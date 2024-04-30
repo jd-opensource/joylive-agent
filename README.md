@@ -38,20 +38,20 @@ Compile requirement: JDK 8+ and Maven 3.2.5+
 
 ## Quick Start
 
-View [Quick Start](./docs/quickstart.md)。
+View [Quick Start](./docs/quickstart.md)
 
 ## Configuration reference manual
 
-View [Configuration Reference Manual](./docs/config.md)。
+View [Configuration Reference Manual](./docs/config.md)
 
 ## Usage Examples
 
-View [Usage Examples](./docs/example.md)。
+View [Usage Examples](./docs/example.md)
 
 ## Q&A
 
-View [Q&A](./docs/qa.md)。
+View [Q&A](./docs/qa.md)
 
 ## Release History
 
-View [Release History](./RELEASE.md)。
+View [Release History](./RELEASE.md)

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 agent:
   enhance:
     javaVersion: '[,1.8);[1.8.0_60,]'
@@ -178,6 +177,6 @@ agent:
     service: true
     readerInterval: 1000
     exporter:
-      type: otlp.http
-      endpoint: http://free2.20200325.xyz:9090/api/v1/otlp/v1/metrics #http://11.159.57.106:30134
+      type: logging
+      endpoint: null
       timeout: 5000
