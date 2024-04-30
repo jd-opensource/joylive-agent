@@ -1,0 +1,2 @@
+com.jd.live.agent.implement.parser.jackson.JacksonJsonParser
+com.jd.live.agent.implement.parser.jackson.JacksonYamlParser

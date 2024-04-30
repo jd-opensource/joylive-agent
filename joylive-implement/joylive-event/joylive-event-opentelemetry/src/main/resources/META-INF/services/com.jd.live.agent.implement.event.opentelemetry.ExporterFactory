@@ -1,0 +1,4 @@
+com.jd.live.agent.implement.event.opentelemetry.log.LoggingExporterFactory
+com.jd.live.agent.implement.event.opentelemetry.oltp.OtlpGrpcExporterFactory
+com.jd.live.agent.implement.event.opentelemetry.oltp.OtlpHttpExporterFactory
+com.jd.live.agent.implement.event.opentelemetry.prometheus.PrometheusExporterFactory

@@ -1,0 +1,41 @@
+joylive
+Copyright (C) 2024 JD.com. All rights reserved.
+
+
+This software includes code from resilience4j:
+
+Please visit this web site for more information of this project:
+  * https://github.com/resilience4j/resilience4j
+
+The Apache Software License, Version 2.0.
+================================================================
+
+This software includes code from Spring boot:
+
+Please visit this web site for more information of this project:
+  * https://github.com/spring-projects/spring-boot
+================================================================
+
+This software includes code from AhoCorasickDoubleArrayTrie:
+
+Please visit this web site for more information of this project:
+  * https://github.com/hankcs/AhoCorasickDoubleArrayTrie
+
+The Apache Software License, Version 2.0.
+================================================================
+
+This software includes code from OpenTelemetry:
+
+Please visit this web site for more information of this project:
+  * https://github.com/open-telemetry/opentelemetry-java
+
+The Apache Software License, Version 2.0.
+================================================================
+
+This software includes code from Guava:
+
+Please visit this web site for more information of this project:
+  * https://github.com/google/guava
+
+The Apache Software License, Version 2.0.
+================================================================

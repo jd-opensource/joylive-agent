@@ -1,0 +1,3 @@
+com.jd.live.agent.governance.policy.variable.method.MethodVariableParser
+com.jd.live.agent.governance.policy.variable.http.HttpVariableParser
+com.jd.live.agent.governance.policy.variable.expression.ExpressionVariableParser

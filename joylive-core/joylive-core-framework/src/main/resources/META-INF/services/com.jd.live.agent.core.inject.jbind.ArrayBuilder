@@ -1,0 +1,15 @@
+com.jd.live.agent.core.inject.jbind.converter.array.LongArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.ByteArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveBooleanArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.IntegerArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.BooleanArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.DoubleArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.FloatArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveByteArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveDoubleArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveFloatArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveIntArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveLongArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.PrimitiveShortArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.ShortArrayBuilder
+com.jd.live.agent.core.inject.jbind.converter.array.StringArrayBuilder

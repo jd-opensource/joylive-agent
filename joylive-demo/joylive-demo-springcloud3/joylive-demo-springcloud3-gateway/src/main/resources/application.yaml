@@ -1,0 +1,40 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: spring-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: consumer
+          uri: lb://service-consumer
+          predicates:
+            - Path=/service-consumer/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+        - id: provider
+          uri: lb://service-provider
+          predicates:
+            - Path=/service-provider/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+      #        - id: http
+      #          uri: http://demo.live.local:15088
+      #          predicates:
+      #            - Path=/http/**
+      #            - Method=GET
+      #          filters:
+      #            - StripPrefix=1
+      #          metadata:
+      #            hostExpression: ${unit}-${host}
+      discovery:
+        locator:
+          enabled: true
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR}
+        username: ${NACOS_USERNAME}
+        password: ${NACOS_PASSWORD}
+        namespace: ${NACOS_NAMESPACE:}

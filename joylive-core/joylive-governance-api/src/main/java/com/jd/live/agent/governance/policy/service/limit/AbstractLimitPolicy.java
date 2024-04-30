@@ -1,0 +1,153 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.jd.live.agent.governance.policy.service.limit;
+
+import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.rule.RelationType;
+import com.jd.live.agent.governance.rule.tag.TagCondition;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Provides a base implementation for rate limiting policies. This abstract class defines common attributes
+ * and functionalities that all specific rate limiting policies should inherit. It includes basic properties
+ * such as policy name, strategy type, conditions under which the policy applies, and versioning information.
+ * <p>
+ * The class also outlines the mechanism for rate limiting by specifying an algorithm or a component (e.g.,
+ * FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j) that implements the actual limiting logic.
+ * This allows for flexible and extensible design where different rate limiting strategies can be easily
+ * integrated and managed.
+ * </p>
+ *
+ * @since 1.0.0
+ */
+@Getter
+@Setter
+public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolicy {
+
+    /**
+     * The name of the rate limiting policy.
+     */
+    private String name;
+
+    /**
+     * Defines how conditions are related (e.g., AND, OR) when evaluating whether the policy applies.
+     */
+    protected RelationType relationType;
+
+    /**
+     * A list of conditions (tags) that determine when the policy is applicable.
+     */
+    protected List<TagCondition> conditions;
+
+    /**
+     * Specifies the algorithm or component used for implementing the rate limiting logic.
+     * <p>
+     * Examples include FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j, etc.
+     * </p>
+     */
+    private String strategyType;
+
+    /**
+     * A map of parameters that further customize the action of the rate limiting strategy.
+     */
+    private Map<String, String> actionParameters;
+
+    /**
+     * The version of the rate limiting policy.
+     */
+    private long version;
+
+    /**
+     * Default constructor for creating an instance without initializing fields.
+     */
+    public AbstractLimitPolicy() {
+    }
+
+    /**
+     * Constructs a new rate limiting policy with the specified name.
+     *
+     * @param name the name of the rate limiting policy
+     */
+    public AbstractLimitPolicy(String name) {
+        this.name = name;
+    }
+
+    /**
+     * Constructs a new rate limiting policy with detailed specifications.
+     *
+     * @param name          the name of the rate limiting policy
+     * @param strategyType  the strategy type of the rate limiting policy
+     * @param conditions    a list of conditions (tags) for the rate limiting policy
+     * @param version       the version of the rate limiting policy
+     */
+    public AbstractLimitPolicy(String name, String strategyType, List<TagCondition> conditions, long version) {
+        this(name, strategyType, RelationType.AND, conditions, version);
+    }
+
+    /**
+     * Constructs a new rate limiting policy with comprehensive specifications including relation type.
+     *
+     * @param name          the name of the rate limiting policy
+     * @param strategyType  the strategy type of the rate limiting policy
+     * @param relationType  how conditions are related when evaluating the applicability of the policy
+     * @param conditions    a list of conditions (tags) for the rate limiting policy
+     * @param version       the version of the rate limiting policy
+     */
+    public AbstractLimitPolicy(String name, String strategyType, RelationType relationType,
+                               List<TagCondition> conditions, long version) {
+        this.name = name;
+        this.strategyType = strategyType;
+        this.relationType = relationType;
+        this.conditions = conditions;
+        this.version = version;
+    }
+
+    /**
+     * Supplements the current rate limiting policy with another policy's details. This method is used
+     * to inherit or override attributes from another policy. If the current policy lacks specific attributes,
+     * they are filled in with the values from the source policy.
+     *
+     * @param source the source rate limiting policy to supplement from
+     */
+    public void supplement(AbstractLimitPolicy source) {
+        if (source == null) {
+            return;
+        }
+        if (name == null) {
+            name = source.name;
+        }
+        if (relationType == null) {
+            relationType = source.relationType;
+        }
+        if (conditions == null) {
+            conditions = source.conditions;
+        }
+        if (strategyType == null) {
+            strategyType = source.strategyType;
+        }
+        if (actionParameters == null) {
+            actionParameters = source.actionParameters;
+        }
+        if (version <= 0) {
+            version = source.version;
+        }
+    }
+}
+

@@ -1,0 +1,3 @@
+com.jd.live.agent.plugin.transmission.springcloud.v3.definition.WebHandlerDecoratorDefinition
+com.jd.live.agent.plugin.transmission.springcloud.v3.definition.ReactorLoadBalancerDefinition
+com.jd.live.agent.plugin.transmission.springcloud.v3.definition.HandshakeWebSocketServiceDefinition

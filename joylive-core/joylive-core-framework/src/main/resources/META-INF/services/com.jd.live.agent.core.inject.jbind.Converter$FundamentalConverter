@@ -1,0 +1,17 @@
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Char2ByteConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2BooleanConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2ByteConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2DoubleConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2FileConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2FloatConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2IntConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2LongConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.CharSequence2ShortConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2BooleanConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2ByteConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2DoubleConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2FloatConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2IntConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2LongConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.Number2ShortConverter
+com.jd.live.agent.core.inject.jbind.converter.fundamental.URLConverter

@@ -1,0 +1,325 @@
+[
+  {
+    "name": "service-consumer",
+    "serviceType": "HTTP",
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "strategyType": "Resilience4j",
+              "slidingWindows": [
+                {
+                  "threshold": 1,
+                  "timeWindowInMs": 1000
+                },
+                {
+                  "threshold": 3,
+                  "timeWindowInMs": 2000
+                }
+              ],
+              "actionParameters": {
+                "maxWaitMs": 100
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "header",
+                  "opType": "EQUAL",
+                  "key": "x-live-ext-demo",
+                  "value": [
+                    "abc"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "paths": [
+          {
+            "path": "/echo",
+            "matchType": "EQUAL",
+            "servicePolicy": {
+              "livePolicy": {
+                "writeProtect": false,
+                "cellPolicy": "PREFER_LOCAL_CELL"
+              }
+            },
+            "methods": [
+              {
+                "name": "GET",
+                "servicePolicy": {
+                  "livePolicy": {
+                    "cellPolicy": "PREFER_LOCAL_CELL",
+                    "cellRemotes": [
+                      {
+                        "name": "cell1",
+                        "type": "INSTANCES",
+                        "threshold": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "service-provider",
+    "serviceType": "HTTP",
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "PREFER_LOCAL_UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "strategyType": "Resilience4j",
+              "slidingWindows": [
+                {
+                  "threshold": 1,
+                  "timeWindowInMs": 1000
+                },
+                {
+                  "threshold": 3,
+                  "timeWindowInMs": 2000
+                }
+              ],
+              "actionParameters": {
+                "maxWaitMs": 100
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "header",
+                  "opType": "EQUAL",
+                  "key": "x-live-ext-demo",
+                  "value": [
+                    "abc"
+                  ]
+                }
+              ]
+            }
+          ],
+          "routePolicies": [
+            {
+              "name": "route1",
+              "tagRules": [
+                {
+                  "order": 10,
+                  "relationType": "AND",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit1"
+                      ]
+                    },
+                    {
+                      "opType": "IN",
+                      "type": "header",
+                      "key": "x-live-cell",
+                      "values": [
+                        "cell1",
+                        "cell2"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "unit",
+                          "values": [
+                            "unit1"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "order": 5,
+                  "relationType": "OR",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit1"
+                      ]
+                    },
+                    {
+                      "opType": "IN",
+                      "type": "header",
+                      "key": "x-live-cell",
+                      "values": [
+                        "cell1",
+                        "cell2"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "unit",
+                          "values": [
+                            "unit1"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "route2",
+              "tagRules": [
+                {
+                  "order": 1,
+                  "relationType": "OR",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit2"
+                      ]
+                    },
+                    {
+                      "opType": "IN",
+                      "type": "header",
+                      "key": "x-live-cell",
+                      "values": [
+                        "cell4"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "unit",
+                          "values": [
+                            "unit1"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "paths": [
+          {
+            "path": "/echo",
+            "matchType": "EQUAL",
+            "servicePolicy": {
+              "livePolicy": {
+                "writeProtect": false,
+                "cellPolicy": "PREFER_LOCAL_CELL"
+              }
+            },
+            "methods": [
+              {
+                "name": "GET",
+                "servicePolicy": {
+                  "livePolicy": {
+                    "unitPolicy": "PREFER_LOCAL_UNIT",
+                    "unitRemotes": [
+                      {
+                        "name": "unit2",
+                        "type": "INSTANCES",
+                        "threshold": 1
+                      }
+                    ],
+                    "cellPolicy": "PREFER_LOCAL_CELL",
+                    "cellRemotes": [
+                      {
+                        "name": "cell1",
+                        "type": "INSTANCES",
+                        "threshold": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.jd.live.agent.demo.service.HelloService",
+    "serviceType": "RPC_INTERFACE",
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "dubbo3-provider",
+    "serviceType": "RPC_APP",
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        }
+      }
+    ]
+  }
+]

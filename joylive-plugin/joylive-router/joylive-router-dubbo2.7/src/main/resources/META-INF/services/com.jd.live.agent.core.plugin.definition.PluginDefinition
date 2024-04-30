@@ -1,0 +1,3 @@
+com.jd.live.agent.plugin.router.dubbo.v2_7.definition.RouterChainDefinition
+com.jd.live.agent.plugin.router.dubbo.v2_7.definition.ClassLoaderFilterDefinition
+com.jd.live.agent.plugin.router.dubbo.v2_7.definition.MonitorFilterDefinition

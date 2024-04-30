@@ -1,0 +1,196 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.jd.live.agent.governance.policy.service;
+
+import com.jd.live.agent.core.util.cache.Cache;
+import com.jd.live.agent.core.util.cache.MapCache;
+import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
+import com.jd.live.agent.governance.policy.service.failover.FailoverPolicy;
+import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
+import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
+import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
+import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
+import com.jd.live.agent.governance.policy.service.route.RoutePolicy;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import static com.jd.live.agent.governance.policy.service.lane.LanePolicy.QUERY_LANE_SPACE_ID;
+import static com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy.QUERY_CONCURRENCY_LIMIT;
+import static com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy.QUERY_RATE_LIMIT;
+import static com.jd.live.agent.governance.policy.service.route.RoutePolicy.QUERY_ROUTE;
+
+/**
+ * ServicePolicy
+ */
+public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritWithIdGen<ServicePolicy> {
+
+    @Setter
+    @Getter
+    private LoadBalancePolicy loadBalancePolicy;
+
+    @Setter
+    @Getter
+    private FailoverPolicy failoverPolicy;
+
+    @Setter
+    @Getter
+    private List<RateLimitPolicy> rateLimitPolicies;
+
+    @Setter
+    @Getter
+    private List<ConcurrencyLimitPolicy> concurrencyLimitPolicies;
+
+    @Setter
+    @Getter
+    private List<RoutePolicy> routePolicies;
+
+    @Setter
+    @Getter
+    private ServiceLivePolicy livePolicy;
+
+    @Setter
+    @Getter
+    private List<LanePolicy> lanePolicies;
+
+    private final transient Cache<Long, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
+
+    public ServicePolicy() {
+    }
+
+    @Override
+    public void supplement(ServicePolicy source) {
+        if (loadBalancePolicy != null && loadBalancePolicy.getId() == null) {
+            loadBalancePolicy.setId(id);
+        }
+        if (failoverPolicy != null && failoverPolicy.getId() == null) {
+            failoverPolicy.setId(id);
+        }
+        if (livePolicy != null && livePolicy.getId() == null) {
+            livePolicy.setId(id);
+        }
+        if (rateLimitPolicies != null && !rateLimitPolicies.isEmpty()) {
+            rateLimitPolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_RATE_LIMIT, r.getName()),
+                    supplementTag(KEY_SERVICE_RATE_LIMIT, r.getName())));
+        }
+        if (concurrencyLimitPolicies != null && !concurrencyLimitPolicies.isEmpty()) {
+            concurrencyLimitPolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_CONCURRENCY_LIMIT, r.getName()),
+                    supplementTag(KEY_SERVICE_CONCURRENCY_LIMIT, r.getName())));
+        }
+        if (routePolicies != null && !routePolicies.isEmpty()) {
+            routePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_ROUTE, r.getName()),
+                    supplementTag(KEY_SERVICE_ROUTE, r.getName())));
+        }
+        if (lanePolicies != null && !lanePolicies.isEmpty()) {
+            lanePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_LANE_SPACE_ID, String.valueOf(r.getLaneSpaceId())),
+                    supplementTag(KEY_SERVICE_LANE_SPACE_ID, String.valueOf(r.getLaneSpaceId()))));
+        }
+        if (source != null) {
+            livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
+            failoverPolicy = copy(source.failoverPolicy, failoverPolicy, s -> new FailoverPolicy());
+            loadBalancePolicy = copy(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
+
+            if ((rateLimitPolicies == null || rateLimitPolicies.isEmpty()) &&
+                    (source.rateLimitPolicies != null && !source.rateLimitPolicies.isEmpty())) {
+                rateLimitPolicies = copy(source.rateLimitPolicies,
+                        s -> new RateLimitPolicy(),
+                        s -> addQuery(uri, QUERY_RATE_LIMIT, s.getName()),
+                        s -> new String[]{KEY_SERVICE_RATE_LIMIT, s.getName()});
+            }
+            if ((concurrencyLimitPolicies == null || concurrencyLimitPolicies.isEmpty()) &&
+                    (source.concurrencyLimitPolicies != null && !source.concurrencyLimitPolicies.isEmpty())) {
+                concurrencyLimitPolicies = copy(source.concurrencyLimitPolicies,
+                        s -> new ConcurrencyLimitPolicy(),
+                        s -> addQuery(uri, QUERY_CONCURRENCY_LIMIT, s.getName()),
+                        s -> new String[]{KEY_SERVICE_CONCURRENCY_LIMIT, s.getName()});
+            }
+            if ((routePolicies == null || routePolicies.isEmpty()) &&
+                    (source.routePolicies != null && !source.routePolicies.isEmpty())) {
+                routePolicies = copy(source.routePolicies,
+                        s -> new RoutePolicy(),
+                        s -> addQuery(uri, QUERY_ROUTE, s.getName()),
+                        s -> new String[]{KEY_SERVICE_ROUTE, s.getName()});
+            }
+
+            if ((lanePolicies == null || lanePolicies.isEmpty()) &&
+                    (source.lanePolicies != null && !source.lanePolicies.isEmpty())) {
+                lanePolicies = copy(source.lanePolicies,
+                        s -> new LanePolicy(),
+                        s -> addQuery(uri, QUERY_LANE_SPACE_ID, String.valueOf(s.getLaneSpaceId())),
+                        s -> new String[]{KEY_SERVICE_LANE_SPACE_ID, String.valueOf(s.getLaneSpaceId())});
+            }
+        }
+    }
+
+    protected <T extends PolicyInherit.PolicyInheritWithId<T>> T copy(T source,
+                                                                      T target,
+                                                                      Function<T, T> creator) {
+        if (source != null) {
+            if (target == null) {
+                target = creator.apply(source);
+                target.setId(id);
+            }
+            target.supplement(source);
+        }
+        return target;
+    }
+
+    protected <T extends PolicyInheritWithIdGen<T>> List<T> copy(List<T> sources,
+                                                                 Function<T, T> creator,
+                                                                 Function<T, String> urlFunc,
+                                                                 Function<T, String[]> tagFunc) {
+        List<T> result = new ArrayList<>(sources.size());
+        for (T source : sources) {
+            T newPolicy = creator.apply(source);
+            newPolicy.supplement(() -> urlFunc.apply(source), supplementTag(tagFunc.apply(source)));
+            newPolicy.supplement(source);
+            result.add(newPolicy);
+        }
+        return result;
+    }
+
+    public LanePolicy getLanePolicy(Long laneSpaceId) {
+        return lanePolicyCache.get(laneSpaceId);
+    }
+
+    protected void cache() {
+        getLanePolicy(0L);
+        if (livePolicy != null) {
+            livePolicy.cache();
+        }
+        if (routePolicies != null) {
+            for (RoutePolicy policy : routePolicies) {
+                policy.cache();
+            }
+        }
+    }
+
+    @Override
+    public ServicePolicy clone() {
+        try {
+            return (ServicePolicy) super.clone();
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
+    }
+}

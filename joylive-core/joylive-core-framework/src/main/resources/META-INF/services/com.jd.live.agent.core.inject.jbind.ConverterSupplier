@@ -1,0 +1,12 @@
+com.jd.live.agent.core.inject.jbind.converter.supplier.Array2ArraySupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.Array2CollectionSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.Collection2ArraySupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.Collection2CollectionSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.ConstructorSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.FromStringSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.Map2ObjectSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.Map2MapSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.String2ArraySupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.String2CollectionSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.ToStringSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.ValueOfSupplier

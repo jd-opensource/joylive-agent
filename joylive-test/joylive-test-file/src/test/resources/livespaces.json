@@ -1,0 +1,198 @@
+[
+  {
+    "apiVersion": "apaas.cos.com/v2alpha1",
+    "kind": "MultiLiveSpace",
+    "metadata": {
+      "name": "mls-abcdefg1",
+      "namespace": "apaas-livespace"
+    },
+    "spec": {
+      "code": "7Jei1Q5nlDbx0dRB4ZKd",
+      "name": "TestLiveSpace",
+      "workspaceId": 6,
+      "version": "2023120609580935201",
+      "tenantId": "tenant1",
+      "units": [
+        {
+          "code": "bj",
+          "name": "beijing",
+          "type": "UNIT",
+          "accessMode": "READ_WRITE",
+          "labels": {
+            "region": "cn-north-2"
+          },
+          "cells": [
+            {
+              "code": "m6",
+              "name": "M6",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "cn-north-2b"
+              }
+            },
+            {
+              "code": "hc",
+              "name": "HC",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "cn-north-2c"
+              }
+            },
+            {
+              "code": "yz2",
+              "name": "YZ2",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "cn-north-2a"
+              }
+            }
+          ]
+        },
+        {
+          "code": "bj-xc",
+          "name": "beijing-test-unit",
+          "type": "UNIT",
+          "accessMode": "READ_WRITE",
+          "labels": {
+            "region": "cn-north-2"
+          },
+          "cells": [
+            {
+              "code": "m6-xc",
+              "name": "M6-XC",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "cn-north-2b"
+              }
+            }
+          ]
+        }
+      ],
+      "domains": [
+        {
+          "host": "jr-gw-unit.jd.com",
+          "protocols": [
+            "http",
+            "https"
+          ],
+          "unitFlag": true,
+          "correctionType": "UPSTREAM",
+          "unitDomainEnabled": true,
+          "unitDomains": [
+            {
+              "unit": "bj-xc",
+              "host": "bj-xc-jr-gw-unit.jd.com",
+              "backend": ":8080"
+            },
+            {
+              "unit": "bj",
+              "host": "bj-jr-gw-unit.jd.com",
+              "backend": ":8080"
+            }
+          ],
+          "paths": [
+            {
+              "path": "/",
+              "ruleId": 1003,
+              "ruleName": "Test",
+              "customVariableSource": false,
+              "variable": "pin",
+              "variableSource": "getPinByQuery",
+              "bizVariableEnabled": false,
+              "bizVariableName": "",
+              "bizVariableScope": null,
+              "bizVariableRules": []
+            }
+          ],
+          "resources": []
+        }
+      ],
+      "unitRules": [
+        {
+          "id": 1003,
+          "name": "Test",
+          "type": "CROSS_REGION_LIVE",
+          "business": "",
+          "variable": "pin",
+          "variableSource": "getPinByQuery",
+          "actionNoVariable": "CENTER",
+          "function": "BKDRHash",
+          "modulo": 10000,
+          "units": [
+            {
+              "code": "bj",
+              "allows": [
+              ],
+              "prefixes": [
+                "dev"
+              ],
+              "ranges": [
+                {
+                  "from": 0,
+                  "to": 8000
+                }
+              ],
+              "cells": [
+                {
+                  "code": "m6",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 40
+                },
+                {
+                  "code": "hc",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 40
+                },
+                {
+                  "code": "yz2",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 20
+                }
+              ]
+            },
+            {
+              "code": "bj-xc",
+              "allows": [
+              ],
+              "prefix": [
+                "xc"
+              ],
+              "ranges": [
+                {
+                  "from": 8000,
+                  "to": 10000
+                }
+              ],
+              "cells": [
+                {
+                  "code": "m6-xc",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 100
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "name": "pin",
+          "type": "unit",
+          "sources": [
+            {
+              "name": "getPinByQuery",
+              "scope": "QUERY",
+              "key": "pin",
+              "func": "",
+              "header": ""
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

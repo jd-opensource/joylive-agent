@@ -1,0 +1,183 @@
+#
+# Copyright © ${year} ${owner} (${email})
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+agent:
+  enhance:
+    javaVersion: '[,1.8);[1.8.0_60,]'
+    reTransformEnabled: true
+    excludePrefixes: null
+    excludeTypes: null
+    excludeInterfaces: null
+    excludeClassLoaders:
+      - com.jd.jr.sgm.agent.loader.ClientLibClassLoader
+      - com.jd.pfinder.profiler.load.InterceptorClassLoader
+      - com.jd.pfinder.profiler.utils.ModuleClassLoader
+      - com.jd.pfinder.profiler.load.ModuleInterceptorClassLoader
+      - io.opentelemetry.javaagent.bootstrap.AgentClassLoader
+      - org.apache.skywalking.apm.agent.core.plugin.loader.AgentClassLoader
+      - org.apache.skywalking.apm.agent.core.plugin.loader.PluginClassLoader
+      - com.navercorp.pinpoint.bootstrap.classloader.AgentClassLoader
+      - com.navercorp.pinpoint.bootstrap.classloader.PluginClassLoader
+      - com.huaweicloud.sermant.core.classloader.FrameworkClassLoader
+      - com.huaweicloud.sermant.core.plugin.classloader.PluginClassLoader
+      - com.huaweicloud.sermant.core.plugin.classloader.ServiceClassLoader
+      - com.alipay.sofa.ark.container.service.classloader.PluginClassLoader
+    logEnhance: true
+    outputEnhance: false
+  publisher:
+    liveEvent:
+      capacity: 20000
+  plugin:
+    systems:
+      - system
+    statics:
+      - dubbo
+      - grpc
+      - httpclient
+      - jdk
+      - jmq
+      - jsf
+      - kafka
+      - okhttp
+      - netty
+      - phevos
+      - rocketmq
+      - shenyu
+      - sofarpc
+      - spring
+      - mariadb
+      - mongodb
+      - opengauss
+      - postgresql
+      - redis
+    disables: null
+    dynamics: null
+    passives: null
+    profiles:
+      test: null
+      production: null
+    profile: null
+  sync:
+    liveSpace:
+      url: null
+      type: file # [file,multilive]
+      interval: 5000
+      timeout: 3000
+      initialTimeout: 20000
+      delay: 0
+      fault: 5000
+      headers: null
+      configs:
+        workspacesPath: /workspaces/
+        workspacePath: /workspaceConfig/
+    laneSpace:
+      type: file
+    microservice:
+      type: file
+  watchdog:
+    enabled: true
+    delay: 5000
+    interval: 100
+    timeout: 5000
+  switch:
+    live:
+      enabled: ${CONFIG_LIVE_ENABLED:true}
+      dubbo: true
+      sofarpc: true
+      jsf: true
+      spring: true
+      phevos: true
+    lane:
+      enabled: ${CONFIG_LANE_ENABLED:true}
+    transmission:
+      enabled: ${CONFIG_TRANSMISSION_ENABLED:true}
+      threadpool: ${CONFIG_TRANSMISSION_THREADPOOL_ENABLED:true}
+    registry:
+      enabled: ${CONFIG_REGISTRY_ENABLED:true}
+    flowcontrol:
+      enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
+      loadbalance: ${CONFIG_LOADBALANCE_ENABLED:true}
+      sticky: ${CONFIG_STICKY_ENABLED:false}
+      limit: ${CONFIG_LIMIT_ENABLED:true}
+      localhost: ${CONFIG_LOCALHOST_ENABLED:false}
+      virtual: ${CONFIG_VIRTUAL_ENABLED:false}
+    protect:
+      enabled: ${CONFIG_PROTECT_ENABLED:false}
+      mariadb: true
+      postgresql: true
+      opengauss: true
+      mongodb: true
+      redis: false
+    classloader:
+      enabled: ${CONFIG_CLASSLOADER_ENABLED:true}
+      springboot: true
+    counter:
+      enabled: true
+  governance:
+    initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
+    router:
+      virtual: ${CONFIG_VIRTUAL_SIZE:500}
+      phevos:
+        groupExpression: ${unit}-${cell}-${group}
+    transmission:
+      thread:
+        excludes:
+          - org.apache.dubbo.common.threadpool.ThreadlessExecutor
+          - org.apache.tomcat.util.threads.ThreadPoolExecutor
+          - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
+          - org.apache.tomcat.util.threads.InlineExecutorService
+          - javax.management.NotificationBroadcasterSupport$1
+          - io.grpc.stub.ClientCalls.ThreadlessExecutor
+          - io.grpc.SynchronizationContext
+          - io.netty.channel.MultithreadEventLoopGroup
+          - io.netty.channel.nio.NioEventLoop
+          - io.netty.channel.SingleThreadEventLoop
+          - io.netty.util.concurrent.MultithreadEventExecutorGroup
+          - io.netty.util.concurrent.AbstractEventExecutorGroup
+          - io.netty.util.concurrent.ThreadPerTaskExecutor
+          - io.netty.util.concurrent.GlobalEventExecutor
+          - io.netty.util.concurrent.AbstractScheduledEventExecutor
+          - io.netty.util.concurrent.AbstractEventExecutor
+          - io.netty.util.concurrent.DefaultEventExecutor
+          - io.netty.util.concurrent.SingleThreadEventExecutor
+          - io.netty.util.internal.ThreadExecutorMap$1
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutorGroup
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.ThreadPerTaskExecutor
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.GlobalEventExecutor
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractScheduledEventExecutor
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutor
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.SingleThreadEventLoop
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor
+          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$1
+          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$ExecutorHolder
+          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$RestrictedScheduledExecutor
+          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$2
+          - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
+          - com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls.ThreadlessExecutor
+          - com.alibaba.nacos.shaded.io.grpc.SynchronizationContext
+          - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
+  counter:
+    gateway: true
+    service: true
+    readerInterval: 1000
+    exporter:
+      type: otlp.http
+      endpoint: http://free2.20200325.xyz:9090/api/v1/otlp/v1/metrics #http://11.159.57.106:30134
+      timeout: 5000

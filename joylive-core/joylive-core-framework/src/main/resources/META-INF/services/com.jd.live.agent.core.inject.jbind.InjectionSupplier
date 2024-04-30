@@ -1,0 +1,2 @@
+com.jd.live.agent.core.inject.jbind.supplier.JConfigAnnotationSupplier
+com.jd.live.agent.core.inject.jbind.supplier.JInjectAnnotationSupplier

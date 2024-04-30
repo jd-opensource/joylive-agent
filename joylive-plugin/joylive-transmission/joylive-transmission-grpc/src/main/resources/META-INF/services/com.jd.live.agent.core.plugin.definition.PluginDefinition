@@ -1,0 +1,2 @@
+com.jd.live.agent.plugin.transmission.grpc.definition.ClientCallImplDefinition
+com.jd.live.agent.plugin.transmission.grpc.definition.GrpcServerDefinition

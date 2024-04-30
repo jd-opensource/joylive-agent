@@ -1,0 +1,2 @@
+com.jd.live.agent.plugin.protection.mongodb.v4.definition.CommandOperationHelperDefinition
+com.jd.live.agent.plugin.protection.mongodb.v4.definition.MixedBulkWriteOperationDefinition

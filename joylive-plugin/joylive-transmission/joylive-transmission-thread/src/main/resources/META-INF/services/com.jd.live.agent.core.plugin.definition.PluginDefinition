@@ -1,0 +1,2 @@
+com.jd.live.agent.plugin.transmission.thread.definition.ExecutorDefinition
+com.jd.live.agent.plugin.transmission.thread.definition.ScheduledExecutorServiceDefinition

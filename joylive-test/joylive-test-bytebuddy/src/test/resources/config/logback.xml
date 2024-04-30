@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" debug="false">
+    <statusListener class="com.jd.live.agent.shaded.ch.qos.logback.core.status.NopStatusListener"/>
+
+    <conversionRule conversionWord="clr"
+                    converterClass="com.jd.live.agent.implement.logger.slf4j.logback.ColorConverter"/>
+    <conversionRule conversionWord="wex"
+                    converterClass="com.jd.live.agent.implement.logger.slf4j.logback.WhitespaceThrowableProxyConverter"/>
+    <conversionRule conversionWord="wEx"
+                    converterClass="com.jd.live.agent.implement.logger.slf4j.logback.ExtendedWhitespaceThrowableProxyConverter"/>
+
+    <property name="LIVE_LOG_CONSOLE_PATTERN"
+              value="${LIVE_LOG_CONSOLE_PATTERN:-%clr(%d{${LIVE_LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LIVE_LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){red} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LIVE_LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <property name="LIVE_LOG_CONSOLE_CHARSET" value="${LIVE_LOG_CONSOLE_CHARSET:-${file.encoding:-UTF-8}}"/>
+    <property name="LIVE_LOG_FILE_PATTERN"
+              value="${LIVE_LOG_FILE_PATTERN:-%d{${LIVE_LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} ${LIVE_LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} : %m%n${LIVE_LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <property name="LIVE_LOG_FILE_CHARSET" value="${LIVE_LOG_FILE_CHARSET:-${file.encoding:-UTF-8}}"/>
+
+    <property scope="context" name="logger.dir" value="${LIVE_LOG_DIR:-./logs/live-agent/}"/>
+    <property scope="context" name="logger.application" value="${LIVE_APP_NAME:-live-agent}"/>
+    <property scope="context" name="logger.level" value="${LIVE_LOG_LEVEL:-info}"/>
+    <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-20GB}"/>
+    <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-10}"/>
+    <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-10MB}"/>
+    <property scope="context" name="logger.cleanHistoryOnStart" value="${LIVE_LOG_CLEAN_HISTORY_ONSTART:-true}"/>
+
+    <appender name="CONSOLE_APPENDER" class="com.jd.live.agent.shaded.ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                ${LIVE_LOG_CONSOLE_PATTERN}
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ROLLING_APPENDER" class="com.jd.live.agent.shaded.ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="com.jd.live.agent.shaded.ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${logger.dir}/%d{yyyy-MM-dd}/${logger.application}-%i.log</fileNamePattern>
+            <maxHistory>${logger.maxHistory}</maxHistory>
+            <maxFileSize>${logger.maxFileSize}</maxFileSize>
+            <totalSizeCap>${logger.totalSize}</totalSizeCap>
+            <cleanHistoryOnStart>${logger.cleanHistoryOnStart}</cleanHistoryOnStart>
+        </rollingPolicy>
+        <filter class="com.jd.live.agent.shaded.ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder>
+            <pattern>
+                ${LIVE_LOG_FILE_PATTERN}
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root>
+        <level value="${logger.level}"/>
+        <appender-ref ref="CONSOLE_APPENDER"/>
+        <appender-ref ref="ROLLING_APPENDER"/>
+    </root>
+
+</configuration>

@@ -1,0 +1,272 @@
+<!--
+
+    Copyright © ${year} ${owner} (${email})
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<assembly>
+    <id>assembly</id>
+    <formats>
+        <format>dir</format>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${assembly.dir}/config</directory>
+            <outputDirectory>config</outputDirectory>
+            <fileMode>0755</fileMode>
+            <filtered>true</filtered>
+            <lineEnding>unix</lineEnding>
+        </fileSet>
+        <!-- lib -->
+    </fileSets>
+    <dependencySets>
+        <!-- . -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>.</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-bootstrap-premain</include>
+            </includes>
+            <outputFileNameMapping>live.jar</outputFileNameMapping>
+        </dependencySet>
+        <!-- lib/system -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>lib/system</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-bootstrap-api</include>
+            </includes>
+        </dependencySet>
+        <!-- lib/core -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>lib/core</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-core-api</include>
+                <include>com.jd.live:joylive-governance-api</include>
+                <include>com.jd.live:joylive-core-framework</include>
+            </includes>
+        </dependencySet>
+        <!-- lib/core.impl -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>lib/core.impl</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-bytekit-bytebuddy</include>
+                <include>com.jd.live:joylive-command-lifecycle</include>
+                <include>com.jd.live:joylive-eventbus-jbus</include>
+                <include>com.jd.live:joylive-function-bkdrhash</include>
+                <include>com.jd.live:joylive-logger-slf4j</include>
+                <include>com.jd.live:joylive-parser-jackson</include>
+                <include>com.jd.live:joylive-parser-properties</include>
+                <include>com.jd.live:joylive-service-file</include>
+                <include>com.jd.live:joylive-service-watchdog</include>
+                <include>com.jd.live:joylive-event-logger</include>
+                <include>com.jd.live:joylive-event-opentelemetry</include>
+                <include>com.jd.live:joylive-expression-jexl</include>
+                <include>com.jd.live:joylive-flowcontrol-resilience4j</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/system -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/system</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-classloader-springboot2</include>
+            </includes>
+        </dependencySet>
+
+
+        <!-- plugin/spring -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/spring</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-application-springboot2</include>
+                <include>com.jd.live:joylive-registry-springcloud3</include>
+                <include>com.jd.live:joylive-router-springcloud3</include>
+                <include>com.jd.live:joylive-router-springgateway3</include>
+                <include>com.jd.live:joylive-transmission-springcloud3</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/dubbo -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/dubbo</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-registry-dubbo3</include>
+                <include>com.jd.live:joylive-registry-dubbo2.7</include>
+                <include>com.jd.live:joylive-registry-dubbo2.6</include>
+                <include>com.jd.live:joylive-router-dubbo3</include>
+                <include>com.jd.live:joylive-router-dubbo2.7</include>
+                <include>com.jd.live:joylive-router-dubbo2.6</include>
+                <include>com.jd.live:joylive-transmission-dubbo3</include>
+                <include>com.jd.live:joylive-transmission-dubbo2.7</include>
+                <include>com.jd.live:joylive-transmission-dubbo2.6</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/sofarpc -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/sofarpc</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-registry-sofarpc</include>
+                <include>com.jd.live:joylive-router-sofarpc</include>
+                <include>com.jd.live:joylive-transmission-sofarpc</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/rocketmq -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/rocketmq</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-rocketmq4</include>
+                <include>com.jd.live:joylive-transmission-rocketmq5</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/kafka -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/kafka</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-kafka</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/okhttp -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/okhttp</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-okhttp1</include>
+                <include>com.jd.live:joylive-transmission-okhttp3</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/netty -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/netty</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-nettyhttp1</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/grpc -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/grpc</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-grpc</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/httpclient -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/httpclient</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-httpclient4</include>
+                <include>com.jd.live:joylive-transmission-httpclient3</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/jdk -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/jdk</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-thread</include>
+                <include>com.jd.live:joylive-transmission-jdkhttp</include>
+                <include>com.jd.live:joylive-transmission-httpservlet</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/mariadb -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/mariadb</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-protection-mariadb2</include>
+                <include>com.jd.live:joylive-protection-mariadb3</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/mongodb -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/mongodb</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-protection-mongodb4</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/opengauss -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/opengauss</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-protection-opengauss3.0</include>
+                <include>com.jd.live:joylive-protection-opengauss3.1</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/postgresql -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/postgresql</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-protection-postgresql9.4</include>
+                <include>com.jd.live:joylive-protection-postgresql42</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/redis -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/redis</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-protection-redis</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>

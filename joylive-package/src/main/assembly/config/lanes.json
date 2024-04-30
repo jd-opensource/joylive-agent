@@ -1,0 +1,46 @@
+[
+  {
+    "id": 1,
+    "lanes": [
+      {
+        "code": "production",
+        "name": "production lane",
+        "defaultLane": true
+      },
+      {
+        "code": "beta",
+        "name": "beta lane"
+      }
+    ],
+    "rules": [
+      {
+        "id": 1,
+        "conditions": {
+          "beta": {
+            "conditions": [
+              {
+                "type": "query",
+                "opType": "EQUAL",
+                "key": "beta",
+                "values": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "domains": [
+      {
+        "host": "demo.live.local",
+        "paths": [
+          {
+            "path": "/",
+            "ruleId": 1
+          }
+        ]
+      }
+    ]
+  }
+]

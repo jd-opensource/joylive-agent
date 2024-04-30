@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ab-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ab-tester
+  template:
+    metadata:
+      labels:
+        app: ab-tester
+    spec:
+      containers:
+        - name: ab-container
+          image: mocoso/apachebench:latest
+          args: [ "tail", "-f", "/dev/null" ] # 保持容器运行
