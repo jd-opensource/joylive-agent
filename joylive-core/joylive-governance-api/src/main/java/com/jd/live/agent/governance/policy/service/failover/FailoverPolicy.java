@@ -21,7 +21,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * FailoverPolicy
+ * Defines a failover policy that specifies the behavior of a system or component in the event of a failure.
+ * This includes how many retry attempts should be made and the timeout for each attempt before considering
+ * the operation as failed. The policy is designed to improve system resilience by allowing temporary failures
+ * to be retried, potentially recovering from transient issues without affecting the overall system availability.
+ * <p>
+ * The {@code FailoverPolicy} class implements {@link PolicyInheritWithId} interface, enabling it to inherit
+ * or supplement its configuration from another failover policy. This feature is useful for dynamically adjusting
+ * policy parameters in response to changes in system behavior or requirements.
+ * </p>
  *
  * @since 1.0.0
  */
@@ -30,10 +38,23 @@ import lombok.Setter;
 @Consumer
 public class FailoverPolicy implements PolicyInheritWithId<FailoverPolicy> {
 
+    /**
+     * The unique identifier of the failover policy. This ID can be used to reference and manage the policy
+     * within a system.
+     */
     private Long id;
 
+    /**
+     * The number of retry attempts that should be made in case of a failure. This parameter allows the system
+     * to attempt to recover from transient failures by retrying the failed operation.
+     */
     private Integer retry;
 
+    /**
+     * The timeout in milliseconds for each retry attempt. This parameter specifies how long the system should
+     * wait for an operation to complete before timing out and potentially retrying the operation, according
+     * to the retry policy.
+     */
     private Integer timeoutInMilliseconds;
 
     @Override

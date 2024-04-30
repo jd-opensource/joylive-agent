@@ -21,7 +21,19 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * LoadBalancePolicy
+ * Represents a policy for load balancing that dictates how tasks or requests are distributed
+ * among various resources or services. This class encapsulates the settings and strategies
+ * used to balance load, aiming to optimize resource use, maximize throughput, minimize response
+ * time, and avoid overloading any single resource.
+ * <p>
+ * The {@code LoadBalancePolicy} class implements {@link PolicyInheritWithId} interface, enabling
+ * policy inheritance. This allows a load balance policy to supplement its configuration from another
+ * policy of the same type. This feature is particularly useful for dynamically adjusting load balancing
+ * strategies in response to changing operational conditions or requirements.
+ * </p>
+ *
+ * Instances of this class can be identified by a unique ID and categorized by a policy type, which
+ * describes the load balancing strategy (e.g., round-robin, least connections, hash-based) being applied.
  *
  * @since 1.0.0
  */
@@ -30,17 +42,37 @@ import lombok.Setter;
 @Consumer
 public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy> {
 
+    /**
+     * The unique identifier of the load balance policy. This ID is used to reference and manage
+     * the policy within a system.
+     */
     private Long id;
 
+    /**
+     * The type of load balancing policy. This string identifies the strategy used for distributing
+     * load among resources or services. Examples include "round-robin", "least-connections", and
+     * "hash-based" among others.
+     */
     private String policyType;
 
+    /**
+     * Constructs a new, empty {@code LoadBalancePolicy}.
+     */
     public LoadBalancePolicy() {
     }
 
+    /**
+     * Constructs a new {@code LoadBalancePolicy} with a specified policy type.
+     *
+     * @param policyType the type of load balancing strategy to be applied by this policy
+     */
     public LoadBalancePolicy(String policyType) {
         this.policyType = policyType;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void supplement(LoadBalancePolicy source) {
         if (source == null) {
@@ -52,3 +84,4 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
     }
 
 }
+

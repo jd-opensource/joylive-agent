@@ -22,5 +22,6 @@ package com.jd.live.agent.governance.policy.service.live;
  * @since 1.0.0
  */
 public enum RemoteType {
+
     INSTANCES
 }

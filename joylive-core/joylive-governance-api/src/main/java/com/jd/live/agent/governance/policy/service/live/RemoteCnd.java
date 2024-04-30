@@ -18,13 +18,27 @@ package com.jd.live.agent.governance.policy.service.live;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Represents a remote configuration detail for a unit or cell within a distributed system.
+ */
 @Getter
 @Setter
 public class RemoteCnd {
 
+    /**
+     * The name of the remote configuration.
+     */
     private String name;
 
+    /**
+     * The type of the remote configuration. The default type is {@link RemoteType#INSTANCES}, suggesting that the default
+     * configuration pertains to instances of services.
+     */
     private RemoteType type = RemoteType.INSTANCES;
 
+    /**
+     * A threshold value associated with this remote configuration.
+     */
     private int threshold;
 }
+

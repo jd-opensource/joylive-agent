@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.policy.service.live;
 
 /**
- * UnitPolicy
+ * CellPolicy
  *
  * @author Zhiguo.Chen
  * @since 1.0.0

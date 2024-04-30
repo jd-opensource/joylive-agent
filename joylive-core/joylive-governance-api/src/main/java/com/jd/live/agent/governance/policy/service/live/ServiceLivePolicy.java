@@ -26,41 +26,71 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service live policy
+ */
 @Provider
 public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInheritWithId<ServiceLivePolicy> {
 
+    /**
+     * Unique identifier for the policy
+     */
     @Getter
     @Setter
     private Long id;
 
+    /**
+     * Flag indicating if write operations are protected
+     */
     @Getter
     @Setter
     private Boolean writeProtect;
 
+    /**
+     * Expression for parsing unit variable
+     */
     @Getter
     @Setter
     private String variableExpression;
 
+    /**
+     * Policy for unit-level operations
+     */
     @Getter
     @Setter
     private UnitPolicy unitPolicy;
 
+    /**
+     * Default unit failover threshold
+     */
     @Getter
     @Setter
     private Integer defaultUnitThreshold;
 
+    /**
+     * Unit failover conditions
+     */
     @Getter
     @Setter
     private List<RemoteCnd> unitRemotes;
 
+    /**
+     * Policy for cell-level operations
+     */
     @Getter
     @Setter
     private CellPolicy cellPolicy;
 
+    /**
+     * Default cell failover threshold
+     */
     @Getter
     @Setter
     private Integer defaultCellThreshold;
 
+    /**
+     * Cell failover conditions
+     */
     @Getter
     @Setter
     private List<RemoteCnd> cellRemotes;
@@ -69,6 +99,13 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
 
     private transient final Cache<String, RemoteCnd> cellRemoteCache = new MapCache<>(new ListBuilder<>(() -> cellRemotes, RemoteCnd::getName));
 
+    /**
+     * Retrieves the threshold for a specific unit based on its name.
+     * If the unit is not found, returns the default unit threshold.
+     *
+     * @param name The name of the unit.
+     * @return The threshold for the specified unit or the default threshold if not found.
+     */
     public Integer getUnitThreshold(String name) {
         RemoteCnd cnd = unitRemoteCache.get(name);
         if (cnd == null) {
@@ -77,6 +114,13 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
         return cnd.getThreshold();
     }
 
+    /**
+     * Retrieves the threshold for a specific cell based on its name.
+     * If the cell is not found, returns the default cell threshold.
+     *
+     * @param name The name of the cell.
+     * @return The threshold for the specified cell or the default threshold if not found.
+     */
     public Integer getCellThreshold(String name) {
         RemoteCnd cnd = cellRemoteCache.get(name);
         if (cnd == null) {

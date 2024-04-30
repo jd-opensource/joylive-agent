@@ -20,6 +20,9 @@ import com.jd.live.agent.core.util.trie.PathType;
 
 public enum ServiceType {
 
+    /**
+     * Represents an HTTP service type.
+     */
     HTTP {
         @Override
         public PathType getPathType() {
@@ -32,6 +35,9 @@ public enum ServiceType {
         }
     },
 
+    /**
+     * Represents an RPC service type that is identified by the application.
+     */
     RPC_APP {
         @Override
         public PathType getPathType() {
@@ -44,6 +50,9 @@ public enum ServiceType {
         }
     },
 
+    /**
+     * Represents an RPC service type that is identified by the interface.
+     */
     RPC_INTERFACE {
         @Override
         public PathType getPathType() {
