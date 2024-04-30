@@ -1,5 +1,11 @@
 # joylive-agent
 
+[![Build](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml/badge.svg)](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml)
+![License](https://img.shields.io/github/license/jd-opensource/joylive-agent.svg)
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
+
+[English](./README.md) | 简体中文
+
 ## 概述
 
 用于多活（单元化）场景的流量治理Java字节码增强框架，继传统SDK治理模式与Sidecar治理模式之后，新一代Proxyless模式的探索实现，为企业Java生态提供高性能，低资源损耗，降本增效的流量治理框架。

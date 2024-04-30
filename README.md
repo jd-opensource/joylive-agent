@@ -1,5 +1,9 @@
 # joylive-agent
 
+[![Build](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml/badge.svg)](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml)
+![License](https://img.shields.io/github/license/jd-opensource/joylive-agent.svg)
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
+
 English | [简体中文](./README-zh.md)
 
 ## Overview
