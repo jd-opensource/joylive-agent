@@ -21,12 +21,6 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-governance-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>lombok</artifactId>
-                    <groupId>org.projectlombok</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
     </dependencies>

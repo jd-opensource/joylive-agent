@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.springgateway.v3.config;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
+@Setter
 public class GatewayConfig {
 
     public static final String CONFIG_SPRING_GATEWAY_PREFIX = "agent.governance.router.springgateway";
@@ -32,8 +34,6 @@ public class GatewayConfig {
 
     protected static final String DEFAULT_HOST_EXPRESSION = "${unit}-${host}";
 
-    @Getter
-    @Setter
     private String hostExpression;
 
 }

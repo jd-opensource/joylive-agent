@@ -16,7 +16,6 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <opentelemetry-sdk.version>1.36.0</opentelemetry-sdk.version>
-        <!--TODO 依赖版本过低-->
         <opentelemetry-exporter-prometheus.version>1.29.0-alpha</opentelemetry-exporter-prometheus.version>
         <protobuf-java.version>4.26.1</protobuf-java.version>
         <gson.version>2.10.1</gson.version>
@@ -297,6 +296,10 @@
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
             <version>${error_prone_annotations.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
 
     </dependencies>
