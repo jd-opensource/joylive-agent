@@ -31,7 +31,7 @@ Compile requirement: JDK 8+ and Maven 3.2.5+
 ## Main Features
 
 1. Supports traffic control for various models, including in-region multi-activity and cross-region multi-activity.
-2. Supports full-link grayscale based on lanes.
+2. Support swimlane-based full-link gray scale, QPS and concurrent current limiting, label routing, load balancing and other microservice governance strategies;
 3. Supports local cell priority and cross-cell fault-tolerance strategies.
 4. Employs bytecode enhancement technology, which is non-intrusive to business code and minimally impacts business performance.
 5. Adopts a microkernel architecture with strong class isolation, featuring an easy-to-use and simple extension and configuration system.
