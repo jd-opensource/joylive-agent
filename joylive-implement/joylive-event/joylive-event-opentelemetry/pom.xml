@@ -12,9 +12,6 @@
     <artifactId>joylive-event-opentelemetry</artifactId>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <opentelemetry-sdk.version>1.36.0</opentelemetry-sdk.version>
         <opentelemetry-exporter-prometheus.version>1.29.0-alpha</opentelemetry-exporter-prometheus.version>
         <protobuf-java.version>4.26.1</protobuf-java.version>
