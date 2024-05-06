@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.bytekit.bytebuddy;
+package com.jd.live.agent.implement.bytekit.bytebuddy.plugin;
 
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceDesc;
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;

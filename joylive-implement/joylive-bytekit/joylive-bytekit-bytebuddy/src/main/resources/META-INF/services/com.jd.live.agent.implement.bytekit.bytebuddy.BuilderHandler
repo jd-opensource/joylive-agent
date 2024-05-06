@@ -1,0 +1,4 @@
+com.jd.live.agent.implement.bytekit.bytebuddy.handler.RetransformHandler
+com.jd.live.agent.implement.bytekit.bytebuddy.handler.IgnoredHandler
+com.jd.live.agent.implement.bytekit.bytebuddy.handler.LoggerHandler
+com.jd.live.agent.implement.bytekit.bytebuddy.handler.ExporterHandler

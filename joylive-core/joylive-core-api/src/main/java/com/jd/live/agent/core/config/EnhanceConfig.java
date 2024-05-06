@@ -36,11 +36,6 @@ public class EnhanceConfig {
     private String javaVersion = SUPPORT_JAVA_VERSION;
 
     /**
-     * enable reTransform
-     */
-    private boolean reTransformEnabled;
-
-    /**
      * exclude class name prefix
      */
     private Set<String> excludePrefixes;
@@ -61,14 +56,9 @@ public class EnhanceConfig {
     private Set<String> excludeClassLoaders;
 
     /**
-     * log enhance
+     * handle java module
      */
-    private boolean logEnhance;
-
-    /**
-     * output enhance class file
-     */
-    private boolean outputEnhance;
+    private Set<String> edgeClasses;
 
     public boolean isExclude(Class<?> type) {
         String name = type.getName();

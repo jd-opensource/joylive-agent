@@ -152,8 +152,9 @@
                                 <exclude>**/pom.xml</exclude>
                                 <exclude>**/deployment*.xml</exclude>
                                 <exclude>**/ab.yaml</exclude>
-                                <exclude>src/test/resources/**</exclude>
                                 <exclude>src/main/resources/**</exclude>
+                                <exclude>src/main/assembly/**</exclude>
+                                <exclude>src/test/resources/**</exclude>
                                 <exclude>
                                     src/main/java/com/jd/live/agent/governance/invoke/ratelimit/tokenbucket/SleepingStopwatch.java
                                 </exclude>

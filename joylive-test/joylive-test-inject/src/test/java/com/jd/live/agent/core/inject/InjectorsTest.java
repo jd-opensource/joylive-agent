@@ -62,7 +62,6 @@ public class InjectorsTest {
         defaultInjectors.inject(new CascadeOption(map), config);
         Assertions.assertEquals("[,1.8);[1.8.0_61,]", config.getEnhanceConfig().getJavaVersion());
         Assertions.assertNotNull(config.getEnhanceConfig());
-        Assertions.assertTrue(config.getEnhanceConfig().isReTransformEnabled());
         Assertions.assertNotNull(config.getEnhanceConfig().getExcludeTypes());
         Assertions.assertEquals(3, config.getEnhanceConfig().getExcludeTypes().size());
     }
@@ -79,7 +78,6 @@ public class InjectorsTest {
         defaultInjectors.inject(new CascadeOption(map), config);
         Assertions.assertEquals("[,1.8);[1.8.0_61,]", config.getEnhanceConfig().getJavaVersion());
         Assertions.assertNotNull(config.getEnhanceConfig());
-        Assertions.assertTrue(config.getEnhanceConfig().isReTransformEnabled());
         Assertions.assertNotNull(config.getEnhanceConfig().getExcludeTypes());
         Assertions.assertEquals(3, config.getEnhanceConfig().getExcludeTypes().size());
     }

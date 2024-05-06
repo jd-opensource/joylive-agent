@@ -30,6 +30,7 @@ import com.jd.live.agent.core.context.AgentPath;
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
+import com.jd.live.agent.core.extension.ExtensionEvent;
 import com.jd.live.agent.core.extension.ExtensionManager;
 import com.jd.live.agent.core.extension.condition.ConditionManager;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
@@ -85,6 +86,12 @@ public class InterceptorTest {
     private static AgentPath agentPath;
     private static Map<String, Object> env;
     private static ConditionMatcher conditionMatcher;
+    private static LiveClassLoader coreClassLoader;
+    private static PolicyManager policyManager;
+    private static ClassLoaderManager classLoaderManager;
+    private static Option option;
+    private static Injection.Injector injector;
+    private static URL[] urls;
 
     @BeforeAll
     public static void initialize() {
@@ -98,9 +105,29 @@ public class InterceptorTest {
         agentPath = new AgentPath(new File((String) env.get(AgentPath.KEY_AGENT_PATH)));
         classLoaderConfig = new ClassLoaderConfig();
         conditionMatcher = new ConditionManager(classLoader, null, null);
+        urls = agentPath.getLibUrls(agentPath.getRoot().getParentFile());
+        coreClassLoader = new LiveClassLoader(urls, InterceptorTest.class.getClassLoader(), ResourcerType.CORE,
+                new CoreResourceFilter(new ResourceConfig(), agentPath.getConfigPath()), "test");
+        injector = createInjector(coreClassLoader);
+        extensionManager.addListener((event -> {
+            if (event.getType() == ExtensionEvent.EventType.CREATED) {
+                injector.inject(event.getInstance());
+            } else {
+                Throwable throwable = event.getThrowable();
+                logger.error(throwable.getMessage(), throwable);
+            }
+        }));
+        app = new Application();
+        policyManager = new PolicyManager();
+        option = createOption(agentPath);
+        classLoaderManager = new ClassLoaderManager(coreClassLoader, classLoaderConfig, agentPath);
+        injector.inject(bus);
+        injector.inject(app);
+        injector.inject(agentConfig);
+        injector.inject(classLoaderConfig);
     }
 
-    private Option createOption(AgentPath agentPath) {
+    private static Option createOption(AgentPath agentPath) {
         File file = agentPath.getConfigFile();
         try (Reader reader = new BufferedReader(new FileReader(file))) {
             ConfigParser parser = extensionManager.getOrLoadExtension(ConfigParser.class, ObjectParser.YAML, classLoader);
@@ -117,15 +144,12 @@ public class InterceptorTest {
         }
     }
 
-    private Injection.Injector createInjector(LiveClassLoader classLoader) {
+    private static Injection.Injector createInjector(LiveClassLoader classLoader) {
         List<InjectionSupplier> suppliers = extensionManager.getOrLoadExtensible(InjectionSupplier.class, classLoader).getExtensions();
         List<ConverterSupplier> converterSuppliers = extensionManager.getOrLoadExtensible(ConverterSupplier.class, classLoader).getExtensions();
         List<Converter.FundamentalConverter> fundamentalConverters = extensionManager.getOrLoadExtensible(Converter.FundamentalConverter.class, classLoader).getExtensions();
         List<ArrayBuilder> arrayBuilders = extensionManager.getOrLoadExtensible(ArrayBuilder.class, classLoader).getExtensions();
-        PolicyManager policyManager = new PolicyManager();
-        ClassLoaderManager clm = new ClassLoaderManager(classLoader, classLoaderConfig, agentPath);
-        Option option = createOption(agentPath);
-        app = new Application();
+
 
         BestSelector bestSelector = new BestSelector(converterSuppliers, fundamentalConverters, arrayBuilders);
         final Injectors injectors = new Injectors(suppliers, new JInjectionContext(bestSelector, bestSelector, option));
@@ -145,7 +169,7 @@ public class InterceptorTest {
                 components.put(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
                 components.put(EventBus.COMPONENT_EVENT_BUS, bus);
                 components.put(ConditionMatcher.COMPONENT_CONDITION_MATCHER, conditionMatcher);
-                components.put(Resourcer.COMPONENT_RESOURCER, clm.getPluginLoaders());
+                components.put(Resourcer.COMPONENT_RESOURCER, classLoaderManager.getPluginLoaders());
                 InjectSource ctx = new InjectSource(option, components);
                 injectors.inject(ctx, target);
             }
@@ -154,17 +178,9 @@ public class InterceptorTest {
 
     @Test
     public void testEnhanceClass() {
-        URL[] urls = agentPath.getLibUrls(agentPath.getRoot().getParentFile());
-        LiveClassLoader liveClassLoader = new LiveClassLoader(urls, InterceptorTest.class.getClassLoader(),
-                ResourcerType.CORE, new CoreResourceFilter(new ResourceConfig(), agentPath.getConfigPath()), "test");
-        Injection.Injector injector = createInjector(liveClassLoader);
-        injector.inject(bus);
-        injector.inject(app);
-        injector.inject(agentConfig);
-        injector.inject(classLoaderConfig);
         // instrumentation.appendToSystemClassLoaderSearch(new JarFile(new File(agentPath.getRoot().getParent() + "/joylive-test-bytebuddy-1.0.0-SNAPSHOT.jar")));
         // + "/joylive-test-bytebuddy-1.0.0-SNAPSHOT.jar"
-        Plugin plugin = new Plugin(new File(agentPath.getRoot().getParent()), true, urls, extensionManager.build(PluginDefinition.class, liveClassLoader));
+        Plugin plugin = new Plugin(new File(agentPath.getRoot().getParent()), true, urls, extensionManager.build(PluginDefinition.class, coreClassLoader));
         plugin.load();
 
         ExtensibleDesc<ByteSupplier> byteSupplierExtensibleDesc = extensionManager.getOrLoadExtensible(ByteSupplier.class);

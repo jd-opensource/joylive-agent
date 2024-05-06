@@ -15,17 +15,16 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy;
 
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.ByteBuilder;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
-import com.jd.live.agent.core.config.EnhanceConfig;
-import com.jd.live.agent.core.context.AgentPath;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
-import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+
+import java.util.List;
 
 /**
  * BuddySupplier
@@ -34,29 +33,19 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
  * @since 1.0.0
  */
 @Injectable
-@Configurable
 @Extension(value = "BuddySupplier", provider = "ByteBuddy")
 public class BuddySupplier implements ByteSupplier {
 
-    @Inject(value = EnhanceConfig.COMPONENT_ENHANCE_CONFIG)
-    private EnhanceConfig enhanceConfig;
-
-    @Inject(value = AgentPath.COMPONENT_AGENT_PATH)
-    private AgentPath agentPath;
-
-    @Inject(value = Publisher.ENHANCE)
-    private Publisher<AgentEvent> publisher;
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private List<BuilderHandler> handlers;
 
     @Inject(value = ConditionMatcher.COMPONENT_CONDITION_MATCHER)
     private ConditionMatcher conditionMatcher;
 
     @Override
     public ByteBuilder create() {
-        return new BuddyBuilder(enhanceConfig, agentPath, publisher, conditionMatcher)
-                .createBootstrapHandler()
-                .createIgnoreHandler()
-                .createLogHandler()
-                .createOutputHandler();
+        return new BuddyBuilder(handlers, conditionMatcher);
     }
 }
 
