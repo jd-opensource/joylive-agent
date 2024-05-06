@@ -1,1 +1,2 @@
-com.jd.live.agent.plugin.transmission.jdkhttp.definition.JdkHttpClientDefinition
+com.jd.live.agent.plugin.transmission.jdkhttp.definition.SunHttpClientDefinition
+com.jd.live.agent.plugin.transmission.jdkhttp.definition.JavaHttpClientDefinition

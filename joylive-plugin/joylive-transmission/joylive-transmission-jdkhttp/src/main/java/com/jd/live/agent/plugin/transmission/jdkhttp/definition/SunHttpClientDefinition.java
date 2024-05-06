@@ -23,12 +23,37 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JdkHttpClientInterceptor;
+import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientInterceptor;
 
+/**
+ * Defines the instrumentation for intercepting the {@code writeRequests} method
+ * of the {@code sun.net.www.http.HttpClient} class. This class configures the
+ * conditions under which the {@link SunHttpClientInterceptor} is applied, aiming
+ * to monitor or modify HTTP request writing behavior.
+ *
+ * <p>The interceptor is conditionally applied based on the presence of the HttpClient
+ * class and the configuration specified by {@link GovernanceConfig#CONFIG_TRANSMISSION_ENABLED}.
+ * This allows for dynamic enabling or disabling of this instrumentation based on runtime
+ * configuration settings.</p>
+ *
+ * <p>Annotations used:</p>
+ * <ul>
+ *     <li>{@link Extension} - Marks this class as an extension with a defined purpose
+ *     within the framework, allowing it to be automatically discovered and applied.</li>
+ *     <li>{@link ConditionalOnProperty} - Ensures that this plugin is active based on the
+ *     {@code CONFIG_TRANSMISSION_ENABLED} configuration property.</li>
+ *     <li>{@link ConditionalOnClass} - Guarantees that this plugin is only loaded if the
+ *     {@code HttpClient} class is available in the runtime environment, preventing class
+ *     loading issues in environments with different Java versions or configurations.</li>
+ * </ul>
+ *
+ * @see PluginDefinitionAdapter
+ * @see SunHttpClientInterceptor
+ */
 @Extension(value = "JdkHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(JdkHttpClientDefinition.TYPE_HTTP_CLIENT)
-public class JdkHttpClientDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(SunHttpClientDefinition.TYPE_HTTP_CLIENT)
+public class SunHttpClientDefinition extends PluginDefinitionAdapter {
 
     public static final String TYPE_HTTP_CLIENT = "sun.net.www.http.HttpClient";
 
@@ -39,11 +64,11 @@ public class JdkHttpClientDefinition extends PluginDefinitionAdapter {
             "sun.net.www.http.PosterOutputStream"
     };
 
-    public JdkHttpClientDefinition() {
+    public SunHttpClientDefinition() {
         super(MatcherBuilder.named(TYPE_HTTP_CLIENT),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_WRITE_REQUESTS).
                                 and(MatcherBuilder.arguments(ARGUMENT_WRITE_REQUESTS)),
-                        new JdkHttpClientInterceptor()));
+                        new SunHttpClientInterceptor()));
     }
 }
