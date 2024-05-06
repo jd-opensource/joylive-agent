@@ -15,10 +15,15 @@
  */
 package com.jd.live.agent.governance.policy.service.failover;
 
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Consumer;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Defines a failover policy that specifies the behavior of a system or component in the event of a failure.
@@ -36,7 +41,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Consumer
-public class FailoverPolicy implements PolicyInheritWithId<FailoverPolicy> {
+public class FailoverPolicy extends PolicyId implements PolicyInheritWithId<FailoverPolicy> {
 
     /**
      * The unique identifier of the failover policy. This ID can be used to reference and manage the policy
@@ -57,6 +62,16 @@ public class FailoverPolicy implements PolicyInheritWithId<FailoverPolicy> {
      */
     private Integer timeoutInMilliseconds;
 
+    /**
+     * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
+     */
+    private Set<Integer> retryableStatusCodes = new HashSet<>(Arrays.asList(500, 502, 503));
+
+    /**
+     * The version of the policy.
+     */
+    private long version;
+
     @Override
     public void supplement(FailoverPolicy source) {
         if (source == null) {
@@ -67,6 +82,12 @@ public class FailoverPolicy implements PolicyInheritWithId<FailoverPolicy> {
         }
         if (timeoutInMilliseconds == null) {
             timeoutInMilliseconds = source.timeoutInMilliseconds;
+        }
+        if ((retryableStatusCodes == null || retryableStatusCodes.isEmpty()) && source.retryableStatusCodes != null) {
+            retryableStatusCodes = source.retryableStatusCodes;
+        }
+        if (version <= 0) {
+            version = source.version;
         }
     }
 }

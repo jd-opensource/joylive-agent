@@ -25,13 +25,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Provides a base implementation for rate limiting policies. This abstract class defines common attributes
- * and functionalities that all specific rate limiting policies should inherit. It includes basic properties
+ * Provides a base implementation for limiting policies. This abstract class defines common attributes
+ * and functionalities that all specific limiting policies should inherit. It includes basic properties
  * such as policy name, strategy type, conditions under which the policy applies, and versioning information.
  * <p>
- * The class also outlines the mechanism for rate limiting by specifying an algorithm or a component (e.g.,
+ * The class also outlines the mechanism for limiting by specifying an algorithm or a component (e.g.,
  * FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j) that implements the actual limiting logic.
- * This allows for flexible and extensible design where different rate limiting strategies can be easily
+ * This allows for flexible and extensible design where different limiting strategies can be easily
  * integrated and managed.
  * </p>
  *
@@ -42,7 +42,7 @@ import java.util.Map;
 public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolicy {
 
     /**
-     * The name of the rate limiting policy.
+     * The name of the limiting policy.
      */
     private String name;
 
@@ -57,7 +57,7 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     protected List<TagCondition> conditions;
 
     /**
-     * Specifies the algorithm or component used for implementing the rate limiting logic.
+     * Specifies the algorithm or component used for implementing the limiting logic.
      * <p>
      * Examples include FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j, etc.
      * </p>
@@ -65,12 +65,12 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     private String strategyType;
 
     /**
-     * A map of parameters that further customize the action of the rate limiting strategy.
+     * A map of parameters that further customize the action of the limiting strategy.
      */
     private Map<String, String> actionParameters;
 
     /**
-     * The version of the rate limiting policy.
+     * The version of the limiting policy.
      */
     private long version;
 
@@ -81,34 +81,34 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     }
 
     /**
-     * Constructs a new rate limiting policy with the specified name.
+     * Constructs a new limiting policy with the specified name.
      *
-     * @param name the name of the rate limiting policy
+     * @param name the name of the limiting policy
      */
     public AbstractLimitPolicy(String name) {
         this.name = name;
     }
 
     /**
-     * Constructs a new rate limiting policy with detailed specifications.
+     * Constructs a new limiting policy with detailed specifications.
      *
-     * @param name          the name of the rate limiting policy
-     * @param strategyType  the strategy type of the rate limiting policy
-     * @param conditions    a list of conditions (tags) for the rate limiting policy
-     * @param version       the version of the rate limiting policy
+     * @param name          the name of the limiting policy
+     * @param strategyType  the strategy type of the limiting policy
+     * @param conditions    a list of conditions (tags) for the limiting policy
+     * @param version       the version of the limiting policy
      */
     public AbstractLimitPolicy(String name, String strategyType, List<TagCondition> conditions, long version) {
         this(name, strategyType, RelationType.AND, conditions, version);
     }
 
     /**
-     * Constructs a new rate limiting policy with comprehensive specifications including relation type.
+     * Constructs a new limiting policy with comprehensive specifications including relation type.
      *
-     * @param name          the name of the rate limiting policy
-     * @param strategyType  the strategy type of the rate limiting policy
+     * @param name          the name of the limiting policy
+     * @param strategyType  the strategy type of the limiting policy
      * @param relationType  how conditions are related when evaluating the applicability of the policy
-     * @param conditions    a list of conditions (tags) for the rate limiting policy
-     * @param version       the version of the rate limiting policy
+     * @param conditions    a list of conditions (tags) for the limiting policy
+     * @param version       the version of the limiting policy
      */
     public AbstractLimitPolicy(String name, String strategyType, RelationType relationType,
                                List<TagCondition> conditions, long version) {
@@ -120,11 +120,11 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     }
 
     /**
-     * Supplements the current rate limiting policy with another policy's details. This method is used
+     * Supplements the current limiting policy with another policy's details. This method is used
      * to inherit or override attributes from another policy. If the current policy lacks specific attributes,
      * they are filled in with the values from the source policy.
      *
-     * @param source the source rate limiting policy to supplement from
+     * @param source the source limiting policy to supplement from
      */
     public void supplement(AbstractLimitPolicy source) {
         if (source == null) {
