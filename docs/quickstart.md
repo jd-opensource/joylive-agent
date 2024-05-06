@@ -7,9 +7,14 @@ Quick Start
 
 #### Preparation
 
-- [Download] JoyLive Agent Release Package
-- [Download] Demo binary product compressed package
-- Download and start Nacos
+> Please prepare the maven compilation environment in advance and execute the command to compile in the project root directory:
+> ```bash
+> mvn package -f pom.xml -DskipTests=true package
+> ```
+
+- **Compile** JoyLive Agent Release Package
+- **Compile** Demo binary product compressed package
+- **Download** and start Nacos
 
 #### Get Demo binary
 
@@ -23,7 +28,7 @@ Quick Start
 
 #### Modify Agent configuration
 
-Download the JoyLive Agent package and unzip it to get the following directory structure:
+The JoyLive Agent package has the following directory structure:
 
 ```bash
 .

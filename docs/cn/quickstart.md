@@ -7,9 +7,14 @@
 
 #### 准备工作
 
-- [下载] JoyLive Agent Release包
-- [下载] Demo二进制产物压缩包
-- [下载] 并启动Nacos
+> 请提前准备好maven编译环境，项目根目录执行命令编译: 
+> ```bash
+> mvn package -f pom.xml -DskipTests=true package
+> ```
+
+- **编译获取** JoyLive Agent Release包，路径：`joylive-package/target/live-x.x.x-SNAPSHOT`
+- **编译获取** Demo二进制产物，路径：`joylive-demo/joylive-demo-springcloud3`下各项目的target目录内
+- **下载获取** 并启动Nacos
 
 #### 获取Demo二进制
 
@@ -23,7 +28,7 @@
 
 #### 修改Agent配置
 
-下载JoyLive Agent包并解压可得到如下目录结构：
+JoyLive Agent包如下目录结构：
 
 ```bash
 .
