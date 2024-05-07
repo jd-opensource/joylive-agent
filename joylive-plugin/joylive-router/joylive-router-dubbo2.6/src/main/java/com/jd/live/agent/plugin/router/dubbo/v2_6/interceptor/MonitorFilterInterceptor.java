@@ -63,19 +63,7 @@ public class MonitorFilterInterceptor extends
             mc.setResult(result);
             mc.setSkip(true);
         }
-        final Supplier<Response> retrySupplier = createRetrySupplier(mc.getTarget(), mc.getMethod(), mc.getArguments(), mc.getResult());
-        Response result = null;
-        Throwable ex = null;
-        try {
-            result = retrySupplier.get();
-        } catch (Throwable throwable) {
-            ex = throwable;
-        }
-        Response tryResult = tryRetry(outboundInvocation, result, retrySupplier);
-        if (tryResult != null) {
-            result = tryResult;
-        }
-        mc.setResult(result == null ? null : result.getResponse());
+        mc.setResult(invokeWithRetry(outboundInvocation, mc));
         mc.setSkip(true);
     }
 

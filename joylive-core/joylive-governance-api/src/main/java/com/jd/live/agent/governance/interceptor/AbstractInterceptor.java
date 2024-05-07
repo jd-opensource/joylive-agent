@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -179,7 +180,9 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected abstract Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result);
 
-        protected Response tryRetry(O invocation, Response response, Supplier<Response> retrySupplier) {
+        protected Object invokeWithRetry(O invocation, MethodContext ctx) {
+            Supplier<Response> retrySupplier = createRetrySupplier(ctx.getTarget(), ctx.getMethod(), ctx.getArguments(), ctx.getResult());
+            Response response = retrySupplier.get();
             ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
             RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
             if (retryPolicy != null && retrierFactories != null) {
@@ -189,7 +192,7 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                     return retrier.execute(retrySupplier);
                 }
             }
-            return null;
+            return response == null ? null : response.getResponse();
         }
 
     }
