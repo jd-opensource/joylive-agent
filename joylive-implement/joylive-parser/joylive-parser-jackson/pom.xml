@@ -11,6 +11,7 @@
 
     <artifactId>joylive-parser-jackson</artifactId>
     <properties>
+        <jackson.version>2.17.0</jackson.version>
         <json-path.version>2.9.0</json-path.version>
         <json-smart.version>2.5.0</json-smart.version>
         <asm.version>9.3</asm.version>
@@ -124,13 +125,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade-plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
                         <configuration>
                             <artifactSet>
                                 <includes>

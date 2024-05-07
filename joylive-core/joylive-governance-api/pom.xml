@@ -10,6 +10,9 @@
     </parent>
 
     <artifactId>joylive-governance-api</artifactId>
+    <properties>
+        <guava.version>33.1.0-jre</guava.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -20,10 +23,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.1.0-jre</version>
+            <version>${guava.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

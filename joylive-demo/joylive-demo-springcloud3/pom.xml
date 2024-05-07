@@ -18,6 +18,7 @@
         <spring.version>5.3.31</spring.version>
         <spring-cloud-openfeign.version>3.1.9</spring-cloud-openfeign.version>
         <spring-cloud-loadbalancer.version>3.1.8</spring-cloud-loadbalancer.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
     </properties>
 
     <modules>
@@ -55,7 +56,7 @@
                 <dependency>
                     <groupId>javax.annotation</groupId>
                     <artifactId>javax.annotation-api</artifactId>
-                    <version>1.3.2</version>
+                    <version>${javax.annotation-api.version}</version>
                 </dependency>
             </dependencies>
         </profile>

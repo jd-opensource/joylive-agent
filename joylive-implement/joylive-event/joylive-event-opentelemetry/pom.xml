@@ -12,6 +12,7 @@
     <artifactId>joylive-event-opentelemetry</artifactId>
 
     <properties>
+        <grpc.version>1.62.2</grpc.version>
         <opentelemetry-sdk.version>1.36.0</opentelemetry-sdk.version>
         <opentelemetry-exporter-prometheus.version>1.29.0-alpha</opentelemetry-exporter-prometheus.version>
         <protobuf-java.version>4.26.1</protobuf-java.version>
@@ -306,13 +307,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade-plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
                         <configuration>
                             <artifactSet>
                                 <includes>
