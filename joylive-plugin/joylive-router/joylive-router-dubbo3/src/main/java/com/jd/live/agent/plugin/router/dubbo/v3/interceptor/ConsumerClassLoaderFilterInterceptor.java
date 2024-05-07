@@ -73,7 +73,7 @@ public class ConsumerClassLoaderFilterInterceptor extends
         } catch (Throwable throwable) {
             ex = throwable;
         }
-        Response tryResult = tryRetry(outboundInvocation, new DubboResponse.DubboOutboundResponse((Result) result, ex), retrySupplier);
+        Response tryResult = tryRetry(outboundInvocation, result, retrySupplier);
         if (tryResult != null) {
             result = tryResult;
         }
