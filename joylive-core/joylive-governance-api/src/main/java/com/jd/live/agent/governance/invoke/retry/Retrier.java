@@ -33,7 +33,10 @@ public interface Retrier {
      * @param response Response
      * @return true: retry, false: no need to retry
      */
-    boolean isRetryable(Response response);
+    default boolean isRetryable(Response response) {
+        RetryPolicy policy = getPolicy();
+        return policy != null && (policy.isRetry(response.getCode()) || policy.isRetry(response.getThrowable()));
+    }
 
     /**
      * Execute retry logic

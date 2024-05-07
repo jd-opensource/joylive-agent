@@ -53,14 +53,6 @@ public class Resilience4jRetrier implements Retrier {
      * {@inheritDoc}
      */
     @Override
-    public boolean isRetryable(Response response) {
-        return policy.isRetry(response.getCode()) || policy.isRetry(response.getThrowable());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public <T extends Response> T execute(Supplier<T> supplier) {
         // TODO retry timeout
         return retry.executeSupplier(supplier);

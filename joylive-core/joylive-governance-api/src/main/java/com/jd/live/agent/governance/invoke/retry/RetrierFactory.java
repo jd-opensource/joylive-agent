@@ -38,20 +38,20 @@ public interface RetrierFactory {
         }
         AtomicReference<Retrier> reference = RETRIERS.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
         Retrier retrier = reference.get();
-        if (retrier != null && retrier.getPolicy().getVersion() >= policy.getVersion()) {
+        long version = retrier == null ? Long.MIN_VALUE : retrier.getPolicy().getVersion();
+        if (version >= policy.getVersion()) {
             return retrier;
         }
-        Retrier newLimiter = create(policy);
+        Retrier newRetrier = create(policy);
         while (true) {
             retrier = reference.get();
-            if (retrier == null || retrier.getPolicy().getVersion() < policy.getVersion()) {
-                if (reference.compareAndSet(retrier, newLimiter)) {
-                    retrier = newLimiter;
-                    break;
-                }
+            version = retrier == null ? Long.MIN_VALUE : retrier.getPolicy().getVersion();
+            if (version >= policy.getVersion()) {
+                return retrier;
+            } else if (reference.compareAndSet(retrier, newRetrier)) {
+                return newRetrier;
             }
         }
-        return retrier;
     }
 
     /**
