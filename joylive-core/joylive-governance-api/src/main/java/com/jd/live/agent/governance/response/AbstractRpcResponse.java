@@ -15,33 +15,22 @@
  */
 package com.jd.live.agent.governance.response;
 
-import java.io.Serializable;
-
 /**
- * Response
+ * AbstractRpcResponse
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> implements RpcResponse {
 
-    /**
-     * Response Code
-     *
-     * @return status code
-     */
-    String getCode();
+    public AbstractRpcResponse(T response, Throwable throwable) {
+        super(response, throwable);
+    }
 
-    /**
-     * Abnormal response
-     *
-     * @return Exception
-     */
-    Throwable getThrowable();
+    public abstract static class AbstractRpcOutboundResponse<T> extends AbstractRpcResponse<T>
+            implements RpcResponse.RpcOutboundResponse {
 
-    /**
-     * Origin response
-     *
-     * @return response
-     */
-    Object getResponse();
+        public AbstractRpcOutboundResponse(T response, Throwable throwable) {
+            super(response, throwable);
+        }
+    }
 }

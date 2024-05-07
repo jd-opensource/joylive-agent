@@ -19,6 +19,11 @@ import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 
+/**
+ * SofaRpcRequest
+ *
+ * @since 1.0.0
+ */
 public interface SofaRpcRequest {
 
     class SofaRpcInboundRequest extends AbstractRpcInboundRequest<SofaRequest> implements SofaRpcRequest {

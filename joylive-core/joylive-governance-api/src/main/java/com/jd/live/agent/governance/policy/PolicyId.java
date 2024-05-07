@@ -120,7 +120,9 @@ public abstract class PolicyId implements PolicyIdGen {
     /**
      * Supplements the existing tag map with additional key-value pairs.
      *
-     * <p>This method takes a variable number of string arguments representing key-value pairs of tags to be added to the current tag map. It creates a new map containing all the entries of the original tag map, if it exists, and then adds the new key-value pairs to it.</p>
+     * <p>This method takes a variable number of string arguments representing key-value pairs of tags to be added to the current tag map.
+     * It creates a new map containing all the entries of the original tag map, if it exists,
+     * and then adds the new key-value pairs to it.</p>
      *
      * <p>If the number of key-value pairs provided is not an even number, the last provided value will be ignored.</p>
      *

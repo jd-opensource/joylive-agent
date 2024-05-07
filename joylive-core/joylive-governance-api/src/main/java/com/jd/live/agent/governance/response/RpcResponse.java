@@ -15,33 +15,23 @@
  */
 package com.jd.live.agent.governance.response;
 
-import java.io.Serializable;
-
 /**
- * Response
+ * RpcResponse
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+public interface RpcResponse extends ServiceResponse {
 
     /**
-     * Response Code
+     * Defines an interface for outbound RPC response.
+     * <p>
+     * This interface represents RPC response that are received from a service.
+     * </p>
      *
-     * @return status code
+     * @since 1.0.0
      */
-    String getCode();
+    interface RpcOutboundResponse extends RpcResponse, OutboundResponse {
 
-    /**
-     * Abnormal response
-     *
-     * @return Exception
-     */
-    Throwable getThrowable();
+    }
 
-    /**
-     * Origin response
-     *
-     * @return response
-     */
-    Object getResponse();
 }

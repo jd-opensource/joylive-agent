@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.retry;
 
 import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.response.Response;
 
 import java.util.function.Supplier;
 
@@ -27,13 +28,21 @@ import java.util.function.Supplier;
 public interface Retrier {
 
     /**
+     * Determine whether to retry
+     *
+     * @param response Response
+     * @return true: retry, false: no need to retry
+     */
+    boolean isRetryable(Response response);
+
+    /**
      * Execute retry logic
      *
      * @param supplier Retry logic
      * @param <T>      Response type
      * @return Response
      */
-    <T> T execute(Supplier<T> supplier);
+    <T extends Response> T execute(Supplier<T> supplier);
 
     /**
      * Get failover policy

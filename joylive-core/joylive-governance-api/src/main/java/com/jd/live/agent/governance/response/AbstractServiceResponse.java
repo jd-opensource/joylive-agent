@@ -15,33 +15,22 @@
  */
 package com.jd.live.agent.governance.response;
 
-import java.io.Serializable;
+import lombok.Getter;
 
 /**
- * Response
+ * AbstractServiceResponse
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+@Getter
+public abstract class AbstractServiceResponse<T> implements ServiceResponse {
 
-    /**
-     * Response Code
-     *
-     * @return status code
-     */
-    String getCode();
+    protected final T response;
 
-    /**
-     * Abnormal response
-     *
-     * @return Exception
-     */
-    Throwable getThrowable();
+    private final Throwable throwable;
 
-    /**
-     * Origin response
-     *
-     * @return response
-     */
-    Object getResponse();
+    public AbstractServiceResponse(T response, Throwable throwable) {
+        this.response = response;
+        this.throwable = throwable;
+    }
 }

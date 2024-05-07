@@ -21,18 +21,18 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.RpcOutboundInvocat
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcInboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 
-public interface DubboInvocation {
+public interface SofaRpcInvocation {
 
-    class DubboInboundInvocation extends RpcInboundInvocation<SofaRpcInboundRequest> implements DubboInvocation {
+    class SofaRpcInboundInvocation extends RpcInboundInvocation<SofaRpcInboundRequest> implements SofaRpcInvocation {
 
-        public DubboInboundInvocation(SofaRpcInboundRequest request, InvocationContext context) {
+        public SofaRpcInboundInvocation(SofaRpcInboundRequest request, InvocationContext context) {
             super(request, context);
         }
     }
 
-    class DubboOutboundInvocation extends RpcOutboundInvocation<SofaRpcOutboundRequest> implements DubboInvocation {
+    class SofaRpcOutboundInvocation extends RpcOutboundInvocation<SofaRpcOutboundRequest> implements SofaRpcInvocation {
 
-        public DubboOutboundInvocation(SofaRpcOutboundRequest request, InvocationContext context) {
+        public SofaRpcOutboundInvocation(SofaRpcOutboundRequest request, InvocationContext context) {
             super(request, context);
         }
     }

@@ -26,7 +26,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcInboundRequest;
-import com.jd.live.agent.plugin.router.sofarpc.request.invoke.DubboInvocation;
+import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ import java.util.List;
  * ProviderInvokerInterceptor
  */
 public class ProviderInvokerInterceptor extends
-        AbstractInboundInterceptor<SofaRpcInboundRequest, DubboInvocation.DubboInboundInvocation> {
+        AbstractInboundInterceptor<SofaRpcInboundRequest, SofaRpcInvocation.SofaRpcInboundInvocation> {
 
     public ProviderInvokerInterceptor(InvocationContext context, List<InboundFilter> filters) {
         super(context, filters);
@@ -62,13 +62,13 @@ public class ProviderInvokerInterceptor extends
     }
 
     @Override
-    protected void process(DubboInvocation.DubboInboundInvocation invocation) {
+    protected void process(SofaRpcInvocation.SofaRpcInboundInvocation invocation) {
         new InboundFilterChain.Chain(inboundFilters).filter(invocation);
     }
 
     @Override
-    protected DubboInvocation.DubboInboundInvocation createInlet(SofaRpcInboundRequest request) {
-        return new DubboInvocation.DubboInboundInvocation(request, context);
+    protected SofaRpcInvocation.SofaRpcInboundInvocation createInlet(SofaRpcInboundRequest request) {
+        return new SofaRpcInvocation.SofaRpcInboundInvocation(request, context);
     }
 
 }

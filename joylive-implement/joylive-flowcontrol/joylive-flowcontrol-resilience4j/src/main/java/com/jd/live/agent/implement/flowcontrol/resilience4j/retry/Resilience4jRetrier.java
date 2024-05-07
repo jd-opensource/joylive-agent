@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.retry;
 
 import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.response.Response;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
@@ -40,8 +41,12 @@ public class Resilience4jRetrier implements Retrier {
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(policy.getRetry())
                 .waitDuration(Duration.ofMillis(policy.getTimeoutInMilliseconds()))
-                // TODO
-                // .retryOnResult(response -> response.getStatus() == 500)
+                .retryOnResult(response -> {
+                    if (policy.getRetryableStatusCodes() != null) {
+                        return policy.getRetryableStatusCodes().contains(((Response) response).getCode());
+                    }
+                    return false;
+                })
                 .retryOnException(throwable -> policy.getExceptionClassNames() != null
                         && policy.getExceptionClassNames().contains(throwable.getClass().getCanonicalName()))
                 .failAfterMaxAttempts(true)
@@ -54,7 +59,23 @@ public class Resilience4jRetrier implements Retrier {
      * {@inheritDoc}
      */
     @Override
-    public <T> T execute(Supplier<T> supplier) {
+    public boolean isRetryable(Response response) {
+        boolean retryable = false;
+        if (policy.getRetryableStatusCodes() != null) {
+            retryable = policy.getRetryableStatusCodes().contains(response.getCode());
+        }
+        if (!retryable && response.getThrowable() != null) {
+            retryable = response.getThrowable() != null
+                    && policy.getExceptionClassNames().contains(response.getThrowable().getClass().getCanonicalName());
+        }
+        return retryable;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T extends Response> T execute(Supplier<T> supplier) {
         return retry.executeSupplier(supplier);
     }
 

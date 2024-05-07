@@ -287,7 +287,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * Retrieves a list of interceptor instances applicable to a given method, based on a set of interceptor definitions.
      * Each interceptor definition includes a matcher that determines whether the interceptor should be applied to the method.
      *
-     * @param methodDesc The description of the method for which interceptors are being retrieved.
+     * @param methodDesc   The description of the method for which interceptors are being retrieved.
      * @param interceptors A list of interceptor definitions to evaluate against the method.
      * @return A list of {@link Interceptor} instances that match the method according to their respective definitions.
      */
@@ -308,17 +308,17 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * to insert advice around the method execution. The advice is defined in a specified class and is selected
      * based on a unique key.
      *
-     * @param builder The builder used to create or modify the class that contains the method.
-     * @param methodDesc The description of the method to be enhanced.
-     * @param classLoader The class loader of the class being modified.
+     * @param builder      The builder used to create or modify the class that contains the method.
+     * @param methodDesc   The description of the method to be enhanced.
+     * @param classLoader  The class loader of the class being modified.
      * @param interceptors A list of interceptors to apply to the method.
-     * @param templateCls The class that contains the advice to be applied to the method.
-     * @param adviceKey A unique key identifying the specific advice to use.
+     * @param templateCls  The class that contains the advice to be applied to the method.
+     * @param adviceKey    A unique key identifying the specific advice to use.
      * @return A {@link DynamicType.Builder} instance representing the modified class.
      * @throws InvocationTargetException if an exception occurs while invoking the advice method.
-     * @throws IllegalAccessException if the advice method or field is not accessible.
-     * @throws NoSuchMethodException if the advice method does not exist.
-     * @throws NoSuchFieldException if a required field by the advice does not exist.
+     * @throws IllegalAccessException    if the advice method or field is not accessible.
+     * @throws NoSuchMethodException     if the advice method does not exist.
+     * @throws NoSuchFieldException      if a required field by the advice does not exist.
      */
     protected DynamicType.Builder<?> enhanceMethod(DynamicType.Builder<?> builder,
                                                    MethodDescription.InDefinedShape methodDesc,

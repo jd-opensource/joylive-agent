@@ -22,14 +22,22 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttpOutboundInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
+import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.response.ClientHttpOutboundResponse;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * InterceptingClientHttpRequestInterceptor
@@ -39,8 +47,8 @@ import java.util.List;
  */
 public class InterceptingClientHttpRequestInterceptor extends AbstractHttpOutboundInterceptor<ReactiveOutboundRequest> {
 
-    public InterceptingClientHttpRequestInterceptor(InvocationContext context, List<OutboundFilter> filters) {
-        super(context, filters);
+    public InterceptingClientHttpRequestInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
+        super(context, filters, retrierFactories);
     }
 
     /**
@@ -54,8 +62,9 @@ public class InterceptingClientHttpRequestInterceptor extends AbstractHttpOutbou
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         HttpRequest request = (HttpRequest) mc.getTarget();
+        OutboundInvocation.HttpOutboundInvocation<ReactiveOutboundRequest> outboundInvocation = null;
         try {
-            process(new ReactiveOutboundRequest(request, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
+            outboundInvocation = process(new ReactiveOutboundRequest(request, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
         } catch (RejectException e) {
             mc.setThrowable(HttpClientErrorException.create(
                     e.getMessage(),
@@ -65,10 +74,47 @@ public class InterceptingClientHttpRequestInterceptor extends AbstractHttpOutbou
                     null,
                     StandardCharsets.UTF_8));
         }
+        final Supplier<Response> retrySupplier = createRetrySupplier(mc.getTarget(), mc.getMethod(), mc.getArguments(), mc.getResult());
+        Response result = null;
+        Throwable ex = null;
+        try {
+            result = retrySupplier.get();
+        } catch (Throwable throwable) {
+            ex = throwable;
+        }
+        Response tryResult = tryRetry(outboundInvocation, result, retrySupplier);
+        if (tryResult != null) {
+            result = tryResult;
+        }
+        mc.setResult(result == null ? null : result.getResponse());
+        mc.setSkip(true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onExit(ExecutableContext ctx) {
         RequestContext.remove();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected final Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result) {
+        return () -> {
+            Response response = null;
+            method.setAccessible(true);
+            try {
+                Object r = method.invoke(target, allArguments);
+                response = new ClientHttpOutboundResponse((ClientHttpResponse) r, null);
+            } catch (IllegalAccessException ignored) {
+                // ignored
+            } catch (Throwable throwable) {
+                response = new ClientHttpOutboundResponse((ClientHttpResponse) result, throwable);
+            }
+            return response;
+        };
     }
 }

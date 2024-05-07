@@ -13,35 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.response;
+package com.jd.live.agent.plugin.router.dubbo.v2_6.response;
 
-import java.io.Serializable;
+import com.alibaba.dubbo.rpc.Result;
+import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
 
 /**
- * Response
+ * DubboResponse
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+public interface DubboResponse {
 
-    /**
-     * Response Code
-     *
-     * @return status code
-     */
-    String getCode();
+    class DubboOutboundResponse extends AbstractRpcOutboundResponse<Result> implements DubboResponse {
 
-    /**
-     * Abnormal response
-     *
-     * @return Exception
-     */
-    Throwable getThrowable();
+        public DubboOutboundResponse(Result response, Throwable throwable) {
+            super(response, throwable);
+        }
 
-    /**
-     * Origin response
-     *
-     * @return response
-     */
-    Object getResponse();
+        @Override
+        public String getCode() {
+            return null;
+        }
+    }
 }

@@ -25,19 +25,25 @@ import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractOutb
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
+import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
-import com.jd.live.agent.plugin.router.sofarpc.request.invoke.DubboInvocation;
+import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation;
+import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * ConsumerInvokerInterceptor
  */
 public class ConsumerInvokerInterceptor extends
-        AbstractOutboundInterceptor<SofaRpcOutboundRequest, DubboInvocation.DubboOutboundInvocation> {
+        AbstractOutboundInterceptor<SofaRpcOutboundRequest, SofaRpcInvocation.SofaRpcOutboundInvocation> {
 
-    public ConsumerInvokerInterceptor(InvocationContext context, List<OutboundFilter> filters) {
-        super(context, filters);
+    public ConsumerInvokerInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
+        super(context, filters, retrierFactories);
     }
 
     /**
@@ -51,23 +57,55 @@ public class ConsumerInvokerInterceptor extends
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         SofaRequest request = (SofaRequest) mc.getArguments()[0];
+        SofaRpcInvocation.SofaRpcOutboundInvocation outboundInvocation = null;
         try {
-            process(new SofaRpcOutboundRequest(request));
+            outboundInvocation = process(new SofaRpcOutboundRequest(request));
         } catch (RejectException e) {
             SofaResponse response = new SofaResponse();
             response.setErrorMsg(e.getMessage());
             mc.setResult(response);
             mc.setSkip(true);
         }
+        final Supplier<Response> retrySupplier = createRetrySupplier(mc.getTarget(), mc.getMethod(), mc.getArguments(), mc.getResult());
+        Response result = null;
+        Throwable ex = null;
+        try {
+            result = retrySupplier.get();
+        } catch (Throwable throwable) {
+            ex = throwable;
+        }
+        Response tryResult = tryRetry(outboundInvocation, result, retrySupplier);
+        if (tryResult != null) {
+            result = tryResult;
+        }
+        mc.setResult(result == null ? null : result.getResponse());
+        mc.setSkip(true);
     }
 
     @Override
-    protected void process(DubboInvocation.DubboOutboundInvocation invocation) {
+    protected void process(SofaRpcInvocation.SofaRpcOutboundInvocation invocation) {
         new OutboundFilterChain.Chain(outboundFilters).filter(invocation);
     }
 
     @Override
-    protected DubboInvocation.DubboOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
-        return new DubboInvocation.DubboOutboundInvocation(request, context);
+    protected SofaRpcInvocation.SofaRpcOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
+        return new SofaRpcInvocation.SofaRpcOutboundInvocation(request, context);
+    }
+
+    @Override
+    protected Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result) {
+        return () -> {
+            Response response = null;
+            method.setAccessible(true);
+            try {
+                Object r = method.invoke(target, allArguments);
+                response = new SofaRpcResponse.SofaRpcOutboundResponse((SofaResponse) r, null);
+            } catch (IllegalAccessException ignored) {
+                // ignored
+            } catch (Throwable throwable) {
+                response = new SofaRpcResponse.SofaRpcOutboundResponse((SofaResponse) result, throwable);
+            }
+            return response;
+        };
     }
 }

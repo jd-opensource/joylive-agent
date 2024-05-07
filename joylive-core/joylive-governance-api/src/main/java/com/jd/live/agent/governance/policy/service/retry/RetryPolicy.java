@@ -50,6 +50,11 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private Long id;
 
     /**
+     * Retryer implementation type, default is Resilience4j.
+     */
+    private String type = "Resilience4j";
+
+    /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
      * to attempt to recover from transient failures by retrying the failed operation.
      */
@@ -65,7 +70,7 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
-    private Set<Integer> retryableStatusCodes = new HashSet<>(Arrays.asList(500, 502, 503));
+    private Set<String> retryableStatusCodes = new HashSet<>(Arrays.asList("500", "502", "503"));
 
     /**
      * A collection of retryable exception class names.
@@ -81,6 +86,9 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     public void supplement(RetryPolicy source) {
         if (source == null) {
             return;
+        }
+        if (type == null) {
+            type = source.type;
         }
         if (retry == null) {
             retry = source.retry;

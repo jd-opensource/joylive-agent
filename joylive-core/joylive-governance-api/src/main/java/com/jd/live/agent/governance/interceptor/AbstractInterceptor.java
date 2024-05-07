@@ -24,12 +24,20 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.*;
+import com.jd.live.agent.governance.invoke.retry.Retrier;
+import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
+import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 import com.jd.live.agent.governance.request.HttpRequest.HttpInboundRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.Response;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * AbstractInterceptor is the base class for all interceptors within the framework.
@@ -117,15 +125,18 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected final OutboundFilter[] outboundFilters;
 
+        protected final Map<String, RetrierFactory> retrierFactories;
+
         /**
          * Constructs a new AbstractOutboundInterceptor with the given InvocationContext and outbound filters.
          *
-         * @param context       the InvocationContext for the current invocation
-         * @param filters       a list of OutboundFilter instances to be applied to the outbound request
+         * @param context the InvocationContext for the current invocation
+         * @param filters a list of OutboundFilter instances to be applied to the outbound request
          */
-        public AbstractOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters) {
+        public AbstractOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
             super(context);
             this.outboundFilters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
+            this.retrierFactories = retrierFactories;
         }
 
         /**
@@ -157,6 +168,30 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected abstract void process(O invocation);
 
+        /**
+         * Create a retry supplier
+         *
+         * @param target       The object on which the method is called.
+         * @param method       The method being called.
+         * @param allArguments All parameters of the method.
+         * @param result       The result of the method call.
+         * @return Returns a supplier for retry logic.
+         */
+        protected abstract Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result);
+
+        protected Response tryRetry(O invocation, Response response, Supplier<Response> retrySupplier) {
+            ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
+            RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
+            if (retryPolicy != null && retrierFactories != null) {
+                RetrierFactory retrierFactory = retrierFactories.get(retryPolicy.getType());
+                Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
+                if (retrier != null && retrier.isRetryable(response)) {
+                    return retrier.execute(retrySupplier);
+                }
+            }
+            return null;
+        }
+
     }
 
     /**
@@ -176,8 +211,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
         /**
          * Constructs a new AbstractRouteInterceptor with the given InvocationContext and route filters.
          *
-         * @param context       the InvocationContext for the current invocation
-         * @param filters       a list of RouteFilter instances to be applied during routing
+         * @param context the InvocationContext for the current invocation
+         * @param filters a list of RouteFilter instances to be applied during routing
          */
         public AbstractRouteInterceptor(InvocationContext context, List<RouteFilter> filters) {
             super(context);
@@ -199,8 +234,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
         /**
          * Initiates the routing process for the outbound request by creating an OutboundInvocation and providing a list of candidate endpoints.
          *
-         * @param request       the outbound request to be routed
-         * @param instances     a list of Endpoint instances to be considered during routing
+         * @param request   the outbound request to be routed
+         * @param instances a list of Endpoint instances to be considered during routing
          * @return the resulting OutboundInvocation after initiating the routing process
          */
         protected O routing(R request, List<? extends Endpoint> instances) {
@@ -230,8 +265,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * Creates a new OutboundInvocation for the given outbound request and initializes it with a list of Endpoint instances.
          * This method can be overridden by concrete subclasses if additional initialization is required.
          *
-         * @param request       the outbound request for which to create an OutboundInvocation
-         * @param instances     a list of Endpoint instances to be associated with the OutboundInvocation
+         * @param request   the outbound request for which to create an OutboundInvocation
+         * @param instances a list of Endpoint instances to be associated with the OutboundInvocation
          * @return a new OutboundInvocation instance with the specified Endpoint instances
          */
         protected O createOutlet(R request, List<? extends Endpoint> instances) {
@@ -252,8 +287,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
         /**
          * Constructs a new AbstractHttpInboundInterceptor with the given InvocationContext and a list of inbound filters.
          *
-         * @param context       the InvocationContext for the current invocation
-         * @param filters       a list of InboundFilter instances to be applied to the inbound request
+         * @param context the InvocationContext for the current invocation
+         * @param filters a list of InboundFilter instances to be applied to the inbound request
          */
         public AbstractHttpInboundInterceptor(InvocationContext context, List<InboundFilter> filters) {
             super(context, filters);
@@ -283,11 +318,11 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * Constructs a new instance of AbstractHttpOutboundInterceptor with the specified InvocationContext and a list
          * of outbound filters.
          *
-         * @param context   The InvocationContext associated with the current invocation.
-         * @param filters   The list of OutboundFilter instances that will be applied to the outbound request.
+         * @param context The InvocationContext associated with the current invocation.
+         * @param filters The list of OutboundFilter instances that will be applied to the outbound request.
          */
-        public AbstractHttpOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters) {
-            super(context, filters);
+        public AbstractHttpOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
+            super(context, filters, retrierFactories);
         }
 
         @Override
@@ -368,9 +403,9 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
         /**
          * Constructs a new AbstractGatewayInterceptor with the given InvocationContext and lists of inbound and route filters.
          *
-         * @param context           The InvocationContext for the current invocation.
-         * @param inboundFilters    The list of InboundFilter instances to be applied to inbound requests.
-         * @param routeFilters      The list of RouteFilter instances to be applied to the routing process.
+         * @param context        The InvocationContext for the current invocation.
+         * @param inboundFilters The list of InboundFilter instances to be applied to inbound requests.
+         * @param routeFilters   The list of RouteFilter instances to be applied to the routing process.
          */
         public AbstractGatewayInterceptor(InvocationContext context, List<InboundFilter> inboundFilters, List<RouteFilter> routeFilters) {
             super(context);

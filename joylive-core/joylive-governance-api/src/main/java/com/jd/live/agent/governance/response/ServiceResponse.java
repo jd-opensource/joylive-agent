@@ -15,33 +15,22 @@
  */
 package com.jd.live.agent.governance.response;
 
-import java.io.Serializable;
-
 /**
- * Response
+ * ServiceResponse
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+public interface ServiceResponse extends Response {
 
     /**
-     * Response Code
+     * Defines an interface for outbound service response.
+     * <p>
+     * This interface represents the response received from another service or component from the current service。
+     * </p>
      *
-     * @return status code
+     * @since 1.0.0
      */
-    String getCode();
+    interface OutboundResponse extends ServiceResponse {
 
-    /**
-     * Abnormal response
-     *
-     * @return Exception
-     */
-    Throwable getThrowable();
-
-    /**
-     * Origin response
-     *
-     * @return response
-     */
-    Object getResponse();
+    }
 }

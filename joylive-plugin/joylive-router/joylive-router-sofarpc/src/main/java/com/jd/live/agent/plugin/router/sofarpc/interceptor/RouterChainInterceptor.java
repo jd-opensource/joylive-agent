@@ -28,7 +28,7 @@ import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
-import com.jd.live.agent.plugin.router.sofarpc.request.invoke.DubboInvocation.DubboOutboundInvocation;
+import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,7 +38,7 @@ import static com.alipay.sofa.rpc.core.exception.RpcErrorType.CLIENT_ROUTER;
 /**
  * RouterChainInterceptor
  */
-public class RouterChainInterceptor extends AbstractRouteInterceptor<SofaRpcOutboundRequest, DubboOutboundInvocation> {
+public class RouterChainInterceptor extends AbstractRouteInterceptor<SofaRpcOutboundRequest, SofaRpcOutboundInvocation> {
 
     public RouterChainInterceptor(InvocationContext context, List<RouteFilter> filters) {
         super(context, filters);
@@ -62,7 +62,7 @@ public class RouterChainInterceptor extends AbstractRouteInterceptor<SofaRpcOutb
         SofaRequest request = (SofaRequest) arguments[0];
         SofaRpcOutboundRequest outboundRequest = new SofaRpcOutboundRequest(request);
         try {
-            DubboOutboundInvocation outboundInvocation = routing(outboundRequest, instances);
+            SofaRpcOutboundInvocation outboundInvocation = routing(outboundRequest, instances);
             List<SofaRpcEndpoint> endpoints = (List<SofaRpcEndpoint>) outboundInvocation.getEndpoints();
             mc.setResult(endpoints.stream().map(SofaRpcEndpoint::getProvider).collect(Collectors.toList()));
         } catch (RejectException e) {
@@ -71,12 +71,12 @@ public class RouterChainInterceptor extends AbstractRouteInterceptor<SofaRpcOutb
     }
 
     @Override
-    protected void routing(DubboOutboundInvocation invocation) {
+    protected void routing(SofaRpcOutboundInvocation invocation) {
         new RouteFilterChain.Chain(routeFilters).filter(invocation);
     }
 
     @Override
-    protected DubboOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
-        return new DubboOutboundInvocation(request, context);
+    protected SofaRpcOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
+        return new SofaRpcOutboundInvocation(request, context);
     }
 }

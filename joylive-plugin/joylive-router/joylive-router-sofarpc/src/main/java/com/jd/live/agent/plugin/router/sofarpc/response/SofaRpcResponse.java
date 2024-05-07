@@ -13,35 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.response;
+package com.jd.live.agent.plugin.router.sofarpc.response;
 
-import java.io.Serializable;
+import com.alipay.sofa.rpc.core.response.SofaResponse;
+import com.jd.live.agent.governance.response.AbstractRpcResponse;
 
 /**
- * Response
+ * SofaRpcResponse
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+public interface SofaRpcResponse {
 
-    /**
-     * Response Code
-     *
-     * @return status code
-     */
-    String getCode();
+    class SofaRpcOutboundResponse extends AbstractRpcResponse.AbstractRpcOutboundResponse<SofaResponse> implements SofaRpcResponse {
 
-    /**
-     * Abnormal response
-     *
-     * @return Exception
-     */
-    Throwable getThrowable();
+        public SofaRpcOutboundResponse(SofaResponse response, Throwable throwable) {
+            super(response, throwable);
+        }
 
-    /**
-     * Origin response
-     *
-     * @return response
-     */
-    Object getResponse();
+        @Override
+        public String getCode() {
+            return null;
+        }
+    }
 }

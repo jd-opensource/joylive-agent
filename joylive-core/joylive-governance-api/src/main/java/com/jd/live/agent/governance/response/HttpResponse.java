@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.request;
+package com.jd.live.agent.governance.response;
+
+import com.jd.live.agent.governance.request.Cookie;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Defines an interface for HTTP requests, extending the functionality of {@link ServiceRequest}.
- * <p>
- * This interface provides methods for accessing various components of an HTTP request, such as URI, schema, port, host,
- * path, HTTP method, headers, queries, and cookies. It serves as a base for more specific HTTP request types, including
- * inbound and outbound requests.
- * </p>
+ * HttpResponse
+ *
+ * @since 1.0.0
  */
-public interface HttpRequest extends ServiceRequest {
+public interface HttpResponse extends ServiceResponse {
 
     /**
      * Returns the URI of the request.
@@ -63,13 +62,6 @@ public interface HttpRequest extends ServiceRequest {
      * @return The path as a string.
      */
     String getPath();
-
-    /**
-     * Returns the HTTP method of the request.
-     *
-     * @return The HTTP method as an instance of {@link HttpMethod}.
-     */
-    HttpMethod getHttpMethod();
 
     /**
      * Returns all headers of the request as a map.
@@ -131,27 +123,15 @@ public interface HttpRequest extends ServiceRequest {
     String getCookie(String key);
 
     /**
-     * Defines an interface for inbound HTTP requests.
+     * Defines an interface for outbound HTTP response.
      * <p>
-     * This interface represents HTTP requests that are received by a service.
+     * This interface represents HTTP response that are received from a service.
      * </p>
      *
      * @since 1.0.0
      */
-    interface HttpInboundRequest extends HttpRequest, InboundRequest {
+    interface HttpOutboundResponse extends HttpResponse, ServiceResponse.OutboundResponse {
 
     }
 
-    /**
-     * Defines an interface for outbound HTTP requests.
-     * <p>
-     * This interface represents HTTP requests that are sent by a service.
-     * </p>
-     *
-     * @since 1.0.0
-     */
-    interface HttpOutboundRequest extends HttpRequest, OutboundRequest {
-
-    }
 }
-
