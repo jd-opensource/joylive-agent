@@ -40,7 +40,7 @@ public class PluginTransformHandler implements BuilderHandler {
 
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
-        PluginTransformer transformer = new PluginTransformer(declare, conditionMatcher);
+        PluginTransformer transformer = new PluginTransformer(instrumentation, declare, conditionMatcher);
         return builder.type(transformer).transform(transformer);
     }
 }

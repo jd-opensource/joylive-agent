@@ -22,6 +22,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.PluginImporter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientInterceptor;
 
@@ -53,7 +54,7 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientIn
 @Extension(value = "JdkHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(SunHttpClientDefinition.TYPE_HTTP_CLIENT)
-public class SunHttpClientDefinition extends PluginDefinitionAdapter {
+public class SunHttpClientDefinition extends PluginDefinitionAdapter implements PluginImporter {
 
     public static final String TYPE_HTTP_CLIENT = "sun.net.www.http.HttpClient";
 
@@ -70,5 +71,10 @@ public class SunHttpClientDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_WRITE_REQUESTS).
                                 and(MatcherBuilder.arguments(ARGUMENT_WRITE_REQUESTS)),
                         new SunHttpClientInterceptor()));
+    }
+
+    @Override
+    public String[] getImports() {
+        return new String[]{"sun.net.www.http.HttpClient", "sun.net.www.MessageHeader"};
     }
 }

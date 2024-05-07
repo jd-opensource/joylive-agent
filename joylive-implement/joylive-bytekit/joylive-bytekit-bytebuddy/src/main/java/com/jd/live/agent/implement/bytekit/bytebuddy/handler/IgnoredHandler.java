@@ -24,6 +24,8 @@ import com.jd.live.agent.implement.bytekit.bytebuddy.BuilderHandler;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.utility.JavaModule;
+import net.bytebuddy.utility.nullability.MaybeNull;
+import net.bytebuddy.utility.nullability.NeverNull;
 
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
@@ -59,11 +61,11 @@ public class IgnoredHandler implements BuilderHandler {
         }
 
         @Override
-        public boolean matches(TypeDescription typeDescription,
-                               ClassLoader classLoader,
-                               JavaModule javaModule,
-                               Class<?> aClass,
-                               ProtectionDomain protectionDomain) {
+        public boolean matches(@NeverNull TypeDescription typeDescription,
+                               @MaybeNull ClassLoader classLoader,
+                               @MaybeNull JavaModule javaModule,
+                               @MaybeNull Class<?> aClass,
+                               @NeverNull ProtectionDomain protectionDomain) {
             return isArray(typeDescription) || isPrimitive(typeDescription) || isAgent(classLoader) || isExcluded(typeDescription);
         }
 

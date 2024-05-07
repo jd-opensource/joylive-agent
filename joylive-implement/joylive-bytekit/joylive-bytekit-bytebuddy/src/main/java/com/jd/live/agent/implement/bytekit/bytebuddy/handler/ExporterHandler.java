@@ -27,6 +27,8 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
+import net.bytebuddy.utility.nullability.MaybeNull;
+import net.bytebuddy.utility.nullability.NeverNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,8 +77,11 @@ public class ExporterHandler implements BuilderHandler {
         }
 
         @Override
-        public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule,
-                                     boolean b, DynamicType dynamicType) {
+        public void onTransformation(@NeverNull TypeDescription typeDescription,
+                                     @MaybeNull ClassLoader classLoader,
+                                     @MaybeNull JavaModule javaModule,
+                                     boolean b,
+                                     @NeverNull DynamicType dynamicType) {
             try {
                 dynamicType.saveIn(output);
             } catch (IOException e) {

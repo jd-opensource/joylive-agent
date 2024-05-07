@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.handler;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
+import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
@@ -30,6 +31,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
 import net.bytebuddy.utility.nullability.MaybeNull;
+import net.bytebuddy.utility.nullability.NeverNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -70,7 +72,10 @@ public class LoggerHandler implements BuilderHandler {
         }
 
         @Override
-        public void onDiscovery(String typeName, @MaybeNull ClassLoader classLoader, @MaybeNull JavaModule module, boolean loaded) {
+        public void onDiscovery(@NeverNull String typeName,
+                                @MaybeNull ClassLoader classLoader,
+                                @MaybeNull JavaModule module,
+                                boolean loaded) {
             if (logger.isDebugEnabled()) {
                 String message = String.format("[Byte Buddy] DISCOVERY %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
                 logger.debug(message);
@@ -78,16 +83,23 @@ public class LoggerHandler implements BuilderHandler {
         }
 
         @Override
-        public void onTransformation(TypeDescription typeDescription, @MaybeNull ClassLoader classLoader, @MaybeNull JavaModule module, boolean loaded, DynamicType dynamicType) {
+        public void onTransformation(@NeverNull TypeDescription typeDescription,
+                                     @MaybeNull ClassLoader classLoader,
+                                     @MaybeNull JavaModule module,
+                                     boolean loaded,
+                                     @NeverNull DynamicType dynamicType) {
             if (logger.isInfoEnabled()) {
                 String message = String.format("[Byte Buddy] TRANSFORM %s [%s, %s, %s, loaded=%b]", typeDescription.getName(), classLoader, module, Thread.currentThread(), loaded);
-                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_SUCCESS, message)));
+                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_ENHANCE_SUCCESS, message)));
                 logger.info(message);
             }
         }
 
         @Override
-        public void onIgnored(TypeDescription typeDescription, @MaybeNull ClassLoader classLoader, @MaybeNull JavaModule module, boolean loaded) {
+        public void onIgnored(@NeverNull TypeDescription typeDescription,
+                              @MaybeNull ClassLoader classLoader,
+                              @MaybeNull JavaModule module,
+                              boolean loaded) {
             if (logger.isDebugEnabled()) {
                 String message = String.format("[Byte Buddy] IGNORE %s [%s, %s, %s, loaded=%b]", typeDescription.getName(), classLoader, module, Thread.currentThread(), loaded);
                 logger.debug(message);
@@ -95,18 +107,25 @@ public class LoggerHandler implements BuilderHandler {
         }
 
         @Override
-        public void onError(String typeName, @MaybeNull ClassLoader classLoader, @MaybeNull JavaModule module, boolean loaded, Throwable throwable) {
+        public void onError(@NeverNull String typeName,
+                            @MaybeNull ClassLoader classLoader,
+                            @MaybeNull JavaModule module,
+                            boolean loaded,
+                            @NeverNull Throwable throwable) {
             OutputStream bos = new ByteArrayOutputStream(1024);
             PrintStream printStream = new PrintStream(bos);
             printStream.printf("[Byte Buddy] ERROR %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
             throwable.printStackTrace(printStream);
             String message = bos.toString();
-            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_FAILURE, message)));
+            publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_ENHANCE_FAILURE, message)));
             logger.error(message);
         }
 
         @Override
-        public void onComplete(String typeName, @MaybeNull ClassLoader classLoader, @MaybeNull JavaModule module, boolean loaded) {
+        public void onComplete(@NeverNull String typeName,
+                               @MaybeNull ClassLoader classLoader,
+                               @MaybeNull JavaModule module,
+                               boolean loaded) {
             if (logger.isDebugEnabled()) {
                 String message = String.format("[Byte Buddy] COMPLETE %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
                 logger.debug(message);
