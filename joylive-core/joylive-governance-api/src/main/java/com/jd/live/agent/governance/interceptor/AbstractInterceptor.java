@@ -173,8 +173,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
         /**
          * Create a retry supplier
          *
-         * @param ctx        The {@link MethodContext} containing information about the target
-         *                   method to be invoked, its arguments, and the expected result type.
+         * @param ctx The {@link MethodContext} containing information about the target
+         *            method to be invoked, its arguments, and the expected result type.
          * @return Returns a supplier for retry logic.
          */
         protected Supplier<Response> createRetrySupplier(MethodContext ctx) {
