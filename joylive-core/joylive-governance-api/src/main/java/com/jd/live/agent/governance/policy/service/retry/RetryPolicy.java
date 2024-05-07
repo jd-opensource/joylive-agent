@@ -61,11 +61,9 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private Integer retry;
 
     /**
-     * The timeout in milliseconds for each retry attempt. This parameter specifies how long the system should
-     * wait for an operation to complete before timing out and potentially retrying the operation, according
-     * to the retry policy.
+     * Retry waiting interval, in milliseconds.
      */
-    private Integer timeoutInMilliseconds;
+    private Integer waitTimeInMilliseconds;
 
     /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
@@ -93,8 +91,8 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (retry == null) {
             retry = source.retry;
         }
-        if (timeoutInMilliseconds == null) {
-            timeoutInMilliseconds = source.timeoutInMilliseconds;
+        if (waitTimeInMilliseconds == null) {
+            waitTimeInMilliseconds = source.waitTimeInMilliseconds;
         }
         if ((retryableStatusCodes == null || retryableStatusCodes.isEmpty()) && source.retryableStatusCodes != null) {
             retryableStatusCodes = source.retryableStatusCodes;

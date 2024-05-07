@@ -348,11 +348,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/jdcloud/**</exclude>
-                            </excludes>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -423,12 +418,12 @@
             </build>
             <distributionManagement>
                 <snapshotRepository>
-                    <id>jdcloud</id>
+                    <id>jd</id>
                     <name>OSS Snapshots Repository</name>
                     <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
                 </snapshotRepository>
                 <repository>
-                    <id>jdcloud</id>
+                    <id>jd</id>
                     <name>OSS Staging Repository</name>
                     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
                 </repository>
