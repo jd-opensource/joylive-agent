@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.failover;
+package com.jd.live.agent.governance.policy.service.retry;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
@@ -41,7 +41,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Consumer
-public class FailoverPolicy extends PolicyId implements PolicyInheritWithId<FailoverPolicy> {
+public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy> {
 
     /**
      * The unique identifier of the failover policy. This ID can be used to reference and manage the policy
@@ -68,12 +68,17 @@ public class FailoverPolicy extends PolicyId implements PolicyInheritWithId<Fail
     private Set<Integer> retryableStatusCodes = new HashSet<>(Arrays.asList(500, 502, 503));
 
     /**
+     * A collection of retryable exception class names.
+     */
+    private Set<String> exceptionClassNames;
+
+    /**
      * The version of the policy.
      */
     private long version;
 
     @Override
-    public void supplement(FailoverPolicy source) {
+    public void supplement(RetryPolicy source) {
         if (source == null) {
             return;
         }
@@ -85,6 +90,9 @@ public class FailoverPolicy extends PolicyId implements PolicyInheritWithId<Fail
         }
         if ((retryableStatusCodes == null || retryableStatusCodes.isEmpty()) && source.retryableStatusCodes != null) {
             retryableStatusCodes = source.retryableStatusCodes;
+        }
+        if ((exceptionClassNames == null || exceptionClassNames.isEmpty()) && source.exceptionClassNames != null) {
+            exceptionClassNames = source.exceptionClassNames;
         }
         if (version <= 0) {
             version = source.version;

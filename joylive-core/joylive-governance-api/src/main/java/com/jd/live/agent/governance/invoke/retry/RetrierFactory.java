@@ -1,7 +1,22 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.jd.live.agent.governance.invoke.retry;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.policy.service.failover.FailoverPolicy;
+import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +32,7 @@ public interface RetrierFactory {
 
     Map<Long, AtomicReference<Retrier>> RETRIERS = new ConcurrentHashMap<>();
 
-    default Retrier get(FailoverPolicy policy) {
+    default Retrier get(RetryPolicy policy) {
         if (policy == null) {
             return null;
         }
@@ -42,9 +57,9 @@ public interface RetrierFactory {
     /**
      * Create Retrier
      *
-     * @param failoverPolicy Failure retry policy
+     * @param retryPolicy Failure retry policy
      * @return Retrier
      */
-    Retrier create(FailoverPolicy failoverPolicy);
+    Retrier create(RetryPolicy retryPolicy);
 
 }

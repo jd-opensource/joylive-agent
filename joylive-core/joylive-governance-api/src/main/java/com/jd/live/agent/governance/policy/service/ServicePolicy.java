@@ -21,7 +21,7 @@ import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
-import com.jd.live.agent.governance.policy.service.failover.FailoverPolicy;
+import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
@@ -51,7 +51,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Setter
     @Getter
-    private FailoverPolicy failoverPolicy;
+    private RetryPolicy retryPolicy;
 
     @Setter
     @Getter
@@ -83,8 +83,8 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (loadBalancePolicy != null && loadBalancePolicy.getId() == null) {
             loadBalancePolicy.setId(id);
         }
-        if (failoverPolicy != null && failoverPolicy.getId() == null) {
-            failoverPolicy.setId(id);
+        if (retryPolicy != null && retryPolicy.getId() == null) {
+            retryPolicy.setId(id);
         }
         if (livePolicy != null && livePolicy.getId() == null) {
             livePolicy.setId(id);
@@ -107,7 +107,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
-            failoverPolicy = copy(source.failoverPolicy, failoverPolicy, s -> new FailoverPolicy());
+            retryPolicy = copy(source.retryPolicy, retryPolicy, s -> new RetryPolicy());
             loadBalancePolicy = copy(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
 
             if ((rateLimitPolicies == null || rateLimitPolicies.isEmpty()) &&
