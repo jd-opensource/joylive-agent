@@ -26,14 +26,12 @@ import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboOutboundInvocation;
-import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOutboundResponse;
 import org.apache.dubbo.monitor.support.MonitorFilter;
 import org.apache.dubbo.rpc.*;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * MonitorFilterInterceptor
@@ -57,15 +55,14 @@ public class MonitorFilterInterceptor extends
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = mc.getArguments();
         Invocation invocation = (Invocation) arguments[1];
-        DubboOutboundInvocation outboundInvocation = null;
+        Object result;
         try {
-            outboundInvocation = process(new DubboOutboundRequest(invocation));
+            DubboOutboundInvocation outboundInvocation = process(new DubboOutboundRequest(invocation));
+            result = invokeWithRetry(outboundInvocation, mc);
         } catch (RejectException e) {
-            Result result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
-            mc.setResult(result);
-            mc.setSkip(true);
+            result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
         }
-        mc.setResult(invokeWithRetry(outboundInvocation, mc));
+        mc.setResult(result);
         mc.setSkip(true);
     }
 
@@ -80,19 +77,7 @@ public class MonitorFilterInterceptor extends
     }
 
     @Override
-    protected Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result) {
-        return () -> {
-            Response response = null;
-            method.setAccessible(true);
-            try {
-                Object r = method.invoke(target, allArguments);
-                response = new DubboResponse.DubboOutboundResponse((Result) r, null);
-            } catch (IllegalAccessException ignored) {
-                // ignored
-            } catch (Throwable throwable) {
-                response = new DubboResponse.DubboOutboundResponse((Result) result, throwable);
-            }
-            return response;
-        };
+    protected Response createResponse(Object result, Throwable throwable) {
+        return new DubboOutboundResponse((Result) result, throwable);
     }
 }

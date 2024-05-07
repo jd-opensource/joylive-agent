@@ -28,19 +28,17 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
-import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation;
-import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse;
+import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
+import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * ConsumerInvokerInterceptor
  */
 public class ConsumerInvokerInterceptor extends
-        AbstractOutboundInterceptor<SofaRpcOutboundRequest, SofaRpcInvocation.SofaRpcOutboundInvocation> {
+        AbstractOutboundInterceptor<SofaRpcOutboundRequest, SofaRpcOutboundInvocation> {
 
     public ConsumerInvokerInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
         super(context, filters, retrierFactories);
@@ -57,43 +55,31 @@ public class ConsumerInvokerInterceptor extends
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         SofaRequest request = (SofaRequest) mc.getArguments()[0];
-        SofaRpcInvocation.SofaRpcOutboundInvocation outboundInvocation = null;
+        Object result;
         try {
-            outboundInvocation = process(new SofaRpcOutboundRequest(request));
+            SofaRpcOutboundInvocation outboundInvocation = process(new SofaRpcOutboundRequest(request));
+            result = invokeWithRetry(outboundInvocation, mc);
         } catch (RejectException e) {
             SofaResponse response = new SofaResponse();
             response.setErrorMsg(e.getMessage());
-            mc.setResult(response);
-            mc.setSkip(true);
+            result = response;
         }
-        mc.setResult(invokeWithRetry(outboundInvocation, mc));
+        mc.setResult(result);
         mc.setSkip(true);
     }
 
     @Override
-    protected void process(SofaRpcInvocation.SofaRpcOutboundInvocation invocation) {
+    protected void process(SofaRpcOutboundInvocation invocation) {
         new OutboundFilterChain.Chain(outboundFilters).filter(invocation);
     }
 
     @Override
-    protected SofaRpcInvocation.SofaRpcOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
-        return new SofaRpcInvocation.SofaRpcOutboundInvocation(request, context);
+    protected SofaRpcOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
+        return new SofaRpcOutboundInvocation(request, context);
     }
 
     @Override
-    protected Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result) {
-        return () -> {
-            Response response = null;
-            method.setAccessible(true);
-            try {
-                Object r = method.invoke(target, allArguments);
-                response = new SofaRpcResponse.SofaRpcOutboundResponse((SofaResponse) r, null);
-            } catch (IllegalAccessException ignored) {
-                // ignored
-            } catch (Throwable throwable) {
-                response = new SofaRpcResponse.SofaRpcOutboundResponse((SofaResponse) result, throwable);
-            }
-            return response;
-        };
+    protected Response createResponse(Object result, Throwable throwable) {
+        return new SofaRpcOutboundResponse((SofaResponse) result, throwable);
     }
 }

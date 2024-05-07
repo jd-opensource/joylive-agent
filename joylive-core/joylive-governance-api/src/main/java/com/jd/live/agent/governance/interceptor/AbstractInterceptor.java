@@ -35,7 +35,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.Response;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -169,19 +168,44 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected abstract void process(O invocation);
 
+        protected abstract Response createResponse(Object result, Throwable throwable);
+
         /**
          * Create a retry supplier
          *
-         * @param target       The object on which the method is called.
-         * @param method       The method being called.
-         * @param allArguments All parameters of the method.
-         * @param result       The result of the method call.
+         * @param ctx        The {@link MethodContext} containing information about the target
+         *                   method to be invoked, its arguments, and the expected result type.
          * @return Returns a supplier for retry logic.
          */
-        protected abstract Supplier<Response> createRetrySupplier(Object target, Method method, Object[] allArguments, Object result);
+        protected Supplier<Response> createRetrySupplier(MethodContext ctx) {
+            return () -> {
+                try {
+                    return createResponse(ctx.invoke(), null);
+                } catch (IllegalAccessException ignored) {
+                    // ignored
+                } catch (Throwable throwable) {
+                    return createResponse(ctx.getResult(), throwable);
+                }
+                return null;
+            };
+        }
 
+        /**
+         * Invokes a method with retry logic based on the provided {@code invocation} and context.
+         * If the initial attempt fails, the method will retry the operation according to the
+         * associated {@link RetryPolicy} retrieved from the service metadata.
+         *
+         * @param invocation The invocation context which may contain service metadata including
+         *                   the retry policy. It could be null, in which case no retry policy
+         *                   is applied.
+         * @param ctx        The {@link MethodContext} containing information about the target
+         *                   method to be invoked, its arguments, and the expected result type.
+         * @return The response object from the successful invocation or the last retry
+         * attempt. Returns null if the response is null or if no retry is
+         * performed and the initial attempt fails.
+         */
         protected Object invokeWithRetry(O invocation, MethodContext ctx) {
-            Supplier<Response> retrySupplier = createRetrySupplier(ctx.getTarget(), ctx.getMethod(), ctx.getArguments(), ctx.getResult());
+            Supplier<Response> retrySupplier = createRetrySupplier(ctx);
             Response response = retrySupplier.get();
             ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
             RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();

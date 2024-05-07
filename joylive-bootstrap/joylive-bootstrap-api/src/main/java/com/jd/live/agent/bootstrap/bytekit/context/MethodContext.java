@@ -18,6 +18,7 @@ package com.jd.live.agent.bootstrap.bytekit.context;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -78,6 +79,11 @@ public class MethodContext extends ExecutableContext {
     public void success(Object result) {
         setResult(result);
         setThrowable(null);
+    }
+
+    public Object invoke() throws InvocationTargetException, IllegalAccessException {
+        method.setAccessible(true);
+        return method.invoke(target, arguments);
     }
 
     @Override

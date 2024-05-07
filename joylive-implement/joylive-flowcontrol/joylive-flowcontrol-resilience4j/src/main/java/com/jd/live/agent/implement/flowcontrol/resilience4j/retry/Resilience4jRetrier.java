@@ -62,6 +62,7 @@ public class Resilience4jRetrier implements Retrier {
      */
     @Override
     public <T extends Response> T execute(Supplier<T> supplier) {
+        // TODO retry timeout
         return retry.executeSupplier(supplier);
     }
 
