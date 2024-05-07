@@ -13,7 +13,7 @@
 
     <properties>
         <spring.version>4.3.16.RELEASE</spring.version>
-        <spring-retry.version>2.0.5</spring-retry.version>
+        <spring-retry.version>1.3.4</spring-retry.version>
     </properties>
 
     <dependencies>
