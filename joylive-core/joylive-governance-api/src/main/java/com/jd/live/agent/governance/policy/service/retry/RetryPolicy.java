@@ -68,12 +68,12 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
-    private Set<String> retryableStatusCodes = new HashSet<>(Arrays.asList("500", "502", "503"));
+    private Set<String> retryStatuses = new HashSet<>(Arrays.asList("500", "502", "503"));
 
     /**
      * A collection of retryable exception class names.
      */
-    private Set<String> exceptionClassNames;
+    private Set<String> retryExceptions;
 
     /**
      * The version of the policy.
@@ -94,14 +94,32 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (waitTimeInMilliseconds == null) {
             waitTimeInMilliseconds = source.waitTimeInMilliseconds;
         }
-        if ((retryableStatusCodes == null || retryableStatusCodes.isEmpty()) && source.retryableStatusCodes != null) {
-            retryableStatusCodes = source.retryableStatusCodes;
+        if ((retryStatuses == null || retryStatuses.isEmpty()) && source.retryStatuses != null) {
+            retryStatuses = source.retryStatuses;
         }
-        if ((exceptionClassNames == null || exceptionClassNames.isEmpty()) && source.exceptionClassNames != null) {
-            exceptionClassNames = source.exceptionClassNames;
+        if ((retryExceptions == null || retryExceptions.isEmpty()) && source.retryExceptions != null) {
+            retryExceptions = source.retryExceptions;
         }
         if (version <= 0) {
             version = source.version;
         }
+    }
+
+    public boolean isRetry(String status) {
+        return status != null && retryStatuses != null && retryStatuses.contains(status);
+    }
+
+    public boolean isRetry(Throwable throwable) {
+        if (throwable == null || retryExceptions == null || retryExceptions.isEmpty()) {
+            return false;
+        }
+        Class<?> type = throwable.getClass();
+        while (type != null && type != Object.class) {
+            if (retryExceptions.contains(type.getName())) {
+                return true;
+            }
+            type = type.getSuperclass();
+        }
+        return false;
     }
 }

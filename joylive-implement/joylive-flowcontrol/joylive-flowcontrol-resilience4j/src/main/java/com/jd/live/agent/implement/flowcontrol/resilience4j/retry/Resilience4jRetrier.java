@@ -41,14 +41,8 @@ public class Resilience4jRetrier implements Retrier {
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(policy.getRetry())
                 .waitDuration(Duration.ofMillis(policy.getWaitTimeInMilliseconds()))
-                .retryOnResult(response -> {
-                    if (policy.getRetryableStatusCodes() != null) {
-                        return policy.getRetryableStatusCodes().contains(((Response) response).getCode());
-                    }
-                    return false;
-                })
-                .retryOnException(throwable -> policy.getExceptionClassNames() != null
-                        && policy.getExceptionClassNames().contains(throwable.getClass().getCanonicalName()))
+                .retryOnResult(response -> policy.isRetry(((Response) response).getCode()))
+                .retryOnException(policy::isRetry)
                 .failAfterMaxAttempts(true)
                 .build();
         RetryRegistry registry = RetryRegistry.of(config);
@@ -60,15 +54,7 @@ public class Resilience4jRetrier implements Retrier {
      */
     @Override
     public boolean isRetryable(Response response) {
-        boolean retryable = false;
-        if (policy.getRetryableStatusCodes() != null) {
-            retryable = policy.getRetryableStatusCodes().contains(response.getCode());
-        }
-        if (!retryable && response.getThrowable() != null) {
-            retryable = response.getThrowable() != null
-                    && policy.getExceptionClassNames().contains(response.getThrowable().getClass().getCanonicalName());
-        }
-        return retryable;
+        return policy.isRetry(response.getCode()) || policy.isRetry(response.getThrowable());
     }
 
     /**
