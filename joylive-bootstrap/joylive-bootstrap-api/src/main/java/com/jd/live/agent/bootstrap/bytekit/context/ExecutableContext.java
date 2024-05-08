@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.context;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +23,7 @@ import lombok.Setter;
  * An abstract class representing an executable context.
  * This class provides a structure to hold information related to an executable task or operation.
  */
-public abstract class ExecutableContext extends AttributeAccessorSupport {
+public abstract class ExecutableContext extends AbstractAttributes {
 
     /**
      * The type of the executable.

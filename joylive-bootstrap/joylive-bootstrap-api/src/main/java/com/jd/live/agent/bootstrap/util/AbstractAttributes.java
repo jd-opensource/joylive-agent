@@ -15,17 +15,27 @@
  */
 package com.jd.live.agent.bootstrap.util;
 
-import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
-public abstract class AttributeAccessorSupport implements AttributeAccessor, Serializable {
+/**
+ * Provides a skeletal implementation of the {@link Attributes} interface to minimize the effort required to implement this interface.
+ * <p>
+ * This abstract class implements the {@code copy} and {@code forEach} methods of the {@code Attributes} interface, relying on the concrete
+ * class to implement the methods for accessing and modifying the attributes. The {@code copy} method uses the {@code forEach} method
+ * from the provided {@code Attributes} instance to copy all attributes to the current instance. Concrete implementations of this class
+ * must implement the {@code getAttribute}, {@code setAttribute}, {@code removeAttribute}, and {@code hasAttribute} methods.
+ * </p>
+ */
+public abstract class AbstractAttributes implements Attributes {
 
     private Map<String, Object> attributes;
 
-    public AttributeAccessorSupport() {
+    public AbstractAttributes() {
     }
 
+    @Override
     public void setAttribute(String key, Object value) {
         if (key != null && value != null) {
             if (attributes == null) {
@@ -35,10 +45,14 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
         }
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public <T> T getAttribute(String key) {
         return key == null || attributes == null ? null : (T) attributes.get(key);
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public <T> T removeAttribute(String key) {
         if (key != null && attributes != null) {
             return (T) attributes.remove(key);
@@ -46,33 +60,15 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
         return null;
     }
 
+    @Override
     public boolean hasAttribute(String key) {
-        return this.attributes.containsKey(key);
+        return key != null && attributes.containsKey(key);
     }
 
-    public String[] attributeNames() {
-        return this.attributes.keySet().toArray(new String[0]);
-    }
-
-    public void copyAttributesFrom(AttributeAccessor source) {
-        String[] attributeNames = source.attributeNames();
-        for (String name : attributeNames) {
-            this.setAttribute(name, source.getAttribute(name));
+    @Override
+    public void attributes(BiConsumer<String, Object> consumer) {
+        if (attributes != null && consumer != null) {
+            attributes.forEach(consumer);
         }
-    }
-
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        } else if (!(other instanceof AttributeAccessorSupport)) {
-            return false;
-        } else {
-            AttributeAccessorSupport that = (AttributeAccessorSupport) other;
-            return this.attributes.equals(that.attributes);
-        }
-    }
-
-    public int hashCode() {
-        return this.attributes.hashCode();
     }
 }

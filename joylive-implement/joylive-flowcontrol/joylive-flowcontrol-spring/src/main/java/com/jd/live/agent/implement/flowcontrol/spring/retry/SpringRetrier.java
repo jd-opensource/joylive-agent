@@ -51,9 +51,6 @@ public class SpringRetrier implements Retrier {
     @Override
     public <T extends Response> T execute(Supplier<T> supplier) {
         return retryTemplate.execute(context -> {
-            if (!context.hasAttribute(Retrier.DEADLINE_KEY) && policy.getTimeout() > 0) {
-                context.setAttribute(Retrier.DEADLINE_KEY, System.currentTimeMillis() + policy.getTimeout());
-            }
             T response = supplier.get();
             context.setAttribute(SpringRetryPolicy.RESPONSE_KEY, response);
             return response;

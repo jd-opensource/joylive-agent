@@ -16,8 +16,8 @@
 package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
@@ -38,6 +38,8 @@ import com.jd.live.agent.governance.response.Response;
 
 import java.util.List;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.governance.invoke.retry.Retrier.DEADLINE_KEY;
 
 /**
  * AbstractInterceptor is the base class for all interceptors within the framework.
@@ -184,8 +186,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                 } catch (Throwable throwable) {
                     response = createResponse(ctx.getResult(), throwable);
                 } finally {
-                    if (response instanceof AttributeAccessorSupport) {
-                        ((AttributeAccessorSupport) response).copyAttributesFrom(ctx);
+                    if (response != null) {
+                        response.copyAttribute(ctx);
                     }
                 }
                 return response;
@@ -214,7 +216,10 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                 RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
                 Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
                 if (retrier != null) {
-                    ctx.setAttribute(Retrier.DEADLINE_KEY, System.currentTimeMillis() + retryPolicy.getTimeout());
+                    Long timeout = retryPolicy.getTimeout();
+                    if (timeout != null && timeout > 0) {
+                        RequestContext.getOrCreate().setAttribute(DEADLINE_KEY, System.currentTimeMillis() + timeout);
+                    }
                     return retrier.execute(retrySupplier);
                 }
             }

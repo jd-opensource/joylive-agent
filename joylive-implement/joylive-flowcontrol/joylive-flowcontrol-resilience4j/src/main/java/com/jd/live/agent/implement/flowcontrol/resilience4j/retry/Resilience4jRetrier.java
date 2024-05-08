@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.flowcontrol.resilience4j.retry;
 
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
@@ -41,17 +42,8 @@ public class Resilience4jRetrier implements Retrier {
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(policy.getRetry() + 1)
                 .waitDuration(Duration.ofMillis(policy.getRetryInterval()))
-                .retryOnResult(response -> {
-                    Response rsp = (Response) response;
-                    if (!rsp.hasAttribute(DEADLINE_KEY) && policy.getTimeout() > 0) {
-                        rsp.setAttribute(DEADLINE_KEY, System.currentTimeMillis() + policy.getTimeout());
-                    }
-                    if (rsp.hasAttribute(DEADLINE_KEY) && System.currentTimeMillis() > (Long) rsp.getAttribute(DEADLINE_KEY)) {
-                        return false;
-                    }
-                    return policy.isRetry(((Response) response).getCode());
-                })
-                .retryOnException(policy::isRetry)
+                .retryOnResult(response -> !RequestContext.isTimeout() && policy.isRetry(((Response) response).getCode()))
+                .retryOnException(throwable -> !RequestContext.isTimeout() && policy.isRetry(throwable))
                 .failAfterMaxAttempts(true)
                 .build();
         RetryRegistry registry = RetryRegistry.of(config);
@@ -63,9 +55,7 @@ public class Resilience4jRetrier implements Retrier {
      */
     @Override
     public <T extends Response> T execute(Supplier<T> supplier) {
-        // TODO retry timeout
         return retry.executeSupplier(supplier);
-
     }
 
     /**

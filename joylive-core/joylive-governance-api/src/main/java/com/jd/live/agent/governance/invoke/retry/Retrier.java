@@ -27,8 +27,6 @@ import java.util.function.Supplier;
  */
 public interface Retrier {
 
-    String DEADLINE_KEY = "deadline";
-
     /**
      * Execute retry logic
      *

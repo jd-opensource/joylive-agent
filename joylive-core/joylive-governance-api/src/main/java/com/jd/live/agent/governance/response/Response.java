@@ -15,14 +15,14 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessor;
+import com.jd.live.agent.bootstrap.util.Attributes;
 
 /**
  * Response
  *
  * @since 1.0.0
  */
-public interface Response extends AttributeAccessor {
+public interface Response extends Attributes {
 
     /**
      * Response Code

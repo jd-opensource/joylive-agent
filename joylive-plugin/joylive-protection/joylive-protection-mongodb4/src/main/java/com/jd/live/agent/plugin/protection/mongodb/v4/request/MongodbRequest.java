@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.plugin.protection.mongodb.v4.request;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import com.mongodb.ServerAddress;
 
-public class MongodbRequest extends AttributeAccessorSupport implements SQLRequest {
+public class MongodbRequest extends AbstractAttributes implements SQLRequest {
 
     private final ServerAddress serverAddress;
     private final String database;

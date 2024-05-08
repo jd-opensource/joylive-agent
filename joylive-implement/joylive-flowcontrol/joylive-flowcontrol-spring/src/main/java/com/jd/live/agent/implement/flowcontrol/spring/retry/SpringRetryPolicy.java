@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.flowcontrol.spring.retry;
 
-import com.jd.live.agent.governance.invoke.retry.Retrier;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 import org.springframework.retry.RetryContext;
@@ -38,21 +38,17 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
 
     @Override
     public boolean canRetry(RetryContext context) {
+        if (RequestContext.isTimeout()) {
+            return false;
+        }
         Throwable t = context.getLastThrowable();
-        if (context.hasAttribute(Retrier.DEADLINE_KEY)) {
-            Long deadline = (Long) context.getAttribute(Retrier.DEADLINE_KEY);
-            if (System.currentTimeMillis() > deadline) {
-                return false;
+        boolean result = (t == null || retryPolicy.isRetry(t)) && context.getRetryCount() < this.getMaxAttempts();
+        if (result) {
+            Response response = (Response) context.getAttribute(RESPONSE_KEY);
+            if (response != null) {
+                result = retryPolicy.isRetry(response.getCode());
             }
         }
-        boolean can = (t == null || retryPolicy.isRetry(t)) && context.getRetryCount() < this.getMaxAttempts();
-        if (!can && context.hasAttribute(RESPONSE_KEY)) {
-            Response response = (Response) context.getAttribute(RESPONSE_KEY);
-            can = retryPolicy.isRetry(response.getCode()) && context.getRetryCount() < this.getMaxAttempts();
-        }
-        if (!can) {
-            can = super.canRetry(context);
-        }
-        return can;
+        return result;
     }
 }

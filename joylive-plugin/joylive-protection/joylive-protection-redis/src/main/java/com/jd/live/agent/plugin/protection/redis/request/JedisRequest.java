@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.plugin.protection.redis.request;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.governance.request.DbRequest;
 import redis.clients.jedis.CommandArguments;
 import redis.clients.jedis.Connection;
 
-public class JedisRequest extends AttributeAccessorSupport implements DbRequest.CacheRequest {
+public class JedisRequest extends AbstractAttributes implements DbRequest.CacheRequest {
 
     private final Connection connection;
     private final CommandArguments args;

@@ -170,5 +170,13 @@ public class RequestContext {
         Carrier carrier = CARRIER.get();
         return carrier != null && carrier.getCargos() != null && !carrier.getCargos().isEmpty();
     }
+
+    /**
+     * Determines if the current time has exceeded a specified deadline.
+     */
+    public static boolean isTimeout() {
+        Long deadline = getAttribute(Carrier.ATTRIBUTE_DEADLINE);
+        return deadline != null && System.currentTimeMillis() > deadline;
+    }
 }
 

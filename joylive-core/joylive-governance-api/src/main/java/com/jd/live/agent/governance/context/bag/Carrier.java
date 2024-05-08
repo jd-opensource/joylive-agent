@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.context.bag;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessor;
+import com.jd.live.agent.bootstrap.util.Attributes;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -30,7 +30,7 @@ import java.util.function.Function;
  * iterating over cargos and attributes in various ways to suit different use cases.
  * </p>
  */
-public interface Carrier extends AttributeAccessor {
+public interface Carrier extends Attributes {
 
     String ATTRIBUTE_FAILOVER_UNIT = "x-live-failover-unit";
 
@@ -39,6 +39,8 @@ public interface Carrier extends AttributeAccessor {
     String ATTRIBUTE_SERVICE_ID = "x-live-service";
 
     String ATTRIBUTE_GATEWAY = "x-live-gateway";
+
+    String ATTRIBUTE_DEADLINE = "deadline";
 
     /**
      * Retrieves all cargos carried by this carrier.

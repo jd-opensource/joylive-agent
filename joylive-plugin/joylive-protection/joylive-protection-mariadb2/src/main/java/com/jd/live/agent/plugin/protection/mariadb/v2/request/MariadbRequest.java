@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.plugin.protection.mariadb.v2.request;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import org.mariadb.jdbc.internal.protocol.Protocol;
 import org.mariadb.jdbc.util.Options;
 
-public class MariadbRequest extends AttributeAccessorSupport implements SQLRequest {
+public class MariadbRequest extends AbstractAttributes implements SQLRequest {
 
     private final Protocol protocol;
     private final String sql;

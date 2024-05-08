@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.plugin.protection.opengauss.v3_1.request;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import org.postgresql.core.Query;
 import org.postgresql.core.QueryExecutor;
 
-public class PostgresqlRequest extends AttributeAccessorSupport implements SQLRequest {
+public class PostgresqlRequest extends AbstractAttributes implements SQLRequest {
 
     private final QueryExecutor executor;
     private final Query query;

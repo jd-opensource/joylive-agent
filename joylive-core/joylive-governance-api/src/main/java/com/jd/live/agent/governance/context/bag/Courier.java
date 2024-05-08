@@ -15,24 +15,24 @@
  */
 package com.jd.live.agent.governance.context.bag;
 
-import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Courier extends AttributeAccessorSupport implements Carrier {
+public class Courier extends AbstractAttributes implements Carrier {
 
-    protected Map<String, Cargo> tags;
+    protected Map<String, Cargo> cargos;
 
     @Override
     public Collection<Cargo> getCargos() {
-        return tags == null ? null : tags.values();
+        return cargos == null ? null : cargos.values();
     }
 
     @Override
     public Cargo getCargo(String key) {
-        return tags == null ? null : tags.get(key);
+        return cargos == null ? null : cargos.get(key);
     }
 
     @Override
@@ -40,10 +40,10 @@ public class Courier extends AttributeAccessorSupport implements Carrier {
         if (cargo != null) {
             String name = cargo.getKey();
             if (name != null && !name.isEmpty()) {
-                if (tags == null) {
-                    tags = new HashMap<>();
+                if (cargos == null) {
+                    cargos = new HashMap<>();
                 }
-                Cargo old = tags.putIfAbsent(cargo.getKey(), cargo);
+                Cargo old = cargos.putIfAbsent(cargo.getKey(), cargo);
                 if (old != null && old != cargo) {
                     cargo.add(cargo.getValues());
                 }
@@ -54,27 +54,27 @@ public class Courier extends AttributeAccessorSupport implements Carrier {
     @Override
     public void addCargo(String key, String value) {
         if (key != null && !key.isEmpty()) {
-            if (tags == null) {
-                tags = new HashMap<>();
+            if (cargos == null) {
+                cargos = new HashMap<>();
             }
-            tags.computeIfAbsent(key, Cargo::new).add(value);
+            cargos.computeIfAbsent(key, Cargo::new).add(value);
         }
     }
 
     @Override
     public void setCargo(String key, String value) {
         if (key != null && !key.isEmpty()) {
-            if (tags == null) {
-                tags = new HashMap<>();
+            if (cargos == null) {
+                cargos = new HashMap<>();
             }
-            tags.put(key, new Cargo(key, value));
+            cargos.put(key, new Cargo(key, value));
         }
     }
 
     @Override
     public void removeCargo(String key) {
-        if (key != null && !key.isEmpty() && tags != null) {
-            tags.remove(key);
+        if (key != null && !key.isEmpty() && cargos != null) {
+            cargos.remove(key);
         }
     }
 
