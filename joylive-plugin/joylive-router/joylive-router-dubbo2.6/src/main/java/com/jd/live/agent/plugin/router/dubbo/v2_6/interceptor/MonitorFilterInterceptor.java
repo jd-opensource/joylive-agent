@@ -23,14 +23,12 @@ import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractOutb
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboOutboundInvocation;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.response.DubboResponse.DubboOutboundResponse;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * MonitorFilterInterceptor
@@ -38,8 +36,8 @@ import java.util.Map;
 public class MonitorFilterInterceptor extends
         AbstractOutboundInterceptor<DubboOutboundRequest, DubboOutboundInvocation> {
 
-    public MonitorFilterInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
-        super(context, filters, retrierFactories);
+    public MonitorFilterInterceptor(InvocationContext context, List<OutboundFilter> filters) {
+        super(context, filters);
     }
 
     /**

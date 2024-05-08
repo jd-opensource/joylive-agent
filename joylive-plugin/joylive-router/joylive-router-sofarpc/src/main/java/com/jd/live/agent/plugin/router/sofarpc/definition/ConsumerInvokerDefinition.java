@@ -29,11 +29,9 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.plugin.router.sofarpc.interceptor.ConsumerInvokerInterceptor;
 
 import java.util.List;
-import java.util.Map;
 
 @Injectable
 @Extension(value = "ConsumerInvokerDefinition_v2.7")
@@ -59,17 +57,13 @@ public class ConsumerInvokerDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<OutboundFilter> filters;
 
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private Map<String, RetrierFactory> retrierFactories;
-
     public ConsumerInvokerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_INVOKER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new ConsumerInvokerInterceptor(context, filters, retrierFactories)
+                        () -> new ConsumerInvokerInterceptor(context, filters)
                 )
         };
     }

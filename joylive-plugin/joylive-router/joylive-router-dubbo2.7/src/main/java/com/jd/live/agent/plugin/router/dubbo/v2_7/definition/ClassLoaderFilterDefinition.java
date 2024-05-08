@@ -61,7 +61,6 @@ public class ClassLoaderFilterDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<InboundFilter> filters;
 
-
     public ClassLoaderFilterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CLASSLOADER_FILTER);
         this.interceptors = new InterceptorDefinition[]{

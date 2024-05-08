@@ -25,14 +25,12 @@ import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractOutb
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * ConsumerInvokerInterceptor
@@ -40,8 +38,8 @@ import java.util.Map;
 public class ConsumerInvokerInterceptor extends
         AbstractOutboundInterceptor<SofaRpcOutboundRequest, SofaRpcOutboundInvocation> {
 
-    public ConsumerInvokerInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
-        super(context, filters, retrierFactories);
+    public ConsumerInvokerInterceptor(InvocationContext context, List<OutboundFilter> filters) {
+        super(context, filters);
     }
 
     /**

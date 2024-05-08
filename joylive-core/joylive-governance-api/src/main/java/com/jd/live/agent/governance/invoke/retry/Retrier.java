@@ -28,17 +28,6 @@ import java.util.function.Supplier;
 public interface Retrier {
 
     /**
-     * Determine whether to retry
-     *
-     * @param response Response
-     * @return true: retry, false: no need to retry
-     */
-    default boolean isRetryable(Response response) {
-        RetryPolicy policy = getPolicy();
-        return policy != null && (policy.isRetry(response.getCode()) || policy.isRetry(response.getThrowable()));
-    }
-
-    /**
      * Execute retry logic
      *
      * @param supplier Retry logic

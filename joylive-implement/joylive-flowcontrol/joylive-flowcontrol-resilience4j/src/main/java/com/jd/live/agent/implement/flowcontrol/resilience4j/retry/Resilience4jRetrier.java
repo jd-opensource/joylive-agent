@@ -39,8 +39,8 @@ public class Resilience4jRetrier implements Retrier {
     public Resilience4jRetrier(RetryPolicy policy) {
         this.policy = policy;
         RetryConfig config = RetryConfig.custom()
-                .maxAttempts(policy.getRetry())
-                .waitDuration(Duration.ofMillis(policy.getWaitTimeInMilliseconds()))
+                .maxAttempts(policy.getRetry() + 1)
+                .waitDuration(Duration.ofMillis(policy.getRetryInterval()))
                 .retryOnResult(response -> policy.isRetry(((Response) response).getCode()))
                 .retryOnException(policy::isRetry)
                 .failAfterMaxAttempts(true)

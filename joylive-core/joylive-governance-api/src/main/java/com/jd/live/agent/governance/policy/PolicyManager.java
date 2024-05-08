@@ -36,9 +36,11 @@ import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
+import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import lombok.Getter;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -59,27 +61,44 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
     private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
 
+    @Getter
     @Inject(Publisher.POLICY_SUBSCRIBER)
     private Publisher<PolicySubscriber> publisher;
 
+    @Getter
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
+    @Getter
     @Config(GovernanceConfig.CONFIG_AGENT_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 
+    @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, UnitFunction> unitFunctions;
 
+    @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, VariableFunction> variableFunctions;
 
+    @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, VariableParser<?, ?>> variableParsers;
 
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private Map<String, RetrierFactory> retrierFactories;
+
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private RetrierFactory retrierFactory;
+
+    @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, TagMatcher> tagMatchers;
@@ -89,43 +108,19 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private final CompletableFuture<Void> future = new CompletableFuture<>();
 
     @Override
-    public Application getApplication() {
-        return application;
-    }
-
-    @Override
-    public GovernanceConfig getGovernanceConfig() {
-        return governanceConfig;
-    }
-
-    @Override
     public PolicySupplier getPolicySupplier() {
         return this;
     }
 
     @Override
-    public Map<String, UnitFunction> getUnitFunctions() {
-        return unitFunctions;
-    }
-
-    @Override
-    public Map<String, VariableFunction> getVariableFunctions() {
-        return variableFunctions;
-    }
-
-    @Override
-    public Map<String, VariableParser<?, ?>> getVariableParsers() {
-        return variableParsers;
-    }
-
-    @Override
-    public Map<String, TagMatcher> getTagMatchers() {
-        return tagMatchers;
-    }
-
-    @Override
     public GovernancePolicy getPolicy() {
         return policy.get();
+    }
+
+    @Override
+    public RetrierFactory getOrDefaultRetrierFactory(String name) {
+        RetrierFactory result = retrierFactories == null || name == null ? null : retrierFactories.get(name);
+        return result == null ? retrierFactory : result;
     }
 
     @Override

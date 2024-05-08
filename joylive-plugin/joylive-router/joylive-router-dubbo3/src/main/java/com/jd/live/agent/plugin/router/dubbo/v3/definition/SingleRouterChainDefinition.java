@@ -59,7 +59,6 @@ public class SingleRouterChainDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<RouteFilter> routeFilters;
 
-
     public SingleRouterChainDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SINGLE_ROUTER_CHAIN);
         this.interceptors = new InterceptorDefinition[]{

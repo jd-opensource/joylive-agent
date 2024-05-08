@@ -29,11 +29,9 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor.MonitorFilterInterceptor;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.jd.live.agent.plugin.router.dubbo.v2_6.definition.ExceptionFilterDefinition.ARGUMENT_INVOKE;
 
@@ -57,17 +55,13 @@ public class MonitorFilterDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<OutboundFilter> filters;
 
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private Map<String, RetrierFactory> retrierFactories;
-
     public MonitorFilterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_MONITOR_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new MonitorFilterInterceptor(context, filters, retrierFactories)
+                        () -> new MonitorFilterInterceptor(context, filters)
                 )
         };
     }

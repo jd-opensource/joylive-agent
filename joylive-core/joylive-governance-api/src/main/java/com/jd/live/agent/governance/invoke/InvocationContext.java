@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.invoke;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
+import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
@@ -112,6 +113,17 @@ public interface InvocationContext {
         Map<String, VariableParser<?, ?>> parsers = getVariableParsers();
         return name == null || parsers == null ? null : parsers.get(name);
     }
+
+    /**
+     * Retrieves the {@code RetrierFactory} instance associated with the specified name,
+     * or returns the default factory instance if no factory is found with that name.
+     *
+     * @param name the name of the {@code RetrierFactory} to retrieve. If {@code null} or
+     *             does not match any existing factory, the default factory is returned.
+     * @return the {@code RetrierFactory} instance associated with the given name, or the
+     *         default factory if no matching name is found.
+     */
+    RetrierFactory getOrDefaultRetrierFactory(String name);
 
     /**
      * Retrieves a map of tag matchers associated with this invocation context.

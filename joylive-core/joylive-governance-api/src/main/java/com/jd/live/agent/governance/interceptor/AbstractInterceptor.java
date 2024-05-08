@@ -36,7 +36,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.Response;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -125,18 +124,15 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected final OutboundFilter[] outboundFilters;
 
-        protected final Map<String, RetrierFactory> retrierFactories;
-
         /**
          * Constructs a new AbstractOutboundInterceptor with the given InvocationContext and outbound filters.
          *
          * @param context the InvocationContext for the current invocation
          * @param filters a list of OutboundFilter instances to be applied to the outbound request
          */
-        public AbstractOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
+        public AbstractOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters) {
             super(context);
             this.outboundFilters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
-            this.retrierFactories = retrierFactories;
         }
 
         /**
@@ -206,16 +202,16 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected Object invokeWithRetry(O invocation, MethodContext ctx) {
             Supplier<Response> retrySupplier = createRetrySupplier(ctx);
-            Response response = retrySupplier.get();
             ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
             RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
-            if (retryPolicy != null && retrierFactories != null) {
-                RetrierFactory retrierFactory = retrierFactories.get(retryPolicy.getType());
+            if (retryPolicy != null && retryPolicy.isEnabled()) {
+                RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
                 Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
-                if (retrier != null && retrier.isRetryable(response)) {
+                if (retrier != null) {
                     return retrier.execute(retrySupplier);
                 }
             }
+            Response response = retrySupplier.get();
             return response == null ? null : response.getResponse();
         }
 
@@ -348,8 +344,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * @param context The InvocationContext associated with the current invocation.
          * @param filters The list of OutboundFilter instances that will be applied to the outbound request.
          */
-        public AbstractHttpOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
-            super(context, filters, retrierFactories);
+        public AbstractHttpOutboundInterceptor(InvocationContext context, List<OutboundFilter> filters) {
+            super(context, filters);
         }
 
         @Override

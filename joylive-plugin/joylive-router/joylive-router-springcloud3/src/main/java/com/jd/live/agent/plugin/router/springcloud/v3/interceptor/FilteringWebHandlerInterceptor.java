@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttpInboundInterceptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
@@ -41,11 +40,8 @@ import java.util.List;
  */
 public class FilteringWebHandlerInterceptor extends AbstractHttpInboundInterceptor<ReactiveInboundRequest> {
 
-    private final Application application;
-
-    public FilteringWebHandlerInterceptor(InvocationContext context, List<InboundFilter> filters, Application application) {
+    public FilteringWebHandlerInterceptor(InvocationContext context, List<InboundFilter> filters) {
         super(context, filters);
-        this.application = application;
     }
 
     /**
@@ -70,6 +66,6 @@ public class FilteringWebHandlerInterceptor extends AbstractHttpInboundIntercept
 
     @Override
     protected HttpInboundInvocation<ReactiveInboundRequest> createInlet(ReactiveInboundRequest request) {
-        return application.getService().isGateway() ? new GatewayInboundInvocation<>(request, context) : super.createInlet(request);
+        return context.getApplication().getService().isGateway() ? new GatewayInboundInvocation<>(request, context) : super.createInlet(request);
     }
 }

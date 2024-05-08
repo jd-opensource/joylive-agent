@@ -21,7 +21,6 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -61,9 +60,6 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
     @Inject
     private List<RouteFilter> filters;
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
     public ServiceInstanceListSupplierDefinition() {
         // enhance default method. so isImplementOf is not used.
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_INSTANCE_LIST_SUPPLIER);
@@ -71,7 +67,7 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET).
                                 and(MatcherBuilder.arguments(ARGUMENTS_GET)),
-                        () -> new ServiceInstanceListSupplierInterceptor(context, filters, application)
+                        () -> new ServiceInstanceListSupplierInterceptor(context, filters)
                 )
         };
     }

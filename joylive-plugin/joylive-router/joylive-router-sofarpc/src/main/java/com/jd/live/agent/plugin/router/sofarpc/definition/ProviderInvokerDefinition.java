@@ -55,7 +55,6 @@ public class ProviderInvokerDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<InboundFilter> filters;
 
-
     public ProviderInvokerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_PROVIDER_INVOKER);
         this.interceptors = new InterceptorDefinition[]{

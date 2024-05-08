@@ -29,11 +29,9 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.plugin.router.dubbo.v3.interceptor.ConsumerClassLoaderFilterInterceptor;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.jd.live.agent.plugin.router.dubbo.v3.definition.ClassLoaderFilterDefinition.ARGUMENT_INVOKE;
 
@@ -56,17 +54,13 @@ public class ConsumerClassLoaderFilterDefinition extends PluginDefinitionAdapter
     @InjectLoader(ResourcerType.PLUGIN)
     private List<OutboundFilter> filters;
 
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private Map<String, RetrierFactory> retrierFactories;
-
     public ConsumerClassLoaderFilterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CLASSLOADER_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new ConsumerClassLoaderFilterInterceptor(context, filters, retrierFactories)
+                        () -> new ConsumerClassLoaderFilterInterceptor(context, filters)
                 )
         };
     }

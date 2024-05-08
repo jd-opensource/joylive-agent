@@ -29,11 +29,9 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.InterceptingClientHttpRequestInterceptor;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * InterceptingClientHttpRequestDefinition
@@ -65,17 +63,13 @@ public class InterceptingClientHttpRequestDefinition extends PluginDefinitionAda
     @InjectLoader(ResourcerType.PLUGIN)
     private List<OutboundFilter> filters;
 
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private Map<String, RetrierFactory> retrierFactories;
-
     public InterceptingClientHttpRequestDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_INTERCEPTING_CLIENT_HTTP_REQUEST);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXECUTE_INTERNAL).
                                 and(MatcherBuilder.arguments(ARGUMENT_EXECUTE_INTERNAL)),
-                        () -> new InterceptingClientHttpRequestInterceptor(context, filters, retrierFactories)
+                        () -> new InterceptingClientHttpRequestInterceptor(context, filters)
                 )
         };
     }

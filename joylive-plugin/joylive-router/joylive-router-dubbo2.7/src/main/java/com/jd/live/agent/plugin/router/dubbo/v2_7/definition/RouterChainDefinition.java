@@ -59,7 +59,6 @@ public class RouterChainDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<RouteFilter> routeFilters;
 
-
     public RouterChainDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_ROUTER_CHAIN);
         this.interceptors = new InterceptorDefinition[]{

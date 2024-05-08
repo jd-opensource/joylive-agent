@@ -63,7 +63,7 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     /**
      * Retry waiting interval, in milliseconds.
      */
-    private Integer waitTimeInMilliseconds;
+    private Long retryInterval;
 
     /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
@@ -91,8 +91,8 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (retry == null) {
             retry = source.retry;
         }
-        if (waitTimeInMilliseconds == null) {
-            waitTimeInMilliseconds = source.waitTimeInMilliseconds;
+        if (retryInterval == null) {
+            retryInterval = source.retryInterval;
         }
         if ((retryStatuses == null || retryStatuses.isEmpty()) && source.retryStatuses != null) {
             retryStatuses = source.retryStatuses;
@@ -105,12 +105,16 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         }
     }
 
+    public boolean isEnabled() {
+        return retry != null && retry > 0;
+    }
+
     public boolean isRetry(String status) {
-        return status != null && retryStatuses != null && retryStatuses.contains(status);
+        return isEnabled() && status != null && retryStatuses != null && retryStatuses.contains(status);
     }
 
     public boolean isRetry(Throwable throwable) {
-        if (throwable == null || retryExceptions == null || retryExceptions.isEmpty()) {
+        if (!isEnabled() || throwable == null || retryExceptions == null || retryExceptions.isEmpty()) {
             return false;
         }
         Class<?> type = throwable.getClass();

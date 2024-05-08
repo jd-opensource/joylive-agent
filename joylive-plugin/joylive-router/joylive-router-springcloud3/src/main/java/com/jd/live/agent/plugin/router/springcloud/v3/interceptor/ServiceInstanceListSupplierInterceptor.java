@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttpRouteInterceptor;
@@ -51,11 +50,8 @@ public class ServiceInstanceListSupplierInterceptor extends AbstractHttpRouteInt
 
     private static final String LOCKED = "LOCKED";
 
-    private final Application application;
-
-    public ServiceInstanceListSupplierInterceptor(InvocationContext context, List<RouteFilter> filters, Application application) {
+    public ServiceInstanceListSupplierInterceptor(InvocationContext context, List<RouteFilter> filters) {
         super(context, filters);
-        this.application = application;
     }
 
     @Override
@@ -102,7 +98,7 @@ public class ServiceInstanceListSupplierInterceptor extends AbstractHttpRouteInt
     @Override
     protected HttpOutboundInvocation<HttpOutboundRequest> createOutlet(HttpOutboundRequest request) {
         Boolean gateway = RequestContext.getAttribute(Carrier.ATTRIBUTE_GATEWAY);
-        gateway = gateway == null ? application.getService().isGateway() : gateway;
+        gateway = gateway == null ? context.getApplication().getService().isGateway() : gateway;
         return gateway ? new OutboundInvocation.GatewayHttpOutboundInvocation<>(request, context) :
                 super.createOutlet(request);
     }

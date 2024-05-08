@@ -24,7 +24,6 @@ import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttp
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ClientHttpOutboundResponse;
@@ -35,7 +34,6 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 
 /**
  * InterceptingClientHttpRequestInterceptor
@@ -45,8 +43,8 @@ import java.util.Map;
  */
 public class InterceptingClientHttpRequestInterceptor extends AbstractHttpOutboundInterceptor<ReactiveOutboundRequest> {
 
-    public InterceptingClientHttpRequestInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
-        super(context, filters, retrierFactories);
+    public InterceptingClientHttpRequestInterceptor(InvocationContext context, List<OutboundFilter> filters) {
+        super(context, filters);
     }
 
     /**

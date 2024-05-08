@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractOutb
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -31,7 +30,6 @@ import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.cluster.filter.support.ConsumerClassLoaderFilter;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * ConsumerClassLoaderFilterInterceptor
@@ -39,8 +37,8 @@ import java.util.Map;
 public class ConsumerClassLoaderFilterInterceptor extends
         AbstractOutboundInterceptor<DubboOutboundRequest, DubboOutboundInvocation> {
 
-    public ConsumerClassLoaderFilterInterceptor(InvocationContext context, List<OutboundFilter> filters, Map<String, RetrierFactory> retrierFactories) {
-        super(context, filters, retrierFactories);
+    public ConsumerClassLoaderFilterInterceptor(InvocationContext context, List<OutboundFilter> filters) {
+        super(context, filters);
     }
 
     /**
