@@ -15,17 +15,15 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.context;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * An abstract class representing an executable context.
  * This class provides a structure to hold information related to an executable task or operation.
  */
-public abstract class ExecutableContext {
+public abstract class ExecutableContext extends AttributeAccessorSupport {
 
     /**
      * The type of the executable.
@@ -60,11 +58,6 @@ public abstract class ExecutableContext {
     protected Throwable throwable;
 
     /**
-     * A map of attributes associated with the executable context.
-     */
-    protected Map<String, Object> attributes;
-
-    /**
      * Creates a new instance of ExecutableContext.
      *
      * @param type        the type of the executable
@@ -94,34 +87,6 @@ public abstract class ExecutableContext {
      */
     public boolean isSuccess() {
         return throwable == null;
-    }
-
-    /**
-     * Adds an attribute to the executable context.
-     *
-     * @param key the key for the attribute
-     * @param obj the value of the attribute
-     * @throws NullPointerException if the key is {@code null} or empty
-     */
-    public void addAttribute(String key, Object obj) {
-        if (key != null && !key.isEmpty()) {
-            if (attributes == null) {
-                attributes = new HashMap<>();
-            }
-            attributes.put(key, obj);
-        }
-    }
-
-    /**
-     * Retrieves an attribute from the executable context.
-     *
-     * @param key the key for the attribute
-     * @param <T> the type of the attribute
-     * @return the value of the attribute, or {@code null} if the key is {@code null} or empty, or the attribute is not found
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getAttribute(String key) {
-        return key == null || key.isEmpty() ? null : (T) attributes.get(key);
     }
 
 }

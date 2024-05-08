@@ -59,7 +59,7 @@ public class ServiceInstanceListSupplierInterceptor extends AbstractHttpRouteInt
         if (LOCK.get() == null) {
             // Prevent duplicate calls
             LOCK.set(Boolean.TRUE);
-            ctx.addAttribute(LOCKED, Boolean.TRUE);
+            ctx.setAttribute(LOCKED, Boolean.TRUE);
         }
     }
 

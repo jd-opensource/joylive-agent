@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
 import lombok.Getter;
 
 /**
@@ -23,7 +24,7 @@ import lombok.Getter;
  * @since 1.0.0
  */
 @Getter
-public abstract class AbstractServiceResponse<T> implements ServiceResponse {
+public abstract class AbstractServiceResponse<T> extends AttributeAccessorSupport implements ServiceResponse {
 
     protected final T response;
 

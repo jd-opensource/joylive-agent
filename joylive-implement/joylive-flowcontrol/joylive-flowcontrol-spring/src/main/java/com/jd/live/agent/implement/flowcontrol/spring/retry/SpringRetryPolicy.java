@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.flowcontrol.spring.retry;
 
+import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 import org.springframework.retry.RetryContext;
@@ -29,8 +30,6 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
 
     public static final String RESPONSE_KEY = "response";
 
-    public static final String DEADLINE_KEY = "deadline";
-
     private final RetryPolicy retryPolicy;
 
     public SpringRetryPolicy(RetryPolicy retryPolicy) {
@@ -40,8 +39,8 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
     @Override
     public boolean canRetry(RetryContext context) {
         Throwable t = context.getLastThrowable();
-        if (context.hasAttribute(SpringRetryPolicy.DEADLINE_KEY)) {
-            Long deadline = (Long) context.getAttribute(SpringRetryPolicy.DEADLINE_KEY);
+        if (context.hasAttribute(Retrier.DEADLINE_KEY)) {
+            Long deadline = (Long) context.getAttribute(Retrier.DEADLINE_KEY);
             if (System.currentTimeMillis() > deadline) {
                 return false;
             }

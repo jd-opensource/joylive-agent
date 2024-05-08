@@ -41,7 +41,16 @@ public class Resilience4jRetrier implements Retrier {
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(policy.getRetry() + 1)
                 .waitDuration(Duration.ofMillis(policy.getRetryInterval()))
-                .retryOnResult(response -> policy.isRetry(((Response) response).getCode()))
+                .retryOnResult(response -> {
+                    Response rsp = (Response) response;
+                    if (!rsp.hasAttribute(DEADLINE_KEY) && policy.getTimeout() > 0) {
+                        rsp.setAttribute(DEADLINE_KEY, System.currentTimeMillis() + policy.getTimeout());
+                    }
+                    if (rsp.hasAttribute(DEADLINE_KEY) && System.currentTimeMillis() > (Long) rsp.getAttribute(DEADLINE_KEY)) {
+                        return false;
+                    }
+                    return policy.isRetry(((Response) response).getCode());
+                })
                 .retryOnException(policy::isRetry)
                 .failAfterMaxAttempts(true)
                 .build();
@@ -56,6 +65,7 @@ public class Resilience4jRetrier implements Retrier {
     public <T extends Response> T execute(Supplier<T> supplier) {
         // TODO retry timeout
         return retry.executeSupplier(supplier);
+
     }
 
     /**
