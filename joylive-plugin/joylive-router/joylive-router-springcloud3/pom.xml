@@ -17,6 +17,7 @@
         <spring.boot.version>2.7.18</spring.boot.version>
         <spring.version>5.3.31</spring.version>
         <servlet.api.version>4.0.4</servlet.api.version>
+        <openfeign.version>11.10</openfeign.version>
     </properties>
 
     <dependencies>
@@ -66,6 +67,18 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>${servlet.api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-openfeign-core</artifactId>
+            <version>${spring.cloud.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+            <version>${openfeign.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -91,6 +91,15 @@
           "loadBalancePolicy": {
             "policyType": "ROUND_ROBIN"
           },
+          "retryPolicy": {
+            "type": "Resilience4j",
+            "retry": 10,
+            "retryInterval": 1000,
+            "timeout": 5000,
+            "retryStatuses": [500, 502],
+            "retryExceptions": ["java.lang.NullPointException"],
+            "version": 1704038400000
+          },
           "rateLimitPolicies": [
             {
               "name": "limit-rule-1",

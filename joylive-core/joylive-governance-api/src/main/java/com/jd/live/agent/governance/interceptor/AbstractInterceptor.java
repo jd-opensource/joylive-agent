@@ -227,7 +227,6 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
             Response response = retrySupplier.get();
             return response == null ? null : response.getResponse();
         }
-
     }
 
     /**
