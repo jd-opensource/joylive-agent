@@ -218,6 +218,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                     Long timeout = retryPolicy.getTimeout();
                     if (timeout != null && timeout > 0) {
                         RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_DEADLINE, System.currentTimeMillis() + timeout);
+                    } else {
+                        RequestContext.removeAttribute(Carrier.ATTRIBUTE_DEADLINE);
                     }
                     return retrier.execute(retrySupplier);
                 }
