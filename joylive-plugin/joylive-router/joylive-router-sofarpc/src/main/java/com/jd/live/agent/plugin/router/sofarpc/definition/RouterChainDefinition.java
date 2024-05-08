@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.sofarpc.interceptor.RouterChainIntercepto
 import java.util.List;
 
 @Injectable
-@Extension(value = "RouterChainDefinition_v2.7")
+@Extension(value = "RouterChainDefinition")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)

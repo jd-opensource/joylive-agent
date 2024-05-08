@@ -36,7 +36,7 @@ import java.util.List;
 import static com.jd.live.agent.plugin.router.sofarpc.definition.ConsumerInvokerDefinition.ARGUMENT_INVOKE;
 
 @Injectable
-@Extension(value = "ProviderInvokerDefinition_v2.7")
+@Extension(value = "ProviderInvokerDefinition")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)

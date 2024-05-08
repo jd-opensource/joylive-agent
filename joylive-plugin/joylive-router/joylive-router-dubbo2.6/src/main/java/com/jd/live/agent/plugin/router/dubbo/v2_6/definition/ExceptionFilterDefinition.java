@@ -46,7 +46,7 @@ public class ExceptionFilterDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_INVOKE = "invoke";
 
-    protected static final String[] ARGUMENT_INVOKE = new String[]{
+    private static final String[] ARGUMENT_INVOKE = new String[]{
             "com.alibaba.dubbo.rpc.Invoker",
             "com.alibaba.dubbo.rpc.Invocation"
     };

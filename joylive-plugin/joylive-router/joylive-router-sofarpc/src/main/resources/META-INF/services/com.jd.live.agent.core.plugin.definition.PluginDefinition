@@ -1,3 +1,4 @@
 com.jd.live.agent.plugin.router.sofarpc.definition.RouterChainDefinition
 com.jd.live.agent.plugin.router.sofarpc.definition.ProviderInvokerDefinition
 com.jd.live.agent.plugin.router.sofarpc.definition.ConsumerInvokerDefinition
+com.jd.live.agent.plugin.router.sofarpc.definition.ConsumerConfigDefinition

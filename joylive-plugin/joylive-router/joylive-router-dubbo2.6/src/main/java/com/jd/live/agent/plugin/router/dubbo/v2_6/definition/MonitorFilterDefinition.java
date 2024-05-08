@@ -33,8 +33,6 @@ import com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor.MonitorFilterInter
 
 import java.util.List;
 
-import static com.jd.live.agent.plugin.router.dubbo.v2_6.definition.ExceptionFilterDefinition.ARGUMENT_INVOKE;
-
 @Injectable
 @Extension(value = "MonitorFilterDefinition_v2.6")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
@@ -44,9 +42,14 @@ import static com.jd.live.agent.plugin.router.dubbo.v2_6.definition.ExceptionFil
 @ConditionalOnClass(MonitorFilterDefinition.TYPE_MONITOR_FILTER)
 public class MonitorFilterDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_MONITOR_FILTER = "com.alibaba.dubbo.monitor.support.MonitorFilter";
+    protected static final String TYPE_MONITOR_FILTER = "com.alibaba.dubbo.monitor.support.MonitorFilter";
 
     private static final String METHOD_INVOKE = "invoke";
+
+    private static final String[] ARGUMENT_INVOKE = new String[]{
+            "com.alibaba.dubbo.rpc.Invoker",
+            "com.alibaba.dubbo.rpc.Invocation"
+    };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;

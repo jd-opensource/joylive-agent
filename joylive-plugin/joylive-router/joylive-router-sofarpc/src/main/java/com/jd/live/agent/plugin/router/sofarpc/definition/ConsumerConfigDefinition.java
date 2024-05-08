@@ -15,56 +15,38 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.plugin.router.sofarpc.interceptor.ConsumerInvokerInterceptor;
+import com.jd.live.agent.plugin.router.sofarpc.interceptor.ConsumerConfigInterceptor;
 
-import java.util.List;
-
-@Injectable
-@Extension(value = "ConsumerInvokerDefinition")
+@Extension(value = "ConsumerConfigDefinition")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ConsumerInvokerDefinition.TYPE_CONSUMER_INVOKER)
-public class ConsumerInvokerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_RETRY_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ConsumerConfigDefinition.TYPE_CONSUMER_CONFIG)
+public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_INVOKER = "com.alipay.sofa.rpc.filter.ConsumerInvoker";
+    protected static final String TYPE_CONSUMER_CONFIG = "com.alipay.sofa.rpc.config.ConsumerConfig";
 
-    private static final String METHOD_INVOKE = "invoke";
+    private static final String METHOD_GET_METHOD_RETRIES = "getMethodRetries";
 
-    protected static final String[] ARGUMENT_INVOKE = new String[]{
-            "com.alipay.sofa.rpc.core.request.SofaRequest"
+    protected static final String[] ARGUMENT_GET_METHOD_RETRIES = new String[]{
+            "java.lang.String"
     };
 
-    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
-    private InvocationContext context;
-
-    @Inject
-    @InjectLoader(ResourcerType.PLUGIN)
-    private List<OutboundFilter> filters;
-
-    public ConsumerInvokerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_INVOKER);
-        this.interceptors = new InterceptorDefinition[]{
+    public ConsumerConfigDefinition() {
+        super(TYPE_CONSUMER_CONFIG,
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE).
-                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new ConsumerInvokerInterceptor(context, filters)
-                )
-        };
+                        MatcherBuilder.named(METHOD_GET_METHOD_RETRIES).
+                                and(MatcherBuilder.arguments(ARGUMENT_GET_METHOD_RETRIES)),
+                        new ConsumerConfigInterceptor()));
     }
 }
