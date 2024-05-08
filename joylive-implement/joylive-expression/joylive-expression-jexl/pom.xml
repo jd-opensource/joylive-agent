@@ -40,13 +40,21 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.apache.commons:*</include>
-                                    <include>commons-logging:*</include>
                                 </includes>
                             </artifactSet>
+
                             <transformers>
                                 <!-- This transformer will merge the contents of META-INF/services -->
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+                                    <addHeader>false</addHeader>
+                                </transformer>
                             </transformers>
                             <relocations>
                                 <relocation>
