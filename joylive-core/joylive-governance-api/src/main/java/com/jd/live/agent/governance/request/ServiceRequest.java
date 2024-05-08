@@ -120,6 +120,36 @@ public interface ServiceRequest extends Request {
      */
     interface OutboundRequest extends ServiceRequest {
 
+        /**
+         * Retrieves the configured timeout value.
+         * <p>
+         * This method returns the timeout setting for the current request. The timeout
+         * is expressed in milliseconds and represents the maximum time allowed for a certain
+         * operation to complete. A return value of 0 may indicate that no timeout is set,
+         * implying an operation could potentially wait indefinitely.
+         * </p>
+         *
+         * @return The timeout value in milliseconds. A value of 0 may indicate no timeout.
+         */
+        default long getTimeout() {
+            return 0;
+        }
+
+        /**
+         * Sets the timeout value for the current request.
+         * <p>
+         * This method allows specifying a timeout in milliseconds, which determines the maximum
+         * duration allowed for a certain operation to complete. Setting this value influences
+         * how long a process will wait before timing out. A value of 0 can be used to indicate
+         * that there should be no timeout, allowing the operation to continue indefinitely until
+         * completion.
+         * </p>
+         *
+         * @param timeout The desired timeout in milliseconds. A value of 0 indicates no timeout.
+         */
+        default void setTimeout(long timeout) {
+        }
+
     }
 }
 
