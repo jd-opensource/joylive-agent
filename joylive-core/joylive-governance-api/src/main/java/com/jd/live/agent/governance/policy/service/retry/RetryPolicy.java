@@ -66,6 +66,11 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private Long retryInterval;
 
     /**
+     * Retry execution timeout, in milliseconds.
+     */
+    private Long timeout;
+
+    /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
     private Set<String> retryStatuses = new HashSet<>(Arrays.asList("500", "502", "503"));
@@ -93,6 +98,9 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         }
         if (retryInterval == null) {
             retryInterval = source.retryInterval;
+        }
+        if (timeout == null) {
+            timeout = source.timeout;
         }
         if ((retryStatuses == null || retryStatuses.isEmpty()) && source.retryStatuses != null) {
             retryStatuses = source.retryStatuses;

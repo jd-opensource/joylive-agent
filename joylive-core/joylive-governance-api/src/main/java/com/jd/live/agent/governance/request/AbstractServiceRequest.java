@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
 import lombok.Getter;
 
 import java.util.HashSet;
@@ -31,7 +32,7 @@ import java.util.Set;
  * @param <T> The type of the original request object this class wraps.
  */
 @Getter
-public abstract class AbstractServiceRequest<T> implements ServiceRequest {
+public abstract class AbstractServiceRequest<T> extends AttributeAccessorSupport implements ServiceRequest {
 
     /**
      * The original request object associated with this service request.

@@ -15,11 +15,12 @@
  */
 package com.jd.live.agent.plugin.protection.postgresql.v42.request;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import org.postgresql.core.Query;
 import org.postgresql.core.QueryExecutor;
 
-public class PostgresqlRequest implements SQLRequest {
+public class PostgresqlRequest extends AttributeAccessorSupport implements SQLRequest {
 
     private final QueryExecutor executor;
     private final Query query;

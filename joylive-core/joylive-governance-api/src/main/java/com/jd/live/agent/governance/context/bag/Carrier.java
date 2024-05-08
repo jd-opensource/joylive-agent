@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.context.bag;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessor;
+
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -28,7 +30,7 @@ import java.util.function.Function;
  * iterating over cargos and attributes in various ways to suit different use cases.
  * </p>
  */
-public interface Carrier {
+public interface Carrier extends AttributeAccessor {
 
     String ATTRIBUTE_FAILOVER_UNIT = "x-live-failover-unit";
 
@@ -248,29 +250,5 @@ public interface Carrier {
             }
         }
     }
-
-    /**
-     * Retrieves an attribute by key.
-     *
-     * @param key The key of the attribute to retrieve.
-     * @return The value of the attribute, or null if not found.
-     */
-    <T> T getAttribute(String key);
-
-    /**
-     * Sets or replaces an attribute with the specified key and value.
-     *
-     * @param key   The key of the attribute.
-     * @param value The value of the attribute.
-     */
-    void setAttribute(String key, Object value);
-
-    /**
-     * Removes an attribute by its key.
-     *
-     * @param key The key of the attribute to remove.
-     * @return The removed attribute, or null if the attribute was not found.
-     */
-    <T> T removeAttribute(String key);
 
 }

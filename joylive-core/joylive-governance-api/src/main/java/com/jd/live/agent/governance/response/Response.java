@@ -15,14 +15,14 @@
  */
 package com.jd.live.agent.governance.response;
 
-import java.io.Serializable;
+import com.jd.live.agent.bootstrap.util.AttributeAccessor;
 
 /**
  * Response
  *
  * @since 1.0.0
  */
-public interface Response extends Serializable {
+public interface Response extends AttributeAccessor {
 
     /**
      * Response Code

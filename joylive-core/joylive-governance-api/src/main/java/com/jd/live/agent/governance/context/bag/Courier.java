@@ -15,15 +15,15 @@
  */
 package com.jd.live.agent.governance.context.bag;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Courier implements Carrier {
+public class Courier extends AttributeAccessorSupport implements Carrier {
 
     protected Map<String, Cargo> tags;
-
-    protected Map<String, Object> attributes;
 
     @Override
     public Collection<Cargo> getCargos() {
@@ -78,28 +78,4 @@ public class Courier implements Carrier {
         }
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T getAttribute(String key) {
-        return key == null || attributes == null ? null : (T) attributes.get(key);
-    }
-
-    @Override
-    public void setAttribute(String key, Object value) {
-        if (key != null && value != null) {
-            if (attributes == null) {
-                attributes = new HashMap<>();
-            }
-            attributes.put(key, value);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T removeAttribute(String key) {
-        if (key != null && attributes != null) {
-            return (T) attributes.remove(key);
-        }
-        return null;
-    }
 }

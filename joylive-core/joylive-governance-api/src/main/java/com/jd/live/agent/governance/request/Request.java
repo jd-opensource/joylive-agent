@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.bootstrap.util.AttributeAccessor;
+
 /**
  * Represents a general request interface.
  * <p>
@@ -24,7 +26,7 @@ package com.jd.live.agent.governance.request;
  *
  * @since 1.0.0
  */
-public interface Request {
+public interface Request extends AttributeAccessor {
 
     /**
      * A constant key used for identifying sticky sessions in live services.
