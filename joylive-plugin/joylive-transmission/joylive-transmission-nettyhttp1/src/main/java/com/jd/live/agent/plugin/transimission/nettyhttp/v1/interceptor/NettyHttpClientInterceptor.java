@@ -43,7 +43,7 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
 
     private HttpClient attachTag(HttpClient httpClient) {
         if (RequestContext.hasCargo()) {
-            return httpClient.headers((headers) -> RequestContext.traverse(tag -> headers.set(tag.getKey(), tag.getValue())));
+            return httpClient.headers((headers) -> RequestContext.cargos(tag -> headers.set(tag.getKey(), tag.getValue())));
         }
         return null;
     }

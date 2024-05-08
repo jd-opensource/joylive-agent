@@ -43,7 +43,7 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
      * @param header The {@link MessageHeader} to which the tag will be attached.
      */
     private void attachTag(MessageHeader header) {
-        RequestContext.traverse(header::add);
+        RequestContext.cargos(header::add);
     }
 }
 

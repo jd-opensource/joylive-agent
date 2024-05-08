@@ -47,7 +47,7 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(HttpHeaders headers) {
-        RequestContext.traverse(tag -> headers.addAll(tag.getKey(), tag.getValues()));
+        RequestContext.cargos(tag -> headers.addAll(tag.getKey(), tag.getValues()));
     }
 
 

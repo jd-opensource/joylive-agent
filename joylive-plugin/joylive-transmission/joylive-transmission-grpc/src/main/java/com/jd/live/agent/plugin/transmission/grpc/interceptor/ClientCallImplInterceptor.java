@@ -28,7 +28,7 @@ public class ClientCallImplInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(Metadata metadata) {
-        RequestContext.traverse(tag -> metadata.put(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER), tag.getValue()));
+        RequestContext.cargos(tag -> metadata.put(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER), tag.getValue()));
     }
 
 }

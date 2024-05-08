@@ -28,6 +28,6 @@ public class HttpClientInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(HttpMethod method) {
-        RequestContext.traverse(tag -> method.setRequestHeader(tag.getKey(), tag.getValue()));
+        RequestContext.cargos(tag -> method.setRequestHeader(tag.getKey(), tag.getValue()));
     }
 }

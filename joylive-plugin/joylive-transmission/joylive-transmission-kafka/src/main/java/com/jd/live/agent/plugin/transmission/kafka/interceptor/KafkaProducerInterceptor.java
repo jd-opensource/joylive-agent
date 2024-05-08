@@ -34,6 +34,6 @@ public class KafkaProducerInterceptor extends InterceptorAdaptor {
 
     private void attachTag(ProducerRecord<?, ?> record) {
         Headers headers = record.headers();
-        RequestContext.traverse((k, v) -> headers.add(k, v == null ? null : k.getBytes(StandardCharsets.UTF_8)));
+        RequestContext.cargos((k, v) -> headers.add(k, v == null ? null : k.getBytes(StandardCharsets.UTF_8)));
     }
 }

@@ -214,7 +214,7 @@ public interface Carrier extends Attributes {
      *
      * @param consumer A consumer to process each cargo.
      */
-    default void traverse(Consumer<Cargo> consumer) {
+    default void cargos(Consumer<Cargo> consumer) {
         if (consumer != null) {
             Collection<Cargo> cargos = getCargos();
             if (cargos != null) {
@@ -228,7 +228,7 @@ public interface Carrier extends Attributes {
      *
      * @param consumer A bi-consumer to process each key-value pair.
      */
-    default void traverse(BiConsumer<String, String> consumer) {
+    default void cargos(BiConsumer<String, String> consumer) {
         if (consumer != null) {
             Collection<Cargo> cargos = getCargos();
             if (cargos != null) {

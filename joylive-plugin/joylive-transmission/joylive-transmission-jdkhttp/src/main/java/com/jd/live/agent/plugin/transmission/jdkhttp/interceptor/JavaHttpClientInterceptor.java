@@ -71,7 +71,7 @@ public class JavaHttpClientInterceptor extends InterceptorAdaptor {
      * @param header The HTTP request header object to which the tags will be attached.
      */
     private void attachTag(Object header) {
-        RequestContext.traverse((key, value) -> addHeader(header, key, value));
+        RequestContext.cargos((key, value) -> addHeader(header, key, value));
     }
 
     /**

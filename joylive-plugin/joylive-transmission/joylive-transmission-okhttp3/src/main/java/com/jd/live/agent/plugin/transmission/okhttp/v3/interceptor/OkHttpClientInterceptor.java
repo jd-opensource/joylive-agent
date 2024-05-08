@@ -31,7 +31,7 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(Request.Builder builder) {
-        RequestContext.traverse(builder::addHeader);
+        RequestContext.cargos(builder::addHeader);
     }
 
 }

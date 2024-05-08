@@ -35,7 +35,7 @@ public class MQClientAPIImplInterceptor extends InterceptorAdaptor {
     private void attachTag(SendMessageRequestHeader header) {
         String properties = header.getProperties();
         StringBuilder builder = new StringBuilder();
-        RequestContext.traverse(tag -> append(builder, tag));
+        RequestContext.cargos(tag -> append(builder, tag));
         if (builder.length() > 0) {
             if (properties != null && !properties.isEmpty()) {
                 builder.append(properties);

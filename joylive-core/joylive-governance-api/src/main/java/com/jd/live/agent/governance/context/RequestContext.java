@@ -107,10 +107,10 @@ public class RequestContext {
      *
      * @param consumer The {@link Consumer} to process each {@link Cargo} contained in the {@link Carrier}.
      */
-    public static void traverse(Consumer<Cargo> consumer) {
+    public static void cargos(Consumer<Cargo> consumer) {
         Carrier carrier = CARRIER.get();
         if (carrier != null) {
-            carrier.traverse(consumer);
+            carrier.cargos(consumer);
         }
     }
 
@@ -119,10 +119,10 @@ public class RequestContext {
      *
      * @param consumer The {@link BiConsumer} to process each key-value pair contained in the {@link Carrier}.
      */
-    public static void traverse(BiConsumer<String, String> consumer) {
+    public static void cargos(BiConsumer<String, String> consumer) {
         Carrier carrier = CARRIER.get();
         if (carrier != null) {
-            carrier.traverse(consumer);
+            carrier.cargos(consumer);
         }
     }
 
@@ -135,6 +135,16 @@ public class RequestContext {
     public static Cargo getCargo(String key) {
         Carrier carrier = CARRIER.get();
         return carrier == null ? null : carrier.getCargo(key);
+    }
+
+    /**
+     * Checks if the current {@link Carrier} instance contains any {@link Cargo}.
+     *
+     * @return {@code true} if the current {@link Carrier} contains {@link Cargo}, {@code false} otherwise.
+     */
+    public static boolean hasCargo() {
+        Carrier carrier = CARRIER.get();
+        return carrier != null && carrier.getCargos() != null && !carrier.getCargos().isEmpty();
     }
 
     /**
@@ -162,13 +172,15 @@ public class RequestContext {
     }
 
     /**
-     * Checks if the current {@link Carrier} instance contains any {@link Cargo}.
+     * Sets or replaces an attribute with the specified key and value.
      *
-     * @return {@code true} if the current {@link Carrier} contains {@link Cargo}, {@code false} otherwise.
+     * @param key   The key of the attribute.
+     * @param value The value of the attribute.
      */
-    public static boolean hasCargo() {
-        Carrier carrier = CARRIER.get();
-        return carrier != null && carrier.getCargos() != null && !carrier.getCargos().isEmpty();
+    public static void setAttribute(String key, Object value) {
+        if (key != null && value != null) {
+            getOrCreate().setAttribute(key, value);
+        }
     }
 
     /**

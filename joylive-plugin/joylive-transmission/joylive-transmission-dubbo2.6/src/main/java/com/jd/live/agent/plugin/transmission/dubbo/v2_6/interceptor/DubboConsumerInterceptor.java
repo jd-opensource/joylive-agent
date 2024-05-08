@@ -42,7 +42,7 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
     private void attachTag(RpcInvocation invocation) {
         Carrier carrier = RequestContext.getOrCreate();
-        carrier.traverse(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
+        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
         carrier.addCargo(require, RpcContext.getContext().getAttachments(), Label::parseValue);
     }
 

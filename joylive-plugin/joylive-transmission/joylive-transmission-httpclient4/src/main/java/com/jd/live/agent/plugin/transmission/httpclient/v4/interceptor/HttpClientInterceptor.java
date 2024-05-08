@@ -34,10 +34,10 @@ public class HttpClientInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(HttpRequestBase request) {
-        RequestContext.traverse((k, v) -> request.addHeader(k, v));
+        RequestContext.cargos((k, v) -> request.addHeader(k, v));
     }
 
     private void attachTag(HttpRequest request) {
-        RequestContext.traverse((k, v) -> request.addHeader(k, v));
+        RequestContext.cargos((k, v) -> request.addHeader(k, v));
     }
 }
