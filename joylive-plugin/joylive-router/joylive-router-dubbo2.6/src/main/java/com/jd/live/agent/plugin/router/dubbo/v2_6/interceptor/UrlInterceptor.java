@@ -17,8 +17,6 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;

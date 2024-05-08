@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.util.AttributeAccessorSupport;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -175,14 +176,19 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          */
         protected Supplier<Response> createRetrySupplier(MethodContext ctx) {
             return () -> {
+                Response response = null;
                 try {
-                    return createResponse(ctx.invoke(), null);
+                    response = createResponse(ctx.invoke(), null);
                 } catch (IllegalAccessException ignored) {
                     // ignored
                 } catch (Throwable throwable) {
-                    return createResponse(ctx.getResult(), throwable);
+                    response = createResponse(ctx.getResult(), throwable);
+                } finally {
+                    if (response instanceof AttributeAccessorSupport) {
+                        ((AttributeAccessorSupport) response).copyAttributesFrom(ctx);
+                    }
                 }
-                return null;
+                return response;
             };
         }
 
@@ -208,6 +214,7 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                 RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
                 Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
                 if (retrier != null) {
+                    ctx.setAttribute(Retrier.DEADLINE_KEY, System.currentTimeMillis() + retryPolicy.getTimeout());
                     return retrier.execute(retrySupplier);
                 }
             }

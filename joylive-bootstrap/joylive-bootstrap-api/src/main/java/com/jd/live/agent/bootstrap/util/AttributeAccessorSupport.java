@@ -54,14 +54,10 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
         return this.attributes.keySet().toArray(new String[0]);
     }
 
-    protected void copyAttributesFrom(AttributeAccessor source) {
+    public void copyAttributesFrom(AttributeAccessor source) {
         String[] attributeNames = source.attributeNames();
-        String[] var3 = attributeNames;
-        int var4 = attributeNames.length;
-
-        for (int var5 = 0; var5 < var4; ++var5) {
-            String attributeName = var3[var5];
-            this.setAttribute(attributeName, source.getAttribute(attributeName));
+        for (String name : attributeNames) {
+            this.setAttribute(name, source.getAttribute(name));
         }
     }
 

@@ -19,7 +19,6 @@ import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
