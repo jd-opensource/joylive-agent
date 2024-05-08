@@ -29,6 +29,8 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
 
     public static final String RESPONSE_KEY = "response";
 
+    public static final String DEADLINE_KEY = "deadline";
+
     private final RetryPolicy retryPolicy;
 
     public SpringRetryPolicy(RetryPolicy retryPolicy) {
@@ -38,6 +40,12 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
     @Override
     public boolean canRetry(RetryContext context) {
         Throwable t = context.getLastThrowable();
+        if (context.hasAttribute(SpringRetryPolicy.DEADLINE_KEY)) {
+            Long deadline = (Long) context.getAttribute(SpringRetryPolicy.DEADLINE_KEY);
+            if (System.currentTimeMillis() > deadline) {
+                return false;
+            }
+        }
         boolean can = (t == null || retryPolicy.isRetry(t)) && context.getRetryCount() < this.getMaxAttempts();
         if (!can && context.hasAttribute(RESPONSE_KEY)) {
             Response response = (Response) context.getAttribute(RESPONSE_KEY);
