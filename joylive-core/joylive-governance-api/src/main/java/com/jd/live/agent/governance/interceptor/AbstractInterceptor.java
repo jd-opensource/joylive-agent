@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
@@ -38,8 +39,6 @@ import com.jd.live.agent.governance.response.Response;
 
 import java.util.List;
 import java.util.function.Supplier;
-
-import static com.jd.live.agent.governance.invoke.retry.Retrier.DEADLINE_KEY;
 
 /**
  * AbstractInterceptor is the base class for all interceptors within the framework.
@@ -218,7 +217,7 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                 if (retrier != null) {
                     Long timeout = retryPolicy.getTimeout();
                     if (timeout != null && timeout > 0) {
-                        RequestContext.getOrCreate().setAttribute(DEADLINE_KEY, System.currentTimeMillis() + timeout);
+                        RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_DEADLINE, System.currentTimeMillis() + timeout);
                     }
                     return retrier.execute(retrySupplier);
                 }
