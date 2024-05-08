@@ -178,7 +178,7 @@ public class AdviceHandler {
     }
 
     /**
-     * Removes an advice identified by its unique key.
+     * Removes advice identified by its unique key.
      *
      * @param adviceKey the unique key of the advice to be removed
      */

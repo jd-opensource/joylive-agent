@@ -44,12 +44,12 @@ import java.util.List;
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(FeignRequestDefinition.TYPE_FEIGN_CLIENT_CLASS)
-public class FeignRequestDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(FeignClientRequestDefinition.TYPE_FEIGN_CLIENT_CLASS)
+public class FeignClientRequestDefinition extends PluginDefinitionAdapter {
 
     public static final String TYPE_FEIGN_CLIENT_CLASS = "feign.Client";
 
-    private static final String METHOD_EXECUTE_INTERNAL = "execute";
+    private static final String METHOD_EXECUTE = "execute";
 
     private static final String[] ARGUMENT_EXECUTE = new String[]{
             "feign.Request", "feign.Request.Options"
@@ -62,12 +62,11 @@ public class FeignRequestDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.PLUGIN)
     private List<OutboundFilter> filters;
 
-    public FeignRequestDefinition() {
+    public FeignClientRequestDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_FEIGN_CLIENT_CLASS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE_INTERNAL).
-                                and(MatcherBuilder.arguments(ARGUMENT_EXECUTE)),
+                        MatcherBuilder.named(METHOD_EXECUTE),
                         () -> new FeignRequestInterceptor(context, filters)
                 )
         };

@@ -14,6 +14,7 @@
     <properties>
         <!-- Only this version for jdk1.8 -->
         <resilience4j.version>1.7.1</resilience4j.version>
+        <vavr.version>0.10.2</vavr.version>
     </properties>
 
     <dependencies>
@@ -32,6 +33,11 @@
             <artifactId>resilience4j-retry</artifactId>
             <version>${resilience4j.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.vavr</groupId>
+            <artifactId>vavr</artifactId>
+            <version>${vavr.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -45,6 +51,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>io.github.resilience4j:*</include>
+                                    <include>io.vavr:*</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
@@ -64,6 +71,10 @@
                                 <relocation>
                                     <pattern>io.github.resilience4j</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.io.github.resilience4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.vavr</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.vavr</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
