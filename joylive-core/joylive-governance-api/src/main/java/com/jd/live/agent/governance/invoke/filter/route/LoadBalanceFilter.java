@@ -72,7 +72,7 @@ public class LoadBalanceFilter implements RouteFilter {
                     }
                     backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
                     backends.remove(backend);
-                } while (!endpoints.isEmpty());
+                } while (!backends.isEmpty());
                 return null;
             });
         }
