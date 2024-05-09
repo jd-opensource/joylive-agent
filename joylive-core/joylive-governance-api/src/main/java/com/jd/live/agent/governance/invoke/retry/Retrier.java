@@ -27,6 +27,8 @@ import java.util.function.Supplier;
  */
 public interface Retrier {
 
+    String RETRY_MARK = "retryMark";
+
     /**
      * Execute retry logic
      *

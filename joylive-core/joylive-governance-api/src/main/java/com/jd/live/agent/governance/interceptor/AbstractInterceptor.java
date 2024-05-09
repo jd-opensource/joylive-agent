@@ -207,10 +207,11 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * attempt. Returns null if the response is null or if no retry is
          * performed and the initial attempt fails.
          */
-        protected Object invokeWithRetry(O invocation, MethodContext ctx) {
+        protected Response invokeWithRetry(O invocation, MethodContext ctx) {
             Supplier<Response> retrySupplier = createRetrySupplier(ctx);
             ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
             RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
+            Response response = null;
             if (retryPolicy != null && retryPolicy.isEnabled()) {
                 RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
                 Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
@@ -221,11 +222,12 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
                     } else {
                         RequestContext.removeAttribute(Carrier.ATTRIBUTE_DEADLINE);
                     }
-                    return retrier.execute(retrySupplier);
+                    response = retrier.execute(retrySupplier);
                 }
+            } else {
+                response = retrySupplier.get();
             }
-            Response response = retrySupplier.get();
-            return response == null ? null : response.getResponse();
+            return response;
         }
     }
 
@@ -285,7 +287,7 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          *
          * @param invocation the OutboundInvocation to which the filters will be applied
          * @return A list of endpoints that have been determined as suitable targets for the invocation after
-         *         applying the route filters.
+         * applying the route filters.
          */
         protected List<? extends Endpoint> routing(O invocation) {
             RouteFilterChain.Chain chain = new RouteFilterChain.Chain(routeFilters);
@@ -545,7 +547,7 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          *
          * @param invocation The OutboundInvocation to which the route filters will be applied.
          * @return A list of endpoints that have been determined as suitable targets for the invocation after applying the
-         *         route filters.
+         * route filters.
          */
         protected List<? extends Endpoint> routing(OutboundInvocation<? extends O> invocation) {
             RouteFilterChain.Chain chain = new RouteFilterChain.Chain(routeFilters);

@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttp
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ClientHttpOutboundResponse;
@@ -32,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -56,12 +58,26 @@ public class InterceptingClientHttpRequestInterceptor extends AbstractHttpOutbou
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        if (RequestContext.getAttribute(Retrier.RETRY_MARK) != null) {
+            return;
+        } else {
+            RequestContext.setAttribute(Retrier.RETRY_MARK, Boolean.TRUE);
+        }
         MethodContext mc = (MethodContext) ctx;
         HttpRequest request = (HttpRequest) mc.getTarget();
         HttpOutboundInvocation<ReactiveOutboundRequest> invocation;
         try {
             invocation = process(new ReactiveOutboundRequest(request, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
-            mc.setResult(invokeWithRetry(invocation, mc));
+            Response response = invokeWithRetry(invocation, mc);
+            if (response.getThrowable() != null) {
+                if (response.getThrowable() instanceof InvocationTargetException) {
+                    mc.setThrowable(((InvocationTargetException) response.getThrowable()).getTargetException());
+                } else {
+                    mc.setThrowable(response.getThrowable());
+                }
+            } else {
+                mc.setResult(response.getResponse());
+            }
         } catch (RejectException e) {
             mc.setThrowable(HttpClientErrorException.create(
                     e.getMessage(),
@@ -70,16 +86,10 @@ public class InterceptingClientHttpRequestInterceptor extends AbstractHttpOutbou
                     request.getHeaders(),
                     null,
                     StandardCharsets.UTF_8));
+        } finally {
+            RequestContext.remove();
         }
         mc.setSkip(true);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onExit(ExecutableContext ctx) {
-        RequestContext.remove();
     }
 
     @Override

@@ -134,12 +134,12 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
     /**
      * Determines if the provided response is retryable based on the nature of the response
      * and the type of exception it contains.
-     *
+     * <p>
      * This method considers a response retryable under two main conditions:
      * 1. The response object is null, indicating that no successful response was received.
      * 2. The throwable within the response is an instance of {@code SofaRpcException} with
-     *    specific error types such as SERVER_BUSY or CLIENT_TIMEOUT, which are typically
-     *    transient errors and might be resolved upon retrying.
+     * specific error types such as SERVER_BUSY or CLIENT_TIMEOUT, which are typically
+     * transient errors and might be resolved upon retrying.
      *
      * @param response The RPC response to evaluate for retryability.
      * @return {@code true} if the response is considered retryable; {@code false} otherwise.
@@ -175,7 +175,7 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
      */
     private static class SofaRpcInvocationContext extends InvocationContext.InvocationContextDelegate {
 
-        public SofaRpcInvocationContext(InvocationContext delegate) {
+        SofaRpcInvocationContext(InvocationContext delegate) {
             super(delegate);
         }
 
@@ -200,7 +200,7 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
      */
     private static class SofaRpcLoadBalancer extends LoadBalancer.LoadBalancerDelegate {
 
-        public SofaRpcLoadBalancer(LoadBalancer delegate) {
+        SofaRpcLoadBalancer(LoadBalancer delegate) {
             super(delegate);
         }
 

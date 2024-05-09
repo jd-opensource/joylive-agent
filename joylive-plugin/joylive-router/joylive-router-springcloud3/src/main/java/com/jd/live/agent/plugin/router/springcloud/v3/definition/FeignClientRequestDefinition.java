@@ -29,7 +29,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignRequestInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignClientRequestInterceptor;
 
 import java.util.List;
 
@@ -52,7 +52,7 @@ public class FeignClientRequestDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_EXECUTE = "execute";
 
     private static final String[] ARGUMENT_EXECUTE = new String[]{
-            "feign.Request", "feign.Request.Options"
+            "feign.Request", "feign.Request$Options"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
@@ -66,8 +66,9 @@ public class FeignClientRequestDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_FEIGN_CLIENT_CLASS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE),
-                        () -> new FeignRequestInterceptor(context, filters)
+                        MatcherBuilder.named(METHOD_EXECUTE).
+                                and(MatcherBuilder.arguments(ARGUMENT_EXECUTE)),
+                        () -> new FeignClientRequestInterceptor(context, filters)
                 )
         };
     }

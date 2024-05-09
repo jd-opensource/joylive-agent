@@ -18,10 +18,12 @@ package com.jd.live.agent.plugin.router.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractOutboundInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -29,6 +31,7 @@ import com.jd.live.agent.plugin.router.dubbo.v3.response.DubboResponse.DubboOutb
 import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.cluster.filter.support.ConsumerClassLoaderFilter;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 /**
@@ -50,17 +53,33 @@ public class ConsumerClassLoaderFilterInterceptor extends
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        if (RequestContext.getAttribute(Retrier.RETRY_MARK) != null) {
+            return;
+        } else {
+            RequestContext.setAttribute(Retrier.RETRY_MARK, Boolean.TRUE);
+        }
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = mc.getArguments();
         Invocation invocation = (Invocation) arguments[1];
         Object result;
         try {
             DubboOutboundInvocation outboundInvocation = process(new DubboOutboundRequest(invocation));
-            result = invokeWithRetry(outboundInvocation, mc);
+            Response response = invokeWithRetry(outboundInvocation, mc);
+            if (response.getThrowable() != null) {
+                if (response.getThrowable() instanceof InvocationTargetException) {
+                    mc.setThrowable(((InvocationTargetException) response.getThrowable()).getTargetException());
+                } else {
+                    mc.setThrowable(response.getThrowable());
+                }
+            } else {
+                mc.setResult(response.getResponse());
+            }
         } catch (RejectException e) {
             result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
+            mc.setResult(result);
+        } finally {
+            RequestContext.remove();
         }
-        mc.setResult(result);
         mc.setSkip(true);
     }
 

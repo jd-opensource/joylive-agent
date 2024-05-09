@@ -69,8 +69,8 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     /**
      * Constructs an OutboundInvocation with a request and a base invocation.
      *
-     * @param request     the request associated with this invocation
-     * @param invocation  the base invocation from which to derive properties
+     * @param request    the request associated with this invocation
+     * @param invocation the base invocation from which to derive properties
      */
     public OutboundInvocation(T request, Invocation<?> invocation) {
         this.request = request;
@@ -101,6 +101,18 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      */
     public List<? extends Endpoint> getEndpoints() {
         return routeTarget == null ? new ArrayList<>(0) : routeTarget.getEndpoints();
+    }
+
+    /**
+     * Get the routing target. When the routing target is empty, the default routing target is returned.
+     *
+     * @return RouteTarget
+     */
+    public RouteTarget getRouteTarget() {
+        if (null == routeTarget) {
+            routeTarget = RouteTarget.forward(getInstances());
+        }
+        return routeTarget;
     }
 
     @Override
