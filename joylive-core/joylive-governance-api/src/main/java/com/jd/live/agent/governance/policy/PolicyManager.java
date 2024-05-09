@@ -35,6 +35,7 @@ import com.jd.live.agent.governance.config.LaneConfig;
 import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
@@ -103,6 +104,16 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, TagMatcher> tagMatchers;
 
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private Map<String, LoadBalancer> loadBalancers;
+
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private LoadBalancer loadBalancer;
+
     private final AtomicInteger counter = new AtomicInteger(0);
 
     private final CompletableFuture<Void> future = new CompletableFuture<>();
@@ -121,6 +132,12 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     public RetrierFactory getOrDefaultRetrierFactory(String name) {
         RetrierFactory result = retrierFactories == null || name == null ? null : retrierFactories.get(name);
         return result == null ? retrierFactory : result;
+    }
+
+    @Override
+    public LoadBalancer getOrDefaultLoadBalancer(String name) {
+        LoadBalancer result = loadBalancers == null || name == null ? null : loadBalancers.get(name);
+        return result == null ? loadBalancer : result;
     }
 
     @Override

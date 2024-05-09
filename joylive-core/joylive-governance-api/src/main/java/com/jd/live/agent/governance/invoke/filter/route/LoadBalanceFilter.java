@@ -15,12 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.instance.Endpoint;
@@ -29,7 +25,6 @@ import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
-import com.jd.live.agent.governance.invoke.loadbalance.randomweight.RandomWeightLoadBalancer;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
@@ -39,22 +34,16 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * LoadBalanceFilter applies load balancing to the list of route targets. It ensures that
  * requests are distributed across available instances in a balanced manner based on the
  * configured load balancing policy.
  */
-@Injectable
 @Extension(value = "LoadBalanceFilter", order = RouteFilter.ORDER_LOADBALANCE)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LOADBALANCE_ENABLED, matchIfMissing = true)
 public class LoadBalanceFilter implements RouteFilter {
-
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private Map<String, LoadBalancer> loadBalancers;
 
     @Override
     public <T extends ServiceRequest.OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
@@ -136,10 +125,8 @@ public class LoadBalanceFilter implements RouteFilter {
     private LoadBalancer getLoadBalancer(OutboundInvocation<?> invocation) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
-        LoadBalancer loadBalancer = loadBalancePolicy == null ? null : loadBalancers.get(loadBalancePolicy.getPolicyType());
-        // If no load balancer is found, use a default random-weight load balancer
-        loadBalancer = loadBalancer == null ? RandomWeightLoadBalancer.INSTANCE : loadBalancer;
-        return loadBalancer;
+        String policyType = loadBalancePolicy == null ? null : loadBalancePolicy.getPolicyType();
+        return invocation.getContext().getOrDefaultLoadBalancer(policyType);
     }
 
 }

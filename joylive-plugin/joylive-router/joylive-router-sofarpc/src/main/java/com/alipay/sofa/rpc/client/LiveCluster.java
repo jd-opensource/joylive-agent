@@ -17,6 +17,7 @@ package com.alipay.sofa.rpc.client;
 
 import com.alipay.sofa.rpc.common.RpcConstants;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
+import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
@@ -24,6 +25,8 @@ import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.governance.request.StickyRequest;
 
 import java.util.List;
+
+import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
 
 /**
  * Represents a live cluster that manages sticky sessions for RPC requests.
@@ -84,7 +87,10 @@ public class LiveCluster implements StickyRequest {
      * @return a list of ProviderInfo objects that can potentially handle the request
      */
     public List<ProviderInfo> route(SofaRequest request) {
-        return cluster.getRouterChain().route(request, null);
+        long routerStartTime = System.nanoTime();
+        List<ProviderInfo> result = cluster.getRouterChain().route(request, null);
+        RpcInvokeContext.getContext().put(INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO, System.nanoTime() - routerStartTime);
+        return result;
     }
 
     /**

@@ -36,7 +36,7 @@ import java.util.function.Function;
  * the round-robin counter is scoped to that policy, ensuring that balancing is consistent
  * within the context of the policy.
  */
-@Extension(value = RoundRobinLoadBalancer.LOAD_BALANCER_NAME)
+@Extension(value = RoundRobinLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_ROUND_ROBIN)
 public class RoundRobinLoadBalancer implements LoadBalancer {
 
     /**

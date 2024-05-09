@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -131,5 +132,89 @@ public interface InvocationContext {
      * @return A map of strings to {@code TagMatcher} instances.
      */
     Map<String, TagMatcher> getTagMatchers();
+
+    /**
+     * etrieves the {@code LoadBalancer} instance associated with the specified name,
+     *      * or returns the default loadbalancer instance if no loadbalancer is found with that name.
+     *
+     * @param name The name of the loadbalancer.
+     * @return the {@code LoadBalancer} instance associated with the given name, or the
+     *         default loadbalancer if no matching name is found.
+     */
+    LoadBalancer getOrDefaultLoadBalancer(String name);
+
+    /**
+     * A delegate class for {@link InvocationContext} that forwards all its operations to another {@link InvocationContext} instance.
+     * This class acts as a wrapper or intermediary, allowing for additional behaviors to be inserted before or after
+     * the delegation of method calls. It implements the {@link InvocationContext} interface and can be used
+     * anywhere an InvocationContext is required, providing a flexible mechanism for extending or modifying the behavior
+     * of invocation contexts dynamically.
+     *
+     * <p>This delegate pattern is particularly useful for adding cross-cutting concerns like logging, monitoring,
+     * or security checks in a transparent manner, without altering the original behavior of the invocation context.</p>
+     *
+     * @see InvocationContext
+     */
+    class InvocationContextDelegate implements InvocationContext {
+
+        /**
+         * The {@link InvocationContext} instance to which this delegate will forward all method calls.
+         */
+        protected final InvocationContext delegate;
+
+        /**
+         * Constructs a new {@code InvocationContextDelegate} with a specified {@link InvocationContext} to delegate to.
+         *
+         * @param delegate The {@link InvocationContext} instance that this delegate will forward calls to.
+         */
+        public InvocationContextDelegate(InvocationContext delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Application getApplication() {
+            return delegate.getApplication();
+        }
+
+        @Override
+        public GovernanceConfig getGovernanceConfig() {
+            return delegate.getGovernanceConfig();
+        }
+
+        @Override
+        public PolicySupplier getPolicySupplier() {
+            return delegate.getPolicySupplier();
+        }
+
+        @Override
+        public Map<String, UnitFunction> getUnitFunctions() {
+            return delegate.getUnitFunctions();
+        }
+
+        @Override
+        public Map<String, VariableFunction> getVariableFunctions() {
+            return delegate.getVariableFunctions();
+        }
+
+        @Override
+        public Map<String, VariableParser<?, ?>> getVariableParsers() {
+            return delegate.getVariableParsers();
+        }
+
+        @Override
+        public RetrierFactory getOrDefaultRetrierFactory(String name) {
+            return delegate.getOrDefaultRetrierFactory(name);
+        }
+
+        @Override
+        public Map<String, TagMatcher> getTagMatchers() {
+            return delegate.getTagMatchers();
+        }
+
+        @Override
+        public LoadBalancer getOrDefaultLoadBalancer(String name) {
+            return delegate.getOrDefaultLoadBalancer(name);
+        }
+    }
 
 }

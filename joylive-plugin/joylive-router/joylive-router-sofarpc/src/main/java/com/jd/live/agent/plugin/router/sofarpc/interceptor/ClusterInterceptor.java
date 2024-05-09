@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.sofarpc.interceptor;
 import com.alipay.sofa.rpc.client.AbstractCluster;
 import com.alipay.sofa.rpc.client.LiveCluster;
 import com.alipay.sofa.rpc.client.ProviderInfo;
+import com.alipay.sofa.rpc.common.RpcConstants;
+import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.rpc.core.exception.RpcErrorType;
 import com.alipay.sofa.rpc.core.exception.SofaRouteException;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
@@ -29,8 +31,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractRouteInterceptor;
+import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
@@ -66,11 +70,9 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
         MethodContext mc = (MethodContext) ctx;
         SofaRequest request = (SofaRequest) ctx.getArguments()[0];
         LiveCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(), LiveCluster::new);
-        List<ProviderInfo> invokers = cluster.route(request);
-        List<SofaRpcEndpoint> instances = invokers.stream().map(e -> new SofaRpcEndpoint(e, cluster::isConnected)).collect(Collectors.toList());
         SofaRpcOutboundRequest outboundRequest = new SofaRpcOutboundRequest(request, cluster);
         SofaRpcOutboundInvocation invocation = createOutlet(outboundRequest);
-        Response response = invokeWithRetry(invocation, () -> invoke(request, invocation, cluster, instances));
+        Response response = invokeWithRetry(invocation, () -> invoke(request, invocation, cluster));
         if (response.getThrowable() != null) {
             mc.setThrowable(response.getThrowable());
         } else {
@@ -96,16 +98,16 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
      * @param request    The {@link SofaRequest} representing the RPC call to be made.
      * @param invocation The {@link SofaRpcOutboundInvocation} context holding invocation details.
      * @param cluster    The {@link LiveCluster} through which the request is to be executed.
-     * @param instances  A list of {@link SofaRpcEndpoint} instances from which the endpoints are selected.
      * @return A {@link SofaRpcOutboundResponse} representing the outcome of the invocation. This response may
      * contain the result of the RPC call or an exception if the call was unsuccessful or no endpoints could be found.
      * @throws RejectException If the invocation is rejected by the routing logic or cluster configuration.
      */
     private SofaRpcOutboundResponse invoke(SofaRequest request,
                                            SofaRpcOutboundInvocation invocation,
-                                           LiveCluster cluster,
-                                           List<SofaRpcEndpoint> instances) {
+                                           LiveCluster cluster) {
         try {
+            List<ProviderInfo> invokers = cluster.route(request);
+            List<SofaRpcEndpoint> instances = invokers.stream().map(e -> new SofaRpcEndpoint(e, cluster::isConnected)).collect(Collectors.toList());
             invocation.setInstances(instances);
             List<? extends Endpoint> endpoints = routing(invocation);
             if (endpoints != null && !endpoints.isEmpty()) {
@@ -126,7 +128,7 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
 
     @Override
     protected SofaRpcOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
-        return new SofaRpcOutboundInvocation(request, context);
+        return new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
     }
 
     /**
@@ -154,6 +156,62 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<SofaRpcOutbound
                 return true;
             default:
                 return false;
+        }
+    }
+
+    /**
+     * A specialized {@link InvocationContextDelegate} designed for use within the SOFA RPC environment.
+     * This class overrides the {@code getLoadBalancer} method to return an instance of {@link SofaRpcLoadBalancer},
+     * effectively customizing the load balancing strategy for SOFA RPC invocations.
+     *
+     * <p>The {@code SofaRpcInvocationContext} serves as an extension to the standard invocation context, providing
+     * a mechanism to utilize a custom load balancer that is specifically tailored for handling the nuances and
+     * requirements of load balancing in SOFA RPC services. This allows for enhanced control over service invocation
+     * and routing, potentially improving performance, reliability, and service discovery in distributed SOFA RPC
+     * environments.</p>
+     *
+     * @see InvocationContextDelegate
+     * @see LoadBalancer
+     */
+    private static class SofaRpcInvocationContext extends InvocationContext.InvocationContextDelegate {
+
+        public SofaRpcInvocationContext(InvocationContext delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public LoadBalancer getOrDefaultLoadBalancer(String name) {
+            return new SofaRpcLoadBalancer(super.getOrDefaultLoadBalancer(name));
+        }
+    }
+
+    /**
+     * A specialized {@link LoadBalancer.LoadBalancerDelegate} designed for use within the SOFA RPC framework.
+     * This class overrides the {@code doSelect} method to add functionality for measuring the time taken
+     * to select an endpoint from a list of available endpoints. The selection time is then recorded in the
+     * {@link RpcInvokeContext} for monitoring, debugging, or other purposes.
+     *
+     * <p>The addition of timing logic allows for the observation and analysis of load balancing performance,
+     * potentially aiding in the optimization of service discovery and request routing within a distributed
+     * SOFA RPC environment. This class demonstrates a practical application of the Decorator pattern to enhance
+     * or modify the behavior of an existing load balancer with minimal impact on the existing infrastructure.</p>
+     *
+     * @see LoadBalancer.LoadBalancerDelegate
+     */
+    private static class SofaRpcLoadBalancer extends LoadBalancer.LoadBalancerDelegate {
+
+        public SofaRpcLoadBalancer(LoadBalancer delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public <T extends Endpoint> T doSelect(List<T> endpoints, Invocation<?> invocation) {
+            long loadBalanceStartTime = System.nanoTime();
+            T result = super.doSelect(endpoints, invocation);
+            RpcInvokeContext.getContext().put(RpcConstants.INTERNAL_KEY_CLIENT_BALANCER_TIME_NANO,
+                    System.nanoTime() - loadBalanceStartTime);
+            return result;
+
         }
     }
 }

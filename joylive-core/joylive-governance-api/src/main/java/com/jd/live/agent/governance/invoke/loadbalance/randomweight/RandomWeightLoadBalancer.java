@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @since 1.0.0
  */
-@Extension(value = RandomWeightLoadBalancer.LOAD_BALANCER_NAME)
+@Extension(value = RandomWeightLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_RANDOM_WEIGHT)
 public class RandomWeightLoadBalancer implements LoadBalancer {
 
     /**

@@ -29,6 +29,10 @@ import java.util.List;
 @Extensible("LoadBalancer")
 public interface LoadBalancer {
 
+    int ORDER_RANDOM_WEIGHT = 0;
+
+    int ORDER_ROUND_ROBIN = ORDER_RANDOM_WEIGHT + 1;
+
     /**
      * Chooses an endpoint from a list based on the invocation context. If the list is null or empty,
      * returns null. If the list contains only one endpoint, returns that endpoint. Otherwise,
@@ -58,5 +62,48 @@ public interface LoadBalancer {
      * @return The selected endpoint.
      */
     <T extends Endpoint> T doSelect(List<T> endpoints, Invocation<?> invocation);
+
+    /**
+     * A delegate class for load balancing that forwards all its operations to another {@link LoadBalancer} instance.
+     * This class acts as a wrapper or intermediary, allowing for additional behaviors to be inserted before or after
+     * the delegation of the load balancing task. It implements the {@link LoadBalancer} interface and can be used
+     * anywhere a LoadBalancer is required, providing a flexible mechanism for extending or modifying load balancing
+     * behavior dynamically.
+     *
+     * @see LoadBalancer
+     */
+    class LoadBalancerDelegate implements LoadBalancer {
+
+        /**
+         * The {@link LoadBalancer} instance to which this delegate will forward all method calls.
+         */
+        protected LoadBalancer delegate;
+
+        /**
+         * Constructs a new {@code LoadBalancerDelegate} with a specified {@link LoadBalancer} to delegate to.
+         *
+         * @param delegate The {@link LoadBalancer} instance that this delegate will forward calls to.
+         */
+        public LoadBalancerDelegate(LoadBalancer delegate) {
+            this.delegate = delegate;
+        }
+
+        /**
+         * Delegates the selection of an endpoint to the underlying {@link LoadBalancer} instance. This method
+         * is called to select an appropriate {@link Endpoint} from a list of available endpoints based on the
+         * current load balancing strategy.
+         *
+         * @param <T>        The type of {@link Endpoint} to be selected.
+         * @param endpoints  A list of available endpoints from which one will be selected.
+         * @param invocation The invocation context, which may contain metadata or other information used in the
+         *                   selection process.
+         * @return The selected {@link Endpoint}, or {@code null} if no suitable endpoint could be found.
+         */
+        @Override
+        public <T extends Endpoint> T doSelect(List<T> endpoints, Invocation<?> invocation) {
+            return delegate.doSelect(endpoints, invocation);
+        }
+    }
+
 
 }
