@@ -24,6 +24,7 @@ import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.governance.request.StickyRequest;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
@@ -59,19 +60,7 @@ public class LiveCluster implements StickyRequest {
 
     @Override
     public String getStickyId() {
-        if (stickyId != null) {
-            return stickyId;
-        }
-        RpcInternalContext context = RpcInternalContext.peekContext();
-        String targetIP = (String) context.getAttachment(RpcConstants.HIDDEN_KEY_PINPOINT);
-        if (targetIP != null && !targetIP.isEmpty()) {
-            try {
-                ProviderInfo providerInfo = ProviderHelper.toProviderInfo(targetIP);
-                return providerInfo.getHost() + ":" + providerInfo.getPort();
-            } catch (Throwable ignore) {
-            }
-        }
-        return null;
+        return stickyId;
     }
 
     @Override
@@ -90,7 +79,46 @@ public class LiveCluster implements StickyRequest {
         long routerStartTime = System.nanoTime();
         List<ProviderInfo> result = cluster.getRouterChain().route(request, null);
         RpcInvokeContext.getContext().put(INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO, System.nanoTime() - routerStartTime);
+
+        result = result == null ? new ArrayList<>() : result;
+        if (result.isEmpty()) {
+            ProviderInfo directProvider = getDirectProvider();
+            if (directProvider != null) {
+                result.add(directProvider);
+            }
+        }
         return result;
+    }
+
+    /**
+     * Attempts to retrieve a direct {@link ProviderInfo} instance based on a target IP address specified
+     * in the {@link RpcInternalContext}. This method is particularly useful for scenarios requiring direct
+     * routing to a specific service provider, bypassing the usual load balancing mechanisms.
+     *
+     * <p>The target IP address is expected to be provided as an attachment in the {@link RpcInternalContext}
+     * under the key defined by {@link RpcConstants#HIDDEN_KEY_PINPOINT}. If the target IP is specified and
+     * is not an empty string, the method attempts to convert it into a {@link ProviderInfo} object using
+     * {@link ProviderHelper#toProviderInfo(String)}. If the conversion is successful, the resulting
+     * {@link ProviderInfo} object is returned. Otherwise, or if no target IP is specified, the method
+     * returns {@code null}.</p>
+     *
+     * <p>This method is particularly useful in testing or debugging scenarios where direct communication
+     * with a specific service provider instance is necessary. It also serves use cases where a particular
+     * service instance needs to be targeted due to its unique characteristics or state.</p>
+     *
+     * @return The {@link ProviderInfo} corresponding to the direct target IP address specified in the
+     *         {@link RpcInternalContext}, or {@code null} if the IP address is not specified, is empty,
+     *         or if the conversion to {@link ProviderInfo} fails for any reason.
+     */
+    private ProviderInfo getDirectProvider() {
+        String targetIP = (String) RpcInternalContext.peekContext().getAttachment(RpcConstants.HIDDEN_KEY_PINPOINT);
+        if (targetIP != null && !targetIP.isEmpty()) {
+            try {
+                return ProviderHelper.toProviderInfo(targetIP);
+            } catch (Throwable ignore) {
+            }
+        }
+        return null;
     }
 
     /**
