@@ -122,7 +122,7 @@ public interface SofaRpcRequest {
 
         @Override
         public RuntimeException createNoAvailableEndpointException() {
-            return new SofaRouteException(LogCodes.getLog(LogCodes.ERROR_TARGET_URL_INVALID, request.getTargetServiceUniqueName(), "[]"));
+            return new SofaRouteException(LogCodes.getLog(LogCodes.ERROR_NO_AVAILABLE_PROVIDER, request.getTargetServiceUniqueName(), "[]"));
         }
 
         /**
