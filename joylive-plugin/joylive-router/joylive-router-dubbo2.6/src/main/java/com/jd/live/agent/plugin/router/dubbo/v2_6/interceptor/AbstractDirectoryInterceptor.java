@@ -25,7 +25,6 @@ import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractRouteInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -64,11 +63,6 @@ public class AbstractDirectoryInterceptor extends AbstractRouteInterceptor<Dubbo
         } catch (RejectException e) {
             mc.setThrowable(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
         }
-    }
-
-    @Override
-    protected void routing(DubboOutboundInvocation invocation) {
-        new RouteFilterChain.Chain(routeFilters).filter(invocation);
     }
 
     @Override

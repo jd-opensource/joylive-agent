@@ -21,8 +21,6 @@ import com.jd.live.agent.governance.policy.service.annotation.Consumer;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -73,7 +71,7 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
-    private Set<String> retryStatuses = new HashSet<>(Arrays.asList("500", "502", "503"));
+    private Set<String> retryStatuses;
 
     /**
      * A collection of retryable exception class names.

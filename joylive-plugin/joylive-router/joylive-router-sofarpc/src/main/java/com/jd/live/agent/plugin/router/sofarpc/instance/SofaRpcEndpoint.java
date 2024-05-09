@@ -37,13 +37,13 @@ public class SofaRpcEndpoint implements Endpoint {
 
     private final ProviderInfo provider;
 
-    private final Predicate<Endpoint> predicate;
+    private final Predicate<ProviderInfo> predicate;
 
     public SofaRpcEndpoint(ProviderInfo provider) {
         this(provider, null);
     }
 
-    public SofaRpcEndpoint(ProviderInfo provider, Predicate<Endpoint> predicate) {
+    public SofaRpcEndpoint(ProviderInfo provider, Predicate<ProviderInfo> predicate) {
         this.provider = provider;
         this.predicate = predicate;
     }
@@ -97,7 +97,7 @@ public class SofaRpcEndpoint implements Endpoint {
     }
 
     @Override
-    public Predicate<Endpoint> getPredicate() {
-        return predicate;
+    public boolean predicate() {
+        return predicate == null || predicate.test(provider);
     }
 }

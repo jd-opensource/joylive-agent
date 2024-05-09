@@ -27,7 +27,10 @@ import java.time.Duration;
 import java.util.function.Supplier;
 
 /**
- * Resilience4jRetrier
+ * Implements a retrier using the Resilience4j library to apply retry logic
+ * based on a specified {@link RetryPolicy}. This class allows operations to be
+ * retried according to configurable criteria such as the maximum number of attempts,
+ * wait duration between attempts, and conditions that trigger a retry.
  *
  * @since 1.0.0
  */
@@ -37,17 +40,58 @@ public class Resilience4jRetrier implements Retrier {
 
     private final Retry retry;
 
+    /**
+     * Constructs a new {@code Resilience4jRetrier} with the specified retry policy.
+     * This sets up the retry behavior based on the policy parameters such as maximum
+     * retry attempts, retry interval, and retry conditions.
+     *
+     * @param policy The {@link RetryPolicy} defining the retry behavior.
+     */
     public Resilience4jRetrier(RetryPolicy policy) {
         this.policy = policy;
-        RetryConfig config = RetryConfig.custom()
+        this.retry = getRetry(policy);
+    }
+
+    /**
+     * Configures and returns a {@link Retry} instance based on the provided
+     * {@link RetryPolicy}. This method sets up the retry configuration including
+     * the maximum number of attempts, wait duration between retries, and conditions
+     * that dictate whether a retry should occur.
+     *
+     * @param policy The {@link RetryPolicy} to base the retry configuration on.
+     * @return A configured {@link Retry} instance.
+     */
+    private Retry getRetry(RetryPolicy policy) {
+        RetryConfig config = RetryConfig.<Response>custom()
                 .maxAttempts(policy.getRetry() + 1)
                 .waitDuration(Duration.ofMillis(policy.getRetryInterval()))
-                .retryOnResult(response -> !RequestContext.isTimeout() && policy.isRetry(((Response) response).getCode()))
-                .retryOnException(throwable -> !RequestContext.isTimeout() && policy.isRetry(throwable))
+                .retryOnResult(this::predicate)
                 .failAfterMaxAttempts(true)
                 .build();
-        RetryRegistry registry = RetryRegistry.of(config);
-        retry = registry.retry(policy.getId().toString());
+        return RetryRegistry.of(config).retry(policy.getId().toString());
+    }
+
+    /**
+     * Evaluates whether a given response should trigger a retry. This method
+     * checks various conditions such as null responses, timeout occurrences,
+     * specific response codes, throwable conditions, and custom predicates
+     * defined within the response to determine if a retry is warranted.
+     *
+     * @param response The {@link Response} to evaluate for retry.
+     * @return {@code true} if the response meets the criteria for retrying; {@code false} otherwise.
+     */
+    private boolean predicate(Response response) {
+        if (response == null) {
+            return false;
+        } else if (RequestContext.isTimeout()) {
+            return false;
+        } else if (policy.isRetry(response.getCode())) {
+            return true;
+        } else if (policy.isRetry(response.getThrowable())) {
+            return true;
+        } else {
+            return response.isRetryable();
+        }
     }
 
     /**

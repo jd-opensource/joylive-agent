@@ -37,9 +37,7 @@ public class SpringRetrier implements Retrier {
     public SpringRetrier(RetryPolicy policy) {
         this.policy = policy;
         this.retryTemplate = new RetryTemplate();
-        SpringRetryPolicy retryPolicy = new SpringRetryPolicy(policy);
-        retryPolicy.setMaxAttempts(policy.getRetry() + 1);
-        retryTemplate.setRetryPolicy(retryPolicy);
+        retryTemplate.setRetryPolicy(new SpringRetryPolicy(policy));
         FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
         fixedBackOffPolicy.setBackOffPeriod(policy.getRetryInterval());
         retryTemplate.setBackOffPolicy(fixedBackOffPolicy);

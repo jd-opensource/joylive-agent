@@ -32,6 +32,7 @@ import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.randomweight.RandomWeightLoadBalancer;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
@@ -58,6 +59,10 @@ public class LoadBalanceFilter implements RouteFilter {
     @Override
     public <T extends ServiceRequest.OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
+        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+        StickyType stickyType = loadBalancePolicy == null ? null : loadBalancePolicy.getStickyType();
+        stickyType = stickyType == null ? StickyType.NONE : stickyType;
         if (!target.isEmpty()) {
             List<? extends Endpoint> candidates = preferSticky(target);
             if (candidates != null && !candidates.isEmpty()) {
@@ -80,15 +85,16 @@ public class LoadBalanceFilter implements RouteFilter {
                     return null;
                 });
             }
+            if (stickyType != StickyType.NONE) {
+                candidates = target.getEndpoints();
+                if (candidates != null && !candidates.isEmpty()) {
+                    invocation.getRequest().setStickyId(candidates.get(0).getId());
+                }
+            }
         }
 
         T request = invocation.getRequest();
-        if (target.isEmpty()) {
-            RuntimeException exception = request.createNoAvailableEndpointException();
-            if (exception != null) {
-                throw exception;
-            }
-        } else {
+        if (!target.isEmpty()) {
             Endpoint endpoint = target.getEndpoints().get(0);
             request.addAttempt(endpoint.getId());
         }

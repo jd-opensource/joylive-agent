@@ -233,6 +233,16 @@ public class MatcherBuilder {
     }
 
     /**
+     * Creates a matcher that matches elements that are abstract.
+     *
+     * @param <T> The type of the element.
+     * @return A matcher that matches private elements.
+     */
+    public static <T extends ModifierDesc> Junction<T> isAbstract() {
+        return ModifierMatcher.of(Mode.ABSTRACT);
+    }
+
+    /**
      * Creates a matcher that matches methods with the specified parameter types.
      *
      * @param types The names of the parameter types to match.

@@ -284,8 +284,14 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * This method must be implemented by concrete subclasses to define how the route filters are applied.
          *
          * @param invocation the OutboundInvocation to which the filters will be applied
+         * @return A list of endpoints that have been determined as suitable targets for the invocation after
+         *         applying the route filters.
          */
-        protected abstract void routing(O invocation);
+        protected List<? extends Endpoint> routing(O invocation) {
+            RouteFilterChain.Chain chain = new RouteFilterChain.Chain(routeFilters);
+            chain.filter(invocation);
+            return invocation.getEndpoints();
+        }
 
         /**
          * Creates a new OutboundInvocation for the given outbound request.
@@ -308,6 +314,42 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
             O result = createOutlet(request);
             result.setInstances(instances);
             return result;
+        }
+
+        /**
+         * Executes an RPC call with retry logic based on the invocation's associated retry policy.
+         * <p>
+         * This method first determines if a retry policy is defined and enabled for the given invocation. If a retry policy
+         * is applicable, it attempts to execute the supplied RPC call using a retrier that adheres to the retry policy's
+         * parameters, such as retry type and timeout. If the retry policy specifies a timeout, this method also adjusts
+         * the request context's deadline attribute accordingly.
+         * </p>
+         * <p>
+         * If no retry policy is enabled or if the retrier cannot be obtained, this method directly executes the RPC call
+         * once without any retry logic.
+         * </p>
+         *
+         * @param invocation The invocation context of the RPC call, which may contain service metadata including the retry policy.
+         * @param supplier   A supplier that executes the RPC call and returns a response.
+         * @return The response from the RPC call, either from the initial attempt or after retrying according to the retry policy.
+         */
+        protected Response invokeWithRetry(O invocation, Supplier<Response> supplier) {
+            ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
+            RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
+            if (retryPolicy != null && retryPolicy.isEnabled()) {
+                RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
+                Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
+                if (retrier != null) {
+                    Long timeout = retryPolicy.getTimeout();
+                    if (timeout != null && timeout > 0) {
+                        RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_DEADLINE, System.currentTimeMillis() + timeout);
+                    } else {
+                        RequestContext.removeAttribute(Carrier.ATTRIBUTE_DEADLINE);
+                    }
+                    return retrier.execute(supplier);
+                }
+            }
+            return supplier.get();
         }
     }
 
@@ -408,11 +450,6 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
             result.setInstances(instances);
             return result;
         }
-
-        @Override
-        protected void routing(HttpOutboundInvocation<T> invocation) {
-            new RouteFilterChain.Chain(routeFilters).filter(invocation);
-        }
     }
 
     /**
@@ -507,9 +544,13 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * Applies the route filters to the given OutboundInvocation as part of the routing process.
          *
          * @param invocation The OutboundInvocation to which the route filters will be applied.
+         * @return A list of endpoints that have been determined as suitable targets for the invocation after applying the
+         *         route filters.
          */
-        protected void routing(OutboundInvocation<? extends O> invocation) {
-            new RouteFilterChain.Chain(routeFilters).filter(invocation);
+        protected List<? extends Endpoint> routing(OutboundInvocation<? extends O> invocation) {
+            RouteFilterChain.Chain chain = new RouteFilterChain.Chain(routeFilters);
+            chain.filter(invocation);
+            return invocation.getEndpoints();
         }
     }
 

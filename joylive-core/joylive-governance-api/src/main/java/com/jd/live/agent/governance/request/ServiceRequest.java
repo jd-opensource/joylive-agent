@@ -59,34 +59,6 @@ public interface ServiceRequest extends Request {
     String getPath();
 
     /**
-     * Retrieves a set of identifiers that represent the attempts made for this request.
-     *
-     * @return A Set of String identifiers for the attempts.
-     */
-    Set<String> getAttempts();
-
-    /**
-     * Adds an attempt identifier to this service request.
-     * <p>
-     * This method is used to track retries or other types of attempts related to processing the service request.
-     * If the {@code attempt} parameter is not {@code null}, it will be added to the set of attempt identifiers.
-     * If no attempts have previously been added, a new set will be initialized.
-     * </p>
-     *
-     * @param attempt The identifier of the attempt to add.
-     */
-    void addAttempt(String attempt);
-
-    /**
-     * Retrieves the sticky session ID associated with the request, if any.
-     *
-     * @return The sticky session ID as a String, or {@code null} if not applicable.
-     */
-    default String getStickyId() {
-        return null;
-    }
-
-    /**
      * Rejects the request with the given fault type and reason.
      *
      * @param type   The type of fault.
@@ -130,7 +102,26 @@ public interface ServiceRequest extends Request {
      * @author Zhiguo.Chen
      * @since 1.0.0
      */
-    interface OutboundRequest extends ServiceRequest {
+    interface OutboundRequest extends ServiceRequest, StickyRequest {
+
+        /**
+         * Retrieves a set of identifiers that represent the attempts made for this request.
+         *
+         * @return A Set of String identifiers for the attempts.
+         */
+        Set<String> getAttempts();
+
+        /**
+         * Adds an attempt identifier to this service request.
+         * <p>
+         * This method is used to track retries or other types of attempts related to processing the service request.
+         * If the {@code attempt} parameter is not {@code null}, it will be added to the set of attempt identifiers.
+         * If no attempts have previously been added, a new set will be initialized.
+         * </p>
+         *
+         * @param attempt The identifier of the attempt to add.
+         */
+        void addAttempt(String attempt);
 
         /**
          * Retrieves the configured timeout value.
@@ -160,16 +151,6 @@ public interface ServiceRequest extends Request {
          * @param timeout The desired timeout in milliseconds. A value of 0 indicates no timeout.
          */
         default void setTimeout(long timeout) {
-        }
-
-        /**
-         * Provides a default exception to be thrown or handled when there is not any available endpoint.
-         *
-         * @return a {@link Throwable} representing the exception to be thrown or handled when
-         * there is not any available endpoint. By default, a {@link RuntimeException} is returned.
-         */
-        default RuntimeException createNoAvailableEndpointException() {
-            return null;
         }
 
     }

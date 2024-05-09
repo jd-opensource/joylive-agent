@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
@@ -313,22 +312,6 @@ public interface Endpoint extends Matcher<TagCondition> {
     }
 
     /**
-     * Retrieves a predicate used for filtering endpoints.
-     * <p>
-     * This default implementation returns {@code null}, indicating that there is no
-     * predicate associated by default. Implementing classes should override this method
-     * to provide an actual predicate that can be used to filter endpoints based on
-     * specific criteria.
-     * </p>
-     *
-     * @return {@code null} by default. Implementing classes should override this
-     * method to return a non-null {@code Predicate<Endpoint>} instance.
-     */
-    default Predicate<Endpoint> getPredicate() {
-        return null;
-    }
-
-    /**
      * Evaluates the predicate associated with this endpoint, if any, to determine
      * if this endpoint satisfies the conditions defined by the predicate.
      * <p>
@@ -341,8 +324,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      *         test passes for this endpoint; {@code false} otherwise.
      */
     default boolean predicate() {
-        Predicate<Endpoint> predicate = getPredicate();
-        return predicate == null || predicate.test(this);
+        return true;
     }
 
     /**

@@ -15,8 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.response;
 
+import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
-import com.jd.live.agent.governance.response.AbstractRpcResponse;
+import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import com.jd.live.agent.governance.response.Response;
+
+import java.util.function.Predicate;
 
 /**
  * SofaRpcResponse
@@ -25,15 +29,14 @@ import com.jd.live.agent.governance.response.AbstractRpcResponse;
  */
 public interface SofaRpcResponse {
 
-    class SofaRpcOutboundResponse extends AbstractRpcResponse.AbstractRpcOutboundResponse<SofaResponse> implements SofaRpcResponse {
+    class SofaRpcOutboundResponse extends AbstractRpcOutboundResponse<SofaResponse> implements SofaRpcResponse {
 
-        public SofaRpcOutboundResponse(SofaResponse response, Throwable throwable) {
-            super(response, throwable);
+        public SofaRpcOutboundResponse(SofaResponse response) {
+            super(response, null, null);
         }
 
-        @Override
-        public String getCode() {
-            return null;
+        public SofaRpcOutboundResponse(SofaRpcException throwable, Predicate<Response> predicate) {
+            super(null, throwable, predicate);
         }
     }
 }

@@ -30,25 +30,28 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
 
     public static final String RESPONSE_KEY = "response";
 
-    private final RetryPolicy retryPolicy;
+    private final RetryPolicy policy;
 
-    public SpringRetryPolicy(RetryPolicy retryPolicy) {
-        this.retryPolicy = retryPolicy;
+    public SpringRetryPolicy(RetryPolicy policy) {
+        super(policy.getRetry() + 1);
+        this.policy = policy;
     }
 
     @Override
     public boolean canRetry(RetryContext context) {
-        if (RequestContext.isTimeout()) {
+        Response response = (Response) context.getAttribute(RESPONSE_KEY);
+        if (response == null) {
             return false;
+        } else if (RequestContext.isTimeout()) {
+            return false;
+        } else if (context.getRetryCount() >= getMaxAttempts()) {
+            return false;
+        } else if (policy.isRetry(response.getCode())) {
+            return true;
+        } else if (policy.isRetry(response.getThrowable())) {
+            return true;
+        } else {
+            return response.isRetryable();
         }
-        Throwable t = context.getLastThrowable();
-        boolean result = (t == null || retryPolicy.isRetry(t)) && context.getRetryCount() < this.getMaxAttempts();
-        if (result) {
-            Response response = (Response) context.getAttribute(RESPONSE_KEY);
-            if (response != null) {
-                result = retryPolicy.isRetry(response.getCode());
-            }
-        }
-        return result;
     }
 }

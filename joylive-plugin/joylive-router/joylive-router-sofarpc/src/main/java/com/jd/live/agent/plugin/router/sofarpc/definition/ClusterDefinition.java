@@ -28,25 +28,25 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.plugin.router.sofarpc.interceptor.ConsumerInvokerInterceptor;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.plugin.router.sofarpc.interceptor.ClusterInterceptor;
 
 import java.util.List;
 
 @Injectable
-@Extension(value = "ConsumerInvokerDefinition")
+@Extension(value = "ClusterDefinition")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ConsumerInvokerDefinition.TYPE_CONSUMER_INVOKER)
-public class ConsumerInvokerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ClusterDefinition.TYPE_ABSTRACT_CLUSTER)
+public class ClusterDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_INVOKER = "com.alipay.sofa.rpc.filter.ConsumerInvoker";
+    protected static final String TYPE_ABSTRACT_CLUSTER = "com.alipay.sofa.rpc.client.AbstractCluster";
 
-    private static final String METHOD_INVOKE = "invoke";
+    private static final String METHOD_DO_INVOKE = "doInvoke";
 
-    protected static final String[] ARGUMENT_INVOKE = new String[]{
+    private static final String[] ARGUMENT_DO_INVOKE = new String[]{
             "com.alipay.sofa.rpc.core.request.SofaRequest"
     };
 
@@ -55,15 +55,16 @@ public class ConsumerInvokerDefinition extends PluginDefinitionAdapter {
 
     @Inject
     @InjectLoader(ResourcerType.PLUGIN)
-    private List<OutboundFilter> filters;
+    private List<RouteFilter> routeFilters;
 
-    public ConsumerInvokerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_INVOKER);
+    public ClusterDefinition() {
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER)
+                .and(MatcherBuilder.not(MatcherBuilder.isAbstract()));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE).
-                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new ConsumerInvokerInterceptor(context, filters)
+                        MatcherBuilder.named(METHOD_DO_INVOKE)
+                                .and(MatcherBuilder.arguments(ARGUMENT_DO_INVOKE)),
+                        () -> new ClusterInterceptor(context, routeFilters)
                 )
         };
     }

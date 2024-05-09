@@ -21,7 +21,6 @@ import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractRouteInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -66,11 +65,6 @@ public class SingleRouterChainInterceptor extends AbstractRouteInterceptor<Dubbo
             mc.setThrowable(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
             mc.setResult(new ArrayList<>(0));
         }
-    }
-
-    @Override
-    protected void routing(DubboOutboundInvocation invocation) {
-        new RouteFilterChain.Chain(routeFilters).filter(invocation);
     }
 
     @Override

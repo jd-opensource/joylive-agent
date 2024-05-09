@@ -33,8 +33,6 @@ import com.jd.live.agent.plugin.router.sofarpc.interceptor.ProviderInvokerInterc
 
 import java.util.List;
 
-import static com.jd.live.agent.plugin.router.sofarpc.definition.ConsumerInvokerDefinition.ARGUMENT_INVOKE;
-
 @Injectable
 @Extension(value = "ProviderInvokerDefinition")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
@@ -47,6 +45,10 @@ public class ProviderInvokerDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE_PROVIDER_INVOKER = "com.alipay.sofa.rpc.filter.ProviderInvoker";
 
     private static final String METHOD_INVOKE = "invoke";
+
+    protected static final String[] ARGUMENT_INVOKE = new String[]{
+            "com.alipay.sofa.rpc.core.request.SofaRequest"
+    };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;

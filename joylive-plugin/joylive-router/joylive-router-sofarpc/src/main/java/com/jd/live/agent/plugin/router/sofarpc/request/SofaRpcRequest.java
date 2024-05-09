@@ -15,16 +15,10 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.request;
 
-import com.alipay.sofa.rpc.client.ProviderHelper;
-import com.alipay.sofa.rpc.client.ProviderInfo;
-import com.alipay.sofa.rpc.common.RpcConstants;
-import com.alipay.sofa.rpc.context.RpcInternalContext;
-import com.alipay.sofa.rpc.core.exception.SofaRouteException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
-import com.alipay.sofa.rpc.log.LogCodes;
-import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
+import com.jd.live.agent.governance.request.StickyRequest;
 
 /**
  * SofaRpcRequest
@@ -84,28 +78,33 @@ public interface SofaRpcRequest {
      */
     class SofaRpcOutboundRequest extends AbstractRpcOutboundRequest<SofaRequest> implements SofaRpcRequest {
 
-        /**
-         * Lazily initialized identifier used for sticky connections, typically based on the target service's IP and port.
-         * <p>
-         * This ID is determined by inspecting the current RPC context for a specific attachment that indicates the target
-         * service's location. If present, this information is used to construct a unique identifier for the request, which
-         * can be used to optimize connection reuse.
-         * </p>
-         */
-        private final LazyObject<String> stickyId = new LazyObject<>(SofaRpcOutboundRequest::getStickyIdFromContext);
+        private final StickyRequest stickyRequest;
 
         /**
-         * Constructs a new {@code SofaRpcOutboundRequest} with the specified SOFA request details.
+         * Creates a new SofaRpcOutboundRequest without a sticky session identifier. This constructor is used
+         * when sticky session routing is not required for the RPC call.
          * <p>
-         * This constructor initializes the request with comprehensive details about the service method to be invoked,
-         * including the service interface name, method name, method arguments, and any additional properties attached
-         * to the request.
+         * Initializes the request with the provided SOFA request details, extracting necessary information
+         * such as service interface name, method name, arguments, and any attachments.
          * </p>
          *
-         * @param request the {@link SofaRequest} containing the details of the SOFA service method to be invoked.
+         * @param request The SOFA request containing the RPC call details.
          */
         public SofaRpcOutboundRequest(SofaRequest request) {
+            this(request, null);
+        }
+
+        /**
+         * Creates a new SofaRpcOutboundRequest with the specified SOFA request details and an optional sticky session
+         * identifier. This constructor supports scenarios where sticky session routing is desired, allowing subsequent
+         * requests to be routed to the same provider.
+         *
+         * @param request  The SOFA request containing the RPC call details.
+         * @param stickyRequest A supplier providing the sticky session identifier, or {@code null} if sticky routing is not used.
+         */
+        public SofaRpcOutboundRequest(SofaRequest request, StickyRequest stickyRequest) {
             super(request);
+            this.stickyRequest = stickyRequest;
             this.service = request.getInterfaceName();
             String uniqueName = request.getTargetServiceUniqueName();
             int pos = uniqueName.lastIndexOf(':');
@@ -117,34 +116,14 @@ public interface SofaRpcRequest {
 
         @Override
         public String getStickyId() {
-            return stickyId.get();
+            return stickyRequest == null ? null : stickyRequest.getStickyId();
         }
 
         @Override
-        public RuntimeException createNoAvailableEndpointException() {
-            return new SofaRouteException(LogCodes.getLog(LogCodes.ERROR_NO_AVAILABLE_PROVIDER, request.getTargetServiceUniqueName(), "[]"));
-        }
-
-        /**
-         * Attempts to extract a sticky ID from the current RPC context.
-         * <p>
-         * This method inspects the current {@link RpcInternalContext} for an attachment indicating the target
-         * service's IP and port. If found, it constructs and returns a unique identifier based on this information.
-         * </p>
-         *
-         * @return a unique identifier for the target service, or {@code null} if it cannot be determined.
-         */
-        private static String getStickyIdFromContext() {
-            RpcInternalContext context = RpcInternalContext.peekContext();
-            String targetIP = (String) context.getAttachment(RpcConstants.HIDDEN_KEY_PINPOINT);
-            if (targetIP != null && !targetIP.isEmpty()) {
-                try {
-                    ProviderInfo providerInfo = ProviderHelper.toProviderInfo(targetIP);
-                    return providerInfo.getHost() + ":" + providerInfo.getPort();
-                } catch (Throwable ignore) {
-                }
+        public void setStickyId(String stickyId) {
+            if (stickyRequest != null) {
+                stickyRequest.setStickyId(stickyId);
             }
-            return null;
         }
     }
 }
