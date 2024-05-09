@@ -62,6 +62,13 @@ public class LoadBalanceFilter implements RouteFilter {
             });
         }
 
+        if (target.isEmpty()) {
+            RuntimeException exception = invocation.getRequest().createNoAvailableEndpointException();
+            if (exception != null) {
+                throw exception;
+            }
+        }
+
         chain.filter(invocation);
     }
 
