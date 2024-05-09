@@ -23,6 +23,9 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -38,15 +41,27 @@ public class StickyFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        RouteTarget target = invocation.getRouteTarget();
-        // Get the sticky ID from the request, if available
-        String id = invocation.getRequest().getStickyId();
-        // first remove sticky id from context
-        String ctxId = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
-        final String stickyId = id != null && !id.isEmpty() ? id : ctxId;
-        // If a sticky ID is available, filter the targets to only include the one with the sticky ID
-        if (stickyId != null && !stickyId.isEmpty()) {
-            target.filter(endpoint -> stickyId.equals(endpoint.getId()), 1);
+        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+        StickyType stickyType = loadBalancePolicy == null ? StickyType.NONE : loadBalancePolicy.getStickyType();
+        stickyType = stickyType == null ? StickyType.NONE : stickyType;
+        if (stickyType != StickyType.NONE) {
+            RouteTarget target = invocation.getRouteTarget();
+            // Get the sticky ID from the request, if available
+            String id = invocation.getRequest().getStickyId();
+            // first remove sticky id from context
+            String ctxId = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
+            final String stickyId = id != null && !id.isEmpty() ? id : ctxId;
+            // If a sticky ID is available, filter the targets to only include the one with the sticky ID
+            if (stickyId != null && !stickyId.isEmpty()) {
+                if (stickyType == StickyType.FIXED) {
+                    target.filter(endpoint -> stickyId.equals(endpoint.getId()), 1);
+                } else {
+                    RequestContext.setAttribute(Request.KEY_STICKY_ID, stickyId);
+                }
+            }
+        } else {
+            RequestContext.removeAttribute(Request.KEY_STICKY_ID);
         }
         chain.filter(invocation);
     }

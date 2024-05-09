@@ -329,6 +329,23 @@ public interface Endpoint extends Matcher<TagCondition> {
     }
 
     /**
+     * Evaluates the predicate associated with this endpoint, if any, to determine
+     * if this endpoint satisfies the conditions defined by the predicate.
+     * <p>
+     * This method will return {@code true} if no predicate is set, implying that
+     * the endpoint is acceptable by default. If a predicate is set, the endpoint
+     * will be tested against it.
+     * </p>
+     *
+     * @return {@code true} if the predicate is {@code null} or if the predicate
+     *         test passes for this endpoint; {@code false} otherwise.
+     */
+    default boolean predicate() {
+        Predicate<Endpoint> predicate = getPredicate();
+        return predicate == null || predicate.test(this);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

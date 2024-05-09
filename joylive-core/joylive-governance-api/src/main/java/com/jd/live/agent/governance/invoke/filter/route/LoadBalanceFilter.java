@@ -22,6 +22,7 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -31,13 +32,13 @@ import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.randomweight.RandomWeightLoadBalancer;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * LoadBalanceFilter applies load balancing to the list of route targets. It ensures that
@@ -58,23 +59,27 @@ public class LoadBalanceFilter implements RouteFilter {
     public <T extends ServiceRequest.OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         if (!target.isEmpty()) {
-            LoadBalancer loadBalancer = getLoadBalancer(invocation);
-            target.choose(endpoints -> {
-                List<? extends Endpoint> backends = endpoints;
-                do {
-                    Endpoint backend = loadBalancer.choose(backends, invocation);
-                    if (backend == null) {
-                        return null;
-                    }
-                    Predicate<Endpoint> predicate = backend.getPredicate();
-                    if (predicate == null || predicate.test(backend)) {
-                        return Collections.singletonList(backend);
-                    }
-                    backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
-                    backends.remove(backend);
-                } while (!backends.isEmpty());
-                return null;
-            });
+            List<? extends Endpoint> candidates = preferSticky(target);
+            if (candidates != null && !candidates.isEmpty()) {
+                target.setEndpoints(candidates);
+            } else {
+                LoadBalancer loadBalancer = getLoadBalancer(invocation);
+                target.choose(endpoints -> {
+                    List<? extends Endpoint> backends = endpoints;
+                    do {
+                        Endpoint backend = loadBalancer.choose(backends, invocation);
+                        if (backend == null) {
+                            return null;
+                        }
+                        if (backend.predicate()) {
+                            return Collections.singletonList(backend);
+                        }
+                        backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
+                        backends.remove(backend);
+                    } while (!backends.isEmpty());
+                    return null;
+                });
+            }
         }
 
         T request = invocation.getRequest();
@@ -89,6 +94,31 @@ public class LoadBalanceFilter implements RouteFilter {
         }
 
         chain.filter(invocation);
+    }
+
+    /**
+     * Attempts to select an endpoint based on a sticky identifier from the provided route target.
+     * <p>
+     * This method retrieves a preferred sticky identifier from the request context and attempts
+     * to find an endpoint from the route target that matches this identifier. If a matching
+     * endpoint is found and it satisfies any associated predicate, it is returned. Otherwise,
+     * this method returns {@code null}, indicating no suitable sticky endpoint was found.
+     * </p>
+     *
+     * @param target The {@link RouteTarget} containing potential endpoints to stick to.
+     * @return A list containing the matched endpoint if one is found and satisfies the predicate;
+     *         otherwise, {@code null}.
+     */
+    private List<? extends Endpoint> preferSticky(RouteTarget target) {
+        // preferred sticky id
+        String id = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
+        if (id != null) {
+            List<? extends Endpoint> backends = RouteTarget.filter(target.getEndpoints(), endpoint -> id.equals(endpoint.getId()), 1);
+            if (!backends.isEmpty() && backends.get(0).predicate()) {
+                return backends;
+            }
+        }
+        return null;
     }
 
     /**

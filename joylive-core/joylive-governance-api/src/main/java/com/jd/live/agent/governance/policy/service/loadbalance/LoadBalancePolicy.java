@@ -56,6 +56,11 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
     private String policyType;
 
     /**
+     * sticky type
+     */
+    private StickyType stickyType = StickyType.NONE;
+
+    /**
      * Constructs a new, empty {@code LoadBalancePolicy}.
      */
     public LoadBalancePolicy() {

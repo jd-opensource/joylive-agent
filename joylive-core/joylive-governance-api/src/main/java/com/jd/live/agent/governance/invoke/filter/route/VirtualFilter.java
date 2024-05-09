@@ -53,7 +53,7 @@ public class VirtualFilter implements RouteFilter {
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         List<? extends Endpoint> instances = invocation.getInstances();
-        if (instances != null && size > 0 && instances.size() < size) {
+        if (size > 0 && instances != null && !instances.isEmpty() && instances.size() < size) {
             List<Endpoint> result = new ArrayList<>(size);
             result.addAll(instances);
             int remain = size - instances.size();

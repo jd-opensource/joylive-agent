@@ -35,19 +35,19 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @Extensible(value = "RouteFilter")
 public interface RouteFilter {
 
-    int ORDER_VIRTUAL = 100;
-
-    int ORDER_LIVE_UNIT = ORDER_VIRTUAL + 100;
-
-    int ORDER_LOCALHOST = ORDER_LIVE_UNIT + 100;
-
-    int ORDER_RETRY = ORDER_LOCALHOST + 100;
+    int ORDER_RETRY = 100;
 
     int ORDER_STICKY = ORDER_RETRY + 100;
 
-    int ORDER_HEALTH = ORDER_STICKY + 100;
+    int ORDER_LOCALHOST = ORDER_STICKY + 100;
 
-    int ORDER_TAG_ROUTE = ORDER_HEALTH + 100;
+    int ORDER_HEALTH = ORDER_LOCALHOST + 100;
+
+    int ORDER_VIRTUAL = ORDER_HEALTH + 100;
+
+    int ORDER_LIVE_UNIT = ORDER_VIRTUAL + 100;
+
+    int ORDER_TAG_ROUTE = ORDER_LIVE_UNIT + 100;
 
     int ORDER_LANE = ORDER_TAG_ROUTE + 100;
 
