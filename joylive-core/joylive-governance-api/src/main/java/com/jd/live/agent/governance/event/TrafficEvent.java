@@ -66,29 +66,29 @@ public class TrafficEvent {
 
     public static final String KEY_SERVICE_POLICY_ID = "service.policyId";
 
-    public static final String COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL = "gateway_inbound_requests_total";
+    public static final String COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL = "live_gateway_inbound_requests_total";
 
-    public static final String COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL = "gateway_inbound_forward_requests_total";
+    public static final String COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL = "live_gateway_inbound_forward_requests_total";
 
-    public static final String COUNTER_GATEWAY_INBOUND_REJECT_REQUESTS_TOTAL = "gateway_inbound_reject_requests_total";
+    public static final String COUNTER_GATEWAY_INBOUND_REJECT_REQUESTS_TOTAL = "live_gateway_inbound_reject_requests_total";
 
-    public static final String COUNTER_GATEWAY_OUTBOUND_REQUESTS_TOTAL = "gateway_outbound_requests_total";
+    public static final String COUNTER_GATEWAY_OUTBOUND_REQUESTS_TOTAL = "live_gateway_outbound_requests_total";
 
-    public static final String COUNTER_GATEWAY_OUTBOUND_FORWARD_REQUESTS_TOTAL = "gateway_outbound_forward_requests_total";
+    public static final String COUNTER_GATEWAY_OUTBOUND_FORWARD_REQUESTS_TOTAL = "live_gateway_outbound_forward_requests_total";
 
-    public static final String COUNTER_GATEWAY_OUTBOUND_REJECT_REQUESTS_TOTAL = "gateway_outbound_reject_requests_total";
+    public static final String COUNTER_GATEWAY_OUTBOUND_REJECT_REQUESTS_TOTAL = "live_gateway_outbound_reject_requests_total";
 
-    public static final String COUNTER_SERVICE_INBOUND_REQUESTS_TOTAL = "service_inbound_requests_total";
+    public static final String COUNTER_SERVICE_INBOUND_REQUESTS_TOTAL = "live_service_inbound_requests_total";
 
-    public static final String COUNTER_SERVICE_INBOUND_FORWARD_REQUESTS_TOTAL = "service_inbound_forward_requests_total";
+    public static final String COUNTER_SERVICE_INBOUND_FORWARD_REQUESTS_TOTAL = "live_service_inbound_forward_requests_total";
 
-    public static final String COUNTER_SERVICE_INBOUND_REJECT_REQUESTS_TOTAL = "service_inbound_reject_requests_total";
+    public static final String COUNTER_SERVICE_INBOUND_REJECT_REQUESTS_TOTAL = "live_service_inbound_reject_requests_total";
 
-    public static final String COUNTER_SERVICE_OUTBOUND_REQUESTS_TOTAL = "service_outbound_requests_total";
+    public static final String COUNTER_SERVICE_OUTBOUND_REQUESTS_TOTAL = "live_service_outbound_requests_total";
 
-    public static final String COUNTER_SERVICE_OUTBOUND_FORWARD_REQUESTS_TOTAL = "service_outbound_forward_requests_total";
+    public static final String COUNTER_SERVICE_OUTBOUND_FORWARD_REQUESTS_TOTAL = "live_service_outbound_forward_requests_total";
 
-    public static final String COUNTER_SERVICE_OUTBOUND_REJECT_REQUESTS_TOTAL = "service_outbound_reject_requests_total";
+    public static final String COUNTER_SERVICE_OUTBOUND_REJECT_REQUESTS_TOTAL = "live_service_outbound_reject_requests_total";
 
     /**
      * The type of component that generated the traffic event.
