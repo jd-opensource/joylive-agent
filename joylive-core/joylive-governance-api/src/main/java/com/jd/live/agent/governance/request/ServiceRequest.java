@@ -66,6 +66,18 @@ public interface ServiceRequest extends Request {
     Set<String> getAttempts();
 
     /**
+     * Adds an attempt identifier to this service request.
+     * <p>
+     * This method is used to track retries or other types of attempts related to processing the service request.
+     * If the {@code attempt} parameter is not {@code null}, it will be added to the set of attempt identifiers.
+     * If no attempts have previously been added, a new set will be initialized.
+     * </p>
+     *
+     * @param attempt The identifier of the attempt to add.
+     */
+    void addAttempt(String attempt);
+
+    /**
      * Retrieves the sticky session ID associated with the request, if any.
      *
      * @return The sticky session ID as a String, or {@code null} if not applicable.

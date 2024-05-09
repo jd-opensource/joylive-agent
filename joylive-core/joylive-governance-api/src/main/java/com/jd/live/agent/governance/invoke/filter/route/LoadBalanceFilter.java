@@ -33,8 +33,11 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * LoadBalanceFilter applies load balancing to the list of route targets. It ensures that
@@ -57,16 +60,32 @@ public class LoadBalanceFilter implements RouteFilter {
         if (!target.isEmpty()) {
             LoadBalancer loadBalancer = getLoadBalancer(invocation);
             target.choose(endpoints -> {
-                Endpoint endpoint = loadBalancer.choose(endpoints, invocation);
-                return endpoint == null ? null : Collections.singletonList(endpoint);
+                List<? extends Endpoint> backends = endpoints;
+                do {
+                    Endpoint backend = loadBalancer.choose(backends, invocation);
+                    if (backend == null) {
+                        return null;
+                    }
+                    Predicate<Endpoint> predicate = backend.getPredicate();
+                    if (predicate == null || predicate.test(backend)) {
+                        return Collections.singletonList(backend);
+                    }
+                    backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
+                    backends.remove(backend);
+                } while (!endpoints.isEmpty());
+                return null;
             });
         }
 
+        T request = invocation.getRequest();
         if (target.isEmpty()) {
-            RuntimeException exception = invocation.getRequest().createNoAvailableEndpointException();
+            RuntimeException exception = request.createNoAvailableEndpointException();
             if (exception != null) {
                 throw exception;
             }
+        } else {
+            Endpoint endpoint = target.getEndpoints().get(0);
+            request.addAttempt(endpoint.getId());
         }
 
         chain.filter(invocation);

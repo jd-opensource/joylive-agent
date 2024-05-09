@@ -20,12 +20,32 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
+import java.util.function.Predicate;
+
+/**
+ * Represents an endpoint in the SOFA RPC framework, encapsulating provider information
+ * and optional filtering logic.
+ * <p>
+ * This class implements the {@link Endpoint} interface, providing detailed information
+ * about a service provider within the SOFA RPC framework. It includes functionality to
+ * retrieve the provider's host, port, weight for load balancing, and custom attributes.
+ * Additionally, this implementation supports specifying a predicate for further
+ * filtering or selection logic among endpoints.
+ * </p>
+ */
 public class SofaRpcEndpoint implements Endpoint {
 
     private final ProviderInfo provider;
 
+    private final Predicate<Endpoint> predicate;
+
     public SofaRpcEndpoint(ProviderInfo provider) {
+        this(provider, null);
+    }
+
+    public SofaRpcEndpoint(ProviderInfo provider, Predicate<Endpoint> predicate) {
         this.provider = provider;
+        this.predicate = predicate;
     }
 
     public ProviderInfo getProvider() {
@@ -74,5 +94,10 @@ public class SofaRpcEndpoint implements Endpoint {
                 return EndpointState.HEALTHY;
         }
 
+    }
+
+    @Override
+    public Predicate<Endpoint> getPredicate() {
+        return predicate;
     }
 }

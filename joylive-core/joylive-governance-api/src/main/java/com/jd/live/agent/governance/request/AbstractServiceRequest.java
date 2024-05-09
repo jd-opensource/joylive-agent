@@ -54,16 +54,7 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
         this.request = request;
     }
 
-    /**
-     * Adds an attempt identifier to this service request.
-     * <p>
-     * This method is used to track retries or other types of attempts related to processing the service request.
-     * If the {@code attempt} parameter is not {@code null}, it will be added to the set of attempt identifiers.
-     * If no attempts have previously been added, a new set will be initialized.
-     * </p>
-     *
-     * @param attempt The identifier of the attempt to add.
-     */
+    @Override
     public void addAttempt(String attempt) {
         if (attempt != null) {
             if (attempts == null) {

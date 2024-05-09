@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
@@ -309,6 +310,22 @@ public interface Endpoint extends Matcher<TagCondition> {
     default boolean isAccessible() {
         EndpointState state = getState();
         return state == null || state.isAccessible();
+    }
+
+    /**
+     * Retrieves a predicate used for filtering endpoints.
+     * <p>
+     * This default implementation returns {@code null}, indicating that there is no
+     * predicate associated by default. Implementing classes should override this method
+     * to provide an actual predicate that can be used to filter endpoints based on
+     * specific criteria.
+     * </p>
+     *
+     * @return {@code null} by default. Implementing classes should override this
+     * method to return a non-null {@code Predicate<Endpoint>} instance.
+     */
+    default Predicate<Endpoint> getPredicate() {
+        return null;
     }
 
     /**
