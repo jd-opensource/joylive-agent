@@ -150,6 +150,16 @@ public interface ServiceRequest extends Request {
         default void setTimeout(long timeout) {
         }
 
+        /**
+         * Provides a default exception to be thrown or handled when there is not any available endpoint.
+         *
+         * @return a {@link Throwable} representing the exception to be thrown or handled when
+         * there is not any available endpoint. By default, a {@link RuntimeException} is returned.
+         */
+        default RuntimeException createNoAvailableEndpointException() {
+            return null;
+        }
+
     }
 }
 

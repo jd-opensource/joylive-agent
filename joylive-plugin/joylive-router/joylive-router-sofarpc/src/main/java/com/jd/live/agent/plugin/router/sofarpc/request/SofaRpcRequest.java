@@ -19,7 +19,9 @@ import com.alipay.sofa.rpc.client.ProviderHelper;
 import com.alipay.sofa.rpc.client.ProviderInfo;
 import com.alipay.sofa.rpc.common.RpcConstants;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
+import com.alipay.sofa.rpc.core.exception.SofaRouteException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
+import com.alipay.sofa.rpc.log.LogCodes;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
@@ -116,6 +118,11 @@ public interface SofaRpcRequest {
         @Override
         public String getStickyId() {
             return stickyId.get();
+        }
+
+        @Override
+        public RuntimeException createNoAvailableEndpointException() {
+            return new SofaRouteException(LogCodes.getLog(LogCodes.ERROR_NO_AVAILABLE_PROVIDER, request.getTargetServiceUniqueName(), "[]"));
         }
 
         /**
