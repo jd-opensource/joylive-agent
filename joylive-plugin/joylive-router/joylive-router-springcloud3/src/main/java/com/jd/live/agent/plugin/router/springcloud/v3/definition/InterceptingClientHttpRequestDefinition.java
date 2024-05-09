@@ -53,7 +53,8 @@ public class InterceptingClientHttpRequestDefinition extends PluginDefinitionAda
     private static final String METHOD_EXECUTE_INTERNAL = "executeInternal";
 
     private static final String[] ARGUMENT_EXECUTE_INTERNAL = new String[]{
-            "org.springframework.http.HttpHeaders"
+            "org.springframework.http.HttpHeaders",
+            "byte[]"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
