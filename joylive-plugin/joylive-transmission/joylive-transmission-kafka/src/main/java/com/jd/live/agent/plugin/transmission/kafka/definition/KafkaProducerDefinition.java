@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.transmission.kafka.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -26,7 +24,10 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.transmission.kafka.interceptor.KafkaProducerInterceptor;
 
 @Extension(value = "KafkaProducerDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnClass(KafkaProducerDefinition.TYPE_KAFKA_PRODUCER)
 public class KafkaProducerDefinition extends PluginDefinitionAdapter {
     public static final String TYPE_KAFKA_PRODUCER = "org.apache.kafka.clients.producer.KafkaProducer";

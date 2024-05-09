@@ -35,10 +35,8 @@ import java.util.List;
 
 @Injectable
 @Extension(value = "ClusterDefinition")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ClusterDefinition.TYPE_ABSTRACT_CLUSTER)
 public class ClusterDefinition extends PluginDefinitionAdapter {
 

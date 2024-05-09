@@ -31,6 +31,7 @@ import com.jd.live.agent.plugin.protection.postgresql.v42.interceptor.QueryExecu
 
 @Injectable
 @Extension(value = "QueryExecutorImplDefinition_v42", order = PluginDefinition.ORDER_PROTECT)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_POSTGRESQL_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(QueryExecutorImplDefinition.TYPE_QUERY_EXECUTOR_IMPL)

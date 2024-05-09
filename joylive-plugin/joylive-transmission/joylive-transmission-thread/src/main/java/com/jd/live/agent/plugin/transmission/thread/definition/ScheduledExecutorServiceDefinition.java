@@ -17,7 +17,9 @@ package com.jd.live.agent.plugin.transmission.thread.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperties;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -41,7 +43,10 @@ import static com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig.C
  */
 @Injectable
 @Extension(value = "ScheduledExecutorServiceDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_THREADPOOL_ENABLED)
 public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter {
     private static final String TYPE_SCHEDULED_EXECUTOR_SERVICE = "java.util.concurrent.ScheduledExecutorService";

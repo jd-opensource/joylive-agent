@@ -26,29 +26,31 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.plugin.router.sofarpc.interceptor.ProviderInvokerInterceptor;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.plugin.router.sofarpc.interceptor.LoadBalanceInterceptor;
 
 import java.util.List;
 
 @Injectable
-@Extension(value = "ProviderInvokerDefinition")
+@Extension(value = "LoadBalanceDefinition")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
+                GovernanceConfig.CONFIG_LANE_ENABLED
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false"),
+        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
-@ConditionalOnClass(ProviderInvokerDefinition.TYPE_PROVIDER_INVOKER)
-public class ProviderInvokerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(LoadBalanceDefinition.TYPE_ABSTRACT_CLUSTER)
+public class LoadBalanceDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_PROVIDER_INVOKER = "com.alipay.sofa.rpc.filter.ProviderInvoker";
+    protected static final String TYPE_ABSTRACT_CLUSTER = "com.alipay.sofa.rpc.client.AbstractCluster";
 
-    private static final String METHOD_INVOKE = "invoke";
+    private static final String METHOD_SELECT = "select";
 
-    protected static final String[] ARGUMENT_INVOKE = new String[]{
-            "com.alipay.sofa.rpc.core.request.SofaRequest"
+    private static final String[] ARGUMENT_SELECT = new String[]{
+            "com.alipay.sofa.rpc.core.request.SofaRequest",
+            "java.util.List"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
@@ -56,15 +58,16 @@ public class ProviderInvokerDefinition extends PluginDefinitionAdapter {
 
     @Inject
     @InjectLoader(ResourcerType.PLUGIN)
-    private List<InboundFilter> filters;
+    private List<RouteFilter> routeFilters;
 
-    public ProviderInvokerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_PROVIDER_INVOKER);
+    public LoadBalanceDefinition() {
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER)
+                .and(MatcherBuilder.not(MatcherBuilder.isAbstract()));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE).
-                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new ProviderInvokerInterceptor(context, filters)
+                        MatcherBuilder.named(METHOD_SELECT)
+                                .and(MatcherBuilder.arguments(ARGUMENT_SELECT)),
+                        () -> new LoadBalanceInterceptor(context, routeFilters)
                 )
         };
     }

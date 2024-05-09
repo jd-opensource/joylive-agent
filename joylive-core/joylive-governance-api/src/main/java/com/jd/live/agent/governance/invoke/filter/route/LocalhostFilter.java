@@ -31,7 +31,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  * it ensures that requests are only routed to local instances of the service.
  */
 @Extension(value = "LocalhostFilter", order = RouteFilter.ORDER_LOCALHOST)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_LOCALHOST_ENABLED)
 public class LocalhostFilter implements RouteFilter {
 

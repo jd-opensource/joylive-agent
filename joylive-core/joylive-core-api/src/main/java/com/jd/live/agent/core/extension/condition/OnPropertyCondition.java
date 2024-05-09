@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.extension.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 
 /**
  * Condition implementation that checks if a specific property is set in the environment.
@@ -28,25 +29,43 @@ public class OnPropertyCondition extends OnCondition {
     @Override
     public boolean match(final ConditionContext context) {
         ConditionalOnProperty onProperty = (ConditionalOnProperty) context.getAnnotation();
-        String key = onProperty.name();
+        String[] keys = onProperty.name();
         String value = onProperty.value();
         // If the property name is not provided
-        if (isEmpty(key)) {
+        if (keys.length == 0) {
             if (!isEmpty(value)) {
-                // If a value is provided, treat it as the property name with expected value 'true' or 'false'
-                String config = context.geConfig(value);
-                // If the property is missing, defer to 'matchIfMissing' attribute
-                return isEmpty(config) ? onProperty.matchIfMissing() : Boolean.parseBoolean(config);
+                return isMatched(context, onProperty, value, null);
             } else {
                 // If neither name nor value is provided, the condition does not match
                 return false;
             }
         } else {
-            // If the property name is provided, retrieve its value from the context
-            String config = context.geConfig(key);
-            // If the property is missing, defer to 'matchIfMissing' attribute
-            // If a value is provided, it must match the property value; otherwise, expect a boolean 'true'
-            return isEmpty(config) ? onProperty.matchIfMissing() : (isEmpty(value) ? Boolean.parseBoolean(config) : value.equals(config));
+            ConditionalRelation relation = onProperty.relation();
+            for (String key : keys) {
+                boolean matched = isMatched(context, onProperty, key, value);
+                if (relation == ConditionalRelation.OR && matched) {
+                    return true;
+                } else if (relation == ConditionalRelation.AND && !matched) {
+                    return false;
+                }
+            }
+            return relation != ConditionalRelation.OR;
+        }
+    }
+
+    private boolean isMatched(ConditionContext context, ConditionalOnProperty onProperty, String key, String value) {
+        // If the property name is provided, retrieve its value from the context
+        String config = context.geConfig(key);
+        // If the property is missing, defer to 'matchIfMissing' attribute
+        // If a value is provided, it must match the property value; otherwise, expect a boolean 'true'
+        if (isEmpty(config)) {
+            return onProperty.matchIfMissing();
+        } else if (isEmpty(value)) {
+            return Boolean.parseBoolean(config);
+        } else if (onProperty.caseSensitive()) {
+            return value.equals(config);
+        } else {
+            return value.equalsIgnoreCase(config);
         }
     }
 

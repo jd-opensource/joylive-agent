@@ -31,6 +31,7 @@ import com.jd.live.agent.plugin.protection.mariadb.v3.interceptor.SendQueryInter
 
 @Injectable
 @Extension(value = "StandardClientDefinition_v3", order = PluginDefinition.ORDER_PROTECT)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MARIADB_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(StandardClientDefinition.TYPE_STANDARD_CLIENT)

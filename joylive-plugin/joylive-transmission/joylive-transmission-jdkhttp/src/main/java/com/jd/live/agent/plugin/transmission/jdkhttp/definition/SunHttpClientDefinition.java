@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.transmission.jdkhttp.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -31,11 +29,6 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientIn
  * of the {@code sun.net.www.http.HttpClient} class. This class configures the
  * conditions under which the {@link SunHttpClientInterceptor} is applied, aiming
  * to monitor or modify HTTP request writing behavior.
- *
- * <p>The interceptor is conditionally applied based on the presence of the HttpClient
- * class and the configuration specified by {@link GovernanceConfig#CONFIG_TRANSMISSION_ENABLED}.
- * This allows for dynamic enabling or disabling of this instrumentation based on runtime
- * configuration settings.</p>
  *
  * <p>Annotations used:</p>
  * <ul>
@@ -52,7 +45,10 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientIn
  * @see SunHttpClientInterceptor
  */
 @Extension(value = "JdkHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnClass(SunHttpClientDefinition.TYPE_HTTP_CLIENT)
 public class SunHttpClientDefinition extends PluginDefinitionAdapter implements PluginImporter {
 

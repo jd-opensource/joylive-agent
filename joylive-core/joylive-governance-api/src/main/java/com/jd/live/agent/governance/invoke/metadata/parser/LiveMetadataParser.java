@@ -27,7 +27,7 @@ import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.RpcRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
-import java.util.Map;
+import java.util.function.Function;
 
 /**
  * The {@code LiveMetadataParser} class is responsible for parsing metadata that is specific
@@ -152,11 +152,11 @@ public class LiveMetadataParser implements LiveParser {
         /**
          * A map of variable parsers used to parse specific variables from HTTP requests.
          */
-        protected Map<String, VariableParser<?, ?>> variableParsers;
+        protected Function<String, VariableParser<?, ?>> variableParsers;
         /**
          * A map of variable functions used to process variables after parsing.
          */
-        protected Map<String, VariableFunction> variableFunctions;
+        protected Function<String, VariableFunction> variableFunctions;
         /**
          * The domain policy that governs the parsing and handling of live metadata.
          */
@@ -178,8 +178,8 @@ public class LiveMetadataParser implements LiveParser {
                                              LiveConfig liveConfig,
                                              Application application,
                                              GovernancePolicy governancePolicy,
-                                             Map<String, VariableParser<?, ?>> variableParsers,
-                                             Map<String, VariableFunction> variableFunctions,
+                                             Function<String, VariableParser<?, ?>> variableParsers,
+                                             Function<String, VariableFunction> variableFunctions,
                                              DomainPolicy domainPolicy) {
             super(request, liveConfig, application, governancePolicy);
             this.domainPolicy = domainPolicy;
@@ -227,7 +227,7 @@ public class LiveMetadataParser implements LiveParser {
             String unitPath = path == null ? null : path.getPath();
 
             VariableParser<HttpRequest, HttpVariableSource> parser =
-                    (VariableParser<HttpRequest, HttpVariableSource>) variableParsers.get(VariableParser.TYPE_HTTP);
+                    (VariableParser<HttpRequest, HttpVariableSource>) variableParsers.apply(VariableParser.TYPE_HTTP);
             String bizVariable = path == null || !path.isBizVariableEnabled() || parser == null ? null :
                     parser.parse((HttpRequest) request, new HttpVariable(path.getBizVariableScope(), path.getBizVariableName()));
             LiveVariableRule variableRule = bizVariable == null ? null : path.getVariableRule(bizVariable);
@@ -251,7 +251,7 @@ public class LiveMetadataParser implements LiveParser {
                 sourceName = sourceName == null && unitRule != null ? unitRule.getVariableSource() : sourceName;
                 LiveVariable liveVariable = variableName == null ? null : liveSpace.getVariable(variableName);
                 LiveVariableSource variableSource = liveVariable == null || sourceName == null ? null : liveVariable.getSource(sourceName);
-                VariableFunction variableFunction = variableSource == null ? null : variableFunctions.get(variableSource.getFunc());
+                VariableFunction variableFunction = variableSource == null ? null : variableFunctions.apply(variableSource.getFunc());
                 variable = parser == null ? null : parser.parse((HttpRequest) request, variableSource, variableFunction);
             }
             return builder.liveConfig(liveConfig).
@@ -332,13 +332,13 @@ public class LiveMetadataParser implements LiveParser {
         /**
          * A map of variable parsers used to parse specific variables for RPC live metadata.
          */
-        protected final Map<String, VariableParser<?, ?>> variableParsers;
+        protected final Function<String, VariableParser<?, ?>> variableParsers;
 
         public RpcOutboundLiveMetadataParser(ServiceRequest request,
                                              LiveConfig liveConfig,
                                              Application application,
                                              GovernancePolicy governancePolicy,
-                                             Map<String, VariableParser<?, ?>> variableParsers) {
+                                             Function<String, VariableParser<?, ?>> variableParsers) {
 
             super(request, liveConfig, application, governancePolicy);
             this.variableParsers = variableParsers;
@@ -351,7 +351,7 @@ public class LiveMetadataParser implements LiveParser {
             String variableExpression = livePolicy == null ? null : livePolicy.getVariableExpression();
             if (variableExpression != null && !variableExpression.isEmpty()) {
                 VariableParser<RpcRequest, ExpressionVariableSource> parser =
-                        (VariableParser<RpcRequest, ExpressionVariableSource>) variableParsers.get(VariableParser.TYPE_EXPRESSION);
+                        (VariableParser<RpcRequest, ExpressionVariableSource>) variableParsers.apply(VariableParser.TYPE_EXPRESSION);
                 String variable = parser == null ? null : parser.parse((RpcRequest) request,
                         new ExpressionVariable(variableExpression));
                 return LiveMetadata.builder().

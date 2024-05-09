@@ -39,7 +39,6 @@ import java.util.List;
  */
 @Injectable
 @Extension(value = "VirtualFilter", order = RouteFilter.ORDER_VIRTUAL)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_VIRTUAL_ENABLED)
 public class VirtualFilter implements RouteFilter {
 

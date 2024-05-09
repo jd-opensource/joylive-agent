@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.transmission.jdkhttp.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -29,10 +27,6 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientI
  * Defines the instrumentation for the Java HTTP Client's HttpRequestBuilderImpl class.
  * This class specifies the conditions under which the {@link JavaHttpClientInterceptor}
  * is applied to modify or monitor HTTP requests during their construction.
- *
- * <p>The interceptor is conditionally applied based on the presence of the HttpRequestBuilderImpl
- * class and the configuration specified by {@link GovernanceConfig#CONFIG_TRANSMISSION_ENABLED}.
- * This allows for dynamic enabling or disabling of this instrumentation based on runtime configuration.</p>
  *
  * <p>Annotations used:</p>
  * <ul>
@@ -49,7 +43,10 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientI
  * @see JavaHttpClientInterceptor
  */
 @Extension(value = "JavaHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnClass(JavaHttpClientDefinition.TYPE_HTTP_REQUEST_BUILDER_IMPL)
 public class JavaHttpClientDefinition extends PluginDefinitionAdapter {
 

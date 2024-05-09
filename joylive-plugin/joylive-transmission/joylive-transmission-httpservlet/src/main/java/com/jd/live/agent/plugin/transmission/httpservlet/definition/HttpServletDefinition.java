@@ -17,9 +17,7 @@ package com.jd.live.agent.plugin.transmission.httpservlet.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -35,7 +33,10 @@ import java.util.List;
 
 @Injectable
 @Extension(value = "HttpServletClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnClass(HttpServletDefinition.TYPE_HTTP_SERVLET)
 public class HttpServletDefinition extends PluginDefinitionAdapter {
 

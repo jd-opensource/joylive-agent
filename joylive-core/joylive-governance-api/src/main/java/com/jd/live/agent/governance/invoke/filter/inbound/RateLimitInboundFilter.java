@@ -42,7 +42,6 @@ import java.util.Map;
 @Injectable
 @Extension(value = "LimitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIMIT_ENABLED, matchIfMissing = true)
 public class RateLimitInboundFilter implements InboundFilter {
 
     @Inject

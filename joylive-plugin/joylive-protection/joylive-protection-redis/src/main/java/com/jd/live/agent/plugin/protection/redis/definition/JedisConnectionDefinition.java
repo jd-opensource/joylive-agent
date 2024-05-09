@@ -31,6 +31,7 @@ import com.jd.live.agent.plugin.protection.redis.interceptor.JedisConnectionInte
 
 @Injectable
 @Extension(value = "JedisConnectionDefinition", order = PluginDefinition.ORDER_PROTECT)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_REDIS_ENABLED)
 @ConditionalOnClass(JedisConnectionDefinition.TYPE_JEDIS)

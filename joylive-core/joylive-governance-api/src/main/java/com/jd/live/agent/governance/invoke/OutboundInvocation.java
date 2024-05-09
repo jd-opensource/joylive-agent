@@ -143,7 +143,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         @Override
         protected LiveParser createLiveParser() {
             return new RpcOutboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
-                    context.getApplication(), governancePolicy, context.getVariableParsers());
+                    context.getApplication(), governancePolicy, context::getVariableParser);
         }
     }
 

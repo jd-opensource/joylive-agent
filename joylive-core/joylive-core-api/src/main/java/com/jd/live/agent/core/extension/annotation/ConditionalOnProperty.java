@@ -51,7 +51,7 @@ public @interface ConditionalOnProperty {
      *
      * @return The name of the property.
      */
-    String name() default "";
+    String[] name() default {};
 
     /**
      * Specifies whether the condition should be considered met if the property is missing. If {@code true},
@@ -60,6 +60,26 @@ public @interface ConditionalOnProperty {
      * @return {@code true} if the condition should be considered met when the property is missing; {@code false} otherwise.
      */
     boolean matchIfMissing() default false;
+
+    /**
+     * Defines the logical relation to be applied when evaluating multiple {@link ConditionalOnProperty} conditions.
+     *
+     * @return the {@link ConditionalRelation} that determines how multiple conditions are combined.
+     */
+    ConditionalRelation relation() default ConditionalRelation.OR;
+
+    /**
+     * Specifies whether the comparison between the actual property value and the {@link #value()}
+     * should be case-sensitive.
+     * <p>
+     * By default, this attribute is set to {@code false}, meaning the comparison is case-insensitive.
+     * Setting this to {@code true} requires an exact case match between the specified value and the
+     * actual property value for the condition to be considered true.
+     * </p>
+     *
+     * @return {@code true} if the comparison should be case-sensitive; {@code false} otherwise.
+     */
+    boolean caseSensitive() default false;
 
 }
 

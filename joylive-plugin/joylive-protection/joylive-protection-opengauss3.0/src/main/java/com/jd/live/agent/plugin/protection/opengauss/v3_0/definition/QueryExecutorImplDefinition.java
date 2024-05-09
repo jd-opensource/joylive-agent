@@ -31,6 +31,7 @@ import com.jd.live.agent.plugin.protection.opengauss.v3_0.interceptor.QueryExecu
 
 @Injectable
 @Extension(value = "QueryExecutorImplDefinition_v3.0", order = PluginDefinition.ORDER_PROTECT)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_OPENGAUSS_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(QueryExecutorImplDefinition.TYPE_QUERY_EXECUTOR_IMPL)

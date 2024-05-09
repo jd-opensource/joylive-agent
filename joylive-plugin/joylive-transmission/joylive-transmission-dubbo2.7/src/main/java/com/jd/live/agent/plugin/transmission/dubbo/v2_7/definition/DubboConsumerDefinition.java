@@ -17,9 +17,7 @@ package com.jd.live.agent.plugin.transmission.dubbo.v2_7.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -35,7 +33,10 @@ import java.util.List;
 
 @Extension(value = "DubboConsumerDefinition_v2.7", order = PluginDefinition.ORDER_TRANSMISSION)
 @Injectable
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
 @ConditionalOnClass(DubboConsumerDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
 public class DubboConsumerDefinition extends PluginDefinitionAdapter {

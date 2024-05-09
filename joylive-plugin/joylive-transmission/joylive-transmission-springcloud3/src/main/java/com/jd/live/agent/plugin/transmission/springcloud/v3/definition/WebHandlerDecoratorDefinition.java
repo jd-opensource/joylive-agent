@@ -17,9 +17,7 @@ package com.jd.live.agent.plugin.transmission.springcloud.v3.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -41,7 +39,10 @@ import java.util.List;
  */
 @Injectable
 @Extension(value = "WebHandlerDecoratorDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.OR)
 @ConditionalOnClass(WebHandlerDecoratorDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(WebHandlerDecoratorDefinition.TYPE_MONO)
 public class WebHandlerDecoratorDefinition extends PluginDefinitionAdapter {

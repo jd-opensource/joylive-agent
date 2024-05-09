@@ -129,6 +129,21 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     }
 
     @Override
+    public UnitFunction getUnitFunction(String name) {
+        return name == null || unitFunctions == null ? null : unitFunctions.get(name);
+    }
+
+    @Override
+    public VariableFunction getVariableFunction(String name) {
+        return name == null || variableFunctions == null ? null : variableFunctions.get(name);
+    }
+
+    @Override
+    public VariableParser<?, ?> getVariableParser(String name) {
+        return name == null || variableParsers == null ? null : variableParsers.get(name);
+    }
+
+    @Override
     public RetrierFactory getOrDefaultRetrierFactory(String name) {
         RetrierFactory result = retrierFactories == null || name == null ? null : retrierFactories.get(name);
         return result == null ? retrierFactory : result;

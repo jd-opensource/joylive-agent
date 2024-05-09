@@ -62,29 +62,12 @@ public interface InvocationContext {
     PolicySupplier getPolicySupplier();
 
     /**
-     * Retrieves a map of unit functions associated with this invocation context.
-     *
-     * @return A map of strings to {@code UnitFunction} instances.
-     */
-    Map<String, UnitFunction> getUnitFunctions();
-
-    /**
      * Retrieves a unit function by its name.
      *
      * @param name The name of the unit function.
      * @return The requested unit function, or null if not found.
      */
-    default UnitFunction getUnitFunction(String name) {
-        Map<String, UnitFunction> functions = getUnitFunctions();
-        return name == null || functions == null ? null : functions.get(name);
-    }
-
-    /**
-     * Retrieves a map of variable functions associated with this invocation context.
-     *
-     * @return A map of strings to {@code VariableFunction} instances.
-     */
-    Map<String, VariableFunction> getVariableFunctions();
+    UnitFunction getUnitFunction(String name);
 
     /**
      * Retrieves a variable function by its name.
@@ -92,17 +75,7 @@ public interface InvocationContext {
      * @param name The name of the variable function.
      * @return The requested variable function, or null if not found.
      */
-    default VariableFunction getVariableFunction(String name) {
-        Map<String, VariableFunction> functions = getVariableFunctions();
-        return name == null || functions == null ? null : functions.get(name);
-    }
-
-    /**
-     * Retrieves a map of variable parsers associated with this invocation context.
-     *
-     * @return A map of strings to {@code VariableParser} instances.
-     */
-    Map<String, VariableParser<?, ?>> getVariableParsers();
+    VariableFunction getVariableFunction(String name);
 
     /**
      * Retrieves a variable parser by its name.
@@ -110,10 +83,7 @@ public interface InvocationContext {
      * @param name The name of the variable parser.
      * @return The requested variable parser, or null if not found.
      */
-    default VariableParser<?, ?> getVariableParser(String name) {
-        Map<String, VariableParser<?, ?>> parsers = getVariableParsers();
-        return name == null || parsers == null ? null : parsers.get(name);
-    }
+    VariableParser<?, ?> getVariableParser(String name);
 
     /**
      * Retrieves the {@code RetrierFactory} instance associated with the specified name,
@@ -187,18 +157,18 @@ public interface InvocationContext {
         }
 
         @Override
-        public Map<String, UnitFunction> getUnitFunctions() {
-            return delegate.getUnitFunctions();
+        public UnitFunction getUnitFunction(String name) {
+            return delegate.getUnitFunction(name);
         }
 
         @Override
-        public Map<String, VariableFunction> getVariableFunctions() {
-            return delegate.getVariableFunctions();
+        public VariableFunction getVariableFunction(String name) {
+            return delegate.getVariableFunction(name);
         }
 
         @Override
-        public Map<String, VariableParser<?, ?>> getVariableParsers() {
-            return delegate.getVariableParsers();
+        public VariableParser<?, ?> getVariableParser(String name) {
+            return delegate.getVariableParser(name);
         }
 
         @Override

@@ -41,5 +41,17 @@ public @interface ConditionalOnProperties {
      */
     ConditionalOnProperty[] value();
 
+    /**
+     * Defines the logical relation to be applied when evaluating multiple {@link ConditionalOnProperty} conditions.
+     * <p>
+     * The default relation is {@link ConditionalRelation#AND}, which requires all specified conditions to be true
+     * for the annotated component to be activated. If set to {@link ConditionalRelation#OR}, the presence of any single
+     * true condition will activate the component.
+     * </p>
+     *
+     * @return the {@link ConditionalRelation} that determines how multiple conditions are combined.
+     */
+    ConditionalRelation relation() default ConditionalRelation.AND;
+
 }
 

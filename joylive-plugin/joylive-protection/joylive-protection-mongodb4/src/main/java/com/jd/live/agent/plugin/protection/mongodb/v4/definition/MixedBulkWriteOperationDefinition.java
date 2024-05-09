@@ -31,6 +31,7 @@ import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.MixedBulkWrite
 
 @Injectable
 @Extension(value = "MixedBulkWriteOperationDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MONGODB_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(MixedBulkWriteOperationDefinition.TYPE_COMMAND_OPERATION_HELPER)

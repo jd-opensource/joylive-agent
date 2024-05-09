@@ -36,7 +36,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  */
 @Extension(value = "StickyFilter", order = RouteFilter.ORDER_STICKY)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_STICKY_ENABLED)
 public class StickyFilter implements RouteFilter {
 
     @Override

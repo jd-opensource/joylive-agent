@@ -1,2 +1,3 @@
 com.jd.live.agent.plugin.router.sofarpc.definition.ProviderInvokerDefinition
 com.jd.live.agent.plugin.router.sofarpc.definition.ClusterDefinition
+com.jd.live.agent.plugin.router.sofarpc.definition.LoadBalanceDefinition

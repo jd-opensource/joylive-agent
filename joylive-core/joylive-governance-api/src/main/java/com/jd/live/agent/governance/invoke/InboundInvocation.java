@@ -131,7 +131,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         protected LiveParser createLiveParser() {
             return new HttpInboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
                     context.getApplication(), governancePolicy,
-                    context.getVariableParsers(), context.getVariableFunctions(), domainPolicy);
+                    context::getVariableParser, context::getVariableFunction, domainPolicy);
         }
 
         @Override
