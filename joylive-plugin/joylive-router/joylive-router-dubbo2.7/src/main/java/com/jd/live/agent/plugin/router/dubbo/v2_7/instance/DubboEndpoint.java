@@ -25,6 +25,17 @@ import org.apache.dubbo.rpc.cluster.ClusterInvoker;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_SERVICE_REFERENCE_PATH;
 
+/**
+ * Represents a network endpoint in a Dubbo RPC system, wrapping an {@link Invoker} instance.
+ * <p>
+ * This class holds information about a specific service endpoint, including its URL and the ability
+ * to invoke the service. It provides methods to access basic network attributes such as the host,
+ * port, and dynamic attributes like weight and state based on the service configuration and runtime
+ * conditions.
+ * </p>
+ *
+ * @param <T> The type of the service interface that this endpoint represents.
+ */
 public class DubboEndpoint<T> implements Endpoint {
 
     private final Invoker<T> invoker;
@@ -98,5 +109,15 @@ public class DubboEndpoint<T> implements Endpoint {
     @Override
     public EndpointState getState() {
         return invoker.isAvailable() ? EndpointState.HEALTHY : EndpointState.DISABLE;
+    }
+
+    /**
+     * Factory method to create a new {@code DubboEndpoint} instance for a given invoker.
+     *
+     * @param invoker The invoker for which the endpoint is to be created.
+     * @return A new instance of {@code DubboEndpoint}.
+     */
+    public static DubboEndpoint<?> of(Invoker<?> invoker) {
+        return new DubboEndpoint<>(invoker);
     }
 }

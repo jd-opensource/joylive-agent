@@ -44,7 +44,7 @@ import java.util.List;
 @Injectable
 @Extension("LiveSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "file")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveSpaceFileSyncer.class);

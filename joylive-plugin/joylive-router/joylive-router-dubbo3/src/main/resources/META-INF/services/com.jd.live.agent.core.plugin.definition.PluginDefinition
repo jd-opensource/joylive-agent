@@ -1,4 +1,3 @@
-com.jd.live.agent.plugin.router.dubbo.v3.definition.SingleRouterChainDefinition
-com.jd.live.agent.plugin.router.dubbo.v3.definition.ConsumerClassLoaderFilterDefinition
 com.jd.live.agent.plugin.router.dubbo.v3.definition.ClassLoaderFilterDefinition
-com.jd.live.agent.plugin.router.dubbo.v3.definition.FailoverClusterInvokerDefinition
+com.jd.live.agent.plugin.router.dubbo.v3.definition.LoadBalanceDefinition
+com.jd.live.agent.plugin.router.dubbo.v3.definition.ClusterDefinition

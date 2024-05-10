@@ -21,7 +21,7 @@ import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
@@ -51,7 +51,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Setter
     @Getter
-    private RetryPolicy retryPolicy;
+    private ClusterPolicy clusterPolicy;
 
     @Setter
     @Getter
@@ -83,8 +83,8 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (loadBalancePolicy != null && loadBalancePolicy.getId() == null) {
             loadBalancePolicy.setId(id);
         }
-        if (retryPolicy != null && retryPolicy.getId() == null) {
-            retryPolicy.setId(id);
+        if (clusterPolicy != null && clusterPolicy.getId() == null) {
+            clusterPolicy.setId(id);
         }
         if (livePolicy != null && livePolicy.getId() == null) {
             livePolicy.setId(id);
@@ -107,7 +107,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
-            retryPolicy = copy(source.retryPolicy, retryPolicy, s -> new RetryPolicy());
+            clusterPolicy = copy(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
             loadBalancePolicy = copy(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
 
             if ((rateLimitPolicies == null || rateLimitPolicies.isEmpty()) &&
@@ -177,6 +177,9 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         getLanePolicy(0L);
         if (livePolicy != null) {
             livePolicy.cache();
+        }
+        if (clusterPolicy != null) {
+            clusterPolicy.cache();
         }
         if (routePolicies != null) {
             for (RoutePolicy policy : routePolicies) {

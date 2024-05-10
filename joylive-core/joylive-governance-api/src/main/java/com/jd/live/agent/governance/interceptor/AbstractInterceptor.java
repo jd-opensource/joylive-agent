@@ -30,7 +30,8 @@ import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.HttpRequest.HttpInboundRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
@@ -210,7 +211,8 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
         protected Response invokeWithRetry(O invocation, MethodContext ctx) {
             Supplier<Response> retrySupplier = createRetrySupplier(ctx);
             ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
-            RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
+            ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
+            RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
             Response response = null;
             if (retryPolicy != null && retryPolicy.isEnabled()) {
                 RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
@@ -316,42 +318,6 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
             O result = createOutlet(request);
             result.setInstances(instances);
             return result;
-        }
-
-        /**
-         * Executes an RPC call with retry logic based on the invocation's associated retry policy.
-         * <p>
-         * This method first determines if a retry policy is defined and enabled for the given invocation. If a retry policy
-         * is applicable, it attempts to execute the supplied RPC call using a retrier that adheres to the retry policy's
-         * parameters, such as retry type and timeout. If the retry policy specifies a timeout, this method also adjusts
-         * the request context's deadline attribute accordingly.
-         * </p>
-         * <p>
-         * If no retry policy is enabled or if the retrier cannot be obtained, this method directly executes the RPC call
-         * once without any retry logic.
-         * </p>
-         *
-         * @param invocation The invocation context of the RPC call, which may contain service metadata including the retry policy.
-         * @param supplier   A supplier that executes the RPC call and returns a response.
-         * @return The response from the RPC call, either from the initial attempt or after retrying according to the retry policy.
-         */
-        protected Response invokeWithRetry(O invocation, Supplier<Response> supplier) {
-            ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
-            RetryPolicy retryPolicy = servicePolicy == null ? null : servicePolicy.getRetryPolicy();
-            if (retryPolicy != null && retryPolicy.isEnabled()) {
-                RetrierFactory retrierFactory = context.getOrDefaultRetrierFactory(retryPolicy.getType());
-                Retrier retrier = retrierFactory == null ? null : retrierFactory.get(retryPolicy);
-                if (retrier != null) {
-                    Long timeout = retryPolicy.getTimeout();
-                    if (timeout != null && timeout > 0) {
-                        RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_DEADLINE, System.currentTimeMillis() + timeout);
-                    } else {
-                        RequestContext.removeAttribute(Carrier.ATTRIBUTE_DEADLINE);
-                    }
-                    return retrier.execute(supplier);
-                }
-            }
-            return supplier.get();
         }
     }
 

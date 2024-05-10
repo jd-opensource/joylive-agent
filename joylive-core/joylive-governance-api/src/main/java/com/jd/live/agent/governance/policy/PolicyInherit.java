@@ -46,6 +46,7 @@ public interface PolicyInherit<T> {
      * @param <T> the type of the policy that is being extended with ID generation capabilities.
      */
     interface PolicyInheritWithIdGen<T> extends PolicyInherit<T>, PolicyIdGen {
+
     }
 
 }

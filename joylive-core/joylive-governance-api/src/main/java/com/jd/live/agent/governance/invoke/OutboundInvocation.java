@@ -110,7 +110,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      */
     public RouteTarget getRouteTarget() {
         if (null == routeTarget) {
-            routeTarget = RouteTarget.forward(getInstances());
+            routeTarget = RouteTarget.forward(instances == null ? new ArrayList<>() : instances);
         }
         return routeTarget;
     }

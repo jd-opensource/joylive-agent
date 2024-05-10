@@ -40,10 +40,12 @@ import java.util.List;
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ClassLoaderFilterDefinition.TYPE_CLASSLOADER_FILTER)
-@ConditionalOnClass(ConsumerClassLoaderFilterDefinition.TYPE_CONSUMER_CLASSLOADER_FILTER)
+@ConditionalOnClass(ClassLoaderFilterDefinition.TYPE_CONSUMER_CLASSLOADER_FILTER)
 public class ClassLoaderFilterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_CLASSLOADER_FILTER = "org.apache.dubbo.rpc.filter.ClassLoaderFilter";
+
+    protected static final String TYPE_CONSUMER_CLASSLOADER_FILTER = "org.apache.dubbo.rpc.cluster.filter.support.ConsumerClassLoaderFilter";
 
     private static final String METHOD_INVOKE = "invoke";
 

@@ -16,7 +16,7 @@
 package com.jd.live.agent.implement.flowcontrol.spring.retry;
 
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -42,7 +42,11 @@ public class SpringRetryPolicy extends SimpleRetryPolicy {
         Response response = (Response) context.getAttribute(RESPONSE_KEY);
         if (response == null) {
             return false;
-        } else if (RequestContext.isTimeout()) {
+        }
+        if (response.getThrowable() != null) {
+            RequestContext.getOrCreate().setAttribute(Response.KEY_LAST_EXCEPTION, response.getThrowable());
+        }
+        if (RequestContext.isTimeout()) {
             return false;
         } else if (context.getRetryCount() >= getMaxAttempts()) {
             return false;

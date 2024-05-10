@@ -45,7 +45,7 @@ public class ClassLoaderFilterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_CLASSLOADER_FILTER = "org.apache.dubbo.rpc.filter.ClassLoaderFilter";
 
-    public static final String TYPE_PROTOCOL_FILTER_WRAPPER = "org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper";
+    protected static final String TYPE_PROTOCOL_FILTER_WRAPPER = "org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper";
 
     private static final String METHOD_INVOKE = "invoke";
 

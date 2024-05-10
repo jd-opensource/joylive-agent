@@ -268,8 +268,10 @@ public class Bootstrap implements AgentLifecycle {
             }
         } catch (InitializeException e) {
             publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE, e.getMessage())));
+            logger.error(e.getMessage(), e);
         } catch (Throwable e) {
-            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE, "failed to install plugin.")));
+            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE, "failed to install plugin. caused by " + e.getMessage())));
+            logger.error(e.getMessage(), e);
         }
     }
 

@@ -15,33 +15,68 @@
  */
 package com.jd.live.agent.governance.invoke.retry;
 
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.exception.RetryException;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 
 import java.util.function.Supplier;
 
 /**
- * Retrier
+ * Defines the contract for implementing retry mechanisms.
+ * <p>
+ * A {@code Retrier} is responsible for executing operations that may fail transiently and are suitable for retrying.
+ * It abstracts the retry logic, allowing operations to be attempted multiple times according to a specified
+ * {@link RetryPolicy}. This interface is useful in scenarios where operations, such as network requests or
+ * database transactions, are prone to failure due to temporary issues that can be resolved by retrying the operation
+ * after a short delay or under different conditions.
+ * </p>
  *
  * @since 1.0.0
  */
 public interface Retrier {
 
+    /**
+     * Marker used to identify retry operations in logs or monitoring.
+     */
     String RETRY_MARK = "retryMark";
 
     /**
-     * Execute retry logic
+     * Executes the given operation with retry logic.
+     * <p>
+     * This method attempts to execute the supplied operation, retrying according to the {@link RetryPolicy}
+     * defined by {@link #getPolicy()}. It is designed to handle operations that return a result and may throw
+     * a {@link RetryException} to indicate a failure that is potentially recoverable through retrying.
+     * </p>
      *
-     * @param supplier Retry logic
-     * @param <T>      Response type
-     * @return Response
+     * @param supplier The operation to be executed, encapsulated as a {@link Supplier} that returns a response of type {@code T}.
+     * @param <T>      The type of response expected from the operation, extending {@link Response}.
+     * @return The response of type {@code T} from the successfully executed operation.
+     * @throws RetryException if the operation fails to complete successfully after the maximum number of retries.
      */
-    <T extends Response> T execute(Supplier<T> supplier);
+    <T extends Response> T execute(Supplier<T> supplier) throws RetryException;
 
     /**
-     * Get failover policy
+     * Retrieves the retry policy governing the behavior of this retrier.
+     * <p>
+     * The {@link RetryPolicy} determines the conditions under which an operation should be retried, including
+     * the maximum number of retry attempts, the delay between attempts, and any other criteria relevant to
+     * deciding whether and how to retry a failed operation.
+     * </p>
      *
-     * @return policy
+     * @return The {@link RetryPolicy} associated with this retrier.
      */
     RetryPolicy getPolicy();
+
+    default Throwable getCause(Throwable throwable) {
+        Throwable result = RequestContext.getAttribute(Response.KEY_LAST_EXCEPTION);
+        if (result != null) {
+            return result;
+        } else if (throwable.getCause() != null) {
+            return throwable.getCause();
+        } else {
+            return throwable;
+        }
+    }
 }
+

@@ -16,9 +16,12 @@
 package com.jd.live.agent.implement.flowcontrol.resilience4j.retry;
 
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.exception.RetryException;
+import com.jd.live.agent.governance.exception.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.retry.Retrier;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
+import io.github.resilience4j.retry.MaxRetriesExceeded;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
@@ -66,6 +69,7 @@ public class Resilience4jRetrier implements Retrier {
                 .maxAttempts(policy.getRetry() + 1)
                 .waitDuration(Duration.ofMillis(policy.getRetryInterval()))
                 .retryOnResult(this::predicate)
+                .retryOnException(t -> false)
                 .failAfterMaxAttempts(true)
                 .build();
         return RetryRegistry.of(config).retry(policy.getId().toString());
@@ -83,7 +87,11 @@ public class Resilience4jRetrier implements Retrier {
     private boolean predicate(Response response) {
         if (response == null) {
             return false;
-        } else if (RequestContext.isTimeout()) {
+        }
+        if (response.getThrowable() != null) {
+            RequestContext.getOrCreate().setAttribute(Response.KEY_LAST_EXCEPTION, response.getThrowable());
+        }
+        if (RequestContext.isTimeout()) {
             return false;
         } else if (policy.isRetry(response.getCode())) {
             return true;
@@ -98,8 +106,16 @@ public class Resilience4jRetrier implements Retrier {
      * {@inheritDoc}
      */
     @Override
-    public <T extends Response> T execute(Supplier<T> supplier) {
-        return retry.executeSupplier(supplier);
+    public <T extends Response> T execute(Supplier<T> supplier) throws RetryException {
+        try {
+            return retry.executeSupplier(supplier);
+        } catch (RetryException e) {
+            throw e;
+        } catch (MaxRetriesExceeded e) {
+            throw new RetryExhaustedException(e.getMessage(), getCause(e), policy.getRetry() + 1);
+        } catch (RuntimeException e) {
+            throw new RetryException(e.getMessage(), getCause(e));
+        }
     }
 
     /**

@@ -18,7 +18,11 @@ package com.jd.live.agent.implement.flowcontrol.spring.retry;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * SpringRetrierFactory
@@ -28,8 +32,28 @@ import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 @Extension(value = "Spring")
 public class SpringRetrierFactory implements RetrierFactory {
 
+    private final Map<Long, AtomicReference<Retrier>> retriers = new ConcurrentHashMap<>();
+
     @Override
-    public Retrier create(RetryPolicy retryPolicy) {
-        return new SpringRetrier(retryPolicy);
+    public Retrier get(RetryPolicy policy) {
+        if (policy == null) {
+            return null;
+        }
+        AtomicReference<Retrier> reference = retriers.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
+        Retrier retrier = reference.get();
+        long version = retrier == null ? Long.MIN_VALUE : retrier.getPolicy().getVersion();
+        if (version >= policy.getVersion()) {
+            return retrier;
+        }
+        Retrier newRetrier = new SpringRetrier(policy);
+        while (true) {
+            retrier = reference.get();
+            version = retrier == null ? Long.MIN_VALUE : retrier.getPolicy().getVersion();
+            if (version >= policy.getVersion()) {
+                return retrier;
+            } else if (reference.compareAndSet(retrier, newRetrier)) {
+                return newRetrier;
+            }
+        }
     }
 }

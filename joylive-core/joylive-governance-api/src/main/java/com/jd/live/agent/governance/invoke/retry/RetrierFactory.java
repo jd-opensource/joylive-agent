@@ -16,50 +16,23 @@
 package com.jd.live.agent.governance.invoke.retry;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 
 /**
- * RetrierFactory
+ * Factory interface for creating {@link Retrier} instances based on specified {@link RetryPolicy} configurations.
  *
  * @since 1.0.0
  */
 @Extensible("RetrierFactory")
 public interface RetrierFactory {
 
-    Map<Long, AtomicReference<Retrier>> RETRIERS = new ConcurrentHashMap<>();
-
-    default Retrier get(RetryPolicy policy) {
-        if (policy == null) {
-            return null;
-        }
-        AtomicReference<Retrier> reference = RETRIERS.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
-        Retrier retrier = reference.get();
-        long version = retrier == null ? Long.MIN_VALUE : retrier.getPolicy().getVersion();
-        if (version >= policy.getVersion()) {
-            return retrier;
-        }
-        Retrier newRetrier = create(policy);
-        while (true) {
-            retrier = reference.get();
-            version = retrier == null ? Long.MIN_VALUE : retrier.getPolicy().getVersion();
-            if (version >= policy.getVersion()) {
-                return retrier;
-            } else if (reference.compareAndSet(retrier, newRetrier)) {
-                return newRetrier;
-            }
-        }
-    }
-
     /**
-     * Create Retrier
+     * Returns a {@link Retrier} instance configured with the specified {@link RetryPolicy}.
      *
-     * @param retryPolicy Failure retry policy
-     * @return Retrier
+     * @param policy The {@link RetryPolicy} to be used for configuring the returned {@code Retrier}.
+     * @return A {@code Retrier} instance configured according to the specified {@code RetryPolicy}.
      */
-    Retrier create(RetryPolicy retryPolicy);
+    Retrier get(RetryPolicy policy);
 
 }
+

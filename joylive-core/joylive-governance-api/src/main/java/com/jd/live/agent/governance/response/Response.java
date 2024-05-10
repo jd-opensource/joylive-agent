@@ -27,6 +27,8 @@ import com.jd.live.agent.bootstrap.util.Attributes;
  */
 public interface Response extends Attributes {
 
+    String KEY_LAST_EXCEPTION = "lastException";
+
     /**
      * Retrieves the status code associated with this response. The status code
      * typically represents the outcome of the operation, such as success, failure,

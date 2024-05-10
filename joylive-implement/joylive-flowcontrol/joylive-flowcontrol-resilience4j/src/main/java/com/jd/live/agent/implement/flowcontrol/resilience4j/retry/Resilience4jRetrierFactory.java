@@ -18,7 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.retry;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.retry.Retrier;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 
 /**
  * Resilience4jRetrierFactory
@@ -29,7 +29,7 @@ import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
 public class Resilience4jRetrierFactory implements RetrierFactory {
 
     @Override
-    public Retrier create(RetryPolicy retryPolicy) {
-        return new Resilience4jRetrier(retryPolicy);
+    public Retrier get(RetryPolicy policy) {
+        return policy == null ? null : new Resilience4jRetrier(policy);
     }
 }

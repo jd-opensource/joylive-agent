@@ -1,0 +1,3 @@
+com.jd.live.agent.governance.invoke.cluster.FailoverClusterInvoker
+com.jd.live.agent.governance.invoke.cluster.FailsafeClusterInvoker
+com.jd.live.agent.governance.invoke.cluster.FailfastClusterInvoker

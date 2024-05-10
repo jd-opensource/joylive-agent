@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
@@ -104,7 +105,7 @@ public interface InvocationContext {
     Map<String, TagMatcher> getTagMatchers();
 
     /**
-     * etrieves the {@code LoadBalancer} instance associated with the specified name,
+     * Retrieves the {@code LoadBalancer} instance associated with the specified name,
      *      * or returns the default loadbalancer instance if no loadbalancer is found with that name.
      *
      * @param name The name of the loadbalancer.
@@ -112,6 +113,16 @@ public interface InvocationContext {
      *         default loadbalancer if no matching name is found.
      */
     LoadBalancer getOrDefaultLoadBalancer(String name);
+
+    /**
+     * Retrieves the {@code ClusterInvoker} instance associated with the specified name,
+     * * or returns the default ClusterInvoker instance if no ClusterInvoker is found with that name.
+     *
+     * @param name The name of the loadbalancer.
+     * @return the {@code ClusterInvoker} instance associated with the given name, or the
+     * default ClusterInvoker if no matching name is found.
+     */
+    ClusterInvoker getOrDefaultClusterInvoker(String name);
 
     /**
      * A delegate class for {@link InvocationContext} that forwards all its operations to another {@link InvocationContext} instance.
@@ -184,6 +195,11 @@ public interface InvocationContext {
         @Override
         public LoadBalancer getOrDefaultLoadBalancer(String name) {
             return delegate.getOrDefaultLoadBalancer(name);
+        }
+
+        @Override
+        public ClusterInvoker getOrDefaultClusterInvoker(String name) {
+            return delegate.getOrDefaultClusterInvoker(name);
         }
     }
 

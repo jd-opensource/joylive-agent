@@ -15,8 +15,10 @@
  */
 package com.jd.live.agent.implement.flowcontrol.spring.retry;
 
+import com.jd.live.agent.governance.exception.RetryException;
+import com.jd.live.agent.governance.exception.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.retry.Retrier;
-import com.jd.live.agent.governance.policy.service.retry.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -47,12 +49,20 @@ public class SpringRetrier implements Retrier {
      * {@inheritDoc}
      */
     @Override
-    public <T extends Response> T execute(Supplier<T> supplier) {
-        return retryTemplate.execute(context -> {
-            T response = supplier.get();
-            context.setAttribute(SpringRetryPolicy.RESPONSE_KEY, response);
-            return response;
-        });
+    public <T extends Response> T execute(Supplier<T> supplier) throws RetryException {
+        try {
+            return retryTemplate.execute(context -> {
+                T response = supplier.get();
+                context.setAttribute(SpringRetryPolicy.RESPONSE_KEY, response);
+                return response;
+            });
+        } catch (RetryException e) {
+            throw e;
+        } catch (org.springframework.retry.ExhaustedRetryException e) {
+            throw new RetryExhaustedException(e.getMessage(), getCause(e), policy.getRetry() + 1);
+        } catch (RuntimeException e) {
+            throw new RetryException(e.getMessage(), getCause(e));
+        }
     }
 
     /**

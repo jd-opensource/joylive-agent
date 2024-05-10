@@ -1,4 +1,3 @@
-com.jd.live.agent.plugin.router.dubbo.v2_6.definition.AbstractDirectoryDefinition
 com.jd.live.agent.plugin.router.dubbo.v2_6.definition.ExceptionFilterDefinition
-com.jd.live.agent.plugin.router.dubbo.v2_6.definition.MonitorFilterDefinition
-com.jd.live.agent.plugin.router.dubbo.v2_6.definition.UrlDefinition
+com.jd.live.agent.plugin.router.dubbo.v2_6.definition.LoadBalanceDefinition
+com.jd.live.agent.plugin.router.dubbo.v2_6.definition.ClusterDefinition
