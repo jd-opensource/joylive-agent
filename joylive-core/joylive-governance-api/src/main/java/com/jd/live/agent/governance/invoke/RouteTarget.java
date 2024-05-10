@@ -35,7 +35,6 @@ import java.util.function.Predicate;
  * used in a workflow or task scheduling system. It provides functionalities to
  * handle a list of endpoints, perform actions on units, and manage routing logic.
  */
-@Getter
 public class RouteTarget {
 
     /**
@@ -51,32 +50,38 @@ public class RouteTarget {
     /**
      * The unit group associated with the unit in this route target.
      */
+    @Getter
     private final UnitGroup unitGroup;
 
     /**
      * The unit that is the subject of the action in this route target.
      */
+    @Getter
     private final Unit unit;
 
     /**
      * The action to be performed on the unit.
      */
+    @Getter
     private final UnitAction unitAction;
 
     /**
      * The route associated with the unit.
      */
+    @Getter
     private final UnitRoute unitRoute;
 
     /**
      * The cell route associated with this route target.
      */
+    @Getter
     @Setter
     private CellRoute cellRoute;
 
     /**
      * A list of endpoints that this route target is currently operating on.
      */
+    @Getter
     @Setter
     private List<? extends Endpoint> endpoints;
 
@@ -93,8 +98,8 @@ public class RouteTarget {
     public RouteTarget(List<? extends Endpoint> instances, EndpointGroup instanceGroup,
                        Unit unit, UnitAction unitAction, UnitRoute unitRoute, CellRoute cellRoute) {
         this.instances = instances == null && instanceGroup != null ? instanceGroup.getEndpoints() : instances;
-        this.instanceGroup = instanceGroup == null && instances != null ? new EndpointGroup(instances) : instanceGroup;
         this.unit = unit == null && unitRoute != null ? unitRoute.getUnit() : unit;
+        this.instanceGroup = instanceGroup == null && instances != null && this.unit != null ? new EndpointGroup(instances) : instanceGroup;
         this.unitGroup = this.instanceGroup == null || this.unit == null ? null : this.instanceGroup.getUnitGroup(this.unit.getCode());
         this.unitAction = unitAction;
         this.unitRoute = unitRoute;
