@@ -30,41 +30,41 @@ import java.util.Map;
 @AllArgsConstructor
 public class TrafficEvent {
 
-    public static final String KEY_LIVE_SPACE_ID = "live.spaceId";
+    public static final String KEY_LIVE_SPACE_ID = "live_spaceId";
 
-    public static final String KEY_LIVE_RULE_ID = "live.ruleId";
+    public static final String KEY_LIVE_RULE_ID = "live_ruleId";
 
-    public static final String KEY_LANE_SPACE_ID = "lane.spaceId";
+    public static final String KEY_LANE_SPACE_ID = "lane_spaceId";
 
-    public static final String KEY_LANE_RULE_ID = "lane.ruleId";
+    public static final String KEY_LANE_RULE_ID = "lane_ruleId";
 
-    public static final String KEY_LOCAL_UNIT = "local.unit";
+    public static final String KEY_LOCAL_UNIT = "local_unit";
 
-    public static final String KEY_LOCAL_CELL = "local.cell";
+    public static final String KEY_LOCAL_CELL = "local_cell";
 
-    public static final String KEY_LOCAL_LANE = "local.lane";
+    public static final String KEY_LOCAL_LANE = "local_lane";
 
-    public static final String KEY_LOCAL_IP = "local.ip";
+    public static final String KEY_LOCAL_IP = "local_ip";
 
-    public static final String KEY_TARGET_UNIT = "target.unit";
+    public static final String KEY_TARGET_UNIT = "target_unit";
 
-    public static final String KEY_TARGET_CELL = "target.cell";
+    public static final String KEY_TARGET_CELL = "target_cell";
 
-    public static final String KEY_TARGET_LANE = "target.lane";
+    public static final String KEY_TARGET_LANE = "target_lane";
 
     public static final String KEY_APPLICATION = "application";
 
-    public static final String KEY_SERVICE_NAME = "service.name";
+    public static final String KEY_SERVICE_NAME = "service_name";
 
-    public static final String KEY_SERVICE_GROUP = "service.group";
+    public static final String KEY_SERVICE_GROUP = "service_group";
 
-    public static final String KEY_SERVICE_PATH = "service.path";
+    public static final String KEY_SERVICE_PATH = "service_path";
 
-    public static final String KEY_SERVICE_METHOD = "service.method";
+    public static final String KEY_SERVICE_METHOD = "service_method";
 
-    public static final String KEY_SERVICE_VARIABLE = "service.variable";
+    public static final String KEY_SERVICE_VARIABLE = "service_variable";
 
-    public static final String KEY_SERVICE_POLICY_ID = "service.policyId";
+    public static final String KEY_SERVICE_POLICY_ID = "service_policyId";
 
     public static final String COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL = "live_gateway_inbound_requests_total";
 
