@@ -65,6 +65,12 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     private String strategyType;
 
     /**
+     * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
+     * concurrency or rate limit has been reached.
+     */
+    private long maxWaitMs;
+
+    /**
      * A map of parameters that further customize the action of the limiting strategy.
      */
     private Map<String, String> actionParameters;

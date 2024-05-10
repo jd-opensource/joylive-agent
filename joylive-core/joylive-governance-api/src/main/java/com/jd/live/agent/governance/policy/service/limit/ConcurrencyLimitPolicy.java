@@ -52,12 +52,6 @@ public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements Polic
     private int maxConcurrency;
 
     /**
-     * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
-     * concurrency limit has been reached.
-     */
-    private long maxWaitMs;
-
-    /**
      * Constructs a new {@code ConcurrencyLimitPolicy} with default settings.
      */
     public ConcurrencyLimitPolicy() {

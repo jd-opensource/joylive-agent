@@ -28,8 +28,8 @@
                   "timeWindowInMs": 2000
                 }
               ],
+              "maxWaitMs": 100,
               "actionParameters": {
-                "maxWaitMs": 100
               },
               "relationType": "AND",
               "conditions": [
@@ -96,8 +96,13 @@
             "retry": 10,
             "retryInterval": 1000,
             "timeout": 5000,
-            "retryStatuses": [500, 502],
-            "retryExceptions": ["java.lang.NullPointException"],
+            "retryStatuses": [
+              500,
+              502
+            ],
+            "retryExceptions": [
+              "java.lang.NullPointException"
+            ],
             "version": 1704038400000
           },
           "rateLimitPolicies": [
@@ -115,8 +120,30 @@
                   "timeWindowInMs": 2000
                 }
               ],
+              "maxWaitMs": 100,
               "actionParameters": {
-                "maxWaitMs": 100
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "header",
+                  "opType": "EQUAL",
+                  "key": "x-live-ext-demo",
+                  "value": [
+                    "abc"
+                  ]
+                }
+              ]
+            }
+          ],
+          "concurrencyLimitPolicies": [
+            {
+              "name": "limit-rule-2",
+              "version": 1704038400000,
+              "strategyType": "Resilience4j",
+              "maxConcurrency": 10,
+              "maxWaitMs": 100,
+              "actionParameters": {
               },
               "relationType": "AND",
               "conditions": [

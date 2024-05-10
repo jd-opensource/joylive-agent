@@ -28,10 +28,6 @@ public interface RateLimiter {
 
     String MAX_BURST_SECONDS = "maxBurstSeconds";
 
-    String MAX_WAIT_MS = "maxWaitMs";
-
-    long DEFAULT_MAX_WAIT_MS = 0L;
-
     /**
      * Try to get a permit return the result
      *
