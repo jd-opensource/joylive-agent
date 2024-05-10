@@ -55,19 +55,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     public AbstractRateLimiter(RateLimitPolicy policy) {
         this.policy = policy;
         this.option = MapOption.of(policy.getActionParameters());
-        this.timeout = getTimeout(option);
-    }
-
-    /**
-     * Retrieves the timeout duration for permit acquisition based on the provided option.
-     * The timeout is determined by the `maxWaitMs` parameter set in actionParameters.
-     *
-     * @param option The option that may contain the max wait time in milliseconds.
-     * @return The timeout duration as a Duration object.
-     */
-    protected Duration getTimeout(Option option) {
-        // The timeout period is set by `maxWaitMs` set in actionParameters
-        return Duration.ofMillis(option.getLong(MAX_WAIT_MS, DEFAULT_MAX_WAIT_MS));
+        this.timeout = Duration.ofMillis(policy.getMaxWaitMs());
     }
 
     @Override
