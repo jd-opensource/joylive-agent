@@ -19,11 +19,21 @@ import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * An abstract class representing an executable context.
  * This class provides a structure to hold information related to an executable task or operation.
  */
 public abstract class ExecutableContext extends AbstractAttributes {
+
+    private static final AtomicLong COUNTER = new AtomicLong(0);
+
+    /**
+     * The id of the executable
+     */
+    @Getter
+    protected final long id;
 
     /**
      * The type of the executable.
@@ -68,6 +78,7 @@ public abstract class ExecutableContext extends AbstractAttributes {
         this.type = type;
         this.arguments = arguments;
         this.description = description;
+        this.id = COUNTER.incrementAndGet();
     }
 
 

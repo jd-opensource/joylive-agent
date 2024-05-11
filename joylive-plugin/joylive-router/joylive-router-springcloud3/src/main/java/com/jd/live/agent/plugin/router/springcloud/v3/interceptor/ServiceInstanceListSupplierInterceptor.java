@@ -46,9 +46,7 @@ import java.util.stream.Collectors;
  */
 public class ServiceInstanceListSupplierInterceptor extends AbstractHttpRouteInterceptor<HttpOutboundRequest> {
 
-    private static final ThreadLocal<Boolean> LOCK = new ThreadLocal<>();
-
-    private static final String LOCKED = "LOCKED";
+    private static final ThreadLocal<Long> LOCK = new ThreadLocal<>();
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, List<RouteFilter> filters) {
         super(context, filters);
@@ -58,14 +56,13 @@ public class ServiceInstanceListSupplierInterceptor extends AbstractHttpRouteInt
     public void onEnter(ExecutableContext ctx) {
         if (LOCK.get() == null) {
             // Prevent duplicate calls
-            LOCK.set(Boolean.TRUE);
-            ctx.setAttribute(LOCKED, Boolean.TRUE);
+            LOCK.set(ctx.getId());
         }
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        if (ctx.getAttribute(LOCKED) != null) {
+        if (LOCK.get() == ctx.getId()) {
             LOCK.remove();
         }
     }
@@ -79,7 +76,7 @@ public class ServiceInstanceListSupplierInterceptor extends AbstractHttpRouteInt
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        if (ctx.getAttribute(LOCKED) != null) {
+        if (LOCK.get() == ctx.getId()) {
             MethodContext mc = (MethodContext) ctx;
             Object[] arguments = ctx.getArguments();
             Object result = mc.getResult();

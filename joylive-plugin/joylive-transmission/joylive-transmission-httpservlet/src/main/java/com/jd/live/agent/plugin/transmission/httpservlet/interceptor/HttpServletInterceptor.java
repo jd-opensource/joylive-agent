@@ -24,9 +24,13 @@ import com.jd.live.agent.governance.context.bag.CargoRequires;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+/**
+ * An interceptor for HttpServlet requests to capture and restore context (cargo) from the request headers.
+ * This is useful for maintaining request-specific context across different components of a distributed system.
+ */
 public class HttpServletInterceptor extends InterceptorAdaptor {
 
-    private static final ThreadLocal<Boolean> LOCK = new ThreadLocal<>();
+    private static final ThreadLocal<Long> LOCK = new ThreadLocal<>();
 
     private final CargoRequire require;
 
@@ -42,17 +46,24 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (LOCK.get() == null) {
-            LOCK.set(Boolean.TRUE);
+            LOCK.set(ctx.getId());
             restoreTag((HttpServletRequest) ctx.getArguments()[0]);
         }
     }
 
+    /**
+     * Restores cargo from the request headers into the RequestContext.
+     *
+     * @param request The incoming HttpServletRequest.
+     */
     private void restoreTag(HttpServletRequest request) {
         RequestContext.create().addCargo(require, request.getHeaderNames(), request::getHeaders);
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        LOCK.remove();
+        if (LOCK.get() == ctx.getId()) {
+            LOCK.remove();
+        }
     }
 }

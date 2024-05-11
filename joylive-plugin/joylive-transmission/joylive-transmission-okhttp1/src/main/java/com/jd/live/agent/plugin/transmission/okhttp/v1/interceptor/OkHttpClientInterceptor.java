@@ -20,25 +20,37 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.squareup.okhttp.Request.Builder;
 
+/**
+ * An interceptor that attaches additional metadata to each request.
+ * This is typically used for adding tracing information, authentication tokens, or other request-scoped data that needs to
+ * be included with every outbound HTTP request.
+ */
 public class OkHttpClientInterceptor extends InterceptorAdaptor {
 
-    private static final ThreadLocal<Boolean> LOCK = new ThreadLocal<>();
+    private static final ThreadLocal<Long> LOCK = new ThreadLocal<>();
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (LOCK.get() == null) {
-            LOCK.set(Boolean.TRUE);
+            LOCK.set(ctx.getId());
             Builder builder = (Builder) ctx.getTarget();
             attachTag(builder);
         }
     }
 
+    /**
+     * Attaches tags to the {@link Builder} by adding headers from the RequestContext.
+     *
+     * @param builder The request builder to which the tags are to be attached.
+     */
     private void attachTag(Builder builder) {
         RequestContext.cargos(builder::addHeader);
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        LOCK.remove();
+        if (LOCK.get() == ctx.getId()) {
+            LOCK.remove();
+        }
     }
 }
