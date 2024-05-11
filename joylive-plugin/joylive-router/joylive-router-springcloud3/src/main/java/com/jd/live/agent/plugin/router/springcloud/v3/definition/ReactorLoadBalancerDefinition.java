@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -31,10 +29,14 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactorLoadBal
  * @since 1.0.0
  */
 @Extension(value = "ReactorLoadBalancerDefinition_v3")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(name = {
+                GovernanceConfig.CONFIG_LIVE_ENABLED,
+                GovernanceConfig.CONFIG_LANE_ENABLED,
+                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
+        }, matchIfMissing = true, relation = ConditionalRelation.OR),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ReactorLoadBalancerDefinition.TYPE_REACTOR_LOAD_BALANCER)
 public class ReactorLoadBalancerDefinition extends PluginDefinitionAdapter {
 

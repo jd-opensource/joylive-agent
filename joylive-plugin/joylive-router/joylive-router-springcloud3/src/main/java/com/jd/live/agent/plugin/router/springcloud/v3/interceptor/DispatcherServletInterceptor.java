@@ -20,16 +20,15 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttpInboundInterceptor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ServletInboundRequest;
 import org.springframework.http.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * DispatcherServletInterceptor
@@ -37,12 +36,14 @@ import java.util.List;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-public class DispatcherServletInterceptor extends AbstractHttpInboundInterceptor<ServletInboundRequest> {
+public class DispatcherServletInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DispatcherServletInterceptor.class);
 
-    public DispatcherServletInterceptor(InvocationContext context, List<InboundFilter> filters) {
-        super(context, filters);
+    private final InvocationContext context;
+
+    public DispatcherServletInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -59,7 +60,8 @@ public class DispatcherServletInterceptor extends AbstractHttpInboundInterceptor
         Object[] arguments = ctx.getArguments();
         HttpServletResponse response = (HttpServletResponse) arguments[1];
         try {
-            process(new ServletInboundRequest((HttpServletRequest) arguments[0]));
+            ServletInboundRequest request = new ServletInboundRequest((HttpServletRequest) arguments[0]);
+            context.inbound(new HttpInboundInvocation<>(request, context));
         } catch (RejectException e) {
             mc.setSkip(true);
             if (response != null) {

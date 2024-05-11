@@ -37,7 +37,7 @@ public class StickySessionInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         List<ServiceInstance> instances = (List<ServiceInstance>) arguments[0];
         String cookie = (String) arguments[1];
-        RequestContext.getOrCreate().setAttribute(Request.KEY_STICKY_ID, cookie);
+        RequestContext.setAttribute(Request.KEY_STICKY_ID, cookie);
         MethodContext mc = (MethodContext) ctx;
         mc.setResult(instances);
         mc.setSkip(true);

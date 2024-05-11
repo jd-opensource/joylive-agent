@@ -16,9 +16,11 @@
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.CellAction;
@@ -37,6 +39,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
  */
 @Injectable
 @Extension(value = "FailoverInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_FAILOVER)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class FailoverInboundFilter implements InboundFilter {
 
     @Inject(Publisher.TRAFFIC)

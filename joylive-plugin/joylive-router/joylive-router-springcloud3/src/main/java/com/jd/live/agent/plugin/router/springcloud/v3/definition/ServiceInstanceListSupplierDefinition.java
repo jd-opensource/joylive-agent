@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -39,10 +37,14 @@ import java.util.List;
  */
 @Injectable
 @Extension(value = "ServiceInstanceListSupplierPluginDefinition_v3")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(name = {
+                GovernanceConfig.CONFIG_LIVE_ENABLED,
+                GovernanceConfig.CONFIG_LANE_ENABLED,
+                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
+        }, matchIfMissing = true, relation = ConditionalRelation.OR),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
 public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {
 

@@ -18,11 +18,11 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttpInboundInterceptor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveInboundRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,18 +30,18 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.handler.FilteringWebHandler;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 /**
  * FilteringWebHandlerInterceptor
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-public class FilteringWebHandlerInterceptor extends AbstractHttpInboundInterceptor<ReactiveInboundRequest> {
+public class FilteringWebHandlerInterceptor extends InterceptorAdaptor {
 
-    public FilteringWebHandlerInterceptor(InvocationContext context, List<InboundFilter> filters) {
-        super(context, filters);
+    private final InvocationContext context;
+
+    public FilteringWebHandlerInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -56,16 +56,15 @@ public class FilteringWebHandlerInterceptor extends AbstractHttpInboundIntercept
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
         try {
-            process(new ReactiveInboundRequest(exchange.getRequest()));
+            ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest());
+            InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
+                    ? new GatewayInboundInvocation<>(request, context)
+                    : new HttpInboundInvocation<>(request, context);
+            context.inbound(invocation);
         } catch (RejectException e) {
             mc.setResult(Mono.error(new ResponseStatusException(
                     HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage(), e)));
             mc.setSkip(true);
         }
-    }
-
-    @Override
-    protected HttpInboundInvocation<ReactiveInboundRequest> createInlet(ReactiveInboundRequest request) {
-        return context.getApplication().getService().isGateway() ? new GatewayInboundInvocation<>(request, context) : super.createInlet(request);
     }
 }

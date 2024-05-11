@@ -38,6 +38,6 @@ public class FilteringWebHandlerInterceptor extends InterceptorAdaptor {
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_GATEWAY, Boolean.TRUE);
+        RequestContext.setAttribute(Carrier.ATTRIBUTE_GATEWAY, Boolean.TRUE);
     }
 }

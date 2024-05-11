@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.CellAction;
@@ -36,6 +38,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_A
  * @since 1.0.0
  */
 @Extension(value = "CellInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_CELL)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class CellInboundFilter implements InboundFilter {
 
     @Override

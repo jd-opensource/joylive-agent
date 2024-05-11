@@ -39,7 +39,7 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
             try {
                 String serviceId = (String) fieldDesc.get(target);
                 if (serviceId != null) {
-                    RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceId);
+                    RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceId);
                 }
             } catch (Throwable ignore) {
             }

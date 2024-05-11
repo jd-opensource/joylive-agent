@@ -15,23 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.DispatcherServletInterceptor;
-
-import java.util.List;
 
 /**
  * DispatcherServletPluginDefinition
@@ -41,10 +34,13 @@ import java.util.List;
  */
 @Injectable
 @Extension(value = "DispatcherServletPluginDefinition_v3")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(name = {
+                GovernanceConfig.CONFIG_LIVE_ENABLED,
+                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
+        }, matchIfMissing = true, relation = ConditionalRelation.OR),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.AND)
 @ConditionalOnClass(DispatcherServletDefinition.TYPE_DISPATCHER_SERVLET)
 public class DispatcherServletDefinition extends PluginDefinitionAdapter {
 
@@ -60,17 +56,13 @@ public class DispatcherServletDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject
-    @InjectLoader(ResourcerType.PLUGIN)
-    private List<InboundFilter> filters;
-
     public DispatcherServletDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_DO_SERVICE).
                                 and(MatcherBuilder.arguments(ARGUMENT_DO_SERVICE)),
-                        () -> new DispatcherServletInterceptor(context, filters)
+                        () -> new DispatcherServletInterceptor(context)
                 )
         };
     }

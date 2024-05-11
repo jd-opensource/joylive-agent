@@ -16,9 +16,11 @@
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -46,6 +48,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
  */
 @Injectable
 @Extension(value = "UnitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_UNIT)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class UnitInboundFilter implements InboundFilter {
 
     @Inject(Publisher.TRAFFIC)

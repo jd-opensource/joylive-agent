@@ -16,9 +16,11 @@
 package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
@@ -54,6 +56,7 @@ import java.util.function.Function;
  */
 @Injectable
 @Extension(value = "CellRouteFilter", order = RouteFilter.ORDER_LIVE_CELL)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class CellRouteFilter implements RouteFilter {
 
     @Inject(Publisher.TRAFFIC)
