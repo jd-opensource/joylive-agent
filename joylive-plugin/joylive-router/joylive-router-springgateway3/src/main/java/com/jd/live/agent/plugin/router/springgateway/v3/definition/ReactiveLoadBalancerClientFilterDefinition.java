@@ -16,7 +16,9 @@
 package com.jd.live.agent.plugin.router.springgateway.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -25,11 +27,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.ReactiveLoadBalancerClientFilterInterceptor;
-
-import java.util.List;
 
 /**
  * ReactiveLoadBalancerClientFilter
@@ -59,9 +58,6 @@ public class ReactiveLoadBalancerClientFilterDefinition extends PluginDefinition
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject
-    private List<RouteFilter> filters;
-
     @Config(GatewayConfig.CONFIG_SPRING_GATEWAY_PREFIX)
     private GatewayConfig config;
 
@@ -71,7 +67,7 @@ public class ReactiveLoadBalancerClientFilterDefinition extends PluginDefinition
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FILTER).
                                 and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
-                        () -> new ReactiveLoadBalancerClientFilterInterceptor(context, filters, config)
+                        () -> new ReactiveLoadBalancerClientFilterInterceptor(context, config)
                 )
         };
     }

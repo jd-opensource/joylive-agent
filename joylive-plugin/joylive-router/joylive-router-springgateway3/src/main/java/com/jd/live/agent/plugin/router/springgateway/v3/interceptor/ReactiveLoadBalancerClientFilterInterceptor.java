@@ -17,13 +17,12 @@ package com.jd.live.agent.plugin.router.springgateway.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.template.Template;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractHttpRouteInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
-import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
@@ -38,7 +37,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,14 +47,16 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
  *
  * @since 1.0.0
  */
-public class ReactiveLoadBalancerClientFilterInterceptor extends AbstractHttpRouteInterceptor<ReactiveOutboundRequest> {
+public class ReactiveLoadBalancerClientFilterInterceptor extends InterceptorAdaptor {
+
+    private final InvocationContext context;
 
     private final GatewayConfig config;
 
     private final Map<String, Template> templates = new ConcurrentHashMap<>();
 
-    public ReactiveLoadBalancerClientFilterInterceptor(InvocationContext context, List<RouteFilter> filters, GatewayConfig config) {
-        super(context, filters);
+    public ReactiveLoadBalancerClientFilterInterceptor(InvocationContext context, GatewayConfig config) {
+        this.context = context;
         this.config = config;
     }
 
@@ -82,15 +82,10 @@ public class ReactiveLoadBalancerClientFilterInterceptor extends AbstractHttpRou
         }
     }
 
-    @Override
-    protected HttpOutboundInvocation<ReactiveOutboundRequest> createOutlet(ReactiveOutboundRequest request) {
-        return new GatewayHttpOutboundInvocation<>(request, context);
-    }
-
     private void forwardHttp(ServerWebExchange exchange, URI uri) {
         ReactiveOutboundRequest request = new ReactiveOutboundRequest(exchange.getRequest().mutate().uri(uri).build(), null);
-        HttpOutboundInvocation<ReactiveOutboundRequest> invocation = createOutlet(request);
-        routing(invocation);
+        OutboundInvocation<ReactiveOutboundRequest> invocation = new GatewayHttpOutboundInvocation<>(request, context);
+        context.route(invocation);
         RouteTarget target = invocation.getRouteTarget();
         UnitRoute unitRoute = target.getUnitRoute();
         CellRoute cellRoute = target.getCellRoute();
@@ -120,7 +115,7 @@ public class ReactiveLoadBalancerClientFilterInterceptor extends AbstractHttpRou
         return hostExpression == null && config != null ? config.getHostExpression() : hostExpression;
     }
 
-    private String getUnitHost(HttpOutboundInvocation<ReactiveOutboundRequest> invocation, Unit unit) {
+    private String getUnitHost(OutboundInvocation<ReactiveOutboundRequest> invocation, Unit unit) {
         ReactiveOutboundRequest request = invocation.getRequest();
         GovernancePolicy governancePolicy = invocation.getGovernancePolicy();
         Domain domain = governancePolicy == null ? null : governancePolicy.getDomain(request.getHost());
