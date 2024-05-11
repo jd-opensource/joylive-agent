@@ -34,7 +34,6 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -44,19 +43,18 @@ import java.util.function.Supplier;
  * by rerouting failed requests to alternative instances within the cluster.
  */
 @Extension(value = ClusterInvoker.TYPE_FAILOVER, order = ClusterInvoker.ORDER_FAILOVER)
-public class FailoverClusterInvoker implements ClusterInvoker {
+public class FailoverClusterInvoker extends AbstractClusterInvoker {
 
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> O execute(LiveCluster<R, O, E, T> cluster,
-                                           ClusterPolicy defaultPolicy,
+                                           InvocationContext context,
                                            OutboundInvocation<R> invocation,
-                                           Function<OutboundInvocation<R>, List<? extends Endpoint>> routing,
-                                           InvocationContext context) {
+                                           ClusterPolicy defaultPolicy) {
         AtomicInteger counter = new AtomicInteger(0);
-        Supplier<O> supplier = () -> invoke(cluster, invocation, routing, counter);
+        Supplier<O> supplier = () -> invoke(cluster, context, invocation, counter);
         ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
@@ -67,7 +65,7 @@ public class FailoverClusterInvoker implements ClusterInvoker {
             if (retrier != null) {
                 Long timeout = retryPolicy.getTimeout();
                 if (timeout != null && timeout > 0) {
-                    RequestContext.getOrCreate().setAttribute(Carrier.ATTRIBUTE_DEADLINE, System.currentTimeMillis() + timeout);
+                    RequestContext.setAttribute(Carrier.ATTRIBUTE_DEADLINE, System.currentTimeMillis() + timeout);
                 } else {
                     RequestContext.removeAttribute(Carrier.ATTRIBUTE_DEADLINE);
                 }
@@ -86,8 +84,9 @@ public class FailoverClusterInvoker implements ClusterInvoker {
      * This method is called internally by {@link #execute} and applies the routing and retry logic.
      *
      * @param cluster    The live cluster where the request is executed.
+     * @param context    The invocation context that provides additional information and state for
+     *                   the current invocation process.
      * @param invocation The specific invocation logic for the request.
-     * @param routing    The routing function to determine the target endpoint(s) for the request.
      * @param counter    An atomic counter used for tracking retry attempts.
      * @return An outbound response of type {@code O} corresponding to the executed request.
      */
@@ -96,8 +95,8 @@ public class FailoverClusterInvoker implements ClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> O invoke(LiveCluster<R, O, E, T> cluster,
+                                          InvocationContext context,
                                           OutboundInvocation<R> invocation,
-                                          Function<OutboundInvocation<R>, List<? extends Endpoint>> routing,
                                           AtomicInteger counter) {
         R request = invocation.getRequest();
         E endpoint = null;
@@ -105,7 +104,7 @@ public class FailoverClusterInvoker implements ClusterInvoker {
             List<? extends Endpoint> instances = invocation.getInstances();
             instances = counter.getAndIncrement() > 0 || instances == null || instances.isEmpty() ? cluster.route(request) : instances;
             invocation.setInstances(instances);
-            List<? extends Endpoint> endpoints = routing.apply(invocation);
+            List<? extends Endpoint> endpoints = context.route(invocation);
             if (endpoints != null && !endpoints.isEmpty()) {
                 endpoint = (E) endpoints.get(0);
                 return cluster.invoke(request, endpoint);

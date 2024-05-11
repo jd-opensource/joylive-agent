@@ -15,23 +15,18 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v3.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.plugin.router.dubbo.v3.interceptor.ClassLoaderFilterInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "ClassLoaderFilterDefinition_v3")
@@ -57,17 +52,13 @@ public class ClassLoaderFilterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject
-    @InjectLoader(ResourcerType.PLUGIN)
-    private List<InboundFilter> filters;
-
     public ClassLoaderFilterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CLASSLOADER_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new ClassLoaderFilterInterceptor(context, filters)
+                        () -> new ClassLoaderFilterInterceptor(context)
                 )
         };
     }

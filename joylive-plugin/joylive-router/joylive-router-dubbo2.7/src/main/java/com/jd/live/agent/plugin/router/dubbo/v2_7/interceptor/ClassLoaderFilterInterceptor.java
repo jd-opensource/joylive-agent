@@ -18,25 +18,22 @@ package com.jd.live.agent.plugin.router.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractInboundInterceptor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboInboundInvocation;
 import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.filter.ClassLoaderFilter;
 
-import java.util.List;
-
 /**
  * ClassLoaderFilterInterceptor
  */
-public class ClassLoaderFilterInterceptor extends
-        AbstractInboundInterceptor<DubboInboundRequest, DubboInboundInvocation> {
+public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
 
-    public ClassLoaderFilterInterceptor(InvocationContext context, List<InboundFilter> filters) {
-        super(context, filters);
+    private final InvocationContext context;
+
+    public ClassLoaderFilterInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -52,22 +49,11 @@ public class ClassLoaderFilterInterceptor extends
         Object[] arguments = mc.getArguments();
         Invocation invocation = (Invocation) arguments[1];
         try {
-            process(new DubboInboundRequest(invocation));
+            context.inbound(new DubboInboundInvocation(new DubboInboundRequest(invocation), context));
         } catch (RejectException e) {
             Result result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
             mc.setResult(result);
             mc.setSkip(true);
         }
     }
-
-    @Override
-    protected void process(DubboInboundInvocation invocation) {
-        new InboundFilterChain.Chain(inboundFilters).filter(invocation);
-    }
-
-    @Override
-    protected DubboInboundInvocation createInlet(DubboInboundRequest request) {
-        return new DubboInboundInvocation(request, context);
-    }
-
 }

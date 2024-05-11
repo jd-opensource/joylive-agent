@@ -47,10 +47,5 @@ public interface DubboResponse {
         public DubboOutboundResponse(Result response, Throwable throwable, Predicate<Response> predicate) {
             super(response, throwable, predicate);
         }
-
-        @Override
-        public String getCode() {
-            return null;
-        }
     }
 }

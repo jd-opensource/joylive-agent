@@ -21,7 +21,23 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.RpcOutboundInvocat
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
 
+/**
+ * Represents a common contract for Dubbo invocations within an RPC system.
+ * This interface is a marker for Dubbo-specific invocation classes, providing a shared
+ * identity that can be used to group inbound and outbound Dubbo invocation types.
+ */
 public interface DubboInvocation {
+
+    /**
+     * Represents a Dubbo-specific inbound RPC invocation.
+     * <p>
+     * This class encapsulates the details of an inbound request received by a Dubbo service provider.
+     * It extends the generic {@link RpcInboundInvocation} by specializing it for Dubbo's
+     * communication protocols and request handling procedures.
+     * </p>
+     *
+     * @see RpcInboundInvocation
+     */
     class DubboInboundInvocation extends RpcInboundInvocation<DubboInboundRequest> implements DubboInvocation {
 
         public DubboInboundInvocation(DubboInboundRequest request, InvocationContext context) {
@@ -29,6 +45,16 @@ public interface DubboInvocation {
         }
     }
 
+    /**
+     * Represents a Dubbo-specific outbound RPC invocation.
+     * <p>
+     * This class encapsulates the details of an outbound request to be sent by a Dubbo service consumer.
+     * It extends the generic {@link RpcOutboundInvocation} by tailoring it to the requirements of Dubbo's
+     * communication protocols and request dispatching procedures.
+     * </p>
+     *
+     * @see RpcOutboundInvocation
+     */
     class DubboOutboundInvocation extends RpcOutboundInvocation<DubboOutboundRequest> implements DubboInvocation {
 
         public DubboOutboundInvocation(DubboOutboundRequest request, InvocationContext context) {

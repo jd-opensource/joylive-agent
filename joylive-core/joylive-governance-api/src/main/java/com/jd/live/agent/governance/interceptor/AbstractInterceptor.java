@@ -102,14 +102,18 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * @param request the inbound request for which to create an InboundInvocation
          * @return a new InboundInvocation instance
          */
-        protected abstract I createInlet(R request);
+        protected I createInlet(R request) {
+            return null;
+        }
 
         /**
          * Applies the inbound filters to the given InboundInvocation.
          *
          * @param invocation the InboundInvocation to which the filters will be applied
          */
-        protected abstract void process(I invocation);
+        protected void process(I invocation) {
+            new InboundFilterChain.Chain(inboundFilters).filter(invocation);
+        }
     }
 
     /**
@@ -304,7 +308,9 @@ public abstract class AbstractInterceptor extends InterceptorAdaptor {
          * @param request the outbound request for which to create an OutboundInvocation
          * @return a new OutboundInvocation instance
          */
-        protected abstract O createOutlet(R request);
+        protected O createOutlet(R request) {
+            return null;
+        }
 
         /**
          * Creates a new OutboundInvocation for the given outbound request and initializes it with a list of Endpoint instances.

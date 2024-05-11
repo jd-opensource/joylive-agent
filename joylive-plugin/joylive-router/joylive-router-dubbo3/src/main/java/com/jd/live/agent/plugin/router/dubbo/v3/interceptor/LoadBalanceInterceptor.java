@@ -18,10 +18,9 @@ package com.jd.live.agent.plugin.router.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractRouteInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -38,12 +37,14 @@ import java.util.stream.Collectors;
 /**
  * LoadBalanceInterceptor
  */
-public class LoadBalanceInterceptor extends AbstractRouteInterceptor<DubboOutboundRequest, DubboOutboundInvocation> {
+public class LoadBalanceInterceptor extends InterceptorAdaptor {
+
+    private final InvocationContext context;
 
     private final Map<AbstractClusterInvoker<?>, DubboCluster> clusters = new ConcurrentHashMap<>();
 
-    public LoadBalanceInterceptor(InvocationContext context, List<RouteFilter> filters) {
-        super(context, filters);
+    public LoadBalanceInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -60,15 +61,14 @@ public class LoadBalanceInterceptor extends AbstractRouteInterceptor<DubboOutbou
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[2];
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
-        DubboOutboundInvocation invocation = createOutlet(request);
+        DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
         DubboCluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster::new);
         try {
             List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
-            invocation.setInstances(instances);
             if (invoked != null) {
                 invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));
             }
-            List<? extends Endpoint> endpoints = routing(invocation);
+            List<? extends Endpoint> endpoints = context.route(invocation, instances);
             if (endpoints != null && !endpoints.isEmpty()) {
                 mc.setResult(((DubboEndpoint<?>) endpoints.get(0)).getInvoker());
             } else {
@@ -78,11 +78,6 @@ public class LoadBalanceInterceptor extends AbstractRouteInterceptor<DubboOutbou
             mc.setThrowable(cluster.createRejectException(e));
         }
         mc.setSkip(true);
-    }
-
-    @Override
-    protected DubboOutboundInvocation createOutlet(DubboOutboundRequest request) {
-        return new DubboOutboundInvocation(request, context);
     }
 
 }

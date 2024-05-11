@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * A {@code ClusterInvoker} that implements the fail-fast cluster invocation strategy.
@@ -42,7 +41,7 @@ import java.util.function.Function;
  * </p>
  */
 @Extension(value = ClusterInvoker.TYPE_FAILFAST, order = ClusterInvoker.ORDER_FAILFAST)
-public class FailfastClusterInvoker implements ClusterInvoker {
+public class FailfastClusterInvoker extends AbstractClusterInvoker {
 
     @SuppressWarnings("unchecked")
     @Override
@@ -50,17 +49,16 @@ public class FailfastClusterInvoker implements ClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> O execute(LiveCluster<R, O, E, T> cluster,
-                                           ClusterPolicy defaultPolicy,
+                                           InvocationContext context,
                                            OutboundInvocation<R> invocation,
-                                           Function<OutboundInvocation<R>, List<? extends Endpoint>> routing,
-                                           InvocationContext context) {
+                                           ClusterPolicy defaultPolicy) {
         R request = invocation.getRequest();
         E endpoint = null;
         try {
             List<? extends Endpoint> instances = invocation.getInstances();
             instances = instances == null || instances.isEmpty() ? cluster.route(request) : instances;
             invocation.setInstances(instances);
-            List<? extends Endpoint> endpoints = routing.apply(invocation);
+            List<? extends Endpoint> endpoints = context.route(invocation);
             if (endpoints != null && !endpoints.isEmpty()) {
                 endpoint = (E) endpoints.get(0);
                 return cluster.invoke(request, endpoint);

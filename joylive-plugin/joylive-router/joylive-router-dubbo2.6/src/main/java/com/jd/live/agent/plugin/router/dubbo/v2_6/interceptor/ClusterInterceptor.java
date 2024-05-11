@@ -21,11 +21,8 @@ import com.alibaba.dubbo.rpc.cluster.support.AbstractClusterInvoker;
 import com.alibaba.dubbo.rpc.cluster.support.DubboCluster;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractRouteInterceptor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -40,12 +37,14 @@ import java.util.stream.Collectors;
 /**
  * ClusterInterceptor
  */
-public class ClusterInterceptor extends AbstractRouteInterceptor<DubboOutboundRequest, DubboOutboundInvocation> {
+public class ClusterInterceptor extends InterceptorAdaptor {
+
+    private final InvocationContext context;
 
     private final Map<AbstractClusterInvoker<?>, DubboCluster> clusters = new ConcurrentHashMap<>();
 
-    public ClusterInterceptor(InvocationContext context, List<RouteFilter> filters) {
-        super(context, filters);
+    public ClusterInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -63,21 +62,13 @@ public class ClusterInterceptor extends AbstractRouteInterceptor<DubboOutboundRe
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);
-        DubboOutboundInvocation invocation = createOutlet(request, instances);
-        ClusterPolicy defaultPolicy = cluster.getDefaultPolicy(request);
-        ClusterInvoker clusterInvoker = cluster.getClusterInvoker(context, invocation, defaultPolicy);
-        DubboOutboundResponse response = clusterInvoker.execute(cluster, defaultPolicy, invocation,
-                i -> routing((DubboOutboundInvocation) i), context);
+        DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
+        DubboOutboundResponse response = cluster.invoke(context, invocation, instances);
         if (response.getThrowable() != null) {
             mc.setThrowable(response.getThrowable());
         } else {
             mc.setResult(response.getResponse());
         }
         mc.setSkip(true);
-    }
-
-    @Override
-    protected DubboOutboundInvocation createOutlet(DubboOutboundRequest request) {
-        return new DubboOutboundInvocation(request, context);
     }
 }

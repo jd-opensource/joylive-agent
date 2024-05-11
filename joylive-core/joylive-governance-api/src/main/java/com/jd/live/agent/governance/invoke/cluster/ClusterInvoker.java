@@ -23,9 +23,6 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.util.List;
-import java.util.function.Function;
-
 /**
  * The ClusterInvoker interface defines the contract for executing service requests
  * against a cluster of endpoints. It is responsible for orchestrating the invocation
@@ -60,12 +57,10 @@ public interface ClusterInvoker {
      * corresponding response.
      *
      * @param cluster       The live cluster on which the request will be executed.
-     * @param defaultPolicy The default cluster policy
-     * @param invocation    The outbound invocation logic that defines how the request should be executed.
-     * @param routing       A function that takes an outbound invocation and returns a list of endpoints
-     *                      that should be considered for routing the request.
      * @param context       The invocation context that provides additional information and state for
      *                      the current invocation process.
+     * @param invocation    The outbound invocation logic that defines how the request should be executed.
+     * @param defaultPolicy The default cluster policy
      * @param <R>           The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>           The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>           The type of the endpoint that extends {@link Endpoint}.
@@ -78,8 +73,7 @@ public interface ClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> O execute(LiveCluster<R, O, E, T> cluster,
-                                           ClusterPolicy defaultPolicy,
+                                           InvocationContext context,
                                            OutboundInvocation<R> invocation,
-                                           Function<OutboundInvocation<R>, List<? extends Endpoint>> routing,
-                                           InvocationContext context) throws T;
+                                           ClusterPolicy defaultPolicy) throws T;
 }

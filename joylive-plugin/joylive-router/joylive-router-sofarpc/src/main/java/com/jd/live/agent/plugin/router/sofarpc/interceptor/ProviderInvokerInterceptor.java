@@ -21,23 +21,20 @@ import com.alipay.sofa.rpc.filter.ProviderInvoker;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractInboundInterceptor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcInboundRequest;
-import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation;
-
-import java.util.List;
+import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcInboundInvocation;
 
 /**
  * ProviderInvokerInterceptor
  */
-public class ProviderInvokerInterceptor extends
-        AbstractInboundInterceptor<SofaRpcInboundRequest, SofaRpcInvocation.SofaRpcInboundInvocation> {
+public class ProviderInvokerInterceptor extends InterceptorAdaptor {
 
-    public ProviderInvokerInterceptor(InvocationContext context, List<InboundFilter> filters) {
-        super(context, filters);
+    private final InvocationContext context;
+
+    public ProviderInvokerInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -52,7 +49,7 @@ public class ProviderInvokerInterceptor extends
         MethodContext mc = (MethodContext) ctx;
         SofaRequest request = (SofaRequest) mc.getArguments()[0];
         try {
-            process(new SofaRpcInboundRequest(request));
+            context.inbound(new SofaRpcInboundInvocation(new SofaRpcInboundRequest(request), context));
         } catch (RejectException e) {
             SofaResponse response = new SofaResponse();
             response.setErrorMsg(e.getMessage());
@@ -60,15 +57,4 @@ public class ProviderInvokerInterceptor extends
             mc.setSkip(true);
         }
     }
-
-    @Override
-    protected void process(SofaRpcInvocation.SofaRpcInboundInvocation invocation) {
-        new InboundFilterChain.Chain(inboundFilters).filter(invocation);
-    }
-
-    @Override
-    protected SofaRpcInvocation.SofaRpcInboundInvocation createInlet(SofaRpcInboundRequest request) {
-        return new SofaRpcInvocation.SofaRpcInboundInvocation(request, context);
-    }
-
 }

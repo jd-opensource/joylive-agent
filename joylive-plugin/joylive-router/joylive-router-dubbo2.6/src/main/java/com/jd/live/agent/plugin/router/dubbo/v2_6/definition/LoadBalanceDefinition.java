@@ -15,21 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v2_6.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor.LoadBalanceInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "LoadBalanceDefinition_v2.6")
@@ -58,10 +53,6 @@ public class LoadBalanceDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject
-    @InjectLoader(ResourcerType.PLUGIN)
-    private List<RouteFilter> routeFilters;
-
     public LoadBalanceDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER)
                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract()));
@@ -69,7 +60,7 @@ public class LoadBalanceDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SELECT)
                                 .and(MatcherBuilder.arguments(ARGUMENT_SELECT)),
-                        () -> new LoadBalanceInterceptor(context, routeFilters)
+                        () -> new LoadBalanceInterceptor(context)
                 )
         };
     }

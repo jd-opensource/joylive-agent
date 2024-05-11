@@ -22,10 +22,9 @@ import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractRouteInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
@@ -37,12 +36,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * ClusterInterceptor
  */
-public class LoadBalanceInterceptor extends AbstractRouteInterceptor<SofaRpcOutboundRequest, SofaRpcOutboundInvocation> {
+public class LoadBalanceInterceptor extends InterceptorAdaptor {
+
+    private final InvocationContext context;
 
     private final Map<AbstractCluster, SofaRpcCluster> clusters = new ConcurrentHashMap<>();
 
-    public LoadBalanceInterceptor(InvocationContext context, List<RouteFilter> filters) {
-        super(context, filters);
+    public LoadBalanceInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -59,12 +60,11 @@ public class LoadBalanceInterceptor extends AbstractRouteInterceptor<SofaRpcOutb
         List<ProviderInfo> invoked = (List<ProviderInfo>) arguments[1];
         SofaRpcCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(), SofaRpcCluster::new);
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
-        SofaRpcOutboundInvocation invocation = createOutlet(request);
+        SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
         try {
             List<SofaRpcEndpoint> instances = cluster.route(request);
-            invocation.setInstances(instances);
             invoked.forEach(p -> request.addAttempt(p.getHost() + ":" + p.getPort()));
-            List<? extends Endpoint> endpoints = routing(invocation);
+            List<? extends Endpoint> endpoints = context.route(invocation, instances);
             if (endpoints != null && !endpoints.isEmpty()) {
                 mc.setResult(((SofaRpcEndpoint) endpoints.get(0)).getProvider());
             } else {
@@ -74,11 +74,6 @@ public class LoadBalanceInterceptor extends AbstractRouteInterceptor<SofaRpcOutb
             mc.setThrowable(cluster.createRejectException(e));
         }
         mc.setSkip(true);
-    }
-
-    @Override
-    protected SofaRpcOutboundInvocation createOutlet(SofaRpcOutboundRequest request) {
-        return new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
     }
 
 }

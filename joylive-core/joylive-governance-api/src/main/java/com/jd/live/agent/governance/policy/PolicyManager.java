@@ -36,6 +36,9 @@ import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.invoke.filter.InboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
@@ -124,6 +127,21 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private ClusterInvoker clusterInvoker;
+
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private List<InboundFilter> inboundFilters;
+
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private List<OutboundFilter> outboundFilters;
+
+    @Getter
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private List<RouteFilter> routeFilters;
 
     private final AtomicInteger counter = new AtomicInteger(0);
 

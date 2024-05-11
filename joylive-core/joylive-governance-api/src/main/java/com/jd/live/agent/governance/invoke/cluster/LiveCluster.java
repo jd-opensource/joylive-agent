@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.exception.RetryExhaustedException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
@@ -87,27 +86,57 @@ public interface LiveCluster<R extends OutboundRequest,
     }
 
     /**
-     * Retrieves a {@link ClusterInvoker} based on the cluster policy associated with the provided service invocation.
-     * <p>
-     * This method determines the appropriate {@link ClusterInvoker} to use for a given service invocation by examining
-     * the service's metadata to extract a cluster policy. The type of cluster policy (if any) guides the selection
-     * of a suitable {@link ClusterInvoker} from the context. If the invocation or its associated policies are not
-     * specified (i.e., {@code null}), or if no specific {@link ClusterInvoker} is defined for the policy type, a
-     * default {@link ClusterInvoker} is returned from the context.
+     * Executes a service request against a live cluster of endpoints. This method orchestrates
+     * the entire invocation process, encapsulating the logic for endpoint selection based on
+     * the provided routing function, executing the request on the chosen endpoints, and
+     * managing the response.
      * </p>
      *
-     * @param invocation    The service invocation object, which may contain metadata about the service and its policies.
-     *                      This parameter can be {@code null}.
-     * @param defaultPolicy The default cluster policy.
-     * @return A {@link ClusterInvoker} that is best suited to handle the service request based on the defined
-     * cluster policy. If no specific policy is found, a default invoker is returned.
+     * @param context    The {@link InvocationContext} providing additional information and state
+     *                   necessary for the current invocation process. This includes metadata,
+     *                   configuration settings, and potentially references to other relevant
+     *                   components within the system.
+     * @param invocation The {@link OutboundInvocation<R>} defining the outbound invocation logic.
+     *                   This parameter specifies how the request should be executed, including
+     *                   the selection of endpoints, serialization of the request, and handling
+     *                   of responses.
+     * @param instances  A list of {@code E} instances representing the available endpoints or
+     *                   services against which the request can be executed. This list is typically
+     *                   determined based on the current state of the cluster and the applicable
+     *                   routing policies.
+     * @return An outbound response of type {@code O}, corresponding to the executed request.
+     *         The response type is generic and can be adapted based on the specific needs of
+     *         the implementation.
+     * @throws T If an error occurs during the execution of the request. The specific type of
+     *           exception {@code T} is defined by the type parameter, allowing for flexibility
+     *           in error handling and enabling the method to throw exceptions that are meaningful
+     *           within the context of the caller's domain.
      */
-    default ClusterInvoker getClusterInvoker(InvocationContext context, OutboundInvocation<R> invocation, ClusterPolicy defaultPolicy) {
-        ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
-        ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
-        clusterPolicy = servicePolicy == null ? defaultPolicy : clusterPolicy;
-        String name = clusterPolicy == null ? null : clusterPolicy.getType();
-        return context.getOrDefaultClusterInvoker(name);
+    default O invoke(InvocationContext context, OutboundInvocation<R> invocation, List<E> instances) throws T {
+        if (instances != null && !instances.isEmpty()) {
+            invocation.setInstances(instances);
+        }
+        return invoke(context, invocation);
+    }
+
+
+    /**
+     * Executes a service request against a live cluster of endpoints. The method handles
+     * the entire invocation process, including selecting endpoints based on the provided
+     * routing function, invoking the request on the selected endpoints, and returning the
+     * corresponding response.
+     *
+     * @param context    The invocation context that provides additional information and state for
+     *                   the current invocation process.
+     * @param invocation The outbound invocation logic that defines how the request should be executed.
+     * @return An outbound response of type {@code O} that corresponds to the executed request.
+     * @throws T If an error occurs during the execution of the request. The specific type of error
+     *           is defined by the type parameter {@code T}.
+     */
+    default O invoke(InvocationContext context, OutboundInvocation<R> invocation) throws T {
+        ClusterPolicy defaultPolicy = getDefaultPolicy(invocation.getRequest());
+        ClusterInvoker invoker = context.getClusterInvoker(invocation, defaultPolicy);
+        return invoker.execute(this, context, invocation, defaultPolicy);
     }
 
     /**

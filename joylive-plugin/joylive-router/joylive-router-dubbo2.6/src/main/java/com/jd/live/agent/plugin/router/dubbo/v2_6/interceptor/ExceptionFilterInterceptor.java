@@ -20,23 +20,20 @@ import com.alibaba.dubbo.rpc.filter.ExceptionFilter;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.interceptor.AbstractInterceptor.AbstractInboundInterceptor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboInboundInvocation;
-
-import java.util.List;
 
 /**
  * ClassLoaderFilterInterceptor
  */
-public class ExceptionFilterInterceptor extends
-        AbstractInboundInterceptor<DubboInboundRequest, DubboInboundInvocation> {
+public class ExceptionFilterInterceptor extends InterceptorAdaptor {
 
-    public ExceptionFilterInterceptor(InvocationContext context, List<InboundFilter> filters) {
-        super(context, filters);
+    private final InvocationContext context;
+
+    public ExceptionFilterInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     /**
@@ -51,22 +48,12 @@ public class ExceptionFilterInterceptor extends
         MethodContext mc = (MethodContext) ctx;
         Invocation invocation = (Invocation) mc.getArguments()[1];
         try {
-            process(new DubboInboundRequest(invocation));
+            context.inbound(new DubboInboundInvocation(new DubboInboundRequest(invocation), context));
         } catch (RejectException e) {
             Result result = new RpcResult(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
             mc.setResult(result);
             mc.setSkip(true);
         }
-    }
-
-    @Override
-    protected void process(DubboInboundInvocation invocation) {
-        new InboundFilterChain.Chain(inboundFilters).filter(invocation);
-    }
-
-    @Override
-    protected DubboInboundInvocation createInlet(DubboInboundRequest request) {
-        return new DubboInboundInvocation(request, context);
     }
 
 }

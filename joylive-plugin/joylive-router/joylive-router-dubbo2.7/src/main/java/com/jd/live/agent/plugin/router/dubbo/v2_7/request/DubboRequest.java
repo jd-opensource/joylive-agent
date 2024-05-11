@@ -24,8 +24,24 @@ import org.apache.dubbo.rpc.Invocation;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
+/**
+ * Defines a common interface for Dubbo RPC requests.
+ * This interface serves as a marker for request types within the Dubbo framework, facilitating
+ * the identification and processing of Dubbo-specific request data in RPC operations.
+ */
 public interface DubboRequest {
 
+    /**
+     * Represents an inbound request in a Dubbo RPC communication.
+     * <p>
+     * This class extends {@link AbstractRpcInboundRequest} to provide a concrete implementation
+     * tailored for Dubbo's protocol and data handling requirements. It extracts and stores
+     * relevant information from the Dubbo {@link com.alibaba.dubbo.rpc.Invocation} object, such as service interface,
+     * group, method name, arguments, and attachments.
+     * </p>
+     *
+     * @see AbstractRpcInboundRequest
+     */
     class DubboInboundRequest extends AbstractRpcInboundRequest<Invocation> implements DubboRequest {
 
         public DubboInboundRequest(Invocation request) {
@@ -46,6 +62,17 @@ public interface DubboRequest {
         }
     }
 
+    /**
+     * Represents an outbound request in a Dubbo RPC communication.
+     * <p>
+     * Similar to {@link DubboInboundRequest}, this class extends {@link AbstractRpcOutboundRequest}
+     * to cater to the specific needs of Dubbo's communication protocol for outbound requests. It
+     * encapsulates the necessary information for dispatching an RPC request, including the target
+     * service interface, group, method name, arguments, and attachments.
+     * </p>
+     *
+     * @see AbstractRpcOutboundRequest
+     */
     class DubboOutboundRequest extends AbstractRpcOutboundRequest<Invocation> implements DubboRequest {
 
         public DubboOutboundRequest(Invocation request) {
