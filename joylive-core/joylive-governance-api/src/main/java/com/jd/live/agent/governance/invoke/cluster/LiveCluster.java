@@ -96,7 +96,7 @@ public interface LiveCluster<R extends OutboundRequest,
      *                   necessary for the current invocation process. This includes metadata,
      *                   configuration settings, and potentially references to other relevant
      *                   components within the system.
-     * @param invocation The {@link OutboundInvocation<R>} defining the outbound invocation logic.
+     * @param invocation The {@link OutboundInvocation}&lt;R&gt; defining the outbound invocation logic.
      *                   This parameter specifies how the request should be executed, including
      *                   the selection of endpoints, serialization of the request, and handling
      *                   of responses.
@@ -105,8 +105,8 @@ public interface LiveCluster<R extends OutboundRequest,
      *                   determined based on the current state of the cluster and the applicable
      *                   routing policies.
      * @return An outbound response of type {@code O}, corresponding to the executed request.
-     *         The response type is generic and can be adapted based on the specific needs of
-     *         the implementation.
+     * The response type is generic and can be adapted based on the specific needs of
+     * the implementation.
      * @throws T If an error occurs during the execution of the request. The specific type of
      *           exception {@code T} is defined by the type parameter, allowing for flexibility
      *           in error handling and enabling the method to throw exceptions that are meaningful
