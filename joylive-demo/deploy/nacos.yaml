@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nacos-server
+  labels:
+    app: nacos-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nacos-server
+  template:
+    metadata:
+      labels:
+        app: nacos-server
+    spec:
+      containers:
+        - name: nacos-server
+          image: nacos/nacos-server:latest
+          ports:
+            - containerPort: 8848
+          env:
+            - name: MODE
+              value: "standalone"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nacos-server
+spec:
+  type: NodePort
+  selector:
+    app: nacos-server
+  ports:
+    - name: http
+      port: 8848
+      targetPort: 8848
+    - name: grpc
+      port: 9848
+      targetPort: 9848

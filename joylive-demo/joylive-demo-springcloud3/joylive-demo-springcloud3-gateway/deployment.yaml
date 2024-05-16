@@ -34,7 +34,7 @@ spec:
       containers:
         - env:
             - name: NACOS_ADDR
-              value: nacos.default.svc:8848
+              value: nacos-server.nacos.svc:8848
             - name: NACOS_USERNAME
               value: nacos
             - name: NACOS_PASSWORD
@@ -111,7 +111,7 @@ spec:
       containers:
         - env:
             - name: NACOS_ADDR
-              value: nacos.default.svc:8848
+              value: nacos-server.nacos.svc:8848
             - name: NACOS_USERNAME
               value: nacos
             - name: NACOS_PASSWORD
