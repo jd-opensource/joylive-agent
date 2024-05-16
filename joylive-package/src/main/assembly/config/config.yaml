@@ -129,6 +129,8 @@ agent:
           - io.netty.channel.MultithreadEventLoopGroup
           - io.netty.channel.nio.NioEventLoop
           - io.netty.channel.SingleThreadEventLoop
+          - io.netty.channel.kqueue.KQueueEventLoopGroup
+          - io.netty.channel.kqueue.KQueueEventLoop
           - io.netty.util.concurrent.MultithreadEventExecutorGroup
           - io.netty.util.concurrent.AbstractEventExecutorGroup
           - io.netty.util.concurrent.ThreadPerTaskExecutor
@@ -138,6 +140,8 @@ agent:
           - io.netty.util.concurrent.DefaultEventExecutor
           - io.netty.util.concurrent.SingleThreadEventExecutor
           - io.netty.util.internal.ThreadExecutorMap$1
+          - reactor.core.scheduler.BoundedElasticScheduler$BoundedScheduledExecutorService
+          - reactor.netty.resources.ColocatedEventLoopGroup
           - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup
           - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup
           - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup

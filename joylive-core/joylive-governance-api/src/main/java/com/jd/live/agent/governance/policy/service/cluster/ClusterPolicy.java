@@ -30,6 +30,18 @@ public class ClusterPolicy extends PolicyId implements PolicyInheritWithId<Clust
 
     private RetryPolicy retryPolicy;
 
+    public ClusterPolicy() {
+    }
+
+    public ClusterPolicy(String type) {
+        this.type = type;
+    }
+
+    public ClusterPolicy(String type, RetryPolicy retryPolicy) {
+        this.type = type;
+        this.retryPolicy = retryPolicy;
+    }
+
     @Override
     public void supplement(ClusterPolicy source) {
         if (retryPolicy != null) {
@@ -41,12 +53,6 @@ public class ClusterPolicy extends PolicyId implements PolicyInheritWithId<Clust
                 retryPolicy.setId(id);
             }
             retryPolicy.supplement(source.retryPolicy);
-        }
-    }
-
-    public void cache() {
-        if (retryPolicy != null) {
-            retryPolicy.cache();
         }
     }
 }

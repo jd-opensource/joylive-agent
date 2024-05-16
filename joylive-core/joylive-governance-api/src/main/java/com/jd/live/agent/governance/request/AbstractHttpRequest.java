@@ -49,7 +49,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected LazyObject<Map<String, List<Cookie>>> cookies;
+    protected LazyObject<Map<String, List<String>>> cookies;
 
     /**
      * Lazily evaluated, parsed query parameters from the HTTP request URL.
@@ -145,15 +145,17 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     }
 
     @Override
-    public Map<String, List<Cookie>> getCookies() {
+    public Map<String, List<String>> getCookies() {
         return cookies.get();
     }
 
     @Override
     public String getCookie(String key) {
-        if (key == null) return null;
-        List<Cookie> values = cookies.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0).getValue();
+        if (key == null) {
+            return null;
+        }
+        List<String> values = cookies.get().get(key);
+        return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     @Override

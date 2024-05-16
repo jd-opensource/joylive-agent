@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.instance.Endpoint;
@@ -22,7 +23,6 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
@@ -92,17 +92,6 @@ public interface InvocationContext {
      * @return The requested variable parser, or null if not found.
      */
     VariableParser<?, ?> getVariableParser(String name);
-
-    /**
-     * Retrieves the {@code RetrierFactory} instance associated with the specified name,
-     * or returns the default factory instance if no factory is found with that name.
-     *
-     * @param name the name of the {@code RetrierFactory} to retrieve. If {@code null} or
-     *             does not match any existing factory, the default factory is returned.
-     * @return the {@code RetrierFactory} instance associated with the given name, or the
-     *         default factory if no matching name is found.
-     */
-    RetrierFactory getOrDefaultRetrierFactory(String name);
 
     /**
      * Retrieves a map of tag matchers associated with this invocation context.
@@ -272,6 +261,16 @@ public interface InvocationContext {
     }
 
     /**
+     * Retrieves the current status of the application.
+     *
+     * @return The current {@link AppStatus} of the application, defaulting to {@code AppStatus.READY} if the status is {@code null}.
+     */
+    default AppStatus getAppStatus() {
+        AppStatus status = getApplication().getStatus();
+        return status == null ? AppStatus.READY : status;
+    }
+
+    /**
      * A delegate class for {@link InvocationContext} that forwards all its operations to another {@link InvocationContext} instance.
      * This class acts as a wrapper or intermediary, allowing for additional behaviors to be inserted before or after
      * the delegation of method calls. It implements the {@link InvocationContext} interface and can be used
@@ -330,11 +329,6 @@ public interface InvocationContext {
         }
 
         @Override
-        public RetrierFactory getOrDefaultRetrierFactory(String name) {
-            return delegate.getOrDefaultRetrierFactory(name);
-        }
-
-        @Override
         public Map<String, TagMatcher> getTagMatchers() {
             return delegate.getTagMatchers();
         }
@@ -363,6 +357,7 @@ public interface InvocationContext {
         public List<RouteFilter> getRouteFilters() {
             return delegate.getRouteFilters();
         }
+
     }
 
 }

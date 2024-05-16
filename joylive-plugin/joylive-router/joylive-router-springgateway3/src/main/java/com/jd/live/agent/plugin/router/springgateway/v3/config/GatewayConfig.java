@@ -22,6 +22,8 @@ import lombok.Setter;
 @Setter
 public class GatewayConfig {
 
+    public static final String ATTRIBUTE_RETRY_CONFIG = "retryConfig";
+
     public static final String CONFIG_SPRING_GATEWAY_PREFIX = "agent.governance.router.springgateway";
 
     public static final String KEY_UNIT = "unit";

@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.exception.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -27,6 +27,8 @@ import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Defines the behavior of a live cluster capable of routing and invoking outbound requests.
@@ -53,22 +55,7 @@ public interface LiveCluster<R extends OutboundRequest,
      * @param request The outbound request to be routed.
      * @return A list of endpoints that can potentially handle the request.
      */
-    List<E> route(R request);
-
-    /**
-     * Checks if the specified endpoint is available to handle requests.
-     * <p>
-     * This method provides a default implementation, always returning {@code true},
-     * indicating that by default, all endpoints are considered available.
-     * Implementations may override this method to provide specific availability checks.
-     * </p>
-     *
-     * @param endpoint The endpoint to check for availability.
-     * @return {@code true} if the endpoint is available; {@code false} otherwise.
-     */
-    default boolean isAvailable(E endpoint) {
-        return true;
-    }
+    CompletionStage<List<E>> route(R request);
 
     /**
      * Retrieves the default {@link ClusterPolicy} for the given request.
@@ -81,6 +68,7 @@ public interface LiveCluster<R extends OutboundRequest,
      * @param request The request for which the default {@link ClusterPolicy} is to be obtained.
      * @return The default {@link ClusterPolicy} for the specified request, or {@code null} if there is none.
      */
+    // TODO change to ServicePolicy
     default ClusterPolicy getDefaultPolicy(R request) {
         return null;
     }
@@ -96,7 +84,7 @@ public interface LiveCluster<R extends OutboundRequest,
      *                   necessary for the current invocation process. This includes metadata,
      *                   configuration settings, and potentially references to other relevant
      *                   components within the system.
-     * @param invocation The {@link OutboundInvocation<R>} defining the outbound invocation logic.
+     * @param invocation The {@link OutboundInvocation} defining the outbound invocation logic.
      *                   This parameter specifies how the request should be executed, including
      *                   the selection of endpoints, serialization of the request, and handling
      *                   of responses.
@@ -105,20 +93,52 @@ public interface LiveCluster<R extends OutboundRequest,
      *                   determined based on the current state of the cluster and the applicable
      *                   routing policies.
      * @return An outbound response of type {@code O}, corresponding to the executed request.
-     *         The response type is generic and can be adapted based on the specific needs of
-     *         the implementation.
-     * @throws T If an error occurs during the execution of the request. The specific type of
-     *           exception {@code T} is defined by the type parameter, allowing for flexibility
-     *           in error handling and enabling the method to throw exceptions that are meaningful
-     *           within the context of the caller's domain.
+     * The response type is generic and can be adapted based on the specific needs of
+     * the implementation.
      */
-    default O invoke(InvocationContext context, OutboundInvocation<R> invocation, List<E> instances) throws T {
+    default CompletionStage<O> invoke(InvocationContext context, OutboundInvocation<R> invocation, List<E> instances) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
         return invoke(context, invocation);
     }
 
+    /**
+     * Executes an outbound invocation synchronously and returns the result.
+     *
+     * @param context    The invocation context, providing metadata or state relevant to the current
+     *                   invocation. This context is passed to the asynchronous operation.
+     * @param invocation The outbound invocation details, including the request data. This is used
+     *                   to initiate the asynchronous operation.
+     * @return The result of the outbound invocation. If the operation completes exceptionally, a
+     * response representing the error condition is returned.
+     */
+    default O request(InvocationContext context, OutboundInvocation<R> invocation) {
+        return request(context, invocation, null);
+    }
+
+    /**
+     * Executes an outbound invocation synchronously and returns the result.
+     *
+     * @param context    The invocation context, providing metadata or state relevant to the current
+     *                   invocation. This context is passed to the asynchronous operation.
+     * @param invocation The outbound invocation details, including the request data. This is used
+     *                   to initiate the asynchronous operation.
+     * @param instances  A list of instances (e.g., service instances, client proxies) involved in
+     *                   the invocation. These instances are used by the asynchronous operation.
+     * @return The result of the outbound invocation. If the operation completes exceptionally, a
+     * response representing the error condition is returned.
+     */
+    default O request(InvocationContext context, OutboundInvocation<R> invocation, List<E> instances) {
+        try {
+            // TODO timeout
+            return invoke(context, invocation, instances).toCompletableFuture().get();
+        } catch (InterruptedException e) {
+            return createResponse(e, invocation.getRequest(), null);
+        } catch (ExecutionException e) {
+            return createResponse(e.getCause() != null ? e.getCause() : e, invocation.getRequest(), null);
+        }
+    }
 
     /**
      * Executes a service request against a live cluster of endpoints. The method handles
@@ -130,10 +150,8 @@ public interface LiveCluster<R extends OutboundRequest,
      *                   the current invocation process.
      * @param invocation The outbound invocation logic that defines how the request should be executed.
      * @return An outbound response of type {@code O} that corresponds to the executed request.
-     * @throws T If an error occurs during the execution of the request. The specific type of error
-     *           is defined by the type parameter {@code T}.
      */
-    default O invoke(InvocationContext context, OutboundInvocation<R> invocation) throws T {
+    default CompletionStage<O> invoke(InvocationContext context, OutboundInvocation<R> invocation) {
         ClusterPolicy defaultPolicy = getDefaultPolicy(invocation.getRequest());
         ClusterInvoker invoker = context.getClusterInvoker(invocation, defaultPolicy);
         return invoker.execute(this, context, invocation, defaultPolicy);
@@ -145,9 +163,8 @@ public interface LiveCluster<R extends OutboundRequest,
      * @param request  The request to be invoked.
      * @param endpoint The endpoint on which to invoke the request.
      * @return The response from the invocation.
-     * @throws T If the invocation fails, an exception of type T is thrown.
      */
-    O invoke(R request, E endpoint) throws T;
+    CompletionStage<O> invoke(R request, E endpoint);
 
     /**
      * Creates a response object based on the provided throwable.
@@ -165,7 +182,48 @@ public interface LiveCluster<R extends OutboundRequest,
      * @param response The response to evaluate.
      * @return {@code true} if the request that generated the response should be retried; {@code false} otherwise.
      */
-    boolean isRetryable(Response response);
+    default boolean isRetryable(Response response) {
+        return false;
+    }
+
+    /**
+     * Checks if the current instance has been destroyed or marked for destruction.
+     *
+     * @return {@code true} if the instance has been destroyed or is otherwise marked as no longer valid, {@code false}
+     * otherwise.
+     */
+    default boolean isDestroyed() {
+        return false;
+    }
+
+    /**
+     * Creates and returns an exception indicating that cluster is not ready.
+     *
+     * @return An exception instance indicating that cluster is not ready.
+     */
+    default T createUnReadyException(R request) {
+        return null;
+    }
+
+    /**
+     * Creates and returns an exception indicating that cluster is not ready.
+     *
+     * @param message The unready message.
+     * @return An exception instance indicating that cluster is not ready.
+     */
+    default T createUnReadyException(String message, R request) {
+        return null;
+    }
+
+    /**
+     * Creates an exception based on the provided throwable.
+     *
+     * @param throwable The exception that occurred during invocation.
+     * @param request   The request.
+     * @param endpoint  The endpoint.
+     * @return A response object representing the error.
+     */
+    T createException(Throwable throwable, R request, E endpoint);
 
     /**
      * Creates an exception to be thrown when no provider is available for the requested service.
@@ -179,9 +237,10 @@ public interface LiveCluster<R extends OutboundRequest,
      * Creates an exception to be thrown when a request is explicitly rejected.
      *
      * @param exception The original rejection exception.
+     * @param request   The request for which no provider could be found.
      * @return An exception of type T representing the rejection.
      */
-    T createRejectException(RejectException exception);
+    T createRejectException(RejectException exception, R request);
 
     /**
      * Creates a new instance of a retry exhaustion exception.
@@ -196,6 +255,62 @@ public interface LiveCluster<R extends OutboundRequest,
      * @return An instance of type {@code T} which extends {@code RetryExhaustedException}, with additional context or details if necessary.
      */
     T createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation);
+
+    /**
+     * Called when a request starts. This method provides a hook that can be used to perform actions
+     * before the actual processing of the request begins.
+     *
+     * @param request the request object that is about to be processed
+     */
+    default void onStart(R request) {
+
+    }
+
+    /**
+     * Handles retry logic for a process or operation, providing a hook for custom actions on each retry attempt.
+     *
+     * @param retries The number of retry attempts that have occurred so far. This count is 1-based, meaning that
+     *                the first retry attempt will pass a value of 1.
+     */
+    default void onRetry(int retries) {
+
+    }
+
+    /**
+     * Called when a request is about to be sent to a specific endpoint. This method can be used to
+     * perform actions or modifications to the request specific to the endpoint it is being sent to.
+     *
+     * @param request  the request object that is about to be sent
+     * @param endpoint the endpoint to which the request will be sent
+     */
+    default void onStartRequest(R request, E endpoint) {
+
+    }
+
+    /**
+     * Called when an error occurs during the processing of a request to an endpoint. This method
+     * can be used to handle errors, log them, or perform any cleanup if necessary.
+     *
+     * @param request   the request object that encountered an error
+     * @param throwable the request object that encountered an error
+     * @param endpoint  the endpoint at which the error occurred
+     */
+    default void onError(Throwable throwable, R request, E endpoint) {
+
+    }
+
+    /**
+     * Called when a request is processed successfully and a response is received from an endpoint.
+     * This method can be used to perform actions based on the successful response, such as logging,
+     * statistics collection, or any post-response processing.
+     *
+     * @param response the response object received from the endpoint after successful processing
+     * @param request  the request object that was successfully processed
+     * @param endpoint the endpoint that successfully processed the request and provided a response
+     */
+    default void onSuccess(O response, R request, E endpoint) {
+
+    }
 
 }
 

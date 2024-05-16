@@ -41,7 +41,6 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
-import com.jd.live.agent.governance.invoke.retry.RetrierFactory;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
@@ -92,16 +91,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, VariableParser<?, ?>> variableParsers;
-
-    @Getter
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private Map<String, RetrierFactory> retrierFactories;
-
-    @Getter
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private RetrierFactory retrierFactory;
 
     @Getter
     @Inject
@@ -170,12 +159,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Override
     public VariableParser<?, ?> getVariableParser(String name) {
         return name == null || variableParsers == null ? null : variableParsers.get(name);
-    }
-
-    @Override
-    public RetrierFactory getOrDefaultRetrierFactory(String name) {
-        RetrierFactory result = retrierFactories == null || name == null ? null : retrierFactories.get(name);
-        return result == null ? retrierFactory : result;
     }
 
     @Override

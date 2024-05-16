@@ -13,7 +13,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>joylive-flowcontrol-resilience4j</module>
-        <module>joylive-flowcontrol-spring</module>
     </modules>
 
     <dependencies>

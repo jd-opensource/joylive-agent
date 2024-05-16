@@ -25,6 +25,7 @@ import reactor.netty.http.client.HttpClient;
 /**
  * NettyHttpClientInterceptor
  */
+@Deprecated
 public class NettyHttpClientInterceptor extends InterceptorAdaptor {
 
     /**
@@ -43,7 +44,7 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
 
     private HttpClient attachTag(HttpClient httpClient) {
         if (RequestContext.hasCargo()) {
-            return httpClient.headers((headers) -> RequestContext.cargos(tag -> headers.set(tag.getKey(), tag.getValue())));
+            return httpClient.headers(headers -> RequestContext.cargos(cargo -> headers.set(cargo.getKey(), cargo.getValue())));
         }
         return null;
     }

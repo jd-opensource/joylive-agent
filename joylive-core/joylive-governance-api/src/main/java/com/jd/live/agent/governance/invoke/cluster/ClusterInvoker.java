@@ -23,6 +23,8 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
+import java.util.concurrent.CompletionStage;
+
 /**
  * The ClusterInvoker interface defines the contract for executing service requests
  * against a cluster of endpoints. It is responsible for orchestrating the invocation
@@ -37,12 +39,6 @@ public interface ClusterInvoker {
     String TYPE_FAILOVER = "failover";
 
     String TYPE_FAILSAFE = "failsafe ";
-
-    String TYPE_BROADCAST = "broadcast ";
-
-    String TYPE_FORKING = "forking ";
-
-    String TYPE_FAILBACK = "failback ";
 
     int ORDER_FAILFAST = 0;
 
@@ -66,14 +62,12 @@ public interface ClusterInvoker {
      * @param <E>           The type of the endpoint that extends {@link Endpoint}.
      * @param <T>           The type of the throwable that can be thrown during the invocation process.
      * @return An outbound response of type {@code O} that corresponds to the executed request.
-     * @throws T If an error occurs during the execution of the request. The specific type of error
-     *           is defined by the type parameter {@code T}.
      */
     <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint,
-            T extends Throwable> O execute(LiveCluster<R, O, E, T> cluster,
-                                           InvocationContext context,
-                                           OutboundInvocation<R> invocation,
-                                           ClusterPolicy defaultPolicy) throws T;
+            T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
+                                                            InvocationContext context,
+                                                            OutboundInvocation<R> invocation,
+                                                            ClusterPolicy defaultPolicy);
 }

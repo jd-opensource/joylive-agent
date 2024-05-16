@@ -22,6 +22,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.version.JVM;
 import com.jd.live.agent.implement.bytekit.bytebuddy.BuilderHandler;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
@@ -32,9 +33,12 @@ import net.bytebuddy.utility.nullability.NeverNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.instrument.Instrumentation;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 /**
  * ExporterHandler
@@ -59,12 +63,12 @@ public class ExporterHandler implements BuilderHandler {
             logger.warn("failed to create output directory " + output.getPath());
             return builder;
         } else {
-            return builder.with(new Exporter(output));
+            return builder.with(JVM.instance().isMac() ? new Exporter(output, '@') : new Exporter(output));
         }
     }
 
     /**
-     * Exporter
+     * MacOSExporter
      *
      * @since 1.0.0
      */
@@ -72,8 +76,15 @@ public class ExporterHandler implements BuilderHandler {
 
         private final File output;
 
+        private final char innerClassSeparator;
+
         public Exporter(File output) {
+            this(output, (char) 0);
+        }
+
+        public Exporter(File output, char innerClassSeparator) {
             this.output = output;
+            this.innerClassSeparator = innerClassSeparator;
         }
 
         @Override
@@ -83,10 +94,40 @@ public class ExporterHandler implements BuilderHandler {
                                      boolean b,
                                      @NeverNull DynamicType dynamicType) {
             try {
-                dynamicType.saveIn(output);
+                if (dynamicType instanceof DynamicType.Default) {
+                    save((DynamicType.Default) dynamicType);
+                } else {
+                    dynamicType.saveIn(output);
+                }
             } catch (IOException e) {
                 logger.warn("failed to save class byte code. " + typeDescription.getTypeName());
             }
+        }
+
+        protected void save(DynamicType.Default type) throws IOException {
+            for (Map.Entry<TypeDescription, byte[]> entry : type.getAllTypes().entrySet()) {
+                save(entry.getKey(), entry.getValue());
+            }
+        }
+
+        protected void save(TypeDescription typeDescription, byte[] bytes) throws IOException {
+            File target = new File(output, getName(typeDescription));
+            File directory = target.getParentFile();
+            if (directory != null && !directory.isDirectory() && !directory.mkdirs()) {
+                throw new IOException("Could not create directory: " + directory);
+            }
+            try (OutputStream outputStream = Files.newOutputStream(target.toPath())) {
+                outputStream.write(bytes);
+                outputStream.flush();
+            }
+        }
+
+        protected String getName(TypeDescription typeDescription) {
+            String result = typeDescription.getName().replace('.', File.separatorChar) + ".class";
+            if (innerClassSeparator > 0) {
+                result = result.replace('$', innerClassSeparator);
+            }
+            return result;
         }
     }
 }

@@ -101,11 +101,6 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-flowcontrol-spring</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-classloader-springboot2</artifactId>
                 <version>${revision}</version>
             </dependency>

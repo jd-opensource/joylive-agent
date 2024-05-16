@@ -52,7 +52,9 @@ public class LoadBalanceFilter implements RouteFilter {
         StickyType stickyType = loadBalancePolicy == null ? null : loadBalancePolicy.getStickyType();
         stickyType = stickyType == null ? StickyType.NONE : stickyType;
         if (!target.isEmpty()) {
-            List<? extends Endpoint> candidates = preferSticky(target);
+            List<? extends Endpoint> candidates = stickyType == StickyType.PREFERRED
+                    ? preferSticky(target)
+                    : target.getEndpoints();
             if (candidates != null && !candidates.isEmpty()) {
                 target.setEndpoints(candidates);
             } else {

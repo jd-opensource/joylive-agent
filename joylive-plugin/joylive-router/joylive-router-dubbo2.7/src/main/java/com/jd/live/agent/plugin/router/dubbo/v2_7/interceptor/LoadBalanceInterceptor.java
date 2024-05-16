@@ -75,7 +75,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
                 mc.setThrowable(cluster.createNoProviderException(request));
             }
         } catch (RejectException e) {
-            mc.setThrowable(cluster.createRejectException(e));
+            mc.setThrowable(cluster.createRejectException(e, request));
         }
         mc.setSkip(true);
     }

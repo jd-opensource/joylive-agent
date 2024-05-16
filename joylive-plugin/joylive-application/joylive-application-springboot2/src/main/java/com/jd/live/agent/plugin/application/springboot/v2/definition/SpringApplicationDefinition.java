@@ -57,6 +57,7 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
     private Publisher<AgentEvent> publisher;
 
     public SpringApplicationDefinition() {
+        // TODO intercept application ready & destroy event to set the application status
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(

@@ -21,7 +21,9 @@ import com.jd.live.agent.governance.policy.service.annotation.Consumer;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Objects;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -37,59 +39,42 @@ import java.util.Set;
  *
  * @since 1.0.0
  */
+// TODO It is necessary to differentiate between read and write exceptions to simplify user configuration,
+//  eliminating the need to configure the exception type on each method
+@Setter
 @Getter
 @Consumer
 public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy> {
-
-    /**
-     * Retryer implementation type, default is Resilience4j.
-     */
-    @Setter
-    private String type = "Resilience4j";
-
     /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
      * to attempt to recover from transient failures by retrying the failed operation.
      */
-    @Setter
     private Integer retry;
 
     /**
      * Retry waiting interval, in milliseconds.
      */
-    @Setter
     private Long retryInterval;
 
     /**
      * Retry execution timeout, in milliseconds.
      */
-    @Setter
     private Long timeout;
 
     /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
-    @Setter
     private Set<String> retryStatuses;
 
     /**
      * A collection of retryable exception class names.
      */
-    @Setter
     private Set<String> retryExceptions;
-
-    /**
-     * The version of the policy.
-     */
-    private transient long version;
 
     @Override
     public void supplement(RetryPolicy source) {
         if (source == null) {
             return;
-        }
-        if (type == null) {
-            type = source.type;
         }
         if (retry == null) {
             retry = source.retry;
@@ -108,6 +93,10 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         }
     }
 
+    public long getDeadline(long startTime) {
+        return timeout != null && timeout > 0 ? startTime + timeout : 0;
+    }
+
     public boolean isEnabled() {
         return retry != null && retry > 0;
     }
@@ -117,24 +106,45 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     }
 
     public boolean isRetry(Throwable throwable) {
-        if (!isEnabled() || throwable == null || retryExceptions == null || retryExceptions.isEmpty()) {
+        return isEnabled() && isRetry(retryExceptions, throwable);
+    }
+
+    /**
+     * Determines whether an operation that threw an exception should be retried, based on a set of
+     * exception class names deemed retryable. This method checks not only the top-level exception but
+     * also recursively examines any underlying causes to see if any of them match the retryable exceptions.
+     *
+     * @param exceptions A {@link Set} of fully qualified class names of exceptions that should trigger a retry.
+     *                   This set must not be null or empty for the method to check for retryable exceptions.
+     * @param throwable  The {@link Throwable} instance thrown during the operation. This includes both the
+     *                   immediate exception and any nested causes.
+     * @return {@code true} if the thrown exception or any of its causes is found in the {@code exceptions} set,
+     * indicating that the operation should be retried. Returns {@code false} otherwise, indicating
+     * that the operation should not be retried based on the exception thrown.
+     */
+    public static boolean isRetry(Set<String> exceptions, Throwable throwable) {
+        if (throwable == null || exceptions == null || exceptions.isEmpty()) {
             return false;
         }
-        Class<?> type = throwable.getClass();
-        while (type != null && type != Object.class) {
-            if (retryExceptions.contains(type.getName())) {
-                return true;
+        Set<Class<?>> handled = new HashSet<>(16);
+        Queue<Throwable> queue = new LinkedList<>();
+        queue.add(throwable);
+        while (!queue.isEmpty()) {
+            Throwable e = queue.poll();
+            Class<?> type = e.getClass();
+            while (type != null && type != Object.class && handled.add(type)) {
+                if (exceptions.contains(type.getName())) {
+                    return true;
+                }
+                type = type.getSuperclass();
             }
-            type = type.getSuperclass();
+
+            Throwable cause = e.getCause();
+            if (cause != null && !handled.contains(cause.getClass())) {
+                queue.add(cause);
+            }
         }
         return false;
     }
 
-    protected int version() {
-        return Objects.hash(id, type, retry, retryInterval, timeout, retryStatuses, retryExceptions);
-    }
-
-    protected void cache() {
-        version = version();
-    }
 }

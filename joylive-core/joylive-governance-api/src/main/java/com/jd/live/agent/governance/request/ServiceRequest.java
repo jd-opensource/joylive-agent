@@ -59,6 +59,20 @@ public interface ServiceRequest extends Request {
     String getPath();
 
     /**
+     * Indicates whether the invocation is performed asynchronously.
+     * <p>
+     * This default implementation returns {@code false}, indicating that the invocation is
+     * performed synchronously. Subclasses should override this method if they provide asynchronous
+     * invocation capabilities.
+     * </p>
+     *
+     * @return {@code false} by default, meaning the invocation is synchronous.
+     */
+    default boolean isAsync() {
+        return false;
+    }
+
+    /**
      * Rejects the request with the given fault type and reason.
      *
      * @param type   The type of fault.

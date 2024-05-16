@@ -99,6 +99,9 @@ public class Application {
     // Process ID of the application.
     private final int pid;
 
+    @Setter
+    private volatile AppStatus status = AppStatus.READY;
+
     /**
      * Default constructor initializes the process ID and instance with a unique application ID.
      */

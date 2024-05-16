@@ -17,14 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import com.jd.live.agent.governance.request.Cookie;
 import com.jd.live.agent.governance.request.HttpMethod;
 import org.springframework.cloud.client.loadbalancer.RequestData;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * RequestDataOutboundRequest
@@ -42,7 +36,7 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
         this.uri = request.getUrl();
         this.headers = new LazyObject<>(request.getHeaders());
         this.queries = new LazyObject<>(() -> parseQuery(request.getUrl().getQuery()));
-        this.cookies = new LazyObject<>(() -> parseCookie(request));
+        this.cookies = new LazyObject<>(request.getCookies());
     }
 
     @Override
@@ -66,13 +60,6 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
         if (request != null) {
             result = request.getCookies().getFirst(key);
         }
-        return result;
-    }
-
-    protected Map<String, List<Cookie>> parseCookie(RequestData request) {
-        Map<String, List<Cookie>> result = new HashMap<>();
-        request.getCookies().forEach((s, strings) -> result.put(s,
-                strings.stream().map(c -> new Cookie(s, c)).collect(Collectors.toList())));
         return result;
     }
 }

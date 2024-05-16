@@ -38,6 +38,7 @@ public class RetryFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+        // TODO change order according to retry policy
         RouteTarget target = invocation.getRouteTarget();
         // Get the set of attempted endpoint IDs from the request
         Set<String> attempts = invocation.getRequest().getAttempts();

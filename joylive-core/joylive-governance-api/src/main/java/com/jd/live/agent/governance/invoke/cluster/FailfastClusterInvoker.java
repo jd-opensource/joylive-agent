@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -24,7 +23,7 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A {@code ClusterInvoker} that implements the fail-fast cluster invocation strategy.
@@ -43,31 +42,14 @@ import java.util.List;
 @Extension(value = ClusterInvoker.TYPE_FAILFAST, order = ClusterInvoker.ORDER_FAILFAST)
 public class FailfastClusterInvoker extends AbstractClusterInvoker {
 
-    @SuppressWarnings("unchecked")
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint,
-            T extends Throwable> O execute(LiveCluster<R, O, E, T> cluster,
-                                           InvocationContext context,
-                                           OutboundInvocation<R> invocation,
-                                           ClusterPolicy defaultPolicy) {
-        R request = invocation.getRequest();
-        E endpoint = null;
-        try {
-            List<? extends Endpoint> instances = invocation.getInstances();
-            instances = instances == null || instances.isEmpty() ? cluster.route(request) : instances;
-            invocation.setInstances(instances);
-            List<? extends Endpoint> endpoints = context.route(invocation);
-            if (endpoints != null && !endpoints.isEmpty()) {
-                endpoint = (E) endpoints.get(0);
-                return cluster.invoke(request, endpoint);
-            }
-            return cluster.createResponse(cluster.createNoProviderException(request), request, null);
-        } catch (RejectException e) {
-            return cluster.createResponse(cluster.createRejectException(e), request, endpoint);
-        } catch (Throwable e) {
-            return cluster.createResponse(e, request, endpoint);
-        }
+            T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
+                                                            InvocationContext context,
+                                                            OutboundInvocation<R> invocation,
+                                                            ClusterPolicy defaultPolicy) {
+        return invoke(cluster, context, invocation, null);
     }
 }

@@ -27,7 +27,8 @@ import com.alipay.sofa.rpc.log.LogCodes;
 import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.exception.RetryExhaustedException;
+import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
@@ -40,6 +41,8 @@ import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcO
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
@@ -94,6 +97,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     public ClusterPolicy getDefaultPolicy(SofaRpcOutboundRequest request) {
         ClusterPolicy policy = new ClusterPolicy();
         if (cluster instanceof FailoverCluster) {
+            // no interval config in com.alipay.sofa.rpc.client.FailoverCluster
             RetryPolicy retryPolicy = new RetryPolicy();
             retryPolicy.setRetry(getRetries(request.getRequest().getMethodName()));
             policy.setType(ClusterInvoker.TYPE_FAILOVER);
@@ -105,7 +109,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
-    public List<SofaRpcEndpoint> route(SofaRpcOutboundRequest request) {
+    public CompletionStage<List<SofaRpcEndpoint>> route(SofaRpcOutboundRequest request) {
         long routerStartTime = System.nanoTime();
         List<ProviderInfo> providers = cluster.getRouterChain().route(request.getRequest(), null);
         RpcInvokeContext.getContext().put(INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO, System.nanoTime() - routerStartTime);
@@ -117,30 +121,27 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
                 providers.add(directProvider);
             }
         }
-        return providers.stream().map(e -> new SofaRpcEndpoint(e, this::isConnected)).collect(Collectors.toList());
+        return CompletableFuture.completedFuture(providers.stream()
+                .map(e -> new SofaRpcEndpoint(e, this::isConnected))
+                .collect(Collectors.toList()));
     }
 
     @Override
-    public SofaRpcOutboundResponse invoke(SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) throws SofaRpcException {
-        return new SofaRpcOutboundResponse(cluster.filterChain(endpoint.getProvider(), request.getRequest()));
+    public CompletionStage<SofaRpcOutboundResponse> invoke(SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
+        try {
+            SofaResponse response = cluster.filterChain(endpoint.getProvider(), request.getRequest());
+            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
+        } catch (SofaRpcException e) {
+            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(e, this::isRetryable));
+        }
     }
 
     @Override
     public SofaRpcOutboundResponse createResponse(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
         if (throwable == null) {
             return new SofaRpcOutboundResponse(new SofaResponse());
-        } else if (throwable instanceof SofaRpcException) {
-            return new SofaRpcOutboundResponse(throwable, this::isRetryable);
-        } else if (throwable instanceof LiveException) {
-            return new SofaRpcOutboundResponse(
-                    new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR,
-                            getError(throwable, request, endpoint)), this::isRetryable);
         }
-        return new SofaRpcOutboundResponse(
-                new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR,
-                        getError(throwable, request, endpoint),
-                        throwable.getCause() != null ? throwable.getCause() : throwable),
-                this::isRetryable);
+        return new SofaRpcOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
     }
 
     @Override
@@ -161,6 +162,39 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
+    public boolean isDestroyed() {
+        return cluster.destroyed;
+    }
+
+    @Override
+    public SofaRpcException createUnReadyException(SofaRpcOutboundRequest request) {
+        return createUnReadyException("Rpc cluster invoker for " + cluster.getConsumerConfig().getInterfaceId()
+                + " on consumer " + Ipv4.getLocalHost()
+                + " is now destroyed! Can not invoke any more.", request);
+    }
+
+    @Override
+    public SofaRpcException createUnReadyException(String message, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.UNKNOWN, message);
+    }
+
+    @Override
+    public SofaRpcException createException(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
+        if (throwable == null) {
+            return null;
+        } else if (throwable instanceof SofaRpcException) {
+            return (SofaRpcException) throwable;
+        } else {
+            String message = getError(throwable, request, endpoint);
+            if (throwable instanceof LiveException) {
+                return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, message);
+            }
+            Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+            return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, message, cause);
+        }
+    }
+
+    @Override
     public SofaRpcException createNoProviderException(SofaRpcOutboundRequest request) {
         return new SofaRouteException(
                 LogCodes.getLog(LogCodes.ERROR_NO_AVAILABLE_PROVIDER,
@@ -168,7 +202,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
-    public SofaRpcException createRejectException(RejectException exception) {
+    public SofaRpcException createRejectException(RejectException exception, SofaRpcOutboundRequest request) {
         return new SofaRpcException(CLIENT_ROUTER, exception.getMessage());
     }
 
@@ -185,8 +219,10 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
-    public boolean isAvailable(SofaRpcEndpoint endpoint) {
-        return isConnected(endpoint.getProvider());
+    public void onRetry(int retries) {
+        if (RpcInternalContext.isAttachmentEnable()) {
+            RpcInternalContext.getContext().setAttachment(RpcConstants.INTERNAL_KEY_INVOKE_TIMES, retries + 1);
+        }
     }
 
     /**

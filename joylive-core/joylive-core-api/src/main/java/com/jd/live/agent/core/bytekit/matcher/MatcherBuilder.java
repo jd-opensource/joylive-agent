@@ -53,6 +53,17 @@ public class MatcherBuilder {
     }
 
     /**
+     * Creates a matcher that matches named elements with the given name.
+     *
+     * @param name The name to match.
+     * @param <T>  The type of the named element.
+     * @return A matcher that matches elements with the specified name.
+     */
+    public static <T extends NamedElement> Junction<T> startWith(String name) {
+        return new NameMatcher<>(new StringMatcher(name, OperationMode.STARTS_WITH));
+    }
+
+    /**
      * Creates a matcher that matches named elements with any of the given names.
      *
      * @param names The names to match.

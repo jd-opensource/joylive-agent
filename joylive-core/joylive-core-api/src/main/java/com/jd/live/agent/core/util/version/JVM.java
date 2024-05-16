@@ -41,12 +41,16 @@ public class JVM {
 
     private final String osArch;
 
+    private final boolean mac;
+
+
     public JVM() {
         version = new Version(System.getProperty(JAVA_VERSION));
         vendor = System.getProperty(JAVA_VM_VENDOR);
         home = System.getProperty(USER_HOME);
         osName = System.getProperty(OS_NAME);
         osArch = System.getProperty(OS_ARCH);
+        mac = osName.toLowerCase().contains("mac");
     }
 
     public static JVM instance() {

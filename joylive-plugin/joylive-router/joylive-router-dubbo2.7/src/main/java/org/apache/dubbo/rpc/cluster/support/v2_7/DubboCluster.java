@@ -19,7 +19,9 @@ package org.apache.dubbo.rpc.cluster.support.v2_7;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.exception.RetryExhaustedException;
+import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.governance.exception.RetryException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -39,6 +41,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
@@ -88,6 +92,7 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
     public ClusterPolicy getDefaultPolicy(DubboOutboundRequest request) {
         ClusterPolicy policy = new ClusterPolicy();
         if (cluster instanceof FailoverClusterInvoker) {
+            // no retry interval in org.apache.dubbo.rpc.cluster.support.FailoverClusterInvoker
             RetryPolicy retryPolicy = new RetryPolicy();
             retryPolicy.setRetry(getRetries(RpcUtils.getMethodName(request.getRequest())));
             policy.setType(ClusterInvoker.TYPE_FAILOVER);
@@ -97,11 +102,11 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
         } else if (cluster instanceof FailsafeClusterInvoker) {
             policy.setType(ClusterInvoker.TYPE_FAILSAFE);
         } else if (cluster instanceof FailbackClusterInvoker) {
-            policy.setType(ClusterInvoker.TYPE_FAILBACK);
+            policy.setType(ClusterInvoker.TYPE_FAILFAST);
         } else if (cluster instanceof BroadcastClusterInvoker) {
-            policy.setType(ClusterInvoker.TYPE_BROADCAST);
+            policy.setType(null);
         } else if (cluster instanceof ForkingClusterInvoker) {
-            policy.setType(ClusterInvoker.TYPE_FORKING);
+            policy.setType(ClusterInvoker.TYPE_FAILFAST);
         } else {
             policy.setType(ClusterInvoker.TYPE_FAILFAST);
         }
@@ -109,33 +114,37 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
     }
 
     @SuppressWarnings("unchecked")
-    public List<DubboEndpoint<?>> route(DubboOutboundRequest request) throws RpcException {
-        List<Invoker<?>> invokers = cluster.getDirectory().list(request.getRequest());
-        return invokers == null ? new ArrayList<>() : invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
+    @Override
+    public CompletionStage<List<DubboEndpoint<?>>> route(DubboOutboundRequest request) {
+        try {
+            List<Invoker<?>> invokers = cluster.getDirectory().list(request.getRequest());
+            return CompletableFuture.completedFuture(invokers == null
+                    ? new ArrayList<>()
+                    : invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList()));
+        } catch (RpcException e) {
+            return Futures.future(e);
+        }
     }
 
     @Override
-    public DubboOutboundResponse invoke(DubboOutboundRequest request, DubboEndpoint<?> endpoint) throws RpcException {
-        Result result = endpoint.getInvoker().invoke(request.getRequest());
-        return result.hasException() ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
-                : new DubboOutboundResponse(result);
+    public CompletionStage<DubboOutboundResponse> invoke(DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
+        try {
+            Result result = endpoint.getInvoker().invoke(request.getRequest());
+            DubboOutboundResponse response = result.hasException()
+                    ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
+                    : new DubboOutboundResponse(result);
+            return CompletableFuture.completedFuture(response);
+        } catch (RpcException e) {
+            return CompletableFuture.completedFuture(new DubboOutboundResponse(e, this::isRetryable));
+        }
     }
 
     @Override
     public DubboOutboundResponse createResponse(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         if (throwable == null) {
             return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
-        } else if (throwable instanceof RpcException) {
-            return new DubboOutboundResponse(throwable, this::isRetryable);
-        } else if (throwable instanceof LiveException) {
-            return new DubboOutboundResponse(
-                    new RpcException(RpcException.UNKNOWN_EXCEPTION, getError(throwable, request, endpoint)), this::isRetryable);
         }
-        return new DubboOutboundResponse(
-                new RpcException(RpcException.UNKNOWN_EXCEPTION,
-                        getError(throwable, request, endpoint),
-                        throwable.getCause() != null ? throwable.getCause() : throwable),
-                this::isRetryable);
+        return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
     }
 
     @Override
@@ -147,6 +156,40 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
         } else {
             RpcException exception = (RpcException) response.getThrowable();
             return exception.isNetwork() || exception.isTimeout();
+        }
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return cluster.isDestroyed();
+    }
+
+    @Override
+    public RpcException createUnReadyException(DubboOutboundRequest request) {
+        return createUnReadyException("Rpc cluster invoker for " + cluster.getInterface()
+                + " on consumer " + Ipv4.getLocalHost()
+                + " use dubbo version " + Version.getVersion()
+                + " is now destroyed! Can not invoke any more.", request);
+    }
+
+    @Override
+    public RpcException createUnReadyException(String message, DubboOutboundRequest request) {
+        return new RpcException(message);
+    }
+
+    @Override
+    public RpcException createException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
+        if (throwable == null) {
+            return null;
+        } else if (throwable instanceof RpcException) {
+            return (RpcException) throwable;
+        } else {
+            String message = getError(throwable, request, endpoint);
+            if (throwable instanceof LiveException) {
+                return new RpcException(RpcException.UNKNOWN_EXCEPTION, message);
+            }
+            Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+            return new RpcException(RpcException.UNKNOWN_EXCEPTION, message, cause);
         }
     }
 
@@ -163,12 +206,12 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
     }
 
     @Override
-    public RpcException createRejectException(RejectException exception) {
+    public RpcException createRejectException(RejectException exception, DubboOutboundRequest request) {
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }
 
     @Override
-    public RpcException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<DubboOutboundRequest> invocation) {
+    public RpcException createRetryExhaustedException(RetryException.RetryExhaustedException exception, OutboundInvocation<DubboOutboundRequest> invocation) {
         String methodName = RpcUtils.getMethodName(invocation.getRequest().getRequest());
         Throwable cause = exception.getCause();
         RpcException le = cause instanceof RpcException ? (RpcException) cause : null;

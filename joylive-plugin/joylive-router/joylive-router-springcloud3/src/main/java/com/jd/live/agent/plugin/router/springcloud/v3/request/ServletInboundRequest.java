@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
-import com.jd.live.agent.governance.request.Cookie;
 import com.jd.live.agent.governance.request.HttpMethod;
 
 import javax.servlet.http.HttpServletRequest;
@@ -73,12 +72,11 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         return result == null ? request.getServerName() : result;
     }
 
-    protected Map<String, List<Cookie>> parseCookie(HttpServletRequest request) {
-        Map<String, List<Cookie>> result = new HashMap<>();
+    protected Map<String, List<String>> parseCookie(HttpServletRequest request) {
+        Map<String, List<String>> result = new HashMap<>();
         if (request.getCookies() != null) {
             for (javax.servlet.http.Cookie cookie : request.getCookies()) {
-                result.computeIfAbsent(cookie.getName(), name -> new ArrayList<>()).add(
-                        new Cookie(cookie.getName(), cookie.getValue()));
+                result.computeIfAbsent(cookie.getName(), name -> new ArrayList<>()).add(cookie.getValue());
             }
         }
         return result;

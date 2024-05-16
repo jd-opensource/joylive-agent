@@ -63,7 +63,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);
         DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-        DubboOutboundResponse response = cluster.invoke(context, invocation, instances);
+        DubboOutboundResponse response = cluster.request(context, invocation, instances);
         if (response.getThrowable() != null) {
             mc.setThrowable(response.getThrowable());
         } else {

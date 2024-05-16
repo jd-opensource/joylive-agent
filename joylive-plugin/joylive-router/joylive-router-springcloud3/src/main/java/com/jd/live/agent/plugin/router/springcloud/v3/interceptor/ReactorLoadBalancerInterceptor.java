@@ -17,10 +17,15 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ReactorLoadBalancerInterceptor
@@ -31,18 +36,31 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
 
     private static final String FIELD_SERVICE_ID = "serviceId";
 
+    private final Map<ReactorLoadBalancer<?>, LazyObject<String>> loadBalancers = new ConcurrentHashMap<>();
+
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object target = ctx.getTarget();
-        FieldDesc fieldDesc = ClassUtils.describe(target.getClass()).getFieldList().getField(FIELD_SERVICE_ID);
+        String serviceId = loadBalancers.computeIfAbsent((ReactorLoadBalancer<?>) ctx.getTarget(), this::getServiceId).get();
+        if (serviceId != null) {
+            RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceId);
+        }
+    }
+
+    /**
+     * Retrieves the service ID associated with the given {@link ReactorLoadBalancer} instance as a {@link LazyObject}.
+     *
+     * @param loadBalancer The {@link ReactorLoadBalancer} instance from which to retrieve the service ID.
+     * @return A {@link LazyObject} encapsulating the service ID. If the service ID cannot be retrieved,
+     * an "empty" {@code LazyObject<String>} is returned.
+     */
+    private LazyObject<String> getServiceId(ReactorLoadBalancer<?> loadBalancer) {
+        FieldDesc fieldDesc = ClassUtils.describe(loadBalancer.getClass()).getFieldList().getField(FIELD_SERVICE_ID);
         if (fieldDesc != null) {
             try {
-                String serviceId = (String) fieldDesc.get(target);
-                if (serviceId != null) {
-                    RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceId);
-                }
+                return LazyObject.of((String) fieldDesc.get(loadBalancer));
             } catch (Throwable ignore) {
             }
         }
+        return LazyObject.empty();
     }
 }

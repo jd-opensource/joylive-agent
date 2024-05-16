@@ -90,6 +90,17 @@ public class LazyObject<T> extends CacheObject<T> {
     }
 
     /**
+     * Creates an "empty" {@code LazyObject} instance.
+     *
+     * @param <T> The type of the object that this {@code LazyObject} is meant to encapsulate.
+     * @return An "empty" {@code LazyObject} instance, which will return {@code null} for any attempt to get its value.
+     */
+    public static <T> LazyObject<T> empty() {
+        return new LazyObject<>(null);
+    }
+
+
+    /**
      * Static factory method that creates a new LazyObject with the specified Supplier for lazy
      * initialization.
      *

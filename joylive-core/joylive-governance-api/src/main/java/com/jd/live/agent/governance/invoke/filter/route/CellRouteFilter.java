@@ -156,27 +156,25 @@ public class CellRouteFilter implements RouteFilter {
                 Integer instance = unitGroup == null ? null : unitGroup.getSize(cellRoute.getCode());
                 instance = instance == null ? 0 : instance;
 
-                // If the cell has instances, add its weight and instance count to the totals.
-                if (instance > 0) {
-                    instances += instance;
-                    int weight = cellRoute.getWeight();
-                    weights += weight;
+                // Degrade the weight to 0 if the cell has instances.
+                instances += instance;
+                int weight = instance == 0 ? 0 : cellRoute.getWeight();
+                weights += weight;
 
-                    // Determine the priority of the cell based on the variable and local preference.
-                    int priority = cellRoute.getPriority(variable, localFirst ? localCell : null);
+                // Determine the priority of the cell based on the variable and local preference.
+                int priority = cellRoute.getPriority(variable, localFirst ? localCell : null);
 
-                    // Get the failover threshold for the cell using the provided function.
-                    Integer threshold = failoverThresholdFunc.apply(cell.getCode());
+                // Get the failover threshold for the cell using the provided function.
+                Integer threshold = failoverThresholdFunc.apply(cell.getCode());
 
-                    // Create a Candidate object and add it to the list of candidates.
-                    Candidate candidate = new Candidate(cellRoute, instance, weight, priority, threshold == null ? 0 : threshold);
-                    candidates.add(candidate);
+                // Create a Candidate object and add it to the list of candidates.
+                Candidate candidate = new Candidate(cellRoute, instance, weight, priority, threshold == null ? 0 : threshold);
+                candidates.add(candidate);
 
-                    // Update the preferred candidate if the current cell has a higher priority.
-                    if (priority > maxPriority && priority >= CellRoute.PRIORITY_LOCAL) {
-                        maxPriority = priority;
-                        prefer = candidate;
-                    }
+                // Update the preferred candidate if the current cell has a higher priority.
+                if (priority > maxPriority && priority >= CellRoute.PRIORITY_LOCAL) {
+                    maxPriority = priority;
+                    prefer = candidate;
                 }
             }
         }
@@ -206,18 +204,22 @@ public class CellRouteFilter implements RouteFilter {
                 election.setWinner(candidates.get(0));
                 break;
             default:
-                // Generate a random number within the range of the total weights.
-                int random = ThreadLocalRandom.current().nextInt(election.getWeights());
-                int range = 0;
+                if (election.getWeights() == 0) {
+                    election.setWinner(candidates.get(ThreadLocalRandom.current().nextInt(candidates.size())));
+                } else {
+                    // Generate a random number within the range of the total weights.
+                    int random = ThreadLocalRandom.current().nextInt(election.getWeights());
+                    int range = 0;
 
-                // Iterate through the candidates and calculate the cumulative weight range.
-                for (Candidate candidate : candidates) {
-                    // Add the candidate's weight to the range.
-                    range += candidate.getWeight();
-                    // If the random number is within the current range, set the candidate as the winner.
-                    if (range > random) {
-                        election.setWinner(candidate);
-                        break;
+                    // Iterate through the candidates and calculate the cumulative weight range.
+                    for (Candidate candidate : candidates) {
+                        // Add the candidate's weight to the range.
+                        range += candidate.getWeight();
+                        // If the random number is within the current range, set the candidate as the winner.
+                        if (range > random) {
+                            election.setWinner(candidate);
+                            break;
+                        }
                     }
                 }
         }

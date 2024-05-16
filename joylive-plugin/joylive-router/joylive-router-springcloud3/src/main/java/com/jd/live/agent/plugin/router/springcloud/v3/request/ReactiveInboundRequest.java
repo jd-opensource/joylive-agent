@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
-import com.jd.live.agent.governance.request.Cookie;
 import com.jd.live.agent.governance.request.HttpMethod;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -63,10 +62,10 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
         return result;
     }
 
-    protected Map<String, List<Cookie>> parseCookie(ServerHttpRequest request) {
-        Map<String, List<Cookie>> result = new HashMap<>();
+    protected Map<String, List<String>> parseCookie(ServerHttpRequest request) {
+        Map<String, List<String>> result = new HashMap<>();
         request.getCookies().forEach((n, v) -> result.put(n,
-                v.stream().map(c -> new Cookie(c.getName(), c.getValue())).collect(Collectors.toList())));
+                v.stream().map(HttpCookie::getValue).collect(Collectors.toList())));
         return result;
     }
 }

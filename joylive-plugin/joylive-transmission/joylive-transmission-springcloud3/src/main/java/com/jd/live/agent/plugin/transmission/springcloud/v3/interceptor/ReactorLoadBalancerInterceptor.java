@@ -28,6 +28,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
+@Deprecated
 public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
 
     public ReactorLoadBalancerInterceptor() {

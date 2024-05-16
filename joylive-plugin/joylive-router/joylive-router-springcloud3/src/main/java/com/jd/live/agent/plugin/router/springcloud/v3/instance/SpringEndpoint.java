@@ -20,16 +20,22 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.DefaultResponse;
+import org.springframework.cloud.client.loadbalancer.Response;
 
 public class SpringEndpoint implements Endpoint {
 
     private static final String STATE_HANGUP = "hangup";
     private static final String STATE_SUSPEND = "suspend";
     private static final String LABEL_STATE = "state";
+
     private final ServiceInstance instance;
+
+    private final Response<ServiceInstance> response;
 
     public SpringEndpoint(ServiceInstance instance) {
         this.instance = instance;
+        this.response = new DefaultResponse(instance);
     }
 
     @Override
@@ -92,5 +98,9 @@ public class SpringEndpoint implements Endpoint {
 
     public ServiceInstance getInstance() {
         return instance;
+    }
+
+    public Response<ServiceInstance> getResponse() {
+        return response;
     }
 }

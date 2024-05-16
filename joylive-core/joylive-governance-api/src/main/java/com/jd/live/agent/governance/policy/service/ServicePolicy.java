@@ -178,9 +178,6 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (livePolicy != null) {
             livePolicy.cache();
         }
-        if (clusterPolicy != null) {
-            clusterPolicy.cache();
-        }
         if (routePolicies != null) {
             for (RoutePolicy policy : routePolicies) {
                 policy.cache();

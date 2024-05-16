@@ -38,6 +38,7 @@ import com.jd.live.agent.plugin.transmission.springcloud.v3.interceptor.ReactorL
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(ReactorLoadBalancerDefinition.TYPE_REACTOR_LOADBALANCER)
+@Deprecated
 public class ReactorLoadBalancerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_REACTOR_LOADBALANCER = "org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction";

@@ -120,7 +120,7 @@ public interface HttpRequest extends ServiceRequest {
      *
      * @return A map of cookie names to their respective list of cookies.
      */
-    Map<String, List<Cookie>> getCookies();
+    Map<String, List<String>> getCookies();
 
     /**
      * Returns the value of a specific cookie.

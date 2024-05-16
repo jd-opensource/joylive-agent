@@ -29,6 +29,7 @@ import com.jd.live.agent.plugin.transimission.nettyhttp.v1.interceptor.NettyHttp
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(NettyHttpClientDefinition.TYPE_HTTP_CLIENT)
+@Deprecated
 public class NettyHttpClientDefinition extends PluginDefinitionAdapter {
 
     public static final String TYPE_HTTP_CLIENT = "reactor.netty.http.client.HttpClient";

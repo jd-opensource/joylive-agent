@@ -62,16 +62,15 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
         SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
         try {
-            List<SofaRpcEndpoint> instances = cluster.route(request);
             invoked.forEach(p -> request.addAttempt(p.getHost() + ":" + p.getPort()));
-            List<? extends Endpoint> endpoints = context.route(invocation, instances);
+            List<? extends Endpoint> endpoints = context.route(invocation);
             if (endpoints != null && !endpoints.isEmpty()) {
                 mc.setResult(((SofaRpcEndpoint) endpoints.get(0)).getProvider());
             } else {
                 mc.setThrowable(cluster.createNoProviderException(request));
             }
         } catch (RejectException e) {
-            mc.setThrowable(cluster.createRejectException(e));
+            mc.setThrowable(cluster.createRejectException(e, request));
         }
         mc.setSkip(true);
     }
