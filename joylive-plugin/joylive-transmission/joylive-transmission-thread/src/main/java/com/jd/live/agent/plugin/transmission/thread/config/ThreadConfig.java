@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.transmission.thread.config;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,65 +27,29 @@ public class ThreadConfig {
 
     public static final String CONFIG_THREAD_PREFIX = "agent.governance.transmission.thread";
 
-    private static final String[] EXCLUDE_EXECUTOR_CLASSES = new String[]{
-            "org.apache.dubbo.common.threadpool.ThreadlessExecutor",
-            "org.apache.tomcat.util.threads.ThreadPoolExecutor",
-            "org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor",
-            "org.apache.tomcat.util.threads.InlineExecutorService",
-            "javax.management.NotificationBroadcasterSupport$1",
-            "io.grpc.stub.ClientCalls.ThreadlessExecutor",
-            "io.grpc.SynchronizationContext",
-            "io.netty.channel.nio.NioEventLoopGroup",
-            "io.netty.channel.MultithreadEventLoopGroup",
-            "io.netty.channel.nio.NioEventLoop",
-            "io.netty.channel.SingleThreadEventLoop",
-            "io.netty.channel.kqueue.KQueueEventLoopGroup",
-            "io.netty.channel.kqueue.KQueueEventLoop",
-            "io.netty.util.concurrent.MultithreadEventExecutorGroup",
-            "io.netty.util.concurrent.AbstractEventExecutorGroup",
-            "io.netty.util.concurrent.ThreadPerTaskExecutor",
-            "io.netty.util.concurrent.GlobalEventExecutor",
-            "io.netty.util.concurrent.AbstractScheduledEventExecutor",
-            "io.netty.util.concurrent.AbstractEventExecutor",
-            "io.netty.util.concurrent.SingleThreadEventExecutor",
-            "io.netty.util.concurrent.DefaultEventExecutor",
-            "io.netty.util.internal.ThreadExecutorMap$1",
-            "reactor.core.scheduler.BoundedElasticScheduler$BoundedScheduledExecutorService",
-            "reactor.netty.resources.ColocatedEventLoopGroup",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutorGroup",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.ThreadPerTaskExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.GlobalEventExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractScheduledEventExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.SingleThreadEventLoop",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$1",
-            "com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$ExecutorHolder",
-            "com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$RestrictedScheduledExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$2",
-            "com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls.ThreadlessExecutor",
-            "com.alibaba.nacos.shaded.io.grpc.SynchronizationContext",
-            "com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor"
-    };
+    private Set<String> excludeExecutors = new HashSet<>();
 
-    private static final String[] EXCLUDE_TASK_CLASSES = new String[]{
-            "com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve",
-    };
+    private Set<String> excludeTasks = new HashSet<>();
 
-    private Set<String> excludeExecutors = new HashSet<>(Arrays.asList(EXCLUDE_EXECUTOR_CLASSES));
-
-    private Set<String> excludeTasks = new HashSet<>(Arrays.asList(EXCLUDE_TASK_CLASSES));
+    private Set<String> excludeTaskPrefixes = new HashSet<>();
 
     public boolean isExcludedExecutor(String name) {
         return name == null || excludeExecutors.contains(name);
     }
 
     public boolean isExcludedTask(String name) {
-        return name == null || excludeTasks.contains(name);
+        return name == null || excludeTasks.contains(name) || isExcludedTaskPrefix(name);
+    }
+
+    protected boolean isExcludedTaskPrefix(String name) {
+        if (name == null) {
+            return false;
+        }
+        for (String prefix : excludeTaskPrefixes) {
+            if (name.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
