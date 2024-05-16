@@ -65,9 +65,9 @@ public class ExecutorDefinition extends PluginDefinitionAdapter {
 
     public ExecutorDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_EXECUTOR).
-                and(MatcherBuilder.not(MatcherBuilder.in(threadConfig.getExcludes())));
+                and(MatcherBuilder.not(MatcherBuilder.in(threadConfig.getExcludeExecutors())));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHODS).and(MatcherBuilder.isPublic()),
-                        () -> new ExecutorInterceptor(handlers))};
+                        () -> new ExecutorInterceptor(handlers, threadConfig))};
     }
 }

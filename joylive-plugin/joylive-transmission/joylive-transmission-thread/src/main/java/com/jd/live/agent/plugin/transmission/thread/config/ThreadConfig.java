@@ -40,6 +40,8 @@ public class ThreadConfig {
             "io.netty.channel.MultithreadEventLoopGroup",
             "io.netty.channel.nio.NioEventLoop",
             "io.netty.channel.SingleThreadEventLoop",
+            "io.netty.channel.kqueue.KQueueEventLoopGroup",
+            "io.netty.channel.kqueue.KQueueEventLoop",
             "io.netty.util.concurrent.MultithreadEventExecutorGroup",
             "io.netty.util.concurrent.AbstractEventExecutorGroup",
             "io.netty.util.concurrent.ThreadPerTaskExecutor",
@@ -49,6 +51,8 @@ public class ThreadConfig {
             "io.netty.util.concurrent.SingleThreadEventExecutor",
             "io.netty.util.concurrent.DefaultEventExecutor",
             "io.netty.util.internal.ThreadExecutorMap$1",
+            "reactor.core.scheduler.BoundedElasticScheduler$BoundedScheduledExecutorService",
+            "reactor.netty.resources.ColocatedEventLoopGroup",
             "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup",
             "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup",
             "com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup",
@@ -70,11 +74,19 @@ public class ThreadConfig {
             "com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor"
     };
 
-    private Set<String> excludes = new HashSet<>(Arrays.asList(EXCLUDE_EXECUTOR_CLASSES));
+    private static final String[] EXCLUDE_TASK_CLASSES = new String[]{
+            "com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve",
+    };
 
-    public boolean exclude(String name) {
-        return name == null || excludes.contains(name);
+    private Set<String> excludeExecutors = new HashSet<>(Arrays.asList(EXCLUDE_EXECUTOR_CLASSES));
+
+    private Set<String> excludeTasks = new HashSet<>(Arrays.asList(EXCLUDE_TASK_CLASSES));
+
+    public boolean isExcludedExecutor(String name) {
+        return name == null || excludeExecutors.contains(name);
     }
 
-
+    public boolean isExcludedTask(String name) {
+        return name == null || excludeTasks.contains(name);
+    }
 }

@@ -23,19 +23,37 @@ import com.jd.live.agent.plugin.transmission.thread.adapter.AbstractThreadAdapte
 import com.jd.live.agent.plugin.transmission.thread.adapter.CallableAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.RunnableAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.RunnableAndCallableAdapter;
+import com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
 /**
  * ExecutorInterceptor
  */
 public class ExecutorInterceptor extends InterceptorAdaptor {
 
+    private static final String FIELD_CALLABLE = "callable";
+
+    private static Field CALLABLE_FIELD;
+
     private final Camera[] cameras;
 
-    public ExecutorInterceptor(List<Camera> cameras) {
+    private final ThreadConfig threadConfig;
+
+    static {
+        try {
+            CALLABLE_FIELD = FutureTask.class.getDeclaredField(FIELD_CALLABLE);
+            CALLABLE_FIELD.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
+    }
+
+    public ExecutorInterceptor(List<Camera> cameras, ThreadConfig threadConfig) {
         this.cameras = cameras == null ? new Camera[0] : cameras.toArray(new Camera[0]);
+        this.threadConfig = threadConfig;
     }
 
     @Override
@@ -47,7 +65,14 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
             return;
         }
         Object argument = arguments[0];
-        if (argument == null || argument instanceof AbstractThreadAdapter) {
+        if (argument == null) {
+            return;
+        }
+        Object unwrapped = unwrap(argument);
+        if (unwrapped instanceof AbstractThreadAdapter) {
+            return;
+        }
+        if (threadConfig.isExcludedTask(unwrapped.getClass().getName())) {
             return;
         }
 
@@ -55,7 +80,6 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         for (int i = 0; i < cameras.length; i++) {
             snapshots[i] = new Snapshot(cameras[i], cameras[i].snapshot());
         }
-
         if (argument instanceof Runnable && argument instanceof Callable) {
             arguments[0] = new RunnableAndCallableAdapter<>(name, (Runnable) argument, (Callable<?>) argument, snapshots);
         } else if (argument instanceof Runnable) {
@@ -63,6 +87,29 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         } else if (argument instanceof Callable) {
             arguments[0] = new CallableAdapter<>(name, (Callable<?>) argument, snapshots);
         }
+    }
+
+    /**
+     * Unwraps the provided argument object to retrieve its underlying value. If the argument is an instance
+     * of {@link AbstractThreadAdapter}, it is returned directly. If the argument is an instance of {@link FutureTask},
+     * the method attempts to extract the 'callable' field from it using reflection. If the extraction fails,
+     * the exception is ignored, and the original argument is returned.
+     *
+     * @param argument the object to unwrap, which could be an instance of {@link AbstractThreadAdapter} or
+     *                 {@link FutureTask} or any other Object.
+     * @return the unwrapped object if unwrapping is possible, otherwise the original object.
+     */
+    private Object unwrap(Object argument) {
+        if (argument instanceof AbstractThreadAdapter) {
+            return argument;
+        }
+        if (argument instanceof FutureTask && CALLABLE_FIELD != null) {
+            try {
+                return CALLABLE_FIELD.get(argument);
+            } catch (Exception ignore) {
+            }
+        }
+        return argument;
     }
 
 }

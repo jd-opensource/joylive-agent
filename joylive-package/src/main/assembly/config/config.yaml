@@ -118,7 +118,7 @@ agent:
         groupExpression: ${unit}-${cell}-${group}
     transmission:
       thread:
-        excludes:
+        excludeExecutors:
           - org.apache.dubbo.common.threadpool.ThreadlessExecutor
           - org.apache.tomcat.util.threads.ThreadPoolExecutor
           - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
@@ -161,6 +161,8 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls.ThreadlessExecutor
           - com.alibaba.nacos.shaded.io.grpc.SynchronizationContext
           - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
+        excludeTasks:
+          - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve
   counter:
     gateway: true
     service: true
