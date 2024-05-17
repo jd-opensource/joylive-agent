@@ -37,23 +37,26 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
 
     private static final String FIELD_CALLABLE = "callable";
 
-    private static Field CALLABLE_FIELD;
+    private final Field callableField;
 
     private final Camera[] cameras;
 
     private final ThreadConfig threadConfig;
 
-    static {
-        try {
-            CALLABLE_FIELD = FutureTask.class.getDeclaredField(FIELD_CALLABLE);
-            CALLABLE_FIELD.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-    }
-
     public ExecutorInterceptor(List<Camera> cameras, ThreadConfig threadConfig) {
         this.cameras = cameras == null ? new Camera[0] : cameras.toArray(new Camera[0]);
         this.threadConfig = threadConfig;
+        this.callableField = getCallableField();
+    }
+
+    private Field getCallableField() {
+        Field result = null;
+        try {
+            result = FutureTask.class.getDeclaredField(FIELD_CALLABLE);
+            result.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
+        return result;
     }
 
     @Override
@@ -103,9 +106,9 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         if (argument instanceof AbstractThreadAdapter) {
             return argument;
         }
-        if (argument instanceof FutureTask && CALLABLE_FIELD != null) {
+        if (argument instanceof FutureTask && callableField != null) {
             try {
-                return CALLABLE_FIELD.get(argument);
+                return callableField.get(argument);
             } catch (Exception ignore) {
             }
         }

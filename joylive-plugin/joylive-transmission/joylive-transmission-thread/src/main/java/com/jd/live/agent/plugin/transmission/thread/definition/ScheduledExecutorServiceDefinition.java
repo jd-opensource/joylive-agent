@@ -25,10 +25,7 @@ import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
-import com.jd.live.agent.core.plugin.definition.PluginDefinition;
-import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.core.thread.Camera;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig;
@@ -48,7 +45,7 @@ import static com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig.C
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_THREADPOOL_ENABLED)
-public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter {
+public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter implements PluginImporter {
     private static final String TYPE_SCHEDULED_EXECUTOR_SERVICE = "java.util.concurrent.ScheduledExecutorService";
 
     private static final String METHOD_SCHEDULE = "schedule";
@@ -72,6 +69,11 @@ public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter 
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHODS).and(MatcherBuilder.isPublic()),
                         () -> new ExecutorInterceptor(handlers, threadConfig))};
+    }
+
+    @Override
+    public String[] getImports() {
+        return new String[]{"java.util.concurrent.FutureTask"};
     }
 
 }

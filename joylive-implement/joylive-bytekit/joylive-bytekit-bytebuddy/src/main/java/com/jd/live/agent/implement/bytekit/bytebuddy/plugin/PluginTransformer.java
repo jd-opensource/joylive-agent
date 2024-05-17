@@ -148,7 +148,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
                         int index = type.lastIndexOf('.');
                         if (index > 0) {
                             String packageName = type.substring(0, index);
-                            if (!isExportedOrOpen(exportModule, packageName, definitionModule) && exported.add(packageName)) {
+                            if (!isExportedAndOpen(exportModule, packageName, definitionModule) && exported.add(packageName)) {
                                 addExportOrOpen(exportModule, packageName, definitionModule);
                             }
                         }
@@ -209,7 +209,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
     }
 
     /**
-     * Checks if a package is already exported or opened from one module to another. This is used
+     * Checks if a package is already exported and opened from one module to another. This is used
      * to avoid unnecessary module modifications if the access is already available.
      *
      * @param source      The module from which the package is to be exported or opened.
@@ -218,8 +218,9 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * @return {@code true} if the package is already exported or opened to the target module,
      * {@code false} otherwise.
      */
-    private boolean isExportedOrOpen(JavaModule source, String packageName, JavaModule target) {
-        return source.isExported(new PackageDescription.Simple(packageName), target);
+    private boolean isExportedAndOpen(JavaModule source, String packageName, JavaModule target) {
+        PackageDescription.Simple packageDescription = new PackageDescription.Simple(packageName);
+        return source.isExported(packageDescription, target) && source.isOpened(packageDescription, target);
     }
 
     /**
