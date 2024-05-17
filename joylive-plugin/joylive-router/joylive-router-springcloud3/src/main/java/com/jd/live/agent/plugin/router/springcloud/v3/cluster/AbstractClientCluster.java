@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.request.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.SpringClusterRequest;

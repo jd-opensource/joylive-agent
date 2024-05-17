@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.core.util.http.HttpMethod;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Map;

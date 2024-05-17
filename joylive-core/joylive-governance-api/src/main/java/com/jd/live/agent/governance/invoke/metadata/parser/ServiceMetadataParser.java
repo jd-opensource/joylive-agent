@@ -12,7 +12,7 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.CellPolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
-import com.jd.live.agent.governance.request.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 

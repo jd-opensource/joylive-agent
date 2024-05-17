@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.request.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.util.Cookies;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;

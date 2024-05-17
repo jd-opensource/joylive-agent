@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.request;
+package com.jd.live.agent.core.util.http;
 
 /**
  * Enumerates the HTTP methods, providing a method to identify if the HTTP method implies writing data.

@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import com.jd.live.agent.governance.request.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
