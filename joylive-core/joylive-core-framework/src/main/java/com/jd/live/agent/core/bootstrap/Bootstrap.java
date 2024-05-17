@@ -65,6 +65,8 @@ import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.shutdown.Shutdown;
 import com.jd.live.agent.core.util.shutdown.ShutdownHookAdapter;
+import com.jd.live.agent.core.util.time.TimeScheduler;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.core.util.type.Artifact;
 import com.jd.live.agent.core.util.version.JVM;
 import com.jd.live.agent.core.util.version.VersionExpression;
@@ -168,6 +170,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private Publisher<AgentEvent> publisher;
 
+    private TimeScheduler timer;
+
     /**
      * Manages services within the agent.
      */
@@ -253,6 +257,8 @@ public class Bootstrap implements AgentLifecycle {
             option = loadConfig(); // load config.yaml and merge bootstrap.properties.
             agentConfig = createAgentConfig(); //depend on option & injector
             context = createAgentContext(); //depend on option & agentPath & agentConfig & application
+            timer = new TimeScheduler("LiveTimer", 200, 300, 4, 10);
+            timer.start();
             eventBus = createEventBus(); //depend on extensionManager & option
             publisher = eventBus.getPublisher(Publisher.SYSTEM);
             publisher.addHandler(this::onAgentEvent);
@@ -316,6 +322,7 @@ public class Bootstrap implements AgentLifecycle {
         }
         Close.instance()
                 .closeIfExists(shutdown, Shutdown::unregister)
+                .closeIfExists(timer, TimeScheduler::close)
                 .closeIfExists(pluginManager, PluginSupervisor::uninstall)
                 .closeIfExists(serviceManager, ServiceManager::close)
                 .closeIfExists(eventBus, EventBus::stop)
@@ -478,6 +485,7 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(AgentPath.COMPONENT_AGENT_PATH, agentPath);
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
+                ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());
                 ctx.add(Resourcer.COMPONENT_CLASSLOADER_CORE, classLoader);
