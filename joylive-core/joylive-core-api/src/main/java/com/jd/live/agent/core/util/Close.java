@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.util;
 
+import java.util.function.Consumer;
+
 /**
  * A utility class that provides methods to facilitate the closing of resources and threads.
  * This class is designed to be used as a singleton and supports method chaining for ease of use.
@@ -81,6 +83,28 @@ public class Close {
                     }
                 }
             }
+        }
+        return this;
+    }
+
+    /**
+     * Attempts to close or clean up the provided resource using the specified {@code closer} action.
+     *
+     * @param value  the resource to be closed or cleaned up; if {@code null}, the {@code closer} is not invoked
+     * @param closer a {@link Consumer} that accepts the resource and performs the necessary action to close
+     *               or clean it up
+     * @return this instance, enabling method chaining
+     */
+    public <T> Close closeIfExists(T value, Consumer<T> closer) {
+        if (value != null) {
+            closer.accept(value);
+        }
+        return this;
+    }
+
+    public Close close(Runnable closer) {
+        if (closer != null) {
+            closer.run();
         }
         return this;
     }

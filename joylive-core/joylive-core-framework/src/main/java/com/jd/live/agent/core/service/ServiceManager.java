@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.service;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -32,6 +34,8 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 public class ServiceManager implements AgentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
     /**
      * The publisher used to distribute AgentEvent instances when services start or stop.
@@ -52,11 +56,6 @@ public class ServiceManager implements AgentService {
     public ServiceManager(List<AgentService> services, Publisher<AgentEvent> publisher) {
         this.services = services;
         this.publisher = publisher;
-        addShutdownHook();
-    }
-
-    protected void addShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> stop().join()));
     }
 
     @Override
@@ -69,6 +68,22 @@ public class ServiceManager implements AgentService {
     public CompletableFuture<Void> stop() {
         return execute(AgentService::stop, s -> new AgentEvent(EventType.AGENT_SERVICE_STOP,
                 "service " + s.getClass().getSimpleName() + " is stopped."));
+    }
+
+    /**
+     * Gracefully shuts down the service.
+     * <p>
+     * This method attempts to stop the service by calling its {@code stop} method and then waits for the
+     * termination process to complete. It ensures that the service is properly shut down by joining the
+     * termination process, thereby blocking until the service has fully stopped.
+     * </p>
+     */
+    public void close() {
+        try {
+            stop().join();
+        } catch (Throwable e) {
+            logger.warn("failed to shutdown service, caused by " + e.getMessage());
+        }
     }
 
     /**

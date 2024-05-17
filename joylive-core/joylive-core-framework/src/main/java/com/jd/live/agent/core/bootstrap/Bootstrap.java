@@ -49,6 +49,7 @@ import com.jd.live.agent.core.inject.InjectorFactory;
 import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
+import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.ConfigParser;
@@ -57,10 +58,13 @@ import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
 import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceManager;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.option.CascadeOption;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.shutdown.Shutdown;
+import com.jd.live.agent.core.util.shutdown.ShutdownHookAdapter;
 import com.jd.live.agent.core.util.type.Artifact;
 import com.jd.live.agent.core.util.version.JVM;
 import com.jd.live.agent.core.util.version.VersionExpression;
@@ -209,6 +213,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private List<InjectSourceSupplier> sourceSuppliers;
 
+    private Shutdown shutdown;
+
     /**
      * Constructs a new Bootstrap instance.
      *
@@ -266,12 +272,19 @@ public class Bootstrap implements AgentLifecycle {
             } else {
                 publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_FAILURE, "failed to install plugin.")));
             }
-        } catch (InitializeException e) {
-            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE, e.getMessage())));
-            logger.error(e.getMessage(), e);
+            shutdown = new Shutdown();
+            shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
+            shutdown.addHook(() -> serviceManager.stop());
+            shutdown.register();
         } catch (Throwable e) {
-            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE, "failed to install plugin. caused by " + e.getMessage())));
+            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE,
+                    e instanceof InitializeException
+                            ? e.getMessage()
+                            : "failed to install plugin. caused by " + e.getMessage())));
             logger.error(e.getMessage(), e);
+            if (serviceManager != null) {
+                serviceManager.stop();
+            }
         }
     }
 
@@ -301,22 +314,15 @@ public class Bootstrap implements AgentLifecycle {
             logger.warn("when using the premain mode, uninstallation is not allowed.");
             return;
         }
-        if (pluginManager != null) {
-            pluginManager.uninstall();
-        }
-        if (serviceManager != null) {
-            try {
-                serviceManager.stop().join();
-            } catch (Exception e) {
-                logger.warn("failed to shutdown service, caused by " + e.getMessage());
-            }
-        }
-        if (eventBus != null) {
-            eventBus.stop();
-        }
-        if (classLoaderManager != null) {
-            classLoaderManager.close();
-        }
+        Close.instance()
+                .closeIfExists(shutdown, Shutdown::unregister)
+                .closeIfExists(pluginManager, PluginSupervisor::uninstall)
+                .closeIfExists(serviceManager, ServiceManager::close)
+                .closeIfExists(eventBus, EventBus::stop)
+                .closeIfExists(classLoaderManager, ClassLoaderManager::close)
+                .closeIfExists(unLoader, Runnable::run)
+                .close((Runnable) LoggerFactory::reset);
+        shutdown = null;
         pluginManager = null;
         agentPath = null;
         injector = null;
@@ -335,11 +341,6 @@ public class Bootstrap implements AgentLifecycle {
         commandManager = null;
         sourceSuppliers = null;
         extensionManager = null;
-        if (unLoader != null) {
-            // notify live agent to clean
-            unLoader.run();
-        }
-        LoggerFactory.reset();
     }
 
     /**
