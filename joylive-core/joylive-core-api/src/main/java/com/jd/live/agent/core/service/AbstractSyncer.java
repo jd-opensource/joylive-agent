@@ -19,13 +19,14 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.exception.InitialTimeoutException;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Daemon;
-import com.jd.live.agent.core.util.Waiter;
+import com.jd.live.agent.core.util.Waiter.MutexWaiter;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * AbstractSyncService provides a base implementation for synchronous services. It extends the
+ * AbstractSyncer provides a base implementation for synchronous services. It extends the
  * {@link AbstractService} and is designed to handle synchronization tasks with configurable
  * intervals and fault tolerance. It uses a daemon thread to perform synchronization and offers
  * methods to tailor the synchronization logic to specific needs.
@@ -36,12 +37,12 @@ import java.util.concurrent.CompletableFuture;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-public abstract class AbstractSyncService<T, M> extends AbstractService {
+public abstract class AbstractSyncer<T, M> extends AbstractService {
 
     /**
      * Logger instance for this class.
      */
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSyncService.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSyncer.class);
 
     /**
      * The daemon thread responsible for executing synchronization tasks.
@@ -61,7 +62,7 @@ public abstract class AbstractSyncService<T, M> extends AbstractService {
     /**
      * The waiter used to block and unblock the daemon thread.
      */
-    protected Waiter.MutexWaiter waiter;
+    protected MutexWaiter waiter;
 
     /**
      * Starts the synchronization service by initializing the daemon thread and initiating its execution.
@@ -71,7 +72,7 @@ public abstract class AbstractSyncService<T, M> extends AbstractService {
     @Override
     protected CompletableFuture<Void> doStart() {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        waiter = new Waiter.MutexWaiter();
+        waiter = new MutexWaiter();
         config = getSyncConfig();
         daemon = createDaemon(future);
         daemon.start();
@@ -85,12 +86,7 @@ public abstract class AbstractSyncService<T, M> extends AbstractService {
      */
     @Override
     protected CompletableFuture<Void> doStop() {
-        if (waiter != null) {
-            waiter.wakeup();
-        }
-        if (daemon != null) {
-            daemon.stop();
-        }
+        Close.instance().closeIfExists(waiter, MutexWaiter::wakeup).closeIfExists(daemon, Daemon::stop);
         return CompletableFuture.completedFuture(null);
     }
 

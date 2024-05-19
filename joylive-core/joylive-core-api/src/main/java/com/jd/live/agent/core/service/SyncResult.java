@@ -15,33 +15,45 @@
  */
 package com.jd.live.agent.core.service;
 
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * A generic class that encapsulates a result object along with its associated metadata.
+ *
+ * @param <T> The type of the data object.
+ * @param <M> The type of the metadata object.
+ */
+@Setter
+@Getter
 public class SyncResult<T, M> {
 
+    /**
+     * The data object of type T.
+     */
     private T data;
 
+    /**
+     * The metadata object of type M.
+     */
     private M meta;
 
+    /**
+     * Constructs an empty {@code SyncResult} instance.
+     */
     public SyncResult() {
     }
 
+    /**
+     * Constructs a {@code SyncResult} instance with the specified data and metadata.
+     *
+     * @param data The data object to be stored in this {@code SyncResult}.
+     * @param meta The metadata object to be associated with the data.
+     */
     public SyncResult(T data, M meta) {
         this.data = data;
         this.meta = meta;
     }
 
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
-    }
-
-    public M getMeta() {
-        return meta;
-    }
-
-    public void setMeta(M meta) {
-        this.meta = meta;
-    }
 }
+

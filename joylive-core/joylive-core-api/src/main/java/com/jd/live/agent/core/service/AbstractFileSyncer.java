@@ -22,7 +22,8 @@ import com.jd.live.agent.core.event.FileEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ObjectParser;
-import lombok.Getter;
+import com.jd.live.agent.core.service.file.FileContent;
+import com.jd.live.agent.core.service.file.FileDigest;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -39,7 +40,7 @@ import java.util.zip.CRC32;
  *
  * @param <T> the type of object that the file's content will be parsed into
  */
-public abstract class AbstractFileSyncer<T> extends AbstractSyncService<T, AbstractFileSyncer.FileDigest> {
+public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest> {
 
     @Inject(ObjectParser.JSON)
     protected ObjectParser jsonParser;
@@ -48,6 +49,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncService<T, Abstr
     protected Publisher<FileEvent> publisher;
 
     protected final EventHandler<FileEvent> handler = this::onFileEvent;
+
     protected File file;
 
     @Override
@@ -73,14 +75,13 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncService<T, Abstr
         return 0;
     }
 
-
     @Override
     public SyncResult<T, FileDigest> sync(SyncConfig config, FileDigest last) throws IOException {
         if (file != null) {
             FileContent content = readFile(last);
             if (content != null) {
-                T result = parse(new InputStreamReader(new ByteArrayInputStream(content.bytes)));
-                return new SyncResult<>(result, new FileDigest(content.lastModified, content.crc32.getValue()));
+                T result = parse(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
+                return new SyncResult<>(result, new FileDigest(content.getLastModified(), content.getCrc32()));
             }
         }
         return null;
@@ -113,8 +114,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncService<T, Abstr
         if (file == null || !file.exists()) {
             return null;
         }
-        long lastModified = 0;
-        lastModified = file.lastModified();
+        long lastModified = file.lastModified();
         if (last != null && last.getLastModified() == lastModified) {
             return null;
         }
@@ -124,11 +124,11 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncService<T, Abstr
         }
         byte[] bytes = bos.toByteArray();
         CRC32 crc32 = new CRC32();
-        crc32.update(bytes);
+        crc32.update(bytes, 0, bytes.length);
         if (last != null && last.getCrc32() == crc32.getValue()) {
             return null;
         }
-        return new FileContent(lastModified, bytes, crc32);
+        return new FileContent(lastModified, crc32.getValue(), bytes);
     }
 
     /**
@@ -185,40 +185,6 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncService<T, Abstr
             }
         }
         return null;
-    }
-
-    /**
-     * Inner class representing the content of a file including its last modified timestamp,
-     * the bytes of its content, and the CRC32 digest of the content.
-     */
-    protected static class FileContent {
-        protected final long lastModified;
-        protected final byte[] bytes;
-        protected final CRC32 crc32;
-
-        FileContent(long lastModified, byte[] bytes, CRC32 crc32) {
-            this.lastModified = lastModified;
-            this.bytes = bytes;
-            this.crc32 = crc32;
-        }
-    }
-
-    /**
-     * Inner class representing a digest of a file, which includes the last modified timestamp
-     * and the CRC32 digest of the file's content.
-     */
-    @Getter
-    public static class FileDigest {
-
-        protected final long lastModified;
-
-        protected final long crc32;
-
-        public FileDigest(long lastModified, long crc32) {
-            this.lastModified = lastModified;
-            this.crc32 = crc32;
-        }
-
     }
 
 }

@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.util.time;
 
-import com.jd.live.agent.core.util.thread.NamedThreadFactory;
+import com.jd.live.agent.core.thread.NamedThreadFactory;
 
 import java.util.Queue;
 import java.util.concurrent.*;
