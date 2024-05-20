@@ -57,7 +57,7 @@ import java.util.function.Function;
 @Injectable
 @Extension(value = "CellRouteFilter", order = RouteFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class CellRouteFilter implements RouteFilter {
+public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
 
     @Inject(Publisher.TRAFFIC)
     private Publisher<TrafficEvent> publisher;

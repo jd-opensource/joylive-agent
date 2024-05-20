@@ -59,7 +59,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 @Injectable
 @Extension(value = "UnitRouteFilter", order = RouteFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class UnitRouteFilter implements RouteFilter {
+public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
 
     @Inject(Publisher.TRAFFIC)
     private Publisher<TrafficEvent> publisher;

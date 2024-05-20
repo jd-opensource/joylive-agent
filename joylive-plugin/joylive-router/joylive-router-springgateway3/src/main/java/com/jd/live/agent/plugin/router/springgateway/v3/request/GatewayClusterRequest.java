@@ -18,15 +18,18 @@ package com.jd.live.agent.plugin.router.springgateway.v3.request;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
+import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
  * GatewayOutboundRequest
@@ -49,10 +53,13 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
 
     private final RetryConfig retryConfig;
 
+    private final GatewayConfig gatewayConfig;
+
     public GatewayClusterRequest(ServerWebExchange exchange,
                                  GatewayFilterChain chain,
                                  ReactiveLoadBalancer.Factory<ServiceInstance> factory,
-                                 RetryConfig retryConfig) {
+                                 RetryConfig retryConfig,
+                                 GatewayConfig gatewayConfig) {
         super(exchange.getRequest(), factory);
         this.exchange = exchange;
         this.chain = chain;
@@ -61,7 +68,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         this.headers = new LazyObject<>(request.getHeaders());
         this.cookies = new LazyObject<>(() -> parseCookie(request));
         this.retryConfig = retryConfig;
-
+        this.gatewayConfig = gatewayConfig;
     }
 
     @Override
@@ -78,6 +85,28 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     public String getCookie(String key) {
         HttpCookie cookie = request.getCookies().getFirst(key);
         return cookie == null ? null : cookie.getValue();
+    }
+
+    @Override
+    public String getForwardHostExpression() {
+        String result = null;
+        if (loadBalancerFactory != null) {
+            Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
+            Map<String, Object> metadata = route == null ? null : route.getMetadata();
+            result = metadata == null ? null : (String) metadata.get(GatewayConfig.KEY_HOST_EXPRESSION);
+            result = result == null && gatewayConfig != null ? gatewayConfig.getHostExpression() : result;
+        }
+        return result;
+    }
+
+    @Override
+    public void forward(String host) {
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, UriComponentsBuilder.fromUri(uri).host(host).build().toUri());
+    }
+
+    @Override
+    public boolean isInstanceSensitive() {
+        return loadBalancerFactory != null;
     }
 
     @Override

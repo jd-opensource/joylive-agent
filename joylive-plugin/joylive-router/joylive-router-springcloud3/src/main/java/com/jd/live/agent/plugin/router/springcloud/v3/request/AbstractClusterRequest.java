@@ -29,6 +29,7 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -149,7 +150,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
     protected abstract RequestData buildRequestData();
 
     private LoadBalancerProperties buildProperties() {
-        return loadBalancerFactory.getProperties(getService());
+        return loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
     }
 
     /**
@@ -160,7 +161,8 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @return A set of LoadBalancerLifecycle objects that are compatible with the current service and request/response types.
      */
     private Set<LoadBalancerLifecycle> buildLifecycleProcessors() {
-        return LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
+        return loadBalancerFactory == null ? new HashSet<>()
+                : LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
                 loadBalancerFactory.getInstances(getService(), LoadBalancerLifecycle.class),
                 RequestDataContext.class,
                 ResponseData.class,
@@ -175,9 +177,10 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @return A DefaultRequest object containing the context for the load balancing operation.
      */
     private DefaultRequest<RequestDataContext> buildLbRequest() {
-        Map<String, String> hints = getProperties().getHint();
-        String defaultHint = hints.getOrDefault("default", "default");
-        String hint = hints.getOrDefault(getService(), defaultHint);
+        LoadBalancerProperties properties = getProperties();
+        Map<String, String> hints = properties == null ? null : properties.getHint();
+        String defaultHint = hints == null ? null : hints.getOrDefault("default", "default");
+        String hint = hints == null ? null : hints.getOrDefault(getService(), defaultHint);
         return new DefaultRequest<>(new RequestDataContext(getRequestData(), hint));
     }
 
@@ -191,7 +194,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     @SuppressWarnings("unchecked")
     private ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
-        ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory.getInstance(getService());
+        ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
         if (loadBalancer == null) {
             return null;
         }
@@ -213,11 +216,14 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * from this client to ensure session persistence.
      */
     private String buildStickyId() {
-        String instanceIdCookieName = getProperties().getStickySession().getInstanceIdCookieName();
-        Object context = getLbRequest().getContext();
-        if (context instanceof RequestDataContext) {
-            MultiValueMap<String, String> cookies = ((RequestDataContext) context).getClientRequest().getCookies();
-            return cookies == null ? null : cookies.getFirst(instanceIdCookieName);
+        LoadBalancerProperties properties = getProperties();
+        if (properties != null) {
+            String instanceIdCookieName = properties.getStickySession().getInstanceIdCookieName();
+            Object context = getLbRequest().getContext();
+            if (context instanceof RequestDataContext) {
+                MultiValueMap<String, String> cookies = ((RequestDataContext) context).getClientRequest().getCookies();
+                return cookies == null ? null : cookies.getFirst(instanceIdCookieName);
+            }
         }
         return null;
     }

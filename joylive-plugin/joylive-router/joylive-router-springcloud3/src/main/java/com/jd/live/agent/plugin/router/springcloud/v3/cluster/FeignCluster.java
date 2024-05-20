@@ -27,10 +27,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterReques
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
 import feign.Client;
 import feign.Request;
-import org.springframework.cloud.client.loadbalancer.CompletionContext;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools;
-import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.cloud.client.loadbalancer.ResponseData;
+import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 import org.springframework.http.HttpHeaders;
@@ -113,11 +110,13 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
         RequestData requestData = request.getRequestData();
         int status = response.getResponse().status();
         HttpStatus httpStatus = HttpStatus.resolve(response.getResponse().status());
+        LoadBalancerProperties properties = request.getProperties();
+        boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
         request.lifecycles(l -> l.onComplete(new CompletionContext<>(
                 CompletionContext.Status.SUCCESS,
                 request.getLbRequest(),
                 endpoint.getResponse(),
-                request.getProperties().isUseRawStatusCodeInResponseData()
+                useRawStatusCodeInResponseData
                         ? new ResponseData(responseHeaders, null, requestData, status)
                         : new ResponseData(httpStatus, responseHeaders, null, requestData))));
     }

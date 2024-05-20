@@ -138,11 +138,13 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             HttpHeaders responseHeaders = getHttpHeaders(response.getHeaders());
             RequestData requestData = request.getRequestData();
             HttpStatus httpStatus = response.getResponse().getStatusCode();
+            LoadBalancerProperties properties = request.getProperties();
+            boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
             request.lifecycles(l -> l.onComplete(new CompletionContext<>(
                     CompletionContext.Status.SUCCESS,
                     request.getLbRequest(),
                     endpoint.getResponse(),
-                    request.getProperties().isUseRawStatusCodeInResponseData()
+                    useRawStatusCodeInResponseData
                             ? new ResponseData(responseHeaders, null, requestData, httpStatus.value())
                             : new ResponseData(httpStatus, responseHeaders, null, requestData))));
         } catch (IOException ignore) {

@@ -17,23 +17,32 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
+import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.domain.Domain;
+import com.jd.live.agent.governance.policy.domain.DomainPolicy;
+import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
@@ -234,19 +243,11 @@ public interface InvocationContext {
      * request. The list may be empty if no endpoints are found to be suitable based on the applied filters.
      */
     default <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation, List<? extends Endpoint> instances) {
-        if (instances != null && !instances.isEmpty()) {
-            invocation.setInstances(instances);
-        }
-        return route(invocation);
+        return route(invocation, instances, null);
     }
 
     /**
      * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
-     * <p>
-     * This method orchestrates the application of route filters on the {@code invocation}. It creates a {@link RouteFilterChain.Chain}
-     * using the route filters provided by the {@link InvocationContext}. The chain is then applied to the {@code invocation}, allowing
-     * each filter an opportunity to inspect or modify the invocation and its associated endpoints.
-     * </p>
      *
      * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed
      * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
@@ -255,7 +256,33 @@ public interface InvocationContext {
      * empty if the filters conclude that no endpoints are suitable.
      */
     default <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation) {
-        RouteFilterChain.Chain chain = new RouteFilterChain.Chain(getRouteFilters());
+        return route(invocation, null, null);
+    }
+
+    /**
+     * Routes an outbound request through a series of {@link RouteFilter}s to determine the appropriate
+     * {@link Endpoint}s for the request. This method applies the provided filters (or the default
+     * filters if none are provided) to the given list of instances (endpoints), modifying the
+     * invocation's endpoints based on the filtering logic.
+     *
+     * @param <R>        The type of the outbound request, extending {@link OutboundRequest}.
+     * @param invocation The {@link OutboundInvocation} representing the outbound request and
+     *                   containing information necessary for routing.
+     * @param instances  A list of initial {@link Endpoint} instances to be considered for the request.
+     *                   If {@code null} or empty, the default list of endpoints will be used.
+     * @param filters    A collection of {@link RouteFilter} instances to apply to the endpoints. If
+     *                   {@code null} or empty, the default set of route filters is used.
+     * @return A list of {@link Endpoint} instances that have been filtered according to the
+     * specified (or default) filters and are deemed suitable for the outbound request.
+     * @throws IllegalArgumentException if the invocation or any other required parameter is {@code null}.
+     */
+    default <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation,
+                                                                       List<? extends Endpoint> instances,
+                                                                       Collection<? extends RouteFilter> filters) {
+        if (instances != null && !instances.isEmpty()) {
+            invocation.setInstances(instances);
+        }
+        RouteFilterChain.Chain chain = new RouteFilterChain.Chain(filters == null || filters.isEmpty() ? getRouteFilters() : filters);
         chain.filter(invocation);
         return invocation.getEndpoints();
     }
@@ -282,7 +309,7 @@ public interface InvocationContext {
      *
      * @see InvocationContext
      */
-    class InvocationContextDelegate implements InvocationContext {
+    class DelegateContext implements InvocationContext {
 
         /**
          * The {@link InvocationContext} instance to which this delegate will forward all method calls.
@@ -294,7 +321,7 @@ public interface InvocationContext {
          *
          * @param delegate The {@link InvocationContext} instance that this delegate will forward calls to.
          */
-        public InvocationContextDelegate(InvocationContext delegate) {
+        public DelegateContext(InvocationContext delegate) {
             this.delegate = delegate;
         }
 
@@ -358,6 +385,123 @@ public interface InvocationContext {
             return delegate.getRouteFilters();
         }
 
+        @Override
+        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation,
+                                                                            ClusterPolicy defaultPolicy) {
+            return delegate.getClusterInvoker(invocation, defaultPolicy);
+        }
+
+        @Override
+        public <R extends OutboundRequest> void outbound(OutboundInvocation<R> invocation) {
+            delegate.outbound(invocation);
+        }
+
+        @Override
+        public <R extends InboundRequest> void inbound(InboundInvocation<R> invocation) {
+            delegate.inbound(invocation);
+        }
+
+        @Override
+        public <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation,
+                                                                          List<? extends Endpoint> instances) {
+            return delegate.route(invocation, instances, null);
+        }
+
+        @Override
+        public <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation) {
+            return delegate.route(invocation, null, null);
+        }
+
+        @Override
+        public <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation,
+                                                                          List<? extends Endpoint> instances,
+                                                                          Collection<? extends RouteFilter> filters) {
+            return delegate.route(invocation, instances, filters);
+        }
+
+        @Override
+        public AppStatus getAppStatus() {
+            return delegate.getAppStatus();
+        }
+    }
+
+    /**
+     * An {@code HttpForwardInvocationContext} extends {@code InvocationContextDelegate} to specifically handle
+     * the routing of HTTP requests
+     *
+     * @see DelegateContext
+     */
+    class HttpForwardContext extends DelegateContext {
+
+        private static final Map<String, Template> TEMPLATES = new ConcurrentHashMap<>();
+
+        /**
+         * Constructs an {@code HttpForwardInvocationContext} with the specified delegate context.
+         *
+         * @param delegate The delegate {@code InvocationContext} to which this context adds additional functionality.
+         */
+        public HttpForwardContext(InvocationContext delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public <R extends OutboundRequest> List<? extends Endpoint> route(OutboundInvocation<R> invocation,
+                                                                          List<? extends Endpoint> instances,
+                                                                          Collection<? extends RouteFilter> filters) {
+            List<? extends Endpoint> result = super.route(invocation, instances, filters);
+            if (invocation.getRequest() instanceof HttpOutboundRequest) {
+                HttpOutboundRequest request = (HttpOutboundRequest) invocation.getRequest();
+                RouteTarget target = invocation.getRouteTarget();
+                UnitRoute unitRoute = target.getUnitRoute();
+                CellRoute cellRoute = target.getCellRoute();
+                Unit unit = unitRoute == null ? null : unitRoute.getUnit();
+                Cell cell = cellRoute == null ? null : cellRoute.getCell();
+                if (unit != null && cell != null) {
+                    String host = request.getHost();
+                    String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
+                    if (unitHost == null) {
+                        unitHost = request.getForwardHostExpression();
+                    }
+                    if (unitHost != null) {
+                        Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
+                        if (template.getVariables() > 0) {
+                            Map<String, Object> context = new HashMap<>();
+                            context.put("unit", unit.getHostPrefix());
+                            context.put("cell", cell.getHostPrefix());
+                            context.put("host", host);
+                            unitHost = template.evaluate(context);
+                        }
+                        request.forward(unitHost);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         * Resolves the host for a given unit based on the incoming request's host, the governance policy,
+         * and the unit's information. This method supports dynamic host resolution based on governance policies
+         * and is intended for internal use within the routing logic.
+         *
+         * @param host             The host of the incoming request.
+         * @param governancePolicy The governance policy under which the request is being processed.
+         * @param unit             The unit associated with the request, if any.
+         * @return The resolved host for the unit, or {@code null} if it cannot be resolved.
+         */
+        protected String getUnitHost(String host, GovernancePolicy governancePolicy, Unit unit) {
+            Domain domain = governancePolicy == null ? null : governancePolicy.getDomain(host);
+            DomainPolicy domainPolicy = domain == null ? null : domain.getPolicy();
+            if (domainPolicy != null) {
+                if (domainPolicy.isUnit()) {
+                    return domainPolicy.getUnitDomain().getHost();
+                } else {
+                    UnitDomain unitDomain = domainPolicy.getLiveDomain().getUnitDomain(unit.getCode());
+                    return unitDomain == null ? null : unitDomain.getHost();
+                }
+            }
+            return null;
+        }
     }
 
 }

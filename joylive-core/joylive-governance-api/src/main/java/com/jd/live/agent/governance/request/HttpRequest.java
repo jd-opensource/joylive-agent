@@ -154,6 +154,25 @@ public interface HttpRequest extends ServiceRequest {
      */
     interface HttpOutboundRequest extends HttpRequest, OutboundRequest {
 
+        /**
+         * Retrieves an expression that describes the target host for this request.
+         *
+         * @return A {@link String} representing the host expression for this request, or {@code null} if no expression
+         *         is defined.
+         */
+        default String getForwardHostExpression() {
+            return null;
+        }
+
+        /**
+         * Forwards this request to the specified host.
+         *
+         * @param host The target host to which the request should be forwarded.
+         */
+        default void forward(String host) {
+
+        }
+
     }
 }
 

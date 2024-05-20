@@ -118,11 +118,13 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ReactiveClusterResponse response, ReactiveClusterRequest request, SpringEndpoint endpoint) {
+        LoadBalancerProperties properties = request.getProperties();
+        boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
         request.lifecycles(l -> l.onComplete(new CompletionContext<>(
                 CompletionContext.Status.SUCCESS,
                 request.getLbRequest(),
                 endpoint.getResponse(),
-                request.getProperties().isUseRawStatusCodeInResponseData()
+                useRawStatusCodeInResponseData
                         ? new ResponseData(new RequestData(request.getRequest()), response.getResponse())
                         : new ResponseData(response.getResponse(), new RequestData(request.getRequest())))));
     }
@@ -138,9 +140,10 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
      * potentially transformed by any configured {@link LoadBalancerClientRequestTransformer}s.
      */
     private ClientRequest buildRequest(ReactiveClusterRequest request, ServiceInstance serviceInstance) {
-        LoadBalancerProperties.StickySession stickySession = request.getProperties().getStickySession();
-        String instanceIdCookieName = stickySession.getInstanceIdCookieName();
-        boolean addServiceInstanceCookie = stickySession.isAddServiceInstanceCookie();
+        LoadBalancerProperties properties = request.getProperties();
+        LoadBalancerProperties.StickySession stickySession = properties == null ? null : properties.getStickySession();
+        String instanceIdCookieName = stickySession == null ? null : stickySession.getInstanceIdCookieName();
+        boolean addServiceInstanceCookie = stickySession != null && stickySession.isAddServiceInstanceCookie();
         ClientRequest clientRequest = request.getRequest();
         URI originalUrl = clientRequest.url();
         ClientRequest result = ClientRequest

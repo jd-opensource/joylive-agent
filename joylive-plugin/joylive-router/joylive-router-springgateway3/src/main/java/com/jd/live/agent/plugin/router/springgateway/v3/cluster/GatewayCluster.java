@@ -28,10 +28,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRe
 import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.CompletionContext;
-import org.springframework.cloud.client.loadbalancer.DefaultResponse;
-import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.cloud.client.loadbalancer.ResponseData;
+import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
@@ -98,31 +95,35 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     @Override
     public void onStartRequest(GatewayClusterRequest request, SpringEndpoint endpoint) {
-        ServiceInstance instance = endpoint.getInstance();
-        URI uri = request.getRequest().getURI();
-        // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
-        // if the loadbalancer doesn't provide one.
-        String overrideScheme = instance.isSecure() ? "https" : "http";
-        Map<String, Object> attributes = request.getExchange().getAttributes();
-        String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
-        if (schemePrefix != null) {
-            overrideScheme = request.getURI().getScheme();
-        }
-        URI requestUrl = reconstructURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
+        if (endpoint != null) {
+            ServiceInstance instance = endpoint.getInstance();
+            URI uri = request.getRequest().getURI();
+            // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
+            // if the loadbalancer doesn't provide one.
+            String overrideScheme = instance.isSecure() ? "https" : "http";
+            Map<String, Object> attributes = request.getExchange().getAttributes();
+            String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
+            if (schemePrefix != null) {
+                overrideScheme = request.getURI().getScheme();
+            }
+            URI requestUrl = reconstructURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
 
-        attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
-        attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, new DefaultResponse(instance));
+            attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
+            attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, new DefaultResponse(instance));
+        }
         super.onStartRequest(request, endpoint);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(GatewayClusterResponse response, GatewayClusterRequest request, SpringEndpoint endpoint) {
+        LoadBalancerProperties properties = request.getProperties();
+        boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
         request.lifecycles(l -> l.onComplete(new CompletionContext<>(
                 CompletionContext.Status.SUCCESS,
                 request.getLbRequest(),
                 endpoint.getResponse(),
-                request.getProperties().isUseRawStatusCodeInResponseData()
+                useRawStatusCodeInResponseData
                         ? new ResponseData(new RequestData(request.getRequest()), response.getResponse())
                         : new ResponseData(response.getResponse(), new RequestData(request.getRequest())))));
     }

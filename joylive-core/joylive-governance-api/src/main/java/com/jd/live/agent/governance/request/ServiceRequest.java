@@ -167,6 +167,17 @@ public interface ServiceRequest extends Request {
         default void setTimeout(long timeout) {
         }
 
+        /**
+         * Determines if the current request is sensitive to specific instances.
+         *
+         * @return {@code true} if the operation is instance-sensitive, meaning it takes into
+         * account the state or characteristics of individual instances; {@code false}
+         * otherwise.
+         */
+        default boolean isInstanceSensitive() {
+            return true;
+        }
+
     }
 }
 

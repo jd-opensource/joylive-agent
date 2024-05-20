@@ -16,13 +16,13 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.SpringClusterRequest;
@@ -61,8 +61,9 @@ public abstract class AbstractClientCluster<
     public ClusterPolicy getDefaultPolicy(R request) {
         if (isRetryable()) {
             RetryPolicy retryPolicy = null;
-            LoadBalancerProperties.Retry retry = request.getProperties().getRetry();
-            if (retry.isEnabled() && (request.getHttpMethod() == HttpMethod.GET || retry.isRetryOnAllOperations())) {
+            LoadBalancerProperties properties = request.getProperties();
+            LoadBalancerProperties.Retry retry = properties == null ? null : properties.getRetry();
+            if (retry != null && retry.isEnabled() && (request.getHttpMethod() == HttpMethod.GET || retry.isRetryOnAllOperations())) {
                 retryPolicy = new RetryPolicy();
                 retryPolicy.setRetry(retry.getMaxRetriesOnNextServiceInstance());
                 retryPolicy.setRetryInterval(retry.getBackoff().getMinBackoff().toMillis());
