@@ -238,6 +238,7 @@ public class ServiceGroup extends ServicePolicyOwner {
                 } else {
                     pathOwner.addOwner(owner);
                     oldPath.merge(newPath, consumer, owner);
+                    targets.add(oldPath);
                 }
             }
             for (ServicePath newPath : group.paths) {

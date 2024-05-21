@@ -168,6 +168,7 @@ public class ServicePath extends ServicePolicyOwner implements Path {
                 } else {
                     methodOwner.addOwner(owner);
                     oldMethod.merge(newMethod.servicePolicy, consumer);
+                    targets.add(oldMethod);
                 }
             }
             for (ServiceMethod newMethod : path.methods) {

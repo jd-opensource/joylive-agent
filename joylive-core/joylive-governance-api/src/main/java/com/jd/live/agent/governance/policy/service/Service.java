@@ -277,6 +277,7 @@ public class Service extends PolicyId {
                     } else {
                         groupOwner.addOwner(owner);
                         oldGroup.merge(newGroup, consumer, owner);
+                        targets.add(oldGroup);
                     }
                 }
                 for (ServiceGroup newGroup : service.groups) {
