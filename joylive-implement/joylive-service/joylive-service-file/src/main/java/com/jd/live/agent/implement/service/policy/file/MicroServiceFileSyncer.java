@@ -106,6 +106,9 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     @Override
     protected boolean updateOnce(List<Service> value, FileDigest meta) {
+        if (value != null && !value.isEmpty()) {
+            value.forEach(s -> s.own(o -> o.own(getName())));
+        }
         GovernancePolicy expect = policySupervisor.getPolicy();
         GovernancePolicy update = expect == null ? new GovernancePolicy() : expect.copy();
         update.setServices(value);
