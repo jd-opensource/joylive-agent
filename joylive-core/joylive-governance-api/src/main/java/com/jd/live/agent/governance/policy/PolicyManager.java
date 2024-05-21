@@ -138,7 +138,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<RouteFilter> routeFilters;
 
-    private AtomicBoolean warmuped = new AtomicBoolean(false);
+    private final AtomicBoolean warmuped = new AtomicBoolean(false);
 
     @Override
     public PolicySupplier getPolicySupplier() {
