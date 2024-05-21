@@ -61,7 +61,11 @@ public class ServiceManager implements AgentService {
     @Override
     public CompletableFuture<Void> start() {
         return execute(AgentService::start, s -> new AgentEvent(EventType.AGENT_SERVICE_START,
-                "service " + s.getClass().getSimpleName() + " is started."));
+                "service " + s.getClass().getSimpleName() + " is started.")).whenComplete((v, t) -> {
+            if (t == null) {
+                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_SERVICES_START, "all services are started.")));
+            }
+        });
     }
 
     @Override

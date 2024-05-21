@@ -15,11 +15,14 @@
  */
 package com.jd.live.agent.governance.policy.service.live;
 
+import com.jd.live.agent.core.parser.json.DeserializeConverter;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Provider;
+import com.jd.live.agent.governance.policy.service.live.converter.CellPolicyDeserializer;
+import com.jd.live.agent.governance.policy.service.live.converter.UnitPolicyDeserializer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -58,6 +61,7 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
      */
     @Getter
     @Setter
+    @DeserializeConverter(UnitPolicyDeserializer.class)
     private UnitPolicy unitPolicy;
 
     /**
@@ -79,6 +83,7 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
      */
     @Getter
     @Setter
+    @DeserializeConverter(CellPolicyDeserializer.class)
     private CellPolicy cellPolicy;
 
     /**

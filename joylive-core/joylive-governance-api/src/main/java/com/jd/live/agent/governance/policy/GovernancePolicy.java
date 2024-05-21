@@ -243,7 +243,7 @@ public class GovernancePolicy {
                 if (old.getName().equals(name)) {
                     oldService = old;
                 } else {
-                    result.add(oldService);
+                    result.add(old);
                 }
             }
         }

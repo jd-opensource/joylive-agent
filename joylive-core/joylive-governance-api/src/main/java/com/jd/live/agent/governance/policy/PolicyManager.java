@@ -18,6 +18,8 @@ package com.jd.live.agent.governance.policy;
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.event.AgentEvent;
+import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
@@ -49,7 +51,6 @@ import lombok.Getter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -67,7 +68,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Getter
     @Inject(Publisher.POLICY_SUBSCRIBER)
-    private Publisher<PolicySubscriber> publisher;
+    private Publisher<PolicySubscriber> policyPublisher;
+
+    @Getter
+    @Inject(Publisher.SYSTEM)
+    private Publisher<AgentEvent> systemPublisher;
 
     @Getter
     @Inject(Application.COMPONENT_APPLICATION)
@@ -131,10 +136,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<RouteFilter> routeFilters;
-
-    private final AtomicInteger counter = new AtomicInteger(0);
-
-    private final CompletableFuture<Void> future = new CompletableFuture<>();
 
     @Override
     public PolicySupplier getPolicySupplier() {
@@ -210,21 +211,26 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Override
     public void initialize() {
-        ServiceConfig serviceConfig = governanceConfig == null ? null : governanceConfig.getServiceConfig();
-        Set<String> warmups = serviceConfig == null ? null : serviceConfig.getWarmups();
-        warmups = warmups == null ? new HashSet<>() : warmups;
-        AppService service = application.getService();
-        String name = service == null || service.getName() == null ? null : service.getName();
-        String namespace = service == null ? null : service.getNamespace();
-        if (name != null) {
-            warmups.add(name);
-        }
-        if (!warmups.isEmpty()) {
-            counter.set(warmups.size());
-            warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, PolicyType.SERVICE_POLICY)));
-        } else {
-            future.complete(null);
-        }
+        systemPublisher.addHandler(events -> {
+            // subscribe after all services are started.
+            for (Event<AgentEvent> event : events) {
+                AgentEvent agentEvent = event.getData();
+                if (agentEvent.getType() == EventType.AGENT_SERVICES_START) {
+                    ServiceConfig serviceConfig = governanceConfig == null ? null : governanceConfig.getServiceConfig();
+                    Set<String> warmups = serviceConfig == null ? null : serviceConfig.getWarmups();
+                    warmups = warmups == null ? new HashSet<>() : warmups;
+                    AppService service = application.getService();
+                    String namespace = service == null ? null : service.getNamespace();
+                    String name = service == null || service.getName() == null ? null : service.getName();
+                    if (name != null) {
+                        warmups.add(name);
+                    }
+                    if (!warmups.isEmpty()) {
+                        warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, PolicyType.SERVICE_POLICY)));
+                    }
+                }
+            }
+        });
     }
 
     protected void subscribe(PolicySubscriber subscriber) {
@@ -236,11 +242,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 } else {
                     logger.error("failed to sync service policy " + subscriber.getName());
                 }
-                if (!future.isDone() && counter.decrementAndGet() == 0) {
-                    future.complete(null);
-                }
             });
-            publisher.offer(new Event<>(subscriber));
+            policyPublisher.offer(new Event<>(subscriber));
         } else {
             exist.trigger(subscriber.getFuture());
         }

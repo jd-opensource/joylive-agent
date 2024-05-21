@@ -96,6 +96,11 @@ public class AgentEvent {
         AGENT_SERVICE_STOP,
 
         /**
+         * Indicates that all agent's services have started.
+         */
+        AGENT_SERVICES_START,
+
+        /**
          * Indicates a successful enhancement or modification performed by the agent.
          */
         AGENT_ENHANCE_SUCCESS,
