@@ -478,7 +478,7 @@ public enum HttpStatus {
     private static final HttpStatus[] VALUES = new HttpStatus[1024];
 
     static {
-        for (HttpStatus status : VALUES) {
+        for (HttpStatus status : values()) {
             VALUES[status.value] = status;
         }
     }
