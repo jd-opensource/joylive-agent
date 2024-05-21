@@ -46,7 +46,7 @@ public class LiveSpec {
 
     @Getter
     @Setter
-    private String version;
+    private Long version;
 
     @Getter
     @Setter

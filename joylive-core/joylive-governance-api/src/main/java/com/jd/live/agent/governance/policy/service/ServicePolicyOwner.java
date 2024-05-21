@@ -19,12 +19,24 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
+import java.util.function.BiConsumer;
+
+/**
+ * Represents an abstract owner of a service policy, extending the capabilities of a PolicyId.
+ */
 @Getter
 public abstract class ServicePolicyOwner extends PolicyId {
 
+    @Setter
     protected ServicePolicy servicePolicy;
 
+    protected transient final Owner owners = new Owner();
+
+    /**
+     * Supplements the current service policy with information from the provided source.\
+     *
+     * @param source The service policy to supplement the current policy with. Can be null.
+     */
     protected void supplement(ServicePolicy source) {
         if (source != null && servicePolicy == null) {
             servicePolicy = new ServicePolicy();
@@ -35,6 +47,25 @@ public abstract class ServicePolicyOwner extends PolicyId {
         }
     }
 
+    /**
+     * Merges the current service policy with the provided source policy using a specified consumer.
+     *
+     * @param source   The service policy to merge with the current policy. Can be null.
+     * @param consumer A {@code BiConsumer} that defines how to merge the current policy with the source. Can be null.
+     */
+    protected void merge(ServicePolicy source, BiConsumer<ServicePolicy, ServicePolicy> consumer) {
+        if (source != null) {
+            if (servicePolicy == null) {
+                servicePolicy = source;
+            } else if (consumer != null) {
+                consumer.accept(servicePolicy, source);
+            }
+        }
+    }
+
+    /**
+     * Caches the current service policy.
+     */
     protected void cache() {
         if (servicePolicy != null) {
             servicePolicy.cache();

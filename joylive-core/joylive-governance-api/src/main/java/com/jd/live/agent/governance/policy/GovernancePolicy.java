@@ -28,12 +28,15 @@ import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.live.UnitDomain;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Represents the governance policy for managing resources and configurations.
@@ -218,6 +221,48 @@ public class GovernancePolicy {
         if (dbClusters != null) {
             dbClusters.forEach(DatabaseCluster::cache);
         }
+    }
+
+    /**
+     * Updates an existing service by name with the provided service details or adds a new service if no matching service is found.
+     *
+     * @param name     the name of the service to update
+     * @param service  the new service details to merge with the existing service or to add if not found
+     * @param consumer a {@code BiConsumer} that defines how to merge the service policies of the existing and new services
+     * @param owner    the owner to set for a new or updated service
+     * @return a list of services with the updated or newly added service
+     */
+    public List<Service> update(String name,
+                                Service service,
+                                BiConsumer<ServicePolicy, ServicePolicy> consumer,
+                                String owner) {
+        List<Service> result = new ArrayList<>();
+        Service oldService = null;
+        if (services != null) {
+            for (Service old : services) {
+                if (old.getName().equals(name)) {
+                    oldService = old;
+                } else {
+                    result.add(oldService);
+                }
+            }
+        }
+        if (service != null && oldService == null) {
+            service.own(o -> o.own(owner));
+            result.add(service);
+        } else if (service != null) {
+            service.own(o -> o.own(owner));
+            Service merge = oldService.copy();
+            merge.merge(service, consumer, owner);
+            result.add(merge);
+        } else if (oldService != null) {
+            Service merge = oldService.copy();
+            merge.merge(null, consumer, owner);
+            if (!merge.getOwners().isEmpty()) {
+                result.add(merge);
+            }
+        }
+        return result;
     }
 
     /**

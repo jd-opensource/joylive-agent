@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * SyncConfig
@@ -29,17 +30,23 @@ import java.util.Map;
 @Getter
 public class SyncConfig {
 
-    public static final String SYNC_MICROSERVICE = "agent.sync.microservice";
+    public static final String SYNC = "agent.sync";
 
-    public static final String SYNC_MICROSERVICE_TYPE = "agent.sync.microservice.type";
+    public static final String SYNC_MICROSERVICE = SYNC + ".microservice";
 
-    public static final String SYNC_LIVE_SPACE = "agent.sync.liveSpace";
+    public static final String SYNC_MICROSERVICE_TYPE = SYNC_MICROSERVICE + ".type";
 
-    public static final String SYNC_LIVE_SPACE_TYPE = "agent.sync.liveSpace.type";
+    public static final String SYNC_LIVE_SPACE = SYNC + ".liveSpace";
 
-    public static final String SYNC_LANE_SPACE = "agent.sync.laneSpace";
+    public static final String SYNC_LIVE_SPACE_TYPE = SYNC_LIVE_SPACE + ".type";
 
-    public static final String SYNC_LANE_SPACE_TYPE = "agent.sync.laneSpace.type";
+    public static final String SYNC_LANE_SPACE = SYNC + ".laneSpace";
+
+    public static final String SYNC_LANE_SPACE_TYPE = SYNC_LANE_SPACE + ".type";
+
+    public static final String SYNC_MICROSERVICE_LIVE = SYNC + ".serviceLive";
+
+    public static final String SYNC_MICROSERVICE_LIVE_TYPE = SYNC_MICROSERVICE_LIVE + ".type";
 
     private String url;
 
@@ -55,6 +62,8 @@ public class SyncConfig {
 
     private long fault = 5000;
 
+    private int concurrency;
+
     private Map<String, String> headers;
 
     private Map<String, String> configs;
@@ -62,5 +71,11 @@ public class SyncConfig {
     public String getConfig(String key, String defaultValue) {
         String value = configs == null || key == null ? null : configs.get(key);
         return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    public void header(BiConsumer<String, String> consumer) {
+        if (headers != null && consumer != null) {
+            headers.forEach(consumer);
+        }
     }
 }
