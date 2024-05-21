@@ -153,7 +153,7 @@ public class Plugin implements PluginDeclare {
             status = Status.SUCCESS;
             List<String> names = new ArrayList<>(definitions.size());
             definitions.forEach(t -> names.add(t.getClass().getSimpleName()));
-            publish(new PluginEvent(this, EventType.SUCCESS, "install plugin " + name + ". definitions=" + names));
+            publish(new PluginEvent(this, EventType.SUCCESS, "Install plugin " + name + ". definitions=" + names));
         }
     }
 
@@ -175,7 +175,7 @@ public class Plugin implements PluginDeclare {
         if (status == Status.SUCCESS || status == Status.FAILED) {
             status = Status.LOADED;
         }
-        publish(new PluginEvent(this, EventType.UNINSTALL, "uninstall plugin " + name));
+        publish(new PluginEvent(this, EventType.UNINSTALL, "Uninstall plugin " + name));
     }
 
     /**

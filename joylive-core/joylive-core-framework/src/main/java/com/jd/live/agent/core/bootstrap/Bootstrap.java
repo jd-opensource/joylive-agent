@@ -56,7 +56,6 @@ import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
-import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceManager;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.network.Ipv4;
@@ -274,9 +273,9 @@ public class Bootstrap implements AgentLifecycle {
             subscribe();
             serviceManager.start().join();
             if (pluginManager.install(dynamic)) {
-                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_SUCCESS, "success installing all plugins.")));
+                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_SUCCESS, "Success installing all plugins.")));
             } else {
-                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_FAILURE, "failed to install plugin.")));
+                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_FAILURE, "Failed to install plugin.")));
             }
             shutdown = new Shutdown();
             shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
@@ -286,7 +285,7 @@ public class Bootstrap implements AgentLifecycle {
             publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE,
                     e instanceof InitializeException
                             ? e.getMessage()
-                            : "failed to install plugin. caused by " + e.getMessage())));
+                            : "Failed to install plugin. caused by " + e.getMessage())));
             logger.error(e.getMessage(), e);
             if (serviceManager != null) {
                 serviceManager.stop();
@@ -298,17 +297,17 @@ public class Bootstrap implements AgentLifecycle {
     public void execute(String command, Map<String, Object> args) {
         if (commandManager == null) {
             //only throw initialize exception without error stack to agent.
-            throw new InitializeException("agent is not successfully installed");
+            throw new InitializeException("Agent is not successfully installed");
         } else if (command == null || command.isEmpty()) {
             //only throw initialize exception without error stack to agent.
-            throw new InitializeException("command is empty.");
+            throw new InitializeException("Command is empty.");
         } else {
             Command commander = commandManager.getExtension(command);
             if (commander != null) {
                 commander.execute(args);
             } else {
                 //only throw initialize exception without error stack to agent.
-                throw new InitializeException("command " + command + " is not found.");
+                throw new InitializeException("Command " + command + " is not found.");
             }
         }
     }
@@ -317,7 +316,7 @@ public class Bootstrap implements AgentLifecycle {
     public void uninstall() {
         // uninstall agent
         if (!dynamic) {
-            logger.warn("when using the premain mode, uninstallation is not allowed.");
+            logger.warn("When using the premain mode, uninstallation is not allowed.");
             return;
         }
         Close.instance()
@@ -388,7 +387,7 @@ public class Bootstrap implements AgentLifecycle {
         } catch (LiveException e) {
             throw e;
         } catch (Throwable e) {
-            throw new ParseException("failed to parse file " + file.getPath(), e);
+            throw new ParseException("Failed to parse file " + file.getPath(), e);
         }
     }
 
@@ -502,9 +501,9 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     private ServiceManager createServiceManager() {
-        List<AgentService> services = extensionManager.getOrLoadExtensible(AgentService.class,
-                classLoaderManager.getCoreImplLoader()).getExtensions();
-        return new ServiceManager(services, publisher);
+        ServiceManager result = new ServiceManager();
+        injector.inject(result);
+        return result;
     }
 
     private PluginSupervisor createPluginManager() {
@@ -586,12 +585,12 @@ public class Bootstrap implements AgentLifecycle {
                 case AGENT_START_FAILURE:
                 case AGENT_POLICY_INITIALIZE_FAILURE:
                     logger.error(data.getMessage(), data.getThrowable());
-                    logger.info("shutdown.....");
+                    logger.info("Shutdown.....");
                     System.exit(1);
                 case AGENT_ENHANCE_FAILURE:
                     logger.error(data.getMessage(), data.getThrowable());
                     if (!dynamic) {
-                        logger.info("shutdown.....");
+                        logger.info("Shutdown.....");
                         System.exit(1);
                     }
             }

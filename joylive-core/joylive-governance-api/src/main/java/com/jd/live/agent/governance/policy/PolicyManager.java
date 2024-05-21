@@ -51,6 +51,7 @@ import lombok.Getter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -137,6 +138,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<RouteFilter> routeFilters;
 
+    private AtomicBoolean warmuped = new AtomicBoolean(false);
+
     @Override
     public PolicySupplier getPolicySupplier() {
         return this;
@@ -212,25 +215,30 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Override
     public void initialize() {
         systemPublisher.addHandler(events -> {
-            // subscribe after all services are started.
             for (Event<AgentEvent> event : events) {
-                AgentEvent agentEvent = event.getData();
-                if (agentEvent.getType() == EventType.AGENT_SERVICES_START) {
-                    ServiceConfig serviceConfig = governanceConfig == null ? null : governanceConfig.getServiceConfig();
-                    Set<String> warmups = serviceConfig == null ? null : serviceConfig.getWarmups();
-                    warmups = warmups == null ? new HashSet<>() : warmups;
-                    AppService service = application.getService();
-                    String namespace = service == null ? null : service.getNamespace();
-                    String name = service == null || service.getName() == null ? null : service.getName();
-                    if (name != null) {
-                        warmups.add(name);
-                    }
-                    if (!warmups.isEmpty()) {
-                        warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, PolicyType.SERVICE_POLICY)));
-                    }
+                if (event.getData().getType() == EventType.AGENT_SERVICE_READY) {
+                    // subscribe after all services are started.
+                    warmup();
                 }
             }
         });
+    }
+
+    private void warmup() {
+        if (warmuped.compareAndSet(false, true)) {
+            ServiceConfig serviceConfig = governanceConfig == null ? null : governanceConfig.getServiceConfig();
+            Set<String> warmups = serviceConfig == null ? null : serviceConfig.getWarmups();
+            warmups = warmups == null ? new HashSet<>() : warmups;
+            AppService service = application.getService();
+            String namespace = service == null ? null : service.getNamespace();
+            String name = service == null || service.getName() == null ? null : service.getName();
+            if (name != null) {
+                warmups.add(name);
+            }
+            if (!warmups.isEmpty()) {
+                warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, PolicyType.SERVICE_POLICY)));
+            }
+        }
     }
 
     protected void subscribe(PolicySubscriber subscriber) {
@@ -238,9 +246,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         if (exist == null) {
             subscriber.trigger((v, t) -> {
                 if (t == null) {
-                    logger.info("success syncing service policy " + subscriber.getName());
+                    logger.info("Success synchronizing service policy " + subscriber.getName());
                 } else {
-                    logger.error("failed to sync service policy " + subscriber.getName());
+                    logger.error("Failed to sync service policy " + subscriber.getName());
                 }
             });
             policyPublisher.offer(new Event<>(subscriber));

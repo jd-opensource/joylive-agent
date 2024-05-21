@@ -97,7 +97,7 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
         update.setLaneSpaces(value);
         update.cache();
         if (policySupervisor.update(expect, update)) {
-            logger.info("success synchronizing file " + file.getPath());
+            logger.info("Success synchronizing file " + file.getPath());
             return true;
         }
         return false;

@@ -53,7 +53,7 @@ public class ServiceRegistryInterceptor extends InterceptorAdaptor {
         subscribePolicy(registration);
 
         if (logger.isInfoEnabled()) {
-            logger.info("success filling metadata for registration " + registration.getServiceId() + " in " + ctx.getTarget().getClass());
+            logger.info("Success filling metadata for registration " + registration.getServiceId() + " in " + ctx.getTarget().getClass());
         }
     }
 

@@ -52,11 +52,11 @@ public class SpringApplicationInterceptor extends InterceptorAdaptor {
             List<CompletableFuture<Void>> futures = subscribers.stream().map(PolicySubscriber::getFuture).collect(Collectors.toList());
             try {
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(config.getInitializeTimeout(), TimeUnit.MILLISECONDS);
-                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_POLICY_INITIALIZE_SUCCESS, "success fetching all policies.")));
+                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_POLICY_INITIALIZE_SUCCESS, "Success fetching all policies.")));
             } catch (InterruptedException ignore) {
             } catch (Throwable e) {
-                String error = e instanceof TimeoutException ? "it's timeout to fetch governance policy." :
-                        "failed to fetch governance policy. caused by " + e.getMessage();
+                String error = e instanceof TimeoutException ? "It's timeout to fetch governance policy." :
+                        "Failed to fetch governance policy. caused by " + e.getMessage();
                 publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_POLICY_INITIALIZE_FAILURE, error)));
             }
         }

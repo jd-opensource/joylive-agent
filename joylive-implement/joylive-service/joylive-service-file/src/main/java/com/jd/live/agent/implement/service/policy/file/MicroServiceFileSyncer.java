@@ -114,7 +114,7 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
         update.setServices(value);
         update.cache();
         if (policySupervisor.update(expect, update)) {
-            logger.info("success synchronizing file " + file.getPath());
+            logger.info("Success synchronizing file " + file.getPath());
             if (loaded.compareAndSet(false, true)) {
                 for (PolicySubscriber subscriber : subscribers.values()) {
                     subscriber.complete();

@@ -86,19 +86,9 @@ public class AgentEvent {
         AGENT_START_FAILURE,
 
         /**
-         * Indicates that an agent's service has started.
-         */
-        AGENT_SERVICE_START,
-
-        /**
-         * Indicates that an agent's service has stopped.
-         */
-        AGENT_SERVICE_STOP,
-
-        /**
          * Indicates that all agent's services have started.
          */
-        AGENT_SERVICES_START,
+        AGENT_SERVICE_READY,
 
         /**
          * Indicates a successful enhancement or modification performed by the agent.

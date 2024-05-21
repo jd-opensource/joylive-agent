@@ -186,14 +186,14 @@ public class PluginManager implements PluginSupervisor {
                         }
                     });
                 } catch (Throwable e) {
-                    plugin.fail("failed to enhance plugin " + plugin.getName(), e);
+                    plugin.fail("Failed to enhance plugin " + plugin.getName(), e);
                     success = false;
                     break;
                 }
             }
         }
         if (!success) {
-            logger.info("start uninstalling plugins.");
+            logger.info("Start uninstalling plugins.");
             enhances.forEach(Plugin::uninstall);
         } else {
             enhances.forEach(Plugin::success);
@@ -218,13 +218,13 @@ public class PluginManager implements PluginSupervisor {
                 try {
                     builder.install(context.getInstrumentation());
                 } catch (Throwable e) {
-                    logger.error("failed to enhance static plugins", e);
+                    logger.error("Failed to enhance static plugins", e);
                     success = false;
                 }
             }
         }
         if (!success) {
-            logger.info("start uninstalling plugins.");
+            logger.info("Start uninstalling plugins.");
             enhances.forEach(Plugin::uninstall);
         } else {
             enhances.forEach(Plugin::success);

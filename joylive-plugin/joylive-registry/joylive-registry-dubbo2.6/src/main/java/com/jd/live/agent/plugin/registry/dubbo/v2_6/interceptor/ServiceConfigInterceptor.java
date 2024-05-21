@@ -52,7 +52,7 @@ public class ServiceConfigInterceptor extends InterceptorAdaptor {
         subscribePolicy(config);
 
         if (logger.isInfoEnabled()) {
-            logger.info("success filling metadata for registration " + config.getInterface() + " in " + config.getClass());
+            logger.info("Success filling metadata for registration " + config.getInterface() + " in " + config.getClass());
         }
     }
 

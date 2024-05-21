@@ -15,12 +15,16 @@
  */
 package com.jd.live.agent.core.service;
 
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.InjectLoader;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +37,7 @@ import java.util.function.Function;
  *
  * @since 1.0.0
  */
+@Injectable
 public class ServiceManager implements AgentService {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
@@ -40,38 +45,28 @@ public class ServiceManager implements AgentService {
     /**
      * The publisher used to distribute AgentEvent instances when services start or stop.
      */
-    private final Publisher<AgentEvent> publisher;
+    @Inject(Publisher.SYSTEM)
+    private Publisher<AgentEvent> publisher;
 
     /**
      * The list of services that this manager is responsible for.
      */
-    private final List<AgentService> services;
-
-    /**
-     * Constructs a new ServiceManager with the given services and event publisher.
-     *
-     * @param services the list of services to manage.
-     * @param publisher the publisher used to send out AgentEvent instances.
-     */
-    public ServiceManager(List<AgentService> services, Publisher<AgentEvent> publisher) {
-        this.services = services;
-        this.publisher = publisher;
-    }
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private List<AgentService> services;
 
     @Override
     public CompletableFuture<Void> start() {
-        return execute(AgentService::start, s -> new AgentEvent(EventType.AGENT_SERVICE_START,
-                "service " + s.getClass().getSimpleName() + " is started.")).whenComplete((v, t) -> {
+        return execute(AgentService::start, s -> "Service " + s.getClass().getSimpleName() + " is started.").whenComplete((v, t) -> {
             if (t == null) {
-                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_SERVICES_START, "all services are started.")));
+                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_SERVICE_READY, "All services are started.")));
             }
         });
     }
 
     @Override
     public CompletableFuture<Void> stop() {
-        return execute(AgentService::stop, s -> new AgentEvent(EventType.AGENT_SERVICE_STOP,
-                "service " + s.getClass().getSimpleName() + " is stopped."));
+        return execute(AgentService::stop, s -> "Service " + s.getClass().getSimpleName() + " is stopped.");
     }
 
     /**
@@ -86,7 +81,7 @@ public class ServiceManager implements AgentService {
         try {
             stop().join();
         } catch (Throwable e) {
-            logger.warn("failed to shutdown service, caused by " + e.getMessage());
+            logger.warn("Failed to shutdown service, caused by " + e.getMessage());
         }
     }
 
@@ -98,13 +93,13 @@ public class ServiceManager implements AgentService {
      * @return a CompletableFuture that completes when all services have executed the action.
      */
     private CompletableFuture<Void> execute(Function<AgentService, CompletableFuture<Void>> actionFunc,
-                                            Function<AgentService, AgentEvent> successFunc) {
+                                            Function<AgentService, String> successFunc) {
         CompletableFuture<?>[] futures = new CompletableFuture[services.size()];
         int index = 0;
         for (AgentService service : services) {
             futures[index++] = actionFunc.apply(service).whenComplete((r, t) -> {
                 if (t == null) {
-                    publisher.offer(new Event<>(successFunc.apply(service)));
+                    logger.info(successFunc.apply(service));
                 }
             });
         }
