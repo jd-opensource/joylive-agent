@@ -111,6 +111,8 @@ agent:
     counter:
       enabled: true
   governance:
+    service:
+      warmups: ${CONFIG_WARMUP_SERVICES:}
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}

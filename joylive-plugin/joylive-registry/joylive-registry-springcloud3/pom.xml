@@ -12,15 +12,26 @@
     <artifactId>joylive-registry-springcloud3</artifactId>
 
     <properties>
-        <package.plugin.type>plugin</package.plugin.type>
         <spring.cloud.version>3.1.8</spring.cloud.version>
-        <spring.version>5.3.31</spring.version>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-commons</artifactId>
             <version>${spring.cloud.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-loadbalancer</artifactId>
+            <version>${spring.cloud.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish</groupId>
+                    <artifactId>jakarta.el</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>provided</scope>
         </dependency>
         <dependency>
