@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
@@ -45,10 +45,28 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     @Override
     public HttpMethod getHttpMethod() {
         org.springframework.http.HttpMethod method = request.getMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
+        if (method == null) {
             return null;
+        }
+        switch (method) {
+            case GET:
+                return HttpMethod.GET;
+            case PUT:
+                return HttpMethod.PUT;
+            case POST:
+                return HttpMethod.POST;
+            case DELETE:
+                return HttpMethod.DELETE;
+            case HEAD:
+                return HttpMethod.HEAD;
+            case PATCH:
+                return HttpMethod.PATCH;
+            case OPTIONS:
+                return HttpMethod.OPTIONS;
+            case TRACE:
+                return HttpMethod.TRACE;
+            default:
+                return null;
         }
     }
 

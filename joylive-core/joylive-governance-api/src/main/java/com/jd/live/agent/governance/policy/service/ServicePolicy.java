@@ -102,8 +102,8 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                     supplementTag(KEY_SERVICE_ROUTE, r.getName())));
         }
         if (lanePolicies != null && !lanePolicies.isEmpty()) {
-            lanePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_LANE_SPACE_ID, String.valueOf(r.getLaneSpaceId())),
-                    supplementTag(KEY_SERVICE_LANE_SPACE_ID, String.valueOf(r.getLaneSpaceId()))));
+            lanePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_LANE_SPACE_ID, r.getLaneSpaceId()),
+                    supplementTag(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
@@ -136,8 +136,8 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                     (source.lanePolicies != null && !source.lanePolicies.isEmpty())) {
                 lanePolicies = copy(source.lanePolicies,
                         s -> new LanePolicy(),
-                        s -> addQuery(uri, QUERY_LANE_SPACE_ID, String.valueOf(s.getLaneSpaceId())),
-                        s -> new String[]{KEY_SERVICE_LANE_SPACE_ID, String.valueOf(s.getLaneSpaceId())});
+                        s -> addQuery(uri, QUERY_LANE_SPACE_ID, s.getLaneSpaceId()),
+                        s -> new String[]{KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()});
             }
         }
     }

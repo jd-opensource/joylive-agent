@@ -442,10 +442,10 @@ public class Bootstrap implements AgentLifecycle {
         location.setHost(Ipv4.getLocalHost());
         setProperty(Application.KEY_INSTANCE_ID, app.getInstance());
         setProperty(Application.KEY_SERVICE, appService == null ? null : appService.getName());
-        setProperty(Application.KEY_LIVE_SPACE_ID, location.getLiveSpaceId() == null ? null : String.valueOf(location.getLiveSpaceId()));
+        setProperty(Application.KEY_LIVE_SPACE_ID, location.getLiveSpaceId() == null ? null : location.getLiveSpaceId());
         setProperty(Application.KEY_UNIT, location.getUnit());
         setProperty(Application.KEY_CELL, location.getCell());
-        setProperty(Application.KEY_LANE_SPACE_ID, location.getLaneSpaceId() == null ? null : String.valueOf(location.getLaneSpaceId()));
+        setProperty(Application.KEY_LANE_SPACE_ID, location.getLaneSpaceId() == null ? null : location.getLaneSpaceId());
         setProperty(Application.KEY_LANE_CODE, location.getLane());
         return app;
     }

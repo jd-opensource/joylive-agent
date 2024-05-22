@@ -288,7 +288,7 @@ public class LiveMetadataParser implements LiveParser {
             UnitRule unitRule = metadata.getUnitRule();
             Carrier carrier = RequestContext.getOrCreate();
             if (unitRule != null) {
-                carrier.setCargo(liveConfig.getSpaceIdKey(), String.valueOf(liveSpace.getId()));
+                carrier.setCargo(liveConfig.getSpaceIdKey(), liveSpace.getId());
                 carrier.setCargo(liveConfig.getRuleIdKey(), String.valueOf(unitRule.getId()));
                 carrier.setCargo(liveConfig.getVariableKey(), metadata.getVariable());
             } else {

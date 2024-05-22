@@ -197,7 +197,7 @@ public class LaneMetadataParser implements LaneParser {
             Lane targetLane = metadata.getTargetLane();
             Carrier carrier = RequestContext.getOrCreate();
             if (null != targetLane) {
-                carrier.setCargo(laneConfig.getSpaceIdKey(), String.valueOf(laneSpace.getId()));
+                carrier.setCargo(laneConfig.getSpaceIdKey(), laneSpace.getId());
                 carrier.setCargo(laneConfig.getCodeKey(), targetLane.getCode());
             } else {
                 carrier.removeCargo(laneConfig.getSpaceIdKey());
