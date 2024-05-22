@@ -36,7 +36,7 @@ public class Location {
     private String zone;
 
     // Identifier for the live space, a logical partition within the deployment environment.
-    private Long liveSpaceId;
+    private String liveSpaceId;
 
     // The unit within the live space, for further logical grouping.
     private String unit;
@@ -45,7 +45,7 @@ public class Location {
     private String cell;
 
     // Identifier for the lane space, typically used for routing or organizational purposes.
-    private Long laneSpaceId;
+    private String laneSpaceId;
 
     // The lane within the lane space, often related to specific functionalities or services.
     // TODO multi lanes

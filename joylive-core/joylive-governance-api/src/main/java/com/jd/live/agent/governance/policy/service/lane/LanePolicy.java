@@ -33,7 +33,7 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
      * The unique identifier of the lane space to which this policy applies. This ID is used to associate the policy
      * with a specific lane or pathway within a system, enabling targeted policy enforcement and management.
      */
-    private Long laneSpaceId;
+    private String laneSpaceId;
 
     @Override
     public void supplement(LanePolicy source) {

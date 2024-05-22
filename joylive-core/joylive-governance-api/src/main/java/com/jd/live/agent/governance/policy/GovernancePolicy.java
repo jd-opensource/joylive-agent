@@ -67,9 +67,9 @@ public class GovernancePolicy {
 
     private final transient Cache<String, DatabaseCluster> dbNameCache = new MapCache<>(new ListBuilder<>(() -> dbClusters, DatabaseCluster::getName));
 
-    private final transient Cache<Long, LiveSpace> liveSpaceCache = new MapCache<>(new ListBuilder<>(() -> liveSpaces, LiveSpace::getId));
+    private final transient Cache<String, LiveSpace> liveSpaceCache = new MapCache<>(new ListBuilder<>(() -> liveSpaces, LiveSpace::getId));
 
-    private final transient Cache<Long, LaneSpace> laneSpaceCache = new MapCache<>(new ListBuilder<>(() -> laneSpaces, LaneSpace::getId));
+    private final transient Cache<String, LaneSpace> laneSpaceCache = new MapCache<>(new ListBuilder<>(() -> laneSpaces, LaneSpace::getId));
 
     private final transient Cache<String, Domain> domainCache = new MapCache<>(() -> {
         Map<String, Domain> laneDomains = new HashMap<>();
@@ -140,7 +140,7 @@ public class GovernancePolicy {
      * @param id The ID of the live space to retrieve.
      * @return The live space with the specified ID, or {@code null} if not found.
      */
-    public LiveSpace getLiveSpace(Long id) {
+    public LiveSpace getLiveSpace(String id) {
         return id == null ? null : liveSpaceCache.get(id);
     }
 
@@ -150,7 +150,7 @@ public class GovernancePolicy {
      * @param id The ID of the lane space to retrieve.
      * @return The lane space with the specified ID, or {@code null} if not found.
      */
-    public LaneSpace getLaneSpace(Long id) {
+    public LaneSpace getLaneSpace(String id) {
         return id == null ? null : laneSpaceCache.get(id);
     }
 
@@ -202,8 +202,8 @@ public class GovernancePolicy {
      * </p>
      */
     public void cache() {
-        getLiveSpace(0L);
-        getLaneSpace(0L);
+        getLiveSpace("");
+        getLaneSpace("");
         getDomain("");
         getService("");
         getDbCluster("");

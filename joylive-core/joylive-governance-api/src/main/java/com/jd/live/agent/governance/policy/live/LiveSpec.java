@@ -34,7 +34,7 @@ public class LiveSpec {
     @JsonAlias("workspaceId")
     @Getter
     @Setter
-    private Long id;
+    private String id;
 
     @Getter
     @Setter
@@ -71,11 +71,11 @@ public class LiveSpec {
     public LiveSpec() {
     }
 
-    public LiveSpec(Long id) {
+    public LiveSpec(String id) {
         this.id = id;
     }
 
-    public LiveSpec(Long id, String code, String name, String tenantId) {
+    public LiveSpec(String id, String code, String name, String tenantId) {
         this.id = id;
         this.code = code;
         this.name = name;

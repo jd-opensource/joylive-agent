@@ -27,7 +27,7 @@ public class LaneSpace {
 
     @Getter
     @Setter
-    private Long id;
+    private String id;
 
     @Getter
     @Setter

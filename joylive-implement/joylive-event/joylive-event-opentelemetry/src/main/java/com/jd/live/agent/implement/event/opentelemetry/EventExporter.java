@@ -58,11 +58,11 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
 
     private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
 
-    private static final AttributeKey<Long> ATTRIBUTE_LIVE_SPACE_ID = AttributeKey.longKey(KEY_LIVE_SPACE_ID);
+    private static final AttributeKey<String> ATTRIBUTE_LIVE_SPACE_ID = AttributeKey.stringKey(KEY_LIVE_SPACE_ID);
 
     private static final AttributeKey<Long> ATTRIBUTE_LIVE_RULE_ID = AttributeKey.longKey(KEY_LIVE_RULE_ID);
 
-    private static final AttributeKey<Long> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.longKey(KEY_LANE_SPACE_ID);
+    private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
 
     private static final AttributeKey<Long> ATTRIBUTE_LANE_RULE_ID = AttributeKey.longKey(KEY_LANE_RULE_ID);
 

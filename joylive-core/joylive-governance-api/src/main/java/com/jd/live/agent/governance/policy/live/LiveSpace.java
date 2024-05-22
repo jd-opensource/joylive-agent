@@ -49,9 +49,9 @@ public class LiveSpace {
         return metadata == null ? null : metadata.get(key);
     }
 
-    public Long getId() {
-        Long result = spec == null ? null : spec.getId();
-        return result == null ? 0 : result;
+    public String getId() {
+        String result = spec == null ? null : spec.getId();
+        return result == null ? "" : result;
     }
 
     public List<Unit> getUnits() {

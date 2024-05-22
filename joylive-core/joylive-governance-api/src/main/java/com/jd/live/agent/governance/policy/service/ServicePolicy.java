@@ -73,7 +73,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Getter
     private List<LanePolicy> lanePolicies;
 
-    private final transient Cache<Long, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
+    private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
 
     public ServicePolicy() {
     }
@@ -169,12 +169,12 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         return result;
     }
 
-    public LanePolicy getLanePolicy(Long laneSpaceId) {
+    public LanePolicy getLanePolicy(String laneSpaceId) {
         return lanePolicyCache.get(laneSpaceId);
     }
 
     protected void cache() {
-        getLanePolicy(0L);
+        getLanePolicy("");
         if (livePolicy != null) {
             livePolicy.cache();
         }

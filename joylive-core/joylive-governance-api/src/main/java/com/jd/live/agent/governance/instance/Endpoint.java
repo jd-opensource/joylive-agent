@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
@@ -180,8 +181,8 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @param liveSpaceId The live space ID to match.
      * @return true if the live space ID matches, false otherwise.
      */
-    default boolean isLiveSpace(long liveSpaceId) {
-        return liveSpaceId == Converts.getLong(getLiveSpaceId(), 0L);
+    default boolean isLiveSpace(String liveSpaceId) {
+        return Objects.equals(liveSpaceId, Converts.getString(getLiveSpaceId(), ""));
     }
 
     /**
@@ -201,7 +202,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @param unit        The unit to match.
      * @return true if both the live space ID and unit match, false otherwise.
      */
-    default boolean isUnit(long liveSpaceId, String unit) {
+    default boolean isUnit(String liveSpaceId, String unit) {
         return isLiveSpace(liveSpaceId) && isUnit(unit);
     }
 
@@ -222,7 +223,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @param cell        The cell to match.
      * @return true if both the live space ID and cell match, false otherwise.
      */
-    default boolean isCell(long liveSpaceId, String cell) {
+    default boolean isCell(String liveSpaceId, String cell) {
         return isLiveSpace(liveSpaceId) && isCell(cell);
     }
 
@@ -232,8 +233,8 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @param laneSpaceId The lane space ID to match.
      * @return true if the lane space ID matches, false otherwise.
      */
-    default boolean isLaneSpace(long laneSpaceId) {
-        return laneSpaceId == Converts.getLong(getLaneSpaceId(), 0L);
+    default boolean isLaneSpace(String laneSpaceId) {
+        return Objects.equals(laneSpaceId, Converts.getString(getLaneSpaceId(), ""));
     }
 
     /**
@@ -253,7 +254,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @param lane        The lane to match.
      * @return true if both the lane space ID and lane match, false otherwise.
      */
-    default boolean isLane(long laneSpaceId, String lane) {
+    default boolean isLane(String laneSpaceId, String lane) {
         return isLaneSpace(laneSpaceId) && isLane(lane);
     }
 

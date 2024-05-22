@@ -46,6 +46,9 @@ public class RoutePolicy extends PolicyId implements PolicyInheritWithIdGen<Rout
     // List of tag rules
     private List<TagRule> tagRules;
 
+    // Order number
+    private int order = 0;
+
     // Mark whether the list is sorted. The transient keyword indicates that this field will not be serialized.
     private transient boolean sorted;
 

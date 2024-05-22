@@ -39,3 +39,7 @@ spring:
         username: ${NACOS_USERNAME}
         password: ${NACOS_PASSWORD}
         namespace: ${NACOS_NAMESPACE:}
+
+logging:
+  level:
+    root: ${LIVE_LOG_LEVEL:INFO}

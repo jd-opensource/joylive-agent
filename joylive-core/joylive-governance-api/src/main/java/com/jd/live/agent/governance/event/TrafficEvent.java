@@ -103,7 +103,7 @@ public class TrafficEvent {
     /**
      * The ID of the live space associated with the event.
      */
-    private final Long liveSpaceId;
+    private final String liveSpaceId;
 
     /**
      * The ID of the unit rule associated with the event.
@@ -113,7 +113,7 @@ public class TrafficEvent {
     /**
      * The ID of the lane space associated with the event.
      */
-    private final Long laneSpaceId;
+    private final String laneSpaceId;
 
     /**
      * The ID of the lane rule associated with the event.
