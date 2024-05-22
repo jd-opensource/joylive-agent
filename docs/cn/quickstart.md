@@ -127,7 +127,7 @@ JoyLive Agent包如下目录结构：
 
 ```bash
 export APPLICATION_NAME=springcloud3-gateway
-export APPLICATION_LOCATION_LIVESPACE_ID=6
+export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
 export APPLICATION_SERVICE_GATEWAY=FRONTEND
@@ -151,7 +151,7 @@ java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar -javaage
 
 ```bash
 export APPLICATION_NAME=springcloud3-provider
-export APPLICATION_LOCATION_LIVESPACE_ID=6
+export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
 export APPLICATION_LOCATION_LANESPACE_ID=1
@@ -170,7 +170,7 @@ java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar -javaag
 
 ```bash
 export APPLICATION_NAME=springcloud3-provider
-export APPLICATION_LOCATION_LIVESPACE_ID=6
+export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit2
 export APPLICATION_LOCATION_CELL=cell4
 export APPLICATION_LOCATION_LANESPACE_ID=1

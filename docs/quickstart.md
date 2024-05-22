@@ -127,7 +127,7 @@ Start the gateway instance in simulation unit 1 with the following command:
 
 ```bash
 export APPLICATION_NAME=springcloud3-gateway
-export APPLICATION_LOCATION_LIVESPACE_ID=6
+export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
 export APPLICATION_SERVICE_GATEWAY=FRONTEND
@@ -151,7 +151,7 @@ Start the application instance in simulation unit 1 with the following command:
 
 ```bash
 export APPLICATION_NAME=springcloud3-provider
-export APPLICATION_LOCATION_LIVESPACE_ID=6
+export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
 export APPLICATION_LOCATION_LANESPACE_ID=1
@@ -170,7 +170,7 @@ Start the application instance in simulation unit 2, the command is as follows:
 
 ```bash
 export APPLICATION_NAME=springcloud3-provider
-export APPLICATION_LOCATION_LIVESPACE_ID=6
+export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit2
 export APPLICATION_LOCATION_CELL=cell4
 export APPLICATION_LOCATION_LANESPACE_ID=1

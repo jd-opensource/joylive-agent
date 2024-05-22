@@ -48,7 +48,7 @@ spec:
             - name: APPLICATION_LOCATION_ZONE
               value: zone1
             - name: APPLICATION_LOCATION_LIVESPACE_ID
-              value: "6"
+              value: v4bEh4kd6Jvu5QBX09qYq-qlbcs
             - name: APPLICATION_LOCATION_UNIT
               value: unit1
             - name: APPLICATION_LOCATION_CELL
@@ -115,7 +115,7 @@ spec:
             - name: APPLICATION_LOCATION_ZONE
               value: zone2
             - name: APPLICATION_LOCATION_LIVESPACE_ID
-              value: "6"
+              value: v4bEh4kd6Jvu5QBX09qYq-qlbcs
             - name: APPLICATION_LOCATION_UNIT
               value: unit2
             - name: APPLICATION_LOCATION_CELL
