@@ -52,7 +52,7 @@ public class DiscoveryClientInterceptor extends InterceptorAdaptor {
         } catch (InterruptedException ignore) {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            logger.warn("Failed to get governance policy for " + serviceId + ", caused by " + e.getMessage(), e);
+            logger.warn("Failed to get governance policy for " + serviceId + ", caused by " + cause.getMessage(), cause);
         } catch (TimeoutException e) {
             logger.warn("Failed to get governance policy for " + serviceId + ", caused by it's timeout.");
         }
