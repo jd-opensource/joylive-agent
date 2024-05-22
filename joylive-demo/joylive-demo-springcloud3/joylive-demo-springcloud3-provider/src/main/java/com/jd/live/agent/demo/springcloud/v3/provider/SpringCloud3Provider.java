@@ -36,10 +36,10 @@ public class SpringCloud3Provider {
 
         @GetMapping("/echo/{message}")
         public String echo(@PathVariable String message,
-                           @RequestHeader(value = "x-live-space-id", required = false) Long liveSpaceId,
+                           @RequestHeader(value = "x-live-space-id", required = false) String liveSpaceId,
                            @RequestHeader(value = "x-live-rule-id", required = false) String ruleId,
                            @RequestHeader(value = "x-live-uid", required = false) String uid,
-                           @RequestHeader(value = "x-lane-space-id", required = false) Long laneSpaceId,
+                           @RequestHeader(value = "x-lane-space-id", required = false) String laneSpaceId,
                            @RequestHeader(value = "x-lane-code", required = false) String laneCode) {
             return new StringBuilder("echo:").append(message).append(", header:{").
                     append("x-live-space-id=").append(liveSpaceId).
