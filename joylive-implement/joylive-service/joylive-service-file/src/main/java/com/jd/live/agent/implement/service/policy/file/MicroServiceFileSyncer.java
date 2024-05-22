@@ -32,6 +32,7 @@ import com.jd.live.agent.core.service.file.FileDigest;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
+import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
 
 import java.io.InputStreamReader;
@@ -127,7 +128,9 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     private void onEvent(List<Event<PolicySubscriber>> events) {
         for (Event<PolicySubscriber> event : events) {
-            subscribe(event.getData());
+            if (event.getData().getType() == PolicyType.SERVICE_POLICY) {
+                subscribe(event.getData());
+            }
         }
     }
 
