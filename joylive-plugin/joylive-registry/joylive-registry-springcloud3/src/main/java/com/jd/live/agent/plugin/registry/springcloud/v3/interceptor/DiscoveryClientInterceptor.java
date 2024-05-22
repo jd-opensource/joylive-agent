@@ -29,13 +29,10 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * ServiceRegistryInterceptor
- *
- * @author Zhiguo.Chen
- * @since 1.0.0
  */
 public class DiscoveryClientInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServiceRegistryInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DiscoveryClientInterceptor.class);
 
     private final PolicySupplier policySupplier;
 

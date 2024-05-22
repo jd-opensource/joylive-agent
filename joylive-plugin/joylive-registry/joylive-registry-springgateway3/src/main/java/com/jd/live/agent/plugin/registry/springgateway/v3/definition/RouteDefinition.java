@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.springcloud.v3.definition;
+package com.jd.live.agent.plugin.registry.springgateway.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -25,32 +25,39 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientInterceptor;
+import com.jd.live.agent.plugin.registry.springgateway.v3.interceptor.RouteInterceptor;
 
 /**
- * ServiceRegistryDefinition
+ * RouteDefinition
  */
 @Injectable
-@Extension(value = "DiscoveryClientDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "RouteDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DiscoveryClientDefinition.TYPE_DISCOVERY_CLIENT)
-public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(RouteDefinition.TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR)
+public class RouteDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DISCOVERY_CLIENT = "org.springframework.cloud.loadbalancer.core.DiscoveryClientServiceInstanceListSupplier";
+    protected static final String TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR = "org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator";
+
+    private static final String METHOD_CONVERT_TO_ROUTE = "convertToRoute";
+
+    private static final String[] ARGUMENT_CONVERT_TO_ROUTE = new String[]{
+            "org.springframework.cloud.gateway.route.RouteDefinition"
+    };
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
-    public DiscoveryClientDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_DISCOVERY_CLIENT);
+    public RouteDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new DiscoveryClientInterceptor(policySupplier))
+                        MatcherBuilder.named(METHOD_CONVERT_TO_ROUTE).
+                                and(MatcherBuilder.arguments(ARGUMENT_CONVERT_TO_ROUTE)),
+                        () -> new RouteInterceptor(policySupplier))
         };
     }
 }

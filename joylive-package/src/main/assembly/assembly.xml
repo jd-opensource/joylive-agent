@@ -88,6 +88,7 @@
             <includes>
                 <include>com.jd.live:joylive-application-springboot2</include>
                 <include>com.jd.live:joylive-registry-springcloud3</include>
+                <include>com.jd.live:joylive-registry-springgateway3</include>
                 <include>com.jd.live:joylive-router-springcloud3</include>
                 <include>com.jd.live:joylive-router-springgateway3</include>
                 <include>com.jd.live:joylive-transmission-springcloud3</include>
