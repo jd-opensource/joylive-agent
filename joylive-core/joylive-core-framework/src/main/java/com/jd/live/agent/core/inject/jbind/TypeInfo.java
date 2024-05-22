@@ -58,6 +58,15 @@ public class TypeInfo {
     }
 
     /**
+     * Constructs a new {@code TypeInfo} instance with the specified raw type.
+     *
+     * @param rawType the raw type of the class
+     */
+    public TypeInfo(Class<?> rawType) {
+        this(rawType, rawType, rawType);
+    }
+
+    /**
      * Determines if the raw type represents a collection.
      *
      * @return true if the raw type is assignable from {@code Collection}, false otherwise

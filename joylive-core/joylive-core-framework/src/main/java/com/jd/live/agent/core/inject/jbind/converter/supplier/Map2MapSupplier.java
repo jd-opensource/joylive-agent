@@ -16,12 +16,11 @@
 package com.jd.live.agent.core.inject.jbind.converter.supplier;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.jbind.Conversion;
-import com.jd.live.agent.core.inject.jbind.ConversionType;
-import com.jd.live.agent.core.inject.jbind.Converter;
-import com.jd.live.agent.core.inject.jbind.ConverterSupplier;
+import com.jd.live.agent.core.inject.jbind.*;
 
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,21 +47,48 @@ public class Map2MapSupplier implements ConverterSupplier {
         @Override
         public Object convert(final Conversion conversion) throws Exception {
             Map<Object, Object> result = null;
-            Class<?> targetType = conversion.getTargetType().getRawType();
-            if (Map.class == targetType) {
+            TypeInfo typeInfo = conversion.getTargetType();
+            Class<?> targetClass = typeInfo.getRawType();
+            if (Map.class == targetClass) {
                 result = new HashMap<>();
-            } else if (ConcurrentMap.class == targetType) {
+            } else if (ConcurrentMap.class == targetClass) {
                 result = new ConcurrentHashMap<>();
-            } else if (SortedMap.class == targetType) {
+            } else if (SortedMap.class == targetClass) {
                 result = new TreeMap<>();
-            } else if (NavigableMap.class == targetType) {
+            } else if (NavigableMap.class == targetClass) {
                 result = new TreeMap<>();
-            } else if (ConcurrentNavigableMap.class == targetType) {
+            } else if (ConcurrentNavigableMap.class == targetClass) {
                 result = new ConcurrentSkipListMap<>();
-            } else if (!targetType.isInterface()) {
-                result = (Map<Object, Object>) targetType.newInstance();
+            } else if (!targetClass.isInterface()) {
+                result = (Map<Object, Object>) targetClass.newInstance();
             }
             if (result != null) {
+                Type type = typeInfo.getType();
+                if (type instanceof ParameterizedType) {
+                    // parameterized conversion
+                    ParameterizedType parameterizedType = (ParameterizedType) type;
+                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                    if (actualTypeArguments != null
+                            && actualTypeArguments.length == 2
+                            && actualTypeArguments[0] instanceof Class
+                            && actualTypeArguments[1] instanceof Class) {
+                        Map<?, ?> source = (Map<?, ?>) conversion.getSource();
+                        TypeInfo targetKeyType = new TypeInfo((Class<?>) actualTypeArguments[0]);
+                        TypeInfo targetValueType = new TypeInfo((Class<?>) actualTypeArguments[1]);
+                        for (Map.Entry<?, ?> entry : source.entrySet()) {
+                            Object key = entry.getKey();
+                            Object value = entry.getValue();
+                            TypeInfo srcKeyType = new TypeInfo(key.getClass());
+                            TypeInfo srcValueType = new TypeInfo(value.getClass());
+                            Converter keyConverter = conversion.getConverter(new ConversionType(srcKeyType, targetKeyType));
+                            Converter valueConverter = conversion.getConverter(new ConversionType(srcValueType, targetValueType));
+                            Conversion keyConversion = conversion.of(srcKeyType, targetKeyType, key);
+                            Conversion valueConversion = conversion.of(srcValueType, targetValueType, value);
+                            result.put(keyConverter.convert(keyConversion), valueConverter.convert(valueConversion));
+                        }
+                        return result;
+                    }
+                }
                 result.putAll((Map<Object, Object>) conversion.getSource());
             }
             return result;

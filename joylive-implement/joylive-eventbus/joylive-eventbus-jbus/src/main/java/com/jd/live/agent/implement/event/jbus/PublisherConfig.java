@@ -27,7 +27,7 @@ public class PublisherConfig {
 
     public static final int DEFAULT_CAPACITY = 1000;
 
-    public static final int DEFAULT_TIMEOUT = 100;
+    public static final int DEFAULT_TIMEOUT = 0;
 
     public static final int BATCH_SIZE = 100;
 
