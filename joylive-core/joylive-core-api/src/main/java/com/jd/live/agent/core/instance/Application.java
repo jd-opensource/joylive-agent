@@ -145,11 +145,13 @@ public class Application {
             if (location != null) {
                 accept(consumer, Label.LABEL_REGION, location.getRegion());
                 accept(consumer, Label.LABEL_ZONE, location.getZone());
-                accept(consumer, Label.LABEL_LIVESPACE_ID, location.getLiveSpaceId() == null ? null : location.getLiveSpaceId());
+                accept(consumer, Label.LABEL_LIVESPACE_ID, location.getLiveSpaceId());
                 accept(consumer, Label.LABEL_UNIT, location.getUnit());
                 accept(consumer, Label.LABEL_CELL, location.getCell());
-                accept(consumer, Label.LABEL_LANESPACE_ID, location.getLaneSpaceId() == null ? null : location.getLaneSpaceId());
+                accept(consumer, Label.LABEL_LANESPACE_ID, location.getLaneSpaceId());
                 accept(consumer, Label.LABEL_LANE, location.getLane());
+                accept(consumer, Label.LABEL_APPLICATION, name);
+                accept(consumer, Label.LABEL_GROUP, service.getGroup());
             }
             if (service != null) {
                 Map<String, String> serviceMeta = service.getMeta();

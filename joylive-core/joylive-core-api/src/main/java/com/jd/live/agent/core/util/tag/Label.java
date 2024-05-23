@@ -63,6 +63,16 @@ public interface Label {
     String LABEL_LANE = "lane";
 
     /**
+     * Constant for the label application.
+     */
+    String LABEL_APPLICATION = "application";
+
+    /**
+     * Constant for the label group.
+     */
+    String LABEL_GROUP = "group";
+
+    /**
      * Default value for labels.
      */
     String DEFAULT_VALUE = "";
