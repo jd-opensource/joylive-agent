@@ -23,7 +23,7 @@ import lombok.Getter;
  * @param <T> The type of the data contained in the response.
  */
 @Getter
-public class HttpResponse<T> {
+public class HttpResponse<T> implements HttpState {
 
     /**
      * The HTTP status code of the response.
@@ -73,4 +73,8 @@ public class HttpResponse<T> {
         this.data = data;
     }
 
+    @Override
+    public int getCode() {
+        return status.value();
+    }
 }

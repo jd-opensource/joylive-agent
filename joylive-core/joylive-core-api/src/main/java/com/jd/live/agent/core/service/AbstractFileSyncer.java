@@ -76,7 +76,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
     }
 
     @Override
-    public SyncResult<T, FileDigest> sync(SyncConfig config, FileDigest last) throws IOException {
+    public SyncResult<T, FileDigest> doSynchronize(SyncConfig config, FileDigest last) throws IOException {
         if (file != null) {
             FileContent content = readFile(last);
             if (content != null) {

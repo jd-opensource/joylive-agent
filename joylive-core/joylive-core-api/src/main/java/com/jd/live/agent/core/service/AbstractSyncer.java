@@ -24,6 +24,7 @@ import com.jd.live.agent.core.util.Daemon;
 import com.jd.live.agent.core.util.Waiter.MutexWaiter;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * AbstractSyncer provides a base implementation for synchronous services. It extends the
@@ -38,6 +39,8 @@ import java.util.concurrent.CompletableFuture;
  * @since 1.0.0
  */
 public abstract class AbstractSyncer<T, M> extends AbstractService {
+
+    private static final int INTERVALS = 10;
 
     /**
      * Logger instance for this class.
@@ -63,6 +66,8 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * The waiter used to block and unblock the daemon thread.
      */
     protected MutexWaiter waiter;
+
+    protected final AtomicLong counter = new AtomicLong(0);
 
     /**
      * Starts the synchronization service by initializing the daemon thread and initiating its execution.
@@ -157,16 +162,17 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
     protected void run(long startTime, CompletableFuture<Void> waitForInitial) {
         Throwable throwable = null;
         boolean synced = false;
+        counter.incrementAndGet();
         try {
             synced = syncAndUpdate();
         } catch (Throwable e) {
-            logger.error("failed to sync and update " + getName(), e);
+            onFailed(e);
             throwable = e;
         }
         if (!waitForInitial.isDone()) {
             long timeout = config.getInitialTimeout();
             if (timeout > 0 && (System.currentTimeMillis() - startTime > timeout)) {
-                waitForInitial.completeExceptionally(new InitialTimeoutException("it's timeout to initialize " + getName() +
+                waitForInitial.completeExceptionally(new InitialTimeoutException("It's timeout to initialize " + getName() +
                         (throwable == null ? "" : ", caused by " + throwable.getMessage())));
             } else if (synced) {
                 waitForInitial.complete(null);
@@ -181,16 +187,52 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @throws Exception If an error occurs during synchronization.
      */
     protected boolean syncAndUpdate() throws Exception {
-        SyncResult<T, M> result = sync(config, last);
+        SyncResult<T, M> result = doSynchronize(config, last);
         if (result != null) {
             last = result.getMeta();
             for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
                 if (updateOnce(result.getData(), result.getMeta())) {
+                    onUpdated();
                     return true;
                 }
             }
+        } else {
+            onNotModified();
         }
         return false;
+    }
+
+    /**
+     * Determines whether the current state should trigger an output.
+     *
+     * @return {@code true} if the current count matches the output interval,
+     * indicating that an output action should be performed; {@code false} otherwise.
+     */
+    protected boolean shouldPrint() {
+        return counter.get() % INTERVALS == 1;
+    }
+
+    /**
+     * Handles the updated state.
+     */
+    protected void onUpdated() {
+
+    }
+
+    /**
+     * Handles the scenario where no modifications are detected.
+     */
+    protected void onNotModified() {
+
+    }
+
+    /**
+     * Handles failure scenarios during synchronization and update processes.
+     *
+     * @param throwable The exception or error that caused the failure.
+     */
+    protected void onFailed(Throwable throwable) {
+        logger.error("Failed to synchronize and update " + getName() + ". caused by " + throwable.getMessage(), throwable);
     }
 
     /**
@@ -217,6 +259,6 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @return A SyncResult instance containing the new data and metadata.
      * @throws Exception If an error occurs during synchronization.
      */
-    protected abstract SyncResult<T, M> sync(SyncConfig config, M last) throws Exception;
+    protected abstract SyncResult<T, M> doSynchronize(SyncConfig config, M last) throws Exception;
 }
 
