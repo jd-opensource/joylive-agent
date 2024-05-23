@@ -91,16 +91,18 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
     }
 
     @Override
-    protected boolean updateOnce(List<LiveSpace> value, FileDigest meta) {
-        GovernancePolicy expect = policySupervisor.getPolicy();
-        GovernancePolicy update = expect == null ? new GovernancePolicy() : expect.copy();
-        update.setLiveSpaces(value);
-        update.cache();
-        if (policySupervisor.update(expect, update)) {
+    protected boolean updateOnce(List<LiveSpace> liveSpaces, FileDigest meta) {
+        if (policySupervisor.update(policy -> newPolicy(policy, liveSpaces))) {
             logger.info("success synchronizing file " + file.getPath());
             return true;
         }
         return false;
+    }
+
+    private GovernancePolicy newPolicy(GovernancePolicy policy, List<LiveSpace> liveSpaces) {
+        GovernancePolicy update = policy == null ? new GovernancePolicy() : policy.copy();
+        update.setLiveSpaces(liveSpaces);
+        return update;
     }
 
 }

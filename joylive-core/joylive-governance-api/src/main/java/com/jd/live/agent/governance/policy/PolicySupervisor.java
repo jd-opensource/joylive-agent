@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * The PolicySupervisor interface extends the PolicySupplier interface to provide additional capabilities
@@ -38,6 +39,26 @@ public interface PolicySupervisor extends PolicySupplier {
      * @return {@code true} if the update was successful, {@code false} otherwise.
      */
     boolean update(GovernancePolicy expect, GovernancePolicy update);
+
+    /**
+     * Attempts to update the governance policy using the provided updater function.
+     *
+     * @param updater A {@link Function} that takes the current {@link GovernancePolicy} as input
+     *                and returns the modified {@link GovernancePolicy}. If {@code null}, the update
+     *                operation will not be performed.
+     * @return {@code true} if the update operation was successful, {@code false} otherwise. This can
+     * include scenarios where the {@code updater} is {@code null}, or if the internal update
+     * mechanism (e.g., replacing the old policy with the new one) fails.
+     */
+    default boolean update(Function<GovernancePolicy, GovernancePolicy> updater) {
+        if (updater != null) {
+            GovernancePolicy old = getPolicy();
+            GovernancePolicy update = updater.apply(old);
+            update.cache();
+            return update(old, update);
+        }
+        return false;
+    }
 
     /**
      * Retrieves a list of policy subscribers.

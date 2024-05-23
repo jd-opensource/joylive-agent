@@ -244,13 +244,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     protected void subscribe(PolicySubscriber subscriber) {
         PolicySubscriber exist = subscribers.putIfAbsent(subscriber.getName(), subscriber);
         if (exist == null) {
-            subscriber.trigger((v, t) -> {
-                if (t == null) {
-                    logger.info("Success synchronizing service policy " + subscriber.getName());
-                } else {
-                    logger.error("Failed to sync service policy " + subscriber.getName());
-                }
-            });
             policyPublisher.offer(new Event<>(subscriber));
         } else {
             exist.trigger(subscriber.getFuture());

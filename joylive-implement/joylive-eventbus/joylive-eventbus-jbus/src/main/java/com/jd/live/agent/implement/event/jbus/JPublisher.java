@@ -91,7 +91,7 @@ public class JPublisher<E> implements Publisher<E> {
                     try {
                         handler.handle(events);
                     } catch (Throwable e) {
-                        logger.error("an error occurred while handling event of " + topic);
+                        logger.error("Failed to handle event of " + topic + ", caused by " + e.getMessage(), e);
                     }
                 }
             }

@@ -67,7 +67,9 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     private SyncConfig syncConfig = new SyncConfig();
 
     private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
+
     private final EventHandler<PolicySubscriber> handler = this::onEvent;
+
     private final AtomicBoolean loaded = new AtomicBoolean();
 
     @Override
@@ -106,37 +108,54 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     }
 
     @Override
-    protected boolean updateOnce(List<Service> value, FileDigest meta) {
-        if (value != null && !value.isEmpty()) {
-            value.forEach(s -> s.own(o -> o.own(getName())));
-        }
-        GovernancePolicy expect = policySupervisor.getPolicy();
-        GovernancePolicy update = expect == null ? new GovernancePolicy() : expect.copy();
-        update.setServices(value);
-        update.cache();
-        if (policySupervisor.update(expect, update)) {
+    protected boolean updateOnce(List<Service> services, FileDigest meta) {
+        if (policySupervisor.update(policy -> newPolicy(services, policy))) {
             logger.info("Success synchronizing file " + file.getPath());
-            if (loaded.compareAndSet(false, true)) {
-                for (PolicySubscriber subscriber : subscribers.values()) {
-                    subscriber.complete();
-                }
-            }
+            onLoaded();
             return true;
         }
         return false;
     }
 
-    private void onEvent(List<Event<PolicySubscriber>> events) {
-        for (Event<PolicySubscriber> event : events) {
-            if (event.getData().getType() == PolicyType.SERVICE_POLICY) {
-                subscribe(event.getData());
+    private GovernancePolicy newPolicy(List<Service> services, GovernancePolicy policy) {
+        if (services != null) {
+            services.forEach(s -> s.own(o -> o.own(getName())));
+        }
+        GovernancePolicy result = policy == null ? new GovernancePolicy() : policy.copy();
+        result.setServices(services);
+        return result;
+    }
+
+    private void onLoaded() {
+        if (loaded.compareAndSet(false, true)) {
+            for (PolicySubscriber subscriber : subscribers.values()) {
+                subscriber.complete();
             }
         }
     }
 
+    private void onEvent(List<Event<PolicySubscriber>> events) {
+        events.forEach(e -> subscribe(e.getData()));
+    }
+
     private void subscribe(PolicySubscriber subscriber) {
-        if (subscribers.putIfAbsent(subscriber.getName(), subscriber) == null && loaded.get()) {
-            subscriber.complete();
+        if (subscriber != null && subscriber.getType() == PolicyType.SERVICE_POLICY) {
+            if (!isStarted()) {
+                subscriber.completeExceptionally(new IllegalStateException("Microservice has been stopped"));
+            } else {
+                PolicySubscriber old = subscribers.putIfAbsent(subscriber.getName(), subscriber);
+                if (loaded.get()) {
+                    subscriber.complete();
+                } else if (old != null && old != subscriber) {
+                    old.trigger((v, t) -> {
+                        if (t == null) {
+                            subscriber.complete();
+                        } else {
+                            subscriber.completeExceptionally(t);
+                        }
+                    });
+                }
+            }
         }
     }
 

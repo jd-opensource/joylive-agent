@@ -137,7 +137,7 @@ public class LiveAgent {
      *                        after the JVM started (true) or before the main method (false).
      */
     private static synchronized void launch(String arguments, Instrumentation instrumentation, boolean dynamic) {
-        logger.info("starting agent....");
+        logger.info("Starting agent....");
         boolean shutdownOnError = true;
 
         try {
@@ -187,7 +187,7 @@ public class LiveAgent {
             }
         } catch (Throwable e) {
             // Log severe errors and shut down if required.
-            logger.log(Level.SEVERE, "failed to install agent. caused by " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Failed to install agent. caused by " + e.getMessage(), e);
             if (shutdownOnError) {
                 System.exit(1);
             }
@@ -255,7 +255,7 @@ public class LiveAgent {
     private static Object install(Instrumentation instrumentation, boolean dynamic, ClassLoader classLoader,
                                   Map<String, Object> env, Map<String, Object> config) {
         try {
-            logger.info("installing agent.");
+            logger.info("Installing agent.");
             // Load the bootstrap class using the provided class loader.
             Class<?> type = classLoader.loadClass(BOOTSTRAP_CLASS);
             // Get the constructor of the bootstrap class.
@@ -266,18 +266,18 @@ public class LiveAgent {
             Method install = type.getDeclaredMethod(BOOTSTRAP_METHOD_INSTALL);
             // Invoke the install method to complete the agent installation.
             install.invoke(lifecycle);
-            logger.info("success installing agent.");
+            logger.info("Success installing agent.");
             // Return the lifecycle object for further operations.
             return lifecycle;
         } catch (InvocationTargetException e) {
             // Log the exception thrown by the install method and exit.
             String message = e.getMessage();
             message = message == null ? e.getTargetException().getMessage() : message;
-            logger.log(Level.SEVERE, "failed to install agent. caused by " + message);
+            logger.log(Level.SEVERE, "Failed to install agent. caused by " + message);
             System.exit(1);
         } catch (Throwable e) {
             // Log any other exceptions that occurred during the installation process and exit.
-            logger.log(Level.SEVERE, "failed to install agent. caused by " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Failed to install agent. caused by " + e.getMessage(), e);
             System.exit(1);
         }
         // If the installation fails, return null.
@@ -439,11 +439,11 @@ public class LiveAgent {
      */
     private static File[] getLibs(File dir) throws IOException {
         if (!dir.exists() && !dir.isDirectory()) {
-            throw new IOException("directory is not exists." + dir.getPath());
+            throw new IOException("Directory is not exists." + dir.getPath());
         }
         File[] files = dir.listFiles(pathname -> pathname.isFile() && pathname.getName().endsWith(".jar"));
         if (files == null || files.length == 0) {
-            throw new IOException("directory is empty. " + dir);
+            throw new IOException("Directory is empty. " + dir);
         }
         return files;
     }

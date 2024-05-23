@@ -53,8 +53,11 @@ public class PolicySubscriber {
      * Marks the subscription process as complete successfully. This method completes the associated future
      * normally, indicating that the subscription process has finished without errors.
      */
-    public void complete() {
-        future.complete(null);
+    public boolean complete() {
+        if (!isDone()) {
+            return future.complete(null);
+        }
+        return false;
     }
 
     /**
@@ -74,8 +77,8 @@ public class PolicySubscriber {
      * @param ex The exception to complete the future with, representing the error that occurred during the
      *           subscription process.
      */
-    public void completeExceptionally(Throwable ex) {
-        future.completeExceptionally(ex);
+    public boolean completeExceptionally(Throwable ex) {
+        return future.completeExceptionally(ex);
     }
 
     /**
@@ -86,7 +89,7 @@ public class PolicySubscriber {
      *
      * @param other The CompletableFuture to be triggered based on the completion status of this subscriber's future.
      */
-    protected void trigger(CompletableFuture<Void> other) {
+    public void trigger(CompletableFuture<Void> other) {
         if (other != null) {
             future.whenComplete((v, e) -> {
                 if (e == null) {
@@ -105,7 +108,7 @@ public class PolicySubscriber {
      * @param action The action to be performed upon completion of the subscription process, accepting either
      *               the result of the completion or the exception thrown.
      */
-    protected void trigger(BiConsumer<Void, Throwable> action) {
+    public void trigger(BiConsumer<Void, Throwable> action) {
         if (action != null) {
             future.whenComplete(action);
         }

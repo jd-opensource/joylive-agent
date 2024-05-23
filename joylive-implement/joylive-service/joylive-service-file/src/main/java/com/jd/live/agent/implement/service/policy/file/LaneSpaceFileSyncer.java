@@ -91,16 +91,18 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
     }
 
     @Override
-    protected boolean updateOnce(List<LaneSpace> value, FileDigest meta) {
-        GovernancePolicy expect = policySupervisor.getPolicy();
-        GovernancePolicy update = expect == null ? new GovernancePolicy() : expect.copy();
-        update.setLaneSpaces(value);
-        update.cache();
-        if (policySupervisor.update(expect, update)) {
+    protected boolean updateOnce(List<LaneSpace> laneSpaces, FileDigest meta) {
+        if (policySupervisor.update(policy -> newPolicy(policy, laneSpaces))) {
             logger.info("Success synchronizing file " + file.getPath());
             return true;
         }
         return false;
+    }
+
+    private GovernancePolicy newPolicy(GovernancePolicy policy, List<LaneSpace> laneSpaces) {
+        GovernancePolicy result = policy == null ? new GovernancePolicy() : policy.copy();
+        result.setLaneSpaces(laneSpaces);
+        return result;
     }
 
 }
