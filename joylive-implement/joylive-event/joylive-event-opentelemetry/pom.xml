@@ -12,7 +12,7 @@
     <artifactId>joylive-event-opentelemetry</artifactId>
 
     <properties>
-        <grpc.version>1.62.2</grpc.version>
+        <grpc.version>1.63.0</grpc.version>
         <opentelemetry-sdk.version>1.38.0</opentelemetry-sdk.version>
         <opentelemetry-exporter-prometheus.version>1.38.0-alpha</opentelemetry-exporter-prometheus.version>
         <protobuf-java.version>4.26.1</protobuf-java.version>
@@ -28,9 +28,6 @@
         <error_prone_annotations.version>2.18.0</error_prone_annotations.version>
         <proto-google-common-protos.version>2.29.0</proto-google-common-protos.version>
         <perfmark-api.version>0.26.0</perfmark-api.version>
-        <okhttp.version>4.12.0</okhttp.version>
-        <okio.version>3.9.0</okio.version>
-        <kotlin-stdlib.version>1.9.23</kotlin-stdlib.version>
     </properties>
 
     <dependencyManagement>
@@ -95,21 +92,16 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>${okhttp.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okio</groupId>
-            <artifactId>okio</artifactId>
-            <version>${okio.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin-stdlib.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.okhttp3</groupId>
+                    <artifactId>okhttp</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -384,6 +376,10 @@
                                 <relocation>
                                     <pattern>org.jetbrains.kotlin</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.org.jetbrains.kotlin</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.slf4j</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
