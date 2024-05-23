@@ -25,6 +25,8 @@
 
 5. Agent本地分区优先策略
    ![pic](docs/image/architect-4.png)
+6. 类加载器，用于资源隔离
+   ![pic](docs/image/architect-5.png)
 
 ## 如何使用
 

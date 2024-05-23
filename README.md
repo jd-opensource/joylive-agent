@@ -26,6 +26,9 @@ Java bytecode enhancement framework for traffic governance in multi-activity (un
 5. Agent for local cell priority strategy
 ![pic](docs/image/architect-4.png)
 
+6. ClassLoader for isolation
+![pic](docs/image/architect-5.png)
+
 ## How to use
 
 ### Requirements
