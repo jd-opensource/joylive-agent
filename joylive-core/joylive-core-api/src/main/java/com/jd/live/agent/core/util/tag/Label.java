@@ -63,6 +63,11 @@ public interface Label {
     String LABEL_LANE = "lane";
 
     /**
+     * Constant for the label cluster.
+     */
+    String LABEL_CLUSTER = "cluster";
+
+    /**
      * Constant for the label application.
      */
     String LABEL_APPLICATION = "application";

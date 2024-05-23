@@ -70,6 +70,7 @@ public class Application {
 
     // Unique application identifier.
     public static final String APP_ID = UUID.randomUUID().toString();
+
     // Byte representation of the application ID.
     public static final byte[] APP_ID_BYTES = APP_ID.getBytes(StandardCharsets.UTF_8);
 
@@ -150,6 +151,7 @@ public class Application {
                 accept(consumer, Label.LABEL_CELL, location.getCell());
                 accept(consumer, Label.LABEL_LANESPACE_ID, location.getLaneSpaceId());
                 accept(consumer, Label.LABEL_LANE, location.getLane());
+                accept(consumer, Label.LABEL_CLUSTER, location.getCluster());
                 accept(consumer, Label.LABEL_APPLICATION, name);
                 accept(consumer, Label.LABEL_GROUP, service.getGroup());
             }
