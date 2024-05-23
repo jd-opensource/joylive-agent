@@ -33,6 +33,8 @@ spec:
     spec:
       containers:
         - env:
+            - name: LIVE_LOG_LEVEL
+              value: info
             - name: NACOS_ADDR
               value: nacos-server.nacos.svc:8848
             - name: NACOS_USERNAME
