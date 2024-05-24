@@ -23,7 +23,7 @@ package com.jd.live.agent.core.instance;
 public enum AppStatus {
 
     /**
-     * The application is in the process of starting. It cannot accept inbound requests or perform outbound operations.
+     * The application is in the process of starting. It cannot accept inbound requests.
      */
     STARTING,
 
@@ -35,22 +35,22 @@ public enum AppStatus {
         public boolean inbound() {
             return true;
         }
-
-        @Override
-        public boolean outbound() {
-            return true;
-        }
     },
 
     /**
-     * The application is in the process of shutting down. It cannot accept inbound requests or perform outbound operations.
+     * The application is in the process of shutting down. It cannot accept new inbound requests.
      */
     DESTROYING,
 
     /**
      * The application has been shut down and is no longer operational. It cannot accept inbound requests or perform outbound operations.
      */
-    DESTROYED;
+    DESTROYED {
+        @Override
+        public boolean outbound() {
+            return false;
+        }
+    };
 
     /**
      * Determines if the application in its current state can accept inbound requests.
@@ -75,7 +75,7 @@ public enum AppStatus {
      * @return {@code true} if the application can perform outbound operations in the current state; {@code false} otherwise.
      */
     public boolean outbound() {
-        return false;
+        return true;
     }
 
     /**
