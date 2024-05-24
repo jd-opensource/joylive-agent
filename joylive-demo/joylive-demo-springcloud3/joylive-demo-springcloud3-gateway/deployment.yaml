@@ -35,6 +35,8 @@ spec:
         - env:
             - name: LIVE_LOG_LEVEL
               value: info
+            - name: CONFIG_LANE_ENABLED
+              value: "false"
             - name: NACOS_ADDR
               value: nacos-server.nacos.svc:8848
             - name: NACOS_USERNAME

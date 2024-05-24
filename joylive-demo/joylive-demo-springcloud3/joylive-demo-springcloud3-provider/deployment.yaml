@@ -35,6 +35,8 @@ spec:
         - env:
             - name: LIVE_LOG_LEVEL
               value: info
+            - name: CONFIG_LANE_ENABLED
+              value: "false"
             - name: NACOS_ADDR
               value: nacos-server.nacos.svc:8848
             - name: NACOS_USERNAME
@@ -59,7 +61,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-SNAPSHOT-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-a9814ef-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-provider
           ports:
@@ -126,7 +128,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: beta
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-SNAPSHOT-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-a9814ef-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-provider-gray
           ports:
