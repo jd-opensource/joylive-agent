@@ -15,29 +15,33 @@
  */
 package com.jd.live.agent.core.config;
 
-import com.jd.live.agent.core.inject.annotation.Config;
-import com.jd.live.agent.core.inject.annotation.Configurable;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * AgentConfig
- *
- * @since 1.0.0
+ * Configuration class for a timer.
  */
 @Getter
 @Setter
-@Configurable(prefix = "agent")
-public class AgentConfig {
+public class TimerConfig {
 
-    public static final String COMPONENT_AGENT_CONFIG = "agentConfig";
+    /**
+     * The time interval for each tick in milliseconds.
+     */
+    private long tickTime = 200;
 
-    @Config("enhance")
-    private EnhanceConfig enhanceConfig = new EnhanceConfig();
+    /**
+     * The number of ticks.
+     */
+    private int ticks = 300;
 
-    @Config("plugin")
-    private PluginConfig pluginConfig = new PluginConfig();
+    /**
+     * The number of worker threads.
+     */
+    private int workerThreads = 4;
 
-    @Config("timer")
-    private TimerConfig timerConfig = new TimerConfig();
+    /**
+     * The maximum number of tasks that can be handled.
+     */
+    private long maxTasks = 0;
 }

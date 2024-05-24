@@ -108,7 +108,7 @@ public class TimeScheduler implements AutoCloseable, Timer {
      * @param ticks         The number of ticks in the time wheel.
      * @param workerThreads The number of worker threads to execute tasks.
      */
-    public TimeScheduler(final long tickTime, final int ticks, final int workerThreads) {
+    public TimeScheduler(long tickTime, int ticks, int workerThreads) {
         this(null, tickTime, ticks, workerThreads, 0);
     }
 
@@ -120,7 +120,7 @@ public class TimeScheduler implements AutoCloseable, Timer {
      * @param ticks         The number of ticks in the time wheel.
      * @param workerThreads The number of worker threads to execute tasks.
      */
-    public TimeScheduler(final String name, final long tickTime, final int ticks, final int workerThreads) {
+    public TimeScheduler(String name, long tickTime, int ticks, int workerThreads) {
         this(name, tickTime, ticks, workerThreads, 0);
     }
 
@@ -134,7 +134,7 @@ public class TimeScheduler implements AutoCloseable, Timer {
      * @param workerThreads The number of worker threads to execute tasks.
      * @param maxTasks      The maximum number of tasks that can be pending before being rejected.
      */
-    public TimeScheduler(final String name, final long tickTime, final int ticks, final int workerThreads, final long maxTasks) {
+    public TimeScheduler(String name, long tickTime, int ticks, int workerThreads, long maxTasks) {
         if (tickTime <= 0) {
             throw new IllegalArgumentException("tickTime must be greater than 0");
         } else if (ticks <= 0) {

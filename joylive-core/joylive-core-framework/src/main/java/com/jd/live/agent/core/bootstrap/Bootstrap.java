@@ -27,10 +27,7 @@ import com.jd.live.agent.bootstrap.util.option.ValueResolver;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
-import com.jd.live.agent.core.config.AgentConfig;
-import com.jd.live.agent.core.config.ClassLoaderConfig;
-import com.jd.live.agent.core.config.EnhanceConfig;
-import com.jd.live.agent.core.config.PluginConfig;
+import com.jd.live.agent.core.config.*;
 import com.jd.live.agent.core.context.AgentContext;
 import com.jd.live.agent.core.context.AgentPath;
 import com.jd.live.agent.core.event.*;
@@ -256,7 +253,7 @@ public class Bootstrap implements AgentLifecycle {
             option = loadConfig(); // load config.yaml and merge bootstrap.properties.
             agentConfig = createAgentConfig(); //depend on option & injector
             context = createAgentContext(); //depend on option & agentPath & agentConfig & application
-            timer = new TimeScheduler("LiveTimer", 200, 300, 4, 10);
+            timer = createTimer();
             timer.start();
             eventBus = createEventBus(); //depend on extensionManager & option
             publisher = eventBus.getPublisher(Publisher.SYSTEM);
@@ -522,6 +519,11 @@ public class Bootstrap implements AgentLifecycle {
 
     private ExtensionManager createExtensionManager() {
         return new JExtensionManager(conditionMatcher);
+    }
+
+    private TimeScheduler createTimer() {
+        TimerConfig config = agentConfig.getTimerConfig();
+        return new TimeScheduler("LiveTimer", config.getTickTime(), config.getTicks(), config.getWorkerThreads(), config.getMaxTasks());
     }
 
     private EventBus createEventBus() {
