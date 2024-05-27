@@ -262,15 +262,15 @@ public class LiveAgent {
             Constructor<?> constructor = type.getConstructor(Instrumentation.class, boolean.class, Map.class, Map.class, Runnable.class);
             // Instantiate the bootstrap class with the given parameters.
             Object lifecycle = constructor.newInstance(instrumentation, dynamic, env, config, unLoader);
-            // Get the install method from the bootstrap class.
+            // Get the installation method from the bootstrap class.
             Method install = type.getDeclaredMethod(BOOTSTRAP_METHOD_INSTALL);
-            // Invoke the install method to complete the agent installation.
+            // Invoke the installation method to complete the agent installation.
             install.invoke(lifecycle);
             logger.info("Success installing agent.");
             // Return the lifecycle object for further operations.
             return lifecycle;
         } catch (InvocationTargetException e) {
-            // Log the exception thrown by the install method and exit.
+            // Log the exception thrown by the installation method and exit.
             String message = e.getMessage();
             message = message == null ? e.getTargetException().getMessage() : message;
             logger.log(Level.SEVERE, "Failed to install agent. caused by " + message);

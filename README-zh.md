@@ -8,24 +8,24 @@
 
 ## 概述
 
-用于多活（单元化）场景的流量治理Java字节码增强框架，继传统SDK治理模式与Sidecar治理模式之后，新一代Proxyless模式的探索实现，为企业Java生态提供高性能，低资源损耗，降本增效的流量治理框架。
+用于多活（单元化）场景的流量治理Java字节码增强框架，继传统SDK治理模式与Sidecar治理模式之后，基于微内核可扩展架构的新一代Proxyless模式的探索实现，为企业Java生态提供高性能，低资源损耗，降本增效的流量治理框架。
 
 ## 架构
-1. Agent在多活场景应用
+1. Agent在多活场景应用   
    ![pic](docs/image/architect-0.png)
 
-2. Agent架构图
+2. Agent架构图   
    ![pic](docs/image/architect-1.png)
 
-3. Agent治理原理
+3. Agent治理原理   
    ![pic](docs/image/architect-2.png)
 
-4. Agent基于泳道的全链路灰度
+4. Agent基于泳道的全链路灰度   
    ![pic](docs/image/architect-3.png)
 
-5. Agent本地分区优先策略
+5. Agent本地分区优先策略   
    ![pic](docs/image/architect-4.png)
-6. 类加载器，用于资源隔离
+6. 类加载器，用于资源隔离   
    ![pic](docs/image/architect-5.png)
 
 ## 如何使用
