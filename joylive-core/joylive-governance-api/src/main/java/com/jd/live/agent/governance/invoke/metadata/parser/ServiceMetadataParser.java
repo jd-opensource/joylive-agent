@@ -288,7 +288,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             }
             ServicePolicy policy = metadata.getServicePolicy();
             ServiceLivePolicy livePolicy = policy == null ? null : policy.getLivePolicy();
-            if (livePolicy != null && livePolicy.getUnitPolicy() != UnitPolicy.NONE) {
+            if (livePolicy != null && livePolicy.getUnitPolicy() != null && livePolicy.getUnitPolicy() != UnitPolicy.NONE) {
                 return metadata;
             }
             livePolicy = livePolicy != null ? livePolicy.clone() : new ServiceLivePolicy();

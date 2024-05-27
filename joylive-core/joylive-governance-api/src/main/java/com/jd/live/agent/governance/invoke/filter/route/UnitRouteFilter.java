@@ -98,6 +98,7 @@ public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
         ServicePolicy servicePolicy = serviceMetadata.getServicePolicy();
         ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
         UnitPolicy unitPolicy = livePolicy == null || liveMetadata.getUnitRule() == null ? UnitPolicy.NONE : livePolicy.getUnitPolicy();
+        unitPolicy = unitPolicy == null ? UnitPolicy.NONE : unitPolicy;
         switch (unitPolicy) {
             case NONE:
                 // Arbitrary call

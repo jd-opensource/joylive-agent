@@ -79,6 +79,7 @@ public class UnitInboundFilter implements InboundFilter {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
         UnitPolicy unitPolicy = livePolicy == null ? UnitPolicy.NONE : livePolicy.getUnitPolicy();
+        unitPolicy = unitPolicy == null ? UnitPolicy.NONE : unitPolicy;
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         UnitRule rule = liveMetadata.getUnitRule();
         String variable = liveMetadata.getVariable();
