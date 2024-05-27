@@ -26,7 +26,7 @@ Java bytecode enhancement framework for traffic governance in multi-activity (un
 5. Agent for local cell priority strategy   
 ![pic](docs/image/architect-4.png)
 
-6. For more information, please refer to the [Architecture Manual](docs/cn/architect.md).
+6. For more information, please refer to the [Architecture Manual](docs/architect.md).
 
 ## How to use
 
