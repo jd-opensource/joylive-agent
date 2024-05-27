@@ -31,7 +31,7 @@ import com.jd.live.agent.plugin.router.dubbo.v2_7.interceptor.ClusterInterceptor
 @Injectable
 @Extension(value = "ClusterDefinition_v2.7")
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ClusterDefinition.TYPE_ABSTRACT_CLUSTER)
 @ConditionalOnClass(ClassLoaderFilterDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
 public class ClusterDefinition extends PluginDefinitionAdapter {

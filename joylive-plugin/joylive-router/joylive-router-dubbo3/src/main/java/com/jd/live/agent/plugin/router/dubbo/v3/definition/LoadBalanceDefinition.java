@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.dubbo.v3.interceptor.LoadBalanceIntercept
                 GovernanceConfig.CONFIG_LANE_ENABLED
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
         @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false"),
-        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(LoadBalanceDefinition.TYPE_ABSTRACT_CLUSTER)
 @ConditionalOnClass(ClassLoaderFilterDefinition.TYPE_CONSUMER_CLASSLOADER_FILTER)
