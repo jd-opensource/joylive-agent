@@ -1,0 +1,10 @@
+Technical Architecture
+===
+
+## 1. Classloader for isolation
+
+See [Classloader](classloader.md)
+
+## 2. Extension System
+
+See [Extension System](extension.md)

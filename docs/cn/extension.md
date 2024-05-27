@@ -155,7 +155,7 @@ private Application application;
 private LoadBalancer loadBalancer;
 ```
 
-声明在扩展接口的散列字段上，则注入所有扩展实现
+声明在扩展接口的映射字段上，则注入所有扩展实现
 ```java
 @Inject
 @InjectLoader(ResourcerType.CORE_IMPL)
