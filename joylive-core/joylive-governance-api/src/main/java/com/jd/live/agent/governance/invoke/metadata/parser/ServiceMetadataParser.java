@@ -1,6 +1,7 @@
 package com.jd.live.agent.governance.invoke.metadata.parser;
 
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
@@ -12,7 +13,6 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.CellPolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
-import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
@@ -287,8 +287,9 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                 return metadata;
             }
             ServicePolicy policy = metadata.getServicePolicy();
-            ServiceLivePolicy livePolicy = policy == null ? null : policy.getLivePolicy();
-            if (livePolicy != null && livePolicy.getUnitPolicy() != null && livePolicy.getUnitPolicy() != UnitPolicy.NONE) {
+            ServiceLivePolicy livePolicy = metadata.getServiceLivePolicy();
+            UnitPolicy unitPolicy = metadata.getUnitPolicy();
+            if (unitPolicy != UnitPolicy.NONE) {
                 return metadata;
             }
             livePolicy = livePolicy != null ? livePolicy.clone() : new ServiceLivePolicy();

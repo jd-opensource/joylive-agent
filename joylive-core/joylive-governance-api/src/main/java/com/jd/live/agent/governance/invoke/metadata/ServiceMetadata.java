@@ -3,6 +3,8 @@ package com.jd.live.agent.governance.invoke.metadata;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
+import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -52,4 +54,14 @@ public class ServiceMetadata {
      * The service policy applicable to this invocation.
      */
     private ServicePolicy servicePolicy;
+
+    public UnitPolicy getUnitPolicy() {
+        ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
+        UnitPolicy unitPolicy = livePolicy == null ? null : livePolicy.getUnitPolicy();
+        return unitPolicy == null ? UnitPolicy.NONE : unitPolicy;
+    }
+
+    public ServiceLivePolicy getServiceLivePolicy() {
+        return servicePolicy == null ? null : servicePolicy.getLivePolicy();
+    }
 }

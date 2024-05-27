@@ -36,7 +36,6 @@ import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.*;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
@@ -95,10 +94,8 @@ public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
                                                           List<? extends Endpoint> endpoints) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
-        ServicePolicy servicePolicy = serviceMetadata.getServicePolicy();
-        ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
-        UnitPolicy unitPolicy = livePolicy == null || liveMetadata.getUnitRule() == null ? UnitPolicy.NONE : livePolicy.getUnitPolicy();
-        unitPolicy = unitPolicy == null ? UnitPolicy.NONE : unitPolicy;
+        ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
+        UnitPolicy unitPolicy = serviceMetadata.getUnitPolicy();
         switch (unitPolicy) {
             case NONE:
                 // Arbitrary call

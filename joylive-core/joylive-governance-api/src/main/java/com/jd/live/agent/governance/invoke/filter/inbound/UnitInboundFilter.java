@@ -32,8 +32,6 @@ import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.policy.live.*;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
@@ -76,10 +74,7 @@ public class UnitInboundFilter implements InboundFilter {
     }
 
     protected <T extends InboundRequest> UnitAction unitAction(InboundInvocation<T> invocation) {
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
-        UnitPolicy unitPolicy = livePolicy == null ? UnitPolicy.NONE : livePolicy.getUnitPolicy();
-        unitPolicy = unitPolicy == null ? UnitPolicy.NONE : unitPolicy;
+        UnitPolicy unitPolicy = invocation.getServiceMetadata().getUnitPolicy();
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         UnitRule rule = liveMetadata.getUnitRule();
         String variable = liveMetadata.getVariable();
