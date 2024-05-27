@@ -151,7 +151,7 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
             writeProtect = source.getWriteProtect();
         }
         if (unitPolicy == null) {
-            unitPolicy = source.getUnitPolicy() == null ? UnitPolicy.NONE : source.getUnitPolicy();
+            unitPolicy = source.getUnitPolicy();
         }
         if (defaultUnitThreshold == null) {
             defaultUnitThreshold = source.getDefaultUnitThreshold();
