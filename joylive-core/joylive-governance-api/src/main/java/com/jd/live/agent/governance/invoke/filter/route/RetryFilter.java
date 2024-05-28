@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.Set;
@@ -38,13 +39,15 @@ public class RetryFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        // TODO change order according to retry policy
-        RouteTarget target = invocation.getRouteTarget();
-        // Get the set of attempted endpoint IDs from the request
-        Set<String> attempts = invocation.getRequest().getAttempts();
-        // If there have been previous attempts, filter out the endpoints that have already failed
-        if (attempts != null && !attempts.isEmpty()) {
-            target.filter(endpoint -> !attempts.contains(endpoint.getId()));
+        StickyType stickyType = invocation.getServiceMetadata().getStickyType();
+        if (stickyType != StickyType.FIXED) {
+            RouteTarget target = invocation.getRouteTarget();
+            // Get the set of attempted endpoint IDs from the request
+            Set<String> attempts = invocation.getRequest().getAttempts();
+            // If there have been previous attempts, filter out the endpoints that have already failed
+            if (attempts != null && !attempts.isEmpty()) {
+                target.filter(endpoint -> !attempts.contains(endpoint.getId()));
+            }
         }
         chain.filter(invocation);
     }

@@ -23,8 +23,6 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -40,10 +38,7 @@ public class StickyFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
-        StickyType stickyType = loadBalancePolicy == null ? StickyType.NONE : loadBalancePolicy.getStickyType();
-        stickyType = stickyType == null ? StickyType.NONE : stickyType;
+        StickyType stickyType = invocation.getServiceMetadata().getStickyType();
         if (stickyType != StickyType.NONE) {
             RouteTarget target = invocation.getRouteTarget();
             // Get the sticky ID from the request, if available

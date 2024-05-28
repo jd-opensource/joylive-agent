@@ -5,6 +5,8 @@ import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -63,5 +65,11 @@ public class ServiceMetadata {
 
     public ServiceLivePolicy getServiceLivePolicy() {
         return servicePolicy == null ? null : servicePolicy.getLivePolicy();
+    }
+
+    public StickyType getStickyType() {
+        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+        StickyType stickyType = loadBalancePolicy == null ? StickyType.NONE : loadBalancePolicy.getStickyType();
+        return stickyType == null ? StickyType.NONE : stickyType;
     }
 }
