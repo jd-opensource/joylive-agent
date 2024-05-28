@@ -52,6 +52,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive environment.
+ */
 @Injectable
 @Extension("LiveSpaceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
@@ -126,6 +129,16 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         }
     }
 
+    /**
+     * Synchronizes a specific live space.
+     *
+     * @param liveSpaceId the ID of the live space.
+     * @param version the version of the live space.
+     * @param config the synchronization configuration.
+     * @param versions the map of versions.
+     * @return the synchronized live space.
+     * @throws IOException if an I/O error occurs.
+     */
     private LiveSpace syncSpace(String liveSpaceId, long version, SyncConfig config, Map<String, Long> versions) throws IOException {
         Response<LiveSpace> response = getSpace(liveSpaceId, version, (LiveSyncConfig) config);
         HttpStatus status = response.getStatus();
@@ -143,6 +156,15 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         }
     }
 
+    /**
+     * Synchronizes a specific live space and returns the result.
+     *
+     * @param liveSpaceId the ID of the live space.
+     * @param config the synchronization configuration.
+     * @param last the last synchronization metadata.
+     * @return the result of the synchronization.
+     * @throws IOException if an I/O error occurs.
+     */
     private SyncResult<List<LiveSpace>, Map<String, Long>> syncSpace(String liveSpaceId, SyncConfig config, Map<String, Long> last) throws IOException {
         List<LiveSpace> liveSpaces = new ArrayList<>();
         Long version = last == null ? null : last.get(liveSpaceId);
@@ -159,6 +181,14 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         }
     }
 
+    /**
+     * Synchronizes all live spaces and returns the result.
+     *
+     * @param config the synchronization configuration.
+     * @param last the last synchronization metadata.
+     * @return the result of the synchronization.
+     * @throws IOException if an I/O error occurs.
+     */
     private SyncResult<List<LiveSpace>, Map<String, Long>> syncSpaces(SyncConfig config, Map<String, Long> last) throws IOException {
         List<LiveSpace> liveSpaces = new ArrayList<>();
         Map<String, Long> spaces = getSpaces((LiveSyncConfig) config);
@@ -176,6 +206,14 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         return spaces.equals(last) ? null : new SyncResult<>(liveSpaces, spaces);
     }
 
+    /**
+     * Creates a new policy based on the given live spaces and metadata.
+     *
+     * @param liveSpaces the list of live spaces.
+     * @param meta the metadata map.
+     * @param old the old policy.
+     * @return the new policy.
+     */
     private GovernancePolicy newPolicy(List<LiveSpace> liveSpaces, Map<String, Long> meta, GovernancePolicy old) {
         List<LiveSpace> oldSpaces = old == null ? null : old.getLiveSpaces();
         if (oldSpaces != null) {
@@ -192,6 +230,13 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         return result;
     }
 
+    /**
+     * Retrieves the map of live spaces and their versions from the remote server.
+     *
+     * @param config the synchronization configuration.
+     * @return the map of live spaces and their versions.
+     * @throws IOException if an I/O error occurs.
+     */
     private Map<String, Long> getSpaces(LiveSyncConfig config) throws IOException {
         String uri = config.getSpacesUrl();
         HttpResponse<Response<List<Workspace>>> httpResponse = HttpUtils.get(uri,
@@ -216,6 +261,15 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         throw new SyncFailedException(getErrorMessage(httpResponse));
     }
 
+    /**
+     * Retrieves the live space information from the remote server.
+     *
+     * @param workspaceId the ID of the workspace to retrieve.
+     * @param version the version of the workspace to retrieve.
+     * @param config the synchronization configuration.
+     * @return the response containing the live space information.
+     * @throws IOException if an I/O error occurs during the HTTP request.
+     */
     private Response<LiveSpace> getSpace(String workspaceId, Long version, LiveSyncConfig config) throws IOException {
         Map<String, Object> context = new HashMap<>(2);
         context.put(SPACE_ID, workspaceId);
@@ -240,22 +294,46 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         throw new SyncFailedException(getErrorMessage(httpResponse, workspaceId));
     }
 
+    /**
+     * Configures the HTTP connection with the necessary headers and timeout settings.
+     *
+     * @param config the synchronization configuration.
+     * @param conn the HTTP connection to configure.
+     */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
     }
 
+    /**
+     * Constructs a success message for logging purposes.
+     *
+     * @return the success message.
+     */
     private String getSuccessMessage() {
         return "Success synchronizing live space policy from multilive. counter=" + counter.get();
     }
 
+    /**
+     * Constructs an error message for logging purposes based on the HTTP state.
+     *
+     * @param reply the HTTP state containing the error information.
+     * @return the error message.
+     */
     private String getErrorMessage(HttpState reply) {
         return "Failed to synchronize live space from multilive. code=" + reply.getCode()
                 + ", message=" + reply.getMessage()
                 + ", counter=" + counter.get();
     }
 
+    /**
+     * Constructs an error message for logging purposes based on the HTTP state and workspace ID.
+     *
+     * @param reply the HTTP state containing the error information.
+     * @param workspaceId the ID of the workspace that failed to synchronize.
+     * @return the error message.
+     */
     private String getErrorMessage(HttpState reply, String workspaceId) {
         return "Failed to synchronize live space from multilive. space=" + workspaceId
                 + ", code=" + reply.getCode()
@@ -263,6 +341,12 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
                 + ", counter=" + counter.get();
     }
 
+    /**
+     * Constructs an error message for logging purposes based on an exception.
+     *
+     * @param throwable the exception that caused the synchronization failure.
+     * @return the error message.
+     */
     private String getErrorMessage(Throwable throwable) {
         return "Failed to synchronize live space from multilive. counter=" + counter.get() + ", caused by " + throwable.getMessage();
     }

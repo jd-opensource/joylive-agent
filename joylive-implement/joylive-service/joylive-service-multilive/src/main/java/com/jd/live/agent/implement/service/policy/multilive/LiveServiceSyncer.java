@@ -63,6 +63,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+/**
+ * LiveServiceSyncer is responsible for synchronizing live service policies from a multilive environment.
+ */
 @Injectable
 @Extension("LiveServiceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
@@ -149,6 +152,11 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         return CompletableFuture.completedFuture(null);
     }
 
+    /**
+     * Synchronizes and updates the service based on the given subscriber.
+     *
+     * @param subscriber the policy subscriber to synchronize and update.
+     */
     private void syncAndUpdate(PolicySubscriber subscriber) {
         ServiceSyncMeta meta = versions.computeIfAbsent(subscriber.getName(), ServiceSyncMeta::new);
         if (!meta.status.compareAndSet(false, true)) {
@@ -179,6 +187,13 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         timer.delay(getName() + "-" + subscriber.getName(), delay, () -> addTask(subscriber));
     }
 
+    /**
+     * Handles successful synchronization with status OK.
+     *
+     * @param subscriber the policy subscriber.
+     * @param service the service data.
+     * @param meta the service synchronization metadata.
+     */
     private void onOk(PolicySubscriber subscriber, Service service, ServiceSyncMeta meta) {
         if (update(subscriber.getName(), service)) {
             meta.version = service.getVersion();
@@ -187,6 +202,12 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         }
     }
 
+    /**
+     * Handles service is NOT_MODIFIED.
+     *
+     * @param subscriber the policy subscriber.
+     * @param meta the service synchronization metadata.
+     */
     private void onNotModified(PolicySubscriber subscriber, ServiceSyncMeta meta) {
         subscriber.complete();
         if (meta.shouldPrint()) {
@@ -194,6 +215,12 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         }
     }
 
+    /**
+     * Handles service is NOT_FOUND.
+     *
+     * @param subscriber the policy subscriber.
+     * @param meta the service synchronization metadata.
+     */
     private void onNotFound(PolicySubscriber subscriber, ServiceSyncMeta meta) {
         if (meta.version > 0) {
             if (update(subscriber.getName(), null)) {
@@ -209,6 +236,13 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         }
     }
 
+    /**
+     * Attempts to update the service with retries.
+     *
+     * @param name the name of the service.
+     * @param service the service data.
+     * @return true if the update was successful, false otherwise.
+     */
     private boolean update(String name, Service service) {
         for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
             if (updateOnce(name, service)) {
@@ -218,10 +252,25 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         return false;
     }
 
+    /**
+     * Attempts to update the service once.
+     *
+     * @param name the name of the service.
+     * @param service the service data.
+     * @return true if the update was successful, false otherwise.
+     */
     private boolean updateOnce(String name, Service service) {
         return policySupervisor.update(expect -> newPolicy(name, service, expect));
     }
 
+    /**
+     * Creates a new policy based on the given service.
+     *
+     * @param name the name of the service.
+     * @param service the service data.
+     * @param oldPolicy the old policy.
+     * @return the new policy.
+     */
     private GovernancePolicy newPolicy(String name, Service service, GovernancePolicy oldPolicy) {
         GovernancePolicy result = oldPolicy == null ? new GovernancePolicy() : oldPolicy.copy();
         BiConsumer<ServicePolicy, ServicePolicy> consumer = (o, n) -> o.setLivePolicy(n == null ? null : n.getLivePolicy());
@@ -230,6 +279,15 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         return result;
     }
 
+    /**
+     * Retrieves the service data from the remote server.
+     *
+     * @param name the name of the service.
+     * @param meta the service synchronization metadata.
+     * @param config the synchronization configuration.
+     * @return the response containing the service data.
+     * @throws IOException if an I/O error occurs.
+     */
     private Response<Service> getService(String name, ServiceSyncMeta meta, SyncConfig config) throws IOException {
         Map<String, Object> context = new HashMap<>(2);
         context.put(SERVICE_NAME, name);
@@ -254,26 +312,53 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         throw new SyncFailedException(meta.getErrorMessage(httpResponse));
     }
 
+    /**
+     * Configures the HTTP connection with the specified synchronization configuration.
+     *
+     * @param config the synchronization configuration.
+     * @param conn the HTTP connection to be configured.
+     */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
     }
 
+    /**
+     * Handles events for policy subscribers.
+     *
+     * @param events the list of events containing policy subscribers.
+     */
     private void onEvent(List<Event<PolicySubscriber>> events) {
         events.forEach(e -> addTask(e.getData(), t -> !versions.containsKey(t.getName())));
     }
 
+    /**
+     * Adds a list of policy subscriber tasks to the queue.
+     *
+     * @param tasks the list of policy subscriber tasks to be added.
+     */
     private void addTasks(List<PolicySubscriber> tasks) {
         if (tasks != null) {
             tasks.forEach(task -> addTask(task, t -> !versions.containsKey(t.getName())));
         }
     }
 
+    /**
+     * Adds a single policy subscriber task to the queue.
+     *
+     * @param task the policy subscriber task to be added.
+     */
     private void addTask(PolicySubscriber task) {
         addTask(task, null);
     }
 
+    /**
+     * Adds a single policy subscriber task to the queue with an optional predicate.
+     *
+     * @param task the policy subscriber task to be added.
+     * @param predicate an optional predicate to test the task before adding it to the queue.
+     */
     private void addTask(PolicySubscriber task, Predicate<PolicySubscriber> predicate) {
         if (task != null
                 && task.getType() == PolicyType.SERVICE_POLICY
@@ -284,6 +369,9 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         }
     }
 
+    /**
+     * Metadata for synchronizing services.
+     */
     private static class ServiceSyncMeta {
 
         protected final String name;
@@ -298,16 +386,33 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
             this.name = name;
         }
 
+        /**
+         * Determines whether a log message should be printed based on the counter.
+         *
+         * @return true if a log message should be printed, false otherwise.
+         */
         public boolean shouldPrint() {
             return counter.get() % INTERVALS == 1;
         }
 
+        /**
+         * Generates a success message for the synchronization.
+         *
+         * @param status the HTTP status of the synchronization.
+         * @return the success message.
+         */
         public String getSuccessMessage(HttpStatus status) {
             return "Success synchronizing service policy from multilive. service=" + name
                     + ", code=" + status.value()
                     + ", counter=" + counter.get();
         }
 
+        /**
+         * Generates an error message for the synchronization.
+         *
+         * @param reply the HTTP state of the synchronization.
+         * @return the error message.
+         */
         public String getErrorMessage(HttpState reply) {
             return "Failed to synchronize service policy from multilive. service=" + name
                     + ", code=" + reply.getCode()
