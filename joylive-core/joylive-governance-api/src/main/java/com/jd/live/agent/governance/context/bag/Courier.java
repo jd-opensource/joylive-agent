@@ -45,7 +45,7 @@ public class Courier extends AbstractAttributes implements Carrier {
                 }
                 Cargo old = cargos.putIfAbsent(cargo.getKey(), cargo);
                 if (old != null && old != cargo) {
-                    cargo.add(cargo.getValues());
+                    old.add(cargo.getValues());
                 }
             }
         }
