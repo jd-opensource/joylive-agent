@@ -18,13 +18,14 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
-import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,14 +40,15 @@ public class RetryFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        StickyType stickyType = invocation.getServiceMetadata().getStickyType();
-        if (stickyType != StickyType.FIXED) {
-            RouteTarget target = invocation.getRouteTarget();
-            // Get the set of attempted endpoint IDs from the request
-            Set<String> attempts = invocation.getRequest().getAttempts();
-            // If there have been previous attempts, filter out the endpoints that have already failed
-            if (attempts != null && !attempts.isEmpty()) {
-                target.filter(endpoint -> !attempts.contains(endpoint.getId()));
+        RouteTarget target = invocation.getRouteTarget();
+        // Get the set of attempted endpoint IDs from the request
+        Set<String> attempts = invocation.getRequest().getAttempts();
+        // If there have been previous attempts, filter out the endpoints that have already failed
+        if (attempts != null && !attempts.isEmpty()) {
+            List<? extends Endpoint> endpoints = RouteTarget.filter(target.getEndpoints(), endpoint -> !attempts.contains(endpoint.getId()), -1);
+            if (endpoints != null && !endpoints.isEmpty()) {
+                // Can retry on failed instances
+                target.setEndpoints(endpoints);
             }
         }
         chain.filter(invocation);
