@@ -120,7 +120,7 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
     @Override
     protected CompletableFuture<Void> doStart() {
         int concurrency = syncConfig.getConcurrency() <= 0 ? CONCURRENCY : syncConfig.getConcurrency();
-        executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory("service-live-syncer", true));
+        executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory(getName(), true));
         publisher.addHandler(handler);
         for (int i = 0; i < concurrency; i++) {
             executorService.submit(() -> {
