@@ -247,4 +247,40 @@ public class StringUtils {
         return sb.length() > 0 ? sb.substring(0, sb.length() - separator.length()) : StringUtils.EMPTY;
     }
 
+    /**
+     * Concatenates a URL with a single path, handling edge cases for slashes.
+     *
+     * @param url  The base URL.
+     * @param path The path to append.
+     * @return The concatenated URL.
+     */
+    public static String url(String url, String path) {
+        if (path == null || path.isEmpty()) {
+            return url;
+        } else if (url == null) {
+            return path;
+        } else if (url.endsWith("/")) {
+            return url + (path.startsWith("/") ? path.substring(1) : path);
+        } else {
+            return url + (path.startsWith("/") ? path : "/" + path);
+        }
+    }
+
+    /**
+     * Concatenates a URL with multiple paths, handling edge cases for slashes.
+     *
+     * @param url   The base URL.
+     * @param paths The paths to append.
+     * @return The concatenated URL.
+     */
+    public static String url(String url, String... paths) {
+        if (paths == null) {
+            return url;
+        }
+        String result = url;
+        for (String path : paths) {
+            result = url(result, path);
+        }
+        return result;
+    }
 }

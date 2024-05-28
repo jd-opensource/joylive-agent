@@ -44,10 +44,6 @@ public class SyncConfig {
 
     public static final String SYNC_LANE_SPACE_TYPE = SYNC_LANE_SPACE + ".type";
 
-    public static final String SYNC_MICROSERVICE_LIVE = SYNC + ".serviceLive";
-
-    public static final String SYNC_MICROSERVICE_LIVE_TYPE = SYNC_MICROSERVICE_LIVE + ".type";
-
     private String url;
 
     private String type;

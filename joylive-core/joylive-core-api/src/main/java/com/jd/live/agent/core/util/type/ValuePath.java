@@ -59,13 +59,17 @@ public class ValuePath implements ObjectGetter {
         this.paths = parse(path);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object get(Object target) {
         Object result = null;
         int index = 0;
-        for (PropertyPath path : paths) {
-            result = getObject(target, path);
-            if (result == null || index == paths.size() - 1) {
+        for (PropertyPath propertyPath : paths) {
+            result = getObject(target, propertyPath);
+            if (result == null) {
+                result = index == 0 && paths.size() > 1 && target instanceof Map ? ((Map<String, Object>) target).get(path) : null;
+                return result;
+            } else if (index == paths.size() - 1) {
                 return result;
             } else if (predicate != null && !predicate.test(result)) {
                 return null;
