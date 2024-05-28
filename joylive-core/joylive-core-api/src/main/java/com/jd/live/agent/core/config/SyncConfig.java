@@ -40,6 +40,8 @@ public class SyncConfig {
 
     public static final String SYNC_LIVE_SPACE_TYPE = SYNC_LIVE_SPACE + ".type";
 
+    public static final String SYNC_LIVE_SPACE_SERVICE = SYNC_LIVE_SPACE + ".service";
+
     public static final String SYNC_LANE_SPACE = SYNC + ".laneSpace";
 
     public static final String SYNC_LANE_SPACE_TYPE = SYNC_LANE_SPACE + ".type";
