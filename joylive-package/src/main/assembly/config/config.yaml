@@ -60,7 +60,7 @@ agent:
       type: file # [file,multilive]
       url: http://localhost:9090/v1
       #spacesUrl: http://localhost:9090/v1/workspaces
-      #spaceUrl: http://localhost:9090/v1/workspaces/${space_id}/version/${space_version}/datatype/all
+      #spaceUrl: http://localhost:9090/v1/workspaces/${space_id}/version/${space_version}
       #serviceUrl: http://localhost:9090/v1/services/${service_name}/version/${service_version}
       #service: true
       interval: 5000
