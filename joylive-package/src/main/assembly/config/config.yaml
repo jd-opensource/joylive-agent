@@ -57,17 +57,18 @@ agent:
     profile: null
   sync:
     liveSpace:
-      url: null
       type: file # [file,multilive]
+      url: http://localhost:9090/v1
+      #spacesUrl: http://localhost:9090/v1/workspaces
+      #spaceUrl: http://localhost:9090/v1/workspaces/${space_id}/version/${space_version}/datatype/all
+      #serviceUrl: http://localhost:9090/v1/services/${service_name}/version/${service_version}
+      #service: true
       interval: 5000
       timeout: 3000
       initialTimeout: 20000
       delay: 0
       fault: 5000
       headers: null
-      configs:
-        workspacesPath: /workspaces/
-        workspacePath: /workspaceConfig/
     laneSpace:
       type: file
     microservice:

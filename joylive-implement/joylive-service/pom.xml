@@ -15,6 +15,7 @@
     <modules>
         <module>joylive-service-watchdog</module>
         <module>joylive-service-file</module>
+        <module>joylive-service-multilive</module>
     </modules>
 
 </project>

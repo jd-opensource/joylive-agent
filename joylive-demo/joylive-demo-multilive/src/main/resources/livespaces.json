@@ -1,0 +1,198 @@
+[
+  {
+    "apiVersion": "apaas.cos.com/v2alpha1",
+    "kind": "MultiLiveSpace",
+    "metadata": {
+      "name": "mls-abcdefg1",
+      "namespace": "apaas-livespace"
+    },
+    "spec": {
+      "id": "v4bEh4kd6Jvu5QBX09qYq-qlbcs",
+      "code": "7Jei1Q5nlDbx0dRB4ZKd",
+      "name": "TestLiveSpace",
+      "version": "2023120609580935201",
+      "tenantId": "tenant1",
+      "units": [
+        {
+          "code": "unit1",
+          "name": "unit1",
+          "type": "UNIT",
+          "accessMode": "READ_WRITE",
+          "labels": {
+            "region": "region1"
+          },
+          "cells": [
+            {
+              "code": "cell1",
+              "name": "cell1",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "zone1"
+              }
+            },
+            {
+              "code": "cell2",
+              "name": "cell2",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "zone2"
+              }
+            },
+            {
+              "code": "cell3",
+              "name": "cell3",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "zone3"
+              }
+            }
+          ]
+        },
+        {
+          "code": "unit2",
+          "name": "unit2",
+          "type": "UNIT",
+          "accessMode": "READ_WRITE",
+          "labels": {
+            "region": "region2"
+          },
+          "cells": [
+            {
+              "code": "cell4",
+              "name": "cell4",
+              "accessMode": "READ_WRITE",
+              "labels": {
+                "zone": "zone4"
+              }
+            }
+          ]
+        }
+      ],
+      "domains": [
+        {
+          "host": "demo.live.local",
+          "protocols": [
+            "http",
+            "https"
+          ],
+          "liveType": "CROSS_REGION_LIVE",
+          "correctionType": "UPSTREAM",
+          "unitDomainEnabled": true,
+          "unitDomains": [
+            {
+              "unit": "unit1",
+              "host": "unit1-demo.live.local",
+              "backend": ":8080"
+            },
+            {
+              "unit": "unit2",
+              "host": "unit2-demo.live.local",
+              "backend": ":8080"
+            }
+          ],
+          "paths": [
+            {
+              "path": "/",
+              "ruleId": 1003,
+              "ruleName": "Test",
+              "customVariableSource": false,
+              "variable": "user",
+              "variableSource": "getUserByQuery",
+              "bizVariableEnabled": false,
+              "bizVariableName": "",
+              "bizVariableScope": null,
+              "bizVariableRules": []
+            }
+          ],
+          "resources": []
+        }
+      ],
+      "unitRules": [
+        {
+          "id": 1003,
+          "name": "Test",
+          "liveType": "CROSS_REGION_LIVE",
+          "business": "",
+          "variable": "user",
+          "variableSource": "getUserByQuery",
+          "variableFunction": "BKDRHash",
+          "variableMissingAction": "CENTER",
+          "modulo": 10000,
+          "units": [
+            {
+              "code": "unit1",
+              "allows": [
+              ],
+              "prefixes": [
+                "unit1"
+              ],
+              "ranges": [
+                {
+                  "from": 0,
+                  "to": 8000
+                }
+              ],
+              "cells": [
+                {
+                  "code": "cell1",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 40
+                },
+                {
+                  "code": "cell2",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 40
+                },
+                {
+                  "code": "cell3",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 20
+                }
+              ]
+            },
+            {
+              "code": "unit2",
+              "allows": [
+              ],
+              "prefix": [
+                "unit2"
+              ],
+              "ranges": [
+                {
+                  "from": 8000,
+                  "to": 10000
+                }
+              ],
+              "cells": [
+                {
+                  "code": "cell4",
+                  "allows": [],
+                  "prefixes": [],
+                  "weight": 100
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "name": "user",
+          "type": "unit",
+          "sources": [
+            {
+              "name": "getUserByQuery",
+              "scope": "QUERY",
+              "key": "user",
+              "func": "",
+              "header": ""
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
