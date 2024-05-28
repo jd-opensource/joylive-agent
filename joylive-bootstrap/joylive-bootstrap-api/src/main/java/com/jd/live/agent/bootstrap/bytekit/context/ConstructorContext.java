@@ -23,15 +23,14 @@ import java.lang.reflect.Constructor;
  * ConstructorContext class extends the ExecutableContext class to provide a context
  * specific to a constructor invocation.
  *
- * @param <T> The type of the object being constructed.
  */
 @Getter
-public class ConstructorContext<T> extends ExecutableContext {
+public class ConstructorContext extends ExecutableContext {
 
     /**
      * The Constructor object being invoked within this context.
      */
-    private final Constructor<T> constructor;
+    private final Constructor<?> constructor;
 
     /**
      * Constructor for the ConstructorContext class.
@@ -42,7 +41,7 @@ public class ConstructorContext<T> extends ExecutableContext {
      * @param constructor The Constructor object representing the constructor being invoked.
      * @param description A String providing a description of the constructor invocation context.
      */
-    public ConstructorContext(Class<T> type, Object[] arguments, Constructor<T> constructor, String description) {
+    public ConstructorContext(Class<?> type, Object[] arguments, Constructor<?> constructor, String description) {
         super(type, arguments, description);
         this.constructor = constructor;
     }
