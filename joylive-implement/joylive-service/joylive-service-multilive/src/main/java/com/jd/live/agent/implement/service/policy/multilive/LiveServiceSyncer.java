@@ -176,7 +176,7 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
         }
         meta.status.set(false);
         long delay = syncConfig.getInterval() + (long) (Math.random() * 1000);
-        timer.delay("service-live-syncer-" + subscriber.getName(), delay, () -> addTask(subscriber));
+        timer.delay(getName() + "-" + subscriber.getName(), delay, () -> addTask(subscriber));
     }
 
     private void onOk(PolicySubscriber subscriber, Service service, ServiceSyncMeta meta) {
