@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import com.alibaba.dubbo.rpc.cluster.support.DubboCluster;
+import com.alibaba.dubbo.rpc.cluster.support.DubboCluster26;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
@@ -41,7 +41,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<AbstractClusterInvoker<?>, DubboCluster26> clusters = new ConcurrentHashMap<>();
 
     public LoadBalanceInterceptor(InvocationContext context) {
         this.context = context;
@@ -62,7 +62,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
         DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-        DubboCluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster::new);
+        DubboCluster26 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster26::new);
         try {
             List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
             if (invoked != null) {

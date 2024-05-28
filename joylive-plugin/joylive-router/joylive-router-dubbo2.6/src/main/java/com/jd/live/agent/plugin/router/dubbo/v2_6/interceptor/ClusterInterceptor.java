@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import com.alibaba.dubbo.rpc.cluster.support.DubboCluster;
+import com.alibaba.dubbo.rpc.cluster.support.DubboCluster26;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -41,7 +41,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<AbstractClusterInvoker<?>, DubboCluster26> clusters = new ConcurrentHashMap<>();
 
     public ClusterInterceptor(InvocationContext context) {
         this.context = context;
@@ -58,7 +58,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        DubboCluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster::new);
+        DubboCluster26 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster26::new);
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);

@@ -26,7 +26,7 @@ import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOu
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import org.apache.dubbo.rpc.cluster.support.v2_7.DubboCluster;
+import org.apache.dubbo.rpc.cluster.support.DubboCluster27;
 
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<AbstractClusterInvoker<?>, DubboCluster27> clusters = new ConcurrentHashMap<>();
 
     public ClusterInterceptor(InvocationContext context) {
         this.context = context;
@@ -58,7 +58,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        DubboCluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster::new);
+        DubboCluster27 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster27::new);
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);

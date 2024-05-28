@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.rpc.cluster.support.v3;
+package org.apache.dubbo.rpc.cluster.support;
 
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
@@ -29,13 +29,12 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
-import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
-import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
-import com.jd.live.agent.plugin.router.dubbo.v3.response.DubboResponse.DubboOutboundResponse;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOutboundResponse;
 import org.apache.dubbo.common.Version;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.rpc.*;
-import org.apache.dubbo.rpc.cluster.support.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -59,7 +58,7 @@ import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
-public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
+public class DubboCluster27 implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
 
     private final AbstractClusterInvoker cluster;
 
@@ -74,7 +73,7 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
      *
      * @param cluster the abstract cluster to be wrapped by this live cluster
      */
-    public DubboCluster(AbstractClusterInvoker cluster) {
+    public DubboCluster27(AbstractClusterInvoker cluster) {
         this.cluster = cluster;
     }
 
@@ -115,7 +114,7 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
 
     @SuppressWarnings("unchecked")
     @Override
-    public CompletionStage<List<DubboEndpoint<?>>> route(DubboOutboundRequest request) throws RpcException {
+    public CompletionStage<List<DubboEndpoint<?>>> route(DubboOutboundRequest request) {
         try {
             List<Invoker<?>> invokers = cluster.getDirectory().list(request.getRequest());
             return CompletableFuture.completedFuture(invokers == null
@@ -130,7 +129,8 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
     public CompletionStage<DubboOutboundResponse> invoke(DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         try {
             Result result = endpoint.getInvoker().invoke(request.getRequest());
-            DubboOutboundResponse response = result.hasException() ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
+            DubboOutboundResponse response = result.hasException()
+                    ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
                     : new DubboOutboundResponse(result);
             return CompletableFuture.completedFuture(response);
         } catch (RpcException e) {
@@ -177,6 +177,22 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
     }
 
     @Override
+    public RpcException createException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
+        if (throwable == null) {
+            return null;
+        } else if (throwable instanceof RpcException) {
+            return (RpcException) throwable;
+        } else {
+            String message = getError(throwable, request, endpoint);
+            if (throwable instanceof LiveException) {
+                return new RpcException(RpcException.UNKNOWN_EXCEPTION, message);
+            }
+            Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+            return new RpcException(RpcException.UNKNOWN_EXCEPTION, message, cause);
+        }
+    }
+
+    @Override
     public RpcException createNoProviderException(DubboOutboundRequest request) {
         Invocation invocation = request.getRequest();
         return new RpcException(RpcException.NO_INVOKER_AVAILABLE_AFTER_FILTER, "Failed to invoke the method "
@@ -191,22 +207,6 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
     @Override
     public RpcException createRejectException(RejectException exception, DubboOutboundRequest request) {
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
-        if (throwable == null) {
-            return null;
-        } else if (throwable instanceof RpcException) {
-            return (RpcException) throwable;
-        } else {
-            String message = getError(throwable, request, endpoint);
-            if (throwable instanceof LiveException) {
-                return new RpcException(RpcException.UNKNOWN_EXCEPTION, message);
-            }
-            Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-            return new RpcException(RpcException.UNKNOWN_EXCEPTION, message, cause);
-        }
     }
 
     @Override
@@ -236,15 +236,16 @@ public class DubboCluster implements LiveCluster<DubboOutboundRequest, DubboOutb
      */
     private int getRetries(String methodName) {
         int len = cluster.getUrl().getMethodParameter(methodName, RETRIES_KEY, DEFAULT_RETRIES) + 1;
-        RpcContext context = RpcContext.getClientAttachment();
-        Object retry = context.getObjectAttachment(RETRIES_KEY);
+        RpcContext rpcContext = RpcContext.getContext();
+        Object retry = rpcContext.getObjectAttachment(RETRIES_KEY);
         if (retry instanceof Number) {
             len = ((Number) retry).intValue() + 1;
-            context.removeAttachment(RETRIES_KEY);
+            rpcContext.removeAttachment(RETRIES_KEY);
         }
         if (len <= 0) {
             len = 1;
         }
+
         return len;
     }
 
