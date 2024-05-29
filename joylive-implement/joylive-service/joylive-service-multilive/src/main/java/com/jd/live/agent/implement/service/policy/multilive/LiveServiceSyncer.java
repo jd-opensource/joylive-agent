@@ -40,10 +40,11 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.*;
-import com.jd.live.agent.governance.policy.service.PolicyMerger;
+import com.jd.live.agent.governance.policy.GovernancePolicy;
+import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySupervisor;
+import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 import com.jd.live.agent.implement.service.policy.multilive.reponse.Error;
 import com.jd.live.agent.implement.service.policy.multilive.reponse.Response;
@@ -106,8 +107,6 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
     private final Map<String, ServiceSyncMeta> versions = new ConcurrentHashMap<>();
 
     private Template template;
-
-    private final PolicyMerger merger = new LivePolicyMerger();
 
     @Override
     public void initialize() {
@@ -273,8 +272,8 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
     private GovernancePolicy newPolicy(String name, Service service, GovernancePolicy oldPolicy) {
         GovernancePolicy result = oldPolicy == null ? new GovernancePolicy() : oldPolicy.copy();
         List<Service> newServices = service == null
-                ? result.onDelete(name, merger, getName())
-                : result.onUpdate(service, merger, getName());
+                ? result.onDelete(name, syncConfig.getPolicy(), getName())
+                : result.onUpdate(service, syncConfig.getPolicy(), getName());
         result.setServices(newServices);
         return result;
     }
@@ -418,26 +417,6 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
                     + ", code=" + reply.getCode()
                     + ", message=" + reply.getMessage()
                     + ", counter=" + counter.get();
-        }
-    }
-
-    /**
-     * Implementation of {@link PolicyMerger} that handles merging of live service policies.
-     */
-    private static class LivePolicyMerger implements PolicyMerger {
-
-        @Override
-        public void onAdd(ServicePolicy newPolicy) {
-        }
-
-        @Override
-        public void onDelete(ServicePolicy oldPolicy) {
-            oldPolicy.setLivePolicy(null);
-        }
-
-        @Override
-        public void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy) {
-            oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
         }
     }
 }

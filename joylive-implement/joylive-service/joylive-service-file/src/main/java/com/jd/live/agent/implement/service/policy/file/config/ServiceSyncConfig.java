@@ -16,7 +16,7 @@
 package com.jd.live.agent.implement.service.policy.file.config;
 
 import com.jd.live.agent.core.config.SyncConfig;
-import com.jd.live.agent.implement.service.policy.file.ServiceSyncPolicy;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,6 +29,6 @@ import lombok.Setter;
 @Setter
 public class ServiceSyncConfig extends SyncConfig {
 
-    private ServiceSyncPolicy policy = ServiceSyncPolicy.ALL;
+    private MergePolicy policy = MergePolicy.ALL;
 
 }

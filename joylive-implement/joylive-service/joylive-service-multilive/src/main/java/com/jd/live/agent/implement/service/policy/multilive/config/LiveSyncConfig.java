@@ -17,6 +17,8 @@ package com.jd.live.agent.implement.service.policy.multilive.config;
 
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.util.StringUtils;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
+import lombok.Getter;
 import lombok.Setter;
 
 /**
@@ -32,6 +34,9 @@ public class LiveSyncConfig extends SyncConfig {
     private String spaceUrl;
 
     private String serviceUrl;
+
+    @Getter
+    private MergePolicy policy = MergePolicy.LIVE;
 
     public String getSpacesUrl() {
         if (serviceUrl == null && getUrl() != null) {
