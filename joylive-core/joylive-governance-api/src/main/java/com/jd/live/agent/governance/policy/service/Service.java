@@ -22,11 +22,8 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Service
@@ -34,7 +31,7 @@ import java.util.function.Consumer;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-public class Service extends PolicyId {
+public class Service extends PolicyOwner {
 
     public static final String SERVICE_PREFIX = "service://";
 
@@ -48,14 +45,11 @@ public class Service extends PolicyId {
 
     @Getter
     @Setter
-    private Long version;
+    private long version;
 
     @Getter
     @Setter
     private List<ServiceGroup> groups;
-
-    @Getter
-    private transient final Owner owners = new Owner();
 
     @Getter
     private transient ServiceGroup defaultGroup;
@@ -185,38 +179,6 @@ public class Service extends PolicyId {
     }
 
     /**
-     * Applies ownership to the service and its groups using the provided consumer.
-     *
-     * @param consumer The consumer to apply ownership logic.
-     */
-    public void own(Consumer<Owner> consumer) {
-        if (consumer != null) {
-            consumer.accept(owners);
-        }
-        if (groups != null) {
-            for (ServiceGroup group : groups) {
-                group.own(consumer);
-            }
-        }
-    }
-
-    /**
-     * Recycles the service by removing groups that no longer have any owners.
-     */
-    protected void recycle() {
-        if (groups != null) {
-            List<ServiceGroup> targets = new ArrayList<>(groups.size());
-            for (ServiceGroup group : groups) {
-                if (!group.getOwners().isEmpty()) {
-                    group.recycle();
-                    targets.add(group);
-                }
-            }
-            groups = targets;
-        }
-    }
-
-    /**
      * Creates a copy of this service.
      *
      * @return A new instance of {@code Service} that is a copy of this instance.
@@ -239,58 +201,61 @@ public class Service extends PolicyId {
         return result;
     }
 
-    /**
-     * Merges the current service with another service instance, updating its groups and policies based on the provided service.
-     * This method ensures that the ownership is updated and that the service groups and policies are merged according to the specified logic.
-     * <p>
-     * If the provided service is {@code null}, it triggers an ownership cleanup and recycles any groups without owners.
-     * Otherwise, it updates or adds service groups from the provided service, applying the specified consumer to merge service policies.
-     * This method is particularly useful for dynamically updating service configurations while maintaining proper ownership and custom policy behaviors.
-     *
-     * @param service  The service to merge with. If {@code null}, the method will clean up ownership and recycle groups accordingly.
-     * @param consumer A {@link BiConsumer} that defines how to merge existing service policies with the new ones. This consumer
-     *                 is applied to each matching service policy from the current and provided service groups.
-     * @param owner    The owner identifier. This is used to update the ownership of the service and its groups during the merge process.
-     *                 The owner is added to the current service's owners and to the owners of any updated or newly added groups.
-     */
-    public void merge(Service service, BiConsumer<ServicePolicy, ServicePolicy> consumer, String owner) {
-        if (service == null) {
-            own(o -> o.removeOwner(owner));
-            recycle();
-        } else {
-            owners.addOwner(owner);
-            if (groups == null || groups.isEmpty()) {
-                groups = service.groups;
+    @Override
+    protected void own(BiConsumer<ServicePolicy, Owner> consumer) {
+        if (consumer != null && groups != null) {
+            List<ServiceGroup> newGroups = new ArrayList<>(groups.size());
+            for (ServiceGroup group : groups) {
+                group.own(consumer);
+                if (group.owners.hasOwner()) {
+                    newGroups.add(group);
+                }
+            }
+            if (newGroups.size() != groups.size()) {
+                groups = newGroups;
                 defaultGroup = null;
                 groupCache.clear();
-            } else {
-                List<ServiceGroup> targets = new ArrayList<>();
-                for (ServiceGroup oldGroup : groups) {
-                    Owner groupOwner = oldGroup.getOwners();
-                    ServiceGroup newGroup = service.getGroup(oldGroup.getName());
-                    if (newGroup == null) {
-                        oldGroup.own(o -> o.removeOwner(owner));
-                        oldGroup.recycle();
-                        if (!groupOwner.isEmpty()) {
-                            targets.add(oldGroup);
-                        }
-                    } else {
-                        groupOwner.addOwner(owner);
-                        oldGroup.merge(newGroup, consumer, owner);
-                        targets.add(oldGroup);
-                    }
-                }
-                for (ServiceGroup newGroup : service.groups) {
-                    ServiceGroup oldGroup = getGroup(newGroup.getName());
-                    if (oldGroup == null) {
-                        targets.add(newGroup);
-                    }
-                }
-                groups = targets;
-                defaultGroup = null;
-                groupCache.clear();
-                service.groupCache.clear();
             }
         }
+    }
+
+    /**
+     * Updates the current service with the provided service, using the specified policy merger and owner.
+     * This method will handle the addition, update, or deletion of service groups as needed.
+     *
+     * @param service The service containing the updates.
+     * @param merger The policy merger to handle the merging logic.
+     * @param owner The owner of the service.
+     */
+    protected void onUpdate(Service service, PolicyMerger merger, String owner) {
+        owners.addOwner(owner);
+        List<ServiceGroup> targets = new ArrayList<>();
+        Set<String> olds = new HashSet<>();
+        if (groups != null) {
+            for (ServiceGroup old : groups) {
+                olds.add(old.getName());
+                ServiceGroup update = service.getGroup(old.getName());
+                if (update == null) {
+                    if (old.onDelete(merger, owner)) {
+                        targets.add(old);
+                    }
+                } else {
+                    old.onUpdate(update, merger, owner);
+                    targets.add(old);
+                }
+            }
+        }
+        if (service.groups != null) {
+            for (ServiceGroup update : service.groups) {
+                if (!olds.contains(update.getName())) {
+                    update.onAdd(merger, owner);
+                    targets.add(update);
+                }
+            }
+        }
+        groups = targets;
+        defaultGroup = null;
+        groupCache.clear();
+        service.groupCache.clear();
     }
 }

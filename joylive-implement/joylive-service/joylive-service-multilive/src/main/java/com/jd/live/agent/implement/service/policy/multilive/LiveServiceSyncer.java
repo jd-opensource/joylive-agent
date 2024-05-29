@@ -40,10 +40,8 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
+import com.jd.live.agent.governance.policy.*;
+import com.jd.live.agent.governance.policy.service.PolicyMerger;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
@@ -60,7 +58,6 @@ import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
@@ -110,9 +107,11 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
 
     private Template template;
 
+    private final PolicyMerger merger = new LivePolicyMerger();
+
     @Override
     public void initialize() {
-        template = new Template(syncConfig.getSpaceUrl());
+        template = new Template(syncConfig.getServiceUrl());
     }
 
     @Override
@@ -273,8 +272,9 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
      */
     private GovernancePolicy newPolicy(String name, Service service, GovernancePolicy oldPolicy) {
         GovernancePolicy result = oldPolicy == null ? new GovernancePolicy() : oldPolicy.copy();
-        BiConsumer<ServicePolicy, ServicePolicy> consumer = (o, n) -> o.setLivePolicy(n == null ? null : n.getLivePolicy());
-        List<Service> newServices = result.update(name, service, consumer, getName());
+        List<Service> newServices = service == null
+                ? result.onDelete(name, merger, getName())
+                : result.onUpdate(service, merger, getName());
         result.setServices(newServices);
         return result;
     }
@@ -418,6 +418,26 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
                     + ", code=" + reply.getCode()
                     + ", message=" + reply.getMessage()
                     + ", counter=" + counter.get();
+        }
+    }
+
+    /**
+     * Implementation of {@link PolicyMerger} that handles merging of live service policies.
+     */
+    private static class LivePolicyMerger implements PolicyMerger {
+
+        @Override
+        public void onAdd(ServicePolicy newPolicy) {
+        }
+
+        @Override
+        public void onDelete(ServicePolicy oldPolicy) {
+            oldPolicy.setLivePolicy(null);
+        }
+
+        @Override
+        public void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy) {
+            oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
         }
     }
 }

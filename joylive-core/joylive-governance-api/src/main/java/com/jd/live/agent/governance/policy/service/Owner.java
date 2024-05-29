@@ -45,7 +45,7 @@ public class Owner {
     }
 
     public void addOwner(Owner owner) {
-        if (owner != null && !owner.isEmpty()) {
+        if (owner != null && owner.hasOwner()) {
             if (owners == null) {
                 owners = new HashSet<>();
             }
@@ -84,8 +84,9 @@ public class Owner {
      *
      * @return {@code true} if the set of owners is null or empty, {@code false} otherwise.
      */
-    public boolean isEmpty() {
-        return owners == null || owners.isEmpty();
+    public boolean hasOwner() {
+        return owners != null && !owners.isEmpty();
     }
+
 }
 

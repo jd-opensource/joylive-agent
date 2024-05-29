@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * maintains a set of tags that can be used to supplement the policy with additional information.
  */
 @Getter
-public abstract class PolicyId implements PolicyIdGen {
+public class PolicyId implements PolicyIdGen {
 
     /**
      * The key for the service name tag.
@@ -81,7 +81,7 @@ public abstract class PolicyId implements PolicyIdGen {
      * The URI associated with the policy.
      */
     @Getter
-    protected String uri;
+    protected transient String uri;
 
     /**
      * A map of tags that provide additional context or metadata for the policy.

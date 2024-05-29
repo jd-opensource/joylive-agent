@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
-import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,16 +23,14 @@ import java.util.function.BiConsumer;
 /**
  * Represents an abstract owner of a service policy, extending the capabilities of a PolicyId.
  */
+@Setter
 @Getter
-public abstract class ServicePolicyOwner extends PolicyId {
+public class ServicePolicyOwner extends PolicyOwner {
 
-    @Setter
     protected ServicePolicy servicePolicy;
 
-    protected transient final Owner owners = new Owner();
-
     /**
-     * Supplements the current service policy with information from the provided source.\
+     * Supplements the current service policy with information from the provided source.
      *
      * @param source The service policy to supplement the current policy with. Can be null.
      */
@@ -48,18 +45,26 @@ public abstract class ServicePolicyOwner extends PolicyId {
     }
 
     /**
-     * Merges the current service policy with the provided source policy using a specified consumer.
+     * Updates the service policy with information from the provided source using the specified merger and owner.
      *
-     * @param source   The service policy to merge with the current policy. Can be null.
-     * @param consumer A {@code BiConsumer} that defines how to merge the current policy with the source. Can be null.
+     * @param source The new service policy information to update with.
+     * @param merger The policy merger to handle the merging logic.
+     * @param owner The owner of the service policy.
      */
-    protected void merge(ServicePolicy source, BiConsumer<ServicePolicy, ServicePolicy> consumer) {
-        if (source != null) {
-            if (servicePolicy == null) {
-                servicePolicy = source;
-            } else if (consumer != null) {
-                consumer.accept(servicePolicy, source);
-            }
+    protected void onUpdate(ServicePolicy source, PolicyMerger merger, String owner) {
+        owners.addOwner(owner);
+        if (servicePolicy == null) {
+            servicePolicy = source;
+            merger.onAdd(servicePolicy);
+        } else {
+            merger.onUpdate(servicePolicy, source);
+        }
+    }
+
+    @Override
+    protected void own(BiConsumer<ServicePolicy, Owner> consumer) {
+        if (consumer != null) {
+            consumer.accept(servicePolicy, owners);
         }
     }
 
@@ -72,3 +77,4 @@ public abstract class ServicePolicyOwner extends PolicyId {
         }
     }
 }
+

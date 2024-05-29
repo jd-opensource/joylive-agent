@@ -25,7 +25,6 @@ import lombok.Setter;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Represents a logical grouping of service paths within a service, managing policies and ownership at the group level.
@@ -157,36 +156,21 @@ public class ServiceGroup extends ServicePolicyOwner {
         }
     }
 
-    /**
-     * Applies ownership logic to the service group and its paths using the provided consumer.
-     *
-     * @param consumer The consumer to apply ownership logic.
-     */
-    protected void own(Consumer<Owner> consumer) {
-        if (consumer != null) {
-            consumer.accept(owners);
-
-        }
+    @Override
+    protected void own(BiConsumer<ServicePolicy, Owner> consumer) {
+        super.own(consumer);
         if (paths != null) {
+            List<ServicePath> newPaths = new ArrayList<>(paths.size());
             for (ServicePath path : paths) {
                 path.own(consumer);
-            }
-        }
-    }
-
-    /**
-     * Recycles the service group by removing paths that no longer have any owners.
-     */
-    protected void recycle() {
-        if (paths != null) {
-            List<ServicePath> targets = new ArrayList<>(paths.size());
-            for (ServicePath path : paths) {
-                if (!path.getOwners().isEmpty()) {
-                    path.recycle();
-                    targets.add(path);
+                if (path.owners.hasOwner()) {
+                    newPaths.add(path);
                 }
             }
-            paths = targets;
+            if (newPaths.size() != paths.size()) {
+                paths = newPaths;
+                pathCache.clear();
+            }
         }
     }
 
@@ -197,6 +181,7 @@ public class ServiceGroup extends ServicePolicyOwner {
         result.tags = tags == null ? null : new HashMap<>(tags);
         result.name = name;
         result.serviceType = serviceType;
+        result.servicePolicy = servicePolicy == null ? null : servicePolicy.clone();
         result.defaultGroup = defaultGroup;
         result.paths = paths == null ? null : new ArrayList<>(paths.size());
         if (paths != null) {
@@ -209,48 +194,43 @@ public class ServiceGroup extends ServicePolicyOwner {
     }
 
     /**
-     * Merges this service group with another, applying the specified consumer to merge service policies.
+     * Updates the current service group with the provided service group, using the specified policy merger and owner.
+     * This method will handle the addition, update, or deletion of service paths as needed.
      *
-     * @param group    The service group to merge with.
-     * @param consumer A consumer that defines how to merge service policies.
-     * @param owner    The owner initiating the merge.
+     * @param group The service group containing the updates.
+     * @param merger The policy merger to handle the merging logic.
+     * @param owner The owner of the service group.
      */
-    protected void merge(ServiceGroup group, BiConsumer<ServicePolicy, ServicePolicy> consumer, String owner) {
-        if (group == null) {
-            return;
-        }
-        merge(group.servicePolicy, consumer);
-        owners.addOwner(owner);
-        if (paths == null || paths.isEmpty()) {
-            paths = group.paths;
-            pathCache.clear();
-        } else {
-            List<ServicePath> targets = new ArrayList<>();
-            for (ServicePath oldPath : paths) {
-                Owner pathOwner = oldPath.getOwners();
-                ServicePath newPath = group.pathCache.get(oldPath.getPath());
-                if (newPath == null) {
-                    oldPath.own(o -> o.removeOwner(owner));
-                    oldPath.recycle();
-                    if (!pathOwner.isEmpty()) {
-                        targets.add(oldPath);
+    protected void onUpdate(ServiceGroup group, PolicyMerger merger, String owner) {
+        onUpdate(group.servicePolicy, merger, owner);
+        List<ServicePath> targets = new ArrayList<>();
+        Set<String> olds = new HashSet<>();
+        if (paths != null) {
+            for (ServicePath old : paths) {
+                olds.add(old.getPath());
+                // Must use group.pathCache to get path
+                ServicePath update = group.pathCache.get(old.getPath());
+                if (update == null) {
+                    if (old.onDelete(merger, owner)) {
+                        targets.add(old);
                     }
                 } else {
-                    pathOwner.addOwner(owner);
-                    oldPath.merge(newPath, consumer, owner);
-                    targets.add(oldPath);
+                    old.onUpdate(update, merger, owner);
+                    targets.add(old);
                 }
             }
-            for (ServicePath newPath : group.paths) {
-                ServicePath oldPath = pathCache.get(newPath.getPath());
-                if (oldPath == null) {
-                    targets.add(newPath);
-                }
-            }
-            paths = targets;
-            pathCache.clear();
-            group.paths.clear();
         }
+        if (group.paths != null) {
+            for (ServicePath update : group.paths) {
+                if (!olds.contains(update.getPath())) {
+                    update.onAdd(merger, owner);
+                    targets.add(update);
+                }
+            }
+        }
+        paths = targets;
+        pathCache.clear();
+        group.pathCache.clear();
     }
 
     protected void setServiceType(ServiceType serviceType) {

@@ -27,16 +27,13 @@ import com.jd.live.agent.governance.policy.live.LiveDomain;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.live.UnitDomain;
+import com.jd.live.agent.governance.policy.service.PolicyMerger;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.ServiceOp;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.*;
 
 /**
  * Represents the governance policy for managing resources and configurations.
@@ -224,45 +221,70 @@ public class GovernancePolicy {
     }
 
     /**
-     * Updates an existing service by name with the provided service details or adds a new service if no matching service is found.
+     * Updates services, using the specified policy merger and owner.
      *
-     * @param name     the name of the service to update
-     * @param service  the new service details to merge with the existing service or to add if not found
-     * @param consumer a {@code BiConsumer} that defines how to merge the service policies of the existing and new services
-     * @param owner    the owner to set for a new or updated service
-     * @return a list of services with the updated or newly added service
+     * @param updates The list of services to update the current services with.
+     * @param merger The policy merger to handle the merging logic.
+     * @param owner The owner of the services.
+     * @return The updated list of services.
      */
-    public List<Service> update(String name,
-                                Service service,
-                                BiConsumer<ServicePolicy, ServicePolicy> consumer,
-                                String owner) {
+    public List<Service> onUpdate(List<Service> updates, Set<String> deletes, PolicyMerger merger, String owner) {
         List<Service> result = new ArrayList<>();
-        Service oldService = null;
+        Map<String, Service> updateMap = new HashMap<>(updates.size());
+        updates.forEach(o -> updateMap.put(o.getName(), o));
+        Set<String> olds = new HashSet<>();
         if (services != null) {
             for (Service old : services) {
-                if (old.getName().equals(name)) {
-                    oldService = old;
+                olds.add(old.getName());
+                Service update = updateMap.get(old.getName());
+                if (update == null) {
+                    if (deletes == null || !deletes.contains(old.getName())) {
+                        result.add(old);
+                    } else {
+                        // Delete
+                        if (ServiceOp.onDelete(old, merger, owner)) {
+                            result.add(old);
+                        }
+                    }
                 } else {
+                    // Update
+                    ServiceOp.onUpdate(old, update, merger, owner);
                     result.add(old);
                 }
             }
         }
-        if (service != null && oldService == null) {
-            service.own(o -> o.own(owner));
-            result.add(service);
-        } else if (service != null) {
-            service.own(o -> o.own(owner));
-            Service merge = oldService.copy();
-            merge.merge(service, consumer, owner);
-            result.add(merge);
-        } else if (oldService != null) {
-            Service merge = oldService.copy();
-            merge.merge(null, consumer, owner);
-            if (!merge.getOwners().isEmpty()) {
-                result.add(merge);
+        for (Service update : updates) {
+            if (!olds.contains(update.getName())) {
+                // Add
+                ServiceOp.onAdd(update, merger, owner);
+                result.add(update);
             }
         }
         return result;
+    }
+
+    /**
+     * Updates the service, using the specified policy merger and owner.
+     *
+     * @param service The service to update the current services with.
+     * @param merger  The policy merger to handle the merging logic.
+     * @param owner   The owner of the services.
+     * @return The updated list of services.
+     */
+    public List<Service> onUpdate(Service service, PolicyMerger merger, String owner) {
+        return onUpdate(Collections.singletonList(service), null, merger, owner);
+    }
+
+    /**
+     * Delete the service, using the specified policy merger and owner.
+     *
+     * @param name   The service name to delete.
+     * @param merger The policy merger to handle the merging logic.
+     * @param owner  The owner of the services.
+     * @return The updated list of services.
+     */
+    public List<Service> onDelete(String name, PolicyMerger merger, String owner) {
+        return onUpdate(new ArrayList<>(), Collections.singleton(name), merger, owner);
     }
 
     /**

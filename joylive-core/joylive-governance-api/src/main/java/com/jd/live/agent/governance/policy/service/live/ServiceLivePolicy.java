@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy.service.live;
 
 import com.jd.live.agent.core.parser.json.DeserializeConverter;
+import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
@@ -47,6 +48,7 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
      */
     @Getter
     @Setter
+    @JsonAlias("writeProtected")
     private Boolean writeProtect;
 
     /**

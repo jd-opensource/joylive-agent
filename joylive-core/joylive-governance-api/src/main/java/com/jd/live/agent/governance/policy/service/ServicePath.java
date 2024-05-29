@@ -25,7 +25,6 @@ import lombok.Setter;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Represents a service path within a service architecture.
@@ -90,34 +89,21 @@ public class ServicePath extends ServicePolicyOwner implements Path {
         methods.add(method);
     }
 
-    /**
-     * Applies the provided consumer to the owners of this path and each associated service method.
-     *
-     * @param consumer The consumer that operates on the owners.
-     */
-    protected void own(Consumer<Owner> consumer) {
-        if (consumer != null) {
-            consumer.accept(owners);
-        }
+    @Override
+    protected void own(BiConsumer<ServicePolicy, Owner> consumer) {
+        super.own(consumer);
         if (methods != null) {
+            List<ServiceMethod> newMethods = new ArrayList<>(methods.size());
             for (ServiceMethod method : methods) {
                 method.own(consumer);
-            }
-        }
-    }
-
-    /**
-     * Removes service methods that have no owners.
-     */
-    protected void recycle() {
-        if (methods != null) {
-            List<ServiceMethod> targets = new ArrayList<>(methods.size());
-            for (ServiceMethod method : methods) {
-                if (!method.getOwners().isEmpty()) {
-                    targets.add(method);
+                if (method.owners.hasOwner()) {
+                    newMethods.add(method);
                 }
             }
-            methods = targets;
+            if (newMethods.size() != methods.size()) {
+                methods = newMethods;
+                methodCache.clear();
+            }
         }
     }
 
@@ -129,6 +115,7 @@ public class ServicePath extends ServicePolicyOwner implements Path {
         result.path = path;
         result.serviceType = serviceType;
         result.matchType = matchType;
+        result.servicePolicy = servicePolicy == null ? null : servicePolicy.clone();
         result.methods = methods == null ? null : new ArrayList<>(methods.size());
         if (methods != null) {
             for (ServiceMethod path : methods) {
@@ -140,47 +127,42 @@ public class ServicePath extends ServicePolicyOwner implements Path {
     }
 
     /**
-     * Merges another ServicePath into this one using a given policy consumer and owner identifier.
+     * Updates the current service path with the provided service path, using the specified policy merger and owner.
+     * This method will handle the addition, update, or deletion of service methods as needed.
      *
-     * @param path     The ServicePath to merge into this one.
-     * @param consumer The policy consumer that defines how service policies are merged.
-     * @param owner    The identifier of the owner to be added to the merged methods.
+     * @param path The service path containing the updates.
+     * @param merger The policy merger to handle the merging logic.
+     * @param owner The owner of the service path.
      */
-    protected void merge(ServicePath path, BiConsumer<ServicePolicy, ServicePolicy> consumer, String owner) {
-        if (path == null) {
-            return;
-        }
-        merge(path.servicePolicy, consumer);
-        this.owners.addOwner(owner);
-        if (methods == null || methods.isEmpty()) {
-            methods = path.methods;
-            methodCache.clear();
-        } else {
-            List<ServiceMethod> targets = new ArrayList<>();
-            for (ServiceMethod oldMethod : methods) {
-                Owner methodOwner = oldMethod.getOwners();
-                ServiceMethod newMethod = path.methodCache.get(oldMethod.getName());
-                if (newMethod == null) {
-                    oldMethod.own(o -> o.removeOwner(owner));
-                    if (!methodOwner.isEmpty()) {
-                        targets.add(oldMethod);
+    protected void onUpdate(ServicePath path, PolicyMerger merger, String owner) {
+        onUpdate(path.servicePolicy, merger, owner);
+        List<ServiceMethod> targets = new ArrayList<>();
+        Set<String> olds = new HashSet<>();
+        if (methods != null) {
+            for (ServiceMethod old : methods) {
+                olds.add(old.getName());
+                ServiceMethod update = path.getMethod(old.getName());
+                if (update == null) {
+                    if (old.onDelete(merger, owner)) {
+                        targets.add(old);
                     }
                 } else {
-                    methodOwner.addOwner(owner);
-                    oldMethod.merge(newMethod.servicePolicy, consumer);
-                    targets.add(oldMethod);
+                    old.onUpdate(update.getServicePolicy(), merger, owner);
+                    targets.add(old);
                 }
             }
-            for (ServiceMethod newMethod : path.methods) {
-                ServiceMethod oldMethod = methodCache.get(newMethod.getName());
-                if (oldMethod == null) {
-                    targets.add(newMethod);
-                }
-            }
-            methods = targets;
-            methodCache.clear();
-            path.methodCache.clear();
         }
+        if (path.methods != null) {
+            for (ServiceMethod update : path.methods) {
+                if (!olds.contains(update.getName())) {
+                    update.onAdd(merger, owner);
+                    targets.add(update);
+                }
+            }
+        }
+        methods = targets;
+        methodCache.clear();
+        path.methodCache.clear();
     }
 
     protected void setServiceType(ServiceType serviceType) {

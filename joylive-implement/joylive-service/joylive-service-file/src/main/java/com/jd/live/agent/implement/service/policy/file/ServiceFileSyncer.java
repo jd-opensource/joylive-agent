@@ -34,26 +34,23 @@ import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.implement.service.policy.file.config.ServiceSyncConfig;
 
 import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * PolicyService
- *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * ServiceFileSyncer
  */
 @Injectable
-@Extension("LiveSpaceFileSyncer")
+@Extension("ServiceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "file")
-public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
+public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
-    private static final Logger logger = LoggerFactory.getLogger(MicroServiceFileSyncer.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServiceFileSyncer.class);
 
     private static final String CONFIG_MICROSERVICE = "microservice.json";
 
@@ -64,13 +61,15 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     protected Publisher<PolicySubscriber> publisher;
 
     @Config(SyncConfig.SYNC_MICROSERVICE)
-    private SyncConfig syncConfig = new SyncConfig();
+    private ServiceSyncConfig syncConfig = new ServiceSyncConfig();
 
     private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
 
     private final EventHandler<PolicySubscriber> handler = this::onEvent;
 
     private final AtomicBoolean loaded = new AtomicBoolean();
+
+    private Map<String, Long> versions = new HashMap<>();
 
     @Override
     protected String getName() {
@@ -109,7 +108,28 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     @Override
     protected boolean updateOnce(List<Service> services, FileDigest meta) {
-        if (policySupervisor.update(policy -> newPolicy(services, policy))) {
+        List<Service> updates = new ArrayList<>();
+        Set<String> deletes = new HashSet<>();
+        Map<String, Long> newVersions = new HashMap<>();
+        // AddOrUpdate
+        if (services != null && !services.isEmpty()) {
+            for (Service service : services) {
+                newVersions.put(service.getName(), service.getVersion());
+                long oldVersion = versions.getOrDefault(service.getName(), -1L);
+                if (service.getVersion() > oldVersion) {
+                    updates.add(service);
+                }
+            }
+        }
+        // Remove
+        for (String name : versions.keySet()) {
+            if (!newVersions.containsKey(name)) {
+                deletes.add(name);
+            }
+        }
+
+        if (policySupervisor.update(policy -> newPolicy(updates, deletes, policy))) {
+            versions = newVersions;
             logger.info("Success synchronizing file " + file.getPath());
             onLoaded();
             return true;
@@ -117,12 +137,9 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
         return false;
     }
 
-    private GovernancePolicy newPolicy(List<Service> services, GovernancePolicy policy) {
-        if (services != null) {
-            services.forEach(s -> s.own(o -> o.own(getName())));
-        }
+    private GovernancePolicy newPolicy(List<Service> updates, Set<String> deletes, GovernancePolicy policy) {
         GovernancePolicy result = policy == null ? new GovernancePolicy() : policy.copy();
-        result.setServices(services);
+        result.setServices(result.onUpdate(updates, deletes, syncConfig.getPolicy(), getName()));
         return result;
     }
 
@@ -158,5 +175,4 @@ public class MicroServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
             }
         }
     }
-
 }
