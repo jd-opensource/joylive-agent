@@ -272,8 +272,9 @@ public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
                                                  CandidateBuilder builder,
                                                  List<Unit> units) {
         Election result = new Election();
-        Unit localUnit = targetRoute != null ? targetRoute.getUnit() : liveMetadata.getCurrentUnit();
-        Candidate localCandidate = targetRoute != null ? builder.build(targetRoute) : builder.build(localUnit);
+        Unit localUnit = liveMetadata.getCurrentUnit() != null ? liveMetadata.getCurrentUnit() : null;
+        localUnit = localUnit == null && targetRoute != null ? targetRoute.getUnit() : localUnit;
+        Candidate localCandidate = builder.build(localUnit);
         result.add(localCandidate, Candidate::isAvailable);
         int random = ThreadLocalRandom.current().nextInt(units.size());
         int i = random;
@@ -303,7 +304,9 @@ public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
      */
     private Election getPreferUnitsWithCenter(LiveMetadata liveMetadata, UnitRoute targetRoute, CandidateBuilder builder) {
         Election result = new Election();
-        Candidate local = builder.build(targetRoute != null ? targetRoute.getUnit() : liveMetadata.getCurrentUnit());
+        Unit unit = liveMetadata.getCurrentUnit() != null ? liveMetadata.getCurrentUnit() : null;
+        unit = unit == null && targetRoute != null ? targetRoute.getUnit() : unit;
+        Candidate local = builder.build(unit);
         Candidate center = builder.build(liveMetadata.getCenterUnit());
         result.add(local, Candidate::isAvailable);
         result.add(center, Candidate::isAvailable);
