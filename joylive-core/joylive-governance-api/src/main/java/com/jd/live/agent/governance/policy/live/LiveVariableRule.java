@@ -27,7 +27,7 @@ public class LiveVariableRule extends PolicyId {
 
     private String value;
 
-    private long ruleId;
+    private String ruleId;
 
     private String ruleName;
 

@@ -85,7 +85,7 @@ public class LiveSpec {
     private final transient Cache<String, Unit> unitCache = new MapCache<>(new ListBuilder<>(() -> units, Unit::getCode));
     private final transient Cache<String, LiveDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LiveDomain::getHost));
     private final transient Cache<String, LiveVariable> variableCache = new MapCache<>(new ListBuilder<>(() -> variables, LiveVariable::getName));
-    private final transient Cache<Long, UnitRule> unitRuleCache = new MapCache<>(new ListBuilder<>(() -> unitRules, rule -> {
+    private final transient Cache<String, UnitRule> unitRuleCache = new MapCache<>(new ListBuilder<>(() -> unitRules, rule -> {
         List<UnitRoute> unitRoutes = rule.getUnitRoutes();
         if (unitRoutes != null) {
             for (UnitRoute unitRoute : unitRoutes) {
@@ -123,7 +123,7 @@ public class LiveSpec {
         return variableCache.get(name);
     }
 
-    public UnitRule getUnitRule(Long id) {
+    public UnitRule getUnitRule(String id) {
         return id == null ? null : unitRuleCache.get(id);
     }
 
@@ -135,7 +135,7 @@ public class LiveSpec {
         getUnit("");
         getDomain("");
         getVariable("");
-        getUnitRule(0L);
+        getUnitRule("");
         getCenter();
         if (units != null) {
             units.forEach(Unit::cache);

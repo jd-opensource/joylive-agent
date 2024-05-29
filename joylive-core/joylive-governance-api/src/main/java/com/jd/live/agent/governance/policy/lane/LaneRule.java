@@ -25,7 +25,7 @@ import java.util.Map;
 @Setter
 public class LaneRule {
 
-    private long id;
+    private String id;
 
     private Map<String, TagGroup> conditions;
 

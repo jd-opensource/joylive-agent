@@ -45,7 +45,7 @@ public class LivePath extends PolicyId implements Path {
     @Getter
     @Setter
     @JsonAlias("unitRuleId")
-    private long ruleId;
+    private String ruleId;
 
     @Getter
     @Setter

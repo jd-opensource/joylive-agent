@@ -74,7 +74,7 @@ public class LiveSpace {
         return spec == null ? null : spec.getVariable(name);
     }
 
-    public UnitRule getUnitRule(Long id) {
+    public UnitRule getUnitRule(String id) {
         return spec == null ? null : spec.getUnitRule(id);
     }
 

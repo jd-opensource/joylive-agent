@@ -28,6 +28,6 @@ public class LanePath implements Path {
 
     private PathMatchType matchType = PathMatchType.PREFIX;
 
-    private long ruleId;
+    private String ruleId;
 
 }

@@ -32,7 +32,7 @@ import java.util.List;
 public class UnitRule {
     @Getter
     @Setter
-    private long id;
+    private String id;
 
     @Getter
     @Setter

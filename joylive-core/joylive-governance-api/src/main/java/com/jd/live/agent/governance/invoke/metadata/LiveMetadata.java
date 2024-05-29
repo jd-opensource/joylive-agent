@@ -43,7 +43,7 @@ public class LiveMetadata {
     /**
      * The unit rule ID applicable to this invocation.
      */
-    private Long unitRuleId;
+    private String unitRuleId;
 
     /**
      * The unit rule applicable to this invocation.

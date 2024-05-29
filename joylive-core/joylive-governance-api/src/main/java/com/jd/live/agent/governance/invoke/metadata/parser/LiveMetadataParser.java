@@ -89,7 +89,7 @@ public class LiveMetadataParser implements LiveParser {
         Unit centerUnit = liveSpace == null ? null : liveSpace.getCenter();
         Unit currentUnit = liveSpace == null ? null : liveSpace.getUnit(application.getLocation().getUnit());
         Cell currentCell = currentUnit == null ? null : currentUnit.getCell(application.getLocation().getCell());
-        Long unitRuleId = parseRuleId(liveConfig.getRuleIdKey());
+        String unitRuleId = parseRuleId(liveConfig.getRuleIdKey());
         UnitRule unitRule = liveSpace == null || unitRuleId == null ? null : liveSpace.getUnitRule(unitRuleId);
         String variable = parseVariable();
         builder.liveConfig(liveConfig).
@@ -118,16 +118,9 @@ public class LiveMetadataParser implements LiveParser {
      * @param key The key used to retrieve the rule ID from the request context.
      * @return The parsed rule ID as a Long, or null if the rule ID is not found or is not a valid number.
      */
-    protected Long parseRuleId(String key) {
+    protected String parseRuleId(String key) {
         Cargo cargo = RequestContext.getCargo(key);
-        String value = cargo == null ? null : cargo.getFirstValue();
-        if (value != null) {
-            try {
-                return Long.valueOf(value);
-            } catch (NumberFormatException ignore) {
-            }
-        }
-        return null;
+        return cargo == null ? null : cargo.getFirstValue();
     }
 
     /**
@@ -234,7 +227,7 @@ public class LiveMetadataParser implements LiveParser {
             String variableName = null;
             String sourceName = null;
             PolicyId policyId = null;
-            Long unitRuleId = null;
+            String unitRuleId = null;
             if (path != null) {
                 policyId = variableRule != null ? variableRule : path;
                 unitRuleId = variableRule != null ? variableRule.getRuleId() : path.getRuleId();
@@ -289,7 +282,7 @@ public class LiveMetadataParser implements LiveParser {
             Carrier carrier = RequestContext.getOrCreate();
             if (unitRule != null) {
                 carrier.setCargo(liveConfig.getSpaceIdKey(), liveSpace.getId());
-                carrier.setCargo(liveConfig.getRuleIdKey(), String.valueOf(unitRule.getId()));
+                carrier.setCargo(liveConfig.getRuleIdKey(), unitRule.getId());
                 carrier.setCargo(liveConfig.getVariableKey(), metadata.getVariable());
             } else {
                 carrier.removeCargo(liveConfig.getSpaceIdKey());

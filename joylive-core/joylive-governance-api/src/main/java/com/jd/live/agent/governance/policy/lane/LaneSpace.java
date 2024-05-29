@@ -45,12 +45,12 @@ public class LaneSpace {
 
     private final transient Cache<String, LaneDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LaneDomain::getHost));
 
-    private final transient Cache<Long, LaneRule> ruleCache = new MapCache<>(new ListBuilder<>(() -> rules, LaneRule::getId));
+    private final transient Cache<String, LaneRule> ruleCache = new MapCache<>(new ListBuilder<>(() -> rules, LaneRule::getId));
 
     @Getter
     private transient Lane defaultLane;
 
-    public LaneRule getLaneRule(Long id) {
+    public LaneRule getLaneRule(String id) {
         return id == null ? null : ruleCache.get(id);
     }
 
@@ -72,7 +72,7 @@ public class LaneSpace {
         }
         getLane("");
         getDomain("");
-        getLaneRule(0L);
+        getLaneRule("");
         if (domains != null) {
             domains.forEach(LaneDomain::cache);
         }

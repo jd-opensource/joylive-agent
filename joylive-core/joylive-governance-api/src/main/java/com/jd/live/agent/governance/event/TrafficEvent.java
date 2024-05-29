@@ -108,7 +108,7 @@ public class TrafficEvent {
     /**
      * The ID of the unit rule associated with the event.
      */
-    private final Long unitRuleId;
+    private final String unitRuleId;
 
     /**
      * The ID of the lane space associated with the event.
@@ -118,7 +118,7 @@ public class TrafficEvent {
     /**
      * The ID of the lane rule associated with the event.
      */
-    private final Long laneRuleId;
+    private final String laneRuleId;
 
     /**
      * The local unit involved in the traffic event.
