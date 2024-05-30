@@ -5,6 +5,28 @@
 
 配置文件支持环境变量占位符
 
+```properties
+app.name=${APPLICATION_NAME}
+app.service.name=${APPLICATION_SERVICE_NAME:${APPLICATION_NAME}}
+app.service.gateway=${APPLICATION_SERVICE_GATEWAY:NONE}
+app.location.region=${APPLICATION_LOCATION_REGION}
+app.location.zone=${APPLICATION_LOCATION_ZONE}
+app.location.liveSpaceId=${APPLICATION_LOCATION_LIVESPACE_ID:${CONFIG_LIVESPACE_ID}}
+app.location.unit=${APPLICATION_LOCATION_UNIT}
+app.location.cell=${APPLICATION_LOCATION_CELL}
+app.location.laneSpaceId=${APPLICATION_LOCATION_LANESPACE_ID}
+app.location.lane=${APPLICATION_LOCATION_LANE}
+```
+
+```yaml
+agent: 
+  switch:
+    live:
+      enabled: ${CONFIG_LIVE_ENABLED:true}
+      dubbo: true
+      sofarpc: true
+```
+
 ### 1.1 环境变量来源
 1. 系统环境变量
 
