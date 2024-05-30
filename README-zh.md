@@ -28,6 +28,10 @@
 
 6. 更多请参考[架构手册](docs/cn/architect.md)
 
+## 关联项目
+
+1. [Joylive-injector](https://github.com/jd-opensource/joylive-injector)，用于云原生场景自动注入多活代理
+
 ## 如何使用
 
 ### 需求
