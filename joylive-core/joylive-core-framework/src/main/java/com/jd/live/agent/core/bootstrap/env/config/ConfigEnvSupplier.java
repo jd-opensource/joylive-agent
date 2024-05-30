@@ -13,18 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.parser.jackson;
+package com.jd.live.agent.core.bootstrap.env.config;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 
-@Extension(value = {ObjectParser.YAML, ObjectParser.YML}, provider = "jackson")
-public class JacksonYamlParser extends AbstractJacksonParser {
+import java.util.Map;
+
+@Injectable
+@Extension("ConfigEnvSupplier")
+public class ConfigEnvSupplier extends AbstractEnvSupplier {
+
+    private static final String RESOURCE_LIVE_AGENT_PROPERTIES = "live-agent.properties";
+
+    public ConfigEnvSupplier() {
+        super(RESOURCE_LIVE_AGENT_PROPERTIES);
+    }
 
     @Override
-    protected JsonFactory createFactory() {
-        return new YAMLFactory();
+    public void process(Map<String, Object> env) {
+        Map<String, Object> map = loadConfigs();
+        if (map != null) {
+            map.forEach(env::putIfAbsent);
+        }
     }
 }

@@ -29,19 +29,40 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 
+/**
+ * AbstractJacksonParser is an abstract class that implements both ConfigParser and ObjectParser.
+ * It provides methods to configure and use an ObjectMapper for JSON parsing and serialization.
+ */
 public abstract class AbstractJacksonParser implements ConfigParser, ObjectParser {
 
+    /**
+     * The ObjectMapper instance used for JSON parsing and serialization.
+     */
     protected ObjectMapper mapper;
 
+    /**
+     * Constructs an AbstractJacksonParser and initializes the ObjectMapper with custom configuration.
+     */
     public AbstractJacksonParser() {
         mapper = configure(new ObjectMapper(createFactory())).registerModules(
                 ObjectMapper.findModules(AbstractJacksonParser.class.getClassLoader()));
     }
 
+    /**
+     * Creates a JsonFactory instance. Subclasses can override this method to provide a custom JsonFactory.
+     *
+     * @return a new JsonFactory instance.
+     */
     protected JsonFactory createFactory() {
         return null;
     }
 
+    /**
+     * Configures the given ObjectMapper with custom settings.
+     *
+     * @param mapper the ObjectMapper to configure.
+     * @return the configured ObjectMapper.
+     */
     protected ObjectMapper configure(ObjectMapper mapper) {
         return mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).
                 setSerializationInclusion(JsonInclude.Include.NON_NULL).

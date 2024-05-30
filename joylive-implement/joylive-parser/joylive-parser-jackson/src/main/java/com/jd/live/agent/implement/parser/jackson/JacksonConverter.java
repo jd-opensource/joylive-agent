@@ -18,9 +18,16 @@ package com.jd.live.agent.implement.parser.jackson;
 import com.fasterxml.jackson.databind.util.StdConverter;
 import com.jd.live.agent.core.parser.json.JsonConverter;
 
+/**
+ * JacksonConverter is a custom converter that extends StdConverter to convert objects of type S to type T.
+ * It uses a provided JsonConverter to perform the actual conversion.
+ *
+ * @param <S> the source type to convert from.
+ * @param <T> the target type to convert to.
+ */
 public class JacksonConverter<S, T> extends StdConverter<S, T> {
 
-    private JsonConverter<S, T> converter;
+    private final JsonConverter<S, T> converter;
 
     public JacksonConverter(JsonConverter<S, T> converter) {
         this.converter = converter;

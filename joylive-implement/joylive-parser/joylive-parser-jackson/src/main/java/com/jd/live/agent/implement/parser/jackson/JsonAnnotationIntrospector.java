@@ -30,8 +30,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+/**
+ * JsonAnnotationIntrospector is a custom JacksonAnnotationIntrospector that provides additional
+ * functionality for handling custom annotations and converters.
+ */
 public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
 
+    /**
+     * A map of custom converters keyed by their respective classes.
+     */
     protected Map<Class<?>, JacksonConverter<?, ?>> converters = new ConcurrentHashMap<>();
 
     @Override
@@ -40,7 +47,18 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
         return converter != null ? converter : super.findDeserializationConverter(a);
     }
 
-    protected <T extends Annotation> JacksonConverter<?, ?> getConverter(Annotated a, Class<T> annotationType, Function<T, Class<?>> func) {
+    /**
+     * Retrieves a custom converter based on the specified annotation type and function.
+     *
+     * @param <T>            the type of the annotation.
+     * @param a              the annotated element.
+     * @param annotationType the class of the annotation to look for.
+     * @param func           a function to extract the converter class from the annotation.
+     * @return the custom converter, or null if none is found.
+     */
+    protected <T extends Annotation> JacksonConverter<?, ?> getConverter(Annotated a,
+                                                                         Class<T> annotationType,
+                                                                         Function<T, Class<?>> func) {
         T annotation = a.getAnnotation(annotationType);
         if (annotation != null) {
             return converters.computeIfAbsent(func.apply(annotation), type -> {
@@ -118,6 +136,12 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
         }
     }
 
+    /**
+     * Retrieves the JSON field name for the given annotated element based on the JsonField annotation.
+     *
+     * @param a the annotated element.
+     * @return the property name, or null if no relevant annotation is found.
+     */
     protected PropertyName getJsonField(Annotated a) {
         JsonField field = a.getAnnotation(JsonField.class);
         if (field != null) {

@@ -106,7 +106,7 @@ public class JExtensionLoader implements ExtensionLoader {
                             // Load class, filtering out those that don't meet the conditions
                             clazz = loadPluginClass(extensible, loader, className);
                             if (clazz != null) {
-                                result.add(createExtension(extensible, clazz, loader));
+                                result.addAll(createExtension(extensible, clazz, loader));
                             }
                         }
                         break;
@@ -132,22 +132,34 @@ public class JExtensionLoader implements ExtensionLoader {
      * @param loader     The class loader to use for loading the extension.
      * @return An {@link ExtensionDesc} object representing the created extension.
      */
-    private <T> ExtensionDesc<T> createExtension(final Class<T> extensible, final Class<T> type, final ClassLoader loader) {
+    private <T> List<ExtensionDesc<T>> createExtension(final Class<T> extensible, final Class<T> type, final ClassLoader loader) {
         // Retrieve annotations from extensible type and extension implementation
         Extensible extensibleAnno = extensible.getAnnotation(Extensible.class);
         Extension extensionAnno = type.getAnnotation(Extension.class);
 
-        // Create a new JExtension instance with the gathered information
-        JExtension<T> e = new JExtension<>(
-                new Name<>(extensible, extensibleAnno == null || isEmpty(extensibleAnno.value()) ? extensible.getName() : extensibleAnno.value()),
-                new Name<>(type, extensionAnno == null || isEmpty(extensionAnno.value()) ? extensible.getName() : extensionAnno.value()),
-                extensionAnno == null || isEmpty(extensionAnno.provider()) ? extensible.getName() : extensionAnno.provider(),
-                extensionAnno != null ? extensionAnno.order() : Short.MAX_VALUE,
-                extensionAnno == null || extensionAnno.singleton(),
-                loader,
-                instantiation,
-                listener);
-        return e;
+        String extensibleName = extensibleAnno == null || isEmpty(extensibleAnno.value()) ? extensible.getSimpleName() : extensibleAnno.value();
+        String[] values = extensionAnno == null ? null : extensionAnno.value();
+        values = values == null || values.length == 0 ? new String[]{extensible.getSimpleName()} : values;
+        Set<String> names = new HashSet<>();
+        for (String value : values) {
+            names.add(isEmpty(value) ? extensible.getSimpleName() : value);
+        }
+
+        List<ExtensionDesc<T>> result = new LinkedList<>();
+        for (String name : names) {
+            // Create a new JExtension instance with the gathered information
+            JExtension<T> ext = new JExtension<>(
+                    new Name<>(extensible, extensibleName),
+                    new Name<>(type, name),
+                    extensionAnno == null || isEmpty(extensionAnno.provider()) ? extensible.getName() : extensionAnno.provider(),
+                    extensionAnno != null ? extensionAnno.order() : Short.MAX_VALUE,
+                    extensionAnno == null || extensionAnno.singleton(),
+                    loader,
+                    instantiation,
+                    listener);
+            result.add(ext);
+        }
+        return result;
     }
 
     protected boolean isEmpty(final String value) {

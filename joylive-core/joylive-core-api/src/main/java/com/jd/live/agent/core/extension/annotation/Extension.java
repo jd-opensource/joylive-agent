@@ -36,7 +36,7 @@ public @interface Extension {
      *
      * @return The type (or name) of the extension.
      */
-    String value() default "";
+    String[] value() default "";
 
     /**
      * Specifies the provider or vendor of the extension. This can be used for informational purposes or to distinguish

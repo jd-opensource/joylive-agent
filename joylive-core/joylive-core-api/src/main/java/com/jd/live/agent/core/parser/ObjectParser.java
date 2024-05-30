@@ -36,6 +36,11 @@ public interface ObjectParser {
     String YAML = "yaml";
 
     /**
+     * Represents the identifier for YAML format.
+     */
+    String YML = "yml";
+
+    /**
      * Represents the identifier for JSON format.
      */
     String JSON = "json";

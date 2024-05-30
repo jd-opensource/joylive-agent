@@ -1,2 +1,2 @@
-com.jd.live.agent.core.bootstrap.spring.SpringEnvSupplier
-com.jd.live.agent.core.bootstrap.config.ConfigEnvSupplier
+com.jd.live.agent.core.bootstrap.env.spring.SpringEnvSupplier
+com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier

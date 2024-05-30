@@ -19,6 +19,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.lang.reflect.Type;
 
+/**
+ * SimpleTypeReference is a custom implementation of TypeReference that allows specifying a custom Type.
+ * It provides a way to work with generic type information during JSON serialization and deserialization.
+ */
 public class SimpleTypeReference extends TypeReference<Object> {
 
     protected final Type type;
