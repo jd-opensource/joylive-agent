@@ -54,6 +54,7 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
 import com.jd.live.agent.core.service.ServiceManager;
+import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.option.CascadeOption;
@@ -481,6 +482,8 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(AgentPath.COMPONENT_AGENT_PATH, agentPath);
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
+                //
+                ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, (ServiceSupervisor) () -> serviceManager.getServices());
                 ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());

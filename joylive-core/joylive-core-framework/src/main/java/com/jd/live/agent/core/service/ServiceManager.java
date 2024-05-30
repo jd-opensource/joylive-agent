@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 @Injectable
-public class ServiceManager implements AgentService {
+public class ServiceManager implements AgentService, ServiceSupervisor {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
@@ -54,6 +54,11 @@ public class ServiceManager implements AgentService {
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<AgentService> services;
+
+    @Override
+    public List<AgentService> getServices() {
+        return services;
+    }
 
     @Override
     public CompletableFuture<Void> start() {

@@ -32,7 +32,9 @@ import com.jd.live.agent.core.service.file.FileDigest;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
+import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
+import com.jd.live.agent.governance.service.PolicyService;
 
 import java.io.InputStreamReader;
 import java.util.List;
@@ -46,7 +48,7 @@ import java.util.List;
 @Extension("LaneSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "file")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
+public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> implements PolicyService {
 
     private static final Logger logger = LoggerFactory.getLogger(LaneSpaceFileSyncer.class);
 
@@ -69,7 +71,12 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
     }
 
     @Override
-    protected String getName() {
+    public PolicyType getPolicyType() {
+        return PolicyType.LANE_SPACE;
+    }
+
+    @Override
+    public String getName() {
         return "lane-syncer";
     }
 

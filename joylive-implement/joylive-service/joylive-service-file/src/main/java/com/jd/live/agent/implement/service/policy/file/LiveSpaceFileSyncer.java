@@ -32,7 +32,9 @@ import com.jd.live.agent.core.service.file.FileDigest;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
+import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.service.PolicyService;
 
 import java.io.InputStreamReader;
 import java.util.List;
@@ -46,7 +48,7 @@ import java.util.List;
 @Extension("LiveSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "file")
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
+public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> implements PolicyService {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveSpaceFileSyncer.class);
 
@@ -69,7 +71,12 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
     }
 
     @Override
-    protected String getName() {
+    public PolicyType getPolicyType() {
+        return PolicyType.LIVE_SPACE;
+    }
+
+    @Override
+    public String getName() {
         return "live-syncer";
     }
 

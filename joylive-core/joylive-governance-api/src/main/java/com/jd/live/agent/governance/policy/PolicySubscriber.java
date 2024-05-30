@@ -17,8 +17,13 @@ package com.jd.live.agent.governance.policy;
 
 import lombok.Getter;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * Represents a subscriber to a policy, encapsulating the subscription details and providing mechanisms to track
@@ -34,6 +39,10 @@ public class PolicySubscriber {
 
     private final PolicyType type;
 
+    private final Map<String, AtomicBoolean> states;
+
+    private final AtomicInteger counter;
+
     private final CompletableFuture<Void> future = new CompletableFuture<>();
 
     /**
@@ -41,33 +50,37 @@ public class PolicySubscriber {
      *
      * @param name      The name of the subscriber.
      * @param namespace The namespace of the subscriber.
-     * @param type      The type of policy the subscriber is interested in.
+     * @param type      The type of the subscriber.
+     * @param owners    The owner of the subscriber.
      */
-    public PolicySubscriber(String name, String namespace, PolicyType type) {
+    public PolicySubscriber(String name, String namespace, PolicyType type, List<String> owners) {
         this.name = name;
         this.namespace = namespace;
         this.type = type;
+        this.states = owners == null || owners.isEmpty() ? null
+                : owners.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));
+        this.counter = states == null ? null : new AtomicInteger(states.size());
     }
 
     /**
      * Marks the subscription process as complete successfully. This method completes the associated future
      * normally, indicating that the subscription process has finished without errors.
+     *
+     * @param owner The owner whose subscription process is marked as complete.
+     * @return {@code true} if the completion was successful, {@code false} otherwise.
      */
-    public boolean complete() {
-        if (!isDone()) {
+    public boolean complete(String owner) {
+        if (states == null) {
             return future.complete(null);
         }
+        AtomicBoolean done = owner == null ? null : states.get(owner);
+        if (done != null && done.compareAndSet(false, true)) {
+            if (counter.decrementAndGet() == 0) {
+                future.complete(null);
+            }
+            return true;
+        }
         return false;
-    }
-
-    /**
-     * Checks if the subscription process is complete.
-     *
-     * @return {@code true} if the subscription process has completed (either normally or exceptionally),
-     *         {@code false} otherwise.
-     */
-    public boolean isDone() {
-        return future.isDone();
     }
 
     /**
@@ -76,9 +89,14 @@ public class PolicySubscriber {
      *
      * @param ex The exception to complete the future with, representing the error that occurred during the
      *           subscription process.
+     * @return {@code true} if the future was completed exceptionally, {@code false} otherwise.
      */
     public boolean completeExceptionally(Throwable ex) {
-        return future.completeExceptionally(ex);
+        boolean result = future.completeExceptionally(ex);
+        if (result && states != null) {
+            states.forEach((key, value) -> value.compareAndSet(false, true));
+        }
+        return result;
     }
 
     /**

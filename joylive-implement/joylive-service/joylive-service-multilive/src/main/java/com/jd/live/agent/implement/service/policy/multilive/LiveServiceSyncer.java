@@ -45,6 +45,7 @@ import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 import com.jd.live.agent.implement.service.policy.multilive.reponse.Error;
 import com.jd.live.agent.implement.service.policy.multilive.reponse.Response;
@@ -69,7 +70,7 @@ import java.util.function.Predicate;
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveServiceSyncer extends AbstractService implements ExtensionInitializer {
+public class LiveServiceSyncer extends AbstractService implements PolicyService, ExtensionInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveServiceSyncer.class);
 
@@ -109,12 +110,17 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
     private Template template;
 
     @Override
+    public PolicyType getPolicyType() {
+        return PolicyType.SERVICE_POLICY;
+    }
+
+    @Override
     public void initialize() {
         template = new Template(syncConfig.getServiceUrl());
     }
 
     @Override
-    protected String getName() {
+    public String getName() {
         return "live-service-syncer";
     }
 
@@ -195,7 +201,7 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
     private void onOk(PolicySubscriber subscriber, Service service, ServiceSyncMeta meta) {
         if (update(subscriber.getName(), service)) {
             meta.version = service.getVersion();
-            subscriber.complete();
+            subscriber.complete(getName());
             logger.info(meta.getSuccessMessage(HttpStatus.OK));
         }
     }
@@ -207,7 +213,7 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
      * @param meta the service synchronization metadata.
      */
     private void onNotModified(PolicySubscriber subscriber, ServiceSyncMeta meta) {
-        subscriber.complete();
+        subscriber.complete(getName());
         if (meta.shouldPrint()) {
             logger.info(meta.getSuccessMessage(HttpStatus.NOT_MODIFIED));
         }
@@ -224,10 +230,10 @@ public class LiveServiceSyncer extends AbstractService implements ExtensionIniti
             if (update(subscriber.getName(), null)) {
                 // Retry from version 0 after data is recovered.
                 meta.version = 0;
-                subscriber.complete();
+                subscriber.complete(getName());
                 logger.info(meta.getSuccessMessage(HttpStatus.NOT_FOUND));
             }
-        } else if (subscriber.complete()) {
+        } else if (subscriber.complete(getName())) {
             logger.info(meta.getSuccessMessage(HttpStatus.NOT_FOUND));
         } else if (meta.shouldPrint()) {
             logger.info(meta.getSuccessMessage(HttpStatus.NOT_FOUND));

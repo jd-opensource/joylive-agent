@@ -34,6 +34,7 @@ import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.implement.service.policy.file.config.ServiceSyncConfig;
 
 import java.io.InputStreamReader;
@@ -48,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Injectable
 @Extension("ServiceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "file")
-public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
+public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> implements PolicyService {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceFileSyncer.class);
 
@@ -72,7 +73,12 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     private Map<String, Long> versions = new HashMap<>();
 
     @Override
-    protected String getName() {
+    public PolicyType getPolicyType() {
+        return PolicyType.SERVICE_POLICY;
+    }
+
+    @Override
+    public String getName() {
         return "service-syncer";
     }
 
@@ -146,7 +152,7 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     private void onLoaded() {
         if (loaded.compareAndSet(false, true)) {
             for (PolicySubscriber subscriber : subscribers.values()) {
-                subscriber.complete();
+                subscriber.complete(getName());
             }
         }
     }
@@ -162,11 +168,11 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
             } else {
                 PolicySubscriber old = subscribers.putIfAbsent(subscriber.getName(), subscriber);
                 if (loaded.get()) {
-                    subscriber.complete();
+                    subscriber.complete(getName());
                 } else if (old != null && old != subscriber) {
                     old.trigger((v, t) -> {
                         if (t == null) {
-                            subscriber.complete();
+                            subscriber.complete(getName());
                         } else {
                             subscriber.completeExceptionally(t);
                         }
