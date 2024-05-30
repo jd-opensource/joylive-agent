@@ -96,7 +96,6 @@
           "clusterPolicy": {
             "type": "failover",
             "retryPolicy": {
-              "type": "Resilience4j",
               "retry": 10,
               "retryInterval": 1000,
               "timeout": 5000,
@@ -106,8 +105,7 @@
               ],
               "retryExceptions": [
                 "java.lang.NullPointException"
-              ],
-              "version": 1704038400000
+              ]
             }
           },
           "rateLimitPolicies": [
