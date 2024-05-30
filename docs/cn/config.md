@@ -32,6 +32,36 @@ public interface EnvSupplier {
 }
 ```
 
+```mermaid
+classDiagram
+direction BT
+class AbstractEnvSupplier {
+  # loadConfigs() Map~String, Object~
+  # loadConfigs(String, String) Map~String, Object~
+  # parse(InputStream, ConfigParser) Map~String, Object~
+  + AbstractEnvSupplier(String[]) 
+}
+class ConfigEnvSupplier {
+  + process(Map~String, Object~) void
+  + ConfigEnvSupplier() 
+}
+class EnvSupplier {
+<<Interface>>
+  + process(Map~String, Object~) void
+}
+class SpringEnvSupplier {
+  + process(Map~String, Object~) void
+  + SpringEnvSupplier() 
+}
+
+AbstractEnvSupplier  ..>  EnvSupplier 
+ConfigEnvSupplier  -->  AbstractEnvSupplier 
+SpringEnvSupplier  -->  AbstractEnvSupplier 
+
+```
+1. ConfigEnvSupplier从应用资源路径加载`live-agent.properties`
+2. SpringEnvSupplier从应用资源路径加载应用名称
+
 ### 1.2 常用环境变量
 
 | 名称                              | 说明               | 必需 | 默认值    | 说明                                                     |

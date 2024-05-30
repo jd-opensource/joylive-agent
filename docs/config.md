@@ -32,6 +32,36 @@ public interface EnvSupplier {
 }
 ```
 
+```mermaid
+classDiagram
+direction BT
+class AbstractEnvSupplier {
+  # loadConfigs() Map~String, Object~
+  # loadConfigs(String, String) Map~String, Object~
+  # parse(InputStream, ConfigParser) Map~String, Object~
+  + AbstractEnvSupplier(String[]) 
+}
+class ConfigEnvSupplier {
+  + process(Map~String, Object~) void
+  + ConfigEnvSupplier() 
+}
+class EnvSupplier {
+<<Interface>>
+  + process(Map~String, Object~) void
+}
+class SpringEnvSupplier {
+  + process(Map~String, Object~) void
+  + SpringEnvSupplier() 
+}
+
+AbstractEnvSupplier  ..>  EnvSupplier 
+ConfigEnvSupplier  -->  AbstractEnvSupplier 
+SpringEnvSupplier  -->  AbstractEnvSupplier 
+
+```
+1. `ConfigEnvSupplier` loads `live-agent.properties` from the application resource path.
+2. `SpringEnvSupplier` loads the application name from the application resource path.
+
 ### 1.2 Common Environment Variables
 
 | Name                              | Description        | Required | Default   | Notes                                                     |
