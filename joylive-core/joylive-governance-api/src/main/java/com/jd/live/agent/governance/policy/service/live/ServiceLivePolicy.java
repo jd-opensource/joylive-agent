@@ -154,23 +154,25 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
         }
         if (unitPolicy == null) {
             unitPolicy = source.getUnitPolicy();
+            defaultUnitThreshold = source.getDefaultUnitThreshold();
         }
         if (defaultUnitThreshold == null) {
             defaultUnitThreshold = source.getDefaultUnitThreshold();
         }
         if ((unitRemotes == null || unitRemotes.isEmpty()) && (source.getUnitRemotes() != null && !source.getUnitRemotes().isEmpty())) {
             unitRemotes = unitRemotes == null ? new ArrayList<>() : unitRemotes;
-            unitRemotes.addAll(source.getUnitRemotes());
+            source.getUnitRemotes().forEach(o -> unitRemotes.add(o.clone()));
         }
         if (cellPolicy == null) {
             cellPolicy = source.cellPolicy;
+            defaultCellThreshold = source.getDefaultCellThreshold();
         }
         if (defaultCellThreshold == null) {
             defaultCellThreshold = source.getDefaultCellThreshold();
         }
         if ((cellRemotes == null || cellRemotes.isEmpty()) && (source.getCellRemotes() != null && !source.getCellRemotes().isEmpty())) {
             cellRemotes = cellRemotes == null ? new ArrayList<>() : cellRemotes;
-            cellRemotes.addAll(source.getCellRemotes());
+            source.getCellRemotes().forEach(o -> cellRemotes.add(o.clone()));
         }
     }
 

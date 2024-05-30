@@ -36,7 +36,6 @@ import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.*;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.CellPolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -83,21 +82,26 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
      * @return true if the routing decision was successful and endpoints were set, false otherwise.
      */
     private boolean forward(OutboundInvocation<?> invocation, RouteTarget target) {
+        LiveMetadata liveMetadata = invocation.getLiveMetadata();
+        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
+        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
+        ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
+        CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
+        boolean localFirst = cellPolicy == CellPolicy.PREFER_LOCAL_CELL || cellPolicy == null && serviceConfig.isLocalFirst();
+
         Unit unit = target.getUnit();
+        unit = unit == null && localFirst ? liveMetadata.getCurrentUnit() : unit;
         if (unit == null) {
             return true;
         }
-        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
-        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
-        ServicePolicy servicePolicy = serviceMetadata.getServicePolicy();
-        ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
-        CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
-        boolean localFirst = cellPolicy == CellPolicy.PREFER_LOCAL_CELL || cellPolicy == null && serviceConfig.isLocalFirst();
-        Function<String, Integer> thresholdFunc = cellPolicy == CellPolicy.PREFER_LOCAL_CELL ? livePolicy::getCellThreshold : serviceConfig::getCellFailoverThreshold;
-        UnitRoute unitRoute = target.getUnitRoute();
+        UnitRoute unitRoute = target.getUnitRoute() == null
+                ? liveMetadata.getUnitRule().getUnitRoute(unit.getCode()) : target.getUnitRoute();
         UnitGroup unitGroup = target.getUnitGroup();
         // previous filters may filtrate the endpoints
-        unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints() ? unitGroup : new UnitGroup(unit.getCode(), target.getEndpoints());
+        unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints()
+                ? unitGroup : new UnitGroup(unit.getCode(), target.getEndpoints());
+        Function<String, Integer> thresholdFunc = cellPolicy == CellPolicy.PREFER_LOCAL_CELL
+                ? livePolicy::getCellThreshold : serviceConfig::getCellFailoverThreshold;
         Election election = sponsor(invocation, unitRoute, localFirst, unitGroup, thresholdFunc);
         if (!election.isOver()) {
             randomWeight(election);
@@ -133,8 +137,9 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
      * @return An Election object representing the sponsored election.
      */
     private Election sponsor(OutboundInvocation<?> invocation,
-                               UnitRoute unitRoute, boolean localFirst, UnitGroup unitGroup,
-                               Function<String, Integer> failoverThresholdFunc) {
+                             UnitRoute unitRoute,
+                             boolean localFirst, UnitGroup unitGroup,
+                             Function<String, Integer> failoverThresholdFunc) {
         // Extract necessary information from the invocation metadata.
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         String variable = liveMetadata.getVariable();

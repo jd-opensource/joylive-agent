@@ -18,12 +18,14 @@ package com.jd.live.agent.governance.policy.service.live;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 /**
  * Represents a remote configuration detail for a unit or cell within a distributed system.
  */
 @Getter
 @Setter
-public class RemoteCnd {
+public class RemoteCnd implements Serializable {
 
     /**
      * The name of the remote configuration.
@@ -40,5 +42,14 @@ public class RemoteCnd {
      * A threshold value associated with this remote configuration.
      */
     private int threshold;
+
+    @Override
+    public RemoteCnd clone() {
+        try {
+            return (RemoteCnd) super.clone();
+        } catch (CloneNotSupportedException ignore) {
+            return null;
+        }
+    }
 }
 
