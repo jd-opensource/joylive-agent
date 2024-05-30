@@ -1,9 +1,11 @@
 配置参考手册
 ===
 
-## 1. 环境变量
+## 1. 系统配置文件
 
-配置文件支持环境变量占位符
+## 1.1 bootstrap.properties
+
+存放应用信息和类加载器配置
 
 ```properties
 app.name=${APPLICATION_NAME}
@@ -18,6 +20,10 @@ app.location.laneSpaceId=${APPLICATION_LOCATION_LANESPACE_ID}
 app.location.lane=${APPLICATION_LOCATION_LANE}
 ```
 
+## 1.2 config.yaml
+
+存放增强配置、插件定义以及多活流量治理策略配置
+
 ```yaml
 agent: 
   switch:
@@ -27,7 +33,11 @@ agent:
       sofarpc: true
 ```
 
-### 1.1 环境变量来源
+## 2. 环境变量
+
+配置文件支持环境变量占位符
+
+### 2.1 环境变量来源
 1. 系统环境变量
 
 `System.getenv()`
@@ -81,10 +91,10 @@ ConfigEnvSupplier  -->  AbstractEnvSupplier
 SpringEnvSupplier  -->  AbstractEnvSupplier 
 
 ```
-1. ConfigEnvSupplier从应用资源路径加载`live-agent.properties`
-2. SpringEnvSupplier从应用资源路径加载应用名称
+1. `ConfigEnvSupplier`从应用资源路径加载`live-agent.properties`
+2. `SpringEnvSupplier`从应用资源路径加载应用名称
 
-### 1.2 常用环境变量
+### 2.2 常用环境变量
 
 | 名称                              | 说明               | 必需 | 默认值    | 说明                                                     |
 |-----------------------------------|--------------------|------|-----------|----------------------------------------------------------|

@@ -1,9 +1,11 @@
 Configuration Reference Manual
 ===
 
-## 1. Environment Variables
+## 1. System Configuration Files
 
-The configuration file supports environment variable placeholders.
+## 1.1 bootstrap.properties
+
+Stores application information and class loader configuration.
 
 ```properties
 app.name=${APPLICATION_NAME}
@@ -18,6 +20,10 @@ app.location.laneSpaceId=${APPLICATION_LOCATION_LANESPACE_ID}
 app.location.lane=${APPLICATION_LOCATION_LANE}
 ```
 
+## 1.2 config.yaml
+
+Stores enhanced configuration, plugin definitions, and multi-active traffic governance policy configuration.
+
 ```yaml
 agent: 
   switch:
@@ -27,7 +33,11 @@ agent:
       sofarpc: true
 ```
 
-### 1.1 Sources of Environment Variables
+## 2. Environment Variables
+
+The configuration file supports environment variable placeholders.
+
+### 2.1 Sources of Environment Variables
 1. System Environment Variables
 
 `System.getenv()`
@@ -84,7 +94,7 @@ SpringEnvSupplier  -->  AbstractEnvSupplier
 1. `ConfigEnvSupplier` loads `live-agent.properties` from the application resource path.
 2. `SpringEnvSupplier` loads the application name from the application resource path.
 
-### 1.2 Common Environment Variables
+### 2.2 Common Environment Variables
 
 | Name                              | Description        | Required | Default   | Notes                                                     |
 |-----------------------------------|--------------------|----------|-----------|----------------------------------------------------------|
@@ -102,6 +112,3 @@ SpringEnvSupplier  -->  AbstractEnvSupplier
 | CONFIG_FLOW_CONTROL_ENABLED       | Enable Service Flow Control | No | true  | Enable service flow control, including rate limiting, circuit breaking, load balancing, tag routing, etc. |
 | CONFIG_LANE_ENABLED               | Enable Lane Flow Control | No | true      | Enable lane flow control                                  |
 | CONFIG_WARMUP_SERVICES            | Warmup Services    | No       |           | Configure the names of microservices to warm up, separated by semicolons or commas |
-```
-
-
