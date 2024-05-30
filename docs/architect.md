@@ -16,3 +16,7 @@ See [Plugin System](plugin.md)
 ## 4. Link Transmission
 
 See [Link Transmission](transmission.md)
+
+## 5. Service Governance Model
+
+See [Service Governance Model](governance.md)
