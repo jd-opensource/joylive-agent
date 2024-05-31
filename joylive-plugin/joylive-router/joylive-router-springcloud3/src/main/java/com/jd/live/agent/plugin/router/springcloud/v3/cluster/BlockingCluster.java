@@ -33,7 +33,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,9 +58,11 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
 
-    private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
+    private static final String FIELD_LOAD_BALANCER = "loadBalancer";
 
     private static final String FIELD_REQUEST_FACTORY = "requestFactory";
+
+    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
 
     /**
      * An interceptor for HTTP requests, used to apply additional processing or modification
@@ -93,10 +94,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         this.interceptor = interceptor;
         ClassDesc describe = ClassUtils.describe(interceptor.getClass());
         FieldList fieldList = describe.getFieldList();
-        FieldDesc field = fieldList.getField(FIELD_REQUEST_FACTORY);
-        this.requestFactory = (LoadBalancerRequestFactory) (field == null ? null : field.get(interceptor));
-        field = fieldList.getField(FIELD_LOAD_BALANCER_FACTORY);
-        this.loadBalancerFactory = (ReactiveLoadBalancer.Factory<ServiceInstance>) (field == null ? null : field.get(interceptor));
+        this.requestFactory = (LoadBalancerRequestFactory) fieldList.getField(FIELD_REQUEST_FACTORY).get(interceptor);
+        LoadBalancerClient client = (LoadBalancerClient) fieldList.getField(FIELD_LOAD_BALANCER).get(interceptor);
+        FieldDesc field = ClassUtils.describe(client.getClass()).getFieldList().getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+        this.loadBalancerFactory = (ReactiveLoadBalancer.Factory<ServiceInstance>) field.get(client);
     }
 
     public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
@@ -134,20 +135,26 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(BlockingClusterResponse response, BlockingClusterRequest request, SpringEndpoint endpoint) {
+        ClientHttpResponse httpResponse = response.getResponse();
+        Object res = httpResponse;
         try {
-            HttpHeaders responseHeaders = getHttpHeaders(response.getHeaders());
+            HttpHeaders responseHeaders = httpResponse.getHeaders();
             RequestData requestData = request.getRequestData();
-            HttpStatus httpStatus = response.getResponse().getStatusCode();
+            HttpStatus httpStatus = httpResponse.getStatusCode();
+            int rawStatusCode = httpResponse.getRawStatusCode();
             LoadBalancerProperties properties = request.getProperties();
             boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
-            request.lifecycles(l -> l.onComplete(new CompletionContext<>(
-                    CompletionContext.Status.SUCCESS,
-                    request.getLbRequest(),
-                    endpoint.getResponse(),
-                    useRawStatusCodeInResponseData
-                            ? new ResponseData(responseHeaders, null, requestData, httpStatus.value())
-                            : new ResponseData(httpStatus, responseHeaders, null, requestData))));
-        } catch (IOException ignore) {
+            res = useRawStatusCodeInResponseData
+                    ? new ResponseData(responseHeaders, null, requestData, rawStatusCode)
+                    : new ResponseData(httpStatus, responseHeaders, null, requestData);
+        } catch (Throwable ignore) {
         }
+
+        Object clientResponse = res;
+        request.lifecycles(l -> l.onComplete(new CompletionContext<>(
+                CompletionContext.Status.SUCCESS,
+                request.getLbRequest(),
+                endpoint.getResponse(),
+                clientResponse)));
     }
 }

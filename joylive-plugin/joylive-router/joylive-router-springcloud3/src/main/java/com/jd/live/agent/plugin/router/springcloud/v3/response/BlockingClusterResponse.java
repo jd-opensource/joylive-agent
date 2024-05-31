@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
@@ -32,6 +33,7 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
 
     public BlockingClusterResponse(ClientHttpResponse response) {
         super(response, null);
+        this.headers = new LazyObject<>(response.getHeaders());
     }
 
     public BlockingClusterResponse(Throwable throwable) {

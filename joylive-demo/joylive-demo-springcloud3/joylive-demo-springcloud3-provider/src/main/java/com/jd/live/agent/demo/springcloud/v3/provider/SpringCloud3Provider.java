@@ -41,13 +41,15 @@ public class SpringCloud3Provider {
                            @RequestHeader(value = "x-live-uid", required = false) String uid,
                            @RequestHeader(value = "x-lane-space-id", required = false) String laneSpaceId,
                            @RequestHeader(value = "x-lane-code", required = false) String laneCode) {
-            return new StringBuilder("echo:").append(message).append(", header:{").
+            return new StringBuilder().append("spring-provider:").append(message).append('\n').
+                    append("  header:{").
                     append("x-live-space-id=").append(liveSpaceId).
                     append(", x-live-rule-id=").append(ruleId).
                     append(", x-live-uid=").append(uid).
                     append(", x-lane-space-id=").append(laneSpaceId).
                     append(", x-lane-code=").append(laneCode).
-                    append("}, location:{").
+                    append("}\n").
+                    append("  location:{").
                     append("liveSpaceId=").append(System.getProperty("x-live-space-id")).
                     append(", unit=").append(System.getProperty("x-live-unit")).
                     append(", cell=").append(System.getProperty("x-live-cell")).
