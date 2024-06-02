@@ -16,13 +16,12 @@
 package com.jd.live.agent.demo.multilive.controller;
 
 import com.jd.live.agent.core.util.http.HttpStatus;
+import com.jd.live.agent.demo.multilive.entity.Workspace;
 import com.jd.live.agent.demo.multilive.service.LiveService;
 import com.jd.live.agent.demo.multilive.vo.Response;
-import com.jd.live.agent.demo.multilive.entity.Workspace;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.service.Service;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,7 +30,6 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Repository
 @RestController
 public class LiveController {
 

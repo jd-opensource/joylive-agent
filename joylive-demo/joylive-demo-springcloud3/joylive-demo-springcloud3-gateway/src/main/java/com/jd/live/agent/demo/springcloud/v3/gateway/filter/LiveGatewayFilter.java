@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.springcloud.v3.gateway;
+package com.jd.live.agent.demo.springcloud.v3.gateway.filter;
 
+import com.jd.live.agent.demo.util.EchoResponse;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -51,21 +52,8 @@ public class LiveGatewayFilter implements GlobalFilter, Ordered {
                     Flux<? extends DataBuffer> fluxBody = (Flux<? extends DataBuffer>) body;
                     return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
                         HttpHeaders headers = request.getHeaders();
-                        StringBuilder builder = new StringBuilder("spring-gateway:\n").
-                                append("  header:{").
-                                append("x-live-space-id=").append(headers.getFirst("x-live-space-id")).
-                                append(", x-live-rule-id=").append(headers.getFirst("x-live-rule-id")).
-                                append(", x-live-uid=").append(headers.getFirst("x-live-uid")).
-                                append(", x-lane-space-id=").append(headers.getFirst("x-lane-space-id")).
-                                append(", x-lane-code=").append(headers.getFirst("x-lane-code")).
-                                append("}\n").
-                                append("  location:{").
-                                append("liveSpaceId=").append(System.getProperty("x-live-space-id")).
-                                append(", unit=").append(System.getProperty("x-live-unit")).
-                                append(", cell=").append(System.getProperty("x-live-cell")).
-                                append(", laneSpaceId=").append(System.getProperty("x-lane-space-id")).
-                                append(", lane=").append(System.getProperty("x-lane-code")).
-                                append("}\n\n");
+                        EchoResponse echoResponse = new EchoResponse("spring-gateway", "header", headers::getFirst);
+                        StringBuilder builder = new StringBuilder(echoResponse.toString());
                         dataBuffers.forEach(dataBuffer -> {
                             // probably should reuse buffers
                             byte[] content = new byte[dataBuffer.readableByteCount()];

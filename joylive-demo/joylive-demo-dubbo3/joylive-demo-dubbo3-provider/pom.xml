@@ -13,7 +13,7 @@
     <dependencies>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-demo-service</artifactId>
+            <artifactId>joylive-demo-api</artifactId>
             <version>${revision}</version>
         </dependency>
     </dependencies>

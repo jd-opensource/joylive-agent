@@ -15,16 +15,15 @@
  */
 package com.jd.live.agent.demo.multilive.service.impl;
 
+import com.jd.live.agent.demo.multilive.entity.Workspace;
 import com.jd.live.agent.demo.multilive.repository.LiveRepository;
 import com.jd.live.agent.demo.multilive.service.LiveService;
-import com.jd.live.agent.demo.multilive.entity.Workspace;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.service.Service;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
+@org.springframework.stereotype.Service
 public class LiveServiceImpl implements LiveService {
 
     private final LiveRepository liveRepository;

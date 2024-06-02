@@ -18,6 +18,13 @@ spring:
   application:
     name: dubbo3-consumer
 
+live:
+  live-space-id: v4bEh4kd6Jvu5QBX09qYq-qlbcs
+  rule-id: 1003
+  uid: unit1
+  lane-space-id:
+  lane-code:
+
 dubbo:
   application:
     name: ${spring.application.name}

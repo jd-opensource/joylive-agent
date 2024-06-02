@@ -42,6 +42,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-demo-api</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
             <version>${netty.version}</version>

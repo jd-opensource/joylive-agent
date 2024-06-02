@@ -17,14 +17,14 @@ package com.jd.live.agent.demo.multilive.repository.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jd.live.agent.demo.multilive.repository.LiveRepository;
 import com.jd.live.agent.demo.multilive.entity.Workspace;
+import com.jd.live.agent.demo.multilive.repository.LiveRepository;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.service.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Component
+@Repository
 public class FileLiveRepository implements LiveRepository {
 
     private final Logger logger = LoggerFactory.getLogger(FileLiveRepository.class);

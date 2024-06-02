@@ -6,6 +6,13 @@ spring:
   cloud:
     gateway:
       routes:
+        - id: rocketmq
+          uri: lb://service-rocketmq
+          predicates:
+            - Path=/service-rocketmq/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
         - id: consumer
           uri: lb://service-consumer
           predicates:

@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.service.impl;
+package com.jd.live.agent.demo.rocketmq;
 
-import com.jd.live.agent.demo.service.HelloService;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-public class HelloServiceImpl implements HelloService {
+@EnableDiscoveryClient
+@SpringBootApplication
+public class RocketmqApplication {
 
-    @Override
-    public String echo(String str) {
-        return attachTag(new StringBuilder("echo:").append(str).append('\n')).toString();
-    }
-
-    protected StringBuilder attachTag(StringBuilder builder) {
-        return builder;
+    public static void main(String[] args) {
+        SpringApplication.run(RocketmqApplication.class, args);
     }
 }

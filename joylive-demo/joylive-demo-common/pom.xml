@@ -13,6 +13,5 @@
     <packaging>pom</packaging>
     <modules>
         <module>joylive-demo-api</module>
-        <module>joylive-demo-service</module>
     </modules>
 </project>
