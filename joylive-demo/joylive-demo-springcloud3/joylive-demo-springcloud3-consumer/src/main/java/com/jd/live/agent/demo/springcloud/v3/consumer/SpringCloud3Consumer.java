@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.consumer;
 
+import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -26,6 +27,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class SpringCloud3Consumer {
 
     public static void main(String[] args) {
+        SnapShotSwitch.setIsSnapShot(false);
         SpringApplication.run(SpringCloud3Consumer.class, args);
     }
 

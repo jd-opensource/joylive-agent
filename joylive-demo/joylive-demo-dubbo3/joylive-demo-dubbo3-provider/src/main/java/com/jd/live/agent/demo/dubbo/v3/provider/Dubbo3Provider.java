@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.dubbo.v3.provider;
 
+import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 @EnableDubbo(scanBasePackages = {"com.jd.live.agent.demo.dubbo.v3.provider.service"})
 public class Dubbo3Provider {
     public static void main(String[] args) throws Exception {
+        SnapShotSwitch.setIsSnapShot(false);
         SpringApplication.run(Dubbo3Provider.class, args);
         System.out.println("dubbo3 provider started");
         new CountDownLatch(1).await();

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.dubbo.v2_7.consumer;
 
+import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -24,6 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class Dubbo27Consumer {
 
     public static void main(String[] args) {
+        SnapShotSwitch.setIsSnapShot(false);
         SpringApplication.run(Dubbo27Consumer.class, args);
     }
 
