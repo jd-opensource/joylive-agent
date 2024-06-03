@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive environment.
+ * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive control plane.
  */
 @Injectable
 @Extension("LiveSpaceSyncer")

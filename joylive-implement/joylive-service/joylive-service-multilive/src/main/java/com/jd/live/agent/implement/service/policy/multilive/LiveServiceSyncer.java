@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 /**
- * LiveServiceSyncer is responsible for synchronizing live service policies from a multilive environment.
+ * LiveServiceSyncer is responsible for synchronizing live service policies from a multilive control plane.
  */
 @Injectable
 @Extension("LiveServiceSyncer")
