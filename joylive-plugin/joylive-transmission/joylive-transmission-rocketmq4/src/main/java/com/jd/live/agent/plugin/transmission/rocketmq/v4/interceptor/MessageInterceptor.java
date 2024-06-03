@@ -48,9 +48,11 @@ public class MessageInterceptor extends InterceptorAdaptor {
 
     private void restoreTag(Message message) {
         String restored = message.getProperty(Cargo.KEY_TAG_RESTORED_BY);
-        if (!application.getInstance().equals(restored)) {
-            message.putUserProperty(Cargo.KEY_TAG_RESTORED_BY, application.getInstance());
+        String uniqueThreadName = application.getUniqueThreadName();
+        if (!uniqueThreadName.equals(restored)) {
+            message.putUserProperty(Cargo.KEY_TAG_RESTORED_BY, uniqueThreadName);
             RequestContext.create().addCargo(require, message.getProperties(), Label::parseValue);
         }
     }
+
 }
