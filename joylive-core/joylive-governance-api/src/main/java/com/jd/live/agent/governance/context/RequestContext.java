@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.context.bag.Courier;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Provides a context for managing request-specific data within the lifetime of a single request.
@@ -189,6 +190,29 @@ public class RequestContext {
     public static boolean isTimeout() {
         Long deadline = getAttribute(Carrier.ATTRIBUTE_DEADLINE);
         return deadline != null && System.currentTimeMillis() > deadline;
+    }
+
+    /**
+     * Restores cargo from obj.
+     *
+     * @param <T>        the type of the object to be restored
+     * @param obj        the object to be restored, if not null
+     * @param idSupplier the supplier to generate an ID for the object; if null, the object's identity hash code is used
+     * @param consumer   the consumer that defines the action to be performed with the created Carrier
+     */
+    public static <T> void restore(T obj, Supplier<String> idSupplier, Consumer<Carrier> consumer) {
+        if (obj != null) {
+            String id = idSupplier != null ? idSupplier.get() : null;
+            id = id != null ? id : String.valueOf(System.identityHashCode(obj));
+            String name = obj.getClass().getSimpleName() + ":" + id;
+            String restoreBy = getAttribute(Carrier.ATTRIBUTE_RESTORE_BY);
+            if (restoreBy == null || !restoreBy.equals(name)) {
+                setAttribute(Carrier.ATTRIBUTE_RESTORE_BY, name);
+                if (consumer != null) {
+                    consumer.accept(create());
+                }
+            }
+        }
     }
 }
 

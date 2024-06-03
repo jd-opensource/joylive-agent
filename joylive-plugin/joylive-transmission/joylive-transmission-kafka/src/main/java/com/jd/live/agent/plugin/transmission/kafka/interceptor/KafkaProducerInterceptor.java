@@ -29,10 +29,10 @@ public class KafkaProducerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((ProducerRecord<?, ?>) ctx.getArguments()[0]);
+        attachCargo((ProducerRecord<?, ?>) ctx.getArguments()[0]);
     }
 
-    private void attachTag(ProducerRecord<?, ?> record) {
+    private void attachCargo(ProducerRecord<?, ?> record) {
         Headers headers = record.headers();
         RequestContext.cargos((k, v) -> headers.add(k, v == null ? null : k.getBytes(StandardCharsets.UTF_8)));
     }

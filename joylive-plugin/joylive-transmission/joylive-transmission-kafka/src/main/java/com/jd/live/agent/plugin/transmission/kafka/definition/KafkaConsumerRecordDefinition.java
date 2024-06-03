@@ -21,7 +21,6 @@ import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -48,16 +47,13 @@ public class KafkaConsumerRecordDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
     public KafkaConsumerRecordDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_RECORD);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_VALUE).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new KafkaConsumerRecordInterceptor(requires, application))};
+                        () -> new KafkaConsumerRecordInterceptor(requires))};
     }
 
 }

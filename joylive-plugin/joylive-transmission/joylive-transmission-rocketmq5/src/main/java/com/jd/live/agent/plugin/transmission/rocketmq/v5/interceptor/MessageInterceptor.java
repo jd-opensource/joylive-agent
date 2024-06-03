@@ -16,43 +16,37 @@
 package com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageExt;
 
 import java.util.List;
 
 public class MessageInterceptor extends InterceptorAdaptor {
 
-    private final Application application;
-
     private final CargoRequire require;
 
-    public MessageInterceptor(Application application, List<CargoRequire> requires) {
-        this.application = application;
+    public MessageInterceptor(List<CargoRequire> requires) {
         this.require = new CargoRequires(requires);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Boolean isProducer = RequestContext.getAttribute(Cargo.KEY_MQ_PRODUCER);
+        Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
         if (isProducer == null || !isProducer) {
-            restoreTag((Message) ctx.getTarget());
+            restoreCargo((Message) ctx.getTarget());
         }
     }
 
-    private void restoreTag(Message message) {
-        String restored = message.getProperty(Cargo.KEY_TAG_RESTORED_BY);
-        String uniqueThreadName = application.getUniqueThreadName();
-        if (!uniqueThreadName.equals(restored)) {
-            message.putUserProperty(Cargo.KEY_TAG_RESTORED_BY, uniqueThreadName);
-            RequestContext.create().addCargo(require, message.getProperties(), Label::parseValue);
-        }
+    private void restoreCargo(Message message) {
+        RequestContext.restore(message,
+                () -> message instanceof MessageExt ? (message.getTopic() + ":" + ((MessageExt) message).getMsgId()) : null,
+                carrier -> carrier.addCargo(require, message.getProperties(), Label::parseValue));
     }
 
 }

@@ -21,7 +21,6 @@ import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -52,15 +51,12 @@ public class MessageDefinition extends PluginDefinitionAdapter {
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
     public MessageDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET_BODY).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new MessageInterceptor(application, requires))};
+                        () -> new MessageInterceptor(requires))};
     }
 }

@@ -42,6 +42,10 @@ public interface Carrier extends Attributes {
 
     String ATTRIBUTE_DEADLINE = "deadline";
 
+    String ATTRIBUTE_MQ_PRODUCER = "mq-producer";
+
+    String ATTRIBUTE_RESTORE_BY = "restored-by";
+
     /**
      * Retrieves all cargos carried by this carrier.
      *

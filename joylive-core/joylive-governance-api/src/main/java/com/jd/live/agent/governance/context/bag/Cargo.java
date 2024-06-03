@@ -29,22 +29,6 @@ import java.util.Enumeration;
  * </p>
  */
 public class Cargo extends Tag {
-
-    /**
-     * Key for identifying the mq producer.
-     */
-    public static final String KEY_MQ_PRODUCER = "mq-producer";
-
-    /**
-     * Key for identifying the entity that restored the cargo.
-     */
-    public static final String KEY_TAG_RESTORED_BY = "live-tag-restored-by";
-
-    /**
-     * Key for identifying the entity that attached the cargo.
-     */
-    public static final String KEY_TAG_ATTACHED_BY = "live-tag-attached-by";
-
     /**
      * Constructs a cargo with a specified key and no values.
      *
