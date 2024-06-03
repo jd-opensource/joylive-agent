@@ -21,25 +21,36 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor.MQProducerInterceptor;
+import com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor.MQProducerSendInterceptor;
+import com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor.MQProducerStartInterceptor;
 
 @Extension(value = "MQProducerDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
+@ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
 @ConditionalOnClass(MessageDefinition.TYPE_ACK_CALLBACK)
 public class MQProducerDefinition extends PluginDefinitionAdapter {
 
-    private static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
+    protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
 
     private static final String METHOD_START = "start";
 
+    private static final String METHOD_SEND = "send";
+
+    private static final String METHOD_REQUEST = "request";
+
+    private static final String METHOD_SEND_MESSAGE_IN_TRANSACTION = "sendMessageInTransaction";
+
+    private static final String METHOD_SEND_ONEWAY = "sendOneway";
+
     public MQProducerDefinition() {
         super(MatcherBuilder.isImplement(TYPE_MQ_PRODUCER),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_START).
-                                and(MatcherBuilder.arguments(0)),
-                        new MQProducerInterceptor()));
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_START), new MQProducerStartInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND), new MQProducerSendInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_REQUEST), new MQProducerSendInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND_ONEWAY), new MQProducerSendInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND_MESSAGE_IN_TRANSACTION), new MQProducerSendInterceptor()));
     }
 }

@@ -38,10 +38,11 @@ import java.util.List;
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
+@ConditionalOnClass(MessageDefinition.TYPE_MESSAGE)
 @ConditionalOnClass(MessageDefinition.TYPE_CLIENT_LOGGER)
 public class MessageDefinition extends PluginDefinitionAdapter {
 
-    private static final String TYPE_MESSAGE = "org.apache.rocketmq.common.message.Message";
+    protected static final String TYPE_MESSAGE = "org.apache.rocketmq.common.message.Message";
 
     private static final String METHOD_GET_BODY = "getBody";
 

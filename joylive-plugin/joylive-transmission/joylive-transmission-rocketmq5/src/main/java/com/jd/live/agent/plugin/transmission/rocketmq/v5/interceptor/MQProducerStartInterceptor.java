@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.transmission.rocketmq.v5.context.RocketmqContext;
 
-public class MQProducerInterceptor extends InterceptorAdaptor {
+public class MQProducerStartInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onExit(ExecutableContext ctx) {

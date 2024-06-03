@@ -16,43 +16,41 @@
 package com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
-import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.CargoRequires;
-import com.jd.live.agent.plugin.transmission.rocketmq.v5.context.RocketmqContext;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.List;
+import java.util.Map;
 
-public class MessageInterceptor extends InterceptorAdaptor {
+public class MessageUtilInterceptor extends InterceptorAdaptor {
 
-    private final Application application;
+    private static final char SPLITTER_KEY_VALUE = 1;
+
+    private static final char SPLITTER_HEADER = 2;
 
     private final CargoRequire require;
 
-    public MessageInterceptor(Application application, List<CargoRequire> requires) {
-        this.application = application;
+    public MessageUtilInterceptor(List<CargoRequire> requires) {
         this.require = new CargoRequires(requires);
     }
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        if (!RocketmqContext.isProducer()) {
-            restoreTag((Message) ctx.getTarget());
-        }
+    public void onSuccess(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
+        attachTag((Message) mc.getArgument(0), (Message) mc.getResult());
     }
 
-    private void restoreTag(Message message) {
-        String restored = message.getProperty(Cargo.KEY_TAG_RESTORED_BY);
-        String uniqueThreadName = application.getUniqueThreadName();
-        if (!uniqueThreadName.equals(restored)) {
-            message.putUserProperty(Cargo.KEY_TAG_RESTORED_BY, uniqueThreadName);
-            RequestContext.create().addCargo(require, message.getProperties(), Label::parseValue);
+    private void attachTag(Message request, Message response) {
+        Map<String, String> properties = request.getProperties();
+        if (properties != null) {
+            properties.forEach((k, v) -> {
+                if (require.match(k)) {
+                    response.putUserProperty(k, v);
+                }
+            });
         }
     }
-
 }

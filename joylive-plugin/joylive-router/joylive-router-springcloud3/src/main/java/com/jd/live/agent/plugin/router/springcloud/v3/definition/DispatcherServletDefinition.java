@@ -46,12 +46,13 @@ public class DispatcherServletDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
-    private static final String METHOD_DO_SERVICE = "doService";
+    private static final String METHOD_DO_DISPATCH = "doDispatch";
 
-    private static final String[] ARGUMENT_DO_SERVICE = new String[]{
+    private static final String[] ARGUMENT_DO_DISPATCH = new String[]{
             "javax.servlet.http.HttpServletRequest",
-            "javax.servlet.http.HttpServletResponse"
+            "javax.servlet.http.HttpServletResponse",
     };
+
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
@@ -60,8 +61,8 @@ public class DispatcherServletDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_DO_SERVICE).
-                                and(MatcherBuilder.arguments(ARGUMENT_DO_SERVICE)),
+                        MatcherBuilder.named(METHOD_DO_DISPATCH).
+                                and(MatcherBuilder.arguments(ARGUMENT_DO_DISPATCH)),
                         () -> new DispatcherServletInterceptor(context)
                 )
         };

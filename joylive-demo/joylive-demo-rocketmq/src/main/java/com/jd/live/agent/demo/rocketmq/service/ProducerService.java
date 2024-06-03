@@ -17,12 +17,10 @@ package com.jd.live.agent.demo.rocketmq.service;
 
 import com.jd.live.agent.demo.rocketmq.config.MqConfig;
 import com.jd.live.agent.demo.service.HelloService;
-import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.nio.charset.StandardCharsets;
 
 @Service
 public class ProducerService implements HelloService {
@@ -35,7 +33,6 @@ public class ProducerService implements HelloService {
 
     @Override
     public String echo(String str) {
-        MessageExt response = rocketMQTemplate.sendAndReceive(mqConfig.getTopic(), str, MessageExt.class, 10000);
-        return new String(response.getBody(), StandardCharsets.UTF_8);
+        return rocketMQTemplate.sendAndReceive(mqConfig.getTopic(), str, String.class, 10000);
     }
 }

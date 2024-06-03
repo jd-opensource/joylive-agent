@@ -1,3 +1,3 @@
 com.jd.live.agent.plugin.transmission.rocketmq.v5.definition.MessageDefinition
-com.jd.live.agent.plugin.transmission.rocketmq.v5.definition.MQClientAPIImplDefinition
 com.jd.live.agent.plugin.transmission.rocketmq.v5.definition.MQProducerDefinition
+com.jd.live.agent.plugin.transmission.rocketmq.v5.definition.MessageUtilDefinition

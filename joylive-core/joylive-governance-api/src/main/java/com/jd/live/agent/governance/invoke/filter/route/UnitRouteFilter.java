@@ -181,6 +181,9 @@ public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
     private UnitRoute getUnitRoute(OutboundInvocation<?> invocation) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         UnitRule rule = liveMetadata.getUnitRule();
+        if (rule == null) {
+            return null;
+        }
         String variable = liveMetadata.getVariable();
         UnitFunction func = invocation.getContext().getUnitFunction(rule.getVariableFunction());
         return rule.getUnitRoute(variable, func);

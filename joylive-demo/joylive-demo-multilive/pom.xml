@@ -12,7 +12,7 @@
     <artifactId>joylive-demo-multilive</artifactId>
 
     <properties>
-        <spring-boot.version>2.2.9.RELEASE</spring-boot.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
     </properties>
 
     <dependencyManagement>

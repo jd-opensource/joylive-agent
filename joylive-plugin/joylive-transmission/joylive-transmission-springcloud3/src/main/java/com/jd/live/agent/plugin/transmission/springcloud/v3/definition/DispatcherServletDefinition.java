@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.rocketmq.v5.definition;
+package com.jd.live.agent.plugin.transmission.springcloud.v3.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -21,46 +21,47 @@ import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor.MessageInterceptor;
+import com.jd.live.agent.plugin.transmission.springcloud.v3.interceptor.DispatcherServletInterceptor;
 
 import java.util.List;
 
+/**
+ * DispatcherServletDefinition
+ */
 @Injectable
-@Extension(value = "Message_v5", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "DispatcherServletDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(MessageDefinition.TYPE_MESSAGE)
-@ConditionalOnClass(MessageDefinition.TYPE_ACK_CALLBACK)
-public class MessageDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(DispatcherServletDefinition.TYPE_DISPATCHER_SERVLET)
+public class DispatcherServletDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_MESSAGE = "org.apache.rocketmq.common.message.Message";
+    protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
-    private static final String METHOD_GET_BODY = "getBody";
+    private static final String METHOD_DO_SERVICE = "doService";
 
-    public static final String TYPE_ACK_CALLBACK = "org.apache.rocketmq.client.consumer.AckCallback";
+    private static final String[] ARGUMENT_DO_SERVICE = new String[]{
+            "javax.servlet.http.HttpServletRequest",
+            "javax.servlet.http.HttpServletResponse"
+    };
 
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
-    public MessageDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE);
+    public DispatcherServletDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_GET_BODY).
-                                and(MatcherBuilder.arguments(0)),
-                        () -> new MessageInterceptor(application, requires))};
+                        MatcherBuilder.named(METHOD_DO_SERVICE).
+                                and(MatcherBuilder.arguments(ARGUMENT_DO_SERVICE)),
+                        () -> new DispatcherServletInterceptor(requires))};
     }
 }

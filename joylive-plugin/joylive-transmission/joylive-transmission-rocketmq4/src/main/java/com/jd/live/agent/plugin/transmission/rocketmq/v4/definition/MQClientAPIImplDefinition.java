@@ -28,10 +28,11 @@ import com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor.MQClientAPI
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
+@ConditionalOnClass(MQClientAPIImplDefinition.TYPE_MQ_CLIENT_API_IMPL)
 @ConditionalOnClass(MessageDefinition.TYPE_CLIENT_LOGGER)
 public class MQClientAPIImplDefinition extends PluginDefinitionAdapter {
 
-    private static final String TYPE_MQ_CLIENT_API_IMPL = "org.apache.rocketmq.client.impl.MQClientAPIImpl";
+    protected static final String TYPE_MQ_CLIENT_API_IMPL = "org.apache.rocketmq.client.impl.MQClientAPIImpl";
 
     private static final String METHOD_SEND_MESSAGE = "sendMessage";
 

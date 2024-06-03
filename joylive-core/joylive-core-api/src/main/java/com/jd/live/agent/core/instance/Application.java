@@ -124,6 +124,10 @@ public class Application {
         this.instance = APP_ID;
     }
 
+    public String getUniqueThreadName() {
+        return "thread-" + Thread.currentThread().getId() + "@" + instance;
+    }
+
     /**
      * Retrieves metadata value by key.
      */

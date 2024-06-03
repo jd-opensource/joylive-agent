@@ -28,10 +28,11 @@ import com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor.MQProducerI
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
+@ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
 @ConditionalOnClass(MessageDefinition.TYPE_CLIENT_LOGGER)
 public class MQProducerDefinition extends PluginDefinitionAdapter {
 
-    private static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
+    protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
 
     private static final String METHOD_START = "start";
 

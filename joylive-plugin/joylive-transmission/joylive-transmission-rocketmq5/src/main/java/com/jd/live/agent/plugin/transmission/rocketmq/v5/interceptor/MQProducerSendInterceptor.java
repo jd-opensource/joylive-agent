@@ -18,35 +18,34 @@ package com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.Cargo;
-import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
+import org.apache.rocketmq.common.message.Message;
 
-public class MQClientAPIImplInterceptor extends InterceptorAdaptor {
+import java.util.Collection;
+
+public class MQProducerSendInterceptor extends InterceptorAdaptor {
 
     private static final char SPLITTER_KEY_VALUE = 1;
 
     private static final char SPLITTER_HEADER = 2;
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((SendMessageRequestHeader) ctx.getArguments()[3]);
-    }
-
-    private void attachTag(SendMessageRequestHeader header) {
-        String properties = header.getProperties();
-        StringBuilder builder = new StringBuilder();
-        RequestContext.cargos(tag -> append(builder, tag));
-        if (builder.length() > 0) {
-            if (properties != null && !properties.isEmpty()) {
-                builder.append(properties);
-            } else {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            header.setProperties(builder.toString());
+        Object argument = ctx.getArguments()[0];
+        if (argument instanceof Message) {
+            attachTag((Message) argument);
+        } else if (argument instanceof Collection) {
+            attachTag((Collection<Message>) argument);
         }
     }
 
-    private void append(StringBuilder builder, Cargo cargo) {
-        builder.append(cargo.getKey()).append(SPLITTER_KEY_VALUE).append(cargo.getValue()).append(SPLITTER_HEADER);
+    private void attachTag(Collection<Message> messages) {
+        RequestContext.cargos(cargo ->
+                messages.forEach(
+                        message -> message.putUserProperty(cargo.getKey(), cargo.getValue())));
+    }
+
+    private void attachTag(Message message) {
+        RequestContext.cargos(cargo -> message.putUserProperty(cargo.getKey(), cargo.getValue()));
     }
 }

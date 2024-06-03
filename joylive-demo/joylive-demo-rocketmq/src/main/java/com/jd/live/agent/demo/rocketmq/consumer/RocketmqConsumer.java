@@ -37,8 +37,12 @@ public class RocketmqConsumer implements RocketMQReplyListener<MessageExt, Strin
 
     @Override
     public String onMessage(MessageExt message) {
-        String msg = consumerService.echo(new String(message.getBody(), StandardCharsets.UTF_8));
         Map<String, String> properties = message.getProperties();
-        return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, msg).toString();
+        try {
+            String msg = consumerService.echo(new String(message.getBody(), StandardCharsets.UTF_8));
+            return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, msg).toString();
+        } catch (Throwable e) {
+            return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, e.getMessage()).toString();
+        }
     }
 }
