@@ -44,7 +44,7 @@ public class LiveConfig {
     }
 
     private void accept(BiConsumer<String, String> consumer, String key, String value) {
-        if (consumer != null && key != null && value != null) {
+        if (consumer != null && key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
             consumer.accept(key, value);
         }
     }
