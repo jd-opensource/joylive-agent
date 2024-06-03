@@ -73,6 +73,7 @@ agent:
       type: file
     microservice:
       type: file
+      url: http://localhost:8000/v1
   watchdog:
     enabled: true
     delay: 5000
