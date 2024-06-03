@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.multilive;
+package com.jd.live.agent.implement.service.policy.microservice;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -27,6 +27,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.service.AbstractService;
@@ -46,9 +47,9 @@ import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.PolicyService;
-import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
-import com.jd.live.agent.implement.service.policy.multilive.reponse.Error;
-import com.jd.live.agent.implement.service.policy.multilive.reponse.Response;
+import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfig;
+import com.jd.live.agent.implement.service.policy.microservice.reponse.Error;
+import com.jd.live.agent.implement.service.policy.microservice.reponse.Response;
 
 import java.io.IOException;
 import java.io.SyncFailedException;
@@ -63,24 +64,31 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 /**
- * LiveServiceSyncer is responsible for synchronizing live service policies from a multilive control plane.
+ * MicroServiceSyncer is responsible for synchronizing microservice policies from a microservice control plane.
  */
 @Injectable
-@Extension("LiveServiceSyncer")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveServiceSyncer extends AbstractService implements PolicyService, ExtensionInitializer {
+@Extension("MicroServiceSyncer")
+@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "jmsf")
+@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+public class MicroServiceSyncer extends AbstractService implements PolicyService, ExtensionInitializer {
 
-    private static final Logger logger = LoggerFactory.getLogger(LiveServiceSyncer.class);
+    private static final Logger logger = LoggerFactory.getLogger(MicroServiceSyncer.class);
 
     private static final int CONCURRENCY = 5;
 
     private static final int INTERVALS = 10;
 
+    private static final String POLICY_TYPE = "policy_type";
+
+    private static final String SPACE = "space";
+
     private static final String SERVICE_NAME = "service_name";
 
     private static final String SERVICE_VERSION = "service_version";
+
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
 
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
@@ -95,7 +103,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     private ObjectParser jsonParser;
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
-    private LiveSyncConfig syncConfig = new LiveSyncConfig();
+    private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     private ExecutorService executorService;
 
@@ -121,7 +129,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
 
     @Override
     public String getName() {
-        return "live-service-syncer";
+        return "micro-service-syncer";
     }
 
     @Override
@@ -195,8 +203,8 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
      * Handles successful synchronization with status OK.
      *
      * @param subscriber the policy subscriber.
-     * @param service the service data.
-     * @param meta the service synchronization metadata.
+     * @param service    the service data.
+     * @param meta       the service synchronization metadata.
      */
     private void onOk(PolicySubscriber subscriber, Service service, ServiceSyncMeta meta) {
         if (update(subscriber.getName(), service)) {
@@ -210,7 +218,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
      * Handles service is NOT_MODIFIED.
      *
      * @param subscriber the policy subscriber.
-     * @param meta the service synchronization metadata.
+     * @param meta       the service synchronization metadata.
      */
     private void onNotModified(PolicySubscriber subscriber, ServiceSyncMeta meta) {
         subscriber.complete(getName());
@@ -223,7 +231,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
      * Handles service is NOT_FOUND.
      *
      * @param subscriber the policy subscriber.
-     * @param meta the service synchronization metadata.
+     * @param meta       the service synchronization metadata.
      */
     private void onNotFound(PolicySubscriber subscriber, ServiceSyncMeta meta) {
         if (meta.version > 0) {
@@ -243,7 +251,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     /**
      * Attempts to update the service with retries.
      *
-     * @param name the name of the service.
+     * @param name    the name of the service.
      * @param service the service data.
      * @return true if the update was successful, false otherwise.
      */
@@ -259,7 +267,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     /**
      * Attempts to update the service once.
      *
-     * @param name the name of the service.
+     * @param name    the name of the service.
      * @param service the service data.
      * @return true if the update was successful, false otherwise.
      */
@@ -270,8 +278,8 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     /**
      * Creates a new policy based on the given service.
      *
-     * @param name the name of the service.
-     * @param service the service data.
+     * @param name      the name of the service.
+     * @param service   the service data.
      * @param oldPolicy the old policy.
      * @return the new policy.
      */
@@ -287,14 +295,16 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     /**
      * Retrieves the service data from the remote server.
      *
-     * @param name the name of the service.
-     * @param meta the service synchronization metadata.
+     * @param name   the name of the service.
+     * @param meta   the service synchronization metadata.
      * @param config the synchronization configuration.
      * @return the response containing the service data.
      * @throws IOException if an I/O error occurs.
      */
     private Response<Service> getService(String name, ServiceSyncMeta meta, SyncConfig config) throws IOException {
         Map<String, Object> context = new HashMap<>(2);
+        // context.put(POLICY_TYPE, name);
+        context.put(SPACE, application.getService().getNamespace());
         context.put(SERVICE_NAME, name);
         context.put(SERVICE_VERSION, String.valueOf(meta.version));
         String uri = template.evaluate(context);
@@ -321,7 +331,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
      * Configures the HTTP connection with the specified synchronization configuration.
      *
      * @param config the synchronization configuration.
-     * @param conn the HTTP connection to be configured.
+     * @param conn   the HTTP connection to be configured.
      */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
@@ -361,7 +371,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     /**
      * Adds a single policy subscriber task to the queue with an optional predicate.
      *
-     * @param task the policy subscriber task to be added.
+     * @param task      the policy subscriber task to be added.
      * @param predicate an optional predicate to test the task before adding it to the queue.
      */
     private void addTask(PolicySubscriber task, Predicate<PolicySubscriber> predicate) {
