@@ -34,7 +34,7 @@ public class EchoController {
     @Resource
     private FeignService feignService;
 
-    @GetMapping("/echo-rest/{str}")
+    @GetMapping({"/echo-rest/{str}","/echo/{str}"})
     public String echoRest(@PathVariable String str, HttpServletRequest request) {
         String message = restService.echo(str);
         return new EchoResponse("spring-consumer", "header", request::getHeader, message).toString();
