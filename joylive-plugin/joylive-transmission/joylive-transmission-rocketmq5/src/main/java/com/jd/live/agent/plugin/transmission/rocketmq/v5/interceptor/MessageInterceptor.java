@@ -23,7 +23,6 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.CargoRequires;
-import com.jd.live.agent.plugin.transmission.rocketmq.v5.context.RocketmqContext;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.List;
@@ -41,7 +40,8 @@ public class MessageInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (!RocketmqContext.isProducer()) {
+        Boolean isProducer = RequestContext.getAttribute(Cargo.KEY_MQ_PRODUCER);
+        if (isProducer == null || !isProducer) {
             restoreTag((Message) ctx.getTarget());
         }
     }

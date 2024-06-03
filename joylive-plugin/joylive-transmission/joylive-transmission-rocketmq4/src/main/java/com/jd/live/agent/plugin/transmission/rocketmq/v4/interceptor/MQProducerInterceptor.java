@@ -18,16 +18,18 @@ package com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Cargo;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.Collection;
 
-public class MQProducerSendInterceptor extends InterceptorAdaptor {
+public class MQProducerInterceptor extends InterceptorAdaptor {
 
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object argument = ctx.getArguments()[0];
+        RequestContext.setAttribute(Cargo.KEY_MQ_PRODUCER, Boolean.TRUE);
         if (argument instanceof Message) {
             attachTag((Message) argument);
         } else if (argument instanceof Collection) {
