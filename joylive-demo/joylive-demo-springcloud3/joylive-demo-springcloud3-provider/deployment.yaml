@@ -61,7 +61,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-a9814ef-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-10881d7-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-provider
           ports:
