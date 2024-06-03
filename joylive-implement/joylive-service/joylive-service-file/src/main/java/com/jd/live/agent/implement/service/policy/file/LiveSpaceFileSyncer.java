@@ -94,7 +94,12 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> imp
     @Override
     protected String getResource(SyncConfig config) {
         String result = super.getResource(config);
-        return result == null || result.isEmpty() ? CONFIG_LIVE_SPACE : result;
+        if (result == null || result.isEmpty()) {
+            return CONFIG_LIVE_SPACE;
+        } else if (result.startsWith("http://") || result.startsWith("https://")) {
+            return CONFIG_LIVE_SPACE;
+        }
+        return result;
     }
 
     @Override

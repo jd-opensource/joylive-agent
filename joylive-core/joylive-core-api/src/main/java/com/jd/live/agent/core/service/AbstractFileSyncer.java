@@ -24,6 +24,7 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.file.FileContent;
 import com.jd.live.agent.core.service.file.FileDigest;
+import com.jd.live.agent.core.util.Futures;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -56,7 +57,10 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
     protected CompletableFuture<Void> doStart() {
         config = getSyncConfig();
         file = getConfigFile();
-        if (file != null && publisher != null) {
+        if (file == null) {
+            return Futures.future(new FileNotFoundException("File is not found. " + getResource(config)));
+        }
+        if (publisher != null) {
             publisher.addHandler(handler);
         }
         return super.doStart();
