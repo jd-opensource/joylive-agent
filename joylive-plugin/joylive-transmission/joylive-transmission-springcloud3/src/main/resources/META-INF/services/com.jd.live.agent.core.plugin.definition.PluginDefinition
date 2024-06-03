@@ -2,4 +2,3 @@ com.jd.live.agent.plugin.transmission.springcloud.v3.definition.WebHandlerDecora
 com.jd.live.agent.plugin.transmission.springcloud.v3.definition.ReactorLoadBalancerDefinition
 com.jd.live.agent.plugin.transmission.springcloud.v3.definition.HandshakeWebSocketServiceDefinition
 com.jd.live.agent.plugin.transmission.springcloud.v3.definition.DefaultExchangeFunctionDefinition
-com.jd.live.agent.plugin.transmission.springcloud.v3.definition.DispatcherServletDefinition

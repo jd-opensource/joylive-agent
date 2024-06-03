@@ -54,7 +54,7 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
     private List<CargoRequire> requires;
 
     public HttpServletDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_HTTP_SERVLET);
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_HTTP_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SERVICE).
