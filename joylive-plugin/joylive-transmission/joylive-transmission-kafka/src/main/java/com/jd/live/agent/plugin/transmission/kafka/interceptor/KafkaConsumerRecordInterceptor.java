@@ -34,8 +34,11 @@ public class KafkaConsumerRecordInterceptor extends InterceptorAdaptor {
 
     private final CargoRequire require;
 
-    public KafkaConsumerRecordInterceptor(List<CargoRequire> requires) {
+    private final Application application;
+
+    public KafkaConsumerRecordInterceptor(List<CargoRequire> requires, Application application) {
         this.require = new CargoRequires(requires);
+        this.application = application;
     }
 
     @Override
@@ -46,9 +49,10 @@ public class KafkaConsumerRecordInterceptor extends InterceptorAdaptor {
     private void restoreTag(ConsumerRecord<?, ?> record) {
         Headers headers = record.headers();
         Header header = headers.lastHeader(Cargo.KEY_TAG_RESTORED_BY);
-        if (header != null && !Arrays.equals(Application.APP_ID_BYTES, header.value())) {
+        byte[] names = application.getUniqueThreadName().getBytes(StandardCharsets.UTF_8);
+        if (!Arrays.equals(names, header == null ? null : header.value())) {
             headers.remove(Cargo.KEY_TAG_RESTORED_BY);
-            headers.add(Cargo.KEY_TAG_RESTORED_BY, Application.APP_ID_BYTES);
+            headers.add(Cargo.KEY_TAG_RESTORED_BY, names);
             RequestContext.create().addCargo(require, headers, Header::key, this::getValue);
         }
 

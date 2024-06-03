@@ -22,7 +22,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.lang.management.ManagementFactory;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -70,9 +69,6 @@ public class Application {
 
     // Unique application identifier.
     public static final String APP_ID = UUID.randomUUID().toString();
-
-    // Byte representation of the application ID.
-    public static final byte[] APP_ID_BYTES = APP_ID.getBytes(StandardCharsets.UTF_8);
 
     // Name of the application.
     @Setter
