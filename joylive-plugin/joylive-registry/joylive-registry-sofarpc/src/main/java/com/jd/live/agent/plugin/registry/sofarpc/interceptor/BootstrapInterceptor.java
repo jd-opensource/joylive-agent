@@ -62,7 +62,12 @@ public abstract class BootstrapInterceptor extends InterceptorAdaptor {
      * @param <S>    the specific type of the AbstractInterfaceConfig
      */
     protected <T, S extends AbstractInterfaceConfig<T, S>> void attachTags(S config) {
-        application.label(config::setParameter);
+        application.label((key, value) -> {
+            String old = config.getParameter(key);
+            if (old == null || old.isEmpty()) {
+                config.setParameter(key, value);
+            }
+        });
         if (logger.isInfoEnabled()) {
             logger.info("Success filling metadata for registration " + config.getInterfaceId() + " in " + config.getClass());
         }

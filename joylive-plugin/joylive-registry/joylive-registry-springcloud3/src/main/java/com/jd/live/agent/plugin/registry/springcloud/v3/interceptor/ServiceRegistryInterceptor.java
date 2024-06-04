@@ -64,7 +64,7 @@ public class ServiceRegistryInterceptor extends InterceptorAdaptor {
     private void attachTag(Registration registration) {
         Map<String, String> metadata = registration.getMetadata();
         if (metadata != null) {
-            application.label(metadata::put);
+            application.label(metadata::putIfAbsent);
         }
     }
 }

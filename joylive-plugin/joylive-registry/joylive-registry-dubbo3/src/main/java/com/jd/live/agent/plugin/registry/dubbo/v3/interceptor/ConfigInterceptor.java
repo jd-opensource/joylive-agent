@@ -67,6 +67,6 @@ public abstract class ConfigInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(Map<String, String> map) {
-        application.label(map::put);
+        application.label(map::putIfAbsent);
     }
 }
