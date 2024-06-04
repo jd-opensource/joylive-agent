@@ -59,6 +59,7 @@ import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
 import com.jd.live.agent.core.service.ServiceManager;
 import com.jd.live.agent.core.service.ServiceSupervisor;
+import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.option.CascadeOption;
@@ -79,10 +80,10 @@ import java.io.Reader;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
 import static com.jd.live.agent.core.util.type.ClassUtils.describe;
@@ -641,14 +642,25 @@ public class Bootstrap implements AgentLifecycle {
      * Runs each runnable and logs exceptions if any occur during execution.
      */
     private void onReady() {
-        for (Callable<?> runnable : readies) {
-            try {
-                runnable.call();
-            } catch (Throwable e) {
-                Throwable cause = e instanceof InvocationTargetException ? e.getCause() : null;
-                cause = cause != null ? cause : e;
-                onException(cause.getMessage(), cause);
+        if (!readies.isEmpty()) {
+            List<Future<?>> futures = new LinkedList<>();
+            ExecutorService executorService = Executors.newFixedThreadPool(Integer.min(3, readies.size()),
+                    new NamedThreadFactory("LiveAgent-ready", true));
+            for (Callable<?> runnable : readies) {
+                futures.add(executorService.submit(runnable));
             }
+            for (Future<?> future : futures) {
+                try {
+                    future.get();
+                } catch (Throwable e) {
+                    Throwable cause = e instanceof ExecutionException ? e.getCause() : null;
+                    cause = cause instanceof InvocationTargetException ? e.getCause() : null;
+                    cause = cause != null ? cause : e;
+                    onException(cause.getMessage(), cause);
+                }
+            }
+            executorService.shutdownNow();
+            readies.clear();
         }
     }
 
