@@ -69,7 +69,7 @@ import java.util.function.Predicate;
 @Injectable
 @Extension("MicroServiceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "jmsf")
-@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE, matchIfMissing = true)
+@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class MicroServiceSyncer extends AbstractService implements PolicyService, ExtensionInitializer {
 
@@ -84,6 +84,8 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
     private static final String SPACE = "space";
 
     private static final String SERVICE_NAME = "service_name";
+
+    private static final String APPLICATION_NAME = "application";
 
     private static final String SERVICE_VERSION = "service_version";
 
@@ -102,7 +104,7 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
     @Inject(ObjectParser.JSON)
     private ObjectParser jsonParser;
 
-    @Config(SyncConfig.SYNC_LIVE_SPACE)
+    @Config(SyncConfig.SYNC_MICROSERVICE)
     private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     private ExecutorService executorService;
@@ -302,9 +304,10 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
      * @throws IOException if an I/O error occurs.
      */
     private Response<Service> getService(String name, ServiceSyncMeta meta, SyncConfig config) throws IOException {
-        Map<String, Object> context = new HashMap<>(2);
+        Map<String, Object> context = new HashMap<>(4);
         // context.put(POLICY_TYPE, name);
         context.put(SPACE, application.getService().getNamespace());
+        context.put(APPLICATION_NAME, application.getName());
         context.put(SERVICE_NAME, name);
         context.put(SERVICE_VERSION, String.valueOf(meta.version));
         String uri = template.evaluate(context);

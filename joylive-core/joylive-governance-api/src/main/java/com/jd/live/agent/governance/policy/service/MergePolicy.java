@@ -58,7 +58,9 @@ public enum MergePolicy implements PolicyMerger {
     FLOW_CONTROL {
         @Override
         public void onAdd(ServicePolicy newPolicy) {
-            newPolicy.setLivePolicy(null);
+            if (newPolicy != null) {
+                newPolicy.setLivePolicy(null);
+            }
         }
 
         @Override
