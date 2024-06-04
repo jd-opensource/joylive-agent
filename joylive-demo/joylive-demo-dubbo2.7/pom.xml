@@ -11,16 +11,17 @@
     <artifactId>joylive-demo-dubbo2.7</artifactId>
     <packaging>pom</packaging>
 
-    <properties>
-        <apache-dubbo.version>2.7.23</apache-dubbo.version>
-        <spring-boot.version>2.2.9.RELEASE</spring-boot.version>
-        <fastjson.version>1.2.83</fastjson.version>
-    </properties>
-
     <modules>
         <module>joylive-demo-dubbo2.7-consumer</module>
         <module>joylive-demo-dubbo2.7-provider</module>
     </modules>
+
+    <properties>
+        <apache-dubbo.version>2.7.23</apache-dubbo.version>
+        <!-- dubbo2.7 support low spring boot version -->
+        <spring-boot.version>2.2.9.RELEASE</spring-boot.version>
+        <fastjson.version>1.2.83</fastjson.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -68,6 +69,12 @@
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-registry-nacos</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.dubbo</groupId>
+                    <artifactId>dubbo-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -112,38 +119,5 @@
             </exclusions>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <configuration>
-                    <skipSource>true</skipSource>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

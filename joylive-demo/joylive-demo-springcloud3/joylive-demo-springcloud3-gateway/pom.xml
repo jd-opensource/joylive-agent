@@ -12,33 +12,12 @@
     <artifactId>joylive-demo-springcloud3-gateway</artifactId>
 
     <properties>
-        <spring-cloud.version>2021.0.9</spring-cloud.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
         <reactor-netty.version>1.0.39</reactor-netty.version>
         <netty.version>4.1.101.Final</netty.version>
         <spring-cloud-nacos.version>2021.0.6.0</spring-cloud-nacos.version>
         <spring-cloud-loadbalancer.version>3.1.8</spring-cloud-loadbalancer.version>
         <spring-boot-maven-plugin.version>2.7.18</spring-boot-maven-plugin.version>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-parent</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -164,23 +143,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot-maven-plugin.version}</version>
                 <configuration>
                     <mainClass>com.jd.live.agent.demo.springcloud.v3.gateway.SpringCloud3Gateway</mainClass>
-                    <layout>ZIP</layout>
-                    <addResources>true</addResources>
-                    <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                        <configuration>
-                            <!--<classifier>run</classifier> -->
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

@@ -13,8 +13,6 @@
     <packaging>pom</packaging>
 
     <properties>
-        <spring.cloud.version>2021.0.9</spring.cloud.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
         <spring.version>5.3.31</spring.version>
         <spring-cloud-openfeign.version>3.1.9</spring-cloud-openfeign.version>
         <spring-cloud-loadbalancer.version>3.1.8</spring-cloud-loadbalancer.version>
@@ -26,58 +24,6 @@
         <module>joylive-demo-springcloud3-consumer</module>
         <module>joylive-demo-springcloud3-gateway</module>
     </modules>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring.cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <configuration>
-                    <skipSource>true</skipSource>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <profiles>
         <profile>

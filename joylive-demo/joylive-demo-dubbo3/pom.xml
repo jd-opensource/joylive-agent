@@ -13,7 +13,6 @@
 
     <properties>
         <apache-dubbo.version>3.2.11</apache-dubbo.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
     </properties>
 
     <modules>
@@ -23,13 +22,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <!-- Dubbo -->
             <dependency>
                 <groupId>org.apache.dubbo</groupId>
@@ -98,38 +90,5 @@
             <artifactId>dubbo-serialization-fastjson2</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <configuration>
-                    <skipSource>true</skipSource>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
