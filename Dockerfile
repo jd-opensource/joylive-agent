@@ -1,5 +1,5 @@
 # Build an image using JDK 8
-FROM openjdk:8-jdk-alpine AS builder
+FROM openjdk:8u342-jdk AS builder
 
 # Set up a working directory
 WORKDIR /app
