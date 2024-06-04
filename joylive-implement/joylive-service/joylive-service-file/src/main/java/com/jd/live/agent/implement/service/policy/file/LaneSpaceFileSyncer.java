@@ -94,7 +94,7 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> imp
     @Override
     protected String getResource(SyncConfig config) {
         String result = super.getResource(config);
-        return result == null || result.isEmpty() ? CONFIG_LANE_SPACE : result;
+        return isConfigFile(result) ? result : CONFIG_LANE_SPACE;
     }
 
     @Override

@@ -100,6 +100,15 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
         return config.getUrl();
     }
 
+    protected boolean isConfigFile(String file) {
+        if (file == null || file.isEmpty()) {
+            return false;
+        } else if (file.startsWith("http://") || file.startsWith("https://")) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Parses the file content into an object of type T.
      * @param reader an InputStreamReader for the file content
