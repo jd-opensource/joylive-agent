@@ -80,6 +80,6 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
 
     @Override
     public boolean isRetryable() {
-        return predicate == null || predicate.test(this);
+        return predicate != null && predicate.test(this);
     }
 }
