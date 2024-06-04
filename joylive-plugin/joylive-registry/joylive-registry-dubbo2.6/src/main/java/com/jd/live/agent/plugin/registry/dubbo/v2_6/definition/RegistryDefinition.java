@@ -39,10 +39,10 @@ import com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor.RegistryIntercep
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(ReferenceConfigDefinition.TYPE_REFERENCE_CONFIG)
-@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
+@ConditionalOnClass(RegistryDefinition.TYPE_FAILBACK_REGISTRY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SERVICE_DISCOVERY = "com.alibaba.dubbo.registry.support.FailbackRegistry";
+    protected static final String TYPE_FAILBACK_REGISTRY = "com.alibaba.dubbo.registry.support.FailbackRegistry";
 
     private static final String METHOD_REGISTER = "doRegister";
 
@@ -57,7 +57,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private AgentLifecycle lifecycle;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_FAILBACK_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER)

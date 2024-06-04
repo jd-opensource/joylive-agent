@@ -38,10 +38,10 @@ import com.jd.live.agent.plugin.registry.sofarpc.interceptor.RegistryInterceptor
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
+@ConditionalOnClass(RegistryDefinition.TYPE_REGISTRY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SERVICE_DISCOVERY = "com.alipay.sofa.rpc.registry.Registry";
+    protected static final String TYPE_REGISTRY = "com.alipay.sofa.rpc.registry.Registry";
 
     private static final String METHOD_REGISTER = "register";
 
@@ -56,7 +56,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private AgentLifecycle lifecycle;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER)

@@ -38,10 +38,10 @@ import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInte
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
+@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_REGISTRY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SERVICE_DISCOVERY = "org.springframework.cloud.client.serviceregistry.ServiceRegistry";
+    protected static final String TYPE_SERVICE_REGISTRY = "org.springframework.cloud.client.serviceregistry.ServiceRegistry";
 
     private static final String METHOD_REGISTER = "register";
 
@@ -52,7 +52,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private AgentLifecycle lifecycle;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_SERVICE_DISCOVERY);
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_SERVICE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER), () -> new RegistryInterceptor(application, lifecycle))
