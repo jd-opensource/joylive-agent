@@ -13,28 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
+package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.bootstrap.AgentLifecycle;
+import com.jd.live.agent.core.instance.AppStatus;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
 
-public class ApplicationStartedInterceptor extends InterceptorAdaptor {
+/**
+ * RegistryInterceptor
+ */
+public class RegistryInterceptor extends InterceptorAdaptor {
 
-    private final PolicySupervisor policySupervisor;
+    private final Application application;
 
-    private final Publisher<AgentEvent> publisher;
+    private final AgentLifecycle lifecycle;
 
-    public ApplicationStartedInterceptor(PolicySupervisor policySupervisor, Publisher<AgentEvent> publisher) {
-        this.policySupervisor = policySupervisor;
-        this.publisher = publisher;
+    public RegistryInterceptor(Application application, AgentLifecycle lifecycle) {
+        this.application = application;
+        this.lifecycle = lifecycle;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        publisher.offer(AgentEvent.onApplicationStarted("Application is started"));
-        policySupervisor.waitReady();
+        MethodContext mc = (MethodContext) ctx;
+        if (application.getStatus() == AppStatus.STARTING) {
+            lifecycle.addReadyHook(mc::invoke);
+            mc.setSkip(true);
+        }
     }
+
 }

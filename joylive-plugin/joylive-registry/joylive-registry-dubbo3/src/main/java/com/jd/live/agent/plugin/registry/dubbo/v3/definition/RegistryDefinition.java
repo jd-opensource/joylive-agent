@@ -13,52 +13,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.definition;
+package com.jd.live.agent.plugin.registry.dubbo.v3.definition;
 
+import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.RegistryInterceptor;
 
+/**
+ * RegistryDefinition
+ */
 @Injectable
-@Extension(value = "SpringApplicationDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
-@ConditionalOnClass(SpringApplicationDefinition.TYPE_SPRING_APPLICATION_RUN_LISTENERS)
+@Extension(value = "RegistryDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-public class SpringApplicationDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ServiceConfigDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
+public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SPRING_APPLICATION_RUN_LISTENERS = "org.springframework.boot.SpringApplicationRunListeners";
+    protected static final String TYPE_SERVICE_DISCOVERY = "org.apache.dubbo.registry.client.AbstractServiceDiscovery";
 
-    private static final String METHOD_STARTED = "started";
+    private static final String METHOD_REGISTER = "doRegister";
 
-    private static final String METHOD_READY = "ready";
+    private static final String[] ARGUMENT_REGISTER = new String[]{
+            "org.apache.dubbo.registry.client.ServiceInstance"
+    };
 
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
 
-    @Inject(Publisher.SYSTEM)
-    private Publisher<AgentEvent> publisher;
+    @Inject(AgentLifecycle.COMPONENT_AGENT_LIFECYCLE)
+    private AgentLifecycle lifecycle;
 
-    public SpringApplicationDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
+    public RegistryDefinition() {
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationStartedInterceptor(policySupervisor, publisher)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_READY),
-                        () -> new ApplicationReadyInterceptor(publisher))
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_REGISTER).
+                                and(MatcherBuilder.arguments(ARGUMENT_REGISTER)),
+                        () -> new RegistryInterceptor(application, lifecycle))
         };
     }
 }

@@ -28,6 +28,11 @@ public enum AppStatus {
     STARTING,
 
     /**
+     * The application is started.
+     */
+    STARTED,
+
+    /**
      * The application is fully operational and can both accept inbound requests and perform outbound operations.
      */
     READY {

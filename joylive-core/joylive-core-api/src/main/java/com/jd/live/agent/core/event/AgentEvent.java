@@ -143,6 +143,16 @@ public class AgentEvent {
     }
 
     /**
+     * Creates an AgentEvent indicating that the application is started.
+     *
+     * @param message the message describing the event
+     * @return a new AgentEvent of type APPLICATION_STARTED
+     */
+    public static AgentEvent onApplicationStarted(String message) {
+        return new AgentEvent(EventType.APPLICATION_STARTED, message);
+    }
+
+    /**
      * Creates an AgentEvent indicating that the application is ready.
      *
      * @param message the message describing the event
@@ -202,6 +212,11 @@ public class AgentEvent {
          * Indicates a successful initialization of an agent's policy or configuration.
          */
         AGENT_SERVICE_POLICY_READY,
+
+        /**
+         * Indicates that application is started.
+         */
+        APPLICATION_STARTED,
 
         /**
          * Indicates a successful initialization of application.

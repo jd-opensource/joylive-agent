@@ -82,7 +82,9 @@ public class MethodContext extends ExecutableContext {
     }
 
     public Object invoke() throws InvocationTargetException, IllegalAccessException {
-        method.setAccessible(true);
+        if (!method.isAccessible()) {
+            method.setAccessible(true);
+        }
         return method.invoke(target, arguments);
     }
 

@@ -77,9 +77,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
@@ -219,7 +221,7 @@ public class Bootstrap implements AgentLifecycle {
      */
     private List<InjectSourceSupplier> sourceSuppliers;
 
-    private List<Runnable> readies = new CopyOnWriteArrayList<>();
+    private final List<Callable<?>> readies = new CopyOnWriteArrayList<>();
 
     private Shutdown shutdown;
 
@@ -358,9 +360,9 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     @Override
-    public void addReadyHook(Runnable runnable) {
-        if (runnable != null) {
-            readies.add(runnable);
+    public void addReadyHook(Callable<?> callable) {
+        if (callable != null) {
+            readies.add(callable);
         }
     }
 
@@ -618,9 +620,12 @@ public class Bootstrap implements AgentLifecycle {
         switch (event.getType()) {
             case AGENT_FAILURE:
             case AGENT_SERVICE_POLICY_FAILURE:
-                case AGENT_ENHANCE_FAILURE:
-                    onException(event.getMessage(), event.getThrowable());
-                    break;
+            case AGENT_ENHANCE_FAILURE:
+                onException(event.getMessage(), event.getThrowable());
+                break;
+            case APPLICATION_STARTED:
+                application.setStatus(AppStatus.STARTED);
+                break;
             case APPLICATION_READY:
                 onReady();
                 application.setStatus(AppStatus.READY);
@@ -636,11 +641,13 @@ public class Bootstrap implements AgentLifecycle {
      * Runs each runnable and logs exceptions if any occur during execution.
      */
     private void onReady() {
-        for (Runnable runnable : readies) {
+        for (Callable<?> runnable : readies) {
             try {
-                runnable.run();
+                runnable.call();
             } catch (Throwable e) {
-                onException(e.getMessage(), e);
+                Throwable cause = e instanceof InvocationTargetException ? e.getCause() : null;
+                cause = cause != null ? cause : e;
+                onException(cause.getMessage(), cause);
             }
         }
     }

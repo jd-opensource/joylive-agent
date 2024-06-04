@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.bootstrap;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * Defines the lifecycle operations for an agent component within a system.
@@ -58,7 +59,7 @@ public interface AgentLifecycle {
      * This can be used to perform initialization tasks or other operations
      * that should occur once the system has completed its startup process.
      *
-     * @param runnable the hook to be executed when the system is ready
+     * @param callable the hook to be executed when the system is ready
      */
-    void addReadyHook(Runnable runnable);
+    void addReadyHook(Callable<?> callable);
 }

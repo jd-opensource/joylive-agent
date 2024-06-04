@@ -109,7 +109,7 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> impleme
     @Override
     protected String getResource(SyncConfig config) {
         String result = super.getResource(config);
-        return result == null || result.isEmpty() ? CONFIG_MICROSERVICE : result;
+        return isConfigFile(result) ? result : CONFIG_MICROSERVICE;
     }
 
     @Override
