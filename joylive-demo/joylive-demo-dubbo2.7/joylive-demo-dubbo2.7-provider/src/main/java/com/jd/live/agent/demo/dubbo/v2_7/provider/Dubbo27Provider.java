@@ -20,15 +20,11 @@ import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.util.concurrent.CountDownLatch;
-
 @SpringBootApplication
 @EnableDubbo(scanBasePackages = {"com.jd.live.agent.demo.dubbo.v2_7.provider.service"})
 public class Dubbo27Provider {
     public static void main(String[] args) throws Exception {
         SnapShotSwitch.setIsSnapShot(false);
         SpringApplication.run(Dubbo27Provider.class, args);
-        System.out.println("dubbo2.7 provider started");
-        new CountDownLatch(1).await();
     }
 }

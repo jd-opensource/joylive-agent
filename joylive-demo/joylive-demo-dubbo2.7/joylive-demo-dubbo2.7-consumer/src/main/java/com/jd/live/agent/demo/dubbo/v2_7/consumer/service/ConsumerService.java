@@ -39,10 +39,10 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     @Resource
     private LiveConfig config;
 
-    @DubboReference(providedBy = "dubbo3-provider", group = "live-demo")
+    @DubboReference(group = "live-demo", providedBy = "dubbo2.7-provider")
     private HelloService helloService;
 
-    @DubboReference(interfaceClass = HelloService.class, providedBy = "dubbo3-provider", group = "live-demo")
+    @DubboReference(interfaceName = "com.jd.live.agent.demo.service.HelloService", providedBy = "dubbo2.7-provider", group = "live-demo", generic = true)
     private GenericService genericService;
 
     @Override
@@ -77,10 +77,8 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     }
 
     private void doGenericInvoke(RpcContext context) {
-        String result;
-        EchoResponse response;
-        result = (String) genericService.$invoke("echo", new String[]{"java.lang.String"}, new Object[]{"hello"});
-        response = new EchoResponse("dubbo2.7-consumer", "attachment", context::getAttachment, result);
+        String result = (String) genericService.$invoke("echo", new String[]{"java.lang.String"}, new Object[]{"hello"});
+        EchoResponse response = new EchoResponse("dubbo2.7-consumer", "attachment", context::getAttachment, result);
         logger.info("Generic invoke result: \n\n{}", response);
     }
 }

@@ -79,10 +79,8 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     }
 
     private void doGenericInvoke(RpcContextAttachment attachment) {
-        String result;
-        EchoResponse response;
-        result = (String) genericService.$invoke("echo", new String[]{"java.lang.String"}, new Object[]{"hello"});
-        response = new EchoResponse("dubbo3-consumer", "attachment", attachment::getAttachment, result);
+        String result = (String) genericService.$invoke("echo", new String[]{"java.lang.String"}, new Object[]{"hello"});
+        EchoResponse response = new EchoResponse("dubbo3-consumer", "attachment", attachment::getAttachment, result);
         logger.info("Generic invoke result: \n\n{}", response);
     }
 }
