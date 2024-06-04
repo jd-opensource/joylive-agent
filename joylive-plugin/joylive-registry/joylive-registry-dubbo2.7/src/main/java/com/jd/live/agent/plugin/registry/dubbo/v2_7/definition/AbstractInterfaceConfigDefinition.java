@@ -39,13 +39,13 @@ import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.InitServiceMetad
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
 @ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_ABSTRACT_INTERFACE_CONFIG)
 public class AbstractInterfaceConfigDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_ABSTRACT_INTERFACE_CONFIG = "org.apache.dubbo.config.AbstractInterfaceConfig";
 
-    public static final String TYPE_CONSUMER_CONTEXT_FILTER = "org.apache.dubbo.rpc.filter.ConsumerContextFilter";
+    protected static final String TYPE_PROTOCOL_FILTER_WRAPPER = "org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper";
 
     private static final String METHOD_APPEND_RUNTIME_PARAMETERS = "appendRuntimeParameters";
 
