@@ -60,8 +60,9 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER).
-                                and(MatcherBuilder.arguments(ARGUMENT_REGISTER)),
+                        MatcherBuilder.named(METHOD_REGISTER)
+                                .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
+                                .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
                         () -> new RegistryInterceptor(application, lifecycle))
         };
     }

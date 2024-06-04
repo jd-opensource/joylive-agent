@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.sofarpc.definition;
+package com.jd.live.agent.plugin.registry.springcloud.v3.definition;
 
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.registry.sofarpc.interceptor.RegistryInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInterceptor;
 
 /**
  * RegistryDefinition
@@ -41,13 +41,9 @@ import com.jd.live.agent.plugin.registry.sofarpc.interceptor.RegistryInterceptor
 @ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SERVICE_DISCOVERY = "com.alipay.sofa.rpc.registry.Registry";
+    protected static final String TYPE_SERVICE_DISCOVERY = "org.springframework.cloud.client.serviceregistry.ServiceRegistry";
 
     private static final String METHOD_REGISTER = "register";
-
-    private static final String[] ARGUMENT_REGISTER = new String[]{
-            "com.alipay.sofa.rpc.config.ProviderConfig"
-    };
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
@@ -56,13 +52,10 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private AgentLifecycle lifecycle;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_SERVICE_DISCOVERY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER)
-                                .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
-                                .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new RegistryInterceptor(application, lifecycle))
+                        MatcherBuilder.named(METHOD_REGISTER), () -> new RegistryInterceptor(application, lifecycle))
         };
     }
 }
