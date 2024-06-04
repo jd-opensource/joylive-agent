@@ -52,4 +52,13 @@ public interface AgentLifecycle {
      *                The keys represent argument names, and the values represent argument values.
      */
     void execute(String command, Map<String, Object> args);
+
+    /**
+     * Adds a hook that will be executed when the system is ready.
+     * This can be used to perform initialization tasks or other operations
+     * that should occur once the system has completed its startup process.
+     *
+     * @param runnable the hook to be executed when the system is ready
+     */
+    void addReadyHook(Runnable runnable);
 }

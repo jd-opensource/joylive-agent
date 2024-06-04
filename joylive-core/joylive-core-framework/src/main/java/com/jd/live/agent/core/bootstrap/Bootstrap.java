@@ -80,6 +80,7 @@ import java.lang.instrument.Instrumentation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
 import static com.jd.live.agent.core.util.type.ClassUtils.describe;
@@ -218,6 +219,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private List<InjectSourceSupplier> sourceSuppliers;
 
+    private List<Runnable> readies = new CopyOnWriteArrayList<>();
+
     private Shutdown shutdown;
 
     /**
@@ -299,25 +302,6 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     @Override
-    public void execute(String command, Map<String, Object> args) {
-        if (commandManager == null) {
-            //only throw initialize exception without error stack to agent.
-            throw new InitializeException("Agent is not successfully installed");
-        } else if (command == null || command.isEmpty()) {
-            //only throw initialize exception without error stack to agent.
-            throw new InitializeException("Command is empty.");
-        } else {
-            Command commander = commandManager.getExtension(command);
-            if (commander != null) {
-                commander.execute(args);
-            } else {
-                //only throw initialize exception without error stack to agent.
-                throw new InitializeException("Command " + command + " is not found.");
-            }
-        }
-    }
-
-    @Override
     public void uninstall() {
         // uninstall agent
         if (!dynamic) {
@@ -352,6 +336,32 @@ public class Bootstrap implements AgentLifecycle {
         commandManager = null;
         sourceSuppliers = null;
         extensionManager = null;
+    }
+
+    @Override
+    public void execute(String command, Map<String, Object> args) {
+        if (commandManager == null) {
+            //only throw initialize exception without error stack to agent.
+            throw new InitializeException("Agent is not successfully installed");
+        } else if (command == null || command.isEmpty()) {
+            //only throw initialize exception without error stack to agent.
+            throw new InitializeException("Command is empty.");
+        } else {
+            Command commander = commandManager.getExtension(command);
+            if (commander != null) {
+                commander.execute(args);
+            } else {
+                //only throw initialize exception without error stack to agent.
+                throw new InitializeException("Command " + command + " is not found.");
+            }
+        }
+    }
+
+    @Override
+    public void addReadyHook(Runnable runnable) {
+        if (runnable != null) {
+            readies.add(runnable);
+        }
     }
 
     /**
@@ -567,6 +577,10 @@ public class Bootstrap implements AgentLifecycle {
         return VersionExpression.of(version).match(JVM.instance().getVersion());
     }
 
+    /**
+     * Injects dependencies into instances managed by the extension manager.
+     * Listens for creation events and performs injection, or logs errors if injection fails.
+     */
     private void inject() {
         extensionManager.addListener((event -> {
             if (event.getType() == EventType.CREATED) {
@@ -578,6 +592,10 @@ public class Bootstrap implements AgentLifecycle {
         }));
     }
 
+    /**
+     * Subscribes all available subscriptions to their respective topics on the event bus.
+     * Retrieves subscriptions from the extension manager and adds handlers to the event bus.
+     */
     private void subscribe() {
         List<Subscription> subscriptions = extensionManager.getOrLoadExtensible(Subscription.class,
                 classLoaderManager.getCoreImplLoader()).getExtensions();
@@ -590,6 +608,12 @@ public class Bootstrap implements AgentLifecycle {
         return extensionManager.getOrLoadExtensible(Command.class, classLoaderManager.getCoreImplLoader());
     }
 
+    /**
+     * Handles various agent events and takes appropriate actions based on the event type.
+     * Updates application status or logs exceptions as necessary.
+     *
+     * @param event the agent event to handle
+     */
     private void onAgentEvent(AgentEvent event) {
         switch (event.getType()) {
             case AGENT_FAILURE:
@@ -598,6 +622,7 @@ public class Bootstrap implements AgentLifecycle {
                     onException(event.getMessage(), event.getThrowable());
                     break;
             case APPLICATION_READY:
+                onReady();
                 application.setStatus(AppStatus.READY);
                 break;
             case APPLICATION_STOP:
@@ -606,6 +631,26 @@ public class Bootstrap implements AgentLifecycle {
         }
     }
 
+    /**
+     * Executes all registered ready hooks.
+     * Runs each runnable and logs exceptions if any occur during execution.
+     */
+    private void onReady() {
+        for (Runnable runnable : readies) {
+            try {
+                runnable.run();
+            } catch (Throwable e) {
+                onException(e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Logs an exception and optionally shuts down the application if not in dynamic mode.
+     *
+     * @param message the message to log
+     * @param throwable the exception to log
+     */
     private void onException(String message, Throwable throwable) {
         logger.error(message, throwable);
         if (!dynamic) {
