@@ -36,7 +36,7 @@ public class MicroServiceSyncConfig extends SyncConfig {
 
     public String getServiceUrl() {
         if (serviceUrl == null && getUrl() != null) {
-            serviceUrl = StringUtils.url(getUrl(), "/space/${space}/services/${service_name}/version/${service_version}");
+            serviceUrl = StringUtils.url(getUrl(), "/space/${space}/service/${service_name}/version/${service_version}?application=${application}");
         }
         return serviceUrl;
     }

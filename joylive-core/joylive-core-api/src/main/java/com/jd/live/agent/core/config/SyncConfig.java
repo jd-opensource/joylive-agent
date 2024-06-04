@@ -34,6 +34,8 @@ public class SyncConfig {
 
     public static final String SYNC_MICROSERVICE = SYNC + ".microservice";
 
+    public static final String SYNC_MICROSERVICE_ENABLED = SYNC_MICROSERVICE + ".enabled";
+
     public static final String SYNC_MICROSERVICE_TYPE = SYNC_MICROSERVICE + ".type";
 
     public static final String SYNC_LIVE_SPACE = SYNC + ".liveSpace";
