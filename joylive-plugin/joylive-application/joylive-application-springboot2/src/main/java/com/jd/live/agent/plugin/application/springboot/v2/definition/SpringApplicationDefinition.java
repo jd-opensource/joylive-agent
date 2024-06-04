@@ -46,6 +46,8 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_READY = "ready";
 
+    private static final String METHOD_RUNNING = "running";
+
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
 
@@ -57,7 +59,7 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
                         () -> new ApplicationStartedInterceptor(policySupervisor, publisher)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_READY),
+                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
                         () -> new ApplicationReadyInterceptor(publisher))
         };
     }
