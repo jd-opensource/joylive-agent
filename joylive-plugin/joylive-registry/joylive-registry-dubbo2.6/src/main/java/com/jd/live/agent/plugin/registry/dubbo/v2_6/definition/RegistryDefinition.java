@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.definition;
+package com.jd.live.agent.plugin.registry.dubbo.v2_6.definition;
 
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -26,28 +26,28 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.RegistryInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor.RegistryInterceptor;
 
 /**
  * RegistryDefinition
  */
 @Injectable
-@Extension(value = "RegistryDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "RegistryDefinition_v2.6", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
+@ConditionalOnClass(ReferenceConfigDefinition.TYPE_REFERENCE_CONFIG)
 @ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SERVICE_DISCOVERY = "org.apache.dubbo.registry.client.AbstractServiceDiscovery";
+    protected static final String TYPE_SERVICE_DISCOVERY = "com.alibaba.dubbo.registry.support.FailbackRegistry";
 
     private static final String METHOD_REGISTER = "doRegister";
 
     private static final String[] ARGUMENT_REGISTER = new String[]{
-            "org.apache.dubbo.registry.client.ServiceInstance"
+            "com.alibaba.dubbo.common.URL"
     };
 
     @Inject(Application.COMPONENT_APPLICATION)
