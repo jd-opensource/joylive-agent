@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke;
 
-import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.matcher.Matcher;
@@ -230,7 +229,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         if (publisher != null && builder != null) {
             TrafficEvent event = configure(builder).build();
             if (event != null) {
-                publisher.offer(new Event<>(event));
+                publisher.offer(event);
             }
         }
     }

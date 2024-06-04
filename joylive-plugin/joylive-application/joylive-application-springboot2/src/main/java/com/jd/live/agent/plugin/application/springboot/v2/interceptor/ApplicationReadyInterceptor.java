@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.logger;
+package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.EventHandler.EventProcessor;
 import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.event.Subscription;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
-@Extension("EventLogger")
-public class EventLogger implements Subscription<AgentEvent>, EventProcessor<AgentEvent> {
+public class ApplicationReadyInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventLogger.class);
+    private final Publisher<AgentEvent> publisher;
 
-    @Override
-    public void process(AgentEvent event) {
-        logger.info(event.getMessage());
+    public ApplicationReadyInterceptor(Publisher<AgentEvent> publisher) {
+        this.publisher = publisher;
     }
 
     @Override
-    public String getTopic() {
-        return Publisher.SYSTEM;
+    public void onEnter(ExecutableContext ctx) {
+        publisher.offer(AgentEvent.onApplicationReady("Application is ready"));
     }
 }

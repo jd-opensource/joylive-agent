@@ -17,14 +17,8 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.handler;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.AgentEvent.EventType;
-import com.jd.live.agent.core.event.Event;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.implement.bytekit.bytebuddy.BuilderHandler;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
@@ -43,19 +37,15 @@ import java.lang.instrument.Instrumentation;
  *
  * @since 1.0.0
  */
-@Injectable
 @Extension(value = "LoggerHandler", order = BuilderHandler.ORDER_LOGGER_HANDLER)
 @ConditionalOnProperty(value = "agent.enhance.loggerEnabled", matchIfMissing = true)
 public class LoggerHandler implements BuilderHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggerHandler.class);
 
-    @Inject(value = Publisher.ENHANCE)
-    private Publisher<AgentEvent> publisher;
-
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
-        return builder.with(new EventLogger(publisher));
+        return builder.with(new EventLogger());
     }
 
     /**
@@ -64,12 +54,6 @@ public class LoggerHandler implements BuilderHandler {
      * @since 1.0.0
      */
     protected static class EventLogger implements AgentBuilder.Listener {
-
-        private final Publisher<AgentEvent> publisher;
-
-        public EventLogger(Publisher<AgentEvent> publisher) {
-            this.publisher = publisher;
-        }
 
         @Override
         public void onDiscovery(@NeverNull String typeName,
@@ -90,7 +74,6 @@ public class LoggerHandler implements BuilderHandler {
                                      @NeverNull DynamicType dynamicType) {
             if (logger.isInfoEnabled()) {
                 String message = String.format("[Byte Buddy] TRANSFORM %s [%s, %s, %s, loaded=%b]", typeDescription.getName(), classLoader, module, Thread.currentThread(), loaded);
-                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_ENHANCE_SUCCESS, message)));
                 logger.info(message);
             }
         }
@@ -116,9 +99,7 @@ public class LoggerHandler implements BuilderHandler {
             PrintStream printStream = new PrintStream(bos);
             printStream.printf("[Byte Buddy] ERROR %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
             throwable.printStackTrace(printStream);
-            String message = bos.toString();
-            publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_ENHANCE_FAILURE, message)));
-            logger.error(message);
+            logger.error(bos.toString());
         }
 
         @Override

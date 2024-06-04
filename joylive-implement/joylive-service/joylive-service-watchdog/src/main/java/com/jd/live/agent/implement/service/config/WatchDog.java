@@ -18,7 +18,6 @@ package com.jd.live.agent.implement.service.config;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.context.AgentPath;
-import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.FileEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
@@ -119,7 +118,7 @@ public class WatchDog extends AbstractService {
                     }
                     if (type != null) {
                         logger.info("detected file changes. " + file.getPath());
-                        publisher.offer(new Event<>(new FileEvent(type, file)));
+                        publisher.offer(new FileEvent(type, file));
                     }
                 }
             }

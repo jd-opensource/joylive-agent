@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -46,6 +47,10 @@ public abstract class Futures {
         CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(throwable);
         return future;
+    }
+
+    public static <T> CompletableFuture<Void> allOf(List<CompletableFuture<T>> futures) {
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
 }

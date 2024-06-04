@@ -37,5 +37,20 @@ public interface EventHandler<E> {
      * @param events A list of events to be handled. Each event contains data of type {@code <E>}.
      */
     void handle(List<Event<E>> events);
+
+    @FunctionalInterface
+    interface EventProcessor<E> extends EventHandler<E> {
+
+        @Override
+        default void handle(List<Event<E>> events) {
+            if (events != null) {
+                for (Event<E> event : events) {
+                    process(event.getData());
+                }
+            }
+        }
+
+        void process(E event);
+    }
 }
 

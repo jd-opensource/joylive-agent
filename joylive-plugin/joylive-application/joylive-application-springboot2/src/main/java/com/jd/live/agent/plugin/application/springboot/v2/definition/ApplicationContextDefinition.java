@@ -26,39 +26,29 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ContextStopInterceptor;
 
 @Injectable
-@Extension(value = "SpringApplicationDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
-@ConditionalOnClass(SpringApplicationDefinition.TYPE_SPRING_APPLICATION_RUN_LISTENERS)
+@Extension(value = "ApplicationContextDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
+@ConditionalOnClass(ApplicationContextDefinition.TYPE_ABSTRACT_APPLICATION_CONTEXT)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-public class SpringApplicationDefinition extends PluginDefinitionAdapter {
+public class ApplicationContextDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SPRING_APPLICATION_RUN_LISTENERS = "org.springframework.boot.SpringApplicationRunListeners";
+    protected static final String TYPE_ABSTRACT_APPLICATION_CONTEXT = "org.springframework.context.support.AbstractApplicationContext";
 
-    private static final String METHOD_STARTED = "started";
-
-    private static final String METHOD_READY = "ready";
-
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
+    private static final String METHOD_STOP = "stop";
 
     @Inject(Publisher.SYSTEM)
     private Publisher<AgentEvent> publisher;
 
-    public SpringApplicationDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
+    public ApplicationContextDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_APPLICATION_CONTEXT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationStartedInterceptor(policySupervisor)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_READY),
-                        () -> new ApplicationReadyInterceptor(publisher))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ContextStopInterceptor(publisher))
         };
     }
 }

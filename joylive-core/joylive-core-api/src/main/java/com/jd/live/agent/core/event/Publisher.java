@@ -87,6 +87,16 @@ public interface Publisher<E> {
     boolean offer(Event<E> event);
 
     /**
+     * Offers an event to the event queue.
+     *
+     * @param event the event to be offered
+     * @return {@code true} if the event was successfully added to the queue, {@code false} otherwise
+     */
+    default boolean offer(E event) {
+        return offer(new Event<>(event));
+    }
+
+    /**
      * Offers an event to this publisher with a timeout. The event will be dispatched
      * to all handlers registered with this publisher if it is accepted within the specified
      * timeout period.
@@ -97,5 +107,18 @@ public interface Publisher<E> {
      * @return {@code true} if the event was successfully offered, {@code false} otherwise.
      */
     boolean offer(Event<E> event, long timeout, TimeUnit timeUnit);
+
+    /**
+     * Offers an event to the event queue, waiting up to the specified timeout if necessary for space to become available.
+     *
+     * @param event    the event to be offered
+     * @param timeout  how long to wait before giving up, in units of {@code timeUnit}
+     * @param timeUnit the time unit of the {@code timeout} argument
+     * @return {@code true} if the event was successfully added to the queue, {@code false} if the specified waiting time elapses before space is available
+     * @throws InterruptedException if interrupted while waiting
+     */
+    default boolean offer(E event, long timeout, TimeUnit timeUnit) {
+        return offer(new Event<>(event), timeout, timeUnit);
+    }
 }
 

@@ -66,4 +66,6 @@ public interface PolicySupervisor extends PolicySupplier {
      * @return A list of {@link PolicySubscriber} who are subscribed to policy updates.
      */
     List<PolicySubscriber> getSubscribers();
+
+    void waitReady();
 }

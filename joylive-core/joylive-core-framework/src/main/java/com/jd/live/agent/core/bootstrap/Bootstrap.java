@@ -30,7 +30,11 @@ import com.jd.live.agent.core.command.Command;
 import com.jd.live.agent.core.config.*;
 import com.jd.live.agent.core.context.AgentContext;
 import com.jd.live.agent.core.context.AgentPath;
-import com.jd.live.agent.core.event.*;
+import com.jd.live.agent.core.event.AgentEvent;
+import com.jd.live.agent.core.event.EventBus;
+import com.jd.live.agent.core.event.EventHandler.EventProcessor;
+import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.extension.ExtensionEvent.EventType;
@@ -258,7 +262,7 @@ public class Bootstrap implements AgentLifecycle {
             timer.start();
             eventBus = createEventBus(); //depend on extensionManager & option
             publisher = eventBus.getPublisher(Publisher.SYSTEM);
-            publisher.addHandler(this::onAgentEvent);
+            publisher.addHandler((EventProcessor<AgentEvent>) this::onAgentEvent);
             if (!supportEnhance()) {
                 //depend on agentConfig
                 throw new InitializeException("the jvm version is not supported enhancement.");
@@ -270,20 +274,23 @@ public class Bootstrap implements AgentLifecycle {
             commandManager = createCommandManager();
             subscribe();
             serviceManager.start().join();
+            // TODO In AgentMain mode, it is necessary to enhance the registry first to obtain the service strategy, and then enhance the routing plugin
             if (pluginManager.install(dynamic)) {
-                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_SUCCESS, "Success installing all plugins.")));
+                publisher.offer(AgentEvent.onAgentEnhanceReady("Success installing all plugins."));
             } else {
-                publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_ENHANCE_FAILURE, "Failed to install plugin.")));
+                publisher.offer(AgentEvent.onAgentEnhanceFailure("Failed to install plugin.", null));
             }
             shutdown = new Shutdown();
             shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
             shutdown.addHook(() -> serviceManager.stop());
             shutdown.register();
+            publisher.offer(AgentEvent.onAgentReady("Success starting LiveAgent."));
         } catch (Throwable e) {
-            publisher.offer(new Event<>(new AgentEvent(AgentEvent.EventType.AGENT_START_FAILURE,
-                    e instanceof InitializeException
+            // TODO Close resource
+            publisher.offer(
+                    AgentEvent.onAgentFailure(e instanceof InitializeException
                             ? e.getMessage()
-                            : "Failed to install plugin. caused by " + e.getMessage())));
+                            : "Failed to install plugin. caused by " + e.getMessage(), e));
             logger.error(e.getMessage(), e);
             if (serviceManager != null) {
                 serviceManager.stop();
@@ -583,22 +590,27 @@ public class Bootstrap implements AgentLifecycle {
         return extensionManager.getOrLoadExtensible(Command.class, classLoaderManager.getCoreImplLoader());
     }
 
-    private void onAgentEvent(List<Event<AgentEvent>> events) {
-        for (Event<AgentEvent> event : events) {
-            AgentEvent data = event.getData();
-            switch (data.getType()) {
-                case AGENT_START_FAILURE:
-                case AGENT_POLICY_INITIALIZE_FAILURE:
-                    logger.error(data.getMessage(), data.getThrowable());
-                    logger.info("Shutdown.....");
-                    System.exit(1);
+    private void onAgentEvent(AgentEvent event) {
+        switch (event.getType()) {
+            case AGENT_FAILURE:
+            case AGENT_SERVICE_POLICY_FAILURE:
                 case AGENT_ENHANCE_FAILURE:
-                    logger.error(data.getMessage(), data.getThrowable());
-                    if (!dynamic) {
-                        logger.info("Shutdown.....");
-                        System.exit(1);
-                    }
-            }
+                    onException(event.getMessage(), event.getThrowable());
+                    break;
+            case APPLICATION_READY:
+                application.setStatus(AppStatus.READY);
+                break;
+            case APPLICATION_STOP:
+                application.setStatus(AppStatus.DESTROYING);
+                break;
+        }
+    }
+
+    private void onException(String message, Throwable throwable) {
+        logger.error(message, throwable);
+        if (!dynamic) {
+            logger.info("Shutdown.....");
+            System.exit(1);
         }
     }
 }

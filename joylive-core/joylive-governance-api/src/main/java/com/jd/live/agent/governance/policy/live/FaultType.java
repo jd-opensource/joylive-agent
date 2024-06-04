@@ -19,6 +19,18 @@ import com.jd.live.agent.bootstrap.exception.RejectException;
 
 public enum FaultType {
 
+    UNREADY {
+        @Override
+        public RejectException reject(String reason) {
+            return new RejectException.RejectCellException();
+        }
+
+        @Override
+        public RejectException failover(String reason) {
+            return new RejectException.RejectCellException();
+        }
+    },
+
     LIMIT {
         @Override
         public RejectException reject(String reason) {

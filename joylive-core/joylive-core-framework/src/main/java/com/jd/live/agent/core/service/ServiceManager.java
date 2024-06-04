@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
-import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
@@ -64,7 +63,7 @@ public class ServiceManager implements AgentService, ServiceSupervisor {
     public CompletableFuture<Void> start() {
         return execute(AgentService::start, s -> "Service " + s.getClass().getSimpleName() + " is started.").whenComplete((v, t) -> {
             if (t == null) {
-                publisher.offer(new Event<>(new AgentEvent(EventType.AGENT_SERVICE_READY, "All services are started.")));
+                publisher.offer(new AgentEvent(EventType.AGENT_SERVICE_READY, "All services are started."));
             }
         });
     }

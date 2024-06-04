@@ -43,9 +43,14 @@ public interface InboundFilter {
     int ORDER_INBOUND_LIMITER = -10;
 
     /**
+     * Execution order for the ready filter
+     */
+    int ORDER_INBOUND_READY = 0;
+
+    /**
      * Execution order for the live unit filter
      */
-    int ORDER_INBOUND_LIVE_UNIT = 0;
+    int ORDER_INBOUND_LIVE_UNIT = ORDER_INBOUND_READY + 1;
 
     /**
      * Execution order for the live cell filter

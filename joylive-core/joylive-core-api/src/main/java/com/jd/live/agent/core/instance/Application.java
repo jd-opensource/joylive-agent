@@ -97,7 +97,7 @@ public class Application {
     private final int pid;
 
     @Setter
-    private volatile AppStatus status = AppStatus.READY;
+    private volatile AppStatus status = AppStatus.STARTING;
 
     /**
      * Default constructor initializes the process ID and instance with a unique application ID.

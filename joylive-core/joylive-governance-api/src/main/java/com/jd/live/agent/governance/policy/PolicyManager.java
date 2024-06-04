@@ -32,6 +32,7 @@ import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceSupervisor;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.LaneConfig;
 import com.jd.live.agent.governance.config.LiveConfig;
@@ -50,8 +51,7 @@ import com.jd.live.agent.governance.service.PolicyService;
 import lombok.Getter;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -220,6 +220,24 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     }
 
     @Override
+    public void waitReady() {
+        if (!subscribers.isEmpty()) {
+            List<CompletableFuture<Void>> futures = new ArrayList<>(subscribers.size());
+            subscribers.forEach((k, v) -> futures.add(v.getFuture()));
+            try {
+                Futures.allOf(futures).get(governanceConfig.getInitializeTimeout(), TimeUnit.MILLISECONDS);
+                systemPublisher.offer(AgentEvent.onServicePolicyReady("Application service policies are ready."));
+            } catch (Throwable e) {
+                Throwable cause = e instanceof ExecutionException ? e.getCause() : null;
+                cause = cause != null ? cause : e;
+                String error = cause instanceof TimeoutException ? "It's timeout to fetch governance policy." :
+                        "Failed to fetch governance policy. caused by " + cause.getMessage();
+                systemPublisher.offer(AgentEvent.onServicePolicyFailure(error, cause));
+            }
+        }
+    }
+
+    @Override
     public void initialize() {
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {
@@ -284,7 +302,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     protected void subscribe(PolicySubscriber subscriber) {
         PolicySubscriber exist = subscribers.putIfAbsent(subscriber.getName(), subscriber);
         if (exist == null) {
-            policyPublisher.offer(new Event<>(subscriber));
+            policyPublisher.offer(subscriber);
         } else {
             exist.trigger(subscriber.getFuture());
         }
