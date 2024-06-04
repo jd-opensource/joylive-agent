@@ -58,14 +58,19 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         config.transmit(context::setAttachment);
         long counter = 0;
         while (!Thread.currentThread().isInterrupted()) {
-            if (counter++ % 2 == 0) {
-                doInvoke(context);
-            } else {
-                doGenericInvoke(context);
+            try {
+                if (counter++ % 2 == 0) {
+                    doInvoke(context);
+                } else {
+                    doGenericInvoke(context);
+                }
+            } catch (Throwable e) {
+                logger.error(e.getMessage(), e);
             }
             try {
                 countDownLatch.await(3000L, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException ignore) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
