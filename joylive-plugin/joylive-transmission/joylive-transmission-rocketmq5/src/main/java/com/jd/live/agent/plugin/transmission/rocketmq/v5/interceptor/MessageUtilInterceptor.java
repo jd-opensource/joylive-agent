@@ -36,7 +36,7 @@ public class MessageUtilInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        attachTag((Message) mc.getArgument(0), (Message) mc.getResult());
+        attachTag(mc.getArgument(0), (Message) mc.getResult());
     }
 
     private void attachTag(Message request, Message response) {

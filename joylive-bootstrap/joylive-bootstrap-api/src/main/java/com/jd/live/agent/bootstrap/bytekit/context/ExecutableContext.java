@@ -100,8 +100,9 @@ public abstract class ExecutableContext extends AbstractAttributes {
         return throwable == null;
     }
 
-    public Object getArgument(int index) {
-        return arguments == null || index < 0 || index >= arguments.length ? null : arguments[index];
+    @SuppressWarnings("unchecked")
+    public <T> T getArgument(int index) {
+        return arguments == null || index < 0 || index >= arguments.length ? null : (T) arguments[index];
     }
 
 }
