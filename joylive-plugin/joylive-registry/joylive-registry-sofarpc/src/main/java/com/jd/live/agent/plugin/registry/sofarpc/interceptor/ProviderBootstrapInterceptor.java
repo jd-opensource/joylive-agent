@@ -18,8 +18,6 @@ package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 import com.alipay.sofa.rpc.bootstrap.ProviderBootstrap;
 import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 
@@ -27,8 +25,6 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
  * ProviderBootstrapInterceptor
  */
 public class ProviderBootstrapInterceptor extends BootstrapInterceptor {
-
-    private static final Logger logger = LoggerFactory.getLogger(ProviderBootstrapInterceptor.class);
 
     public ProviderBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
         super(application, policySupplier);
@@ -39,9 +35,5 @@ public class ProviderBootstrapInterceptor extends BootstrapInterceptor {
         ProviderConfig<?> config = ((ProviderBootstrap<?>) ctx.getTarget()).getProviderConfig();
         attachTags(config);
         subscribePolicy(config);
-
-        if (logger.isInfoEnabled()) {
-            logger.info("Success filling metadata for registration " + config.getInterfaceId() + " in " + config.getClass());
-        }
     }
 }

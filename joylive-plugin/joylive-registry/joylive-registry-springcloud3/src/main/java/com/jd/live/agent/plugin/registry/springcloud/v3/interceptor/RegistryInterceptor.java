@@ -18,31 +18,47 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
-import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
+import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.PolicyType;
+import org.springframework.cloud.client.serviceregistry.Registration;
+
+import java.util.Map;
 
 /**
  * RegistryInterceptor
  */
-public class RegistryInterceptor extends InterceptorAdaptor {
+public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
-    private final Application application;
+    private final PolicySupplier policySupplier;
 
-    private final AgentLifecycle lifecycle;
-
-    public RegistryInterceptor(Application application, AgentLifecycle lifecycle) {
-        this.application = application;
-        this.lifecycle = lifecycle;
+    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, PolicySupplier policySupplier) {
+        super(application, lifecycle);
+        this.policySupplier = policySupplier;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        if (application.getStatus() == AppStatus.STARTING) {
-            lifecycle.addReadyHook(mc::invoke);
-            mc.setSkip(true);
-        }
+        Registration registration = (Registration) ctx.getArguments()[0];
+        attachTag(registration);
+        subscribePolicy(registration);
+        super.onEnter(ctx);
     }
 
+    @Override
+    protected String getServiceName(MethodContext ctx) {
+        return ((Registration) ctx.getArgument(0)).getServiceId();
+    }
+
+    private void subscribePolicy(Registration registration) {
+        policySupplier.subscribe(registration.getServiceId(), PolicyType.SERVICE_POLICY);
+    }
+
+    private void attachTag(Registration registration) {
+        Map<String, String> metadata = registration.getMetadata();
+        if (metadata != null) {
+            application.label(metadata::putIfAbsent);
+        }
+    }
 }

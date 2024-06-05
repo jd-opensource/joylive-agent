@@ -26,13 +26,17 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInterceptor;
 
 /**
- * RegistryDefinition
+ * ServiceRegistryDefinition
+ *
+ * @author Zhiguo.Chen
+ * @since 1.0.0
  */
 @Injectable
-@Extension(value = "RegistryDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "ServiceRegistryDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
@@ -45,17 +49,24 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_REGISTER = "register";
 
+    private static final String ARGUMENT_REGISTER = "org.springframework.cloud.client.serviceregistry.Registration";
+
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
     @Inject(AgentLifecycle.COMPONENT_AGENT_LIFECYCLE)
     private AgentLifecycle lifecycle;
 
+    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
+    private PolicySupplier policySupplier;
+
     public RegistryDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_SERVICE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER), () -> new RegistryInterceptor(application, lifecycle))
+                        MatcherBuilder.named(METHOD_REGISTER).
+                                and(MatcherBuilder.arguments(MatcherBuilder.isSubTypeOf(ARGUMENT_REGISTER))),
+                        () -> new RegistryInterceptor(application, lifecycle, policySupplier))
         };
     }
 }

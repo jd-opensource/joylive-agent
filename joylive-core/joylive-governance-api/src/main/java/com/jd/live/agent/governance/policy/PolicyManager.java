@@ -215,6 +215,12 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     }
 
     @Override
+    public boolean isDone(String name) {
+        PolicySubscriber subscriber = name == null ? null : subscribers.get(name);
+        return subscriber != null && subscriber.isDone();
+    }
+
+    @Override
     public List<PolicySubscriber> getSubscribers() {
         return Collections.unmodifiableList(new ArrayList<>(subscribers.values()));
     }

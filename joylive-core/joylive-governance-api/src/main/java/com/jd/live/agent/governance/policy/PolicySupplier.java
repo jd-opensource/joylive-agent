@@ -52,5 +52,14 @@ public interface PolicySupplier {
      * @return A {@link CompletableFuture} that completes when the subscription is successful.
      */
     CompletableFuture<Void> subscribe(String name, PolicyType type);
+
+    /**
+     * Checks if the task associated with the given name has completed successfully.
+     *
+     * @param name the name of the task to check
+     * @return {@code true} if the task with the specified name is done and has not completed exceptionally,
+     * otherwise {@code false}
+     */
+    boolean isDone(String name);
 }
 

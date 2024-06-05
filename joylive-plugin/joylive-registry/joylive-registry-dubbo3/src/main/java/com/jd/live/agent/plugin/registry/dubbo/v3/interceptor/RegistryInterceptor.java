@@ -15,34 +15,28 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
-import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
+import org.apache.dubbo.registry.client.ServiceInstance;
 
 /**
  * RegistryInterceptor
  */
-public class RegistryInterceptor extends InterceptorAdaptor {
+public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
-    private final Application application;
-
-    private final AgentLifecycle lifecycle;
+    private static final Logger logger = LoggerFactory.getLogger(RegistryInterceptor.class);
 
     public RegistryInterceptor(Application application, AgentLifecycle lifecycle) {
-        this.application = application;
-        this.lifecycle = lifecycle;
+        super(application, lifecycle);
     }
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        if (application.getStatus() == AppStatus.STARTING) {
-            lifecycle.addReadyHook(mc::invoke);
-            mc.setSkip(true);
-        }
+    protected String getServiceName(MethodContext ctx) {
+        return ((ServiceInstance) ctx.getArgument(0)).getServiceName();
     }
-
 }
+

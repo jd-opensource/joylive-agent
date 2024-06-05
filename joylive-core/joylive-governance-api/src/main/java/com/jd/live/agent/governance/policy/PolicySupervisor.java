@@ -67,5 +67,9 @@ public interface PolicySupervisor extends PolicySupplier {
      */
     List<PolicySubscriber> getSubscribers();
 
+    /**
+     * Waits until the application is ready.
+     * This method blocks the current thread until the application signals that it is ready to proceed.
+     */
     void waitReady();
 }

@@ -25,7 +25,8 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientGetInterceptor;
 
 /**
  * ServiceRegistryDefinition
@@ -42,6 +43,8 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISCOVERY_CLIENT = "org.springframework.cloud.loadbalancer.core.DiscoveryClientServiceInstanceListSupplier";
 
+    private static final String METHOD_GET = "get";
+
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
@@ -49,8 +52,11 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new DiscoveryClientInterceptor(policySupplier))
+                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(policySupplier)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_GET)
+                                .and(MatcherBuilder.arguments(0)),
+                        () -> new DiscoveryClientGetInterceptor(policySupplier))
         };
     }
 }

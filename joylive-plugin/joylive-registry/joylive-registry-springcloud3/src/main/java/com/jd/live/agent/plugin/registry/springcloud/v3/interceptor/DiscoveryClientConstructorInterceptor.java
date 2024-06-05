@@ -30,13 +30,13 @@ import java.util.concurrent.TimeoutException;
 /**
  * ServiceRegistryInterceptor
  */
-public class DiscoveryClientInterceptor extends InterceptorAdaptor {
+public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(DiscoveryClientInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DiscoveryClientConstructorInterceptor.class);
 
     private final PolicySupplier policySupplier;
 
-    public DiscoveryClientInterceptor(PolicySupplier policySupplier) {
+    public DiscoveryClientConstructorInterceptor(PolicySupplier policySupplier) {
         this.policySupplier = policySupplier;
     }
 
@@ -47,6 +47,8 @@ public class DiscoveryClientInterceptor extends InterceptorAdaptor {
     }
 
     private void subscribePolicy(String serviceId) {
+        // Built at runtime, cannot intercept and obtain the required service during the startup phase
+        // restTemplate.getForObject("http://service-provider/echo/" + str, String.class)
         try {
             policySupplier.subscribe(serviceId, PolicyType.SERVICE_POLICY).get(5000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignore) {

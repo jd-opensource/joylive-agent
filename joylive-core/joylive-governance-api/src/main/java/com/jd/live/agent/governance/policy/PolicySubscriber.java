@@ -84,6 +84,16 @@ public class PolicySubscriber {
     }
 
     /**
+     * Checks if the associated future has completed successfully.
+     *
+     * @return {@code true} if the future is done and has not completed exceptionally,
+     * otherwise {@code false}
+     */
+    public boolean isDone() {
+        return future.isDone() && !future.isCompletedExceptionally();
+    }
+
+    /**
      * Marks the subscription process as complete with an exception. This method completes the associated future
      * exceptionally, indicating that the subscription process has finished due to an error.
      *

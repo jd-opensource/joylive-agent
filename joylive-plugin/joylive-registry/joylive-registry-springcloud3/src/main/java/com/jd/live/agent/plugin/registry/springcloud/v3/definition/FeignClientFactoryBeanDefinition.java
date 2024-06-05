@@ -41,6 +41,7 @@ import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.FeignClientF
 public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FEIGN_CLIENT_FACTORY_BEAN = "org.springframework.cloud.openfeign.FeignClientFactoryBean";
+
     private static final String METHOD_FEIGN = "feign";
 
     private static final String[] ARGUMENT_FEIGN = new String[]{

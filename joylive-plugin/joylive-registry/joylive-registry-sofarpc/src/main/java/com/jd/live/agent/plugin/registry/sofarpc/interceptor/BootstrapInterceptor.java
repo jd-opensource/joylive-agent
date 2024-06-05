@@ -16,8 +16,6 @@
 package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 
 import com.alipay.sofa.rpc.config.AbstractInterfaceConfig;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -27,11 +25,6 @@ import com.jd.live.agent.governance.policy.PolicyType;
  * BootstrapInterceptor provides a base class for interceptors during the bootstrap phase.
  */
 public abstract class BootstrapInterceptor extends InterceptorAdaptor {
-
-    /**
-     * Logger for logging information.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(BootstrapInterceptor.class);
 
     /**
      * Application instance.
@@ -68,9 +61,6 @@ public abstract class BootstrapInterceptor extends InterceptorAdaptor {
                 config.setParameter(key, value);
             }
         });
-        if (logger.isInfoEnabled()) {
-            logger.info("Success filling metadata for registration " + config.getInterfaceId() + " in " + config.getClass());
-        }
     }
 
     /**
@@ -81,7 +71,6 @@ public abstract class BootstrapInterceptor extends InterceptorAdaptor {
      * @param <S>    the specific type of the AbstractInterfaceConfig
      */
     protected <T, S extends AbstractInterfaceConfig<T, S>> void subscribePolicy(S config) {
-        // TODO: Perform asynchronously, hook at application startup to ensure policy synchronization is complete
         // This method can obtain the target interface name for generic calls
         String serviceName = config.getInterfaceId();
         policySupplier.subscribe(serviceName, PolicyType.SERVICE_POLICY);
