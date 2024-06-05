@@ -20,3 +20,7 @@ See [Link Transmission](transmission.md)
 ## 5. Service Governance Model
 
 See [Service Governance Model](governance.md)
+
+## 6. LiveSpace Model
+
+See [LiveSpace Model](livespace.md)
