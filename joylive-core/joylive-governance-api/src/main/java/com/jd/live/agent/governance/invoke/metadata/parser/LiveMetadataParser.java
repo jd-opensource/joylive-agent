@@ -120,7 +120,9 @@ public class LiveMetadataParser implements LiveParser {
      */
     protected String parseRuleId(String key) {
         Cargo cargo = RequestContext.getCargo(key);
-        return cargo == null ? null : cargo.getFirstValue();
+        String ruleId = cargo == null ? null : cargo.getFirstValue();
+        ruleId = ruleId == null || ruleId.isEmpty() ? application.getLocation().getUnitRuleId() : ruleId;
+        return ruleId;
     }
 
     /**

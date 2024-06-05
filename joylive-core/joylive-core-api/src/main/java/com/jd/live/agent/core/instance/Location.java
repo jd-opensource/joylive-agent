@@ -38,6 +38,9 @@ public class Location {
     // Identifier for the live space, a logical partition within the deployment environment.
     private String liveSpaceId;
 
+    // Represents the planning of live spaces, the composition of unit, cell and traffic distribution
+    private String unitRuleId;
+
     // The unit within the live space, for further logical grouping.
     private String unit;
 
