@@ -19,9 +19,11 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.PolicyType;
-import org.apache.dubbo.config.*;
+import org.apache.dubbo.config.AbstractInterfaceConfig;
+import org.apache.dubbo.config.AbstractReferenceConfig;
+import org.apache.dubbo.config.AbstractServiceConfig;
+import org.apache.dubbo.config.RegistryConfig;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
@@ -31,6 +33,10 @@ import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGIST
  * InitServiceMetadataInterceptor
  */
 public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
+
+    private static final int REGISTRY_TYPE_SERVICE = 2;
+
+    private static final int REGISTRY_TYPE_INTERFACE = 1;
 
     private final PolicySupplier policySupplier;
 
@@ -46,41 +52,39 @@ public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        subscribePolicy((AbstractInterfaceConfig) ctx.getTarget());
-    }
-
-    private void subscribePolicy(AbstractInterfaceConfig config) {
-        String service = null;
+        AbstractInterfaceConfig config = (AbstractInterfaceConfig) ctx.getTarget();
+        int type = 0;
         if (config instanceof AbstractServiceConfig) {
-            service = isServiceModel((AbstractServiceConfig) config) ? config.getApplication().getName() : null;
+            type = getRegistryType((AbstractServiceConfig) config);
         } else if (config instanceof AbstractReferenceConfig) {
-            service = ((AbstractReferenceConfig) config).getProvidedBy();
+            type = getRegistryType((AbstractReferenceConfig) config);
         }
-        policySupplier.subscribe(service != null ? service : config.getInterface(), PolicyType.SERVICE_POLICY);
+        if ((type & REGISTRY_TYPE_SERVICE) > 0) {
+            policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
+        }
+        if ((type & REGISTRY_TYPE_INTERFACE) > 0) {
+            policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+        }
     }
 
-    private boolean isServiceModel(AbstractServiceConfig config) {
+    private int getRegistryType(AbstractServiceConfig config) {
+        int result = 0;
         if (config.getRegistries() != null) {
-            boolean serviceMode = true;
             for (RegistryConfig registry : config.getRegistries()) {
                 Map<String, String> map = registry.getParameters();
-                if (map == null || !SERVICE_REGISTRY_TYPE.equals(map.get(REGISTRY_TYPE_KEY))) {
-                    serviceMode = false;
-                    break;
+                if (map != null && SERVICE_REGISTRY_TYPE.equals(map.get(REGISTRY_TYPE_KEY))) {
+                    result |= REGISTRY_TYPE_SERVICE;
+                } else {
+                    result |= REGISTRY_TYPE_INTERFACE;
                 }
-            }
-            if (serviceMode) {
-                ApplicationConfig applicationConfig = config.getApplication();
-                Map<String, String> map = applicationConfig.getParameters();
-                if (map == null) {
-                    map = new HashMap<>();
-                    applicationConfig.setParameters(map);
-                }
-                map.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
-                return true;
             }
         }
-        return false;
+        return result;
+    }
+
+    private int getRegistryType(AbstractReferenceConfig config) {
+        String service = config.getProvidedBy();
+        return service == null || service.isEmpty() ? REGISTRY_TYPE_INTERFACE : REGISTRY_TYPE_SERVICE;
     }
 
 }
