@@ -36,6 +36,8 @@ public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
 
     private static final int REGISTRY_TYPE_INTERFACE = 1;
 
+    private static final int REGISTRY_TYPE_ALL = REGISTRY_TYPE_SERVICE | REGISTRY_TYPE_INTERFACE;
+
     private final PolicySupplier policySupplier;
 
     public InitServiceMetadataInterceptor(PolicySupplier policySupplier) {
@@ -57,8 +59,8 @@ public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
         } else if (config instanceof AbstractReferenceConfig) {
             type = getRegistryType((AbstractReferenceConfig) config);
         }
-        if ((type & REGISTRY_TYPE_SERVICE) > 0) {
-            if ((type & REGISTRY_TYPE_INTERFACE) == 0) {
+        switch (type) {
+            case REGISTRY_TYPE_SERVICE:
                 // Only register with service mode
                 ApplicationConfig applicationConfig = config.getApplication();
                 Map<String, String> map = applicationConfig.getParameters();
@@ -67,11 +69,13 @@ public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
                     applicationConfig.setParameters(map);
                 }
                 map.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
-            }
-            policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
-        }
-        if ((type & REGISTRY_TYPE_INTERFACE) > 0) {
-            policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+                policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
+                break;
+            case REGISTRY_TYPE_ALL: // Degrade to interface
+            case REGISTRY_TYPE_INTERFACE:
+            default:
+                policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+
         }
     }
 
