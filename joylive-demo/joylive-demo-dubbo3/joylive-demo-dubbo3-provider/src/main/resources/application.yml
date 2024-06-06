@@ -30,6 +30,8 @@ dubbo:
     id: nacos-registry
     address: nacos://${NACOS_USERNAME}:${NACOS_PASSWORD}@${NACOS_ADDR}
     group: "live-demo"
+    parameters:
+      namespace: ${NACOS_NAMESPACE:public}
   config-center:
     address: nacos://${NACOS_USERNAME}:${NACOS_PASSWORD}@${NACOS_ADDR}
   metadata-report:
