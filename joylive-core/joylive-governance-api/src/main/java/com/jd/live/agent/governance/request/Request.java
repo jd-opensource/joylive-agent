@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.util.Attributes;
+import com.jd.live.agent.core.Constants;
 
 /**
  * Represents a general request interface.
@@ -34,7 +35,7 @@ public interface Request extends Attributes {
      * This key can be used in request headers or parameters to maintain session stickiness across multiple requests.
      * </p>
      */
-    String KEY_STICKY_ID = "x-live-sticky-id";
+    String KEY_STICKY_ID = Constants.LABEL_LIVE_PREFIX + "sticky-id";
 
 }
 

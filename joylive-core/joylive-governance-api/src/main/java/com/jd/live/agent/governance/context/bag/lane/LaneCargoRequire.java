@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.context.bag.lane;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.governance.config.LaneConfig;
@@ -33,8 +34,8 @@ public class LaneCargoRequire implements CargoRequire {
 
     @Override
     public String[] getNames() {
-        String spaceIdKey = laneConfig == null ? LaneConfig.KEY_LANE_SPACE_ID : laneConfig.getSpaceIdKey();
-        String codeKey = laneConfig == null ? LaneConfig.KEY_LANE_CODE : laneConfig.getCodeKey();
+        String spaceIdKey = laneConfig == null ? Constants.LABEL_LANE_SPACE_ID : laneConfig.getSpaceIdKey();
+        String codeKey = laneConfig == null ? Constants.LABEL_LANE : laneConfig.getLaneKey();
         return new String[]{spaceIdKey, codeKey};
     }
 }

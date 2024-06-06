@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,24 +33,14 @@ public class LaneConfig {
     public static final String COMPONENT_LANE_CONFIG = "laneConfig";
 
     /**
-     * The key used to reference the lane space ID in configurations or headers.
-     */
-    public static final String KEY_LANE_SPACE_ID = "x-lane-space-id";
-
-    /**
-     * The key used to reference the lane code in configurations or headers.
-     */
-    public static final String KEY_LANE_CODE = "x-lane-code";
-
-    /**
      * The space ID key used for lane configuration.
      */
-    private String spaceIdKey = KEY_LANE_SPACE_ID;
+    private String spaceIdKey = Constants.LABEL_LANE_SPACE_ID;
 
     /**
      * The code key used for lane configuration.
      */
-    private String codeKey = KEY_LANE_CODE;
+    private String laneKey = Constants.LABEL_LANE;
 
 }
 

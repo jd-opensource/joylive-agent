@@ -95,7 +95,7 @@ public class LaneMetadataParser implements LaneParser {
      * @return The lane code as a String, or null if not found.
      */
     protected String parseLane(LaneSpace laneSpace) {
-        Cargo cargo = RequestContext.getCargo(laneConfig.getCodeKey());
+        Cargo cargo = RequestContext.getCargo(laneConfig.getLaneKey());
         return cargo == null ? null : cargo.getFirstValue();
     }
 
@@ -198,10 +198,10 @@ public class LaneMetadataParser implements LaneParser {
             Carrier carrier = RequestContext.getOrCreate();
             if (null != targetLane) {
                 carrier.setCargo(laneConfig.getSpaceIdKey(), laneSpace.getId());
-                carrier.setCargo(laneConfig.getCodeKey(), targetLane.getCode());
+                carrier.setCargo(laneConfig.getLaneKey(), targetLane.getCode());
             } else {
                 carrier.removeCargo(laneConfig.getSpaceIdKey());
-                carrier.removeCargo(laneConfig.getCodeKey());
+                carrier.removeCargo(laneConfig.getLaneKey());
             }
         }
     }

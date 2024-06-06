@@ -180,7 +180,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
                     carrier.removeCargo(liveConfig.getRuleIdKey());
                     carrier.removeCargo(liveConfig.getVariableKey());
                     carrier.removeCargo(laneConfig.getSpaceIdKey());
-                    carrier.removeCargo(laneConfig.getCodeKey());
+                    carrier.removeCargo(laneConfig.getLaneKey());
                 }
             }
             super.parsePolicy();

@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.context.bag;
 
 import com.jd.live.agent.bootstrap.util.Attributes;
+import com.jd.live.agent.core.Constants;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -32,13 +33,13 @@ import java.util.function.Function;
  */
 public interface Carrier extends Attributes {
 
-    String ATTRIBUTE_FAILOVER_UNIT = "x-live-failover-unit";
+    String ATTRIBUTE_FAILOVER_UNIT = Constants.LABEL_LIVE_PREFIX + "failover-unit";
 
-    String ATTRIBUTE_FAILOVER_CELL = "x-live-failover-cell";
+    String ATTRIBUTE_FAILOVER_CELL = Constants.LABEL_LIVE_PREFIX + "failover-cell";
 
-    String ATTRIBUTE_SERVICE_ID = "x-live-service";
+    String ATTRIBUTE_SERVICE_ID = Constants.LABEL_SERVICE_ID;
 
-    String ATTRIBUTE_GATEWAY = "x-live-gateway";
+    String ATTRIBUTE_GATEWAY = Constants.LABEL_LIVE_PREFIX + "gateway";
 
     String ATTRIBUTE_DEADLINE = "deadline";
 

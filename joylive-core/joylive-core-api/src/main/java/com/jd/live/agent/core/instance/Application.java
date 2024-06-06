@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.core.instance;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Configurable;
-import com.jd.live.agent.core.util.tag.Label;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,26 +46,8 @@ public class Application {
     // Constant for the application instance configuration key.
     public static final String CONFIG_APP_INSTANCE = "app.instance";
 
-    // Default value used in various contexts.
-    public static final String DEFAULT_VALUE = "default";
-
     // Constant for the application component key.
     public static final String COMPONENT_APPLICATION = "application";
-
-    // Constants for various keys used in metadata and headers.
-    public static final String KEY_INSTANCE_ID = "x-live-instance-id";
-
-    public static final String KEY_SERVICE = "x-live-service";
-
-    public static final String KEY_LIVE_SPACE_ID = "x-live-space-id";
-
-    public static final String KEY_UNIT = "x-live-unit";
-
-    public static final String KEY_CELL = "x-live-cell";
-
-    public static final String KEY_LANE_SPACE_ID = "x-lane-space-id";
-
-    public static final String KEY_LANE_CODE = "x-lane-code";
 
     // Unique application identifier.
     public static final String APP_ID = UUID.randomUUID().toString();
@@ -140,16 +122,18 @@ public class Application {
     public void label(BiConsumer<String, String> consumer) {
         if (consumer != null) {
             if (location != null) {
-                accept(consumer, Label.LABEL_REGION, location.getRegion());
-                accept(consumer, Label.LABEL_ZONE, location.getZone());
-                accept(consumer, Label.LABEL_LIVESPACE_ID, location.getLiveSpaceId());
-                accept(consumer, Label.LABEL_UNIT, location.getUnit());
-                accept(consumer, Label.LABEL_CELL, location.getCell());
-                accept(consumer, Label.LABEL_LANESPACE_ID, location.getLaneSpaceId());
-                accept(consumer, Label.LABEL_LANE, location.getLane());
-                accept(consumer, Label.LABEL_CLUSTER, location.getCluster());
-                accept(consumer, Label.LABEL_APPLICATION, name);
-                accept(consumer, Label.LABEL_GROUP, service.getGroup());
+                accept(consumer, Constants.LABEL_REGION, location.getRegion());
+                accept(consumer, Constants.LABEL_ZONE, location.getZone());
+                accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
+                accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
+                accept(consumer, Constants.LABEL_UNIT, location.getUnit());
+                accept(consumer, Constants.LABEL_CELL, location.getCell());
+                accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
+                accept(consumer, Constants.LABEL_LANE, location.getLane());
+                accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
+                accept(consumer, Constants.LABEL_APPLICATION, name);
+                accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
+                accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
             }
             if (service != null) {
                 Map<String, String> serviceMeta = service.getMeta();

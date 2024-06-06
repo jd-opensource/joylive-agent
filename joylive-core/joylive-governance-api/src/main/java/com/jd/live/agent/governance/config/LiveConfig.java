@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,39 +33,19 @@ public class LiveConfig {
     public static final String COMPONENT_LIVE_CONFIG = "liveConfig";
 
     /**
-     * The key used to reference the live rule ID in configurations or headers.
-     */
-    public static final String KEY_LIVE_RULE_ID = "x-live-rule-id";
-
-    /**
-     * The key used to reference the live space ID in configurations or headers.
-     */
-    public static final String KEY_LIVE_SPACE_ID = "x-live-space-id";
-
-    /**
-     * The key used to reference the live variable, often a unique identifier, in configurations or headers.
-     */
-    public static final String KEY_LIVE_VARIABLE = "x-live-uid";
-
-    /**
-     * A common prefix for live configuration keys to maintain consistency in naming.
-     */
-    public static final String KEY_LIVE_PREFIX = "x-live-";
-
-    /**
      * The space ID key used for live configuration.
      */
-    private String spaceIdKey = KEY_LIVE_SPACE_ID;
+    private String spaceIdKey = Constants.LABEL_LIVE_SPACE_ID;
 
     /**
      * The variable key used for live configuration, which may represent a unique identifier for live sessions.
      */
-    private String variableKey = KEY_LIVE_VARIABLE;
+    private String variableKey = Constants.LABEL_VARIABLE;
 
     /**
      * The rule ID key used for live configuration, which may determine the behavior of live sessions.
      */
-    private String ruleIdKey = KEY_LIVE_RULE_ID;
+    private String ruleIdKey = Constants.LABEL_RULE_ID;
 
 }
 

@@ -24,6 +24,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
@@ -457,18 +458,21 @@ public class Bootstrap implements AgentLifecycle {
         }
         location.setIp(Ipv4.getLocalIp());
         location.setHost(Ipv4.getLocalHost());
-        setProperty(Application.KEY_INSTANCE_ID, app.getInstance());
-        setProperty(Application.KEY_SERVICE, appService == null ? null : appService.getName());
-        setProperty(Application.KEY_LIVE_SPACE_ID, location.getLiveSpaceId() == null ? null : location.getLiveSpaceId());
-        setProperty(Application.KEY_UNIT, location.getUnit());
-        setProperty(Application.KEY_CELL, location.getCell());
-        setProperty(Application.KEY_LANE_SPACE_ID, location.getLaneSpaceId() == null ? null : location.getLaneSpaceId());
-        setProperty(Application.KEY_LANE_CODE, location.getLane());
+        setProperty(Constants.LABEL_INSTANCE_ID, app.getInstance());
+        setProperty(Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
+        setProperty(Constants.LABEL_RULE_ID, location.getUnitRuleId());
+        setProperty(Constants.LABEL_UNIT, location.getUnit());
+        setProperty(Constants.LABEL_CELL, location.getCell());
+        setProperty(Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
+        setProperty(Constants.LABEL_LANE, location.getLane());
+        setProperty(Constants.LABEL_SERVICE_NAMESPACE, appService.getNamespace());
+        setProperty(Constants.LABEL_SERVICE_ID, appService.getName());
+        setProperty(Constants.LABEL_SERVICE_GROUP, appService.getGroup());
         return app;
     }
 
     private void setProperty(String key, String value) {
-        if (value != null) {
+        if (value != null && !value.isEmpty()) {
             System.setProperty(key, value);
         }
     }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.instance;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.tag.Label;
@@ -118,7 +119,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The live space ID, or the default value if not specified.
      */
     default String getLiveSpaceId() {
-        return getLabel(Label.LABEL_LIVESPACE_ID, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_LIVE_SPACE_ID, Constants.DEFAULT_VALUE);
     }
 
     /**
@@ -127,7 +128,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The unit, or the default value if not specified.
      */
     default String getUnit() {
-        return getLabel(Label.LABEL_UNIT, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_UNIT, Constants.DEFAULT_VALUE);
     }
 
     /**
@@ -136,7 +137,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The cell, or the default value if not specified.
      */
     default String getCell() {
-        return getLabel(Label.LABEL_CELL, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_CELL, Constants.DEFAULT_VALUE);
     }
 
     /**
@@ -145,7 +146,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The region, or the default value if not specified.
      */
     default String getRegion() {
-        return getLabel(Label.LABEL_REGION, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_REGION, Constants.DEFAULT_VALUE);
     }
 
     /**
@@ -154,7 +155,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The zone, or the default value if not specified.
      */
     default String getZone() {
-        return getLabel(Label.LABEL_ZONE, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_ZONE, Constants.DEFAULT_VALUE);
     }
 
     /**
@@ -163,7 +164,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The lane space ID, or the default value if not specified.
      */
     default String getLaneSpaceId() {
-        return getLabel(Label.LABEL_LANESPACE_ID, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_LANE_SPACE_ID, Constants.DEFAULT_VALUE);
     }
 
     /**
@@ -172,7 +173,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return The lane, or the default value if not specified.
      */
     default String getLane() {
-        return getLabel(Label.LABEL_LANE, Label.DEFAULT_VALUE);
+        return getLabel(Constants.LABEL_LANE, Constants.DEFAULT_VALUE);
     }
 
     /**

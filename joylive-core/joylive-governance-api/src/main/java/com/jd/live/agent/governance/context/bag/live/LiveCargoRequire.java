@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.context.bag.live;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.governance.config.LiveConfig;
@@ -34,14 +35,14 @@ public class LiveCargoRequire implements CargoRequire {
 
     @Override
     public String[] getNames() {
-        String spaceIdKey = liveConfig == null ? LiveConfig.KEY_LIVE_SPACE_ID : liveConfig.getSpaceIdKey();
-        String ruleIdKey = liveConfig == null ? LiveConfig.KEY_LIVE_RULE_ID : liveConfig.getRuleIdKey();
-        String variableKey = liveConfig == null ? LiveConfig.KEY_LIVE_VARIABLE : liveConfig.getVariableKey();
+        String spaceIdKey = liveConfig == null ? Constants.LABEL_LIVE_SPACE_ID : liveConfig.getSpaceIdKey();
+        String ruleIdKey = liveConfig == null ? Constants.LABEL_RULE_ID : liveConfig.getRuleIdKey();
+        String variableKey = liveConfig == null ? Constants.LABEL_VARIABLE : liveConfig.getVariableKey();
         return new String[]{spaceIdKey, ruleIdKey, variableKey};
     }
 
     @Override
     public String[] getPrefixes() {
-        return new String[]{LiveConfig.KEY_LIVE_PREFIX};
+        return new String[]{Constants.LABEL_LIVE_PREFIX};
     }
 }

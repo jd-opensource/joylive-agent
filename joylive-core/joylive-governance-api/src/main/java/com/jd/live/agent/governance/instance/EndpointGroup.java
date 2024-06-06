@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.instance;
 
-import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -57,7 +57,7 @@ public class EndpointGroup {
         String unit;
         for (Endpoint endpoint : this.endpoints) {
             unit = endpoint.getUnit();
-            unit = (unit == null) ? Label.DEFAULT_VALUE : unit;
+            unit = (unit == null) ? Constants.DEFAULT_VALUE : unit;
             units.computeIfAbsent(unit, UnitGroup::new).add(endpoint);
         }
     }

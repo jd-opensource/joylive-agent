@@ -28,61 +28,6 @@ import static java.util.Collections.addAll;
 public interface Label {
 
     /**
-     * Constant for the label region.
-     */
-    String LABEL_REGION = "region";
-
-    /**
-     * Constant for the label zone.
-     */
-    String LABEL_ZONE = "zone";
-
-    /**
-     * Constant for the label live space ID.
-     */
-    String LABEL_LIVESPACE_ID = "liveSpaceId";
-
-    /**
-     * Constant for the label unit.
-     */
-    String LABEL_UNIT = "unit";
-
-    /**
-     * Constant for the label cell.
-     */
-    String LABEL_CELL = "cell";
-
-    /**
-     * Constant for the label lane space ID.
-     */
-    String LABEL_LANESPACE_ID = "laneSpaceId";
-
-    /**
-     * Constant for the label lane.
-     */
-    String LABEL_LANE = "lane";
-
-    /**
-     * Constant for the label cluster.
-     */
-    String LABEL_CLUSTER = "cluster";
-
-    /**
-     * Constant for the label application.
-     */
-    String LABEL_APPLICATION = "application";
-
-    /**
-     * Constant for the label group.
-     */
-    String LABEL_GROUP = "group";
-
-    /**
-     * Default value for labels.
-     */
-    String DEFAULT_VALUE = "";
-
-    /**
      * Gets the key of the label.
      *
      * @return the label key
