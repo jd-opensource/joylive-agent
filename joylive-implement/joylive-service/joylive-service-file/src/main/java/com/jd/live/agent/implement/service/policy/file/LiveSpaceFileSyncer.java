@@ -76,11 +76,6 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> imp
     }
 
     @Override
-    public String getName() {
-        return "live-syncer";
-    }
-
-    @Override
     protected List<LiveSpace> parse(InputStreamReader reader) {
         return jsonParser.read(reader, new TypeReference<List<LiveSpace>>() {
         });

@@ -94,11 +94,6 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
     }
 
     @Override
-    public String getName() {
-        return "live-space-syncer";
-    }
-
-    @Override
     protected SyncConfig getSyncConfig() {
         return syncConfig;
     }

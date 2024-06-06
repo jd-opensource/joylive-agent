@@ -70,6 +70,8 @@ public abstract class AbstractService implements AgentService {
      */
     protected CompletableFuture<Void> stopFuture;
 
+    protected String name;
+
     @Override
     public CompletableFuture<Void> start() {
         int current = status.get();
@@ -170,6 +172,23 @@ public abstract class AbstractService implements AgentService {
      *
      * @return A {@link String} representing the name of the service.
      */
-    protected abstract String getName();
+    public String getName() {
+        if (name == null) {
+            String className = this.getClass().getSimpleName();
+            StringBuilder builder = new StringBuilder();
+            int index = 0;
+            for (char c : className.toCharArray()) {
+                if (Character.isUpperCase(c)) {
+                    if (index > 0) {
+                        builder.append("-");
+                    }
+                    builder.append(Character.toLowerCase(c));
+                }
+                index++;
+            }
+            name = builder.toString();
+        }
+        return name;
+    }
 }
 

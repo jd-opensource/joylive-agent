@@ -76,11 +76,6 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> imp
     }
 
     @Override
-    public String getName() {
-        return "lane-syncer";
-    }
-
-    @Override
     protected List<LaneSpace> parse(InputStreamReader reader) {
         return jsonParser.read(reader, new TypeReference<List<LaneSpace>>() {
         });

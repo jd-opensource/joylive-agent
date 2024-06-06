@@ -78,11 +78,6 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> impleme
     }
 
     @Override
-    public String getName() {
-        return "service-syncer";
-    }
-
-    @Override
     protected CompletableFuture<Void> doStart() {
         publisher.addHandler(handler);
         policySupervisor.getSubscribers().forEach(this::subscribe);
