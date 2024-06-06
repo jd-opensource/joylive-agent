@@ -32,7 +32,6 @@ public interface PolicyService extends AgentService {
      */
     PolicyType getPolicyType();
 
-    String getName();
 }
 
 

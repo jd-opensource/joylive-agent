@@ -183,6 +183,8 @@ public abstract class AbstractService implements AgentService {
                         builder.append("-");
                     }
                     builder.append(Character.toLowerCase(c));
+                } else {
+                    builder.append(c);
                 }
                 index++;
             }

@@ -120,11 +120,6 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
     }
 
     @Override
-    public String getName() {
-        return "live-service-syncer";
-    }
-
-    @Override
     protected CompletableFuture<Void> doStart() {
         int concurrency = syncConfig.getConcurrency() <= 0 ? CONCURRENCY : syncConfig.getConcurrency();
         executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory(getName(), true));

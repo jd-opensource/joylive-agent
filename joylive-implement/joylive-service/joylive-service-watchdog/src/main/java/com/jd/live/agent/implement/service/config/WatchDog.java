@@ -45,7 +45,6 @@ public class WatchDog extends AbstractService {
 
     private static final Logger logger = LoggerFactory.getLogger(WatchDog.class);
 
-    public static final String WATCH_DOG = "WatchDog";
     @Config("agent.watchdog")
     private WatchDogConfig watchDogConfig = new WatchDogConfig();
     @Inject
@@ -93,11 +92,6 @@ public class WatchDog extends AbstractService {
             }
         }
         return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    protected String getName() {
-        return WATCH_DOG;
     }
 
     private Waiting pollEvent() throws InterruptedException {

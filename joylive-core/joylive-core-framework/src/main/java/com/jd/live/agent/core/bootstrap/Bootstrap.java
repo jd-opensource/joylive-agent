@@ -515,6 +515,13 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(ClassLoaderConfig.COMPONENT_CLASSLOADER_CONFIG, classLoaderConfig);
                 ctx.add(AgentLifecycle.COMPONENT_AGENT_LIFECYCLE, Bootstrap.this);
                 ctx.add(ConditionMatcher.COMPONENT_CONDITION_MATCHER, conditionMatcher);
+                if (serviceManager != null) {
+                    serviceManager.service(service -> {
+                        if (service instanceof InjectSourceSupplier) {
+                            ((InjectSourceSupplier) service).apply(ctx);
+                        }
+                    });
+                }
                 if (sourceSuppliers != null) {
                     sourceSuppliers.forEach(s -> s.apply(ctx));
                 }

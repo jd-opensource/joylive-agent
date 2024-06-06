@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.service;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Defines an interface for supervising services within a system.
@@ -35,5 +36,16 @@ public interface ServiceSupervisor {
      * are currently being supervised.
      */
     List<AgentService> getServices();
+
+    default void service(Consumer<AgentService> consumer) {
+        if (consumer != null) {
+            List<AgentService> services = getServices();
+            if (services != null && !services.isEmpty()) {
+                for (AgentService service : services) {
+                    consumer.accept(service);
+                }
+            }
+        }
+    }
 }
 

@@ -97,6 +97,9 @@ public class GovernanceConfig {
     @Config("lane")
     private LaneConfig laneConfig = new LaneConfig();
 
+    @Config("registry")
+    private RegistryConfig registryConfig = new RegistryConfig();
+
     @Config
     private int initializeTimeout = 10 * 1000;
 

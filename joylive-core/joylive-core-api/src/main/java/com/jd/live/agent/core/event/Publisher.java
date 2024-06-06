@@ -33,15 +33,14 @@ public interface Publisher<E> {
     String SYSTEM = "system";
 
     /**
+     * Topic identifier for registry events.
+     */
+    String REGISTRY = "registry";
+
+    /**
      * Topic identifier for configuration-related events.
      */
     String CONFIG = "config";
-
-    /**
-     * Topic identifier for enhancement-related events.
-     */
-    String ENHANCE = "enhance";
-
     /**
      * Topic identifier for traffic-related events.
      */

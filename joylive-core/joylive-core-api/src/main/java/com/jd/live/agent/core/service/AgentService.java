@@ -49,5 +49,12 @@ public interface AgentService {
      * @return A {@link CompletableFuture} that is completed when the service has stopped.
      */
     CompletableFuture<Void> stop();
+
+    /**
+     * Retrieves the name of the service.
+     *
+     * @return A {@link String} representing the name of the service.
+     */
+    String getName();
 }
 
