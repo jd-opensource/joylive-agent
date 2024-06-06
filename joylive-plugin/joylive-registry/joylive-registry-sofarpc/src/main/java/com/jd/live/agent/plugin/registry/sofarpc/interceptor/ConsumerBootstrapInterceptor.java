@@ -18,30 +18,34 @@ package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 import com.alipay.sofa.rpc.bootstrap.ConsumerBootstrap;
 import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.PolicyType;
 
 /**
  * ConsumerBootstrapInterceptor
  */
-public class ConsumerBootstrapInterceptor extends BootstrapInterceptor {
+public class ConsumerBootstrapInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConsumerBootstrapInterceptor.class);
+    private final Application application;
+
+    private final PolicySupplier policySupplier;
 
     public ConsumerBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+        this.application = application;
+        this.policySupplier = policySupplier;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         ConsumerConfig<?> config = ((ConsumerBootstrap<?>) ctx.getTarget()).getConsumerConfig();
-        attachTags(config);
-        subscribePolicy(config);
-
-        if (logger.isInfoEnabled()) {
-            logger.info("Success filling metadata for registration " + config.getInterfaceId() + " in " + config.getClass());
-        }
+        application.label((key, value) -> {
+            String old = config.getParameter(key);
+            if (old == null || old.isEmpty()) {
+                config.setParameter(key, value);
+            }
+        });
+        policySupplier.subscribe(config.getInterfaceId(), PolicyType.SERVICE_POLICY);
     }
 }

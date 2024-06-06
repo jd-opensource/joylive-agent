@@ -17,13 +17,20 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.PolicyType;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceExport;
+import com.jd.live.agent.governance.registry.ServiceInstance;
+import org.springframework.cloud.client.DefaultServiceInstance;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -33,32 +40,39 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
     private final PolicySupplier policySupplier;
 
-    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, PolicySupplier policySupplier) {
-        super(application, lifecycle);
+    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry, PolicySupplier policySupplier) {
+        super(application, lifecycle, registry);
         this.policySupplier = policySupplier;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Registration registration = (Registration) ctx.getArguments()[0];
-        attachTag(registration);
-        subscribePolicy(registration);
-        super.onEnter(ctx);
-    }
-
-    @Override
-    protected String getServiceName(MethodContext ctx) {
-        return ((Registration) ctx.getArgument(0)).getServiceId();
-    }
-
-    private void subscribePolicy(Registration registration) {
-        policySupplier.subscribe(registration.getServiceId(), PolicyType.SERVICE_POLICY);
-    }
-
-    private void attachTag(Registration registration) {
         Map<String, String> metadata = registration.getMetadata();
         if (metadata != null) {
             application.label(metadata::putIfAbsent);
         }
+        policySupplier.subscribe(registration.getServiceId(), PolicyType.SERVICE_POLICY);
+        super.onEnter(ctx);
+    }
+
+    @Override
+    protected ServiceInstance getInstance(MethodContext ctx) {
+        Registration registration = (Registration) ctx.getArguments()[0];
+        Map<String, String> metadata = registration.getMetadata();
+        metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
+        return ServiceInstance.builder()
+                .type("spring-cloud.v3")
+                .service(registration.getServiceId())
+                .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
+                .exports(Collections.singletonList(
+                        ServiceExport.builder()
+                                .schema(registration.getScheme())
+                                .host(registration.getHost())
+                                .port(registration.getPort())
+                                .url(DefaultServiceInstance.getUri(registration).toString())
+                                .metadata(metadata)
+                                .build()))
+                .build();
     }
 }

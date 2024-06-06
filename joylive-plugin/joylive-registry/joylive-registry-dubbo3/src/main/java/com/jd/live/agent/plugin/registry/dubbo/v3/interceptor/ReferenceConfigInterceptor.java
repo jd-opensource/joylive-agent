@@ -15,23 +15,41 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.PolicyType;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 import org.apache.dubbo.config.ReferenceConfig;
+
+import java.util.Map;
 
 /**
  * ReferenceConfigInterceptor
  */
-public class ReferenceConfigInterceptor extends ConfigInterceptor {
+public class ReferenceConfigInterceptor extends InterceptorAdaptor {
+
+    private final Application application;
+
+    private final PolicySupplier policySupplier;
 
     public ReferenceConfigInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+        this.application = application;
+        this.policySupplier = policySupplier;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected String getService(AbstractInterfaceConfig config) {
-        String providedBy = ((ReferenceConfig<?>) config).getProvidedBy();
-        return providedBy != null ? providedBy : config.getInterface();
+    public void onSuccess(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
+        AbstractInterfaceConfig config = (AbstractInterfaceConfig) ctx.getTarget();
+        Map<String, String> map = (Map<String, String>) mc.getResult();
+
+        application.label(map::putIfAbsent);
+        String service = ((ReferenceConfig<?>) config).getProvidedBy();
+        service = service != null && !service.isEmpty() ? service : config.getInterface();
+        policySupplier.subscribe(service, PolicyType.SERVICE_POLICY);
     }
 }

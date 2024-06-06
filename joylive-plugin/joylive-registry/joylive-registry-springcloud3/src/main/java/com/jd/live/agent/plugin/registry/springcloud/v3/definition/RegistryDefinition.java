@@ -27,6 +27,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInterceptor;
 
 /**
@@ -60,13 +61,16 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
+
     public RegistryDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_SERVICE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER).
                                 and(MatcherBuilder.arguments(MatcherBuilder.isSubTypeOf(ARGUMENT_REGISTER))),
-                        () -> new RegistryInterceptor(application, lifecycle, policySupplier))
+                        () -> new RegistryInterceptor(application, lifecycle, registry, policySupplier))
         };
     }
 }

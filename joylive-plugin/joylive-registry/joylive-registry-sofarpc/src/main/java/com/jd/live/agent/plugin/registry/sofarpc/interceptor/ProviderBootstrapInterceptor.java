@@ -19,21 +19,33 @@ import com.alipay.sofa.rpc.bootstrap.ProviderBootstrap;
 import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.PolicyType;
 
 /**
  * ProviderBootstrapInterceptor
  */
-public class ProviderBootstrapInterceptor extends BootstrapInterceptor {
+public class ProviderBootstrapInterceptor extends InterceptorAdaptor {
+
+    private final Application application;
+
+    private final PolicySupplier policySupplier;
 
     public ProviderBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+        this.application = application;
+        this.policySupplier = policySupplier;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         ProviderConfig<?> config = ((ProviderBootstrap<?>) ctx.getTarget()).getProviderConfig();
-        attachTags(config);
-        subscribePolicy(config);
+        application.label((key, value) -> {
+            String old = config.getParameter(key);
+            if (old == null || old.isEmpty()) {
+                config.setParameter(key, value);
+            }
+        });
+        policySupplier.subscribe(config.getInterfaceId(), PolicyType.SERVICE_POLICY);
     }
 }

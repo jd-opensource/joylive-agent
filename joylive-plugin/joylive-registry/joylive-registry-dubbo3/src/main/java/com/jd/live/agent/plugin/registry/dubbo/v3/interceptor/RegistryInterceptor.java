@@ -16,27 +16,38 @@
 package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
-import org.apache.dubbo.registry.client.ServiceInstance;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceExport;
+import com.jd.live.agent.governance.registry.ServiceInstance;
+
+import java.util.Collections;
 
 /**
  * RegistryInterceptor
  */
 public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegistryInterceptor.class);
-
-    public RegistryInterceptor(Application application, AgentLifecycle lifecycle) {
-        super(application, lifecycle);
+    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry) {
+        super(application, lifecycle, registry);
     }
 
     @Override
-    protected String getServiceName(MethodContext ctx) {
-        return ((ServiceInstance) ctx.getArgument(0)).getServiceName();
+    protected ServiceInstance getInstance(MethodContext ctx) {
+        org.apache.dubbo.registry.client.ServiceInstance instance = ctx.getArgument(0);
+        return ServiceInstance.builder()
+                .type("dubbo.v3")
+                .service(instance.getServiceName())
+                .group(instance.getMetadata("group"))
+                .exports(Collections.singletonList(
+                        ServiceExport.builder()
+                                .host(instance.getHost())
+                                .port(instance.getPort())
+                                .metadata(instance.getMetadata())
+                                .build()))
+                .build();
     }
 }
 

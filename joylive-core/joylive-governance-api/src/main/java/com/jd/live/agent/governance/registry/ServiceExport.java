@@ -18,30 +18,39 @@ package com.jd.live.agent.governance.registry;
 import lombok.*;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an instance of a service in a discovery system.
  */
-@Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServiceInstance implements Serializable {
+public class ServiceExport implements Serializable {
 
-    private String type;
+    @Getter
+    private String schema;
 
-    private String namespace;
+    @Getter
+    private String host;
 
-    private String service;
+    @Getter
+    private int port;
 
-    private String group;
+    private String url;
 
-    private String instanceId;
+    @Getter
+    private Map<String, String> metadata;
 
-    private String version;
-
-    private List<ServiceExport> exports;
-
+    public String getUrl() {
+        if (url == null) {
+            String protocol = schema == null ? "" : schema;
+            if (!protocol.isEmpty()) {
+                protocol = protocol + "://";
+            }
+            url = protocol + host + ":" + port;
+        }
+        return url;
+    }
 }

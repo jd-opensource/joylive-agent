@@ -26,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.sofarpc.interceptor.RegistryInterceptor;
 
 /**
@@ -55,6 +56,9 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     @Inject(AgentLifecycle.COMPONENT_AGENT_LIFECYCLE)
     private AgentLifecycle lifecycle;
 
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
+
     public RegistryDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
@@ -62,7 +66,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_REGISTER)
                                 .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
                                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new RegistryInterceptor(application, lifecycle))
+                        () -> new RegistryInterceptor(application, lifecycle, registry))
         };
     }
 }

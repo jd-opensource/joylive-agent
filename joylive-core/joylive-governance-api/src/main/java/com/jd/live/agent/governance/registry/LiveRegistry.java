@@ -34,6 +34,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * {@code LiveRegistry} is an implementation of {@link Registry} that manages the registration and unregistration
+ * of service instances. It also handles agent events to determine the readiness of the registry and manages
+ * heartbeat signals to ensure service instances are alive.
+ *
+ * @see AbstractService
+ * @see Registry
+ * @see InjectSourceSupplier
+ */
 @Extension("LiveRegistry")
 @Injectable
 public class LiveRegistry extends AbstractService implements Registry, InjectSourceSupplier {
@@ -90,6 +99,11 @@ public class LiveRegistry extends AbstractService implements Registry, InjectSou
         }
     }
 
+    /**
+     * Handles {@link AgentEvent}s to update the readiness state of the registry.
+     *
+     * @param event the agent event to handle.
+     */
     private void onAgentEvent(AgentEvent event) {
         if (event.getType() == EventType.AGENT_READY) {
             ready.set(true);
@@ -99,12 +113,20 @@ public class LiveRegistry extends AbstractService implements Registry, InjectSou
         }
     }
 
+    /**
+     * Called when the registry becomes ready to register all pending registrations.
+     */
     private void onReady() {
         for (Registration registration : registrations.values()) {
             doRegister(registration);
         }
     }
 
+    /**
+     * Performs the actual registration of a {@link Registration}.
+     *
+     * @param registration the registration to perform.
+     */
     private void doRegister(Registration registration) {
         if (registration != null) {
             synchronized (registration) {
@@ -127,6 +149,11 @@ public class LiveRegistry extends AbstractService implements Registry, InjectSou
         }
     }
 
+    /**
+     * Performs the actual unregistration of a {@link Registration}.
+     *
+     * @param registration the registration to perform.
+     */
     private void addHeartbeat(Registration registration) {
         if (registration != null) {
             long delay = registryConfig.getHeartbeatInterval() + (long) (Math.random() * 2000.0);
@@ -134,6 +161,11 @@ public class LiveRegistry extends AbstractService implements Registry, InjectSou
         }
     }
 
+    /**
+     * Adds a heartbeat task for the given {@link Registration}.
+     *
+     * @param registration the registration to add a heartbeat for.
+     */
     private void doHeartbeat(Registration registration) {
         if (registration != null) {
             synchronized (registration) {
@@ -150,6 +182,9 @@ public class LiveRegistry extends AbstractService implements Registry, InjectSou
         source.add(Registry.COMPONENT_REGISTRY, this);
     }
 
+    /**
+     * Represents a registration of a {@link ServiceInstance}.
+     */
     private static class Registration {
 
         protected boolean registered;

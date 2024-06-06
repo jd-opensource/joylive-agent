@@ -15,40 +15,53 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.AgentLifecycle;
+import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceInstance;
 
 /**
- * An abstract interceptor that delays the registration of services until the application is ready.
- * This class extends {@link ReadyExecutionInterceptor} and provides additional logging functionality.
+ * AbstractRegistryInterceptor
  */
-public abstract class AbstractRegistryInterceptor extends ReadyExecutionInterceptor {
+public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
 
     private final Logger logger = LoggerFactory.getLogger(AbstractRegistryInterceptor.class);
 
-    public AbstractRegistryInterceptor(Application application, AgentLifecycle lifecycle) {
-        super(application, lifecycle);
-    }
+    protected final Application application;
 
-    /**
-     * Gets the service name from the given method context.
-     *
-     * @param ctx the method context
-     * @return the service name
-     */
-    protected abstract String getServiceName(MethodContext ctx);
+    protected final AgentLifecycle lifecycle;
 
-    @Override
-    protected void beforeAddReadyHook(MethodContext ctx) {
-        logger.info("Delay registration until application is ready, service=" + getServiceName(ctx));
+    protected final Registry registry;
+
+    public AbstractRegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry) {
+        this.application = application;
+        this.lifecycle = lifecycle;
+        this.registry = registry;
     }
 
     @Override
-    protected void beforeExecute(MethodContext ctx) {
-        logger.info("Register when application is ready, service=" + getServiceName(ctx));
+    public void onEnter(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
+        if (application.getStatus() == AppStatus.STARTING) {
+            ServiceInstance instance = getInstance(mc);
+            if (instance != null) {
+                logger.info("Delay registration until application is ready, service=" + instance.getService());
+                lifecycle.addReadyHook(() -> {
+                    logger.info("Register when application is ready, service=" + instance.getService());
+                    registry.register(instance);
+                    return mc.invoke();
+                });
+                mc.setSkip(true);
+            }
+        }
     }
+
+    protected abstract ServiceInstance getInstance(MethodContext ctx);
 
 }
