@@ -72,6 +72,7 @@ agent:
     laneSpace:
       type: file
     microservice:
+      enabled: true
       type: file
       url: http://localhost:8000/v1
   watchdog:
