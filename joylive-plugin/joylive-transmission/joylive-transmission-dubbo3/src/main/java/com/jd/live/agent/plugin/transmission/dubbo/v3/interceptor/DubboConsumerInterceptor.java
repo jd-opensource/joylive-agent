@@ -24,8 +24,11 @@ import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcInvocation;
+import org.apache.dubbo.rpc.model.ServiceMetadata;
 
 import java.util.List;
+
+import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
@@ -44,6 +47,11 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         Carrier carrier = RequestContext.getOrCreate();
         carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
         carrier.addCargo(require, RpcContext.getClientAttachment().getObjectAttachments(), Label::parseValue);
+        ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();
+        String provider = (String) serviceMetadata.getAttachments().get(PROVIDED_BY);
+        if (provider != null && !provider.isEmpty()) {
+            invocation.setAttachmentIfAbsent(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
+        }
     }
 
 }

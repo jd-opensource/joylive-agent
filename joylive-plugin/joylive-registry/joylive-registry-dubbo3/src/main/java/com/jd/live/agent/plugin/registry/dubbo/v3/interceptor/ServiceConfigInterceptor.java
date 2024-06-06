@@ -27,6 +27,7 @@ import org.apache.dubbo.config.ApplicationConfig;
 import java.util.Map;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE;
+import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INTERFACE;
 
 /**
  * ServiceRegistrationInterceptor
@@ -50,11 +51,16 @@ public class ServiceConfigInterceptor extends InterceptorAdaptor {
         Map<String, String> map = (Map<String, String>) methodContext.getResult();
         application.label(map::putIfAbsent);
 
-        // TODO ALL mode, which includes two types.
         AbstractInterfaceConfig config = (AbstractInterfaceConfig) ctx.getTarget();
         ApplicationConfig application = config.getApplication();
         String registerMode = application.getRegisterMode();
-        String service = DEFAULT_REGISTER_MODE_INSTANCE.equals(registerMode) ? application.getName() : config.getInterface();
-        policySupplier.subscribe(service, PolicyType.SERVICE_POLICY);
+        if (DEFAULT_REGISTER_MODE_INSTANCE.equals(registerMode)) {
+            policySupplier.subscribe(application.getName(), PolicyType.SERVICE_POLICY);
+        } else if (DEFAULT_REGISTER_MODE_INTERFACE.equals(registerMode)) {
+            policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+        } else {
+            policySupplier.subscribe(application.getName(), PolicyType.SERVICE_POLICY);
+            policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+        }
     }
 }
