@@ -96,7 +96,7 @@ public class WatchDog extends AbstractService {
     }
 
     @Override
-    protected String getName() {
+    public String getName() {
         return WATCH_DOG;
     }
 
