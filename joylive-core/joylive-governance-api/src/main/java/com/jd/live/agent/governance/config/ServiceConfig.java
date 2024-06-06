@@ -55,6 +55,11 @@ public class ServiceConfig {
     private Set<String> warmups;
 
     /**
+     * A set of exclude class full name.
+     */
+    private Set<String> excludes;
+
+    /**
      * Retrieves the failover threshold for a given unit.
      *
      * @param unit the identifier of the unit to get the failover threshold for
@@ -72,6 +77,10 @@ public class ServiceConfig {
      */
     public Integer getCellFailoverThreshold(String cell) {
         return cell == null || cellFailoverThresholds == null ? null : cellFailoverThresholds.get(cell);
+    }
+
+    public boolean isExclude(String type) {
+        return type != null && excludes != null && excludes.contains(type);
     }
 }
 
