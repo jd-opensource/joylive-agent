@@ -38,7 +38,7 @@ public class ExecuteServerInterceptor extends AbstractDbInterceptor {
     }
 
     /**
-     * Enhanced logic after method execution<br>
+     * Enhanced logic before method execution<br>
      * <p>
      *
      * @param ctx ExecutableContext
