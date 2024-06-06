@@ -61,22 +61,28 @@ public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
         }
         switch (type) {
             case REGISTRY_TYPE_SERVICE:
-                // Only register with service mode
-                ApplicationConfig applicationConfig = config.getApplication();
-                Map<String, String> map = applicationConfig.getParameters();
-                if (map == null) {
-                    map = new HashMap<>();
-                    applicationConfig.setParameters(map);
-                }
-                map.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
+                updateRegistryModel(config, SERVICE_REGISTRY_TYPE);
                 policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
                 break;
-            case REGISTRY_TYPE_ALL: // Degrade to interface
+            case REGISTRY_TYPE_ALL:
+                updateRegistryModel(config, "all");
+                policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
             case REGISTRY_TYPE_INTERFACE:
             default:
                 policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
 
         }
+    }
+
+    private void updateRegistryModel(AbstractInterfaceConfig config, String type) {
+        // Only register with service mode
+        ApplicationConfig applicationConfig = config.getApplication();
+        Map<String, String> map = applicationConfig.getParameters();
+        if (map == null) {
+            map = new HashMap<>();
+            applicationConfig.setParameters(map);
+        }
+        map.put(REGISTRY_TYPE_KEY, type);
     }
 
     private int getRegistryType(AbstractServiceConfig config) {

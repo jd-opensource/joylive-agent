@@ -47,7 +47,10 @@ public interface DubboRequest {
         public DubboInboundRequest(Invocation request) {
             super(request);
             URL url = request.getInvoker().getUrl();
-            if (SERVICE_REGISTRY_TYPE.equals(url.getParameter(REGISTRY_TYPE_KEY))) {
+            boolean requestMode = SERVICE_REGISTRY_TYPE.equals(request.getAttachment(REGISTRY_TYPE_KEY));
+            String registryType = url.getParameter(REGISTRY_TYPE_KEY);
+            boolean serviceMode = SERVICE_REGISTRY_TYPE.equals(registryType) || "all".equals(registryType);
+            if (requestMode && serviceMode) {
                 this.service = url.getParameter(CommonConstants.APPLICATION_KEY);
                 this.path = url.getServiceInterface();
             } else {

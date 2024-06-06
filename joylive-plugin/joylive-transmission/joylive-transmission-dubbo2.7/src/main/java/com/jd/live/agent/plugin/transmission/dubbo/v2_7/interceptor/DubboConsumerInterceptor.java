@@ -22,10 +22,15 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import org.apache.dubbo.common.URL;
+import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcInvocation;
 
 import java.util.List;
+
+import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
+import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_TYPE;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
@@ -44,6 +49,13 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         Carrier carrier = RequestContext.getOrCreate();
         carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
         carrier.addCargo(require, RpcContext.getContext().getObjectAttachments(), Label::parseValue);
+        Invoker<?> invoker = invocation.getInvoker();
+        if (invoker != null) {
+            URL url = invoker.getUrl();
+            if (SERVICE_REGISTRY_TYPE.equals(url.getParameter(REGISTRY_TYPE_KEY))) {
+                invocation.setAttachmentIfAbsent(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
+            }
+        }
     }
 
 }
