@@ -43,7 +43,6 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         return ServiceInstance.builder()
                 .type("dubbo.v2_7")
                 .service(instance.getServiceName())
-                .group(instance.getMetadata("group"))
                 .host(instance.getHost())
                 .port(instance.getPort())
                 .protocols(Collections.singletonList(
