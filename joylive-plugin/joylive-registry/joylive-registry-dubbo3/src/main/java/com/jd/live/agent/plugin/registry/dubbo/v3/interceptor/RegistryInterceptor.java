@@ -20,10 +20,12 @@ import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceExport;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.registry.ServiceProtocol;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * RegistryInterceptor
@@ -37,16 +39,26 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     @Override
     protected ServiceInstance getInstance(MethodContext ctx) {
         org.apache.dubbo.registry.client.ServiceInstance instance = ctx.getArgument(0);
+        Map<String, String> metadata = instance.getMetadata();
+        application.label(metadata::put);
+        List<ServiceProtocol> protocols = new ArrayList<>();
+        instance.getServiceMetadata().getServices().forEach((name, info) -> {
+            protocols.add(ServiceProtocol.builder()
+                    .group(info.getGroup())
+                    .path(info.getPath())
+                    .schema(info.getProtocol())
+                    .host(instance.getHost())
+                    .port(info.getPort())
+                    .metadata(info.getParams())
+                    .build());
+        });
         return ServiceInstance.builder()
                 .type("dubbo.v3")
                 .service(instance.getServiceName())
-                .group(instance.getMetadata("group"))
-                .exports(Collections.singletonList(
-                        ServiceExport.builder()
-                                .host(instance.getHost())
-                                .port(instance.getPort())
-                                .metadata(instance.getMetadata())
-                                .build()))
+                .host(instance.getHost())
+                .port(instance.getPort())
+                .metadata(metadata)
+                .protocols(protocols)
                 .build();
     }
 }

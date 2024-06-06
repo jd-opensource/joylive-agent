@@ -25,8 +25,8 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceExport;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.registry.ServiceProtocol;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,13 +44,13 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     protected ServiceInstance getInstance(MethodContext ctx) {
         ProviderConfig<?> config = ((ProviderBootstrap<?>) ctx.getTarget()).getProviderConfig();
         if (config.isRegister()) {
-            List<ServiceExport> exports = new ArrayList<>();
+            List<ServiceProtocol> protocols = new ArrayList<>();
             List<ServerConfig> serverConfigs = config.getServer();
             for (ServerConfig serverConfig : serverConfigs) {
-                exports.add(ServiceExport.builder()
+                protocols.add(ServiceProtocol.builder()
+                        .schema(serverConfig.getProtocol())
                         .host(RegistryUtils.getServerHost(serverConfig))
                         .port(getPort(serverConfig))
-                        .schema(serverConfig.getProtocol())
                         .metadata(RegistryUtils.convertProviderToMap(config, serverConfig))
                         .build());
             }
@@ -59,7 +59,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                     .service(config.getInterfaceId())
                     .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
                     .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())
-                    .exports(exports)
+                    .protocols(protocols)
                     .build();
         }
         return null;

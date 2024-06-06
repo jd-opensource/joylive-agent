@@ -27,7 +27,13 @@ import java.util.Map;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServiceExport implements Serializable {
+public class ServiceProtocol implements Serializable {
+
+    @Getter
+    private String group;
+
+    @Getter
+    private String path;
 
     @Getter
     private String schema;

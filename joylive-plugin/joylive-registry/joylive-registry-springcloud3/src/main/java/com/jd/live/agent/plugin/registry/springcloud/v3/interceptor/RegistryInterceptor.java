@@ -24,8 +24,8 @@ import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceExport;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.registry.ServiceProtocol;
 import org.springframework.cloud.client.DefaultServiceInstance;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
@@ -65,8 +65,10 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 .type("spring-cloud.v3")
                 .service(registration.getServiceId())
                 .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
-                .exports(Collections.singletonList(
-                        ServiceExport.builder()
+                .host(registration.getHost())
+                .port(registration.getPort())
+                .protocols(Collections.singletonList(
+                        ServiceProtocol.builder()
                                 .schema(registration.getScheme())
                                 .host(registration.getHost())
                                 .port(registration.getPort())

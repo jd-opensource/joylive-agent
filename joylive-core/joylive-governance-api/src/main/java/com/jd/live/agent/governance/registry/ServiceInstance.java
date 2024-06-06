@@ -19,6 +19,7 @@ import lombok.*;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an instance of a service in a discovery system.
@@ -42,6 +43,12 @@ public class ServiceInstance implements Serializable {
 
     private String version;
 
-    private List<ServiceExport> exports;
+    private String host;
+
+    private int port;
+
+    private Map<String, String> metadata;
+
+    private List<ServiceProtocol> protocols;
 
 }
