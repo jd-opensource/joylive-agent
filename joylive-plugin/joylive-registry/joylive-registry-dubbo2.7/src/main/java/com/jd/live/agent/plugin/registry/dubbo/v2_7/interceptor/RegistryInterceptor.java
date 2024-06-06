@@ -41,7 +41,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = instance.getMetadata();
         application.label(metadata::put);
         return ServiceInstance.builder()
-                .type("dubbo.v2.7")
+                .type("dubbo.v2_7")
                 .service(instance.getServiceName())
                 .group(instance.getMetadata("group"))
                 .host(instance.getHost())
