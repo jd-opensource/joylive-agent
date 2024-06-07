@@ -20,6 +20,13 @@
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-bootstrap-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jdk.tools</groupId>
+            <artifactId>jdk.tools</artifactId>
+            <version>1.8</version>
+            <scope>system</scope>
+            <systemPath>${java.home}/../lib/tools.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
@@ -41,7 +48,8 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass/>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <mainClass>com.jd.live.agent.bootstrap.AgentLoader</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
