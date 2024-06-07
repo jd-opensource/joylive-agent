@@ -21,12 +21,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 public class EchoController {
 
+    private final CountDownLatch latch = new CountDownLatch(1);
+
     @GetMapping("/echo/{str}")
     public String echo(@PathVariable String str, HttpServletRequest request) {
+        try {
+            latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ignore) {
+        }
         return new EchoResponse("spring-provider", "header", request::getHeader, str).toString();
     }
 }
