@@ -48,10 +48,11 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Enhanced logic after method execution<br>
+     * Enhanced logic before method execution. This method is called before the
+     * target method is executed.
      * <p>
      *
-     * @param ctx ExecutableContext
+     * @param ctx The execution context of the method being intercepted.
      */
     @SuppressWarnings("unchecked")
     @Override

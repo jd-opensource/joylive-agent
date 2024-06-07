@@ -45,6 +45,12 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         this.policySupplier = policySupplier;
     }
 
+    /**
+     * Enhanced logic before method execution<br>
+     * <p>
+     *
+     * @see org.springframework.cloud.client.serviceregistry.ServiceRegistry#register(Registration)
+     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         Registration registration = (Registration) ctx.getArguments()[0];

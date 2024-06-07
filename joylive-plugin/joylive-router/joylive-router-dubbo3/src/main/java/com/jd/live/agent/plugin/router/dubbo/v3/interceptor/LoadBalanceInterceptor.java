@@ -48,7 +48,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Enhanced logic after method execution<br>
+     * Enhanced logic before method execution<br>
      * <p>
      *
      * @param ctx ExecutableContext
