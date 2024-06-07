@@ -361,9 +361,17 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     @Override
-    public void addReadyHook(Callable<?> callable) {
+    public void addReadyHook(Callable<?> callable, ClassLoader classLoader) {
         if (callable != null) {
-            readies.add(callable);
+            readies.add(() -> {
+                ClassLoader old = Thread.currentThread().getContextClassLoader();
+                Thread.currentThread().setContextClassLoader(classLoader);
+                try {
+                    return callable.call();
+                } finally {
+                    Thread.currentThread().setContextClassLoader(old);
+                }
+            });
         }
     }
 

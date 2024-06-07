@@ -60,6 +60,7 @@ public interface AgentLifecycle {
      * that should occur once the system has completed its startup process.
      *
      * @param callable the hook to be executed when the system is ready
+     * @param classLoader execute in this classloader
      */
-    void addReadyHook(Callable<?> callable);
+    void addReadyHook(Callable<?> callable, ClassLoader classLoader);
 }

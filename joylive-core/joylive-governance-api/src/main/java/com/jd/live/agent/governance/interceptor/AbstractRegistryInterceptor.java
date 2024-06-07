@@ -56,7 +56,7 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
                     logger.info("Register when application is ready, service=" + instance.getService());
                     registry.register(instance);
                     return mc.invoke();
-                });
+                }, ctx.getType().getClassLoader());
                 mc.setSkip(true);
             }
         }
