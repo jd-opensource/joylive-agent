@@ -65,3 +65,7 @@
 ## 发布历史
 
 查看[发布历史](./RELEASE.md)
+
+## 加入我们
+欢迎加入一起探讨微服务治理及多活领域的建设。   
+![pic](docs/image/architect-3.png)

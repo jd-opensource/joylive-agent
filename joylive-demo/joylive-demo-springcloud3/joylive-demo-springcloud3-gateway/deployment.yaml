@@ -57,7 +57,7 @@ spec:
               value: cell1
             - name: APPLICATION_SERVICE_GATEWAY
               value: FRONTEND
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.0.0-10881d7-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.0.0-fc92feb-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-gateway
           ports:
@@ -136,7 +136,7 @@ spec:
               value: cell4
             - name: APPLICATION_SERVICE_GATEWAY
               value: FRONTEND
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.0.0-SNAPSHOT-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.0.0-fc92feb-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-gateway-gray
           ports:

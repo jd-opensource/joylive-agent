@@ -65,3 +65,7 @@ View [Q&A](./docs/qa.md)
 ## Release History
 
 View [Release History](./RELEASE.md)
+
+## Join us
+Welcome to join the discussion on the construction of microservice governance and multi-active fields together.   
+![pic](docs/image/weixin.png)
