@@ -3,6 +3,9 @@
 [![Build](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml/badge.svg)](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml)
 ![License](https://img.shields.io/github/license/jd-opensource/joylive-agent.svg)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
+[![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
+
+<img src="docs/image/weixin.jpg" alt="pic" style="zoom:33%;" />
 
 English | [简体中文](./README-zh.md)
 
@@ -65,7 +68,3 @@ View [Q&A](./docs/qa.md)
 ## Release History
 
 View [Release History](./RELEASE.md)
-
-## Join us
-Welcome to join the discussion on the construction of microservice governance and multi-active fields together.   
-![pic](docs/image/weixin.png)

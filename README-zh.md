@@ -3,6 +3,9 @@
 [![Build](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml/badge.svg)](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml)
 ![License](https://img.shields.io/github/license/jd-opensource/joylive-agent.svg)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
+[![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
+
+<img src="docs/image/weixin.jpg" alt="pic" style="zoom:33%;" />
 
 [English](./README.md) | 简体中文
 
@@ -65,7 +68,3 @@
 ## 发布历史
 
 查看[发布历史](./RELEASE.md)
-
-## 加入我们
-欢迎加入一起探讨微服务治理及多活领域的建设。   
-![pic](docs/image/weixin.png)
