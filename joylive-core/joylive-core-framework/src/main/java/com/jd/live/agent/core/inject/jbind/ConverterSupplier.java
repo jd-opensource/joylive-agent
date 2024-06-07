@@ -56,6 +56,11 @@ public interface ConverterSupplier {
     int STRING_TO_COLLECTION_ORDER = 71;
 
     /**
+     * A constant that represents the order value for string-to-map suppliers.
+     */
+    int STRING_TO_MAP_ORDER = 72;
+
+    /**
      * A constant that represents the order value for array-to-array suppliers.
      */
     int ARRAY_TO_ARRAY_ORDER = 80;

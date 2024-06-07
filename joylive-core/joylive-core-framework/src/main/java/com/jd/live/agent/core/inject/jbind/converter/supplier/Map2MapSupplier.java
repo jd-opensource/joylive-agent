@@ -21,11 +21,7 @@ import com.jd.live.agent.core.inject.jbind.*;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Map;
 
 @Extension(value = "Map2MapSupplier", order = ConverterSupplier.MAP_TO_OBJECT_ORDER)
 public class Map2MapSupplier implements ConverterSupplier {
@@ -41,27 +37,15 @@ public class Map2MapSupplier implements ConverterSupplier {
         return Map2MapConverter.INSTANCE;
     }
 
-    public static class Map2MapConverter implements Converter {
+    public static class Map2MapConverter extends AbstractMapConverter {
         protected static final Converter INSTANCE = new Map2MapConverter();
 
+        @SuppressWarnings("unchecked")
         @Override
         public Object convert(final Conversion conversion) throws Exception {
-            Map<Object, Object> result = null;
             TypeInfo typeInfo = conversion.getTargetType();
             Class<?> targetClass = typeInfo.getRawType();
-            if (Map.class == targetClass) {
-                result = new HashMap<>();
-            } else if (ConcurrentMap.class == targetClass) {
-                result = new ConcurrentHashMap<>();
-            } else if (SortedMap.class == targetClass) {
-                result = new TreeMap<>();
-            } else if (NavigableMap.class == targetClass) {
-                result = new TreeMap<>();
-            } else if (ConcurrentNavigableMap.class == targetClass) {
-                result = new ConcurrentSkipListMap<>();
-            } else if (!targetClass.isInterface()) {
-                result = (Map<Object, Object>) targetClass.newInstance();
-            }
+            Map result = createMap(targetClass);
             if (result != null) {
                 Type type = typeInfo.getType();
                 if (type instanceof ParameterizedType) {
@@ -89,7 +73,7 @@ public class Map2MapSupplier implements ConverterSupplier {
                         return result;
                     }
                 }
-                result.putAll((Map<Object, Object>) conversion.getSource());
+                result.putAll((Map<?, ?>) conversion.getSource());
             }
             return result;
         }

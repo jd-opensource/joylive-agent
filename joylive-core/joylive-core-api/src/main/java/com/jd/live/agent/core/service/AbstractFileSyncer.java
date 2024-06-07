@@ -105,8 +105,12 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
             return false;
         } else if (file.startsWith("http://") || file.startsWith("https://")) {
             return false;
+        } else if (file.startsWith("${") && file.endsWith("}")) {
+            return false;
+        } else {
+            URL resource = getClass().getClassLoader().getResource(file);
+            return resource != null;
         }
-        return true;
     }
 
     /**

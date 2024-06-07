@@ -8,5 +8,6 @@ com.jd.live.agent.core.inject.jbind.converter.supplier.Map2ObjectSupplier
 com.jd.live.agent.core.inject.jbind.converter.supplier.Map2MapSupplier
 com.jd.live.agent.core.inject.jbind.converter.supplier.String2ArraySupplier
 com.jd.live.agent.core.inject.jbind.converter.supplier.String2CollectionSupplier
+com.jd.live.agent.core.inject.jbind.converter.supplier.String2MapSupplier
 com.jd.live.agent.core.inject.jbind.converter.supplier.ToStringSupplier
 com.jd.live.agent.core.inject.jbind.converter.supplier.ValueOfSupplier
