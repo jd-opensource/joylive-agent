@@ -119,7 +119,6 @@ public class LiveAgent {
      *                        after the JVM started (true) or before the main method (false).
      */
     private static synchronized void launch(String arguments, Instrumentation instrumentation, boolean dynamic) {
-        logger.info("Starting agent....");
         boolean shutdownOnError = true;
 
         try {
@@ -241,7 +240,7 @@ public class LiveAgent {
     private static Object install(Instrumentation instrumentation, boolean dynamic, ClassLoader classLoader,
                                   Map<String, Object> env, Map<String, Object> config) {
         try {
-            logger.info("Installing agent.");
+            logger.info("[LiveAgent]Installing agent.");
             // Load the bootstrap class using the provided class loader.
             Class<?> type = classLoader.loadClass(BOOTSTRAP_CLASS);
             // Get the constructor of the bootstrap class.
