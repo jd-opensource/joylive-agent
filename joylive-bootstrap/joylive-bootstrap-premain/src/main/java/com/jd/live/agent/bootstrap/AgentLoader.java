@@ -25,6 +25,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -104,14 +106,28 @@ public class AgentLoader {
      * @throws IOException if an I/O error occurs while reading input
      */
     private static VirtualMachineDescriptor getVmDescriptor(AgentOption option) throws IOException {
-        String pid = AgentOption.getPid();
+        String jvmId = AgentOption.getJvmId();
         Map<String, VirtualMachineDescriptor> descriptors = VirtualMachine.list().stream()
-                .filter(v -> !v.id().equals(pid))
+                .filter(v -> !v.id().equals(jvmId))
                 .collect(Collectors.toMap(VirtualMachineDescriptor::id, v -> v));
-        String jvmId = option.getProcessId();
+        String name = option.getName();
+        String pid = option.getPid();
+
+        if ((pid == null || pid.isEmpty()) && (name != null && !name.isEmpty())) {
+            List<VirtualMachineDescriptor> targets = new ArrayList<>();
+            for (VirtualMachineDescriptor descriptor : descriptors.values()) {
+                if (descriptor.displayName().contains(name)) {
+                    targets.add(descriptor);
+                }
+            }
+            if (targets.size() == 1) {
+                pid = targets.get(0).id();
+            }
+        }
+
         if (!descriptors.isEmpty() && option.isInteractive()) {
             long counter = 0;
-            while (jvmId == null || jvmId.isEmpty() || !descriptors.containsKey(jvmId)) {
+            while (pid == null || pid.isEmpty() || !descriptors.containsKey(pid)) {
                 counter++;
                 if (counter == 1) {
                     System.out.println("Select the java process id to be attached.");
@@ -119,16 +135,16 @@ public class AgentLoader {
                         System.out.println(vm.id() + " " + vm.displayName());
                     }
                 }
-                System.out.print("Please enter the pid:");
+                System.out.print("Please enter the jvmId:");
                 // Read the jvm id entered by the user
-                jvmId = new BufferedReader(new InputStreamReader(System.in)).readLine();
-                jvmId = jvmId == null || jvmId.isEmpty() ? null : jvmId.trim();
+                pid = new BufferedReader(new InputStreamReader(System.in)).readLine();
+                pid = pid == null || pid.isEmpty() ? null : pid.trim();
             }
         }
-        VirtualMachineDescriptor descriptor = jvmId == null || jvmId.isEmpty()
-                ? null : descriptors.get(jvmId);
+        VirtualMachineDescriptor descriptor = pid == null || pid.isEmpty()
+                ? null : descriptors.get(pid);
         if (descriptor == null) {
-            System.out.println("The java process is not found. pid=" + jvmId);
+            System.out.println("The java process is not found. jvmId=" + pid);
             return null;
         }
 

@@ -30,8 +30,11 @@ import java.util.Map;
  */
 public class AgentOption {
 
-    @Parameter(names = {"-p", "-pid"}, description = "The target JVM process ID")
-    private String processId;
+    @Parameter(names = {"-p", "-pid"}, description = "The target jvm process id")
+    private String pid;
+
+    @Parameter(names = {"-n", "-name"}, description = "The target jvm process name")
+    private String name;
 
     @Parameter(names = {"-t", "-path"}, description = "The agent root path")
     private String agentPath;
@@ -45,12 +48,20 @@ public class AgentOption {
     @Parameter(names = {"-i", "-interactive"}, description = "The interactive mode")
     private boolean interactive = true;
 
-    public String getProcessId() {
-        return processId;
+    public String getPid() {
+        return pid;
     }
 
-    public void setProcessId(String processId) {
-        this.processId = processId;
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getAgentPath() {
@@ -129,7 +140,7 @@ public class AgentOption {
      *
      * @return the current process ID
      */
-    public static String getPid() {
+    public static String getJvmId() {
         String name = ManagementFactory.getRuntimeMXBean().getName();
         return name.split("@")[0];
     }
