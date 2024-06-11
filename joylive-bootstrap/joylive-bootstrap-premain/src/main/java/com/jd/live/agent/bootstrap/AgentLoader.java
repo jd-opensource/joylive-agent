@@ -1,8 +1,25 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.jd.live.agent.bootstrap;
 
 import com.jd.live.agent.bootstrap.option.AgentOption;
 import com.jd.live.agent.bootstrap.option.OptionParser;
-import com.sun.tools.attach.*;
+import com.jd.live.agent.bootstrap.vm.VirtualMachineFactory;
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,12 +44,9 @@ public class AgentLoader {
      * finds the target JVM, and loads the specified agent into it.
      *
      * @param args the command-line arguments
-     * @throws IOException                  if an I/O error occurs
-     * @throws AttachNotSupportedException  if the target JVM does not support attaching
-     * @throws AgentLoadException           if the agent cannot be loaded
-     * @throws AgentInitializationException if the agent initialization fails
+     * @throws Exception                  if an  error occurs
      */
-    public static void main(String[] args) throws IOException, AttachNotSupportedException, AgentLoadException, AgentInitializationException {
+    public static void main(String[] args) throws Exception {
         AgentOption option = OptionParser.parse(args);
         if (option != null) {
             VirtualMachineDescriptor descriptor = getVmDescriptor(option);
@@ -40,10 +54,11 @@ public class AgentLoader {
                 File path = getPath(option);
                 if (path != null) {
                     option.setAgentPath(path.getAbsolutePath());
-                    VirtualMachine vm = VirtualMachine.attach(descriptor);
+                    VirtualMachine machine = VirtualMachine.attach(descriptor);
+                    VirtualMachine lvm = VirtualMachineFactory.getVirtualMachine(machine);
                     // Launch Agent
-                    vm.loadAgent(new File(path, LIVE_JAR).getPath(), option.getAgentArgs());
-                    vm.detach();
+                    lvm.loadAgent(new File(path, LIVE_JAR).getPath(), option.getAgentArgs());
+                    lvm.detach();
                 }
             }
         }
