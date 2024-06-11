@@ -57,8 +57,11 @@ public class AgentLoader {
                     VirtualMachine machine = VirtualMachine.attach(descriptor);
                     VirtualMachine lvm = VirtualMachineFactory.getVirtualMachine(machine);
                     // Launch Agent
+                    System.out.println("Start launching live agent");
+                    System.out.println("Start attaching live agent to jvm, pid=" + descriptor.id());
                     lvm.loadAgent(new File(path, LIVE_JAR).getPath(), option.getAgentArgs());
                     lvm.detach();
+                    System.out.println("Finish attaching live agent to jvm, pid=" + descriptor.id());
                 }
             }
         }
