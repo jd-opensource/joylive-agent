@@ -29,8 +29,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -51,26 +49,6 @@ import java.util.logging.Logger;
 public class LiveAgent {
     private static final Logger logger = Logger.getLogger(LiveAgent.class.getName());
 
-    public static final String KEY_AGENT_PATH = "LIVE_AGENT_ROOT";
-
-    public static final String ARG_AGENT_PATH = "agentPath";
-
-    private static final String DIR_LIB = "lib";
-
-    private static final String DIR_LIB_SYSTEM = "system";
-
-    private static final String DIR_LIB_CORE = "core";
-
-    private static final String DIR_CONFIG = "config";
-
-    private static final String BOOTSTRAP_METHOD_INSTALL = "install";
-
-    private static final String BOOTSTRAP_METHOD_EXECUTE = "execute";
-
-    private static final String BOOTSTRAP_CLASS = "com.jd.live.agent.core.bootstrap.Bootstrap";
-
-    private static final String ARG_COMMAND = "command";
-
     private static final int STATUS_INITIAL = 0;
 
     private static final int STATUS_SYSTEM_LIB = 1;
@@ -81,9 +59,13 @@ public class LiveAgent {
 
     private static final int STATUS_INSTALL_FAILED = 4;
 
-    private static final String JAR_FILE_PREFIX = "jar:file:";
+    private static final String BOOTSTRAP_CLASS = "com.jd.live.agent.core.bootstrap.Bootstrap";
 
-    private static final String LIVE_AGENT_PATH = "LiveAgent.path";
+    private static final String BOOTSTRAP_METHOD_INSTALL = "install";
+
+    private static final String BOOTSTRAP_METHOD_EXECUTE = "execute";
+
+    private static final String ARG_COMMAND = "command";
 
     private static final String BOOTSTRAP_PROPERTIES = "bootstrap.properties";
 
@@ -144,12 +126,16 @@ public class LiveAgent {
             // Parse the arguments and environment to prepare for the agent setup.
             Map<String, Object> args = createArgs(arguments);
             Map<String, Object> env = createEnv();
-            File root = getRootPath(env, args);
-            File libDir = new File(root, DIR_LIB);
-            File configDir = new File(root, DIR_CONFIG);
+            File root = LivePath.getRootPath(env, args);
+            if (root != null) {
+                // Update the environment with the determined agent path.
+                env.put(LivePath.KEY_AGENT_PATH, root.getPath());
+            }
+            File libDir = new File(root, LivePath.DIR_LIB);
+            File configDir = new File(root, LivePath.DIR_CONFIG);
             Map<String, Object> bootstrapConfig = createBootstrapConfig(configDir);
-            File[] systemLibs = getLibs(new File(libDir, DIR_LIB_SYSTEM));
-            File[] coreLibs = getLibs(new File(libDir, DIR_LIB_CORE));
+            File[] systemLibs = getLibs(new File(libDir, LivePath.DIR_LIB_SYSTEM));
+            File[] coreLibs = getLibs(new File(libDir, LivePath.DIR_LIB_CORE));
             URL[] coreLibUrls = getUrls(coreLibs);
             String command = (String) args.get(ARG_COMMAND);
 
@@ -295,48 +281,6 @@ public class LiveAgent {
     }
 
     /**
-     * Determines the root path of the agent based on the provided arguments and environment.
-     *
-     * @param env  A map containing the environment configuration.
-     * @param args A map containing the agent's arguments.
-     * @return A file representing the root path of the agent.
-     */
-    private static File getRootPath(Map<String, Object> env, Map<String, Object> args) {
-        File result = null;
-        String root = (String) args.get(ARG_AGENT_PATH);
-        if (root == null || root.isEmpty()) {
-            root = (String) env.get(KEY_AGENT_PATH);
-            if (root == null || root.isEmpty()) {
-                ProtectionDomain protectionDomain = LiveAgent.class.getProtectionDomain();
-                CodeSource codeSource = protectionDomain == null ? null : protectionDomain.getCodeSource();
-                if (codeSource != null) {
-                    String path = urlDecode(codeSource.getLocation().getPath());
-                    result = new File(path).getParentFile();
-                } else {
-                    URL url = ClassLoader.getSystemClassLoader().getResource(LIVE_AGENT_PATH);
-                    if (url != null) {
-                        String path = url.toString();
-                        if (path.startsWith(JAR_FILE_PREFIX)) {
-                            int pos = path.lastIndexOf('/');
-                            int end = path.lastIndexOf('/', pos - 1);
-                            result = new File(urlDecode(path.substring(JAR_FILE_PREFIX.length(), end)));
-                        }
-                    }
-                }
-            } else {
-                result = new File(root);
-            }
-        } else {
-            result = new File(root);
-        }
-        if (result != null) {
-            // Update the environment with the determined agent path.
-            env.put(KEY_AGENT_PATH, result.getPath());
-        }
-        return result;
-    }
-
-    /**
      * Creates a class loader with specified URLs, configuration path, and a configuration function.
      *
      * @param urls       An array of URLs from which to load classes and resources.
@@ -365,7 +309,7 @@ public class LiveAgent {
         Map<String, Object> result = new HashMap<>();
         if (args != null) {
             // Split the input string into parts using the semicolon as a delimiter.
-            String[] parts = args.trim().split(";");
+            String[] parts = args.trim().split("[;,]");
             for (String arg : parts) {
                 // Find the index of the equal sign to separate key and value.
                 int index = arg.indexOf('=');
@@ -475,21 +419,6 @@ public class LiveAgent {
             } catch (IOException ignore) {
                 // Ignoring IOException during class loader close operation.
             }
-        }
-    }
-
-    /**
-     * Decodes a URL encoded string using UTF-8 encoding.
-     *
-     * @param value The string to be decoded.
-     * @return The decoded string.
-     */
-    private static String urlDecode(String value) {
-        try {
-            return java.net.URLDecoder.decode(value, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // Returns the original value if UTF-8 encoding is not supported.
-            return value;
         }
     }
 
