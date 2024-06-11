@@ -43,9 +43,9 @@ spring:
     nacos:
       discovery:
         server-addr: ${NACOS_ADDR}
-        username: ${NACOS_USERNAME}
-        password: ${NACOS_PASSWORD}
-        namespace: ${NACOS_NAMESPACE:}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        namespace: ${NACOS_NAMESPACE:public}
 
 logging:
   level:

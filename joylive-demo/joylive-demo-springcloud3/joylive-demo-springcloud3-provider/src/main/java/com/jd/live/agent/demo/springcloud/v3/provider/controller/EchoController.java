@@ -33,7 +33,7 @@ public class EchoController {
     @GetMapping("/echo/{str}")
     public String echo(@PathVariable String str, HttpServletRequest request) {
         try {
-            latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MILLISECONDS);
+            latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
         } catch (InterruptedException ignore) {
         }
         return new EchoResponse("spring-provider", "header", request::getHeader, str).toString();
