@@ -18,7 +18,7 @@
 
     <properties>
         <revision>1.0.0-SNAPSHOT</revision>
-        <lombok.version>1.18.22</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
         <mockito-core.version>4.11.0</mockito-core.version>
         <junit-jupiter.version>5.10.1</junit-jupiter.version>
 
@@ -33,7 +33,7 @@
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-versions-plugin.version>2.7</maven-versions-plugin.version>
         <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
         <maven-flatten-plugin.version>1.5.0</maven-flatten-plugin.version>
