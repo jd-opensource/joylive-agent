@@ -96,10 +96,10 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
             if (url != null) {
                 try {
                     Map<String, Object> result = parse(url.openStream(), parser);
-                    logger.info("[LiveAgent]Successfully load config from " + url);
+                    logger.info("[LiveAgent] Successfully load config from " + url);
                     return result;
                 } catch (Throwable e) {
-                    logger.warn("[LiveAgent]Failed to load config from " + url, e);
+                    logger.warn("[LiveAgent] Failed to load config from " + url, e);
                     return new HashMap<>();
                 }
             }

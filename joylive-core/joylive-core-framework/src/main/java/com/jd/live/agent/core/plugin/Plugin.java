@@ -136,9 +136,9 @@ public class Plugin implements PluginDeclare {
      */
     public void load() {
         if (status == Status.CREATED) {
-            status = Status.LOADED;
             try {
                 definitions = loader.loadExtensible().getExtensions();
+                status = Status.LOADED;
             } catch (Throwable e) {
                 fail("failed to load plugin " + name, e);
             }
@@ -149,7 +149,7 @@ public class Plugin implements PluginDeclare {
      * Marks the plugin as successfully loaded and publishes a success event to all listeners.
      */
     public void success() {
-        if (status != Status.SUCCESS) {
+        if (status == Status.LOADED) {
             status = Status.SUCCESS;
             List<String> names = new ArrayList<>(definitions.size());
             definitions.forEach(t -> names.add(t.getClass().getSimpleName()));
@@ -172,8 +172,10 @@ public class Plugin implements PluginDeclare {
      * Uninstalls the plugin by setting its status back to LOADED and publishes an uninstall event.
      */
     public void uninstall() {
-        if (status == Status.SUCCESS || status == Status.FAILED) {
+        if (status == Status.SUCCESS) {
             status = Status.LOADED;
+        } else if (status == Status.FAILED) {
+            status = definitions == null ? Status.CREATED : Status.LOADED;
         }
         publish(new PluginEvent(this, EventType.UNINSTALL, "Uninstall plugin " + name));
     }
@@ -198,9 +200,25 @@ public class Plugin implements PluginDeclare {
      * Represents the various statuses a plugin can be in during its lifecycle.
      */
     public enum Status {
-        CREATED,  // The plugin has been created but not yet loaded.
-        LOADED,   // The plugin's definitions have been loaded.
-        SUCCESS,  // The plugin has been successfully loaded and is operational.
-        FAILED    // The plugin has failed to load properly.
+
+        /**
+         * The plugin has been created but not yet loaded
+         */
+        CREATED,
+
+        /**
+         * The plugin's definitions have been loaded
+         */
+        LOADED,
+
+        /**
+         * The plugin has been successfully loaded and is operational
+         */
+        SUCCESS,
+
+        /**
+         * The plugin has failed to load properly
+         */
+        FAILED
     }
 }

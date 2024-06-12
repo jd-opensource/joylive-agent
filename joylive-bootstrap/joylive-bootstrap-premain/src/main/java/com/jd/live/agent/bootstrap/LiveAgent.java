@@ -240,7 +240,7 @@ public class LiveAgent {
     private static Object install(Instrumentation instrumentation, boolean dynamic, ClassLoader classLoader,
                                   Map<String, Object> env, Map<String, Object> config) {
         try {
-            logger.info("[LiveAgent]Installing agent.");
+            logger.info("[LiveAgent] Installing agent.");
             // Load the bootstrap class using the provided class loader.
             Class<?> type = classLoader.loadClass(BOOTSTRAP_CLASS);
             // Get the constructor of the bootstrap class.
@@ -251,7 +251,6 @@ public class LiveAgent {
             Method install = type.getDeclaredMethod(BOOTSTRAP_METHOD_INSTALL);
             // Invoke the installation method to complete the agent installation.
             install.invoke(lifecycle);
-            logger.info("Success installing agent.");
             // Return the lifecycle object for further operations.
             return lifecycle;
         } catch (InvocationTargetException e) {
