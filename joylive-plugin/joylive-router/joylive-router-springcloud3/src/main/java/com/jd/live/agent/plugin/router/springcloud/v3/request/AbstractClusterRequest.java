@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
@@ -57,33 +57,33 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * processors for the load balancer. These processors provide hooks for custom logic at various
      * stages of the load balancing process.
      */
-    protected final LazyObject<Set<LoadBalancerLifecycle>> lifecycles;
+    protected final UnsafeLazyObject<Set<LoadBalancerLifecycle>> lifecycles;
 
     /**
      * A lazy-initialized {@code Request<?>} object that encapsulates the original request data
      * along with any hints to influence load balancing decisions.
      */
-    protected final LazyObject<Request<?>> lbRequest;
+    protected final UnsafeLazyObject<Request<?>> lbRequest;
 
     /**
      * A lazy-initialized {@code LoadBalancerProperties} object, containing configuration
      * properties for load balancing.
      */
-    protected final LazyObject<LoadBalancerProperties> properties;
+    protected final UnsafeLazyObject<LoadBalancerProperties> properties;
 
     /**
      * A lazy-initialized {@code RequestData} object, representing the data of the original
      * request that will be used by the load balancer to select an appropriate service instance.
      */
-    protected final LazyObject<RequestData> requestData;
+    protected final UnsafeLazyObject<RequestData> requestData;
 
     /**
      * A lazy-initialized {@code ServiceInstanceListSupplier} object, responsible for providing
      * a list of available service instances for load balancing.
      */
-    protected final LazyObject<ServiceInstanceListSupplier> instanceSupplier;
+    protected final UnsafeLazyObject<ServiceInstanceListSupplier> instanceSupplier;
 
-    protected final LazyObject<String> stickyId;
+    protected final UnsafeLazyObject<String> stickyId;
 
     /**
      * Constructs a new ClientOutboundRequest with the specified parameters.
@@ -95,12 +95,12 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory) {
         super(request);
         this.loadBalancerFactory = loadBalancerFactory;
-        this.lifecycles = new LazyObject<>(this::buildLifecycleProcessors);
-        this.properties = new LazyObject<>(this::buildProperties);
-        this.lbRequest = new LazyObject<>(this::buildLbRequest);
-        this.instanceSupplier = new LazyObject<>(this::buildServiceInstanceListSupplier);
-        this.requestData = new LazyObject<>(this::buildRequestData);
-        this.stickyId = new LazyObject<>(this::buildStickyId);
+        this.lifecycles = new UnsafeLazyObject<>(this::buildLifecycleProcessors);
+        this.properties = new UnsafeLazyObject<>(this::buildProperties);
+        this.lbRequest = new UnsafeLazyObject<>(this::buildLbRequest);
+        this.instanceSupplier = new UnsafeLazyObject<>(this::buildServiceInstanceListSupplier);
+        this.requestData = new UnsafeLazyObject<>(this::buildRequestData);
+        this.stickyId = new UnsafeLazyObject<>(this::buildStickyId);
     }
 
     @Override

@@ -38,13 +38,15 @@ public class UnitGroup {
      * and should not be modified directly.
      */
     @Getter
-    private final List<Endpoint> endpoints = new LinkedList<>();
+    private final List<Endpoint> endpoints = new ArrayList<>();
 
     /**
      * A map that associates cell strings with CellGroup objects. Each CellGroup contains a collection
      * of Endpoint objects that share the same cell value within this unit.
      */
     private final Map<String, CellGroup> cells;
+
+    private CellGroup lastCellGroup;
 
     /**
      * Constructs a new UnitGroup with the specified unit and an empty list of endpoints.
@@ -78,7 +80,10 @@ public class UnitGroup {
         if (endpoint != null) {
             endpoints.add(endpoint);
             String cell = endpoint.getCell();
-            cells.computeIfAbsent(cell, c -> new CellGroup(unit, c)).add(endpoint);
+            if (lastCellGroup == null || !lastCellGroup.getCell().equals(cell)) {
+                lastCellGroup = cells.computeIfAbsent(cell, c -> new CellGroup(unit, c));
+            }
+            lastCellGroup.add(endpoint);
         }
     }
 

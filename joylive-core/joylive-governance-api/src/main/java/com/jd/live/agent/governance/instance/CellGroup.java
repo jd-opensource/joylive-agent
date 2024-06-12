@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.instance;
 
 import lombok.Getter;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -56,7 +56,7 @@ public class CellGroup {
     public CellGroup(String unit, String cell) {
         this.unit = Objects.requireNonNull(unit, "Unit cannot be null");
         this.cell = Objects.requireNonNull(cell, "Cell cannot be null");
-        this.endpoints = new LinkedList<>();
+        this.endpoints = new ArrayList<>();
     }
 
     /**

@@ -18,8 +18,8 @@ package com.jd.live.agent.governance.instance;
 import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -51,14 +51,19 @@ public class EndpointGroup {
      * @param endpoints the initial list of endpoints to group by unit; a null or empty list
      *                   results in an empty EndpointGroup
      */
+    @SuppressWarnings("unchecked")
     public EndpointGroup(List<? extends Endpoint> endpoints) {
-        this.endpoints = endpoints == null || endpoints.isEmpty() ? new LinkedList<>() : new LinkedList<>(endpoints);
+        this.endpoints = endpoints == null || endpoints.isEmpty() ? new ArrayList<>() : (List<Endpoint>) endpoints;
         this.units = new HashMap<>(3);
+        UnitGroup last = null;
         String unit;
         for (Endpoint endpoint : this.endpoints) {
             unit = endpoint.getUnit();
             unit = (unit == null) ? Constants.DEFAULT_VALUE : unit;
-            units.computeIfAbsent(unit, UnitGroup::new).add(endpoint);
+            if (last == null || !last.getUnit().equals(unit)) {
+                last = units.computeIfAbsent(unit, UnitGroup::new);
+            }
+            last.add(endpoint);
         }
     }
 
