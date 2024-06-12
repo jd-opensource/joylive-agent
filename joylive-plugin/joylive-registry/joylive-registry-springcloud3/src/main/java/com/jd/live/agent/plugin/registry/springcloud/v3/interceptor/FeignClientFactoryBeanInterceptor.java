@@ -35,10 +35,6 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         FeignClientFactoryBean factoryBean = (FeignClientFactoryBean) ctx.getTarget();
-        subscribePolicy(factoryBean);
-    }
-
-    private void subscribePolicy(FeignClientFactoryBean factoryBean) {
         policySupplier.subscribe(factoryBean.getName(), PolicyType.SERVICE_POLICY);
     }
 }

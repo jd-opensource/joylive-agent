@@ -17,8 +17,6 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor;
 
 import com.alibaba.dubbo.config.ReferenceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -30,8 +28,6 @@ import java.util.Map;
  * ReferenceConfigInterceptor
  */
 public class ReferenceConfigInterceptor extends InterceptorAdaptor {
-
-    private static final Logger logger = LoggerFactory.getLogger(ReferenceConfigInterceptor.class);
 
     private final Application application;
 
@@ -45,22 +41,11 @@ public class ReferenceConfigInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Map<String, String> map = (Map<String, String>) ctx.getArguments()[0];
+        Map<String, String> argument = (Map<String, String>) ctx.getArguments()[0];
         ReferenceConfig<?> config = (ReferenceConfig<?>) ctx.getTarget();
 
-        attachTag(map);
-        subscribePolicy(config);
-
-        if (logger.isInfoEnabled()) {
-            logger.info("Success filling metadata for registration " + config.getInterface() + " in " + config.getClass());
-        }
-    }
-
-    private void subscribePolicy(ReferenceConfig<?> config) {
+        application.label(argument::putIfAbsent);
         policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
     }
 
-    private void attachTag(Map<String, String> map) {
-        application.label(map::putIfAbsent);
-    }
 }

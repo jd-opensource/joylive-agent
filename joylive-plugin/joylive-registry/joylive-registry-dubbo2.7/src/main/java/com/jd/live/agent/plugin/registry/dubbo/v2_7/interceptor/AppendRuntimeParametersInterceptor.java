@@ -41,10 +41,7 @@ public class AppendRuntimeParametersInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((Map<String, String>) ctx.getArguments()[0]);
-    }
-
-    private void attachTag(Map<String, String> map) {
-        application.label(map::putIfAbsent);
+        Map<String, String> argument = (Map<String, String>) ctx.getArguments()[0];
+        application.label(argument::putIfAbsent);
     }
 }

@@ -43,10 +43,7 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         ServiceInstanceListSupplier supplier = (ServiceInstanceListSupplier) ctx.getTarget();
-        subscribePolicy(supplier.getServiceId());
-    }
-
-    private void subscribePolicy(String serviceId) {
+        String serviceId = supplier.getServiceId();
         // Built at runtime, cannot intercept and obtain the required service during the startup phase
         // restTemplate.getForObject("http://service-provider/echo/" + str, String.class)
         try {

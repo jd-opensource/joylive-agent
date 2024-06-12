@@ -16,8 +16,6 @@
 package com.jd.live.agent.plugin.registry.springgateway.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.PolicyType;
@@ -30,7 +28,7 @@ import java.net.URI;
  */
 public class RouteInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(RouteInterceptor.class);
+    private static final String SCHEMA_LB = "lb";
 
     private final PolicySupplier policySupplier;
 
@@ -42,12 +40,8 @@ public class RouteInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RouteDefinition definition = (RouteDefinition) ctx.getArguments()[0];
         URI uri = definition.getUri();
-        if ("lb".equals(uri.getScheme())) {
-            subscribePolicy(uri.getHost());
+        if (SCHEMA_LB.equals(uri.getScheme())) {
+            policySupplier.subscribe(uri.getHost(), PolicyType.SERVICE_POLICY);
         }
-    }
-
-    private void subscribePolicy(String serviceId) {
-        policySupplier.subscribe(serviceId, PolicyType.SERVICE_POLICY);
     }
 }
