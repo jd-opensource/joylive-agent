@@ -1,0 +1,50 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.jd.live.agent.core.inject.jbind.supplier;
+
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
+import com.jd.live.agent.core.extension.ExtensibleDesc;
+
+import java.lang.reflect.Array;
+import java.util.List;
+
+/**
+ * JExtensionListSourcer
+ *
+ * @since 1.0.0
+ */
+public class JExtensionArraySourcer extends JExtensibleSourcer {
+
+    public JExtensionArraySourcer(String name, Class<?> type, Class<?> owner, ResourcerType resourcerType) {
+        super(name, type, owner, resourcerType);
+    }
+
+    @Override
+    public Object getSource(Object context) {
+        ExtensibleDesc<?> extensible = getExtensible(context);
+        if (extensible == null) {
+            return null;
+        }
+        List<?> extensions = extensible.getExtensions();
+        Object result = Array.newInstance(type, extensions.size());
+        int index = 0;
+        for (Object extension : extensions) {
+            Array.set(result, index++, extension);
+        }
+        return result;
+    }
+
+}

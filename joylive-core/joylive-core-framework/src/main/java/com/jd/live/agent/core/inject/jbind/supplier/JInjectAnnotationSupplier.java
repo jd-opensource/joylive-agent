@@ -28,6 +28,7 @@ import com.jd.live.agent.core.inject.jbind.InjectType.InjectField;
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.type.FieldDesc;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -65,11 +66,13 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         if (fieldType.equals(Publisher.class)) {
             return new JPublisherSourcer(name, fieldType);
         } else if (fieldType.equals(ExtensibleDesc.class)) {
-            return build(getExtensible(fieldDesc), name, fieldDesc, JExtensibleSourcer::new);
+            return build(getExtensibleByList(fieldDesc), name, fieldDesc, JExtensibleSourcer::new);
         } else if (fieldType.equals(List.class)) {
-            return build(getExtensible(fieldDesc), name, fieldDesc, JExtensionListSourcer::new);
+            return build(getExtensibleByList(fieldDesc), name, fieldDesc, JExtensionListSourcer::new);
+        } else if (fieldType.isArray()) {
+            return build(getExtensibleByArray(fieldDesc), name, fieldDesc, JExtensionArraySourcer::new);
         } else if (fieldType.equals(Map.class)) {
-            return build(getExtensibleOfMap(fieldDesc), name, fieldDesc, JExtensionMapSourcer::new);
+            return build(getExtensibleByMap(fieldDesc), name, fieldDesc, JExtensionMapSourcer::new);
         } else if (fieldType.isInterface()) {
             return build(fieldType, name, fieldDesc, JExtensionSourcer::new);
         }
@@ -89,13 +92,18 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return new JInjectAnnotationInjection(injectType);
     }
 
-    protected Class<?> getExtensible(FieldDesc fieldDesc) {
-        Type[] types = getTypeOfArguments(fieldDesc);
+    protected Class<?> getExtensibleByArray(FieldDesc fieldDesc) {
+        Type type = getComponentType(fieldDesc);
+        return type instanceof Class ? (Class<?>) type : null;
+    }
+
+    protected Class<?> getExtensibleByList(FieldDesc fieldDesc) {
+        Type[] types = getParameterizedTypes(fieldDesc);
         return types != null && types.length > 0 && types[0] instanceof Class ? (Class<?>) types[0] : null;
     }
 
-    protected Class<?> getExtensibleOfMap(FieldDesc fieldDesc) {
-        Type[] types = getTypeOfArguments(fieldDesc);
+    protected Class<?> getExtensibleByMap(FieldDesc fieldDesc) {
+        Type[] types = getParameterizedTypes(fieldDesc);
         if (types != null && types.length == 2 && types[0].equals(String.class)) {
             if (types[1] instanceof Class<?>) {
                 return (Class<?>) types[1];
@@ -107,10 +115,20 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return null;
     }
 
-    protected Type[] getTypeOfArguments(FieldDesc fieldDesc) {
+    protected Type[] getParameterizedTypes(FieldDesc fieldDesc) {
         Type genericType = fieldDesc.getGeneric().getType();
         if (genericType instanceof ParameterizedType) {
             return ((ParameterizedType) genericType).getActualTypeArguments();
+        }
+        return null;
+    }
+
+    protected Type getComponentType(FieldDesc fieldDesc) {
+        Type genericType = fieldDesc.getGeneric().getType();
+        if (genericType instanceof Class) {
+            return ((Class<?>) genericType).getComponentType();
+        } else if (genericType instanceof GenericArrayType) {
+            return ((GenericArrayType) genericType).getGenericComponentType();
         }
         return null;
     }

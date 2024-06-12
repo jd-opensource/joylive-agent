@@ -125,17 +125,17 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
-    private List<InboundFilter> inboundFilters;
+    private InboundFilter[] inboundFilters;
 
     @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
-    private List<OutboundFilter> outboundFilters;
+    private OutboundFilter[] outboundFilters;
 
     @Getter
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
-    private List<RouteFilter> routeFilters;
+    private RouteFilter[] routeFilters;
 
     @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)
     private ServiceSupervisor serviceSupervisor;
