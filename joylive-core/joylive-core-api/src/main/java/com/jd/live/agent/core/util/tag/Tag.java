@@ -108,18 +108,15 @@ public class Tag implements Label, Serializable {
 
     @Override
     public String getValue() {
-        StringBuilder builder = new StringBuilder();
         int size = values == null ? 0 : values.size();
         switch (size) {
             case 0:
-                builder.append("[]");
-                break;
+                return "[]";
             case 1:
-                builder.append(values.get(0));
-                break;
+                return values.get(0);
             default:
                 // array
-                builder.append('[');
+                StringBuilder builder = new StringBuilder('[');
                 for (int i = 0; i < size; i++) {
                     if (i > 0) {
                         builder.append(',');
@@ -127,8 +124,8 @@ public class Tag implements Label, Serializable {
                     builder.append(values.get(i));
                 }
                 builder.append(']');
+                return builder.toString();
         }
-        return builder.toString();
     }
 
     /**
