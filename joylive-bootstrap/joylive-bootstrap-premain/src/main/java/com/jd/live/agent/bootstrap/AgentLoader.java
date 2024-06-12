@@ -46,7 +46,7 @@ public class AgentLoader {
      * finds the target JVM, and loads the specified agent into it.
      *
      * @param args the command-line arguments
-     * @throws Exception                  if an  error occurs
+     * @throws Exception if an  error occurs
      */
     public static void main(String[] args) throws Exception {
         AgentOption option = OptionParser.parse(args);
