@@ -25,13 +25,14 @@ import com.jd.live.agent.core.bytekit.ByteBuilder;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.bytekit.transformer.Resetter;
 import com.jd.live.agent.core.config.PluginConfig;
-import com.jd.live.agent.core.context.AgentContext;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.extension.ExtensionManager;
 import com.jd.live.agent.core.plugin.Plugin.Status;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.util.Close;
 
 import java.io.File;
+import java.lang.instrument.Instrumentation;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,19 +43,18 @@ import java.util.stream.Collectors;
 
 /**
  * Manages the lifecycle of plugins within an agent context. This includes installing, enhancing,
- * and uninstalling both static and dynamic plugins. It interacts with an {@link AgentContext},
- * {@link ExtensionManager}, and a {@link ClassLoaderSupervisor} to manage plugin resources and class loading.
- * Additionally, it uses a {@link ByteSupplier} to manipulate bytecode for plugin enhancement.
+ * and uninstalling both static and dynamic plugins.
  *
  * @since 1.0.0
  */
 public class PluginManager implements PluginSupervisor {
     private static final Logger logger = LoggerFactory.getLogger(PluginManager.class);
 
-    /**
-     * The context object containing agent configuration and paths.
-     */
-    private final AgentContext context;
+    private final Instrumentation instrumentation;
+
+    private final PluginConfig pluginConfig;
+
+    private final AgentPath agentPath;
 
     /**
      * The extension manager responsible for managing extensions.
@@ -97,18 +97,16 @@ public class PluginManager implements PluginSupervisor {
         }
     };
 
-    /**
-     * Constructs a new PluginManager with the specified context, extension manager, class loader supervisor,
-     * and byte supplier.
-     *
-     * @param context           The agent context.
-     * @param extensionManager  The manager for plugin extensions.
-     * @param supervisor        The supervisor for class loaders.
-     * @param byteSupplier      The supplier for byte manipulation utilities.
-     */
-    public PluginManager(AgentContext context, ExtensionManager extensionManager, ClassLoaderSupervisor supervisor,
+    public PluginManager(Instrumentation instrumentation,
+                         PluginConfig pluginConfig,
+                         AgentPath agentPath,
+                         ExtensionManager extensionManager,
+                         ClassLoaderSupervisor supervisor,
                          ByteSupplier byteSupplier) {
-        this.context = context;
+
+        this.instrumentation = instrumentation;
+        this.pluginConfig = pluginConfig;
+        this.agentPath = agentPath;
         this.extensionManager = extensionManager;
         this.supervisor = supervisor;
         this.byteSupplier = byteSupplier;
@@ -116,7 +114,6 @@ public class PluginManager implements PluginSupervisor {
 
     @Override
     public synchronized boolean install(boolean dynamic) {
-        PluginConfig pluginConfig = context.getAgentConfig().getPluginConfig();
         // system plugin install first
         List<Plugin> enhanceStatics = install(pluginConfig == null ? null : pluginConfig.getSystems(), false);
         // Automatically install any static plugins that are not installed.
@@ -147,8 +144,7 @@ public class PluginManager implements PluginSupervisor {
     private List<Plugin> install(Set<String> names, boolean dynamic) {
         List<Plugin> installed = new LinkedList<>();
         if (names != null) {
-            PluginConfig pluginConfig = context.getAgentConfig().getPluginConfig();
-            Map<String, File> files = context.getAgentPath().getPlugins();
+            Map<String, File> files = agentPath.getPlugins();
             Map<String, Plugin> plugins = dynamic ? dynamics : statics;
             for (String name : names) {
                 File file = files.get(name);
@@ -177,7 +173,7 @@ public class PluginManager implements PluginSupervisor {
             enhances = plugins.stream().filter(p -> p.getStatus() == Status.LOADED && !p.isEmpty()).collect(Collectors.toList());
             for (Plugin plugin : enhances) {
                 try {
-                    Resetter resetter = byteSupplier.create().append(plugin).install(context.getInstrumentation());
+                    Resetter resetter = byteSupplier.create().append(plugin).install(instrumentation);
                     plugin.addListener(p -> {
                         if (p.getType() == EventType.UNINSTALL) {
                             resetter.reset();
@@ -220,7 +216,7 @@ public class PluginManager implements PluginSupervisor {
                     builder = builder.append(plugin);
                 }
                 try {
-                    builder.install(context.getInstrumentation());
+                    builder.install(instrumentation);
                 } catch (Throwable e) {
                     logger.error("Failed to enhance static plugins", e);
                     success = false;
@@ -261,7 +257,7 @@ public class PluginManager implements PluginSupervisor {
      * @return The created Plugin instance.
      */
     private Plugin createPlugin(File file, boolean dynamic) {
-        URL[] urls = context.getAgentPath().getLibUrls(file);
+        URL[] urls = agentPath.getLibUrls(file);
         ClassLoader classLoader = supervisor.create(file.getName(), urls);
         Plugin plugin = new Plugin(file, dynamic, urls, extensionManager.build(PluginDefinition.class, classLoader));
         plugin.addListener(pluginListener);

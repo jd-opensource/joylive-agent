@@ -29,8 +29,7 @@ import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
 import com.jd.live.agent.core.config.*;
-import com.jd.live.agent.core.context.AgentContext;
-import com.jd.live.agent.core.context.AgentPath;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.event.EventHandler.EventProcessor;
@@ -69,7 +68,6 @@ import com.jd.live.agent.core.util.shutdown.Shutdown;
 import com.jd.live.agent.core.util.shutdown.ShutdownHookAdapter;
 import com.jd.live.agent.core.util.time.TimeScheduler;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.core.util.type.Artifact;
 import com.jd.live.agent.core.util.version.JVM;
 import com.jd.live.agent.core.util.version.VersionExpression;
 
@@ -86,7 +84,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
-import static com.jd.live.agent.core.util.type.ClassUtils.describe;
 
 /**
  * Bootstrap is the main entry point for the agent's lifecycle management.
@@ -198,11 +195,6 @@ public class Bootstrap implements AgentLifecycle {
     private ExtensionManager extensionManager;
 
     /**
-     * Context for the agent providing access to its components.
-     */
-    private AgentContext context;
-
-    /**
      * Supplies bytecode for instrumentation.
      */
     private ByteSupplier byteSupplier;
@@ -263,7 +255,6 @@ public class Bootstrap implements AgentLifecycle {
             setupLogger(); //depend on extensionManager
             option = loadConfig(); // load config.yaml and merge bootstrap.properties.
             agentConfig = createAgentConfig(); //depend on option & injector
-            context = createAgentContext(); //depend on option & agentPath & agentConfig & application
             timer = createTimer();
             timer.start();
             eventBus = createEventBus(); //depend on extensionManager & option
@@ -333,7 +324,6 @@ public class Bootstrap implements AgentLifecycle {
         publisher = null;
         serviceManager = null;
         conditionMatcher = null;
-        context = null;
         byteSupplier = null;
         loggerBridge = null;
         commandManager = null;
@@ -491,12 +481,6 @@ public class Bootstrap implements AgentLifecycle {
         return result;
     }
 
-    private AgentContext createAgentContext() {
-        Artifact artifact = describe(Bootstrap.class).getArtifact();
-        return new AgentContext(instrumentation, dynamic, classLoader, agentPath, option,
-                agentConfig, artifact.getVersion(), application);
-    }
-
     private Injector createInjector() {
         InjectorFactory factory = extensionManager.getOrLoadExtension(InjectorFactory.class);
         final Injection injection = factory.create(extensionManager, new MapOption(env), classLoader);
@@ -545,7 +529,8 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     private PluginSupervisor createPluginManager() {
-        return new PluginManager(context, extensionManager, classLoaderManager.getPluginLoaders(), byteSupplier);
+        return new PluginManager(instrumentation, agentConfig.getPluginConfig(), agentPath, extensionManager,
+                classLoaderManager.getPluginLoaders(), byteSupplier);
     }
 
     private ClassLoaderManager createClassLoaderManager() {

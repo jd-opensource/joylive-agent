@@ -17,7 +17,7 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.handler;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.context.AgentPath;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;

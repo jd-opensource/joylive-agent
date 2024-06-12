@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.context;
+package com.jd.live.agent.core.config;
 
 import com.jd.live.agent.bootstrap.exception.DirectoryException;
 import lombok.Getter;

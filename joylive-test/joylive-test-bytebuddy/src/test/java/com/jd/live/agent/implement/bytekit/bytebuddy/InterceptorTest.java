@@ -26,7 +26,7 @@ import com.jd.live.agent.core.config.AgentConfig;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.config.EnhanceConfig;
 import com.jd.live.agent.core.config.PluginConfig;
-import com.jd.live.agent.core.context.AgentPath;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
