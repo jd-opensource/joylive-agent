@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.PolicyType;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 
@@ -50,6 +49,6 @@ public class ReferenceConfigInterceptor extends InterceptorAdaptor {
         application.label(map::putIfAbsent);
         String service = ((ReferenceConfig<?>) config).getProvidedBy();
         service = service != null && !service.isEmpty() ? service : config.getInterface();
-        policySupplier.subscribe(service, PolicyType.SERVICE_POLICY);
+        policySupplier.subscribe(service);
     }
 }

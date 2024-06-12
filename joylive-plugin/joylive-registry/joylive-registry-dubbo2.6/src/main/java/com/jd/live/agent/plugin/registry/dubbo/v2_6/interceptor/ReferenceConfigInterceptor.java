@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.PolicyType;
 
 import java.util.Map;
 
@@ -45,7 +44,7 @@ public class ReferenceConfigInterceptor extends InterceptorAdaptor {
         ReferenceConfig<?> config = (ReferenceConfig<?>) ctx.getTarget();
 
         application.label(argument::putIfAbsent);
-        policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+        policySupplier.subscribe(config.getInterface());
     }
 
 }

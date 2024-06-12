@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.PolicyType;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 import org.apache.dubbo.config.ApplicationConfig;
 
@@ -55,12 +54,12 @@ public class ServiceConfigInterceptor extends InterceptorAdaptor {
         ApplicationConfig application = config.getApplication();
         String registerMode = application.getRegisterMode();
         if (DEFAULT_REGISTER_MODE_INSTANCE.equals(registerMode)) {
-            policySupplier.subscribe(application.getName(), PolicyType.SERVICE_POLICY);
+            policySupplier.subscribe(application.getName());
         } else if (DEFAULT_REGISTER_MODE_INTERFACE.equals(registerMode)) {
-            policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+            policySupplier.subscribe(config.getInterface());
         } else {
-            policySupplier.subscribe(application.getName(), PolicyType.SERVICE_POLICY);
-            policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+            policySupplier.subscribe(application.getName());
+            policySupplier.subscribe(config.getInterface());
         }
     }
 }

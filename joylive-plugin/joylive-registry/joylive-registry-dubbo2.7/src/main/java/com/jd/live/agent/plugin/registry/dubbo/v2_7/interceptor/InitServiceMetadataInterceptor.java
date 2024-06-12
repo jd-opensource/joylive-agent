@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.PolicyType;
 import org.apache.dubbo.config.*;
 
 import java.util.HashMap;
@@ -62,14 +61,14 @@ public class InitServiceMetadataInterceptor extends InterceptorAdaptor {
         switch (type) {
             case REGISTRY_TYPE_SERVICE:
                 updateRegistryModel(config, SERVICE_REGISTRY_TYPE);
-                policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
+                policySupplier.subscribe(config.getApplication().getName());
                 break;
             case REGISTRY_TYPE_ALL:
                 updateRegistryModel(config, "all");
-                policySupplier.subscribe(config.getApplication().getName(), PolicyType.SERVICE_POLICY);
+                policySupplier.subscribe(config.getApplication().getName());
             case REGISTRY_TYPE_INTERFACE:
             default:
-                policySupplier.subscribe(config.getInterface(), PolicyType.SERVICE_POLICY);
+                policySupplier.subscribe(config.getInterface());
 
         }
     }

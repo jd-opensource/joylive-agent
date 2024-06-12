@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.PolicyType;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 
 import java.util.concurrent.ExecutionException;
@@ -47,7 +46,7 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
         // Built at runtime, cannot intercept and obtain the required service during the startup phase
         // restTemplate.getForObject("http://service-provider/echo/" + str, String.class)
         try {
-            policySupplier.subscribe(serviceId, PolicyType.SERVICE_POLICY).get(5000, TimeUnit.MILLISECONDS);
+            policySupplier.subscribe(serviceId).get(5000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignore) {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;

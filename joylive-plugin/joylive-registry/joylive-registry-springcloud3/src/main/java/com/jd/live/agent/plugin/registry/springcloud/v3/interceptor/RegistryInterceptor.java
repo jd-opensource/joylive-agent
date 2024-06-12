@@ -22,7 +22,6 @@ import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.registry.ServiceProtocol;
@@ -58,7 +57,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         if (metadata != null) {
             application.label(metadata::putIfAbsent);
         }
-        policySupplier.subscribe(registration.getServiceId(), PolicyType.SERVICE_POLICY);
+        policySupplier.subscribe(registration.getServiceId());
         super.onEnter(ctx);
     }
 
