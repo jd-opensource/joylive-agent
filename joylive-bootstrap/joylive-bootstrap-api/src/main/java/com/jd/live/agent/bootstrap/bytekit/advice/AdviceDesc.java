@@ -19,11 +19,12 @@ import com.jd.live.agent.bootstrap.plugin.PluginEvent;
 import com.jd.live.agent.bootstrap.plugin.PluginListener;
 import com.jd.live.agent.bootstrap.plugin.PluginPublisher;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
+import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -35,12 +36,14 @@ public class AdviceDesc implements PluginListener {
     /**
      * A unique key identifying the advice.
      */
+    @Getter
     private final String key;
 
     /**
      * A list of interceptors associated with this advice.
      */
-    private final List<Interceptor> interceptors = new ArrayList<>();
+    @Getter
+    private final List<Interceptor> interceptors = new CopyOnWriteArrayList<>();
 
     /**
      * An atomic reference used for thread-safe operations, primarily to manage the owner of this advice.
@@ -50,7 +53,7 @@ public class AdviceDesc implements PluginListener {
     /**
      * A set of interceptor names ensuring that each interceptor is unique.
      */
-    private final Set<String> names = new HashSet<>();
+    private final Map<String, Boolean> names = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new AdviceDesc instance with a specified key.
@@ -59,24 +62,6 @@ public class AdviceDesc implements PluginListener {
      */
     public AdviceDesc(String key) {
         this.key = key;
-    }
-
-    /**
-     * Returns the unique key of this advice.
-     *
-     * @return the unique key
-     */
-    public String getKey() {
-        return key;
-    }
-
-    /**
-     * Retrieves the list of interceptors associated with this advice.
-     *
-     * @return the list of interceptors
-     */
-    public List<Interceptor> getInterceptors() {
-        return interceptors;
     }
 
     /**
@@ -131,7 +116,7 @@ public class AdviceDesc implements PluginListener {
      * @return true if the name was added successfully, false if it already exists
      */
     protected boolean add(String interceptor) {
-        return names.add(interceptor);
+        return names.putIfAbsent(interceptor, Boolean.TRUE) == null;
     }
 
     /**
