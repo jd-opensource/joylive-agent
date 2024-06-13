@@ -11,7 +11,7 @@
 
     <artifactId>joylive-eventbus-disruptor</artifactId>
     <properties>
-        <disruptor.version>4.0.0</disruptor.version>
+        <disruptor.version>3.4.4</disruptor.version>
     </properties>
 
     <dependencies>
