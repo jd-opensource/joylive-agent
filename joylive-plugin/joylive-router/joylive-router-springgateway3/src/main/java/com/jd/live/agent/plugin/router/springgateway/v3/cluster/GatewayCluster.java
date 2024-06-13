@@ -34,10 +34,6 @@ import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactor
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
-import org.springframework.core.NestedRuntimeException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -126,10 +122,5 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                 useRawStatusCodeInResponseData
                         ? new ResponseData(new RequestData(request.getRequest()), response.getResponse())
                         : new ResponseData(response.getResponse(), new RequestData(request.getRequest())))));
-    }
-
-    @Override
-    protected NestedRuntimeException createException(HttpStatus status, String message, HttpHeaders headers) {
-        return new ResponseStatusException(status, message);
     }
 }

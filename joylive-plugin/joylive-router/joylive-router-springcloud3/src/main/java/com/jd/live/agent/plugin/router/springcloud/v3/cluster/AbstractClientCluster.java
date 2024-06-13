@@ -34,9 +34,8 @@ import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMapAdapter;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +91,7 @@ public abstract class AbstractClientCluster<
 
     @Override
     public NestedRuntimeException createUnReadyException(String message, R request) {
-        return createException(HttpStatus.FORBIDDEN, message, request.getHeaders());
+        return createException(HttpStatus.FORBIDDEN, message);
     }
 
     @Override
@@ -105,19 +104,18 @@ public abstract class AbstractClientCluster<
         if (throwable instanceof NestedRuntimeException) {
             return (NestedRuntimeException) throwable;
         }
-        return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), request.getHeaders());
+        return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
     }
 
     @Override
     public NestedRuntimeException createNoProviderException(R request) {
         return createException(HttpStatus.SERVICE_UNAVAILABLE,
-                "LoadBalancer does not contain an instance for the service " + request.getService(),
-                request.getHeaders());
+                "LoadBalancer does not contain an instance for the service " + request.getService());
     }
 
     @Override
     public NestedRuntimeException createRejectException(RejectException exception, R request) {
-        return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage(), request.getHeaders());
+        return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage());
     }
 
     @Override
@@ -161,28 +159,24 @@ public abstract class AbstractClientCluster<
 
     /**
      * Creates an {@link NestedRuntimeException} using the provided status, message, and headers map.
-     * This method is a convenience that first converts the headers map into an {@link HttpHeaders} instance.
      *
      * @param status  the HTTP status code of the error
      * @param message the error message
-     * @param headers a map of header names to lists of header values
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    protected NestedRuntimeException createException(HttpStatus status, String message, Map<String, List<String>> headers) {
-        return createException(status, message, getHttpHeaders(headers));
+    protected NestedRuntimeException createException(HttpStatus status, String message) {
+        return createException(status, message, null);
     }
-
     /**
      * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
-     * This method allows for direct specification of {@link HttpHeaders}, facilitating the creation of the exception.
      *
-     * @param status  the HTTP status code of the error
-     * @param message the error message
-     * @param headers the {@link HttpHeaders} containing the headers associated with the error
+     * @param status    the HTTP status code of the error
+     * @param message   the error message
+     * @param throwable the exception
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    protected NestedRuntimeException createException(HttpStatus status, String message, HttpHeaders headers) {
-        return HttpClientErrorException.create(status, message, headers, new byte[0], StandardCharsets.UTF_8);
+    protected NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+        return new ResponseStatusException(status, message, throwable);
     }
 }
 
