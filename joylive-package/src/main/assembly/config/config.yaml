@@ -172,23 +172,25 @@ agent:
           - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
         excludeTasks:
           - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve
-          - sun.rmi.transport.tcp.TCPTransport$ConnectionHandler
-          - sun.rmi.transport.DGCImpl$1
-          - sun.rmi.transport.DGCAckHandler$1
           - com.alibaba.nacos.client.naming.backups.FailoverReactor$DiskFileWriter
           - com.alibaba.nacos.client.naming.backups.FailoverReactor.SwitchRefresher
-          - com.alibaba.nacos.client.auth.ram.identify.CredentialWatcher$1
           - com.alibaba.nacos.client.naming.remote.gprc.redo.RedoScheduledTask
           - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver$Resolve
           - com.alibaba.nacos.shaded.io.grpc.internal.DelayedClientTransport$5
           - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
           - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
+          - com.jd.live.agent.core.thread.NamedThreadFactory
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
+          - com.alibaba.nacos.client.auth.ram.identify.CredentialWatcher$
           - com.alibaba.nacos.client.naming.backups.FailoverReactor$$Lambda$
           - com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate$$Lambda$
           - com.alibaba.nacos.common.remote.client.RpcClient$$Lambda$
+          - com.alibaba.nacos.common.utils.ThreadFactoryBuilder$$Lambda$
+          - sun.rmi.transport.tcp.TCPTransport$
+          - sun.rmi.transport.DGCImpl$
+          - sun.rmi.transport.DGCAckHandler$
   counter:
     gateway: true
     service: true

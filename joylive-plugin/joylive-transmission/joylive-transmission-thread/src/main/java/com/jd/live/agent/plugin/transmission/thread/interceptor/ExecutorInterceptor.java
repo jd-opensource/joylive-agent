@@ -27,8 +27,11 @@ import com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * ExecutorInterceptor
@@ -42,6 +45,8 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
     private final Camera[] cameras;
 
     private final ThreadConfig threadConfig;
+
+    private final Map<Class<?>, Boolean> excludes = new ConcurrentHashMap<>();
 
     public ExecutorInterceptor(List<Camera> cameras, ThreadConfig threadConfig) {
         this.cameras = cameras == null ? new Camera[0] : cameras.toArray(new Camera[0]);
@@ -59,6 +64,10 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         return result;
     }
 
+    private boolean isExcluded(Object task) {
+        return task != null && excludes.computeIfAbsent(task.getClass(), c -> threadConfig.isExcludedTask(c.getName()));
+    }
+
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object target = ctx.getTarget();
@@ -68,14 +77,15 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
             return;
         }
         Object argument = arguments[0];
+        Object unwrapped = unwrap(argument);
         if (argument == null) {
             return;
-        }
-        Object unwrapped = unwrap(argument);
-        if (unwrapped instanceof AbstractThreadAdapter) {
+        } else if (unwrapped instanceof AbstractThreadAdapter) {
             return;
-        }
-        if (threadConfig.isExcludedTask(unwrapped.getClass().getName())) {
+        } else if (isExcluded(unwrapped)) {
+            return;
+        } else if (target instanceof ThreadPoolExecutor
+                && isExcluded(((ThreadPoolExecutor) target).getThreadFactory())) {
             return;
         }
 
@@ -103,10 +113,11 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
      * @return the unwrapped object if unwrapping is possible, otherwise the original object.
      */
     private Object unwrap(Object argument) {
-        if (argument instanceof AbstractThreadAdapter) {
+        if (argument == null) {
+            return null;
+        } else if (argument instanceof AbstractThreadAdapter) {
             return argument;
-        }
-        if (argument instanceof FutureTask && callableField != null) {
+        } else if (argument instanceof FutureTask && callableField != null) {
             try {
                 return callableField.get(argument);
             } catch (Exception ignore) {
