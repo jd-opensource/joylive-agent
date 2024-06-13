@@ -15,21 +15,20 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
+import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.util.Cookies;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.util.MultiValueMapAdapter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractClusterRequest}
@@ -92,7 +91,8 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
 
     @Override
     protected RequestData buildRequestData() {
-        return new RequestData(request);
+        return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
+                new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
     }
 
     public byte[] getBody() {
@@ -109,13 +109,17 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
      * @return A map of cookie names to their respective list of values.
      */
     protected Map<String, List<String>> parseCookie() {
-        if (request instanceof ServerHttpRequest) {
-            Map<String, List<String>> result = new HashMap<>();
-            ((ServerHttpRequest) request).getCookies().forEach((n, v) -> result.put(n,
-                    v.stream().map(HttpCookie::getValue).collect(Collectors.toList())));
-            return result;
-        } else {
-            return Cookies.parse(request.getHeaders().get(COOKIE_HEADER));
+        Map<String, List<String>> result = new HashMap<>();
+        List<String> cookies = request.getHeaders().get(COOKIE_HEADER);
+        if (cookies != null) {
+            cookies.forEach(cookie -> {
+                String[] keyValue = StringUtils.split(cookie, '=');
+                if (keyValue.length < 2) {
+                    return;
+                }
+                result.computeIfAbsent(keyValue[0], key -> new ArrayList<>()).add(keyValue[1]);
+            });
         }
+        return result;
     }
 }

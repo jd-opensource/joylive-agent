@@ -28,10 +28,11 @@ import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactor
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Map;
+import java.util.*;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
@@ -63,7 +64,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         this.uri = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
         this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
         this.headers = new UnsafeLazyObject<>(request::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(() -> getRequestData().getCookies());
+        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
         this.retryConfig = retryConfig;
         this.gatewayConfig = gatewayConfig;
     }
@@ -108,6 +109,23 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
 
     @Override
     protected RequestData buildRequestData() {
-        return new RequestData(request);
+        return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
+                new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
+    }
+
+    protected Map<String, List<String>> parseCookie(ServerHttpRequest request) {
+        Map<String, List<String>> result = new HashMap<>();
+        request.getCookies().forEach((name, cookies) -> {
+            if (!cookies.isEmpty()) {
+                if (cookies.size() == 1) {
+                    result.put(name, Collections.singletonList(cookies.get(0).getValue()));
+                } else {
+                    List<String> values = new ArrayList<>(cookies.size());
+                    cookies.forEach(cookie -> values.add(cookie.getValue()));
+                    result.put(name, values);
+                }
+            }
+        });
+        return result;
     }
 }
