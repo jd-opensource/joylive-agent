@@ -17,6 +17,8 @@ package com.jd.live.agent.governance.rule;
 
 import com.jd.live.agent.core.util.matcher.Matcher;
 
+import java.util.List;
+
 /**
  * The ConditionalMatcher interface represents an entity that can evaluate a set of conditions
  * against a given matcher and determine if a match exists based on a specified relation type.
@@ -36,14 +38,15 @@ public interface ConditionalMatcher<T> extends Conditional<T>, Matcher<Matcher<T
      * @return true if the matcher matches the conditions based on the relation type; false otherwise
      */
     default boolean match(Matcher<T> matcher) {
+        List<T> conditions = getConditions();
         if (matcher == null) {
             return false;
-        } else if (getConditions() == null || getConditions().isEmpty()) {
+        } else if (conditions == null || conditions.isEmpty()) {
             return true;
         }
 
         boolean matched = false;
-        for (T condition : getConditions()) {
+        for (T condition : conditions) {
             if (matcher.match(condition)) {
                 if (getRelationType() == RelationType.OR) {
                     return true;

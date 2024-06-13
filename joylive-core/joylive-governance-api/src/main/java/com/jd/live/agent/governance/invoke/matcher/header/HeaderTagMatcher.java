@@ -16,13 +16,13 @@
 package com.jd.live.agent.governance.invoke.matcher.header;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.RpcRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -42,7 +42,7 @@ public class HeaderTagMatcher implements TagMatcher {
         } else if (request instanceof RpcRequest) {
             Object value = ((RpcRequest) request).getAttachment(condition.getKey());
             if (value instanceof String) {
-                values = Collections.singletonList((String) value);
+                values = Label.parseValue((String) value);
             }
         }
         return condition.match(values);
