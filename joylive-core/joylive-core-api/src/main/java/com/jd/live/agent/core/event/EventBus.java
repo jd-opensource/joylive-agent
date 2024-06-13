@@ -32,6 +32,11 @@ public interface EventBus {
     String COMPONENT_EVENT_BUS = "eventBus";
 
     /**
+     * Priority order for the disruptor bus instance.
+     */
+    int ORDER_DISRUPTOR_BUS = 0;
+
+    /**
      * Priority order for the JEventBus instance.
      */
     int ORDER_JEVENT_BUS = 100;

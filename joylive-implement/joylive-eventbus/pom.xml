@@ -13,8 +13,8 @@
     <packaging>pom</packaging>
 
     <modules>
-
         <module>joylive-eventbus-jbus</module>
+        <module>joylive-eventbus-disruptor</module>
     </modules>
 
 </project>

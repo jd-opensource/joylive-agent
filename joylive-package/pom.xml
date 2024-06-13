@@ -61,6 +61,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-eventbus-disruptor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-function-bkdrhash</artifactId>
         </dependency>
         <dependency>

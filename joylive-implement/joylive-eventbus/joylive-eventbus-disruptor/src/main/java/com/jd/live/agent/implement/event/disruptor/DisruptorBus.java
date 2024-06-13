@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.jbus;
+package com.jd.live.agent.implement.event.disruptor;
 
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.event.Publisher;
@@ -30,12 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * EventBus
+ * DisruptorBus
  */
 @Injectable
-@Extension(value = "JEventBus", order = EventBus.ORDER_JEVENT_BUS)
-@Configurable(prefix = "agent.publisher", auto = false)
-public class JEventBus implements EventBus {
+@Extension(value = "DisruptorBus", order = EventBus.ORDER_DISRUPTOR_BUS)
+@Configurable(prefix = "agent.publisher")
+public class DisruptorBus implements EventBus {
 
     public static final String DEFAULT_NAME = "default";
 
@@ -45,14 +45,14 @@ public class JEventBus implements EventBus {
     @Config
     private Map<String, PublisherConfig> configs = new ConcurrentHashMap<>();
 
-    private final Map<String, JPublisher<?>> publishers = new ConcurrentHashMap<>();
+    private final Map<String, DisruptorPublisher<?>> publishers = new ConcurrentHashMap<>();
 
     private final AtomicBoolean started = new AtomicBoolean(true);
 
-    public JEventBus() {
+    public DisruptorBus() {
     }
 
-    public JEventBus(Application application, Map<String, PublisherConfig> configs) {
+    public DisruptorBus(Application application, Map<String, PublisherConfig> configs) {
         this.application = application;
         this.configs = configs;
     }
@@ -62,8 +62,8 @@ public class JEventBus implements EventBus {
     public <E> Publisher<E> getPublisher(String topic) {
         if (topic == null || topic.isEmpty())
             return null;
-        JPublisher<E> result = (JPublisher<E>) publishers.computeIfAbsent(topic,
-                o -> new JPublisher<>(topic, application, getConfig(o), started.get()));
+        DisruptorPublisher<E> result = (DisruptorPublisher<E>) publishers.computeIfAbsent(topic,
+                o -> new DisruptorPublisher<>(topic, application, getConfig(o), started.get()));
         if (!started.get() && result.isStarted()) {
             result.stop();
         }
@@ -82,7 +82,7 @@ public class JEventBus implements EventBus {
 
     public void stop() {
         if (started.compareAndSet(true, false)) {
-            publishers.values().forEach(JPublisher::stop);
+            publishers.values().forEach(DisruptorPublisher::stop);
         }
     }
 }

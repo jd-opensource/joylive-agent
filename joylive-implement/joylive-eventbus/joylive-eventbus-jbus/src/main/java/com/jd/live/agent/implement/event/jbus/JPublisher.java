@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.event.config.PublisherConfig;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.network.Ipv4;
 
@@ -31,8 +32,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.jd.live.agent.implement.event.jbus.PublisherConfig.BATCH_SIZE;
 
 public class JPublisher<E> implements Publisher<E> {
 
@@ -63,11 +62,13 @@ public class JPublisher<E> implements Publisher<E> {
         this.started = new AtomicBoolean(autoStart);
         this.queue = new LinkedBlockingQueue<>(config.getCapacity() > 0 ? config.getCapacity() : PublisherConfig.DEFAULT_CAPACITY);
         this.thread = new Thread(this::run, "bus-" + topic);
-        thread.start();
+        if (autoStart) {
+            thread.start();
+        }
     }
 
     protected void run() {
-        int batchSize = config.getBatchSize() <= 0 ? BATCH_SIZE : config.getBatchSize();
+        int batchSize = config.getBatchSize() <= 0 ? PublisherConfig.BATCH_SIZE : config.getBatchSize();
         List<Event<E>> events = new ArrayList<>(batchSize + 2);
         Event<E> event;
         while (isStarted() && !Thread.currentThread().isInterrupted()) {
@@ -114,24 +115,28 @@ public class JPublisher<E> implements Publisher<E> {
     }
 
     @Override
-    public boolean offer(Event<E> event) {
-        return offer(event, config.getTimeout(), TimeUnit.MILLISECONDS);
+    public boolean offer(E event) {
+        return offer(event, config.getTimeout());
     }
 
     @Override
-    public boolean offer(Event<E> event, long timeout, TimeUnit timeUnit) {
+    public boolean tryOffer(E event) {
+        return offer(event, 0);
+    }
+
+    private boolean offer(E event, long timeout) {
         if (event == null || !started.get()) {
             return false;
         } else if (handlers.isEmpty()) {
             return true;
         }
-        timeUnit = timeUnit == null ? TimeUnit.MILLISECONDS : timeUnit;
-        event.setTopic(topic);
-        event.setTime(System.currentTimeMillis());
-        event.setInstanceId(application.getInstance());
-        event.setIp(Ipv4.getLocalIp());
+        Event<E> newEvent = new Event<>(event);
+        newEvent.setTopic(topic);
+        newEvent.setTime(System.currentTimeMillis());
+        newEvent.setInstanceId(application.getInstance());
+        newEvent.setIp(Ipv4.getLocalIp());
         try {
-            return timeout <= 0 ? queue.offer(event) : queue.offer(event, timeout, timeUnit);
+            return timeout <= 0 ? queue.offer(newEvent) : queue.offer(newEvent, timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             return false;
         }
