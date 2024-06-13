@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v2_7.instance;
 
-import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import org.apache.dubbo.common.URL;
@@ -36,7 +36,7 @@ import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_SERVI
  *
  * @param <T> The type of the service interface that this endpoint represents.
  */
-public class DubboEndpoint<T> implements Endpoint {
+public class DubboEndpoint<T> extends AbstractEndpoint {
 
     private final Invoker<T> invoker;
 

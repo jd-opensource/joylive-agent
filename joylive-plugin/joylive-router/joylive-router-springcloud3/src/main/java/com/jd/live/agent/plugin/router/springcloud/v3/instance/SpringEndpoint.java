@@ -16,14 +16,14 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.instance;
 
 import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.Response;
 
-public class SpringEndpoint implements Endpoint {
+public class SpringEndpoint extends AbstractEndpoint {
 
     private static final String STATE_HANGUP = "hangup";
     private static final String STATE_SUSPEND = "suspend";

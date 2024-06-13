@@ -199,7 +199,7 @@ public class RouteTarget {
             return endpoints;
         }
         int count = 0;
-        List<Endpoint> targets = new ArrayList<>(endpoints.size());
+        List<Endpoint> targets = new ArrayList<>(Math.max(endpoints.size() / 2, 1));
         for (Endpoint endpoint : endpoints) {
             if (predicate.test(endpoint)) {
                 ++count;

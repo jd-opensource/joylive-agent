@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.sofarpc.instance;
 
 import com.alipay.sofa.rpc.client.ProviderInfo;
+import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
@@ -33,7 +34,7 @@ import java.util.function.Predicate;
  * filtering or selection logic among endpoints.
  * </p>
  */
-public class SofaRpcEndpoint implements Endpoint {
+public class SofaRpcEndpoint extends AbstractEndpoint {
 
     private final ProviderInfo provider;
 

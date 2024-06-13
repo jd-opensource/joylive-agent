@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.instance;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invoker;
-import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
@@ -34,7 +34,7 @@ import static com.alibaba.dubbo.common.Constants.REMOTE_TIMESTAMP_KEY;
  *
  * @param <T> The type of the service interface that this endpoint represents.
  */
-public class DubboEndpoint<T> implements Endpoint {
+public class DubboEndpoint<T> extends AbstractEndpoint {
 
     private final Invoker<T> invoker;
 

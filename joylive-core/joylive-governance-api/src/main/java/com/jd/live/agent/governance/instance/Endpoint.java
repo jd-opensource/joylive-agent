@@ -17,13 +17,11 @@ package com.jd.live.agent.governance.instance;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.matcher.Matcher;
-import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
@@ -183,7 +181,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return true if the live space ID matches, false otherwise.
      */
     default boolean isLiveSpace(String liveSpaceId) {
-        return Objects.equals(liveSpaceId, Converts.getString(getLiveSpaceId(), ""));
+        return liveSpaceId != null && liveSpaceId.equals(getLiveSpaceId());
     }
 
     /**
@@ -193,7 +191,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return true if the unit matches, false otherwise.
      */
     default boolean isUnit(String unit) {
-        return getUnit().equals(unit);
+        return unit != null && unit.equals(getUnit());
     }
 
     /**
@@ -214,7 +212,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return true if the cell matches, false otherwise.
      */
     default boolean isCell(String cell) {
-        return getCell().equals(cell);
+        return cell != null && cell.equals(getCell());
     }
 
     /**
@@ -235,7 +233,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return true if the lane space ID matches, false otherwise.
      */
     default boolean isLaneSpace(String laneSpaceId) {
-        return Objects.equals(laneSpaceId, Converts.getString(getLaneSpaceId(), ""));
+        return laneSpaceId != null && laneSpaceId.equals(getLaneSpaceId());
     }
 
     /**
@@ -245,7 +243,7 @@ public interface Endpoint extends Matcher<TagCondition> {
      * @return true if the lane matches, false otherwise.
      */
     default boolean isLane(String lane) {
-        return getLane().equals(lane);
+        return lane != null && lane.equals(getLane());
     }
 
     /**

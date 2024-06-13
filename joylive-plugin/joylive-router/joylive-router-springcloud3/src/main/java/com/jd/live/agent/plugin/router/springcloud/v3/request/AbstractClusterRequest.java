@@ -32,6 +32,7 @@ import org.springframework.util.MultiValueMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -45,6 +46,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
 
     protected static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
 
+    protected static final Map<String, Set<LoadBalancerLifecycle>> LOAD_BALANCER_LIFE_CYCLES = new ConcurrentHashMap<>();
     /**
      * A factory for creating instances of {@code ReactiveLoadBalancer} for service instances.
      * This factory is used to obtain a load balancer instance for the service associated with
@@ -161,12 +163,13 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @return A set of LoadBalancerLifecycle objects that are compatible with the current service and request/response types.
      */
     private Set<LoadBalancerLifecycle> buildLifecycleProcessors() {
-        return loadBalancerFactory == null ? new HashSet<>()
+        return LOAD_BALANCER_LIFE_CYCLES.computeIfAbsent(getService(), service -> loadBalancerFactory == null
+                ? new HashSet<>()
                 : LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
-                loadBalancerFactory.getInstances(getService(), LoadBalancerLifecycle.class),
+                loadBalancerFactory.getInstances(service, LoadBalancerLifecycle.class),
                 RequestDataContext.class,
                 ResponseData.class,
-                ServiceInstance.class);
+                ServiceInstance.class));
     }
 
     /**
