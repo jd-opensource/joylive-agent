@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import org.springframework.http.HttpCookie;
@@ -37,9 +37,9 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     public ReactiveInboundRequest(ServerHttpRequest request) {
         super(request);
         this.uri = request.getURI();
-        this.headers = new LazyObject<>(request.getHeaders());
-        this.queries = new LazyObject<>(request.getQueryParams());
-        this.cookies = new LazyObject<>(() -> parseCookie(request));
+        this.headers = new UnsafeLazyObject<>(request::getHeaders);
+        this.queries = new UnsafeLazyObject<>(request::getQueryParams);
+        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
     }
 
     @Override

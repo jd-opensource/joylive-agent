@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
@@ -61,9 +61,9 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         this.exchange = exchange;
         this.chain = chain;
         this.uri = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
-        this.queries = new LazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new LazyObject<>(request.getHeaders());
-        this.cookies = new LazyObject<>(() -> getRequestData().getCookies());
+        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(request::getHeaders);
+        this.cookies = new UnsafeLazyObject<>(() -> getRequestData().getCookies());
         this.retryConfig = retryConfig;
         this.gatewayConfig = gatewayConfig;
     }

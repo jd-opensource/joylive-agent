@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -40,9 +40,9 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         } catch (URISyntaxException ignore) {
         }
         uri = u;
-        headers = new LazyObject<>(() -> parseHeader(request));
-        queries = new LazyObject<>(() -> parseQuery(request.getQueryString()));
-        cookies = new LazyObject<>(() -> parseCookie(request));
+        headers = new UnsafeLazyObject<>(() -> parseHeader(request));
+        queries = new UnsafeLazyObject<>(() -> parseQuery(request.getQueryString()));
+        cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
     }
 
     @Override

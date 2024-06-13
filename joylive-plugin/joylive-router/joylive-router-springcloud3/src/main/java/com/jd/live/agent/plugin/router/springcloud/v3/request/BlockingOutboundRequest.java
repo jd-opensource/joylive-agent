@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -41,9 +41,9 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
         super(request);
         this.serviceId = serviceId;
         this.uri = request.getURI();
-        this.queries = new LazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new LazyObject<>(request.getHeaders());
-        this.cookies = new LazyObject<>(() -> parseCookie(request));
+        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(request::getHeaders);
+        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
     }
 
     @Override

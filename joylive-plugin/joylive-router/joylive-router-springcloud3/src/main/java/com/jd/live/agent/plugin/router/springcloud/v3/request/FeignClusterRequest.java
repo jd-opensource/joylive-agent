@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.util.Cookies;
 import feign.Request;
@@ -60,9 +60,9 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         super(request, loadBalancerClientFactory);
         this.options = options;
         this.uri = URI.create(request.url());
-        this.queries = new LazyObject<>(() -> parseQuery(request.requestTemplate().queryLine()));
-        this.headers = new LazyObject<>(() -> parseHeaders(request));
-        this.cookies = new LazyObject<>(() -> Cookies.parse(request.headers().get(COOKIE_HEADER)));
+        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.requestTemplate().queryLine()));
+        this.headers = new UnsafeLazyObject<>(() -> parseHeaders(request));
+        this.cookies = new UnsafeLazyObject<>(() -> Cookies.parse(request.headers().get(COOKIE_HEADER)));
     }
 
 

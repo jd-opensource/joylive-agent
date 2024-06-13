@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.util.Cookies;
 import org.springframework.cloud.client.ServiceInstance;
@@ -65,9 +65,9 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
                                   ClientHttpRequestExecution execution) {
         super(request, loadBalancerFactory);
         this.uri = request.getURI();
-        this.queries = new LazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new LazyObject<>(request.getHeaders());
-        this.cookies = new LazyObject<>(this::parseCookie);
+        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(request::getHeaders);
+        this.cookies = new UnsafeLazyObject<>(this::parseCookie);
         this.body = body;
         this.execution = execution;
     }

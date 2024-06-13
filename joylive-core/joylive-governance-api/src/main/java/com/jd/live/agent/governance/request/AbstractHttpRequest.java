@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -49,17 +49,17 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected LazyObject<Map<String, List<String>>> cookies;
+    protected UnsafeLazyObject<Map<String, List<String>>> cookies;
 
     /**
      * Lazily evaluated, parsed query parameters from the HTTP request URL.
      */
-    protected LazyObject<Map<String, List<String>>> queries;
+    protected UnsafeLazyObject<Map<String, List<String>>> queries;
 
     /**
      * Lazily evaluated HTTP headers from the request.
      */
-    protected LazyObject<Map<String, List<String>>> headers;
+    protected UnsafeLazyObject<Map<String, List<String>>> headers;
 
     /**
      * The URI of the HTTP request.
@@ -69,17 +69,17 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated port number of the request URI.
      */
-    protected LazyObject<Integer> port;
+    protected UnsafeLazyObject<Integer> port;
 
     /**
      * Lazily evaluated host of the request URI.
      */
-    protected LazyObject<String> host;
+    protected UnsafeLazyObject<String> host;
 
     /**
      * Lazily evaluated scheme of the request URI.
      */
-    protected LazyObject<String> schema;
+    protected UnsafeLazyObject<String> schema;
 
     /**
      * Constructs an instance of {@code AbstractHttpRequest} with the original request object.
@@ -88,9 +88,9 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      */
     public AbstractHttpRequest(T request) {
         super(request);
-        port = new LazyObject<>(this::parsePort);
-        host = new LazyObject<>(this::parseHost);
-        schema = new LazyObject<>(this::parseScheme);
+        port = new UnsafeLazyObject<>(this::parsePort);
+        host = new UnsafeLazyObject<>(this::parseHost);
+        schema = new UnsafeLazyObject<>(this::parseScheme);
     }
 
     @Override

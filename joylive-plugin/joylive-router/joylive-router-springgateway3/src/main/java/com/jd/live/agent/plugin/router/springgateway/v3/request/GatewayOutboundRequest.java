@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
@@ -39,9 +39,9 @@ public class GatewayOutboundRequest extends AbstractHttpOutboundRequest<ServerHt
     public GatewayOutboundRequest(ServerWebExchange exchange) {
         super(exchange.getRequest());
         this.uri = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
-        this.queries = new LazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new LazyObject<>(request.getHeaders());
-        this.cookies = new LazyObject<>(() -> parseCookie(request));
+        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(request::getHeaders);
+        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
     }
 
     @Override
