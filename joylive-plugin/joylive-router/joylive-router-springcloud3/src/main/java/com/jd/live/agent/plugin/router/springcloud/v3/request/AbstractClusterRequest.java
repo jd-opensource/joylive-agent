@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
+import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
@@ -47,6 +48,9 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
     protected static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
 
     protected static final Map<String, Set<LoadBalancerLifecycle>> LOAD_BALANCER_LIFE_CYCLES = new ConcurrentHashMap<>();
+
+    protected static final Map<String, CacheObject<ServiceInstanceListSupplier>> SERVICE_INSTANCE_LIST_SUPPLIERS = new ConcurrentHashMap<>();
+
     /**
      * A factory for creating instances of {@code ReactiveLoadBalancer} for service instances.
      * This factory is used to obtain a load balancer instance for the service associated with
@@ -197,18 +201,19 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     @SuppressWarnings("unchecked")
     private ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
-        ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
-        if (loadBalancer == null) {
-            return null;
-        }
-        ClassDesc describe = ClassUtils.describe(loadBalancer.getClass());
-        FieldDesc field = describe.getFieldList().getField(FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-        if (field == null) {
-            return null;
-        } else {
-            ObjectProvider<ServiceInstanceListSupplier> provider = (ObjectProvider<ServiceInstanceListSupplier>) field.get(loadBalancer);
-            return provider.getIfAvailable();
-        }
+        return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(getService(), service -> {
+            ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
+            if (loadBalancer != null) {
+                ClassDesc describe = ClassUtils.describe(loadBalancer.getClass());
+                FieldDesc field = describe.getFieldList().getField(FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
+                if (field != null) {
+                    ObjectProvider<ServiceInstanceListSupplier> provider = (ObjectProvider<ServiceInstanceListSupplier>) field.get(loadBalancer);
+                    return CacheObject.of(provider.getIfAvailable());
+                }
+            }
+            return CacheObject.of(null);
+        }).get();
+
     }
 
     /**
