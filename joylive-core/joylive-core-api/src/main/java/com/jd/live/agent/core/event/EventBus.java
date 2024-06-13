@@ -31,6 +31,12 @@ public interface EventBus {
      */
     String COMPONENT_EVENT_BUS = "eventBus";
 
+    String CONFIG_PUBLISHER_PREFIX = "agent.publisher";
+
+    String CONFIG_PUBLISHER_TYPE = CONFIG_PUBLISHER_PREFIX + ".type";
+
+    String CONFIG_PUBLISHER_CONFIG = CONFIG_PUBLISHER_PREFIX + ".configs";
+
     /**
      * Priority order for the disruptor bus instance.
      */

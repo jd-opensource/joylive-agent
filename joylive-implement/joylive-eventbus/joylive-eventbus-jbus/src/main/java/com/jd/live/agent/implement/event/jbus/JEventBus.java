@@ -18,9 +18,9 @@ package com.jd.live.agent.implement.event.jbus;
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.config.PublisherConfig;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
-import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
@@ -33,8 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * EventBus
  */
 @Injectable
-@Extension(value = "JEventBus", order = EventBus.ORDER_JEVENT_BUS)
-@Configurable(prefix = "agent.publisher", auto = false)
+@Extension(value = "jbus", order = EventBus.ORDER_JEVENT_BUS)
+@ConditionalOnProperty(name = EventBus.CONFIG_PUBLISHER_TYPE, value = "jbus")
 public class JEventBus implements EventBus {
 
     public static final String DEFAULT_NAME = "default";
@@ -42,7 +42,7 @@ public class JEventBus implements EventBus {
     @Inject
     private Application application;
 
-    @Config
+    @Config(EventBus.CONFIG_PUBLISHER_CONFIG)
     private Map<String, PublisherConfig> configs = new ConcurrentHashMap<>();
 
     private final Map<String, JPublisher<?>> publishers = new ConcurrentHashMap<>();

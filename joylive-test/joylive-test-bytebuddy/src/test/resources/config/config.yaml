@@ -38,8 +38,9 @@ agent:
       - com.huaweicloud.sermant.core.plugin.classloader.ServiceClassLoader
       - com.alipay.sofa.ark.container.service.classloader.PluginClassLoader
   publisher:
-    liveEvent:
-      capacity: 20000
+    configs:
+      traffic:
+        capacity: 20000
   plugin:
     systems:
       - system
