@@ -29,7 +29,6 @@ import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
 import com.jd.live.agent.core.config.*;
-import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.event.EventHandler.EventProcessor;
@@ -185,6 +184,11 @@ public class Bootstrap implements AgentLifecycle {
     private PluginSupervisor pluginManager;
 
     /**
+     * Subscription, handling the event.
+     */
+    private List<Subscription> subscriptions;
+
+    /**
      * Matches conditions for enabling or disabling certain agent features.
      */
     private ConditionMatcher conditionMatcher;
@@ -269,6 +273,7 @@ public class Bootstrap implements AgentLifecycle {
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
+            subscriptions = createSubscriptions();
             subscribe();
             serviceManager.start().join();
             // TODO In AgentMain mode, it is necessary to enhance the registry first to obtain the service strategy, and then enhance the routing plugin
@@ -310,6 +315,7 @@ public class Bootstrap implements AgentLifecycle {
                 .closeIfExists(eventBus, EventBus::stop)
                 .closeIfExists(classLoaderManager, ClassLoaderManager::close)
                 .closeIfExists(unLoader, Runnable::run)
+                .close(subscriptions)
                 .close((Runnable) LoggerFactory::reset);
         shutdown = null;
         pluginManager = null;
@@ -329,6 +335,7 @@ public class Bootstrap implements AgentLifecycle {
         commandManager = null;
         sourceSuppliers = null;
         extensionManager = null;
+        subscriptions = null;
     }
 
     @Override
@@ -603,11 +610,15 @@ public class Bootstrap implements AgentLifecycle {
      * Retrieves subscriptions from the extension manager and adds handlers to the event bus.
      */
     private void subscribe() {
-        List<Subscription> subscriptions = extensionManager.getOrLoadExtensible(Subscription.class,
-                classLoaderManager.getCoreImplLoader()).getExtensions();
-        for (Subscription subscription : subscriptions) {
-            eventBus.getPublisher(subscription.getTopic()).addHandler(subscription);
+        if (subscriptions != null) {
+            for (Subscription subscription : subscriptions) {
+                eventBus.getPublisher(subscription.getTopic()).addHandler(subscription);
+            }
         }
+    }
+
+    private List<Subscription> createSubscriptions() {
+        return extensionManager.getOrLoadExtensible(Subscription.class, classLoaderManager.getCoreImplLoader()).getExtensions();
     }
 
     private ExtensibleDesc<Command> createCommandManager() {

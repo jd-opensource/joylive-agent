@@ -29,7 +29,6 @@ import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
 import com.jd.live.agent.implement.event.opentelemetry.config.ExporterConfig;
 import com.jd.live.agent.implement.event.opentelemetry.log.LoggingExporterFactory;
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
@@ -126,6 +125,8 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
     @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, ExporterFactory> factoryMap;
 
+    private OpenTelemetrySdk sdk;
+
     @Override
     public void handle(List<Event<TrafficEvent>> events) {
         if (events != null) {
@@ -196,7 +197,7 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
         MetricReader reader = factory.create(config);
 
         SdkMeterProvider provider = SdkMeterProvider.builder().setResource(resource).registerMetricReader(reader).build();
-        OpenTelemetry sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
+        sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
         Meter meter = sdk.getMeter(LIVE_SCOPE);
         this.gatewayInbounds = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
         this.gatewayInboundForwards = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
@@ -210,5 +211,12 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
         this.serviceOutbounds = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
         this.serviceOutboundForwards = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
         this.serviceOutboundRejects = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+    }
+
+    @Override
+    public void close() {
+        if (sdk != null) {
+            sdk.close();
+        }
     }
 }

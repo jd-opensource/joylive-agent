@@ -17,6 +17,9 @@ package com.jd.live.agent.core.event;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * Represents an extensible interface for a subscription in an event-driven system.
  * This interface extends {@link EventHandler}, meaning it is capable of handling events
@@ -28,7 +31,7 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
  * @param <E> The type of events that this subscription will handle.
  */
 @Extensible("subscription")
-public interface Subscription<E> extends EventHandler<E> {
+public interface Subscription<E> extends EventHandler<E>, Closeable {
 
     /**
      * Retrieves the topic associated with this subscription. The topic indicates which
@@ -37,5 +40,10 @@ public interface Subscription<E> extends EventHandler<E> {
      * @return The topic of this subscription.
      */
     String getTopic();
+
+    @Override
+    default void close() throws IOException {
+
+    }
 }
 

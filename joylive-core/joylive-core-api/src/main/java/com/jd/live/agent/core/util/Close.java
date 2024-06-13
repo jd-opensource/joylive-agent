@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -73,6 +74,28 @@ public class Close {
      * @return This Close instance for method chaining.
      */
     public Close close(AutoCloseable... resources) {
+        if (resources != null) {
+            for (AutoCloseable resource : resources) {
+                if (resource != null) {
+                    try {
+                        resource.close();
+                    } catch (Exception e) {
+                        // Optionally log the exception or handle it as needed.
+                    }
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Closes multiple AutoCloseable resources and returns this Close instance for method chaining.
+     * If the resources array is null or contains null elements, this method does nothing for those elements.
+     *
+     * @param resources The AutoCloseable resources to close.
+     * @return This Close instance for method chaining.
+     */
+    public Close close(List<? extends AutoCloseable> resources) {
         if (resources != null) {
             for (AutoCloseable resource : resources) {
                 if (resource != null) {
