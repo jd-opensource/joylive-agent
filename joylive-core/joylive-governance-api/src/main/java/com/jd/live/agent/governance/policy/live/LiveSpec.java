@@ -23,6 +23,7 @@ import com.jd.live.agent.core.util.map.ListBuilder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -97,6 +98,17 @@ public class LiveSpec {
                         for (CellRoute cellRoute : cellRoutes) {
                             cellRoute.setCell(unit.getCell(cellRoute.getCode()));
                         }
+                    } else if (unit.getCells() != null) {
+                        // Fault tolerance for the absence of partition configuration under unit rules
+                        cellRoutes = new ArrayList<>();
+                        for (Cell cell : unit.getCells()) {
+                            CellRoute cellRoute = new CellRoute();
+                            cellRoute.setCode(cell.getCode());
+                            cellRoute.setCell(cell);
+                            cellRoute.setWeight(1);
+                            cellRoutes.add(cellRoute);
+                        }
+                        unitRoute.setCells(cellRoutes);
                     }
                 }
             }
