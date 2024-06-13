@@ -22,9 +22,9 @@ import com.jd.live.agent.core.event.config.PublisherConfig;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.network.Ipv4;
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -85,7 +84,7 @@ public class DisruptorPublisher<E> implements Publisher<E> {
         this.started = new AtomicBoolean(autoStart);
         this.disruptor = new Disruptor<>(Event::new, nearestPowerOfTwo(config.getCapacity()),
                 new NamedThreadFactory("publisher-" + topic), ProducerType.MULTI,
-                new TimeoutBlockingWaitStrategy(config.getTimeout(), TimeUnit.MILLISECONDS));
+                new BlockingWaitStrategy());
         this.disruptor.handleEventsWith(new MyEventHandler());
         this.ringBuffer = autoStart ? disruptor.start() : null;
     }
