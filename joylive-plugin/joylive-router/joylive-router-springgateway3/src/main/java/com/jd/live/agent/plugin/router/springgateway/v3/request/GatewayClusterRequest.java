@@ -31,10 +31,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
@@ -112,12 +109,5 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     @Override
     protected RequestData buildRequestData() {
         return new RequestData(request);
-    }
-
-    protected Map<String, List<String>> parseCookie(ServerHttpRequest request) {
-        Map<String, List<String>> result = new HashMap<>();
-        request.getCookies().forEach((n, v) -> result.put(n,
-                v.stream().map(HttpCookie::getValue).collect(Collectors.toList())));
-        return result;
     }
 }
