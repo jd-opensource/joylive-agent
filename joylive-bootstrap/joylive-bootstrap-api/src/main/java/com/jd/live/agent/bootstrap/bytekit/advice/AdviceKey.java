@@ -35,10 +35,16 @@ public class AdviceKey {
      * @return a unique string representing the method key
      */
     public static String getMethodKey(String methodDesc, ClassLoader classLoader) {
+        int hashCode = System.identityHashCode(classLoader);
+        byte[] loaders = new byte[4];
+        loaders[0] = (byte) (hashCode >> 24);
+        loaders[1] = (byte) (hashCode >> 16);
+        loaders[2] = (byte) (hashCode >> 8);
+        loaders[3] = (byte) hashCode;
+
         CRC32 crc32 = new CRC32();
         update(crc32, methodDesc.getBytes(StandardCharsets.UTF_8));
-        update(crc32, Integer.toString(System.identityHashCode(classLoader)).getBytes(StandardCharsets.UTF_8));
+        update(crc32, loaders);
         return Long.toHexString(crc32.getValue());
     }
-
 }
