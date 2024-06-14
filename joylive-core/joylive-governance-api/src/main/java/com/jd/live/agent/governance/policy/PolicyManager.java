@@ -183,6 +183,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Override
     public boolean update(GovernancePolicy expect, GovernancePolicy update) {
+        if (update != null) {
+            update.locate(application.getLocation());
+        }
         // live policy is updated by a few services.
         return policy.compareAndSet(expect, update);
     }

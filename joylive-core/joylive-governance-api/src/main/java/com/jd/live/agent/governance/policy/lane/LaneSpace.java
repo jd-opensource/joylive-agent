@@ -50,6 +50,9 @@ public class LaneSpace {
     @Getter
     private transient Lane defaultLane;
 
+    @Getter
+    private transient Lane currentLane;
+
     public LaneRule getLaneRule(String id) {
         return id == null ? null : ruleCache.get(id);
     }
@@ -60,6 +63,10 @@ public class LaneSpace {
 
     public LaneDomain getDomain(String host) {
         return domainCache.get(host);
+    }
+
+    public void locate(String lane) {
+        currentLane = getLane(lane);
     }
 
     public void cache() {

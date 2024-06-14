@@ -26,17 +26,29 @@ import java.util.Map;
  *
  * @since 1.0.0
  */
-@Setter
-@Getter
 public class LiveSpace {
 
+    @Setter
+    @Getter
     private String apiVersion;
 
+    @Setter
+    @Getter
     private String kind;
 
+    @Setter
+    @Getter
     private Map<String, String> metadata;
 
+    @Setter
+    @Getter
     private LiveSpec spec;
+
+    @Getter
+    private transient Unit currentUnit;
+
+    @Getter
+    private transient Cell currentCell;
 
     public LiveSpace() {
     }
@@ -76,6 +88,11 @@ public class LiveSpace {
 
     public UnitRule getUnitRule(String id) {
         return spec == null ? null : spec.getUnitRule(id);
+    }
+
+    public void locate(String unit, String cell) {
+        currentUnit = getUnit(unit);
+        currentCell = currentUnit == null ? null : currentUnit.getCell(cell);
     }
 
     public void cache() {

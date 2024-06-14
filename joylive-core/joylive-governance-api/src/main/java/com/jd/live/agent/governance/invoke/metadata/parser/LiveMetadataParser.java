@@ -1,7 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata.parser;
 
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
@@ -85,10 +84,10 @@ public class LiveMetadataParser implements LiveParser {
      * @return The configured live metadata builder.
      */
     protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
-        LiveSpace liveSpace = parseLiveSpace();
+        LiveSpace liveSpace = governancePolicy.getCurrentLiveSpace();
         Unit centerUnit = liveSpace == null ? null : liveSpace.getCenter();
-        Unit currentUnit = liveSpace == null ? null : liveSpace.getUnit(application.getLocation().getUnit());
-        Cell currentCell = currentUnit == null ? null : currentUnit.getCell(application.getLocation().getCell());
+        Unit currentUnit = liveSpace == null ? null : liveSpace.getCurrentUnit();
+        Cell currentCell = liveSpace == null ? null : liveSpace.getCurrentCell();
         String unitRuleId = parseRuleId(liveConfig.getRuleIdKey());
         UnitRule unitRule = liveSpace == null || unitRuleId == null ? null : liveSpace.getUnitRule(unitRuleId);
         String variable = parseVariable();
@@ -101,15 +100,6 @@ public class LiveMetadataParser implements LiveParser {
                 unitRule(unitRule).
                 variable(variable);
         return builder;
-    }
-
-    /**
-     * Parses the live space based on the application location's live space ID.
-     *
-     * @return The live space, or null if not found.
-     */
-    protected LiveSpace parseLiveSpace() {
-        return governancePolicy.getLiveSpace(application.getLocation().getLiveSpaceId());
     }
 
     /**
@@ -208,10 +198,9 @@ public class LiveMetadataParser implements LiveParser {
             if (liveSpace == null) {
                 return builder;
             }
-            Location location = application.getLocation();
             Unit centerUnit = liveSpace.getCenter();
-            Unit currentUnit = liveSpace.getUnit(location.getUnit());
-            Cell currentCell = currentUnit == null ? null : currentUnit.getCell(location.getCell());
+            Unit currentUnit = liveSpace.getCurrentUnit();
+            Cell currentCell = liveSpace.getCurrentCell();
             LiveDomain liveDomain = domainPolicy.getLiveDomain();
             UnitDomain unitDomain = domainPolicy.isUnit() ? domainPolicy.getUnitDomain() :
                     (currentUnit == null ? null : liveDomain.getUnitDomain(currentUnit.getCode()));

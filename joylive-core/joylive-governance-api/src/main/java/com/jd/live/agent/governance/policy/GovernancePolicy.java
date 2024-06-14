@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
@@ -59,6 +60,12 @@ public class GovernancePolicy {
     @Setter
     @Getter
     private List<DatabaseCluster> dbClusters;
+
+    @Getter
+    private LiveSpace currentLiveSpace;
+
+    @Getter
+    private LaneSpace currentLaneSpace;
 
     private final transient Cache<String, DatabaseCluster> dbAddressCache = new MapCache<>(new ListBuilder<>(() -> dbClusters, DatabaseCluster::getAddress));
 
@@ -190,6 +197,20 @@ public class GovernancePolicy {
      */
     public DatabaseCluster getDbCluster(String host, int port) {
         return dbAddressCache.get(port <= 0 ? host : host + ":" + port);
+    }
+
+    public void locate(Location location) {
+        if (location == null) {
+            return;
+        }
+        currentLiveSpace = getLiveSpace(location.getLiveSpaceId());
+        if (currentLiveSpace != null) {
+            currentLiveSpace.locate(location.getUnit(), location.getCell());
+        }
+        currentLaneSpace = getLaneSpace(location.getLaneSpaceId());
+        if (currentLaneSpace != null) {
+            currentLaneSpace.locate(location.getLane());
+        }
     }
 
     /**

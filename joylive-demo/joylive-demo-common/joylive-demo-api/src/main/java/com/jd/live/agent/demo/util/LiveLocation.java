@@ -38,7 +38,7 @@ public class LiveLocation {
     @Override
     public String toString() {
         return "Location{" +
-                "liveSpaceId=" + (liveSpaceId == null ? "null" : ('\'' + liveSpaceId + '\'')) +
+                "live-space-id=" + (liveSpaceId == null ? "null" : ('\'' + liveSpaceId + '\'')) +
                 ", unit=" + (unit == null ? "null" : ('\'' + unit + '\'')) +
                 ", cell=" + (cell == null ? "null" : ('\'' + cell + '\'')) +
                 ", lane-space-id=" + (laneSpaceId == null ? "null" : ('\'' + laneSpaceId + '\'')) +
