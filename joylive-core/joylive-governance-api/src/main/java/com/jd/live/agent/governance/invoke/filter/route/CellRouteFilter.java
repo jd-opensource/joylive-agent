@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.instance.CellGroup;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.UnitGroup;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -116,8 +115,7 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
         Cell cell = target.getCell();
         if (cell != null) {
             CellGroup cellGroup = unitGroup.getCell(cell.getCode());
-            List<Endpoint> endpoints = cellGroup != null && !cellGroup.isEmpty() ? cellGroup.getEndpoints() : unitGroup.getEndpoints();
-            target.setEndpoints(endpoints);
+            target.setEndpoints(cellGroup == null ? new ArrayList<>() : cellGroup.getEndpoints());
             return true;
         }
         return false;
@@ -366,7 +364,7 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
          * @return True if the election can be modified, false otherwise.
          */
         public boolean isMutable() {
-            return winner != null && winner.getPriority() < CellRoute.PRIORITY_PREFIX;
+            return winner != null && winner.isMutable();
         }
     }
 
@@ -419,6 +417,16 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
             this.priority = priority;
             this.threshold = threshold;
         }
+
+        /**
+         * Checks if the election is mutable.
+         *
+         * @return True if the election can be modified, false otherwise.
+         */
+        public boolean isMutable() {
+            return priority < CellRoute.PRIORITY_PREFIX;
+        }
+
     }
 
 }
