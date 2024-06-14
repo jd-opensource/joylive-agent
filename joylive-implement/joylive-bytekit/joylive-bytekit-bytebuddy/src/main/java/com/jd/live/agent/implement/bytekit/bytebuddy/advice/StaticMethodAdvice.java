@@ -41,7 +41,7 @@ public class StaticMethodAdvice {
                                   @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
                                   @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        adviceKey = AdviceKey.getMethodKey(methodDesc, method.getName(), type.getClassLoader());
+        adviceKey = AdviceKey.getMethodKey(methodDesc, type.getClassLoader());
         MethodContext mc = new MethodContext(type, null, method, arguments, methodDesc);
         context = mc;
         AdviceHandler.onEnter(mc, adviceKey);

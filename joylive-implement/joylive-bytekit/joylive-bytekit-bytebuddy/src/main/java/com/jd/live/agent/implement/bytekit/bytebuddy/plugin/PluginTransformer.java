@@ -266,13 +266,13 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
                 String key = desc.getDescription();
                 try {
                     if (methodDesc.isStatic()) {
-                        adviceKey = AdviceKey.getMethodKey(key, desc.getActualName(), loader);
+                        adviceKey = AdviceKey.getMethodKey(key, loader);
                         newBuilder = enhanceMethod(newBuilder, methodDesc, loader, interceptors, StaticMethodAdvice.class, adviceKey);
                     } else if (methodDesc.isConstructor()) {
-                        adviceKey = AdviceKey.getConstructorKey(key, loader);
+                        adviceKey = AdviceKey.getMethodKey(key, loader);
                         newBuilder = enhanceMethod(newBuilder, methodDesc, loader, interceptors, ConstructorAdvice.class, adviceKey);
                     } else {
-                        adviceKey = AdviceKey.getMethodKey(key, desc.getActualName(), loader);
+                        adviceKey = AdviceKey.getMethodKey(key, loader);
                         newBuilder = enhanceMethod(newBuilder, methodDesc, loader, interceptors, MemberMethodAdvice.class, adviceKey);
                     }
                 } catch (NoSuchFieldException | NoSuchMethodException | IllegalAccessException |

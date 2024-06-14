@@ -15,6 +15,9 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.advice;
 
+import java.nio.charset.StandardCharsets;
+import java.util.zip.CRC32;
+
 /**
  * AdviceKey class provides static methods for generating unique keys for methods and constructors.
  */
@@ -25,26 +28,22 @@ public class AdviceKey {
      */
     private static final String CONSTRUCTOR = "_Constructor_";
 
-    /**
-     * Generates a unique key for a given method based on its description, name, and the class loader.
-     *
-     * @param methodDesc  the description of the method
-     * @param methodName  the name of the method
-     * @param classLoader the class loader used to load the method's class
-     * @return a unique string representing the method key
-     */
-    public static String getMethodKey(String methodDesc, String methodName, ClassLoader classLoader) {
-        return Integer.toHexString(methodDesc.hashCode()) + "_" + methodName + "_" + classLoader;
+    private static void update(CRC32 crc32, byte[] b) {
+        crc32.update(b, 0, b.length);
     }
 
     /**
-     * Generates a unique key for a given constructor based on its description and the class loader.
+     * Generates a unique key for a given method based on its description, and the class loader.
      *
-     * @param methodDesc  the description of the constructor
-     * @param classLoader the class loader used to load the constructor's class
-     * @return a unique string representing the constructor key
+     * @param methodDesc  the description of the method
+     * @param classLoader the class loader used to load the method's class
+     * @return a unique string representing the method key
      */
-    public static String getConstructorKey(String methodDesc, ClassLoader classLoader) {
-        return Integer.toHexString(methodDesc.hashCode()) + CONSTRUCTOR + classLoader;
+    public static String getMethodKey(String methodDesc, ClassLoader classLoader) {
+        CRC32 crc32 = new CRC32();
+        update(crc32, methodDesc.getBytes(StandardCharsets.UTF_8));
+        update(crc32, Integer.toString(System.identityHashCode(classLoader)).getBytes(StandardCharsets.UTF_8));
+        return Long.toHexString(crc32.getValue());
     }
+
 }
