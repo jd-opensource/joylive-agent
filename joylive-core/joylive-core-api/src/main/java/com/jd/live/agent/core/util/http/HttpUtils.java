@@ -20,7 +20,7 @@ import com.jd.live.agent.core.parser.ObjectReader;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -310,12 +310,72 @@ public abstract class HttpUtils {
         return result;
     }
 
-    protected static String decodeURL(String value) {
+    /**
+     * Decodes a URL encoded string using UTF-8 encoding.
+     * If the decoding fails due to an unsupported encoding exception, the original string is returned.
+     *
+     * @param s the URL encoded string to decode
+     * @return the decoded string, or the original string if decoding fails
+     */
+    public static String decodeURL(String s) {
         try {
-            return value == null || value.isEmpty() ? value : URLDecoder.decode(value, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-            return value;
+            return decodeURL(s, StandardCharsets.UTF_8);
+        } catch (UnsupportedEncodingException e) {
+            return s;
         }
+    }
+
+    /**
+     * Decodes a URL encoded string using a specified encoding.
+     * This method is optimized to minimize object creation and reuse the original string as much as possible.
+     *
+     * @param s       the URL encoded string to decode
+     * @param charset the character encoding to use for decoding
+     * @return the decoded string
+     * @throws UnsupportedEncodingException if the specified encoding is not supported
+     * @throws IllegalArgumentException     if the input string contains incomplete escape sequences
+     */
+    public static String decodeURL(String s, Charset charset) throws UnsupportedEncodingException {
+        if (s == null) {
+            return null;
+        }
+
+        int length = s.length();
+        char[] result = new char[length];
+        int resultPos = 0;
+        byte[] bytes = new byte[length / 3];
+        int bytesPos = 0;
+
+        for (int i = 0; i < length; i++) {
+            char c = s.charAt(i);
+            if (c == '+') {
+                result[resultPos++] = ' ';
+            } else if (c == '%') {
+                bytesPos = 0;
+                while (i + 2 < length && c == '%') {
+                    int v = Integer.parseInt(s.substring(i + 1, i + 3), 16);
+                    bytes[bytesPos++] = (byte) v;
+                    i += 3;
+                    if (i < length) {
+                        c = s.charAt(i);
+                    }
+                }
+                if (i < length && c == '%') {
+                    throw new UnsupportedEncodingException("Incomplete trailing escape (%) pattern");
+                }
+                String decodedChunk = new String(bytes, 0, bytesPos, charset);
+                for (int j = 0; j < decodedChunk.length(); j++) {
+                    result[resultPos++] = decodedChunk.charAt(j);
+                }
+                if (i < length) {
+                    i--; // Adjust for the outer loop increment
+                }
+            } else {
+                result[resultPos++] = c;
+            }
+        }
+
+        return new String(result, 0, resultPos);
     }
 }
 
