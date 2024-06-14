@@ -16,12 +16,16 @@
 package com.jd.live.agent.bootstrap.bytekit.advice;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
 
 /**
  * AdviceKey class provides static methods for generating unique keys for methods and constructors.
  */
 public class AdviceKey {
+
+    private static final Map<ClassLoader, Map<String, String>> ADVICE_KEYS = new ConcurrentHashMap<>();
 
     private static void update(CRC32 crc32, byte[] b) {
         crc32.update(b, 0, b.length);
@@ -35,16 +39,22 @@ public class AdviceKey {
      * @return a unique string representing the method key
      */
     public static String getMethodKey(String methodDesc, ClassLoader classLoader) {
-        int hashCode = System.identityHashCode(classLoader);
-        byte[] loaders = new byte[4];
-        loaders[0] = (byte) (hashCode >> 24);
-        loaders[1] = (byte) (hashCode >> 16);
-        loaders[2] = (byte) (hashCode >> 8);
-        loaders[3] = (byte) hashCode;
+        return ADVICE_KEYS.computeIfAbsent(classLoader, c -> new ConcurrentHashMap<>())
+                .computeIfAbsent(methodDesc, m -> {
+                    int hashCode = System.identityHashCode(classLoader);
+                    byte[] loaders = new byte[4];
+                    loaders[0] = (byte) (hashCode >> 24);
+                    loaders[1] = (byte) (hashCode >> 16);
+                    loaders[2] = (byte) (hashCode >> 8);
+                    loaders[3] = (byte) hashCode;
 
-        CRC32 crc32 = new CRC32();
-        update(crc32, methodDesc.getBytes(StandardCharsets.UTF_8));
-        update(crc32, loaders);
-        return Long.toHexString(crc32.getValue());
+                    CRC32 crc32 = new CRC32();
+                    update(crc32, methodDesc.getBytes(StandardCharsets.UTF_8));
+                    update(crc32, loaders);
+                    return Long.toHexString(crc32.getValue());
+                });
+
+
     }
+
 }
