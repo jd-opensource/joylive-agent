@@ -41,7 +41,7 @@ public class Courier extends AbstractAttributes implements Carrier {
             String name = cargo.getKey();
             if (name != null && !name.isEmpty()) {
                 if (cargos == null) {
-                    cargos = new HashMap<>();
+                    cargos = new HashMap<>(1);
                 }
                 Cargo old = cargos.putIfAbsent(cargo.getKey(), cargo);
                 if (old != null && old != cargo) {
@@ -55,7 +55,7 @@ public class Courier extends AbstractAttributes implements Carrier {
     public void addCargo(String key, String value) {
         if (key != null && !key.isEmpty()) {
             if (cargos == null) {
-                cargos = new HashMap<>();
+                cargos = new HashMap<>(1);
             }
             cargos.computeIfAbsent(key, Cargo::new).add(value);
         }
@@ -65,7 +65,7 @@ public class Courier extends AbstractAttributes implements Carrier {
     public void setCargo(String key, String value) {
         if (key != null && !key.isEmpty()) {
             if (cargos == null) {
-                cargos = new HashMap<>();
+                cargos = new HashMap<>(1);
             }
             cargos.put(key, new Cargo(key, value));
         }
