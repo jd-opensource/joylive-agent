@@ -23,11 +23,6 @@ import java.util.zip.CRC32;
  */
 public class AdviceKey {
 
-    /**
-     * A constant string representing the constructor.
-     */
-    private static final String CONSTRUCTOR = "_Constructor_";
-
     private static void update(CRC32 crc32, byte[] b) {
         crc32.update(b, 0, b.length);
     }
