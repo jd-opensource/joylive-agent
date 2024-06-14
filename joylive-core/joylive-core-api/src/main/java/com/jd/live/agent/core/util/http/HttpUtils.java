@@ -202,7 +202,7 @@ public abstract class HttpUtils {
      */
     public static Map<String, List<String>> parseQuery(String query) {
         Map<String, List<String>> result = new HashMap<>();
-        parseQuery(query, true, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(value == null ? "" : value));
+        parseQuery(query, true, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(value == null ? "" : value));
         return result;
     }
 
@@ -215,7 +215,7 @@ public abstract class HttpUtils {
      */
     public static Map<String, List<String>> parseQuery(String query, boolean decode) {
         Map<String, List<String>> result = new HashMap<>();
-        parseQuery(query, decode, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(value == null ? "" : value));
+        parseQuery(query, decode, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(value == null ? "" : value));
         return result;
     }
 
@@ -229,7 +229,7 @@ public abstract class HttpUtils {
         Map<String, List<String>> result = new HashMap<>();
         if (headers != null && !headers.isEmpty()) {
             for (String header : headers) {
-                parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(header));
+                parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(header));
             }
         }
         return result;
@@ -243,7 +243,7 @@ public abstract class HttpUtils {
      */
     public static Map<String, List<String>> parseCookie(String header) {
         Map<String, List<String>> result = new HashMap<>();
-        parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(header));
+        parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(header));
         return result;
     }
 
