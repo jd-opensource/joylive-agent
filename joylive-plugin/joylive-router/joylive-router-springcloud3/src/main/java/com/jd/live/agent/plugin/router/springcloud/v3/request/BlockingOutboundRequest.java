@@ -38,7 +38,7 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
         super(request);
         this.serviceId = serviceId;
         this.uri = request.getURI();
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.cookies = new UnsafeLazyObject<>(() -> request instanceof ServerHttpRequest
                 ? HttpUtils.parseCookie(((ServerHttpRequest) request).getCookies(), HttpCookie::getValue)

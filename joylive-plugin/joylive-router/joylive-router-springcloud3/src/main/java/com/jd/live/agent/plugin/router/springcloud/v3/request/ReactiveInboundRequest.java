@@ -35,7 +35,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
         super(request);
         this.uri = request.getURI();
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
     }
 

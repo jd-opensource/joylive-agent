@@ -48,7 +48,7 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
                                   ExchangeFunction next) {
         super(request, loadBalancerFactory);
         this.uri = request.url();
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.url().getQuery()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.url().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.headers()));
         this.cookies = new UnsafeLazyObject<>(request::cookies);
         this.next = next;

@@ -61,7 +61,7 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
                                   ClientHttpRequestExecution execution) {
         super(request, loadBalancerFactory);
         this.uri = request.getURI();
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(request.getHeaders()).get(HttpHeaders.COOKIE)));
         this.body = body;

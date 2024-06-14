@@ -65,7 +65,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         this.exchange = exchange;
         this.chain = chain;
         this.uri = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
         this.retryConfig = retryConfig;

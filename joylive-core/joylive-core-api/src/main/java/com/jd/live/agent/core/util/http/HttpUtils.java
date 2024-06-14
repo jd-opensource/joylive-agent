@@ -156,13 +156,13 @@ public abstract class HttpUtils {
     }
 
     /**
-     * Parses the given query string and processes each parameter using the provided consumer.
+     * Parses a query string and applies the given consumer to each key-value pair.
      *
-     * @param query    The HTTP query string to parse.
-     * @param consumer A BiConsumer that processes each parameter. The first argument is the parameter name,
-     *                 and the second argument is the parameter value.
+     * @param query    the query string to parse
+     * @param decode   whether the query string is URL decode
+     * @param consumer a consumer that accepts each key-value pair
      */
-    public static void parseQuery(String query, BiConsumer<String, String> consumer) {
+    public static void parseQuery(String query, boolean decode, BiConsumer<String, String> consumer) {
         if (query == null || query.isEmpty()) {
             return;
         }
@@ -178,11 +178,14 @@ public abstract class HttpUtils {
             }
             int equalsIndex = query.indexOf('=', start);
             if (equalsIndex == -1) {
-                key = decode(query.substring(start, end).trim());
+                key = query.substring(start, end).trim();
+                key = decode ? decodeURL(key) : key;
                 value = null;
             } else if (equalsIndex < end) {
-                key = decode(query.substring(start, equalsIndex).trim());
-                value = decode(query.substring(equalsIndex + 1, end).trim());
+                key = query.substring(start, equalsIndex).trim();
+                key = decode ? decodeURL(key) : key;
+                value = query.substring(equalsIndex + 1, end).trim();
+                value = decode ? decodeURL(value) : value;
             } else {
                 key = null;
             }
@@ -201,7 +204,20 @@ public abstract class HttpUtils {
      */
     public static Map<String, List<String>> parseQuery(String query) {
         Map<String, List<String>> result = new HashMap<>();
-        parseQuery(query, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(value == null ? "" : value));
+        parseQuery(query, true, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(value == null ? "" : value));
+        return result;
+    }
+
+    /**
+     * Parses a query string and returns a map where each key is associated with a list of values.
+     *
+     * @param query  the query string to parse
+     * @param decode whether the query string is URL decoded
+     * @return a map where each key is associated with a list of values
+     */
+    public static Map<String, List<String>> parseQuery(String query, boolean decode) {
+        Map<String, List<String>> result = new HashMap<>();
+        parseQuery(query, decode, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(value == null ? "" : value));
         return result;
     }
 
@@ -309,7 +325,7 @@ public abstract class HttpUtils {
         return result;
     }
 
-    protected static String decode(String value) {
+    protected static String decodeURL(String value) {
         try {
             return value == null || value.isEmpty() ? value : URLDecoder.decode(value, "UTF-8");
         } catch (UnsupportedEncodingException ignored) {

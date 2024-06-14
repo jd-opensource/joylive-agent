@@ -37,7 +37,7 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
         this.serviceId = serviceId;
         this.uri = request.getUrl();
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getUrl().getQuery()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getUrl().getRawQuery()));
         this.cookies = new UnsafeLazyObject<>(request::getCookies);
     }
 
