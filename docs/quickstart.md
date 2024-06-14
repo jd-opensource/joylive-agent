@@ -136,9 +136,9 @@ export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
 # Linux or macOS
-java -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar -javaagent:${path_to_agent}/live.jar
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar
 # Windows
-java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar -javaagent:${path_to_agent}\live.jar
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
 #### Start application
@@ -161,9 +161,9 @@ export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
 # Linux or macOS
-java -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}/live.jar
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar 
 # Windows
-java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}\live.jar
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
 Start the application instance in simulation unit 2, the command is as follows:
@@ -180,9 +180,9 @@ export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
 # Linux or macOS
-java -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}/live.jar
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar
 # Windows
-java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}\live.jar
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
 #### Effect verification
