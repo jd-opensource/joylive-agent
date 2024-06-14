@@ -17,8 +17,6 @@ package com.jd.live.agent.plugin.transmission.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
@@ -38,8 +36,6 @@ import java.util.List;
  */
 public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebHandlerDecoratorInterceptor.class);
-
     private final CargoRequire require;
 
     public WebHandlerDecoratorInterceptor(List<CargoRequire> requires) {
@@ -55,15 +51,9 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        restoreTag(exchange);
-    }
-
-    private void restoreTag(ServerWebExchange exchange) {
+        HttpHeaders headers = exchange.getRequest().getHeaders();
         Carrier carrier = RequestContext.create();
-        carrier.addCargo(require, exchange.getRequest().getHeaders());
-        if (logger.isDebugEnabled()) {
-            logger.debug("success adding tags to inbound request. " + carrier.getCargos());
-        }
+        carrier.addCargo(require, HttpHeaders.writableHttpHeaders(headers));
     }
 
     @SuppressWarnings("unchecked")

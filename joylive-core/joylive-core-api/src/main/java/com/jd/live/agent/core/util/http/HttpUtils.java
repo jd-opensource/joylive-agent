@@ -16,12 +16,18 @@
 package com.jd.live.agent.core.util.http;
 
 import com.jd.live.agent.core.parser.ObjectReader;
+import com.jd.live.agent.core.util.StringUtils;
 
 import java.io.*;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
@@ -149,4 +155,166 @@ public abstract class HttpUtils {
         }
     }
 
+    /**
+     * Parses the given query string and processes each parameter using the provided consumer.
+     *
+     * @param query    The HTTP query string to parse.
+     * @param consumer A BiConsumer that processes each parameter. The first argument is the parameter name,
+     *                 and the second argument is the parameter value.
+     */
+    public static void parseQuery(String query, BiConsumer<String, String> consumer) {
+        if (query == null || query.isEmpty()) {
+            return;
+        }
+
+        int length = query.length();
+        int start = 0;
+        String key;
+        String value = null;
+        while (start < length) {
+            int end = query.indexOf('&', start);
+            if (end == -1) {
+                end = length;
+            }
+            int equalsIndex = query.indexOf('=', start);
+            if (equalsIndex == -1) {
+                key = decode(query.substring(start, end).trim());
+                value = null;
+            } else if (equalsIndex < end) {
+                key = decode(query.substring(start, equalsIndex).trim());
+                value = decode(query.substring(equalsIndex + 1, end).trim());
+            } else {
+                key = null;
+            }
+            if (key != null && !key.isEmpty()) {
+                consumer.accept(key, value);
+            }
+            start = end + 1;
+        }
+    }
+
+    /**
+     * Parses a query string and returns a map of key-value pairs.
+     *
+     * @param query the query string to parse
+     * @return a map where each key is associated with a list of values
+     */
+    public static Map<String, List<String>> parseQuery(String query) {
+        Map<String, List<String>> result = new HashMap<>();
+        parseQuery(query, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(value == null ? "" : value));
+        return result;
+    }
+
+    /**
+     * Parses cookies from the "Cookie" headers of the request.
+     *
+     * @param headers the collection of "Cookie" headers
+     * @return a map of cookie names to lists of cookie values
+     */
+    public static Map<String, List<String>> parseCookie(Collection<String> headers) {
+        Map<String, List<String>> result = new HashMap<>();
+        if (headers != null && !headers.isEmpty()) {
+            for (String header : headers) {
+                parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(header));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Parses cookies from the "Cookie" header of the request.
+     *
+     * @param header cooke header string
+     * @return a map of cookie names to lists of cookie values
+     */
+    public static Map<String, List<String>> parseCookie(String header) {
+        Map<String, List<String>> result = new HashMap<>();
+        parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>()).add(header));
+        return result;
+    }
+
+    /**
+     * Parses a cookie string and applies the given consumer to each cookie name-value pair.
+     *
+     * @param value    the cookie string to parse
+     * @param consumer a consumer that accepts each cookie name-value pair
+     */
+    public static void parseCookie(String value, BiConsumer<String, String> consumer) {
+        if (value != null && !value.isEmpty() && consumer != null) {
+            String[] parts = StringUtils.split(value, ch -> ch == ';' || ch == ',');
+            List<HttpCookie> cookies;
+            for (String part : parts) {
+                part = part.trim();
+                if (!part.isEmpty()) {
+                    try {
+                        cookies = HttpCookie.parse(part);
+                        cookies.forEach(cookie -> consumer.accept(cookie.getName(), cookie.getValue()));
+                    } catch (Throwable ignore) {
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Converts a map of cookies with generic type values to a map of cookies with string values.
+     *
+     * @param <T>       the type of the cookie value
+     * @param cookies   a map where the key is the cookie name and the value is a list of cookie values of type T
+     * @param valueFunc a function that converts a value of type T to a string
+     * @return a map where the key is the cookie name and the value is a list of cookie values as strings
+     */
+    public static <T> Map<String, List<String>> parseCookie(Map<String, List<T>> cookies, Function<T, String> valueFunc) {
+        Map<String, List<String>> result = new HashMap<>();
+        if (cookies != null && !cookies.isEmpty()) {
+            cookies.forEach((name, cooke) -> {
+                if (!cooke.isEmpty()) {
+                    if (cooke.size() == 1) {
+                        result.put(name, Collections.singletonList(valueFunc.apply(cooke.get(0))));
+                    } else {
+                        List<String> values = new ArrayList<>(cooke.size());
+                        cooke.forEach(value -> values.add(valueFunc.apply(value)));
+                        result.put(name, values);
+                    }
+                }
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Parses HTTP headers from the given enumeration of header names and a function to retrieve header values.
+     *
+     * @param names      an enumeration of header names
+     * @param headerFunc a function that takes a header name and returns an enumeration of its values
+     * @return a map where each key is a header name and the value is a list of header values
+     */
+    public static Map<String, List<String>> parseHeader(Enumeration<String> names,
+                                                        Function<String, Enumeration<String>> headerFunc) {
+        Map<String, List<String>> result = new HashMap<>();
+        String name;
+        List<String> values;
+        Enumeration<String> valueEnumeration;
+        while (names.hasMoreElements()) {
+            name = names.nextElement();
+            values = result.computeIfAbsent(name, k -> new ArrayList<>());
+            valueEnumeration = headerFunc.apply(name);
+            if (valueEnumeration != null) {
+                while (valueEnumeration.hasMoreElements()) {
+                    values.add(valueEnumeration.nextElement());
+                }
+            }
+        }
+        return result;
+    }
+
+    protected static String decode(String value) {
+        try {
+            return value == null || value.isEmpty() ? value : URLDecoder.decode(value, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+            return value;
+        }
+    }
 }
+

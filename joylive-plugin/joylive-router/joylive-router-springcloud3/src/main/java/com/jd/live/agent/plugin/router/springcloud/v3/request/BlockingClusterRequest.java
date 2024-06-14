@@ -15,20 +15,19 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.util.MultiValueMapAdapter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractClusterRequest}
@@ -37,8 +36,6 @@ import java.util.Map;
  * @see AbstractClusterRequest for the base functionality
  */
 public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> {
-
-    private static final String COOKIE_HEADER = "Cookie";
 
     /**
      * The body of the HTTP request.
@@ -64,9 +61,9 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
                                   ClientHttpRequestExecution execution) {
         super(request, loadBalancerFactory);
         this.uri = request.getURI();
-        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new UnsafeLazyObject<>(request::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(this::parseCookie);
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(request.getHeaders()).get(HttpHeaders.COOKIE)));
         this.body = body;
         this.execution = execution;
     }
@@ -101,25 +98,5 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
 
     public ClientHttpRequestExecution getExecution() {
         return execution;
-    }
-
-    /**
-     * Parses the cookies from the HTTP request.
-     *
-     * @return A map of cookie names to their respective list of values.
-     */
-    protected Map<String, List<String>> parseCookie() {
-        Map<String, List<String>> result = new HashMap<>();
-        List<String> cookies = request.getHeaders().get(COOKIE_HEADER);
-        if (cookies != null) {
-            cookies.forEach(cookie -> {
-                String[] keyValue = StringUtils.split(cookie, '=');
-                if (keyValue.length < 2) {
-                    return;
-                }
-                result.computeIfAbsent(keyValue[0], key -> new ArrayList<>()).add(keyValue[1]);
-            });
-        }
-        return result;
     }
 }

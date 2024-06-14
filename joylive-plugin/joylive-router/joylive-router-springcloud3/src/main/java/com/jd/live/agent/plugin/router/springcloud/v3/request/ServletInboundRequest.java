@@ -17,12 +17,16 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ServletHttpInboundRequest
@@ -40,8 +44,8 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         } catch (URISyntaxException ignore) {
         }
         uri = u;
-        headers = new UnsafeLazyObject<>(() -> parseHeader(request));
-        queries = new UnsafeLazyObject<>(() -> parseQuery(request.getQueryString()));
+        headers = new UnsafeLazyObject<>(() -> HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders));
+        queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getQueryString()));
         cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
     }
 
@@ -72,30 +76,11 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         return result == null ? request.getServerName() : result;
     }
 
-    protected Map<String, List<String>> parseCookie(HttpServletRequest request) {
+    private Map<String, List<String>> parseCookie(HttpServletRequest request) {
         Map<String, List<String>> result = new HashMap<>();
         if (request.getCookies() != null) {
             for (javax.servlet.http.Cookie cookie : request.getCookies()) {
                 result.computeIfAbsent(cookie.getName(), name -> new ArrayList<>()).add(cookie.getValue());
-            }
-        }
-        return result;
-    }
-
-    protected Map<String, List<String>> parseHeader(HttpServletRequest request) {
-        Map<String, List<String>> result = new HashMap<>();
-        Enumeration<?> keyEnums = request.getHeaderNames();
-        String key;
-        List<String> values;
-        Enumeration<String> valueEnumeration;
-        while (keyEnums.hasMoreElements()) {
-            key = (String) keyEnums.nextElement();
-            values = result.computeIfAbsent(key, k -> new ArrayList<>());
-            valueEnumeration = request.getHeaders(key);
-            if (valueEnumeration != null) {
-                while (valueEnumeration.hasMoreElements()) {
-                    values.add(valueEnumeration.nextElement());
-                }
             }
         }
         return result;

@@ -17,9 +17,11 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 
@@ -46,8 +48,8 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
                                   ExchangeFunction next) {
         super(request, loadBalancerFactory);
         this.uri = request.url();
-        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.url().getQuery()));
-        this.headers = new UnsafeLazyObject<>(request::headers);
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.url().getQuery()));
+        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.headers()));
         this.cookies = new UnsafeLazyObject<>(request::cookies);
         this.next = next;
     }

@@ -136,7 +136,7 @@ public class Tag implements Label, Serializable {
      */
     protected void add(String value) {
         if (values == null) {
-            values = new ArrayList<>();
+            values = new ArrayList<>(1);
             if (value != null) {
                 values.add(value);
             }

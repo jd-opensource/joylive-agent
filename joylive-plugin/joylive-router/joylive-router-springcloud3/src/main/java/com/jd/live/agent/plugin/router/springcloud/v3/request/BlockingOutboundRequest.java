@@ -17,15 +17,12 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * ReactiveOutboundRequest
@@ -41,9 +38,11 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
         super(request);
         this.serviceId = serviceId;
         this.uri = request.getURI();
-        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new UnsafeLazyObject<>(request::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
+        this.cookies = new UnsafeLazyObject<>(() -> request instanceof ServerHttpRequest
+                ? HttpUtils.parseCookie(((ServerHttpRequest) request).getCookies(), HttpCookie::getValue)
+                : HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(request.getHeaders()).get(HttpHeaders.COOKIE)));
     }
 
     @Override
@@ -67,17 +66,6 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
         if (request instanceof ServerHttpRequest) {
             HttpCookie cookie = ((ServerHttpRequest) request).getCookies().getFirst(key);
             result = cookie == null ? null : cookie.getValue();
-        }
-        return result;
-    }
-
-    protected Map<String, List<String>> parseCookie(HttpRequest request) {
-        Map<String, List<String>> result = new HashMap<>();
-        if (request instanceof ServerHttpRequest) {
-            ((ServerHttpRequest) request).getCookies().forEach((n, v) -> result.put(n,
-                    v.stream().map(HttpCookie::getValue).collect(Collectors.toList())));
-        } else {
-            request.getHeaders().get("Cookie");
         }
         return result;
     }

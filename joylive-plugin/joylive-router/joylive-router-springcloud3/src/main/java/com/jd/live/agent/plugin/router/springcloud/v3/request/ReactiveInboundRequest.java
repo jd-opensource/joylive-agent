@@ -17,14 +17,11 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * ReactiveInboundRequest
@@ -37,9 +34,9 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     public ReactiveInboundRequest(ServerHttpRequest request) {
         super(request);
         this.uri = request.getURI();
-        this.headers = new UnsafeLazyObject<>(request::getHeaders);
-        this.queries = new UnsafeLazyObject<>(request::getQueryParams);
-        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
+        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
     }
 
     @Override
@@ -77,13 +74,6 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
             HttpCookie cookie = request.getCookies().getFirst(key);
             result = cookie == null ? null : cookie.getValue();
         }
-        return result;
-    }
-
-    protected Map<String, List<String>> parseCookie(ServerHttpRequest request) {
-        Map<String, List<String>> result = new HashMap<>();
-        request.getCookies().forEach((n, v) -> result.put(n,
-                v.stream().map(HttpCookie::getValue).collect(Collectors.toList())));
         return result;
     }
 }

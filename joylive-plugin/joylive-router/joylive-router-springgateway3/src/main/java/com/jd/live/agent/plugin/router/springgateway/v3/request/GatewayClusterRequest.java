@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import lombok.Getter;
@@ -27,12 +28,14 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
@@ -62,9 +65,9 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         this.exchange = exchange;
         this.chain = chain;
         this.uri = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
-        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getURI().getQuery()));
-        this.headers = new UnsafeLazyObject<>(request::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getQuery()));
+        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
         this.retryConfig = retryConfig;
         this.gatewayConfig = gatewayConfig;
     }
@@ -111,21 +114,5 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     protected RequestData buildRequestData() {
         return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
                 new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
-    }
-
-    protected Map<String, List<String>> parseCookie(ServerHttpRequest request) {
-        Map<String, List<String>> result = new HashMap<>();
-        request.getCookies().forEach((name, cookies) -> {
-            if (!cookies.isEmpty()) {
-                if (cookies.size() == 1) {
-                    result.put(name, Collections.singletonList(cookies.get(0).getValue()));
-                } else {
-                    List<String> values = new ArrayList<>(cookies.size());
-                    cookies.forEach(cookie -> values.add(cookie.getValue()));
-                    result.put(name, values);
-                }
-            }
-        });
-        return result;
     }
 }

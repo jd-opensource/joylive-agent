@@ -17,8 +17,10 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.cloud.client.loadbalancer.RequestData;
+import org.springframework.http.HttpHeaders;
 
 /**
  * RequestDataOutboundRequest
@@ -34,8 +36,8 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
         super(request);
         this.serviceId = serviceId;
         this.uri = request.getUrl();
-        this.headers = new UnsafeLazyObject<>(request::getHeaders);
-        this.queries = new UnsafeLazyObject<>(() -> parseQuery(request.getUrl().getQuery()));
+        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
+        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getUrl().getQuery()));
         this.cookies = new UnsafeLazyObject<>(request::getCookies);
     }
 
