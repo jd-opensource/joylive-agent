@@ -16,10 +16,8 @@
 package com.jd.live.agent.core.util.http;
 
 import com.jd.live.agent.core.parser.ObjectReader;
-import com.jd.live.agent.core.util.StringUtils;
 
 import java.io.*;
-import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -256,20 +254,7 @@ public abstract class HttpUtils {
      * @param consumer a consumer that accepts each cookie name-value pair
      */
     public static void parseCookie(String value, BiConsumer<String, String> consumer) {
-        if (value != null && !value.isEmpty() && consumer != null) {
-            String[] parts = StringUtils.split(value, ch -> ch == ';' || ch == ',');
-            List<HttpCookie> cookies;
-            for (String part : parts) {
-                part = part.trim();
-                if (!part.isEmpty()) {
-                    try {
-                        cookies = HttpCookie.parse(part);
-                        cookies.forEach(cookie -> consumer.accept(cookie.getName(), cookie.getValue()));
-                    } catch (Throwable ignore) {
-                    }
-                }
-            }
-        }
+        Cookies.parse(value, consumer);
     }
 
 
