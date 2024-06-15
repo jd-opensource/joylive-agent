@@ -39,7 +39,8 @@ public class AdviceKey {
      * @return a unique string representing the method key
      */
     public static String getMethodKey(String methodDesc, ClassLoader classLoader) {
-        return ADVICE_KEYS.computeIfAbsent(classLoader, c -> new ConcurrentHashMap<>())
+        ClassLoader key = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
+        return ADVICE_KEYS.computeIfAbsent(key, c -> new ConcurrentHashMap<>())
                 .computeIfAbsent(methodDesc, m -> {
                     int hashCode = System.identityHashCode(classLoader);
                     byte[] loaders = new byte[4];
