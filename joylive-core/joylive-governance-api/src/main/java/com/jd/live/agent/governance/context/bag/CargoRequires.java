@@ -31,6 +31,8 @@ public class CargoRequires implements CargoRequire {
 
     private final String[] names;
 
+    private final Set<String> nameSet;
+
     private final String[] prefixes;
 
     public CargoRequires(List<CargoRequire> requires) {
@@ -38,21 +40,27 @@ public class CargoRequires implements CargoRequire {
         switch (size) {
             case 0:
                 names = new String[0];
+                nameSet = new HashSet<>();
                 prefixes = new String[0];
                 break;
             case 1:
                 CargoRequire req = requires.get(0);
-                names = req.getNames();
-                prefixes = req.getPrefixes();
+                names = req.getNames() == null ? new String[0] : req.getNames();
+                nameSet = names == null ? new HashSet<>() : new HashSet<>(Arrays.asList(req.getNames()));
+                prefixes = req.getPrefixes() == null ? new String[0] : req.getPrefixes();
                 break;
             default:
-                Set<String> exactNames = new HashSet<>();
+                nameSet = new HashSet<>();
                 Set<String> prefixNames = new HashSet<>();
                 for (CargoRequire require : requires) {
-                    exactNames.addAll(Arrays.asList(require.getNames()));
-                    prefixNames.addAll(Arrays.asList(require.getPrefixes()));
+                    if (require.getNames() != null) {
+                        nameSet.addAll(Arrays.asList(require.getNames()));
+                    }
+                    if (require.getPrefixes() != null) {
+                        prefixNames.addAll(Arrays.asList(require.getPrefixes()));
+                    }
                 }
-                names = exactNames.toArray(new String[0]);
+                names = nameSet.toArray(new String[0]);
                 prefixes = prefixNames.toArray(new String[0]);
         }
     }
@@ -67,4 +75,18 @@ public class CargoRequires implements CargoRequire {
         return prefixes;
     }
 
+    @Override
+    public boolean match(String name) {
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        if (nameSet.contains(name)) {
+            return true;
+        }
+        for (String v : prefixes) {
+            if (name.startsWith(v))
+                return true;
+        }
+        return false;
+    }
 }
