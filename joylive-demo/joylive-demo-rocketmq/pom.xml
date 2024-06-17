@@ -58,4 +58,18 @@
 
     </dependencies>
 
+    <build>
+        <directory>${basedir}/target</directory>
+        <finalName>joylive-demo-rocketmq</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.jd.live.agent.demo.rocketmq.RocketmqApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

@@ -25,3 +25,9 @@ image-joylive-demo-springcloud3-gateway:
 
 push-joylive-demo-springcloud3-gateway:
 	docker push ${repo}/joylive-demo-springcloud3-gateway:${version}-AMD64
+
+image-joylive-demo-rocketmq:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-rocketmq:${version}-AMD64 ./joylive-demo-rocketmq
+
+push-joylive-demo-rocketmq:
+	docker push ${repo}/joylive-demo-rocketmq:${version}-AMD64
