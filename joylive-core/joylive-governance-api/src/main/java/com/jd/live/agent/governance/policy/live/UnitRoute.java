@@ -102,6 +102,16 @@ public class UnitRoute {
     }
 
     public void cache() {
+        if (cells != null) {
+            for (CellRoute cell : cells) {
+                if (cell.getAllows() != null) {
+                    cell.getAllows().remove("");
+                }
+                if (cell.getPrefixes() != null) {
+                    cell.getPrefixes().remove("");
+                }
+            }
+        }
         getCellRoute("");
     }
 
