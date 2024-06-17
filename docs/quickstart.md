@@ -126,6 +126,7 @@ In this example, instead of modifying the configuration file, we use the method 
 Start the gateway instance in simulation unit 1 with the following command:
 
 ```bash
+# Set env for Linux or macOS
 export APPLICATION_NAME=springcloud3-gateway
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
@@ -135,9 +136,20 @@ export APPLICATION_SERVICE_GATEWAY=FRONTEND
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
-# Linux or macOS
-java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar
-# Windows
+# Start
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar 
+
+# Set env for Windows(PowerShell)
+$env:APPLICATION_NAME="springcloud3-gateway"
+$env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT="unit1"
+$env:APPLICATION_LOCATION_CELL="cell1"
+$env:APPLICATION_SERVICE_GATEWAY="FRONTEND"
+# Set the startup nacos access address
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# Start
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
@@ -150,39 +162,57 @@ In this example, instead of modifying the configuration file, the method is to s
 Start the application instance in simulation unit 1 with the following command:
 
 ```bash
+# Set env for Linux or macOS
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
-export APPLICATION_LOCATION_LANESPACE_ID=1
-export APPLICATION_LOCATION_LANE=production
 # Set the startup nacos access address
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
-# Linux or macOS
-java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar 
-# Windows
-java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar
+# Start
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
+
+# Set env for Windows(PowerShell)
+$env:APPLICATION_NAME="springcloud3-provider"
+$env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT="unit1"
+$env:APPLICATION_LOCATION_CELL="cell1"
+# Set the startup nacos access address
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# Start
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
 Start the application instance in simulation unit 2, the command is as follows:
 
 ```bash
+# Set env for Linux or macOS
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit2
 export APPLICATION_LOCATION_CELL=cell4
-export APPLICATION_LOCATION_LANESPACE_ID=1
-export APPLICATION_LOCATION_LANE=beta
 # Set the startup nacos access address
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
-# Linux or macOS
-java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar
-# Windows
-java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar
+# Start
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
+
+# Set env for Windows(PowerShell)
+$env:APPLICATION_NAME="springcloud3-provider"
+$env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT="unit2"
+$env:APPLICATION_LOCATION_CELL="cell4"
+# Set the startup nacos access address
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# Start
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
 #### Effect verification
@@ -190,11 +220,9 @@ java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-d
 Visit the nacos registration center and check the metadata of the service instance. The following data indicates that the agent has been enhanced successfully.
 
 ```properties
-unit=unit1
-laneSpaceId=1
-liveSpaceId=6
-cell=cell1
-lane=production
+x-live-space-id=v4bEh4kd6Jvu5QBX09qYq-qlbcs
+x-live-unit=unit1
+x-live-cell=cell1
 ```
 
 #### Traffic test

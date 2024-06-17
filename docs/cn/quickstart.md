@@ -126,6 +126,7 @@ JoyLive Agent包如下目录结构：
 模拟单元1内启动网关实例，命令如下：
 
 ```bash
+# Linux or macOS设置环境变量
 export APPLICATION_NAME=springcloud3-gateway
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
@@ -135,10 +136,21 @@ export APPLICATION_SERVICE_GATEWAY=FRONTEND
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
-# Linux or macOS
-java -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar -javaagent:${path_to_agent}/live.jar
-# Windows
-java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar -javaagent:${path_to_agent}\live.jar
+# 启动
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar 
+
+# Windows设置环境变量（PowerShell）
+$env:APPLICATION_NAME="springcloud3-gateway"
+$env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT="unit1"
+$env:APPLICATION_LOCATION_CELL="cell1"
+$env:APPLICATION_SERVICE_GATEWAY="FRONTEND"
+# 设置启动的nacos访问地址
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# 启动
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
 #### 启动应用
@@ -150,39 +162,57 @@ java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar -javaage
 模拟单元1内启动应用实例，命令如下：
 
 ```bash
+# Linux or macOS设置环境变量
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
-export APPLICATION_LOCATION_LANESPACE_ID=1
-export APPLICATION_LOCATION_LANE=production
 # 设置启动的nacos访问地址
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
-# Linux or macOS
-java -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}/live.jar
-# Windows
-java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}\live.jar
+# 启动
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
+
+# Windows设置环境变量（PowerShell）
+$env:APPLICATION_NAME="springcloud3-provider"
+$env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT="unit1"
+$env:APPLICATION_LOCATION_CELL="cell1"
+# 设置启动的nacos访问地址
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# 启动
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
 模拟单元2内启动应用实例，命令如下：
 
 ```bash
+# Linux or macOS设置环境变量
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit2
 export APPLICATION_LOCATION_CELL=cell4
-export APPLICATION_LOCATION_LANESPACE_ID=1
-export APPLICATION_LOCATION_LANE=beta
 # 设置启动的nacos访问地址
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
-# Linux or macOS
-java -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}/live.jar
-# Windows
-java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar -javaagent:${path_to_agent}\live.jar
+# 启动
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
+
+# Windows设置环境变量（PowerShell）
+$env:APPLICATION_NAME="springcloud3-provider"
+$env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT="unit2"
+$env:APPLICATION_LOCATION_CELL="cell4"
+# 设置启动的nacos访问地址
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# 启动
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
 #### 效果验证
@@ -190,11 +220,9 @@ java -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-provider.jar -javaag
 访问nacos注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
 
 ```properties
-unit=unit1
-laneSpaceId=1
-liveSpaceId=6
-cell=cell1
-lane=production
+x-live-space-id=v4bEh4kd6Jvu5QBX09qYq-qlbcs
+x-live-unit=unit1
+x-live-cell=cell1
 ```
 
 #### 流量测试
