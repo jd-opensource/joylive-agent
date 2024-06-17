@@ -9,7 +9,7 @@
 
 > 请提前准备好maven编译环境，项目根目录执行命令编译: 
 > ```bash
-> mvn package -f pom.xml -DskipTests=true package
+> mvn package -f pom.xml -DskipTests=true
 > ```
 
 - **编译获取** JoyLive Agent Release包，路径：`joylive-package/target/live-x.x.x-SNAPSHOT`

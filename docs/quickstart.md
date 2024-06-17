@@ -9,7 +9,7 @@ Quick Start
 
 > Please prepare the maven compilation environment in advance and execute the command to compile in the project root directory:
 > ```bash
-> mvn package -f pom.xml -DskipTests=true package
+> mvn package -f pom.xml -DskipTests=true
 > ```
 
 - **Compile** JoyLive Agent Release Package
