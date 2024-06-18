@@ -90,7 +90,7 @@ agent:
       spring: true
       phevos: true
     lane:
-      enabled: ${CONFIG_LANE_ENABLED:true}
+      enabled: ${CONFIG_LANE_ENABLED:false}
     transmission:
       enabled: ${CONFIG_TRANSMISSION_ENABLED:true}
       threadpool: ${CONFIG_TRANSMISSION_THREADPOOL_ENABLED:true}

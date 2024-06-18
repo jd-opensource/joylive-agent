@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq-nameserver
+  labels:
+    app: rocketmq
+spec:
+  ports:
+    - port: 9876
+      name: nameserver
+  selector:
+    app: rocketmq
+    component: nameserver
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocketmq-nameserver
+  labels:
+    app: rocketmq
+    component: nameserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocketmq
+      component: nameserver
+  template:
+    metadata:
+      labels:
+        app: rocketmq
+        component: nameserver
+    spec:
+      containers:
+        - name: nameserver
+          image: docker.jinghai.link/apache/rocketmq:5.2.0
+          ports:
+            - containerPort: 9876
+          command: ["sh", "-c", "/home/rocketmq/rocketmq-5.2.0/bin/mqnamesrv"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq-broker
+  labels:
+    app: rocketmq
+spec:
+  ports:
+    - port: 10911
+      name: broker
+    - port: 10909
+      name: broker-srv
+    - port: 10912
+      name: broker-admin
+  selector:
+    app: rocketmq
+    component: broker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocketmq-broker
+  labels:
+    app: rocketmq
+    component: broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocketmq
+      component: broker
+  template:
+    metadata:
+      labels:
+        app: rocketmq
+        component: broker
+    spec:
+      containers:
+        - name: broker
+          image: docker.jinghai.link/apache/rocketmq:5.2.0
+          ports:
+            - containerPort: 10911
+            - containerPort: 10909
+            - containerPort: 10912
+          command: ["sh", "-c", "/home/rocketmq/rocketmq-5.2.0/bin/mqbroker"]
+          env:
+            - name: NAMESRV_ADDR
+              value: "rocketmq-nameserver.default.svc:9876"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq-proxy
+  labels:
+    app: rocketmq
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      name: proxy
+    - port: 8081
+      name: proxy-admin
+  selector:
+    app: rocketmq
+    component: proxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocketmq-proxy
+  labels:
+    app: rocketmq
+    component: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocketmq
+      component: proxy
+  template:
+    metadata:
+      labels:
+        app: rocketmq
+        component: proxy
+    spec:
+      containers:
+        - name: proxy
+          image: docker.jinghai.link/apache/rocketmq:5.2.0
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          command: ["sh", "-c", "/home/rocketmq/rocketmq-5.2.0/bin/mqproxy"]
+          env:
+            - name: NAMESRV_ADDR
+              value: "rocketmq-nameserver.default.svc:9876"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq-dashboard
+  labels:
+    app: rocketmq
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: rocketmq
+    component: dashboard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocketmq-dashboard
+  labels:
+    app: rocketmq
+    component: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocketmq
+      component: dashboard
+  template:
+    metadata:
+      labels:
+        app: rocketmq
+        component: dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: docker.jinghai.link/apacherocketmq/rocketmq-dashboard:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JAVA_OPTS
+              value: "-Drocketmq.namesrv.addr=rocketmq-nameserver.default.svc:9876"
