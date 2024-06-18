@@ -72,16 +72,111 @@ LivePluginClassLoader  ..>  LiveAppClassLoader
 
 ## 1.3 应用状态
 
-![pic](./image/app-status.png)
+```mermaid
+classDiagram
+    direction BT
+    class StartStatus{
+        <<enumeration>>
+        STARTING
+        STARTED
+        READY
+        STOP
+        CLOSE
+    }
+    class GovernStatus{
+        <<enumeration>>
+        INITIAL
+        SERVICE_READY
+        ENHANCE_READY
+        POLICY_READY
+        REGISTRY_READY
+        GOVERN_READY
+        FAILED
+    }
+    
+    class Application{
+        - startStatus: StartStatus
+        - governStatus: GovernStatus
+    }
+    
+    Application --> StartStatus
+    Application --> GovernStatus
 
-在流量治理扩展里面，根据应用启动状态和治理状态来控制流量。
+```
 
-1. 应用启动状态为READY才能入流量
+| 状态       | 名称  | 入流量 | 出流量 | 说明                   |
+|----------|-----|-----|-----|----------------------|
+| STARTING | 启动中 | 否   | 是   |                      |
+| PREPARED | 上下文就绪 | 否   | 是   |                      |
+| STARTED  | 实例就绪 | 否   | 是   |                      |
+| READY    | 启动就绪 | 是    | 是    | 流量治理插件需要根据当前状态来校验入流量 |
+| STOPPED  | 停止  | 否    | 是    |                      |
+| CLOSED   | 销毁关闭 | 否    | 是    |                      |
+| FAILED   | 失败  | 否    | 是    |                      |
 
-2. 应用治理状态为GOVERN_READY才进行流量治理
+| 状态             | 名称       | 开启治理 | 说明                      |
+|----------------|----------|------|-------------------------|
+| INITIAL        | 初始状态     | 否    |                         |
+| SERVICE_READY  | 同步相关服务就绪 | 否    |                         |
+| ENHANCE_READY  | 增强植入就绪   | 否    |                         |
+| POLICY_READY   | 服务策略就绪   | 否    |                         |
+| REGISTRY_READY | 注册就绪     | 否    | 流量治理插件需要根据当前状态来判断是否跳过治理 |
+| GOVERN_READY   | 治理就绪     | 是    |                         |
+| FAILED         | 失败       | 否    |                         |
 
-静态注入时候，在应用状态为STARTED的时候等待策略同步完成，当应用状态为READY的时候，治理状态已经为GOVERN_READY
-动态注入时候，应用状态初始化为READY，治理初始状态为INITIAL，这个时候允许流量继续进入，当策略就绪并且重新更新注册后，治理才生效。
+### 1.3.1 静态注入
+
+1. 启动状态机
+
+以Springboot来讲解状态机变化
+
+```mermaid
+stateDiagram
+    direction TB
+    [*] --> STARTING: start
+    STARTING --> PREPARED: prepare context success
+    STARTING --> FAILED: prepare context error
+    PREPARED --> STARTED: refresh context success
+    PREPARED --> FAILED: refresh context error
+    STARTED --> READY: run success
+    STARTED --> FAILED: run error
+    READY --> STOPPED: stop
+    READY --> CLOSED: close
+    STOPPED --> STARTED: start
+    FAILED --> CLOSED
+    CLOSED --> [*]
+    
+```
+2. 治理状态机
+
+```mermaid
+stateDiagram
+    direction TB
+    [*] --> INITIAL: start
+    INITIAL --> SERVICE_READY: start service success
+    INITIAL --> FAILED: start service error
+    SERVICE_READY --> ENHANCE_READY: enhance success
+    SERVICE_READY --> FAILED: enhance error
+    ENHANCE_READY --> POLICY_READY: sync policy success
+    ENHANCE_READY --> FAILED: sync policy error
+    POLICY_READY --> REGISTRY_READY: registry success
+    POLICY_READY --> FAILED: registry error
+    REGISTRY_READY --> GOVERN_READY
+    GOVERN_READY --> CLOSED:close
+    FAILED --> CLOSED:close
+    CLOSED --> [*]
+    
+```
+
+### 1.3.2 动态注入
+
+1. 启动状态机
+
+初始状态为READY，应用可以继续接收流量
+
+2. 治理状态机
+
+初始状态为INITIAL
 
 ## 1.4 应用启动
 
@@ -105,15 +200,15 @@ Springboot支持Jar和War两种启动方式
 
 ```mermaid
 classDiagram
-direction BT
-class SpringApplicationRunListeners {
-  ~ environmentPrepared(ConfigurableBootstrapContext, ConfigurableEnvironment) void
-  ~ contextPrepared(ConfigurableApplicationContext) void
-  ~ ready(ConfigurableApplicationContext, Duration) void
-  ~ contextLoaded(ConfigurableApplicationContext) void
-  ~ starting(ConfigurableBootstrapContext, Class~?~) void
-  ~ started(ConfigurableApplicationContext, Duration) void
-}
+    direction BT
+    class SpringApplicationRunListeners {
+      ~ environmentPrepared(ConfigurableBootstrapContext, ConfigurableEnvironment) void
+      ~ contextPrepared(ConfigurableApplicationContext) void
+      ~ ready(ConfigurableApplicationContext, Duration) void
+      ~ contextLoaded(ConfigurableApplicationContext) void
+      ~ starting(ConfigurableBootstrapContext, Class~?~) void
+      ~ started(ConfigurableApplicationContext, Duration) void
+    }
 
 ```
 
