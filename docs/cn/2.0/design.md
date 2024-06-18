@@ -75,15 +75,17 @@ LivePluginClassLoader  ..>  LiveAppClassLoader
 ```mermaid
 classDiagram
     direction BT
-    class StartStatus{
+    class BootState{
         <<enumeration>>
         STARTING
+        PREPARED
         STARTED
         READY
-        STOP
-        CLOSE
+        STOPPED
+        CLOSED
+        FAILED
     }
-    class GovernStatus{
+    class GovernState{
         <<enumeration>>
         INITIAL
         SERVICE_READY
@@ -95,24 +97,25 @@ classDiagram
     }
     
     class Application{
-        - startStatus: StartStatus
-        - governStatus: GovernStatus
+        - BootState: BootState
+        - GovernState: GovernState
     }
     
-    Application --> StartStatus
-    Application --> GovernStatus
+    Application --> BootState
+    Application --> GovernState
 
 ```
 
-| 状态       | 名称  | 入流量 | 出流量 | 说明                   |
-|----------|-----|-----|-----|----------------------|
-| STARTING | 启动中 | 否   | 是   |                      |
+| 状态       | 名称    | 入流量 | 出流量 | 说明                   |
+|----------|-------|-----|-----|----------------------|
+| INITIAL | 初始化   | 否   | 是   | 发现应用后，初始化应用对象        |
+| STARTING | 启动中   | 否   | 是   |                      |
 | PREPARED | 上下文就绪 | 否   | 是   |                      |
-| STARTED  | 实例就绪 | 否   | 是   |                      |
-| READY    | 启动就绪 | 是    | 是    | 流量治理插件需要根据当前状态来校验入流量 |
-| STOPPED  | 停止  | 否    | 是    |                      |
-| CLOSED   | 销毁关闭 | 否    | 是    |                      |
-| FAILED   | 失败  | 否    | 是    |                      |
+| STARTED  | 实例就绪  | 否   | 是   |                      |
+| READY    | 启动就绪  | 是    | 是    | 流量治理插件需要根据当前状态来校验入流量 |
+| STOPPED  | 停止    | 否    | 是    |                      |
+| CLOSED   | 销毁关闭  | 否    | 是    |                      |
+| FAILED   | 失败    | 否    | 是    |                      |
 
 | 状态             | 名称       | 开启治理 | 说明                      |
 |----------------|----------|------|-------------------------|
@@ -133,7 +136,8 @@ classDiagram
 ```mermaid
 stateDiagram
     direction TB
-    [*] --> STARTING: start
+    [*] --> INITIAL
+    INITIAL --> STARTING: start
     STARTING --> PREPARED: prepare context success
     STARTING --> FAILED: prepare context error
     PREPARED --> STARTED: refresh context success
@@ -336,4 +340,11 @@ nacos支持在心跳事件里面更新元数据，可以拦截心跳事件，根
 #### 1.6.2 其它
 
 在注册中心插件里面，拦截器的构造函数里面，注册应用事件，当服务策略就绪的时候，异步注销和重新注册服务。
+
+### 1.7 应用事件隔离
+
+增对应用相关的事件，如应用生命周期事件和流量事件等等，需要按照应用进行主题隔离。
+
+主题的名称改为：主题@应用名
+
 

@@ -15,11 +15,5 @@
    2. 链路透传：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc，Grpc，Rocketmq 4/5，Kafka，Http client 3/4，Http servlet，Okhttp 1/3，JDK http connection，Thread pool。
 7. 发布配套的云原生多活控制器 
 
-# 2. 2024-9 发布版本2.0.0
-1. 实现动态增强注入
-2. 支持对多个J2EE应用增强
-3. 支持治理扩展和插件热更新
-4. 支持熔断策略
 
-查看 [2.0设计](./2.0/design.md)
 
