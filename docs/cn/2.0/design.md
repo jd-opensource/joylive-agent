@@ -91,28 +91,15 @@ LivePluginClassLoader  ..>  LiveAppClassLoader
 
 通过插件及应用提供者扩展，来感知应用的启动事件。多种方式可能触发了相同的应用启动事件，需要过滤掉重复的事件。
 
-```mermaid
-classDiagram
-direction BT
-class AppContext {
-  + getContext() T ~T~
-  + getClassLoader() Classloader
-}
-class AppProvider {
-  
-}
+### 1.4.1 静态注入
 
-<<Interface>> AppProvider
-AppProvider --> AppContext 
-```
-
-### 1.4.1 `Springboot`类加载器
+#### 1.4.1.1 `Springboot`类加载器
 
 Springboot支持Jar和War两种启动方式
 
 静态注入可以拦截`org.springframework.boot.loader.LaunchedURLClassLoader`的构造函数，获取到应用类加载器并发出应用启动事件。
 
-### 1.4.1 `Springboot`事件拦截
+#### 1.4.1.2 `Springboot`事件拦截
 
 静态注入可以拦截`org.springframework.boot.SpringApplicationRunListeners`的相关方法，触发应用事件
 
@@ -130,7 +117,46 @@ class SpringApplicationRunListeners {
 
 ```
 
-### 1.4.2 `JMX`获取`ConfigurableApplicationContext`
+### 1.4.2 动态注入
+
+#### 1.4.2.1 动态接口
+
+```mermaid
+classDiagram
+    direction BT
+    class AppContext {
+        <<Interface>>
+        + getId() String
+        + getName() String
+        + getClassLoader() Classloader
+        + ~T~ getBeans(type: Class~T~) List~T~
+    }
+    class AppContextProvider {
+        <<Extensible>>
+        + getContexts(): List~AppContext~
+    }
+    class JmxSpringContextProvider {
+        <<Extension>>
+        - queryName: String = "org.springframework.boot:type=Admin,name=*"
+        - getApplicationContexts() List~~ConfigurableApplicationContext~
+    }
+
+    class SpringAppContext {
+        - context: ConfigurableApplicationContext
+    }
+    
+    class JmxUtils{
+        + static ~T~ getMBeans(queryName:String, converter:Function~Object, T~) List~T~
+    }
+
+    AppContextProvider --> AppContext
+    SpringAppContext ..|> AppContext
+    JmxSpringContextProvider ..|> AppContextProvider
+    JmxSpringContextProvider --> SpringAppContext
+    JmxSpringContextProvider --> JmxUtils
+```
+
+#### 1.4.2.2 `JMX`获取`ConfigurableApplicationContext`
 
 动态注入，需要拿到启动的应用上下文。
 
@@ -181,11 +207,11 @@ public static <T> List<T> getMBeans(String queryName, Function<Object, T> conver
 ```
 2. 查询Springboot的MBean，并通过反射获取其上下文
 ```java
-public static List<ConfigurableApplicationContext> getApplicationContexts() {
+public List<ConfigurableApplicationContext> getApplicationContexts() {
     try {
         Field contextField = SpringApplicationAdminMXBeanRegistrar.class.getDeclaredField("applicationContext");
         contextField.setAccessible(true);
-        return getMBeans("org.springframework.boot:type=Admin,name=*", target -> {
+        return getMBeans(queryName, target -> {
             try {
                 Field outerField = target.getClass().getDeclaredField("this$0");
                 outerField.setAccessible(true);
