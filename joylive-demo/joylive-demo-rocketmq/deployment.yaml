@@ -44,7 +44,7 @@ spec:
             - name: NACOS_PASSWORD
               value: nacos
             - name: ROCKETMQ_ADDR
-              value: localhost
+              value: rocketmq-nameserver.default.svc:9876
             - name: APPLICATION_NAME
               value: springcloud3-rocketmq
             - name: APPLICATION_SERVICE_NAME
@@ -116,6 +116,8 @@ spec:
               value: nacos
             - name: NACOS_PASSWORD
               value: nacos
+            - name: ROCKETMQ_ADDR
+              value: rocketmq-nameserver.default.svc:9876
             - name: APPLICATION_NAME
               value: springcloud3-rocketmq-gray
             - name: APPLICATION_SERVICE_NAME
