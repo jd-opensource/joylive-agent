@@ -52,7 +52,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         return invoke(cluster, context, invocation, null);
     }
 
-
     /**
      * Invokes a service method on a cluster of endpoints. This method handles the routing of the
      * request to the appropriate endpoint(s) based on the cluster strategy and an optional predicate
