@@ -36,22 +36,20 @@ public class PluginConfig {
 
     private Set<String> statics;
 
-    private Set<String> disables;
-
     private Set<String> dynamics;
 
-    private Set<String> passives;
+    private Set<String> disables;
 
     private Map<String, Set<String>> profiles;
 
     private String profile;
 
-    public boolean isActive(String name, boolean dynamic) {
-        if (disables != null && disables.contains(name)) {
+    public boolean isActive(String name, boolean dynamicMode) {
+        if (isDisable(name)) {
             return false;
         } else if (isSystem(name)) {
             return true;
-        } else if ((!dynamic && !isStatic(name)) || (dynamic && !isDynamic(name) && !isPassive(name))) {
+        } else if (!dynamicMode && !isStatic(name)) {
             return false;
         } else if (profile == null || profile.isEmpty() || profiles == null) {
             return true;
@@ -67,10 +65,6 @@ public class PluginConfig {
 
     public boolean isStatic(String name) {
         return statics != null && statics.contains(name);
-    }
-
-    public boolean isPassive(String name) {
-        return passives != null && passives.contains(name);
     }
 
     public boolean isDisable(String name) {

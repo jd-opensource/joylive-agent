@@ -22,11 +22,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bytekit.ByteBuilder;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
-import com.jd.live.agent.core.config.AgentConfig;
-import com.jd.live.agent.core.config.ClassLoaderConfig;
-import com.jd.live.agent.core.config.EnhanceConfig;
-import com.jd.live.agent.core.config.PluginConfig;
-import com.jd.live.agent.core.config.AgentPath;
+import com.jd.live.agent.core.config.*;
 import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
@@ -46,6 +42,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.Plugin;
+import com.jd.live.agent.core.plugin.Plugin.PluginType;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.util.option.CascadeOption;
 import com.jd.live.agent.core.util.option.Option;
@@ -180,7 +177,7 @@ public class InterceptorTest {
     public void testEnhanceClass() {
         // instrumentation.appendToSystemClassLoaderSearch(new JarFile(new File(agentPath.getRoot().getParent() + "/joylive-test-bytebuddy-1.0.0-SNAPSHOT.jar")));
         // + "/joylive-test-bytebuddy-1.0.0-SNAPSHOT.jar"
-        Plugin plugin = new Plugin(new File(agentPath.getRoot().getParent()), true, urls, extensionManager.build(PluginDefinition.class, coreClassLoader));
+        Plugin plugin = new Plugin(new File(agentPath.getRoot().getParent()), PluginType.DYNAMIC, urls, extensionManager.build(PluginDefinition.class, coreClassLoader));
         plugin.load();
 
         ExtensibleDesc<ByteSupplier> byteSupplierExtensibleDesc = extensionManager.getOrLoadExtensible(ByteSupplier.class);

@@ -50,7 +50,6 @@ agent:
       - redis
     disables: null
     dynamics: null
-    passives: null
     profiles:
       test: null
       production: null

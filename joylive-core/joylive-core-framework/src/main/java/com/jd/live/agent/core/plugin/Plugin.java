@@ -53,7 +53,7 @@ public class Plugin implements PluginDeclare {
      * Indicates whether the plugin is dynamic.
      */
     @Getter
-    private final boolean dynamic;
+    private final PluginType type;
 
     /**
      * An array of {@link URL} objects that the plugin uses for class loading.
@@ -82,14 +82,14 @@ public class Plugin implements PluginDeclare {
      *
      * @param path     The file path of the plugin's location.
      * @param name     The name of the plugin.
-     * @param dynamic  Indicates whether the plugin is dynamic.
+     * @param type     The type of the plugin.
      * @param urls     An array of {@link URL} objects for class loading.
      * @param loader   The class loader to use for loading plugin definitions.
      */
-    public Plugin(File path, String name, boolean dynamic, URL[] urls, ExtensibleLoader<PluginDefinition> loader) {
+    public Plugin(File path, String name, PluginType type, URL[] urls, ExtensibleLoader<PluginDefinition> loader) {
         this.path = path;
         this.name = name;
-        this.dynamic = dynamic;
+        this.type = type;
         this.urls = urls;
         this.loader = loader;
     }
@@ -99,12 +99,12 @@ public class Plugin implements PluginDeclare {
      * and a loader for plugin definitions. The plugin name is derived from the file name of the path.
      *
      * @param path     The file path of the plugin's location.
-     * @param dynamic  Indicates whether the plugin is dynamic.
+     * @param type     The type of the plugin.
      * @param urls     An array of {@link URL} objects for class loading.
      * @param loader   The class loader to use for loading plugin definitions.
      */
-    public Plugin(File path, boolean dynamic, URL[] urls, ExtensibleLoader<PluginDefinition> loader) {
-        this(path, path.getName(), dynamic, urls, loader);
+    public Plugin(File path, PluginType type, URL[] urls, ExtensibleLoader<PluginDefinition> loader) {
+        this(path, path.getName(), type, urls, loader);
     }
 
     /**
@@ -116,7 +116,7 @@ public class Plugin implements PluginDeclare {
      * @param loader The class loader to use for loading plugin definitions.
      */
     public Plugin(File path, String name, ExtensibleLoader<PluginDefinition> loader) {
-        this(path, name, false, null, loader);
+        this(path, name, PluginType.STATIC, null, loader);
     }
 
     public ClassLoader getClassLoader() {
@@ -220,5 +220,25 @@ public class Plugin implements PluginDeclare {
          * The plugin has failed to load properly
          */
         FAILED
+    }
+
+    /**
+     * The {@code PluginType} enum represents the type of a plugin.
+     */
+    public enum PluginType {
+        /**
+         * System plugin.
+         */
+        SYSTEM,
+
+        /**
+         * Static plugin.
+         */
+        STATIC,
+
+        /**
+         * Dynamic plugin.
+         */
+        DYNAMIC
     }
 }
