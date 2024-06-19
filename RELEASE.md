@@ -16,3 +16,5 @@
 
 ### Limitations
 1. Dynamic enhancement injection (agentmain) is not fully functional; please do not use it.
+2. A message queue cluster is used for multiple lanes or units, and topics need to be logically isolated
+
