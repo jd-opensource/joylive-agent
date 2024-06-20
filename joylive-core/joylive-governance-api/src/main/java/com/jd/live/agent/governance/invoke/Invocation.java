@@ -229,7 +229,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         if (publisher != null && builder != null) {
             TrafficEvent event = configure(builder).build();
             if (event != null) {
-                publisher.offer(event);
+                publisher.tryOffer(event);
             }
         }
     }
