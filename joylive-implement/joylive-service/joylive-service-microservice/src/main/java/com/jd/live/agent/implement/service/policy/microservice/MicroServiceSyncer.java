@@ -167,7 +167,8 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
      * @param subscriber the policy subscriber to synchronize and update.
      */
     private void syncAndUpdate(PolicySubscriber subscriber) {
-        ServiceSyncMeta meta = versions.computeIfAbsent(subscriber.getName(), ServiceSyncMeta::new);
+        ServiceSyncMeta meta = versions.computeIfAbsent(subscriber.getName(),
+                k -> new ServiceSyncMeta(subscriber.getNamespace(), subscriber.getName()));
         if (!meta.status.compareAndSet(false, true)) {
             return;
         }
@@ -387,6 +388,8 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
      */
     private static class ServiceSyncMeta {
 
+        protected final String namespace;
+
         protected final String name;
 
         protected long version;
@@ -395,7 +398,8 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
 
         protected final AtomicBoolean status = new AtomicBoolean(false);
 
-        ServiceSyncMeta(String name) {
+        ServiceSyncMeta(String namespace, String name) {
+            this.namespace = namespace;
             this.name = name;
         }
 
@@ -415,7 +419,8 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
          * @return the success message.
          */
         public String getSuccessMessage(HttpStatus status) {
-            return "Success synchronizing service policy from multilive. service=" + name
+            return "Success synchronizing service policy from jmsf control plane. service=" + name
+                    + ", space=" + namespace
                     + ", code=" + status.value()
                     + ", counter=" + counter.get();
         }
@@ -427,7 +432,8 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
          * @return the error message.
          */
         public String getErrorMessage(HttpState reply) {
-            return "Failed to synchronize service policy from multilive. service=" + name
+            return "Failed to synchronize service policy from jmsf control plane. service=" + name
+                    + ", space=" + namespace
                     + ", code=" + reply.getCode()
                     + ", message=" + reply.getMessage()
                     + ", counter=" + counter.get();
