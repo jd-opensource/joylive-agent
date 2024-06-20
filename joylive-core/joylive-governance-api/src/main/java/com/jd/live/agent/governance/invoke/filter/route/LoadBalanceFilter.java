@@ -109,7 +109,7 @@ public class LoadBalanceFilter implements RouteFilter {
         // preferred sticky id
         String id = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
         if (id != null) {
-            List<? extends Endpoint> backends = RouteTarget.filter(target.getEndpoints(), endpoint -> id.equals(endpoint.getId()), 1);
+            List<? extends Endpoint> backends = RouteTarget.tryCopy(target.getEndpoints(), endpoint -> id.equals(endpoint.getId()), 1);
             if (!backends.isEmpty() && backends.get(0).predicate()) {
                 return backends;
             }

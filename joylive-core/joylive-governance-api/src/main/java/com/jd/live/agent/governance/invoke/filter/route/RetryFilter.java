@@ -18,14 +18,12 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -45,11 +43,8 @@ public class RetryFilter implements RouteFilter {
         Set<String> attempts = invocation.getRequest().getAttempts();
         // If there have been previous attempts, filter out the endpoints that have already failed
         if (attempts != null && !attempts.isEmpty()) {
-            List<? extends Endpoint> endpoints = RouteTarget.filter(target.getEndpoints(), endpoint -> !attempts.contains(endpoint.getId()), -1);
-            if (endpoints != null && !endpoints.isEmpty()) {
-                // Can retry on failed instances
-                target.setEndpoints(endpoints);
-            }
+            // Can retry on failed instances
+            target.filter(endpoint -> !attempts.contains(endpoint.getId()), -1, false);
         }
         chain.filter(invocation);
     }

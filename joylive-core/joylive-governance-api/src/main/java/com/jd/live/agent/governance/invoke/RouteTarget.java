@@ -176,35 +176,30 @@ public class RouteTarget {
      * @return The count of endpoints that matched the predicate.
      */
     public int filter(Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
-        List<? extends Endpoint> targets = filter(endpoints, predicate, maxSize);
-        if (targets != endpoints) {
-            if (targets.size() != endpoints.size() && (nullable || !targets.isEmpty())) {
-                endpoints = targets;
-            }
-            return targets.size();
-        }
-        return targets == null ? 0 : targets.size();
+        return filter(endpoints, predicate, maxSize, nullable);
     }
 
     /**
-     * Static method to filter a list of endpoints based on a predicate and an optional maximum size.
+     * Creates a new list containing elements from the original list that match the given predicate,
+     * up to a specified maximum size.
      *
-     * @param endpoints The list of endpoints to filter.
-     * @param predicate The predicate to use for filtering.
-     * @param maxSize   The maximum size of the list to return.
-     * @return The filtered list of endpoints.
+     * @param endpoints The list of endpoints to filter. If null or empty, the method returns the original list.
+     * @param predicate The predicate to use for filtering. If null, the method returns the original list.
+     * @param maxSize   The maximum size of the list to return. If non-positive, a default value is used.
+     * @return A new list containing the filtered endpoints. If the input list or predicate is null, returns the original list.
      */
-    public static List<? extends Endpoint> filter(List<? extends Endpoint> endpoints, Predicate<Endpoint> predicate, int maxSize) {
-        if (predicate == null || endpoints == null || endpoints.isEmpty()) {
+    public static List<? extends Endpoint> tryCopy(List<? extends Endpoint> endpoints, Predicate<Endpoint> predicate, int maxSize) {
+        if (endpoints == null || endpoints.isEmpty() || (predicate == null && maxSize <= 0)) {
             return endpoints;
         }
         int count = 0;
-        int max = maxSize > 0 ? maxSize : endpoints.size() / 2;
-        max = Math.max(max, 1);
-        List<Endpoint> targets = new ArrayList<>(max);
+        List<Endpoint> targets = null;
         for (Endpoint endpoint : endpoints) {
-            if (predicate.test(endpoint)) {
+            if (predicate == null || predicate.test(endpoint)) {
                 ++count;
+                if (targets == null) {
+                    targets = new ArrayList<>(Math.max(maxSize > 0 ? maxSize : endpoints.size() / 2, 1));
+                }
                 targets.add(endpoint);
                 if (maxSize > 0 && count == maxSize) {
                     break;
@@ -215,14 +210,51 @@ public class RouteTarget {
     }
 
     /**
+     * Static method to filter a list of endpoints based on a predicate and an optional maximum size.
+     *
+     * @param endpoints The list of endpoints to filter.
+     * @param predicate The predicate to use for filtering.
+     * @param maxSize   The maximum size of the list to return.
+     * @param nullable  Whether a null list is acceptable.
+     * @return The count of endpoints that matched the predicate.
+     */
+    public static <T extends Endpoint> int filter(List<T> endpoints, Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
+        int size = endpoints == null ? 0 : endpoints.size();
+        if (size == 0 || (predicate == null && maxSize <= 0)) {
+            return size;
+        }
+
+        int writeIndex = 0;
+        // Traverse the list with readIndex to improve performance.
+        for (int readIndex = 0; readIndex < size; readIndex++) {
+            T endpoint = endpoints.get(readIndex);
+            if (predicate == null || predicate.test(endpoint)) {
+                if (writeIndex < readIndex) {
+                    endpoints.set(writeIndex, endpoint);
+                }
+                writeIndex++;
+                if (maxSize > 0 && writeIndex >= maxSize) {
+                    break;
+                }
+            }
+        }
+
+        // Remove the remaining elements if any
+        if ((writeIndex > 0 || nullable) && writeIndex < size) {
+            endpoints.subList(writeIndex, size).clear();
+        }
+        return writeIndex;
+    }
+
+    /**
      * Static method to filter a list of endpoints based on a predicate.
      *
      * @param endpoints The list of endpoints to filter.
      * @param predicate The predicate to use for filtering.
-     * @return The filtered list of endpoints.
+     *                  @return The count of endpoints that matched the predicate.
      */
-    public static List<? extends Endpoint> filter(List<? extends Endpoint> endpoints, Predicate<Endpoint> predicate) {
-        return filter(endpoints, predicate, 0);
+    public static int filter(List<? extends Endpoint> endpoints, Predicate<Endpoint> predicate) {
+        return filter(endpoints, predicate, 0, false);
     }
 
     /**
