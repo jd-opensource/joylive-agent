@@ -69,7 +69,7 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     }
 
     @Override
-    public Integer getWeight(ServiceRequest request) {
+    protected int computeWeight(ServiceRequest request) {
         int result = url.getMethodParameter(request.getMethod(), KEY_WEIGHT, DEFAULT_WEIGHT);
         if (result > 0) {
             long timestamp = url.getParameter(REMOTE_TIMESTAMP_KEY, 0L);

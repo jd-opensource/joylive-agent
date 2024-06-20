@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.instance;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.governance.request.ServiceRequest;
 
 /**
  * An abstract implementation of the {@link Endpoint} interface that provides caching for
@@ -34,6 +35,8 @@ public abstract class AbstractEndpoint implements Endpoint {
 
     private String lane;
 
+    // Endpoint is request level
+    private Integer weight;
 
     @Override
     public String getLiveSpaceId() {
@@ -89,4 +92,14 @@ public abstract class AbstractEndpoint implements Endpoint {
         }
         return lane;
     }
+
+    @Override
+    public Integer getWeight(ServiceRequest request) {
+        if (weight == null) {
+            weight = computeWeight(request);
+        }
+        return weight;
+    }
+
+    protected abstract int computeWeight(ServiceRequest request);
 }

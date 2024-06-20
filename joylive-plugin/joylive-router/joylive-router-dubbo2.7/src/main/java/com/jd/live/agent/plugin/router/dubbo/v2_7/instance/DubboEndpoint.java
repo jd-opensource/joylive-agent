@@ -71,7 +71,7 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     }
 
     @Override
-    public Integer getWeight(ServiceRequest request) {
+    protected int computeWeight(ServiceRequest request) {
         int result;
         URL target = url;
         if (invoker instanceof ClusterInvoker) {

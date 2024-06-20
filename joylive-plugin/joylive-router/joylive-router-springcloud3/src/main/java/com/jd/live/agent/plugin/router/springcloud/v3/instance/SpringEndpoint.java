@@ -60,7 +60,7 @@ public class SpringEndpoint extends AbstractEndpoint {
     }
 
     @Override
-    public Integer getWeight(ServiceRequest request) {
+    protected int computeWeight(ServiceRequest request) {
         int result = Converts.getInteger(getLabel(KEY_WEIGHT), DEFAULT_WEIGHT);
         if (result > 0) {
             long timestamp = Converts.getLong(getLabel(KEY_TIMESTAMP), 0L);

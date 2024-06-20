@@ -102,7 +102,7 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
         }
         UnitGroup unitGroup = target.getUnitGroup();
         // previous filters may filtrate the endpoints
-        unitGroup = unitGroup.getEndpoints() == target.getEndpoints() && unitGroup.size() == target.size()
+        unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints() && unitGroup.size() == target.size()
                 ? unitGroup
                 : new UnitGroup(unit.getCode(), target.getEndpoints());
         Election election = sponsor(invocation, target.getUnitRoute(), localFirst, unitGroup, thresholdFunc);

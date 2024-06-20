@@ -43,17 +43,24 @@ public class RandomWeight {
                 int totalWeight = 0;
                 int halfWeight = 0;
                 int half = size / 2;
-                T last = null;
                 int pos = 0;
 
+                boolean uniformWeights = true;
+                int firstWeight = -1;
+                int weight;
                 for (T target : targets) {
-                    totalWeight += Math.max(weightFunc.apply(target), 0);
+                    weight = Math.max(weightFunc.apply(target), 0);
+                    totalWeight += weight;
                     if (++pos == half) {
                         halfWeight = totalWeight;
                     }
-                    last = target;
+                    if (pos == 1) {
+                        firstWeight = weight;
+                    } else if (weight != firstWeight) {
+                        uniformWeights = false;
+                    }
                 }
-                if (totalWeight <= 0) {
+                if (uniformWeights || totalWeight <= 0) {
                     return targets.get(ThreadLocalRandom.current().nextInt(targets.size()));
                 }
 
@@ -67,7 +74,7 @@ public class RandomWeight {
                         return target;
                     }
                 }
-                return last;
+                return targets.get(ThreadLocalRandom.current().nextInt(targets.size()));
         }
     }
 
