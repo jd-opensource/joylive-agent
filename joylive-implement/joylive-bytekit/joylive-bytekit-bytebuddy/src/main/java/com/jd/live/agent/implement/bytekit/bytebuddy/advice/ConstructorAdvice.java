@@ -42,8 +42,10 @@ public class ConstructorAdvice {
                                @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         adviceKey = AdviceKey.getMethodKey(methodDesc, type.getClassLoader());
-        context = new ConstructorContext(type, arguments, constructor, methodDesc);
-        AdviceHandler.onEnter((ConstructorContext) context, adviceKey);
+        ConstructorContext cc = new ConstructorContext(type, arguments, constructor, methodDesc);
+        context = cc;
+        AdviceHandler.onEnter(cc, adviceKey);
+        arguments = cc.getArguments();
     }
 
     @Advice.OnMethodExit
