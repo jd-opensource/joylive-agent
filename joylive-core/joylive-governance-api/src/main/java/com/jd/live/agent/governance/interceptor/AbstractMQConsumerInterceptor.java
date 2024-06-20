@@ -98,7 +98,7 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
      * @param group the base consumer group name. If null, it will be treated as an empty string.
      * @return the constructed consumer group name with appended unit and lane information if applicable.
      */
-    public String getConsumerGroup(String group) {
+    protected String getConsumerGroup(String group) {
         Application application = context.getApplication();
         Location location = application.getLocation();
         String unit = location.getUnit();
