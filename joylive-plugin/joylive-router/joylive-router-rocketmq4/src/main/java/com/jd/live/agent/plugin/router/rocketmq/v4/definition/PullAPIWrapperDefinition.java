@@ -31,7 +31,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.RegisterFilterInterceptor;
 
 @Injectable
-@Extension(value = "PullAPIWrapperDefinition_v5")
+@Extension(value = "PullAPIWrapperDefinition_v4")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED

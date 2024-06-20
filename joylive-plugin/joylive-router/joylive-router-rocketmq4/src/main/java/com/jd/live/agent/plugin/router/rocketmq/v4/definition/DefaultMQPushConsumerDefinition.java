@@ -30,7 +30,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SetConsumerGroupInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v5")
+@Extension(value = "DefaultMQPushConsumerDefinition_v4")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
