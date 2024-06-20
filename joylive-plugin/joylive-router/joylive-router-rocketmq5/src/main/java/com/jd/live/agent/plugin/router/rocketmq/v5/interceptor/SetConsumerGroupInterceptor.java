@@ -16,38 +16,19 @@
 package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.instance.Location;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 
-public class SetConsumerGroupInterceptor extends InterceptorAdaptor {
+public class SetConsumerGroupInterceptor extends AbstractMQConsumerInterceptor {
 
-    private final Application application;
-
-    private final boolean liveEnabled;
-
-    private final boolean laneEnabled;
-
-    public SetConsumerGroupInterceptor(Application application, boolean liveEnabled, boolean laneEnabled) {
-        this.application = application;
-        this.liveEnabled = liveEnabled;
-        this.laneEnabled = laneEnabled;
+    public SetConsumerGroupInterceptor(InvocationContext context) {
+        super(context);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        Location location = application.getLocation();
-        String consumerGroup = (String) arguments[0];
-        String unit = location.getUnit();
-        String lane = location.getLane();
-        if (liveEnabled && unit != null && !unit.isEmpty()) {
-            consumerGroup = consumerGroup + "_unit_" + unit;
-        }
-        if (laneEnabled && lane != null && !lane.isEmpty()) {
-            consumerGroup = consumerGroup + "_lane_" + lane;
-        }
-        arguments[0] = consumerGroup;
+        arguments[0] = getConsumerGroup((String) arguments[0]);
     }
 
 }

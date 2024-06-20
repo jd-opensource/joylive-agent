@@ -63,6 +63,10 @@ public interface InvocationContext {
      */
     Application getApplication();
 
+    boolean isLiveEnabled();
+
+    boolean isLaneEnabled();
+
     /**
      * Retrieves the governance configuration associated with this invocation context.
      *
@@ -327,6 +331,16 @@ public interface InvocationContext {
         @Override
         public Application getApplication() {
             return delegate.getApplication();
+        }
+
+        @Override
+        public boolean isLiveEnabled() {
+            return delegate.isLiveEnabled();
+        }
+
+        @Override
+        public boolean isLaneEnabled() {
+            return delegate.isLaneEnabled();
         }
 
         @Override

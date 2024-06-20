@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v4.interceptor;
+package com.jd.live.agent.plugin.transmission.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
-import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.context.RequestContext;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.Headers;
 
-public class SetConsumerGroupInterceptor extends AbstractMQConsumerInterceptor {
+import java.nio.charset.StandardCharsets;
 
-    public SetConsumerGroupInterceptor(InvocationContext context) {
-        super(context);
-    }
+public class KafkaProducerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object[] arguments = ctx.getArguments();
-        arguments[0] = getConsumerGroup((String) arguments[0]);
+        attachCargo((ProducerRecord<?, ?>) ctx.getArguments()[0]);
     }
 
+    private void attachCargo(ProducerRecord<?, ?> record) {
+        Headers headers = record.headers();
+        RequestContext.cargos((k, v) -> headers.add(k, v == null ? null : k.getBytes(StandardCharsets.UTF_8)));
+    }
 }

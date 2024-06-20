@@ -147,7 +147,7 @@
             <outputDirectory>plugin/kafka</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-transmission-kafka</include>
+                <include>com.jd.live:joylive-transmission-kafka3</include>
             </includes>
         </dependencySet>
 

@@ -19,14 +19,13 @@ import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SetConsumerGroupInterceptor;
 
 @Injectable
@@ -48,14 +47,8 @@ public class DefaultLitePullConsumerDefinition extends PluginDefinitionAdapter {
             "java.lang.String"
     };
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
-    @Config(GovernanceConfig.CONFIG_LIVE_ENABLED)
-    private boolean liveEnabled = true;
-
-    @Config(GovernanceConfig.CONFIG_LANE_ENABLED)
-    private boolean laneEnabled = true;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     public DefaultLitePullConsumerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_LITE_PULL_CONSUMER);
@@ -63,7 +56,7 @@ public class DefaultLitePullConsumerDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP).
                                 and(MatcherBuilder.arguments(ARGUMENT_SET_CONSUMER_GROUP)),
-                        () -> new SetConsumerGroupInterceptor(application, liveEnabled, laneEnabled)
+                        () -> new SetConsumerGroupInterceptor(context)
                 )
         };
     }

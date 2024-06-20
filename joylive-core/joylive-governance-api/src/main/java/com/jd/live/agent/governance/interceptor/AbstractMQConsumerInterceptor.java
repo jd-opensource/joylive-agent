@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -29,14 +30,8 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
 
     protected final InvocationContext context;
 
-    protected final boolean liveEnabled;
-
-    protected final boolean laneEnabled;
-
-    public AbstractMQConsumerInterceptor(InvocationContext context, boolean liveEnabled, boolean laneEnabled) {
+    public AbstractMQConsumerInterceptor(InvocationContext context) {
         this.context = context;
-        this.liveEnabled = liveEnabled;
-        this.laneEnabled = laneEnabled;
     }
 
     /**
@@ -95,6 +90,27 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
         } else {
             return laneId.equals(currentLane);
         }
+    }
+
+    /**
+     * Constructs a consumer group name based on the provided base group name and the enabled status of live and lane features.
+     *
+     * @param group the base consumer group name. If null, it will be treated as an empty string.
+     * @return the constructed consumer group name with appended unit and lane information if applicable.
+     */
+    public String getConsumerGroup(String group) {
+        Application application = context.getApplication();
+        Location location = application.getLocation();
+        String unit = location.getUnit();
+        String lane = location.getLane();
+        group = group == null ? "" : group;
+        if (context.isLiveEnabled() && unit != null && !unit.isEmpty() && !group.contains("_unit_")) {
+            group = group + "_unit_" + unit;
+        }
+        if (context.isLaneEnabled() && lane != null && !lane.isEmpty() && !group.contains("_lane_")) {
+            group = group + "_lane_" + lane;
+        }
+        return group;
     }
 
 }

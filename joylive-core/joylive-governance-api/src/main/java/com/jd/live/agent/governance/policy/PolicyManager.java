@@ -79,6 +79,14 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private Application application;
 
     @Getter
+    @Config(GovernanceConfig.CONFIG_LIVE_ENABLED)
+    private boolean liveEnabled = true;
+
+    @Getter
+    @Config(GovernanceConfig.CONFIG_LANE_ENABLED)
+    private boolean laneEnabled = true;
+
+    @Getter
     @Config(GovernanceConfig.CONFIG_AGENT_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 

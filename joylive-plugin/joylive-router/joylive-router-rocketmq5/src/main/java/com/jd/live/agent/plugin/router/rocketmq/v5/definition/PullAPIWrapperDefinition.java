@@ -20,7 +20,6 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -54,19 +53,13 @@ public class PullAPIWrapperDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Config(GovernanceConfig.CONFIG_LIVE_ENABLED)
-    private boolean liveEnabled = true;
-
-    @Config(GovernanceConfig.CONFIG_LANE_ENABLED)
-    private boolean laneEnabled = true;
-
     public PullAPIWrapperDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_PULL_API_WRAPPER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER_FILTER_MESSAGE_HOOK).
                                 and(MatcherBuilder.arguments(ARGUMENT_REGISTER_FILTER_MESSAGE_HOOK)),
-                        () -> new RegisterFilterInterceptor(context, liveEnabled, laneEnabled)
+                        () -> new RegisterFilterInterceptor(context)
                 )
         };
     }

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v4.definition;
+package com.jd.live.agent.plugin.router.kafka.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -26,37 +27,38 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SetConsumerGroupInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetchInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v4")
+@Extension(value = "ConsumerInterceptorsDefinition_v3")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
-}, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE_DEFAULT_MQ_PUSH_CONSUMER)
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)
-public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
+}, relation = ConditionalRelation.OR, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
+@ConditionalOnClass(FetchDefinition.TYPE_CONSUMER_INTERCEPTORS)
+public class FetchDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
+    protected static final String TYPE_CONSUMER_INTERCEPTORS = "org.apache.kafka.clients.consumer.internals.Fetch";
 
-    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
+    private static final String METHOD_FOR_PARTITION = "forPartition";
 
-    private static final String[] ARGUMENT_SET_CONSUMER_GROUP = new String[]{
-            "java.lang.String"
+    private static final String[] ARGUMENT_FOR_PARTITION = new String[]{
+            "org.apache.kafka.common.TopicPartition",
+            "java.util.List",
+            "boolean"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultMQPushConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PUSH_CONSUMER);
+    public FetchDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_INTERCEPTORS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP).
-                                and(MatcherBuilder.arguments(ARGUMENT_SET_CONSUMER_GROUP)),
-                        () -> new SetConsumerGroupInterceptor(context)
+                        MatcherBuilder.named(METHOD_FOR_PARTITION)
+                                .and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
+                        () -> new FetchInterceptor(context)
                 )
         };
     }

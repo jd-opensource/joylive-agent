@@ -1,0 +1,2 @@
+com.jd.live.agent.plugin.transmission.kafka.v3.definition.KafkaConsumerRecordDefinition
+com.jd.live.agent.plugin.transmission.kafka.v3.definition.KafkaProducerDefinition
