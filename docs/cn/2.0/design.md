@@ -78,8 +78,6 @@ classDiagram
     class BootState{
         <<enumeration>>
         STARTING
-        PREPARED
-        STARTED
         READY
         STOPPED
         CLOSED
@@ -108,14 +106,11 @@ classDiagram
 
 | 状态       | 名称    | 入流量 | 出流量 | 说明                   |
 |----------|-------|-----|-----|----------------------|
-| INITIAL | 初始化   | 否   | 是   | 发现应用后，初始化应用对象        |
-| STARTING | 启动中   | 否   | 是   |                      |
-| PREPARED | 上下文就绪 | 否   | 是   |                      |
-| STARTED  | 实例就绪  | 否   | 是   |                      |
+| STARTING | 启动中   | 否   | 是   | 应用上下文就绪，可植入治理插件      |
 | READY    | 启动就绪  | 是    | 是    | 流量治理插件需要根据当前状态来校验入流量 |
 | STOPPED  | 停止    | 否    | 是    |                      |
 | CLOSED   | 销毁关闭  | 否    | 是    |                      |
-| FAILED   | 失败    | 否    | 是    |                      |
+| FAILED   | 启动失败  | 否    | 是    |                      |
 
 | 状态             | 名称       | 开启治理 | 说明                      |
 |----------------|----------|------|-------------------------|
@@ -136,12 +131,9 @@ classDiagram
 ```mermaid
 stateDiagram
     direction TB
-    [*] --> INITIAL
-    INITIAL --> STARTING: start
-    STARTING --> PREPARED: prepare context success
-    STARTING --> FAILED: prepare context error
-    PREPARED --> STARTED: refresh context success
-    PREPARED --> FAILED: refresh context error
+    [*] --> STARTING
+    STARTING --> READY: run success
+    STARTING --> FAILED: run error
     STARTED --> READY: run success
     STARTED --> FAILED: run error
     READY --> STOPPED: stop
@@ -161,8 +153,6 @@ stateDiagram
     INITIAL --> FAILED: start service error
     SERVICE_READY --> ENHANCE_READY: enhance success
     SERVICE_READY --> FAILED: enhance error
-    ENHANCE_READY --> POLICY_READY: sync policy success
-    ENHANCE_READY --> FAILED: sync policy error
     POLICY_READY --> REGISTRY_READY: registry success
     POLICY_READY --> FAILED: registry error
     REGISTRY_READY --> GOVERN_READY
@@ -346,5 +336,51 @@ nacos支持在心跳事件里面更新元数据，可以拦截心跳事件，根
 增对应用相关的事件，如应用生命周期事件和流量事件等等，需要按照应用进行主题隔离。
 
 主题的名称改为：主题@应用名
+
+### 1.8 启动流程
+
+```mermaid
+sequenceDiagram
+    participant Bootstrap
+    participant Bootstrap Plugin
+    participant Version Manager
+    participant Application Manager
+    participant Application Loader
+    participant Classloader Manager
+    participant Service Manager
+    participant Plugin Manager
+    participant Registry Plugin
+    participant Policy Supervisor
+
+    Bootstrap->>Bootstrap: 框架初始化
+    Bootstrap->>Bootstrap Plugin: 注入启动插件
+    Bootstrap Plugin->>Bootstrap Plugin: 获取已经存在的上下文（动态注入）
+    Bootstrap Plugin->>Application Manager: 通知创建应用
+    Bootstrap Plugin->>Bootstrap Plugin: 拦截应用上下文就绪
+    Bootstrap Plugin->>Application Manager: 通知创建应用
+    Application Manager->>Application Loader: 创建应用加载器
+    Application Loader->>Classloader Manager: 创建类加载器
+    Application Loader->>Service Manager: 创建服务管理器
+    Application Loader->>Plugin Manager: 创建插件管理器
+    Application Loader->>Service Manager: 启动服务
+    Application Loader->>Plugin Manager: 安装插件
+    Plugin Manager->>Registry Plugin: 安装插件
+    Registry Plugin->>Registry Plugin: 获取服务注册和订阅（动态注入）
+    Registry Plugin->>Policy Supervisor: 订阅服务治理策略
+    Registry Plugin->>Registry Plugin: 拦截服务注册和订阅
+    Registry Plugin->>Policy Supervisor: 订阅服务治理策略
+    Bootstrap Plugin->>Bootstrap Plugin: 拦截实例就绪
+    Bootstrap Plugin->>Application Manager: 等待应用治理就绪
+    Application Manager->>Application Loader: 等待应用治理就绪
+    Application Loader->>Policy Supervisor: 等待应用策略就绪
+    Application Loader->>Registry Plugin: 等待重新注册（动态注入）
+    Application Loader->>Application Loader: 应用治理就绪
+    Bootstrap Plugin->>Bootstrap Plugin: 拦截启动就绪
+    Bootstrap Plugin->>Application Manager: 启动就绪
+    Version Manager->>Version Manager: 检测更新
+    Version Manager->>Application Manager: 通知更新应用
+```
+
+
 
 

@@ -63,6 +63,7 @@ public class GovernanceConfig {
     public static final String CONFIG_LIVE_SPRING_ENABLED = CONFIG_SWITCH_LIVE + ".spring";
     public static final String CONFIG_LIVE_SPRING_GATEWAY_ENABLED = CONFIG_SWITCH_LIVE + ".springgateway";
     public static final String CONFIG_LIVE_PHEVOS_ENABLED = CONFIG_SWITCH_LIVE + ".phevos";
+    public static final String CONFIG_LIVE_ROCKETMQ_ENABLED = CONFIG_SWITCH_LIVE + ".rocketmq";
 
     public static final String CONFIG_LANE_ENABLED = CONFIG_SWITCH_LANE + ENABLED;
 

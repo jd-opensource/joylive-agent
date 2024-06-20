@@ -161,6 +161,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-router-rocketmq5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-transmission-thread</artifactId>
         </dependency>
         <dependency>

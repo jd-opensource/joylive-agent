@@ -88,6 +88,7 @@ agent:
       jsf: true
       spring: true
       phevos: true
+      rocketmq: true
     lane:
       enabled: ${CONFIG_LANE_ENABLED:false}
     transmission:
