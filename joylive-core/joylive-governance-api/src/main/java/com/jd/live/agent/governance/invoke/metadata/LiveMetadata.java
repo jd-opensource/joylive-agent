@@ -54,4 +54,8 @@ public class LiveMetadata {
      * The variable for this invocation.
      */
     private String variable;
+
+    public String getLiveSpaceId() {
+        return liveSpace == null ? null : liveSpace.getId();
+    }
 }

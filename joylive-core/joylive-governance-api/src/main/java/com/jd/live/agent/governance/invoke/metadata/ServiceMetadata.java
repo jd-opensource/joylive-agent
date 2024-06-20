@@ -3,6 +3,7 @@ package com.jd.live.agent.governance.invoke.metadata;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.live.CellPolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
@@ -58,9 +59,15 @@ public class ServiceMetadata {
     private ServicePolicy servicePolicy;
 
     public UnitPolicy getUnitPolicy() {
-        ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
+        ServiceLivePolicy livePolicy = getServiceLivePolicy();
         UnitPolicy unitPolicy = livePolicy == null ? null : livePolicy.getUnitPolicy();
         return unitPolicy == null ? UnitPolicy.NONE : unitPolicy;
+    }
+
+    public CellPolicy getCellPolicy() {
+        ServiceLivePolicy livePolicy = getServiceLivePolicy();
+        CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
+        return cellPolicy == null ? CellPolicy.ANY : cellPolicy;
     }
 
     public ServiceLivePolicy getServiceLivePolicy() {

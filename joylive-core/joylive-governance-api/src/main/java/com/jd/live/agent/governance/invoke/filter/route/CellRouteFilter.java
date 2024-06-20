@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.instance.CellGroup;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.UnitGroup;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -87,21 +88,24 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
         boolean localFirst = cellPolicy == CellPolicy.PREFER_LOCAL_CELL || cellPolicy == null && serviceConfig.isLocalFirst();
-
+        Function<String, Integer> thresholdFunc = !localFirst ? null : (
+                cellPolicy == CellPolicy.PREFER_LOCAL_CELL
+                        ? livePolicy::getCellThreshold
+                        : serviceConfig::getCellFailoverThreshold);
         Unit unit = target.getUnit();
-        unit = unit == null && localFirst ? liveMetadata.getCurrentUnit() : unit;
         if (unit == null) {
+            // unit policy is none.
+            if (localFirst && !target.isEmpty()) {
+                filterLocal(target, liveMetadata, thresholdFunc);
+            }
             return true;
         }
-        UnitRoute unitRoute = target.getUnitRoute() == null
-                ? liveMetadata.getUnitRule().getUnitRoute(unit.getCode()) : target.getUnitRoute();
         UnitGroup unitGroup = target.getUnitGroup();
         // previous filters may filtrate the endpoints
-        unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints()
-                ? unitGroup : new UnitGroup(unit.getCode(), target.getEndpoints());
-        Function<String, Integer> thresholdFunc = cellPolicy == CellPolicy.PREFER_LOCAL_CELL
-                ? livePolicy::getCellThreshold : serviceConfig::getCellFailoverThreshold;
-        Election election = sponsor(invocation, unitRoute, localFirst, unitGroup, thresholdFunc);
+        unitGroup = unitGroup.getEndpoints() == target.getEndpoints() && unitGroup.size() == target.size()
+                ? unitGroup
+                : new UnitGroup(unit.getCode(), target.getEndpoints());
+        Election election = sponsor(invocation, target.getUnitRoute(), localFirst, unitGroup, thresholdFunc);
         if (!election.isOver()) {
             randomWeight(election);
         }
@@ -119,6 +123,40 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Filters the endpoints in the given {@code RouteTarget} based on their locality to the current unit and cell.
+     *
+     * @param target        The {@code RouteTarget} containing the endpoints to be filtered. If empty or if localFirst is false, no filtering is applied.
+     * @param liveMetadata  The live metadata providing information about the current unit and cell.
+     * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
+     *                      those endpoints are preferred.
+     */
+    private void filterLocal(RouteTarget target,
+                             LiveMetadata liveMetadata,
+                             Function<String, Integer> thresholdFunc) {
+        String liveSpaceId = liveMetadata.getLiveSpaceId();
+        Unit currentUnit = liveMetadata.getCurrentUnit();
+        Cell currentCell = liveMetadata.getCurrentCell();
+        if (liveSpaceId != null && currentUnit != null && currentCell != null) {
+            List<Endpoint> cellEndpoints = new ArrayList<>();
+            List<Endpoint> unitEndpoints = new ArrayList<>();
+            for (Endpoint endpoint : target.getEndpoints()) {
+                if (endpoint.isUnit(liveSpaceId, currentUnit.getCode())) {
+                    unitEndpoints.add(endpoint);
+                }
+                if (endpoint.isCell(liveSpaceId, currentUnit.getCode())) {
+                    cellEndpoints.add(endpoint);
+                }
+            }
+            Integer threshold = thresholdFunc.apply(currentCell.getCode());
+            if (!cellEndpoints.isEmpty() && (threshold == null || threshold <= cellEndpoints.size())) {
+                target.setEndpoints(cellEndpoints);
+            } else if (!unitEndpoints.isEmpty() && (threshold == null || threshold <= unitEndpoints.size())) {
+                target.setEndpoints(unitEndpoints);
+            }
+        }
     }
 
     /**
@@ -168,10 +206,11 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
                 int priority = cellRoute.getPriority(variable, localFirst ? localCell : null);
 
                 // Get the failover threshold for the cell using the provided function.
-                Integer threshold = failoverThresholdFunc.apply(cell.getCode());
+                Integer threshold = !localFirst ? 0 : failoverThresholdFunc.apply(cell.getCode());
+                threshold = threshold == null ? 0 : threshold;
 
                 // Create a Candidate object and add it to the list of candidates.
-                Candidate candidate = new Candidate(cellRoute, instance, weight, priority, threshold == null ? 0 : threshold);
+                Candidate candidate = new Candidate(cellRoute, instance, weight, priority, threshold);
                 candidates.add(candidate);
 
                 // Update the preferred candidate if the current cell has a higher priority.
