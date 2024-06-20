@@ -1,1 +1,4 @@
+com.jd.live.agent.plugin.router.rocketmq.v5.definition.DefaultLitePullConsumerDefinition
+com.jd.live.agent.plugin.router.rocketmq.v5.definition.DefaultMQPullConsumerDefinition
+com.jd.live.agent.plugin.router.rocketmq.v5.definition.DefaultMQPushConsumerDefinition
 com.jd.live.agent.plugin.router.rocketmq.v5.definition.PullAPIWrapperDefinition

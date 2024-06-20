@@ -47,16 +47,29 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
             @Override
             public void filterMessage(FilterMessageContext filterMessageContext) {
                 List<MessageExt> messages = filterMessageContext.getMsgList();
-                List<MessageExt> result = new ArrayList<>(messages.size());
-                for (MessageExt message : messages) {
+                int size = messages.size();
+                if (size == 0) {
+                    return;
+                }
+
+                int writeIndex = 0;
+                for (int readIndex = 0; readIndex < size; readIndex++) {
+                    MessageExt message = messages.get(readIndex);
                     if (isAllowLive(message) && isAllowLane(message)) {
-                        result.add(message);
+                        if (writeIndex != readIndex) {
+                            messages.set(writeIndex, message);
+                        }
+                        writeIndex++;
                     }
                 }
-                filterMessageContext.setMsgList(result);
 
+                // Remove the remaining elements if any
+                if (writeIndex < size) {
+                    messages.subList(writeIndex, size).clear();
+                }
             }
         });
+        arguments[0] = result;
     }
 
     /**

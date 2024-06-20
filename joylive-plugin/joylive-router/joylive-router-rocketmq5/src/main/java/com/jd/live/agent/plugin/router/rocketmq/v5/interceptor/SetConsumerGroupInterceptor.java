@@ -16,21 +16,29 @@
 package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
-import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
-public class ConstructorInterceptor extends AbstractMQConsumerInterceptor {
+public class SetConsumerGroupInterceptor extends InterceptorAdaptor {
 
-    public ConstructorInterceptor(InvocationContext context, boolean liveEnabled, boolean laneEnabled) {
-        super(context, liveEnabled, laneEnabled);
+    private final Application application;
+
+    private final boolean liveEnabled;
+
+    private final boolean laneEnabled;
+
+    public SetConsumerGroupInterceptor(Application application, boolean liveEnabled, boolean laneEnabled) {
+        this.application = application;
+        this.liveEnabled = liveEnabled;
+        this.laneEnabled = laneEnabled;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        Location location = context.getApplication().getLocation();
-        String consumerGroup = (String) arguments[1];
+        Location location = application.getLocation();
+        String consumerGroup = (String) arguments[0];
         String unit = location.getUnit();
         String lane = location.getLane();
         if (liveEnabled && unit != null && !unit.isEmpty()) {
@@ -39,6 +47,7 @@ public class ConstructorInterceptor extends AbstractMQConsumerInterceptor {
         if (laneEnabled && lane != null && !lane.isEmpty()) {
             consumerGroup = consumerGroup + "_lane_" + lane;
         }
-        arguments[1] = consumerGroup;
+        arguments[0] = consumerGroup;
     }
+
 }
