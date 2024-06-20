@@ -196,6 +196,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-router-rocketmq4</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-transmission-thread</artifactId>
                 <version>${revision}</version>
             </dependency>
