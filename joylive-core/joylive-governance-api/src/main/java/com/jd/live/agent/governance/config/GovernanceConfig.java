@@ -93,11 +93,14 @@ public class GovernanceConfig {
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();
 
+    @Config("lane")
+    private LaneConfig laneConfig = new LaneConfig();
+
     @Config("service")
     private ServiceConfig serviceConfig = new ServiceConfig();
 
-    @Config("lane")
-    private LaneConfig laneConfig = new LaneConfig();
+    @Config("mq")
+    private MqConfig mqConfig = new MqConfig();
 
     @Config("registry")
     private RegistryConfig registryConfig = new RegistryConfig();

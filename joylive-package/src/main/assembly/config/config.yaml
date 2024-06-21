@@ -116,11 +116,13 @@ agent:
     counter:
       enabled: true
   governance:
+    initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
     service:
       warmups: ${CONFIG_WARMUP_SERVICES:}
       excludes:
         - org.apache.dubbo.metadata.MetadataService
-    initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
+    mq:
+      group: ${group}${'_unit_'unit}${'_lane_'lane}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
       phevos:

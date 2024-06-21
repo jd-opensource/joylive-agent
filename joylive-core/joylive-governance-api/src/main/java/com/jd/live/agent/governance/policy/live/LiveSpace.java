@@ -78,6 +78,14 @@ public class LiveSpace {
         return spec == null ? null : spec.getCenter();
     }
 
+    public boolean isCenter(String code) {
+        if (code == null) {
+            return false;
+        }
+        Unit center = getCenter();
+        return code.equals(center == null ? null : center.getCode());
+    }
+
     public LiveDomain getDomain(String host) {
         return spec == null ? null : spec.getDomain(host);
     }

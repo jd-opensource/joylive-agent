@@ -54,6 +54,10 @@ public class UnitRoute {
 
     @Getter
     @Setter
+    private String failoverUnit;
+
+    @Getter
+    @Setter
     private transient Unit unit;
 
     private final transient Cache<String, CellRoute> cellRouteCache = new MapCache<>(new ListBuilder<>(() -> cells, CellRoute::getCode));

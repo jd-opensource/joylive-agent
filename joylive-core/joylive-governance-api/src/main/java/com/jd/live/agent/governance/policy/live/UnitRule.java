@@ -125,6 +125,11 @@ public class UnitRule {
         return unitRoutes == null ? 0 : unitRoutes.size();
     }
 
+    public boolean isFailover(String unit) {
+        UnitRoute localRoute = getUnitRoute(unit);
+        return localRoute == null || localRoute.getFailoverUnit() != null && !localRoute.getFailoverUnit().isEmpty();
+    }
+
     public void cache() {
         getUnitRoute("");
         if (unitRoutes != null) {

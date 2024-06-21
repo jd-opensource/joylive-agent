@@ -27,38 +27,37 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetchInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetcherInterceptor;
 
 @Injectable
-@Extension(value = "FetchDefinition_v3")
+@Extension(value = "FetcherDefinition_v3")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, relation = ConditionalRelation.OR, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
-@ConditionalOnClass(FetchDefinition.TYPE_FETCH)
-public class FetchDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(FetcherDefinition.TYPE_FETCHER)
+public class FetcherDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FETCH = "org.apache.kafka.clients.consumer.internals.Fetch";
+    protected static final String TYPE_FETCHER = "org.apache.kafka.clients.consumer.internals.Fetcher";
 
-    private static final String METHOD_FOR_PARTITION = "forPartition";
+    private static final String METHOD_FETCH_RECORDS = "fetchRecords";
 
-    private static final String[] ARGUMENT_FOR_PARTITION = new String[]{
-            "org.apache.kafka.common.TopicPartition",
-            "java.util.List",
-            "boolean"
+    private static final String[] ARGUMENT_FETCH_RECORDS = new String[]{
+            "org.apache.kafka.clients.consumer.internals.Fetcher.CompletedFetch",
+            "int"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FetchDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FETCH);
+    public FetcherDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_FETCHER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FOR_PARTITION)
-                                .and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
-                        () -> new FetchInterceptor(context)
+                        MatcherBuilder.named(METHOD_FETCH_RECORDS)
+                                .and(MatcherBuilder.arguments(ARGUMENT_FETCH_RECORDS)),
+                        () -> new FetcherInterceptor(context)
                 )
         };
     }

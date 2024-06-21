@@ -38,29 +38,29 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
-        filter(records, this::isAllow);
+        filter(records, message -> isAllow(message) == MessageAction.CONSUME);
     }
 
     /**
      * Determines whether the message is allowed based on live and lane checks.
      *
-     * @param message the kafka message to check.
-     * @return {@code true} if the lane checks allow the message; {@code false} otherwise.
+     * @param message the Kafka message to check.
+     * @return {@code MessageAction.CONSUME} if both live and lane checks allow the message;
+     *         otherwise returns the result of the live check.
      */
-    private boolean isAllow(ConsumerRecord<?, ?> message) {
-        return isAllowLive(message) && isAllowLane(message);
+    private MessageAction isAllow(ConsumerRecord<?, ?> message) {
+        MessageAction result = isAllowLive(message);
+        return result == MessageAction.CONSUME ? isAllowLane(message) : result;
     }
 
     /**
      * Determines whether the message is allowed based on lane checks.
      *
-     * @param message the kafka message to check.
-     * @return {@code true} if the lane checks allow the message; {@code false} otherwise.
+     * @param message the Kafka message to check.
+     * @return {@code MessageAction.CONSUME} if the lane checks allow the message;
+     *         {@code MessageAction.DISCARD} otherwise.
      */
-    private boolean isAllowLane(ConsumerRecord<?, ?> message) {
-        if (!context.isLaneEnabled()) {
-            return true;
-        }
+    private MessageAction isAllowLane(ConsumerRecord<?, ?> message) {
         String laneSpaceId = getHeader(message, Constants.LABEL_LANE_SPACE_ID);
         String lane = getHeader(message, Constants.LABEL_LANE);
         return allowLane(laneSpaceId, lane);
@@ -69,13 +69,11 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
     /**
      * Determines whether the message is allowed based on live checks.
      *
-     * @param message the kafka message to check.
-     * @return {@code true} if the live checks allow the message; {@code false} otherwise.
+     * @param message the Kafka message to check.
+     * @return {@code MessageAction.CONSUME} if the live checks allow the message;
+     *         {@code MessageAction.DISCARD} or {@code MessageAction.REJECT} otherwise.
      */
-    private boolean isAllowLive(ConsumerRecord<?, ?> message) {
-        if (!context.isLiveEnabled()) {
-            return true;
-        }
+    private MessageAction isAllowLive(ConsumerRecord<?, ?> message) {
         String liveSpaceId = getHeader(message, Constants.LABEL_LIVE_SPACE_ID);
         String ruleId = getHeader(message, Constants.LABEL_RULE_ID);
         String uid = getHeader(message, Constants.LABEL_VARIABLE);

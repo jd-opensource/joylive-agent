@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.instance.Endpoint;
@@ -63,9 +64,17 @@ public interface InvocationContext {
      */
     Application getApplication();
 
+    default Location getLocation() {
+        return getApplication().getLocation();
+    }
+
     boolean isLiveEnabled();
 
     boolean isLaneEnabled();
+
+    default boolean isGovernReady() {
+        return getApplication().getStatus() == AppStatus.READY;
+    }
 
     /**
      * Retrieves the governance configuration associated with this invocation context.

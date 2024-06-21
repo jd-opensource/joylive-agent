@@ -48,7 +48,7 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
 
             @Override
             public void filterMessage(FilterMessageContext filterContext) {
-                filter(filterContext.getMsgList(), RegisterFilterInterceptor.this::isAllow);
+                filter(filterContext.getMsgList(), message -> isAllow(message) == MessageAction.CONSUME);
             }
         });
         arguments[0] = result;
@@ -57,23 +57,23 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
     /**
      * Determines whether the message is allowed based on live and lane checks.
      *
-     * @param message the kafka message to check.
-     * @return {@code true} if the lane checks allow the message; {@code false} otherwise.
+     * @param message the Kafka message to check.
+     * @return {@code MessageAction.CONSUME} if both live and lane checks allow the message;
+     *         otherwise returns the result of the live check.
      */
-    private boolean isAllow(MessageExt message) {
-        return isAllowLive(message) && isAllowLane(message);
+    private MessageAction isAllow(MessageExt message) {
+        MessageAction result = isAllowLive(message);
+        return result == MessageAction.CONSUME ? isAllowLane(message) : result;
     }
 
     /**
      * Determines whether the message is allowed based on lane checks.
      *
-     * @param message the RocketMQ message to check.
-     * @return {@code true} if the lane checks allow the message; {@code false} otherwise.
+     * @param message the Kafka message to check.
+     * @return {@code MessageAction.CONSUME} if the lane checks allow the message;
+     *         {@code MessageAction.DISCARD} otherwise.
      */
-    private boolean isAllowLane(MessageExt message) {
-        if (!context.isLaneEnabled()) {
-            return true;
-        }
+    private MessageAction isAllowLane(MessageExt message) {
         String laneSpaceId = message.getUserProperty(Constants.LABEL_LANE_SPACE_ID);
         String lane = message.getUserProperty(Constants.LABEL_LANE);
         return allowLane(laneSpaceId, lane);
@@ -82,13 +82,11 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
     /**
      * Determines whether the message is allowed based on live checks.
      *
-     * @param message the RocketMQ message to check.
-     * @return {@code true} if the live checks allow the message; {@code false} otherwise.
+     * @param message the Kafka message to check.
+     * @return {@code MessageAction.CONSUME} if the live checks allow the message;
+     *         {@code MessageAction.DISCARD} or {@code MessageAction.REJECT} otherwise.
      */
-    private boolean isAllowLive(MessageExt message) {
-        if (!context.isLiveEnabled()) {
-            return true;
-        }
+    private MessageAction isAllowLive(MessageExt message) {
         String liveSpaceId = message.getUserProperty(Constants.LABEL_LIVE_SPACE_ID);
         String ruleId = message.getUserProperty(Constants.LABEL_RULE_ID);
         String uid = message.getUserProperty(Constants.LABEL_VARIABLE);

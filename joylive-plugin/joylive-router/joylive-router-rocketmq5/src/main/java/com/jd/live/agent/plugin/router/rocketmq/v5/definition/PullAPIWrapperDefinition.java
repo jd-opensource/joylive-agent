@@ -27,6 +27,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.PullInterceptor;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.RegisterFilterInterceptor;
 
 @Injectable
@@ -50,6 +51,24 @@ public class PullAPIWrapperDefinition extends PluginDefinitionAdapter {
             "java.util.ArrayList"
     };
 
+    private static final String METHOD_PULL_KERNEL_IMPL = "pullKernelImpl";
+
+    private static final String[] ARGUMENT_PULL_KERNEL_IMPL = new String[]{
+            "org.apache.rocketmq.common.message.MessageQueue",
+            "java.lang.String",
+            "java.lang.String",
+            "long",
+            "long",
+            "int",
+            "int",
+            "int",
+            "long",
+            "long",
+            "long",
+            "org.apache.rocketmq.client.impl.CommunicationMode",
+            "org.apache.rocketmq.client.consumer.PullCallback"
+    };
+
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
@@ -60,6 +79,11 @@ public class PullAPIWrapperDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_REGISTER_FILTER_MESSAGE_HOOK).
                                 and(MatcherBuilder.arguments(ARGUMENT_REGISTER_FILTER_MESSAGE_HOOK)),
                         () -> new RegisterFilterInterceptor(context)
+                ),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_PULL_KERNEL_IMPL).
+                                and(MatcherBuilder.arguments(ARGUMENT_PULL_KERNEL_IMPL)),
+                        () -> new PullInterceptor(context)
                 )
         };
     }

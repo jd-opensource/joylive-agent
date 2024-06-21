@@ -15,13 +15,19 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.MqConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.policy.live.Unit;
+import com.jd.live.agent.governance.policy.live.UnitRoute;
+import com.jd.live.agent.governance.policy.live.UnitRule;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * AbstractMQConsumerInterceptor
@@ -40,34 +46,44 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
      * @param liveSpaceId the ID of the live space to check against. Can be null or empty.
      * @param ruleId the ID of the rule to check against. Can be null or empty.
      * @param variable the variable to check against the rule. Can be null or empty.
-     * @return {@code true} if the operation is allowed; {@code false} otherwise.
+     * @return {@code MessageAction.CONSUME} if the operation is allowed;
+     *         {@code MessageAction.DISCARD} if the operation is not allowed;
+     *         {@code MessageAction.REJECT} if the operation is explicitly rejected.
      */
-    protected boolean allowLive(String liveSpaceId, String ruleId, String variable) {
-        Location location = context.getApplication().getLocation();
-        String currentLiveSpaceId = location.getLiveSpaceId();
-        if (liveSpaceId == null || liveSpaceId.isEmpty()) {
-            return currentLiveSpaceId == null || currentLiveSpaceId.isEmpty();
-        } else if (!liveSpaceId.equals(currentLiveSpaceId)) {
-            return false;
+    protected MessageAction allowLive(String liveSpaceId, String ruleId, String variable) {
+        if (!context.isLiveEnabled()) {
+            return MessageAction.CONSUME;
+        } else if (liveSpaceId == null || liveSpaceId.isEmpty()) {
+            return MessageAction.CONSUME;
+        } else if (!liveSpaceId.equals(context.getLocation().getLiveSpaceId())) {
+            return MessageAction.DISCARD;
+        } else {
+            GovernancePolicy policy = context.getPolicySupplier().getPolicy();
+            LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(liveSpaceId);
+            Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
+            UnitRule rule = liveSpace == null ? null : liveSpace.getUnitRule(ruleId);
+            if (liveSpace == null) {
+                return MessageAction.CONSUME;
+            } else if (local == null) {
+                return MessageAction.DISCARD;
+            } else if (rule == null) {
+                return MessageAction.DISCARD;
+            } else if (!local.getAccessMode().isWriteable()) {
+                // TODO REJECT
+                return rule.isFailover(local.getCode()) ? MessageAction.DISCARD : MessageAction.REJECT;
+            } else {
+                UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
+                UnitRoute targetRoute = rule.getUnitRoute(variable, func);
+                Unit targetUnit = targetRoute == null ? null : targetRoute.getUnit();
+                if (targetUnit == null) {
+                    return MessageAction.DISCARD;
+                } else if (targetUnit == local) {
+                    return MessageAction.CONSUME;
+                } else {
+                    return local.getCode().equals(targetRoute.getFailoverUnit()) ? MessageAction.CONSUME : MessageAction.DISCARD;
+                }
+            }
         }
-        GovernancePolicy policy = context.getPolicySupplier().getPolicy();
-        LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(liveSpaceId);
-        UnitRule rule = liveSpace == null ? null : liveSpace.getUnitRule(ruleId);
-        if (rule == null) {
-            return true;
-        }
-        if (variable == null || variable.isEmpty()) {
-            Unit center = liveSpace.getCenter();
-            return rule.getVariableMissingAction() == VariableMissingAction.CENTER
-                    && center != null
-                    && center.getCode().equals(location.getUnit());
-        }
-        UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
-        UnitRoute route = rule.getUnitRoute(variable, func);
-        Unit routeUnit = route == null ? null : route.getUnit();
-        return routeUnit != null
-                && routeUnit.getCode().equals(location.getUnit())
-                && routeUnit.getAccessMode().isWriteable();
     }
 
     /**
@@ -75,21 +91,13 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
      *
      * @param laneSpaceId the ID of the lane space to check against. Can be null or empty.
      * @param laneId the ID of the lane to check against. Can be null or empty.
-     * @return {@code true} if the current lane space and lane match the provided IDs; {@code false} otherwise.
+     * @return {@code MessageAction.CONSUME} if the current lane space and lane match the provided IDs;
+     *         {@code MessageAction.DISCARD} otherwise.
      */
-    protected boolean allowLane(String laneSpaceId, String laneId) {
-        Location location = context.getApplication().getLocation();
-        String currentLaneSpaceId = location.getLaneSpaceId();
-        String currentLane = location.getLane();
-        if (laneSpaceId == null || laneSpaceId.isEmpty()) {
-            return currentLaneSpaceId == null || currentLaneSpaceId.isEmpty();
-        } else if (!laneSpaceId.equals(currentLaneSpaceId)) {
-            return false;
-        } else if (laneId == null || laneId.isEmpty()) {
-            return currentLane == null || currentLane.isEmpty();
-        } else {
-            return laneId.equals(currentLane);
-        }
+    protected MessageAction allowLane(String laneSpaceId, String laneId) {
+        return context.getLocation().inLane(laneSpaceId, laneId)
+                ? MessageAction.CONSUME
+                : MessageAction.DISCARD;
     }
 
     /**
@@ -99,18 +107,40 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
      * @return the constructed consumer group name with appended unit and lane information if applicable.
      */
     protected String getConsumerGroup(String group) {
-        Application application = context.getApplication();
-        Location location = application.getLocation();
-        String unit = location.getUnit();
-        String lane = location.getLane();
+        Location location = context.getLocation();
         group = group == null ? "" : group;
-        if (context.isLiveEnabled() && unit != null && !unit.isEmpty() && !group.contains("_unit_")) {
-            group = group + "_unit_" + unit;
+        Map<String, Object> map = new HashMap<>(3);
+        map.put("group", group);
+        if (context.isLiveEnabled()) {
+            map.put("unit", location.getUnit());
         }
-        if (context.isLaneEnabled() && lane != null && !lane.isEmpty() && !group.contains("_lane_")) {
-            group = group + "_lane_" + lane;
+        if (context.isLaneEnabled()) {
+            map.put("lane", location.getLane());
         }
-        return group;
+        MqConfig config = context.getGovernanceConfig().getMqConfig();
+        return config.getGroupTemplate().evaluate(map);
     }
+
+
+    /**
+     * Enum representing possible actions to take on a message.
+     */
+    protected enum MessageAction {
+        /**
+         * Consume the message.
+         */
+        CONSUME,
+
+        /**
+         * Discard the message.
+         */
+        DISCARD,
+
+        /**
+         * Reject the message.
+         */
+        REJECT
+    }
+
 
 }

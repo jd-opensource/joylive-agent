@@ -128,15 +128,44 @@ public class Template implements Evaluator {
 
         private final String expression;
 
+        private String prefix;
+
+        private String suffix;
+
         VariableSection(String expression, String variable) {
             this.expression = expression;
+            if (!variable.isEmpty() && variable.charAt(0) == '\'') {
+                int pos = variable.indexOf('\'', 1);
+                if (pos > 0) {
+                    prefix = variable.substring(1, pos);
+                    variable = variable.substring(pos + 1);
+                }
+            }
+            if (!variable.isEmpty() && variable.charAt(variable.length() - 1) == '\'') {
+                int pos = variable.lastIndexOf('\'', variable.length() - 2);
+                if (pos >= 0) {
+                    suffix = variable.substring(pos + 1, variable.length() - 1);
+                    variable = variable.substring(0, pos);
+                }
+            }
             this.getter = new ValuePath(variable);
         }
 
         @Override
         public String evaluate(Map<String, Object> context) {
-            Object result = getter.get(context);
-            return result == null ? expression : result.toString();
+            Object object = getter.get(context);
+            String result = object == null ? null : object.toString();
+            if (result == null || result.isEmpty()) {
+                return "";
+            } else if (prefix == null && suffix == null) {
+                return result;
+            } else if (prefix != null && suffix != null) {
+                return prefix + result + suffix;
+            } else if (prefix != null) {
+                return prefix + result;
+            } else {
+                return result + suffix;
+            }
         }
     }
 

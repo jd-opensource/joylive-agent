@@ -63,5 +63,36 @@ public class Location {
     // The IP address of the host machine.
     private String ip;
 
+    public boolean inLiveSpace(String spaceId) {
+        if (spaceId == null || spaceId.isEmpty()) {
+            return liveSpaceId == null || liveSpaceId.isEmpty();
+        } else {
+            return spaceId.equals(liveSpaceId);
+        }
+    }
+
+    public boolean inUnit(String unit) {
+        return unit != null && unit.equals(this.unit);
+    }
+
+    public boolean inLaneSpace(String spaceId) {
+        if (spaceId == null || spaceId.isEmpty()) {
+            return laneSpaceId == null || laneSpaceId.isEmpty();
+        } else {
+            return spaceId.equals(laneSpaceId);
+        }
+    }
+
+    public boolean inLane(String lane) {
+        if (lane == null || lane.isEmpty()) {
+            return this.lane == null || this.lane.isEmpty();
+        } else {
+            return lane.equals(this.lane);
+        }
+    }
+
+    public boolean inLane(String spaceId, String lane) {
+        return inLaneSpace(spaceId) && inLane(lane);
+    }
 }
 
