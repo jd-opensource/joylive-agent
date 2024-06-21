@@ -20,6 +20,8 @@ import com.jd.live.agent.core.util.map.MapBuilder;
 
 /**
  * MapTrie
+ *
+ * @param <T> value type
  */
 public class MapTrie<T> extends MapCache<String, T> implements Trie<T> {
 

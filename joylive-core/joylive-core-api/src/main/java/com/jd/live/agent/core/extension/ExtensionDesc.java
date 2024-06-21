@@ -22,6 +22,7 @@ import java.util.Comparator;
  * It includes information such as the class loader, the extensible type, the name of the extension,
  * the provider, the order, whether it is a singleton, and the target object of the extension.
  *
+ * @param <T> the extensible type
  * @author Zhiguo.Chen
  * @since 1.0.0
  */

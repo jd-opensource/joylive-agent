@@ -18,7 +18,9 @@ package com.jd.live.agent.core.extension;
 import lombok.Getter;
 
 /**
- * extension name
+ * Extension name
+ *
+ * @param <T> class type
  */
 @Getter
 public class Name<T> {

@@ -21,6 +21,7 @@ import com.jd.live.agent.core.bytekit.type.TypeDesc;
 /**
  * SuperTypeMatcher
  *
+ * @param <T> types to be matched
  * @since 1.0.0
  */
 public class SuperTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {

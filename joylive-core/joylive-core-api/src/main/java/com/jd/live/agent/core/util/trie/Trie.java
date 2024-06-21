@@ -19,6 +19,8 @@ import com.jd.live.agent.core.util.cache.Cache;
 
 /**
  * Trie
+ *
+ * @param <T> value type
  */
 public interface Trie<T> extends Cache<String, T> {
 

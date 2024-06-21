@@ -21,6 +21,7 @@ import com.jd.live.agent.core.bytekit.type.MethodDesc;
 /**
  * MethodTypeMatcher
  *
+ * @param <T> type of method
  * @since 1.0.0
  */
 public class MethodTypeMatcher<T extends MethodDesc> extends AbstractJunction<T> {

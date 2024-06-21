@@ -22,6 +22,7 @@ import com.jd.live.agent.core.bytekit.type.TypeDesc;
 /**
  * ParameterTypeMatcher
  *
+ * @param <T> type of parameter
  * @since 1.0.0
  */
 public class ParameterTypeMatcher<T extends ParameterDesc> extends AbstractJunction<T> {

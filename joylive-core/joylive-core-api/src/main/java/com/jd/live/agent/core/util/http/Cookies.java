@@ -5,10 +5,11 @@ import java.util.function.BiConsumer;
 /**
  * A utility class for handling cookie.
  * Such as:
- *
- * <li>Set-Cookie: name=value; Path=/; Domain=example.com</li>
- * <li>Set-Cookie2: name=value; Version=1; Max-Age=3600; Path=/; Domain=example.com, name1=value1","; </li>
- * <li>name=value; Version=1; Max-Age=3600; Path=/; Domain=example.com</li>
+ * <ul>
+ *   <li>Set-Cookie: name=value; Path=/; Domain=example.com</li>
+ *   <li>Set-Cookie2: name=value; Version=1; Max-Age=3600; Path=/; Domain=example.com, name1=value1</li>
+ *   <li>name=value; Version=1; Max-Age=3600; Path=/; Domain=example.com</li>
+ * </ul>
  */
 public class Cookies {
 

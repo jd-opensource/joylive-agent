@@ -18,6 +18,7 @@ package com.jd.live.agent.core.bytekit.matcher;
 /**
  * NegatingMatcher
  *
+ * @param <T> type of element to match
  * @since 1.0.0
  */
 public class NegatingMatcher<T> extends AbstractJunction<T> {

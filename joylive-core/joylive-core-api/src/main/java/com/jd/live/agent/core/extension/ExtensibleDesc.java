@@ -25,6 +25,7 @@ import java.util.function.Predicate;
  * It provides methods to manage and access extensions of type T, associated with a specific name.
  * This interface extends the Function interface to allow the use of the apply method for retrieving extensions.
  *
+ * @param <T> the type of extensions
  * @author Zhiguo.Chen
  * @since 1.0.0
  */

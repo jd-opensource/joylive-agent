@@ -26,6 +26,8 @@ import java.lang.reflect.Type;
  * This abstract class is meant to be subclassed in order to capture the generic type information
  * T by creating an anonymous inner class. This technique allows the actual type arguments to be
  * preserved and retrieved at runtime despite Java's type erasure.
+ *
+ * @param <T> the type to capture and pass
  */
 @Getter
 public abstract class TypeReference<T> {

@@ -31,6 +31,7 @@ import java.util.*;
 /**
  * An implementation of Aho Corasick algorithm based on Double Array Trie
  *
+ * @param <V> the type of value
  * @author hankcs
  */
 public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
@@ -441,6 +442,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
 
     /**
      * Processor handles the output when hit a keyword
+     *
+     * @param <V> the value type
      */
     public interface IHit<V> {
         /**
@@ -455,6 +458,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
 
     /**
      * Processor handles the output when hit a keyword, with more detail
+     *
+     * @param <V> the value type
      */
     public interface IHitFull<V> {
         /**
@@ -470,6 +475,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
 
     /**
      * Callback that allows to cancel the search process.
+     *
+     * @param <V> the value type
      */
     public interface IHitCancellable<V> {
         /**

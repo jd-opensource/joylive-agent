@@ -25,6 +25,7 @@ import java.util.Queue;
 /**
  * SubTypeMatcher
  *
+ * @param <T> types to be matched
  * @since 1.0.0
  */
 public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {

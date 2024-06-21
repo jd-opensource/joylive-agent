@@ -20,6 +20,7 @@ import java.util.Collection;
 /**
  * SizeMatcher
  *
+ * @param <T> type of iterable
  * @since 1.0.0
  */
 public class SizeMatcher<T extends Iterable<?>> extends AbstractJunction<T> {
