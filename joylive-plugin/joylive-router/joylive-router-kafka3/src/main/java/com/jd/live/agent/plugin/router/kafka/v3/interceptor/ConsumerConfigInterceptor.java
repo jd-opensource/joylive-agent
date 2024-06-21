@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
@@ -25,6 +27,8 @@ import java.util.Properties;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 
 public class ConsumerConfigInterceptor extends AbstractMQConsumerInterceptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerConfigInterceptor.class);
 
     public ConsumerConfigInterceptor(InvocationContext context) {
         super(context);
@@ -41,11 +45,21 @@ public class ConsumerConfigInterceptor extends AbstractMQConsumerInterceptor {
     }
 
     private void configure(Properties properties) {
-        properties.put(GROUP_ID_CONFIG, getConsumerGroup(properties.getProperty(GROUP_ID_CONFIG)));
+        String group = properties.getProperty(GROUP_ID_CONFIG);
+        String newGroup = getConsumerGroup(group);
+        properties.put(GROUP_ID_CONFIG, newGroup);
+        if (!newGroup.equals(group)) {
+            logger.info("Change consumer group of " + group + " to group " + newGroup);
+        }
     }
 
     private void configure(Map map) {
-        map.put(GROUP_ID_CONFIG, getConsumerGroup((String) map.get(GROUP_ID_CONFIG)));
+        String group = (String) map.get(GROUP_ID_CONFIG);
+        String newGroup = getConsumerGroup(group);
+        map.put(GROUP_ID_CONFIG, newGroup);
+        if (!newGroup.equals(group)) {
+            logger.info("Change consumer group of " + group + " to group " + newGroup);
+        }
     }
 
 }
