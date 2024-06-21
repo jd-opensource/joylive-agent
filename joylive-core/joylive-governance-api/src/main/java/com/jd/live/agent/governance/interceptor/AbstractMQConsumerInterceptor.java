@@ -41,6 +41,18 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
     }
 
     /**
+     * Determines if the current unit is writeable based on the governance policy and location.
+     *
+     * @return {@code true} if the current unit is writeable; {@code false} otherwise.
+     */
+    protected boolean isWriteable() {
+        GovernancePolicy policy = context.getPolicySupplier().getPolicy();
+        LiveSpace liveSpace = policy.getCurrentLiveSpace();
+        Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
+        return local != null && !local.getAccessMode().isWriteable();
+    }
+
+    /**
      * Determines whether an operation is allowed based on the provided liveSpaceId, ruleId, and variable.
      *
      * @param liveSpaceId the ID of the live space to check against. Can be null or empty.
@@ -68,9 +80,6 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
                 return MessageAction.DISCARD;
             } else if (rule == null) {
                 return MessageAction.DISCARD;
-            } else if (!local.getAccessMode().isWriteable()) {
-                // TODO REJECT
-                return rule.isFailover(local.getCode()) ? MessageAction.DISCARD : MessageAction.REJECT;
             } else {
                 UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
                 UnitRoute targetRoute = rule.getUnitRoute(variable, func);

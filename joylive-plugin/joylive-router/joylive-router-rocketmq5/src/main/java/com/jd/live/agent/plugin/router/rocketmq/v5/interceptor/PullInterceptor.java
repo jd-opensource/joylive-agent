@@ -32,7 +32,7 @@ public class PullInterceptor extends AbstractMQConsumerInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (!context.isGovernReady()) {
+        if (!context.isGovernReady() || !isWriteable()) {
             Object[] arguments = ctx.getArguments();
             MethodContext mc = (MethodContext) ctx;
             PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
@@ -40,6 +40,7 @@ public class PullInterceptor extends AbstractMQConsumerInterceptor {
             mc.setResult(result);
             mc.setSkip(true);
         }
-
     }
+
+
 }
