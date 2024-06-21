@@ -29,7 +29,7 @@ public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (!context.isGovernReady() || !isWriteable()) {
+        if (isConsumeDisabled()) {
             MethodContext mc = (MethodContext) ctx;
             mc.setResult(Fetch.empty());
             mc.setSkip(true);

@@ -41,11 +41,14 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Determines if the current unit is writeable based on the governance policy and location.
+Fix     * Determines if message consumption is disabled based on the governance policy and the current unit's access mode.
      *
-     * @return {@code true} if the current unit is writeable; {@code false} otherwise.
+     * @return {@code true} if message consumption is disabled; {@code false} otherwise.
      */
-    protected boolean isWriteable() {
+    protected boolean isConsumeDisabled() {
+        if (!context.isGovernReady()) {
+            return true;
+        }
         GovernancePolicy policy = context.getPolicySupplier().getPolicy();
         LiveSpace liveSpace = policy.getCurrentLiveSpace();
         Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
