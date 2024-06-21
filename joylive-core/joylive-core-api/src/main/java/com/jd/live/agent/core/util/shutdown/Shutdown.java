@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * at any time before the shutdown process begins. Once the shutdown process starts, no new hooks
  * can be added.
  * </p>
- * </p>
  */
 public class Shutdown {
 

@@ -15,6 +15,17 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+    <organization>
+        <name>JoyLive</name>
+        <url>https://github.com/jd-opensource</url>
+    </organization>
+    <inceptionYear>2024</inceptionYear>
+    <scm>
+        <tag>main</tag>
+        <connection>scm:git:https://github.com/jd-opensource/joylive-agent.git</connection>
+        <developerConnection>scm:git:https://github.com/jd-opensource/joylive-agent.git</developerConnection>
+        <url>scm:git:https://github.com/jd-opensource</url>
+    </scm>
 
     <properties>
         <revision>1.0.0-SNAPSHOT</revision>
@@ -36,6 +47,7 @@
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-versions-plugin.version>2.7</maven-versions-plugin.version>
         <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
+        <maven-scm-api.version>2.1.0</maven-scm-api.version>
         <maven-flatten-plugin.version>1.5.0</maven-flatten-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
@@ -184,10 +196,24 @@
                     <artifactId>maven-release-plugin</artifactId>
                     <version>${maven-release-plugin.version}</version>
                     <configuration>
-                        <mavenExecutorId>forked-path</mavenExecutorId>
                         <useReleaseProfile>false</useReleaseProfile>
-                        <arguments>-Psonatype-oss-release</arguments>
+                        <arguments>-P restricted-release,sonatype-oss-release,full</arguments>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <allowTimestampedSnapshots>false</allowTimestampedSnapshots>
+                        <tagNameFormat>${project.artifactId}-@{project.version}</tagNameFormat>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.scm</groupId>
+                            <artifactId>maven-scm-api</artifactId>
+                            <version>${maven-scm-api.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.scm</groupId>
+                            <artifactId>maven-scm-provider-gitexe</artifactId>
+                            <version>${maven-scm-api.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -370,10 +396,26 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -390,10 +432,18 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>versions-maven-plugin</artifactId>
+                        <configuration>
+                            <generateBackupPoms>false</generateBackupPoms>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-release-plugin</artifactId>
+                        <configuration>
+                            <mavenExecutorId>forked-path</mavenExecutorId>
+                            <useReleaseProfile>false</useReleaseProfile>
+                            <arguments>-Psonatype</arguments>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -401,12 +451,12 @@
                 <snapshotRepository>
                     <id>sonatype</id>
                     <name>OSS Snapshots Repository</name>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
                 </snapshotRepository>
                 <repository>
                     <id>sonatype</id>
                     <name>OSS Staging Repository</name>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
                 </repository>
             </distributionManagement>
         </profile>

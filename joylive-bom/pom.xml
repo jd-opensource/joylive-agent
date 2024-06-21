@@ -7,6 +7,26 @@
     <artifactId>joylive-bom</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
+    <description>The parent pom of JoyLive agent.</description>
+    <url>https://github.com/jd-opensource/joylive-agent</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <organization>
+        <name>JoyLive</name>
+        <url>https://github.com/jd-opensource</url>
+    </organization>
+    <inceptionYear>2024</inceptionYear>
+    <scm>
+        <tag>main</tag>
+        <connection>scm:git:https://github.com/jd-opensource/joylive-agent.git</connection>
+        <developerConnection>scm:git:https://github.com/jd-opensource/joylive-agent.git</developerConnection>
+        <url>scm:git:https://github.com/jd-opensource</url>
+    </scm>
 
     <properties>
         <revision>1.0.0-SNAPSHOT</revision>
