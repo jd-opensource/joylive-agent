@@ -30,6 +30,11 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.PullInterceptor;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.RegisterFilterInterceptor;
 
+/**
+ * PullAPIWrapperDefinition
+ *
+ * @since 1.0.0
+ */
 @Injectable
 @Extension(value = "PullAPIWrapperDefinition_v5")
 @ConditionalOnProperty(name = {

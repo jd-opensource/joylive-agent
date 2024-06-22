@@ -29,6 +29,11 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetcherInterceptor;
 
+/**
+ * FetcherDefinition
+ *
+ * @since 1.0.0
+ */
 @Injectable
 @Extension(value = "FetcherDefinition_v3")
 @ConditionalOnProperty(name = {

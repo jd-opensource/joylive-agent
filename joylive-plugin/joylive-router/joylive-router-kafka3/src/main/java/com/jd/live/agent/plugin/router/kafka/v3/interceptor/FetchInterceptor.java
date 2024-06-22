@@ -20,6 +20,7 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 
 import java.util.Arrays;
@@ -27,12 +28,24 @@ import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.filter;
 
+/**
+ * FetchInterceptor
+ *
+ * @since 1.0.0
+ */
 public class FetchInterceptor extends AbstractMQConsumerInterceptor {
 
     public FetchInterceptor(InvocationContext context) {
         super(context);
     }
 
+    /**
+     * Enhanced logic before method execution. This method is called before the
+     * target method is executed.
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.apache.kafka.clients.consumer.internals.Fetch#forPartition(TopicPartition, List, boolean)
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
@@ -46,7 +59,7 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
      *
      * @param message the Kafka message to check.
      * @return {@code MessageAction.CONSUME} if both live and lane checks allow the message;
-     *         otherwise returns the result of the live check.
+     * otherwise returns the result of the live check.
      */
     private MessageAction isAllow(ConsumerRecord<?, ?> message) {
         MessageAction result = isAllowLive(message);
@@ -58,7 +71,7 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
      *
      * @param message the Kafka message to check.
      * @return {@code MessageAction.CONSUME} if the lane checks allow the message;
-     *         {@code MessageAction.DISCARD} otherwise.
+     * {@code MessageAction.DISCARD} otherwise.
      */
     private MessageAction isAllowLane(ConsumerRecord<?, ?> message) {
         String laneSpaceId = getHeader(message, Constants.LABEL_LANE_SPACE_ID);
@@ -71,7 +84,7 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
      *
      * @param message the Kafka message to check.
      * @return {@code MessageAction.CONSUME} if the live checks allow the message;
-     *         {@code MessageAction.DISCARD} or {@code MessageAction.REJECT} otherwise.
+     * {@code MessageAction.DISCARD} or {@code MessageAction.REJECT} otherwise.
      */
     private MessageAction isAllowLive(ConsumerRecord<?, ?> message) {
         String liveSpaceId = getHeader(message, Constants.LABEL_LIVE_SPACE_ID);

@@ -26,6 +26,11 @@ import java.util.Properties;
 
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 
+/**
+ * ConsumerConfigInterceptor
+ *
+ * @since 1.0.0
+ */
 public class ConsumerConfigInterceptor extends AbstractMQConsumerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(ConsumerConfigInterceptor.class);
@@ -34,6 +39,14 @@ public class ConsumerConfigInterceptor extends AbstractMQConsumerInterceptor {
         super(context);
     }
 
+    /**
+     * Enhanced logic before method execution. This method is called before the
+     * target method is executed.
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.apache.kafka.clients.consumer.ConsumerConfig#ConsumerConfig(Properties)
+     * @see org.apache.kafka.clients.consumer.ConsumerConfig#ConsumerConfig(Map)
+     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();

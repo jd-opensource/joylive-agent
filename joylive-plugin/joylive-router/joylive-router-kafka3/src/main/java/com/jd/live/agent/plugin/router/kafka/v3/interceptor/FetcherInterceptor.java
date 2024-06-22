@@ -20,13 +20,26 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.kafka.clients.consumer.internals.Fetch;
+import org.apache.kafka.clients.consumer.internals.Fetcher;
 
+/**
+ * FetcherInterceptor
+ *
+ * @since 1.0.0
+ */
 public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
 
     public FetcherInterceptor(InvocationContext context) {
         super(context);
     }
 
+    /**
+     * Enhanced logic before method execution. This method is called before the
+     * target method is executed.
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.apache.kafka.clients.consumer.internals.Fetcher #fetchRecords(Fetcher.CompletedFetch, int)
+     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (isConsumeDisabled()) {

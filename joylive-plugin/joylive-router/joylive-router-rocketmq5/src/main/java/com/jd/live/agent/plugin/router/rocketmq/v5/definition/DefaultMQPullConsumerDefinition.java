@@ -28,6 +28,11 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SetConsumerGroupInterceptor;
 
+/**
+ * DefaultMQPullConsumerDefinition
+ *
+ * @since 1.0.0
+ */
 @Injectable
 @Extension(value = "DefaultMQPullConsumerDefinition_v5")
 @ConditionalOnProperty(name = {

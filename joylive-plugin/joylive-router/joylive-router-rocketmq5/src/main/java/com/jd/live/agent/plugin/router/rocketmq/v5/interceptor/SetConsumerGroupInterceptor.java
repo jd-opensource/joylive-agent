@@ -21,6 +21,11 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
+/**
+ * SetConsumerGroupInterceptor
+ *
+ * @since 1.0.0
+ */
 public class SetConsumerGroupInterceptor extends AbstractMQConsumerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(SetConsumerGroupInterceptor.class);
@@ -29,6 +34,14 @@ public class SetConsumerGroupInterceptor extends AbstractMQConsumerInterceptor {
         super(context);
     }
 
+    /**
+     * Enhanced logic before method execution. This method is called before the
+     * target method is executed.
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.apache.rocketmq.client.consumer.DefaultLitePullConsumer#setConsumerGroup(String)
+     * @see org.apache.rocketmq.client.consumer.DefaultMQPullConsumer#setConsumerGroup(String)
+     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();

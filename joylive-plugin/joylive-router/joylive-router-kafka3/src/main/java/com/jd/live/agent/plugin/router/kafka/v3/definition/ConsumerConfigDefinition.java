@@ -28,6 +28,11 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.kafka.v3.interceptor.ConsumerConfigInterceptor;
 
+/**
+ * ConsumerConfigDefinition
+ *
+ * @since 1.0.0
+ */
 @Injectable
 @Extension(value = "ConsumerConfigDefinition_v3")
 @ConditionalOnProperty(name = {
