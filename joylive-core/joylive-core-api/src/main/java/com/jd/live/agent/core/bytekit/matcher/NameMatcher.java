@@ -20,7 +20,7 @@ import com.jd.live.agent.core.bytekit.type.NamedElement;
 /**
  * NameMatcher
  *
- * @param <T> type of the matched element
+ * @param <T> Match target type
  * @since 1.0.0
  */
 public class NameMatcher<T extends NamedElement> extends AbstractJunction<T> {

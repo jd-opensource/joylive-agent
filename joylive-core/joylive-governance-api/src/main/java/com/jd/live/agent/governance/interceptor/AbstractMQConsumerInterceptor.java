@@ -31,6 +31,8 @@ import java.util.Map;
 
 /**
  * AbstractMQConsumerInterceptor
+ *
+ * @since 1.0.0
  */
 public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
 
@@ -133,7 +135,6 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
         return config.getGroupTemplate().evaluate(map);
     }
 
-
     /**
      * Enum representing possible actions to take on a message.
      */
@@ -153,6 +154,5 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
          */
         REJECT
     }
-
 
 }

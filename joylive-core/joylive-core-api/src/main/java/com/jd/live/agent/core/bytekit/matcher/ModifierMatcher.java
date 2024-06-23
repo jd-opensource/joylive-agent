@@ -20,6 +20,7 @@ import com.jd.live.agent.core.bytekit.type.ModifierDesc;
 /**
  * ModifierMatcher
  *
+ * @param <T> Match target type
  * @since 1.0.0
  */
 public class ModifierMatcher<T extends ModifierDesc> extends AbstractJunction<T> {

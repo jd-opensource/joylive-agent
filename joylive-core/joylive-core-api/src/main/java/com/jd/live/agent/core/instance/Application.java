@@ -40,42 +40,62 @@ import java.util.function.BiConsumer;
 @Configurable(prefix = "app")
 public class Application {
 
-    // Constant for the application name key.
+    /**
+     * Constant for the application name key.
+     */
     public static final String KEY_APPLICATION_NAME = "APPLICATION_NAME";
 
-    // Constant for the application instance configuration key.
+    /**
+     * Constant for the application instance configuration key.
+     */
     public static final String CONFIG_APP_INSTANCE = "app.instance";
 
-    // Constant for the application component key.
+    /**
+     * Constant for the application component key.
+     */
     public static final String COMPONENT_APPLICATION = "application";
 
-    // Unique application identifier.
+    /**
+     * Unique application identifier.
+     */
     public static final String APP_ID = UUID.randomUUID().toString();
 
-    // Name of the application.
+    /**
+     * Name of the application.
+     */
     @Setter
     @Config("name")
     private String name;
 
-    // Instance identifier of the application.
+    /**
+     * Instance identifier of the application.
+     */
     private String instance;
 
-    // Associated service of the application.
+    /**
+     * Associated service of the application.
+     */
     @Setter
     @Config("service")
     private AppService service;
 
-    // Location information of the application.
+    /**
+     * Location information of the application.
+     */
     @Setter
     @Config("location")
     private Location location;
 
-    // Metadata associated with the application.
+    /**
+     * Metadata associated with the application.
+     */
     @Setter
     @Config("meta")
     private Map<String, String> meta;
 
-    // Process ID of the application.
+    /**
+     * Process ID of the application.
+     */
     private final int pid;
 
     @Setter
@@ -91,6 +111,12 @@ public class Application {
 
     /**
      * Custom constructor for setting application properties.
+     *
+     * @param name     application name
+     * @param instance application instance
+     * @param service  associated service
+     * @param location location information
+     * @param meta     metadata
      */
     public Application(String name, String instance, AppService service, Location location, Map<String, String> meta) {
         this.name = name;
@@ -104,6 +130,9 @@ public class Application {
 
     /**
      * Retrieves metadata value by key.
+     *
+     * @param key metadata key
+     * @return metadata value
      */
     public String getMeta(String key) {
         return meta == null || key == null ? null : meta.get(key);
@@ -111,6 +140,10 @@ public class Application {
 
     /**
      * Retrieves metadata value by key with a default value.
+     *
+     * @param key          metadata key
+     * @param defaultValue default value
+     * @return metadata value
      */
     public String getMeta(String key, String defaultValue) {
         return meta == null || key == null ? defaultValue : meta.getOrDefault(key, defaultValue);
@@ -118,6 +151,8 @@ public class Application {
 
     /**
      * Applies labels to the application based on its properties.
+     *
+     * @param consumer label consumer
      */
     public void label(BiConsumer<String, String> consumer) {
         if (consumer != null) {
@@ -146,6 +181,10 @@ public class Application {
 
     /**
      * Helper method for applying labels.
+     *
+     * @param consumer label consumer
+     * @param key      label key
+     * @param value    label value
      */
     private void accept(BiConsumer<String, String> consumer, String key, String value) {
         if (consumer != null && key != null && value != null) {
@@ -155,6 +194,8 @@ public class Application {
 
     /**
      * Utility method for retrieving the process ID.
+     *
+     * @return process ID
      */
     private static int pid() {
         String processName = ManagementFactory.getRuntimeMXBean().getName();

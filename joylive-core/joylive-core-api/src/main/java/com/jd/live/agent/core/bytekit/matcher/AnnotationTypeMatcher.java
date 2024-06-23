@@ -22,7 +22,7 @@ import com.jd.live.agent.core.bytekit.type.TypeDesc;
 /**
  * AnnotationTypeMatcher
  *
- * @param <T> type of annotation
+ * @param <T> Match target type
  * @since 1.0.0
  */
 public class AnnotationTypeMatcher<T extends AnnotationDesc> extends AbstractJunction<T> {

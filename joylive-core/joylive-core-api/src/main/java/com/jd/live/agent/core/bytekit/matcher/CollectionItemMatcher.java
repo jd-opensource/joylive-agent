@@ -18,6 +18,7 @@ package com.jd.live.agent.core.bytekit.matcher;
 /**
  * CollectionItemMatcher
  *
+ * @param <T> Match target type
  * @since 1.0.0
  */
 public class CollectionItemMatcher<T> extends AbstractJunction<Iterable<? extends T>> {

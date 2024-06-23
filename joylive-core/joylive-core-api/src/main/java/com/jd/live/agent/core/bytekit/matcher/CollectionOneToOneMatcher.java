@@ -22,6 +22,7 @@ import java.util.List;
 /**
  * CollectionOneToOneMatcher
  *
+ * @param <T> Match target type
  * @since 1.0.0
  */
 public class CollectionOneToOneMatcher<T> extends AbstractJunction<Iterable<? extends T>> {

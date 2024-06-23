@@ -34,22 +34,34 @@ import java.util.Map;
 @Builder
 public class AppService {
 
-    // Name of the service.
+    /**
+     * Name of the service.
+     */
     private String name;
 
-    // Role of the service in terms of gateway functionality.
+    /**
+     * Role of the service in terms of gateway functionality.
+     */
     private GatewayRole gateway = GatewayRole.NONE;
 
-    // Namespace the service belongs to.
+    /**
+     * Namespace the service belongs to.
+     */
     private String namespace;
 
-    // Group the service is part of.
+    /**
+     * Group the service is part of.
+     */
     private String group;
 
-    // Communication protocol used by the service.
+    /**
+     * Communication protocol used by the service.
+     */
     private String protocol;
 
-    // Metadata associated with the service.
+    /**
+     * Metadata associated with the service.
+     */
     private Map<String, String> meta;
 
     /**
@@ -60,6 +72,8 @@ public class AppService {
 
     /**
      * Constructs a new AppService with the specified name.
+     *
+     * @param name The service name.
      */
     public AppService(String name) {
         this.name = name;
@@ -67,6 +81,13 @@ public class AppService {
 
     /**
      * Constructs a new AppService with the specified properties.
+     *
+     * @param name      The service name.
+     * @param gateway   The gateway role.
+     * @param namespace The service namespace.
+     * @param group     The service group.
+     * @param protocol  The service communication protocol.
+     * @param meta      The service metadata.
      */
     public AppService(String name, GatewayRole gateway, String namespace, String group, String protocol, Map<String, String> meta) {
         this.name = name;

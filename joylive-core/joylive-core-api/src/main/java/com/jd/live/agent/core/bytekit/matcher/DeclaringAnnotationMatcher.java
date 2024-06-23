@@ -21,7 +21,7 @@ import com.jd.live.agent.core.bytekit.type.AnnotationSource;
 /**
  * DeclaringAnnotationMatcher
  *
- * @param <T> type of annotation
+ * @param <T> Match target type
  * @since 1.0.0
  */
 public class DeclaringAnnotationMatcher<T extends AnnotationSource> extends AbstractJunction<T> {

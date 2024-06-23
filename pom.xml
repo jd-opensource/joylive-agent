@@ -38,9 +38,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <puppycrawl-tools-checkstyle.version>8.45.1</puppycrawl-tools-checkstyle.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-        <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-        <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
-        <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
+        <maven-javadoc-plugin.version>3.7.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
@@ -49,7 +49,7 @@
         <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
         <maven-scm-api.version>2.1.0</maven-scm-api.version>
         <maven-flatten-plugin.version>1.5.0</maven-flatten-plugin.version>
-        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
         <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
