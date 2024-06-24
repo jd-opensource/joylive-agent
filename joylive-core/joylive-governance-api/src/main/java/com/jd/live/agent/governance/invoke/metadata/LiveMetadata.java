@@ -58,4 +58,10 @@ public class LiveMetadata {
     public String getLiveSpaceId() {
         return liveSpace == null ? null : liveSpace.getId();
     }
+
+    private static final class LiveMetadataBuilderImpl extends LiveMetadataBuilder<LiveMetadata, LiveMetadataBuilderImpl> {
+    }
+
+    public abstract static class LiveMetadataBuilder<C extends LiveMetadata, B extends LiveMetadataBuilder<C, B>> {
+    }
 }

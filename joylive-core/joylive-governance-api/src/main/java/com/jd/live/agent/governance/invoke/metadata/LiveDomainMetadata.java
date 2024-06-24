@@ -49,5 +49,11 @@ public class LiveDomainMetadata extends LiveMetadata {
      */
     private PolicyId policyId;
 
+    private static final class LiveDomainMetadataBuilderImpl extends LiveDomainMetadataBuilder<LiveDomainMetadata, LiveDomainMetadataBuilderImpl> {
+    }
+
+    public abstract static class LiveDomainMetadataBuilder<C extends LiveDomainMetadata, B extends LiveDomainMetadataBuilder<C, B>> extends LiveMetadata.LiveMetadataBuilder<C, B> {
+    }
+
 }
 

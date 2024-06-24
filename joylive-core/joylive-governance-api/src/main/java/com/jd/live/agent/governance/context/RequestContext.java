@@ -186,6 +186,8 @@ public class RequestContext {
 
     /**
      * Determines if the current time has exceeded a specified deadline.
+     *
+     * @return {@code true} if the current time has exceeded the deadline, {@code false} otherwise.
      */
     public static boolean isTimeout() {
         Long deadline = getAttribute(Carrier.ATTRIBUTE_DEADLINE);

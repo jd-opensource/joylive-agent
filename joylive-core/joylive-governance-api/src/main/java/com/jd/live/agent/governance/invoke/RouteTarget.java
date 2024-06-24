@@ -216,6 +216,7 @@ public class RouteTarget {
      * @param predicate The predicate to use for filtering.
      * @param maxSize   The maximum size of the list to return.
      * @param nullable  Whether a null list is acceptable.
+     * @param <T>       The type of the endpoints in the list.
      * @return The count of endpoints that matched the predicate.
      */
     public static <T extends Endpoint> int filter(List<T> endpoints, Predicate<Endpoint> predicate, int maxSize, boolean nullable) {

@@ -154,6 +154,7 @@ public interface InvocationContext {
      * @param invocation    The service invocation object, which may contain metadata about the service and its policies.
      *                      This parameter can be {@code null}.
      * @param defaultPolicy The default cluster policy.
+     * @param <R>           The type of the outbound request.
      * @return A {@link ClusterInvoker} that is best suited to handle the service request based on the defined
      * cluster policy. If no specific policy is found, a default invoker is returned.
      */

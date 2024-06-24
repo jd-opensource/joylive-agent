@@ -116,7 +116,9 @@ public class LiveMetadataParser implements LiveParser {
     }
 
     /**
-     * Parses the variable from the request or context. This method combines the results from `parseVariableByRequest` and `parseVariableByContext` to determine the final variable value.
+     * Parses the variable from the request or context.
+     *
+     * @return The first value associated with the cargo for the specified variable key, or {@code null} if no such value exists.
      */
     protected String parseVariable() {
         Cargo cargo = RequestContext.getCargo(liveConfig.getVariableKey());

@@ -114,6 +114,8 @@ public interface Carrier extends Attributes {
      * @param require The requirement that must be met for a cargo to be added.
      * @param map     A map of potential cargos to add.
      * @param func    A function to transform the map values.
+     * @param <T>     The type of the map values.
+     *  @param <M>    The type of the map extending from {@link Map} with keys as {@link String} and values of type {@code T}.
      */
     default <T, M extends Map<String, T>> void addCargo(CargoRequire require, M map, Function<String, Collection<String>> func) {
         if (require != null && map != null) {

@@ -16,12 +16,6 @@ public interface PolicyIdGen {
     /**
      * Appends a query parameter to a given URL.
      *
-     * <p>
-     * This method takes a base URL and appends a single query parameter to it.
-     * If the URL already contains query parameters, the new parameter is appended with an ampersand ('&').
-     * If it does not, the parameter is appended with a question mark ('?') to start the query string.
-     * </p>
-     *
      * @param url   the base URL to which the query parameter will be appended.
      * @param query the query parameter key.
      * @param value the value associated with the query parameter.

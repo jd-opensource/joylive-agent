@@ -70,11 +70,6 @@ public class RetryException extends LiveException {
 
     /**
      * Exception class to indicate that a retry operation has timed out.
-     * <p>
-     * This exception is thrown when a retryable operation does not complete within
-     * the specified timeout period. The timeout duration is captured and can be
-     * retrieved using the {@link #getTimeout()} method.
-     * </p>
      */
     @Getter
     public static class RetryTimeoutException extends RetryException {

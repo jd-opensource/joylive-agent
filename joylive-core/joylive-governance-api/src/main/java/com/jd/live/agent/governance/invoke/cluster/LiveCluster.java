@@ -74,11 +74,7 @@ public interface LiveCluster<R extends OutboundRequest,
     }
 
     /**
-     * Executes a service request against a live cluster of endpoints. This method orchestrates
-     * the entire invocation process, encapsulating the logic for endpoint selection based on
-     * the provided routing function, executing the request on the chosen endpoints, and
-     * managing the response.
-     * </p>
+     * Executes a service request against a live cluster of endpoints.
      *
      * @param context    The {@link InvocationContext} providing additional information and state
      *                   necessary for the current invocation process. This includes metadata,
@@ -206,10 +202,11 @@ public interface LiveCluster<R extends OutboundRequest,
     }
 
     /**
-     * Creates and returns an exception indicating that cluster is not ready.
+     * Creates and returns an exception indicating that the cluster is not ready.
      *
-     * @param message The unready message.
-     * @return An exception instance indicating that cluster is not ready.
+     * @param message The message explaining why the cluster is not ready.
+     * @param request The request that cannot be processed because the cluster is not ready.
+     * @return An instance of the exception indicating that the cluster is not ready.
      */
     default T createUnReadyException(String message, R request) {
         return null;

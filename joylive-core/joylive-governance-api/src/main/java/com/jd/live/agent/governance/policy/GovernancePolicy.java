@@ -245,6 +245,7 @@ public class GovernancePolicy {
      * Updates services, using the specified policy merger and owner.
      *
      * @param updates The list of services to update the current services with.
+     * @param deletes The list of services to be deleted.
      * @param merger The policy merger to handle the merging logic.
      * @param owner The owner of the services.
      * @return The updated list of services.

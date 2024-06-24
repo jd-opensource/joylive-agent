@@ -202,6 +202,10 @@ public class TrafficEvent {
      */
     private final int requests;
 
+    public static TrafficEventBuilder builder() {
+        return new TrafficEventBuilder();
+    }
+
     /**
      * An enumeration representing the type of component that generates the traffic event.
      */
@@ -245,6 +249,10 @@ public class TrafficEvent {
          * Represents an action to reject the traffic.
          */
         REJECT
+    }
+
+    public static class TrafficEventBuilder {
+
     }
 
 }
