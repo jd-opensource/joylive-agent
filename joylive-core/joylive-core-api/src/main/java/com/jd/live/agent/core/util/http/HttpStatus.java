@@ -496,17 +496,19 @@ public enum HttpStatus {
         this.reasonPhrase = reasonPhrase;
     }
 
-
     /**
-     * Return the integer value of this status code.
+     * Returns the integer value of this status code.
+     *
+     * @return the integer value of this status code.
      */
     public int value() {
         return this.value;
     }
 
     /**
-     * Return the HTTP status series of this status code.
+     * Returns the HTTP status series of this status code.
      *
+     * @return the HTTP status series of this status code.
      * @see HttpStatus.Series
      */
     public Series series() {
@@ -515,6 +517,7 @@ public enum HttpStatus {
 
     /**
      * Return the reason phrase of this status code.
+     * @return Return the reason phrase of this status code.
      */
     public String getReasonPhrase() {
         return this.reasonPhrase;
@@ -525,6 +528,7 @@ public enum HttpStatus {
      * {@link Series#INFORMATIONAL}.
      * <p>This is a shortcut for checking the value of {@link #series()}.
      *
+     * @return true if the status code is in the INFORMATIONAL series, false otherwise.
      * @see #series()
      */
     public boolean is1xxInformational() {
@@ -536,6 +540,7 @@ public enum HttpStatus {
      * {@link Series#SUCCESSFUL}.
      * <p>This is a shortcut for checking the value of {@link #series()}.
      *
+     * @return true if the status code is in the SUCCESSFUL series, false otherwise.
      * @see #series()
      */
     public boolean is2xxSuccessful() {
@@ -547,6 +552,7 @@ public enum HttpStatus {
      * {@link Series#REDIRECTION}.
      * <p>This is a shortcut for checking the value of {@link #series()}.
      *
+     * @return true if the status code is in the REDIRECTION series, false otherwise.
      * @see #series()
      */
     public boolean is3xxRedirection() {
@@ -558,6 +564,7 @@ public enum HttpStatus {
      * {@link Series#CLIENT_ERROR}.
      * <p>This is a shortcut for checking the value of {@link #series()}.
      *
+     * @return true if the status code is in the CLIENT_ERROR series, false otherwise.
      * @see #series()
      */
     public boolean is4xxClientError() {
@@ -569,6 +576,7 @@ public enum HttpStatus {
      * {@link Series#SERVER_ERROR}.
      * <p>This is a shortcut for checking the value of {@link #series()}.
      *
+     * @return true if the status code is in the SERVER_ERROR series, false otherwise.
      * @see #series()
      */
     public boolean is5xxServerError() {
@@ -581,6 +589,7 @@ public enum HttpStatus {
      * {@link Series#SERVER_ERROR}.
      * <p>This is a shortcut for checking the value of {@link #series()}.
      *
+     * @return true if the status code is in the CLIENT_ERROR or SERVER_ERROR series, false otherwise.
      * @see #is4xxClientError()
      * @see #is5xxServerError()
      */
@@ -588,9 +597,6 @@ public enum HttpStatus {
         return (is4xxClientError() || is5xxServerError());
     }
 
-    /**
-     * Return a string representation of this status code.
-     */
     @Override
     public String toString() {
         return this.value + " " + name();
@@ -645,6 +651,7 @@ public enum HttpStatus {
 
         /**
          * Return the integer value of this status series. Ranges from 1 to 5.
+         * @return Return the integer value of this status series. Ranges from 1 to 5.
          */
         public int value() {
             return this.value;

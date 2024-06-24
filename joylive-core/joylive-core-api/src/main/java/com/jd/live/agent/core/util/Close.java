@@ -113,6 +113,7 @@ public class Close {
     /**
      * Attempts to close or clean up the provided resource using the specified {@code closer} action.
      *
+     * @param <T>    the type of the target.
      * @param value  the resource to be closed or cleaned up; if {@code null}, the {@code closer} is not invoked
      * @param closer a {@link Consumer} that accepts the resource and performs the necessary action to close
      *               or clean it up

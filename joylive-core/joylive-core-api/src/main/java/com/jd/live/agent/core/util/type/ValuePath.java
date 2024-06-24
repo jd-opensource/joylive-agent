@@ -190,7 +190,7 @@ public class ValuePath implements ObjectGetter {
      * exception occurs during the parsing of the index (e.g., if the index is not a valid integer), the method
      * returns null to indicate the failure to retrieve an item.
      *
-     * @param target The list from which to retrieve an item. This should be an instance of List<?>.
+     * @param target The list from which to retrieve an item. This should be an instance of List.
      * @param index  The index of the item to retrieve, represented as a String. This index will be parsed into an integer.
      * @return The item at the specified index in the list, or null if the index is invalid or if an exception occurs.
      */

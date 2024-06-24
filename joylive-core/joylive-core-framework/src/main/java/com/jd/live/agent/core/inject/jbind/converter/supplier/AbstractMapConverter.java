@@ -37,8 +37,8 @@ public abstract class AbstractMapConverter implements Converter {
 
     /**
      * Creates an instance of a {@link Map} based on the provided type.
-     *
-     * <p>This method supports the following types:
+     * <p>
+     * This method supports the following types:
      * <ul>
      *     <li>{@link Map}</li>
      *     <li>{@link ConcurrentMap}</li>
@@ -46,8 +46,7 @@ public abstract class AbstractMapConverter implements Converter {
      *     <li>{@link NavigableMap}</li>
      *     <li>{@link ConcurrentNavigableMap}</li>
      * </ul>
-     * If the provided type is not an interface and is a concrete class, it attempts to instantiate it using
-     * reflection.</p>
+     * If the provided type is not an interface and is a concrete class, it attempts to instantiate it using reflection.
      *
      * @param type the class type of the map to create.
      * @return a new instance of the specified map type, or {@code null} if the type is an interface that is not supported.

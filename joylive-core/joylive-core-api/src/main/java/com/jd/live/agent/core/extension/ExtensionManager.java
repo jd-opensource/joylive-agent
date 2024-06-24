@@ -33,6 +33,7 @@ public interface ExtensionManager {
     /**
      * Retrieves an extension by its type and name.
      *
+     * @param <T>  The type of the extension.
      * @param type The type of the extension.
      * @param name The name of the extension.
      * @return The retrieved extension.
@@ -42,6 +43,7 @@ public interface ExtensionManager {
     /**
      * Retrieves an extension by its class and name.
      *
+     * @param <T>        The type of the extension.
      * @param extensible The class of the extension.
      * @param name       The name of the extension.
      * @return The retrieved extension.
@@ -51,6 +53,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads an extension by its class.
      *
+     * @param <T>        The type of the extension.
      * @param extensible The class of the extension.
      * @return The retrieved or loaded extension.
      */
@@ -59,6 +62,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads an extension by its class using a specified class loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible  The class of the extension.
      * @param classLoader The class loader to use.
      * @return The retrieved or loaded extension.
@@ -68,6 +72,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads an extension by its class and name.
      *
+     * @param <T>        The type of the extension.
      * @param extensible The class of the extension.
      * @param name       The name of the extension.
      * @return The retrieved or loaded extension.
@@ -77,6 +82,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads an extension by its class and name using a specified class loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible  The class of the extension.
      * @param name        The name of the extension.
      * @param classLoader The class loader to use.
@@ -87,6 +93,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads the description of an extensible by its class.
      *
+     * @param <T>        The type of the extension.
      * @param extensible The class of the extensible.
      * @return The description of the retrieved or loaded extensible.
      */
@@ -95,6 +102,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads the description of an extensible by its class using a specified class loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible  The class of the extensible.
      * @param classLoader The class loader to use.
      * @return The description of the retrieved or loaded extensible.
@@ -104,6 +112,7 @@ public interface ExtensionManager {
     /**
      * Retrieves or loads the description of an extensible by its class using a specified extension loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible      The class of the extensible.
      * @param extensionLoader The extension loader to use.
      * @return The description of the retrieved or loaded extensible.
@@ -113,6 +122,7 @@ public interface ExtensionManager {
     /**
      * Loads the description of an extensible by its class.
      *
+     * @param <T>        The type of the extension.
      * @param extensible The class of the extensible.
      * @return The loaded description of the extensible.
      */
@@ -121,6 +131,7 @@ public interface ExtensionManager {
     /**
      * Loads the description of an extensible by its class using a specified class loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible  The class of the extensible.
      * @param classLoader The class loader to use.
      * @return The loaded description of the extensible.
@@ -130,6 +141,7 @@ public interface ExtensionManager {
     /**
      * Loads the description of an extensible by its class using a specified extension loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible      The class of the extensible.
      * @param extensionLoader The extension loader to use.
      * @return The loaded description of the extensible.
@@ -139,6 +151,7 @@ public interface ExtensionManager {
     /**
      * Builds an extensible loader for an extensible class using a specified class loader.
      *
+     * @param <T>        The type of the extension.
      * @param extensible  The class of the extensible.
      * @param classLoader The class loader to use.
      * @return The built extensible loader.
