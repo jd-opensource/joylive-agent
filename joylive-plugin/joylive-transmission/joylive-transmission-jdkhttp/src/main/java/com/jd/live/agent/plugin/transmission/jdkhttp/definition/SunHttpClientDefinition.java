@@ -47,7 +47,8 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientIn
 @Extension(value = "JdkHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(SunHttpClientDefinition.TYPE_HTTP_CLIENT)
 public class SunHttpClientDefinition extends PluginDefinitionAdapter implements PluginImporter {

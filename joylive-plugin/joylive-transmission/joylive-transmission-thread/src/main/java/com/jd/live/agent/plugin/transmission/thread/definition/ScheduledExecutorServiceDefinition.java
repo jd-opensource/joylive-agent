@@ -42,7 +42,8 @@ import static com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig.C
 @Extension(value = "ScheduledExecutorServiceDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_THREADPOOL_ENABLED)
 public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter implements PluginImporter {

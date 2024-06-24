@@ -30,13 +30,15 @@ public enum MergePolicy implements PolicyMerger {
 
         @Override
         public void onDelete(ServicePolicy oldPolicy) {
-            oldPolicy.setClusterPolicy(null);
-            oldPolicy.setLanePolicies(null);
-            oldPolicy.setRoutePolicies(null);
-            oldPolicy.setLoadBalancePolicy(null);
-            oldPolicy.setConcurrencyLimitPolicies(null);
-            oldPolicy.setRateLimitPolicies(null);
-            oldPolicy.setLivePolicy(null);
+            if (oldPolicy != null) {
+                oldPolicy.setClusterPolicy(null);
+                oldPolicy.setLanePolicies(null);
+                oldPolicy.setRoutePolicies(null);
+                oldPolicy.setLoadBalancePolicy(null);
+                oldPolicy.setConcurrencyLimitPolicies(null);
+                oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setLivePolicy(null);
+            }
         }
 
         @Override
@@ -65,22 +67,26 @@ public enum MergePolicy implements PolicyMerger {
 
         @Override
         public void onDelete(ServicePolicy oldPolicy) {
-            oldPolicy.setClusterPolicy(null);
-            oldPolicy.setLanePolicies(null);
-            oldPolicy.setRoutePolicies(null);
-            oldPolicy.setLoadBalancePolicy(null);
-            oldPolicy.setConcurrencyLimitPolicies(null);
-            oldPolicy.setRateLimitPolicies(null);
+            if (oldPolicy != null) {
+                oldPolicy.setClusterPolicy(null);
+                oldPolicy.setLanePolicies(null);
+                oldPolicy.setRoutePolicies(null);
+                oldPolicy.setLoadBalancePolicy(null);
+                oldPolicy.setConcurrencyLimitPolicies(null);
+                oldPolicy.setRateLimitPolicies(null);
+            }
         }
 
         @Override
         public void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy) {
-            oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
-            oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
-            oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
-            oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
-            oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
-            oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+            if (oldPolicy != null && newPolicy != null) {
+                oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
+                oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
+                oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
+                oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
+                oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
+                oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+            }
         }
     },
 

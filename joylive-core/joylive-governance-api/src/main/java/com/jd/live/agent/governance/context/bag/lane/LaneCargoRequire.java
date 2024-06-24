@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.context.bag.lane;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.LaneConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 
@@ -25,7 +26,10 @@ import com.jd.live.agent.governance.context.bag.CargoRequire;
  * LaneCargoRequire is an implementation of the CargoRequire interface that provides
  * the necessary cargo requirements for a lane-specific configuration. It uses
  * a LaneConfig instance to determine the specific keys required for space ID and lane code.
+ *
+ * @since 1.0.0
  */
+@Injectable
 @Extension("LaneCargoRequire")
 public class LaneCargoRequire implements CargoRequire {
 

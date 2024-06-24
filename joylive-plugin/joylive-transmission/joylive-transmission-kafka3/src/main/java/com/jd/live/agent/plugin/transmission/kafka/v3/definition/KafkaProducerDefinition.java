@@ -26,7 +26,8 @@ import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaProducerI
 @Extension(value = "KafkaProducerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(KafkaProducerDefinition.TYPE_KAFKA_PRODUCER)
 public class KafkaProducerDefinition extends PluginDefinitionAdapter {

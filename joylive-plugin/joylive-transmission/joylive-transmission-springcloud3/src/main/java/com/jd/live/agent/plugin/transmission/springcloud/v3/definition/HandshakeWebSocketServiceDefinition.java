@@ -34,7 +34,8 @@ import com.jd.live.agent.plugin.transmission.springcloud.v3.interceptor.Handshak
 @Extension(value = "HandshakeWebSocketServiceDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(HandshakeWebSocketServiceDefinition.TYPE_REACTOR_LOADBALANCER)
 public class HandshakeWebSocketServiceDefinition extends PluginDefinitionAdapter {

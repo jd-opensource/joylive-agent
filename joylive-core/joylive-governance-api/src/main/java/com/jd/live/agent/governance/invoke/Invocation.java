@@ -195,7 +195,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
             return false;
         }
         Map<String, TagMatcher> matchers = context.getTagMatchers();
-        TagMatcher matcher = matchers == null ? null : matchers.get(condition.getType());
+        TagMatcher matcher = matchers == null ? null : matchers.get(condition.getType().toLowerCase());
         return matcher != null && matcher.match(condition, request);
     }
 

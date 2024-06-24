@@ -26,7 +26,8 @@ import com.jd.live.agent.plugin.transmission.httpclient.v4.interceptor.HttpClien
 @Extension(value = "HttpClient4Definition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(HttpClientDefinition.TYPE_ABSTRACT_HTTP_CLIENT)
 public class HttpClientDefinition extends PluginDefinitionAdapter {
