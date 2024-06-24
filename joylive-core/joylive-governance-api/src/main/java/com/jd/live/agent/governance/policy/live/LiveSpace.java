@@ -26,28 +26,23 @@ import java.util.Map;
  *
  * @since 1.0.0
  */
+@Getter
 public class LiveSpace {
 
     @Setter
-    @Getter
     private String apiVersion;
 
     @Setter
-    @Getter
     private String kind;
 
     @Setter
-    @Getter
     private Map<String, String> metadata;
 
     @Setter
-    @Getter
     private LiveSpec spec;
 
-    @Getter
     private transient Unit currentUnit;
 
-    @Getter
     private transient Cell currentCell;
 
     public LiveSpace() {

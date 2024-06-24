@@ -30,6 +30,7 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.mq.TopicConverter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
@@ -68,10 +69,28 @@ public interface InvocationContext {
         return getApplication().getLocation();
     }
 
+    /**
+     * Checks if the live feature is enabled.
+     *
+     * @return {@code true} if the live feature is enabled, {@code false} otherwise
+     */
     boolean isLiveEnabled();
 
+    /**
+     * Checks if the lane feature is enabled.
+     *
+     * @return {@code true} if the lane feature is enabled, {@code false} otherwise
+     */
     boolean isLaneEnabled();
 
+    /**
+     * Checks if the governance context is ready.
+     * <p>
+     * This default implementation checks if the application's status is {@code AppStatus.READY}.
+     * </p>
+     *
+     * @return {@code true} if the governance context is ready, {@code false} otherwise
+     */
     default boolean isGovernReady() {
         return getApplication().getStatus() == AppStatus.READY;
     }
@@ -89,6 +108,8 @@ public interface InvocationContext {
      * @return An instance of {@code PolicySupplier} that supplies policies.
      */
     PolicySupplier getPolicySupplier();
+
+    TopicConverter getTopicConverter();
 
     /**
      * Retrieves a unit function by its name.
@@ -360,6 +381,11 @@ public interface InvocationContext {
         @Override
         public PolicySupplier getPolicySupplier() {
             return delegate.getPolicySupplier();
+        }
+
+        @Override
+        public TopicConverter getTopicConverter() {
+            return delegate.getTopicConverter();
         }
 
         @Override

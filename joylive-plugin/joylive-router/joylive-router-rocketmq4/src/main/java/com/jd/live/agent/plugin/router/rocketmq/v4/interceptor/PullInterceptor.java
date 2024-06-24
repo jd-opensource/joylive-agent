@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
+import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.ArrayList;
 
@@ -32,14 +33,15 @@ public class PullInterceptor extends AbstractMQConsumerInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (isConsumeDisabled()) {
-            Object[] arguments = ctx.getArguments();
+        Object[] arguments = ctx.getArguments();
+        MessageQueue messageQueue = (MessageQueue) arguments[0];
+        String topic = context.getTopicConverter().getSource(messageQueue.getTopic());
+        if (!isConsumeReady(topic)) {
             MethodContext mc = (MethodContext) ctx;
             PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
                     0, 0, new ArrayList<>());
             mc.setResult(result);
             mc.setSkip(true);
         }
-
     }
 }

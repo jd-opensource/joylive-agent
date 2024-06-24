@@ -26,29 +26,38 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v3.interceptor.ConsumerConfigInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v3.interceptor.PartitionInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v3.interceptor.SendInterceptor;
 
 @Injectable
-@Extension(value = "ConsumerConfigDefinition_v3")
+@Extension(value = "KafkaProducerDefinition_v3")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
-@ConditionalOnClass(ConsumerConfigDefinition.TYPE_CONSUMER_CONFIG)
-public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(KafkaProducerDefinition.TYPE_CONSUMER_CONFIG)
+public class KafkaProducerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_CONSUMER_CONFIG = "org.apache.kafka.clients.consumer.ConsumerConfig";
+    protected static final String TYPE_CONSUMER_CONFIG = "org.apache.kafka.clients.producer.KafkaProducer";
+
+    private static final String METHOD_SEND = "send";
+
+    private static final String METHOD_PARTITIONS_FOR = "partitionsFor";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public ConsumerConfigDefinition() {
+    public KafkaProducerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONFIG);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new ConsumerConfigInterceptor(context)
+                        MatcherBuilder.named(METHOD_SEND),
+                        () -> new SendInterceptor(context)
+                ),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_PARTITIONS_FOR),
+                        () -> new PartitionInterceptor(context)
                 )
         };
     }

@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.policy.lane;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.governance.policy.mq.MqPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,6 +41,10 @@ public class LaneSpace {
     @Getter
     @Setter
     private List<LaneRule> rules;
+
+    @Getter
+    @Setter
+    private MqPolicy mqPolicy;
 
     private final transient Cache<String, Lane> laneCache = new MapCache<>(new ListBuilder<>(() -> lanes, Lane::getCode));
 

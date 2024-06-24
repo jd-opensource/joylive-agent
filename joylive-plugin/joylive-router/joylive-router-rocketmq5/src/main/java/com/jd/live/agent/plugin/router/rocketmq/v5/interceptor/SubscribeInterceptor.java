@@ -16,27 +16,21 @@
 package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
-public class SetConsumerGroupInterceptor extends AbstractMQConsumerInterceptor {
+public class SubscribeInterceptor extends AbstractMQConsumerInterceptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(SetConsumerGroupInterceptor.class);
-
-    public SetConsumerGroupInterceptor(InvocationContext context) {
+    public SubscribeInterceptor(InvocationContext context) {
         super(context);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        String group = (String) arguments[0];
-        arguments[0] = getConsumerGroup(group);
-        if (!arguments[0].equals(group)) {
-            logger.info("Change consumer group of " + group + " to group " + arguments[0]);
+        String topic = (String) arguments[0];
+        if (isEnabled(topic)) {
+            arguments[0] = context.getTopicConverter().getTarget(topic);
         }
     }
-
 }

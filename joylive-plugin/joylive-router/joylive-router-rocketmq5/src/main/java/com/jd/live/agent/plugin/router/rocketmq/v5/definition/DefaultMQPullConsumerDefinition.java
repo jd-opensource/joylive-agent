@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SetConsumerGroupInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
 
 @Injectable
 @Extension(value = "DefaultMQPullConsumerDefinition_v5")
@@ -41,11 +41,9 @@ public class DefaultMQPullConsumerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DEFAULT_MQ_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPullConsumer";
 
-    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
+    private static final String METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE = "fetchMessageQueuesInBalance";
 
-    private static final String[] ARGUMENT_SET_CONSUMER_GROUP = new String[]{
-            "java.lang.String"
-    };
+    private static final String METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES = "fetchSubscribeMessageQueues";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
@@ -54,9 +52,8 @@ public class DefaultMQPullConsumerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PULL_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP).
-                                and(MatcherBuilder.arguments(ARGUMENT_SET_CONSUMER_GROUP)),
-                        () -> new SetConsumerGroupInterceptor(context)
+                        MatcherBuilder.in(METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE, METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES),
+                        () -> new SubscribeInterceptor(context)
                 )
         };
     }

@@ -20,6 +20,7 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 
 import java.util.Arrays;
@@ -37,8 +38,11 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
-        filter(records, message -> isAllow(message) == MessageAction.CONSUME);
+        TopicPartition topicPartition = (TopicPartition) arguments[0];
+        if (isEnabled(topicPartition.topic())) {
+            List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
+            filter(records, message -> isAllow(message) == MessageAction.CONSUME);
+        }
     }
 
     /**
@@ -49,6 +53,10 @@ public class FetchInterceptor extends AbstractMQConsumerInterceptor {
      *         otherwise returns the result of the live check.
      */
     private MessageAction isAllow(ConsumerRecord<?, ?> message) {
+        String topic = context.getTopicConverter().getSource(message.topic());
+        if (!isEnabled(topic)) {
+            return MessageAction.CONSUME;
+        }
         MessageAction result = isAllowLive(message);
         return result == MessageAction.CONSUME ? isAllowLane(message) : result;
     }

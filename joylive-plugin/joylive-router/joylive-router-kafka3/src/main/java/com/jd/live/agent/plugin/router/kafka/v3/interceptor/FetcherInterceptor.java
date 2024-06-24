@@ -17,23 +17,46 @@ package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.kafka.clients.consumer.internals.Fetch;
+import org.apache.kafka.common.TopicPartition;
+
+import java.lang.reflect.Field;
 
 public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(FetcherInterceptor.class);
+
+    private Field partitionField;
+
     public FetcherInterceptor(InvocationContext context) {
         super(context);
+        try {
+            Class<?> type = Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher.CompletedFetch");
+            partitionField = type.getDeclaredField("partition");
+            partitionField.setAccessible(true);
+        } catch (Throwable e) {
+            logger.warn("Partition field is not found.", e);
+        }
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (isConsumeDisabled()) {
-            MethodContext mc = (MethodContext) ctx;
-            mc.setResult(Fetch.empty());
-            mc.setSkip(true);
+        if (partitionField != null) {
+            try {
+                Object[] arguments = ctx.getArguments();
+                TopicPartition partition = (TopicPartition) partitionField.get(arguments[0]);
+                String topic = context.getTopicConverter().getSource(partition.topic());
+                if (isConsumeReady(topic)) {
+                    MethodContext mc = (MethodContext) ctx;
+                    mc.setResult(Fetch.empty());
+                    mc.setSkip(true);
+                }
+            } catch (Throwable ignored) {
+            }
         }
-
     }
 }

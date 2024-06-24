@@ -17,17 +17,12 @@ package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.MqConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.policy.live.Unit;
-import com.jd.live.agent.governance.policy.live.UnitRoute;
-import com.jd.live.agent.governance.policy.live.UnitRule;
+import com.jd.live.agent.governance.policy.lane.LaneSpace;
+import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.mq.MqPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * AbstractMQConsumerInterceptor
@@ -41,18 +36,45 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Determines if message consumption is disabled based on the governance policy and the current unit's access mode.
+     * Determines if the given topic is ready to be consumed based on the governance context and policies.
      *
-     * @return {@code true} if message consumption is disabled; {@code false} otherwise.
+     * @param topic the topic name to check
+     * @return {@code true} if the topic is ready to be consumed, {@code false} otherwise
      */
-    protected boolean isConsumeDisabled() {
+    protected boolean isConsumeReady(String topic) {
         if (!context.isGovernReady()) {
+            return false;
+        }
+        if (!isEnabled(topic)) {
             return true;
         }
         GovernancePolicy policy = context.getPolicySupplier().getPolicy();
         LiveSpace liveSpace = policy.getCurrentLiveSpace();
         Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
         return local != null && !local.getAccessMode().isWriteable();
+    }
+
+    /**
+     * Determines if the given topic is enabled based on the current governance policies and location.
+     *
+     * @param topic the topic name to check
+     * @return {@code true} if the topic is enabled, {@code false} otherwise
+     */
+    protected boolean isEnabled(String topic) {
+        if (topic == null || topic.isEmpty()) {
+            return false;
+        }
+        GovernancePolicy policy = context.getPolicySupplier().getPolicy();
+        Location location = context.getLocation();
+        LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(location.getLiveSpaceId());
+        LiveSpec liveSpec = liveSpace == null ? null : liveSpace.getSpec();
+        MqPolicy mqPolicy = liveSpec == null ? null : liveSpec.getMqPolicy();
+        if (mqPolicy == null || !mqPolicy.include(topic)) {
+            LaneSpace laneSpace = policy == null ? null : policy.getLaneSpace(location.getLaneSpaceId());
+            mqPolicy = laneSpace == null ? null : laneSpace.getMqPolicy();
+            return mqPolicy != null && mqPolicy.include(topic);
+        }
+        return true;
     }
 
     /**
@@ -111,28 +133,6 @@ public abstract class AbstractMQConsumerInterceptor extends InterceptorAdaptor {
                 ? MessageAction.CONSUME
                 : MessageAction.DISCARD;
     }
-
-    /**
-     * Constructs a consumer group name based on the provided base group name and the enabled status of live and lane features.
-     *
-     * @param group the base consumer group name. If null, it will be treated as an empty string.
-     * @return the constructed consumer group name with appended unit and lane information if applicable.
-     */
-    protected String getConsumerGroup(String group) {
-        Location location = context.getLocation();
-        group = group == null ? "" : group;
-        Map<String, Object> map = new HashMap<>(3);
-        map.put("group", group);
-        if (context.isLiveEnabled()) {
-            map.put("unit", location.getUnit());
-        }
-        if (context.isLaneEnabled()) {
-            map.put("lane", location.getLane());
-        }
-        MqConfig config = context.getGovernanceConfig().getMqConfig();
-        return config.getGroupTemplate().evaluate(map);
-    }
-
 
     /**
      * Enum representing possible actions to take on a message.

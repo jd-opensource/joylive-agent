@@ -30,6 +30,7 @@ import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Futures;
@@ -41,6 +42,8 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
+import com.jd.live.agent.governance.policy.mq.TopicConverter;
+import com.jd.live.agent.governance.policy.mq.TopicName;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
@@ -89,6 +92,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Config(GovernanceConfig.CONFIG_AGENT_GOVERNANCE)
     private GovernanceConfig governanceConfig;
+
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private TopicName topicName;
 
     @Getter
     @Inject
@@ -152,6 +159,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private final AtomicBoolean warmup = new AtomicBoolean(false);
 
+    private TopicConverter topicConverter;
+
     @Override
     public PolicySupplier getPolicySupplier() {
         return this;
@@ -160,6 +169,27 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Override
     public GovernancePolicy getPolicy() {
         return policy.get();
+    }
+
+    @Override
+    public TopicConverter getTopicConverter() {
+        if (topicConverter == null) {
+            topicConverter = new TopicConverter() {
+                @Override
+                public String getTarget(String topic) {
+                    Location location = application.getLocation();
+                    String unit = laneEnabled ? location.getUnit() : null;
+                    String lane = laneEnabled ? location.getLane() : null;
+                    return topicName.getTarget(topic, unit, lane);
+                }
+
+                @Override
+                public String getSource(String topic) {
+                    return topicName.getSource(topic);
+                }
+            };
+        }
+        return topicConverter;
     }
 
     @Override

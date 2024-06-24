@@ -26,34 +26,36 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SubscribeInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SendInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPullConsumerDefinition_v5")
+@Extension(value = "DefaultMQProducerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultMQPullConsumerDefinition.TYPE_DEFAULT_MQ_PULL_CONSUMER)
+@ConditionalOnClass(DefaultMQProducerDefinition.TYPE_DEFAULT_MQ_PRODUCER_IMPL)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)
-public class DefaultMQPullConsumerDefinition extends PluginDefinitionAdapter {
+public class DefaultMQProducerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_MQ_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPullConsumer";
+    protected static final String TYPE_DEFAULT_MQ_PRODUCER_IMPL = "org.apache.rocketmq.client.impl.producer.DefaultMQProducer";
 
-    private static final String METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE = "fetchMessageQueuesInBalance";
+    private static final String METHOD_SEND = "send";
 
-    private static final String METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES = "fetchSubscribeMessageQueues";
+    private static final String METHOD_SEND_ONEWAY = "sendOneway";
+
+    private static final String METHOD_REQUEST = "request";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultMQPullConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PULL_CONSUMER);
+    public DefaultMQProducerDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PRODUCER_IMPL);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE, METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES),
-                        () -> new SubscribeInterceptor(context)
+                        MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ONEWAY, METHOD_REQUEST),
+                        () -> new SendInterceptor(context)
                 )
         };
     }

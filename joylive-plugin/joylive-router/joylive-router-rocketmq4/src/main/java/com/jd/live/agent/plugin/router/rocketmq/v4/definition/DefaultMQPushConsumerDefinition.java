@@ -26,10 +26,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SetConsumerGroupInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SubscribeInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v4")
+@Extension(value = "DefaultMQPushConsumerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
@@ -41,11 +41,9 @@ public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DEFAULT_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
 
-    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
+    private static final String METHOD_SUBSCRIBE = "subscribe";
 
-    private static final String[] ARGUMENT_SET_CONSUMER_GROUP = new String[]{
-            "java.lang.String"
-    };
+    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
@@ -54,9 +52,8 @@ public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PUSH_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP).
-                                and(MatcherBuilder.arguments(ARGUMENT_SET_CONSUMER_GROUP)),
-                        () -> new SetConsumerGroupInterceptor(context)
+                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
+                        () -> new SubscribeInterceptor(context)
                 )
         };
     }

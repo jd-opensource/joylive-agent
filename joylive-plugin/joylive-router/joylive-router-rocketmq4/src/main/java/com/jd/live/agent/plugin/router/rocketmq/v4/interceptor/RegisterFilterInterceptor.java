@@ -47,8 +47,8 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
             }
 
             @Override
-            public void filterMessage(FilterMessageContext filterContext) {
-                filter(filterContext.getMsgList(), message -> isAllow(message) == MessageAction.CONSUME);
+            public void filterMessage(FilterMessageContext filterMessageContext) {
+                filter(filterMessageContext.getMsgList(), message -> isAllow(message) == MessageAction.CONSUME);
             }
         });
         arguments[0] = result;
@@ -62,6 +62,10 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
      *         otherwise returns the result of the live check.
      */
     private MessageAction isAllow(MessageExt message) {
+        String topic = context.getTopicConverter().getSource(message.getTopic());
+        if (!isEnabled(topic)) {
+            return MessageAction.CONSUME;
+        }
         MessageAction result = isAllowLive(message);
         return result == MessageAction.CONSUME ? isAllowLane(message) : result;
     }

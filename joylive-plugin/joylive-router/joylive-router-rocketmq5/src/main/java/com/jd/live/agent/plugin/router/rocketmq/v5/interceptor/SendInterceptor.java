@@ -16,32 +16,36 @@
 package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import org.apache.rocketmq.client.consumer.PullResult;
-import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.message.Message;
 
-import java.util.ArrayList;
+import java.util.Collection;
 
-public class PullInterceptor extends AbstractMQConsumerInterceptor {
+public class SendInterceptor extends AbstractMQConsumerInterceptor {
 
-    public PullInterceptor(InvocationContext context) {
+    public SendInterceptor(InvocationContext context) {
         super(context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        MessageQueue messageQueue = (MessageQueue) arguments[0];
-        String topic = context.getTopicConverter().getSource(messageQueue.getTopic());
-        if (!isConsumeReady(topic)) {
-            MethodContext mc = (MethodContext) ctx;
-            PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
-                    0, 0, new ArrayList<>());
-            mc.setResult(result);
-            mc.setSkip(true);
+        if (arguments[0] instanceof Message) {
+            updateTopic((Message) arguments[0]);
+        } else if (arguments[0] instanceof Collection) {
+            Collection<Message> messages = (Collection<Message>) arguments[0];
+            for (Message message : messages) {
+                updateTopic(message);
+            }
+        }
+    }
+
+    private void updateTopic(Message message) {
+        String topic = message.getTopic();
+        if (isEnabled(topic)) {
+            message.setTopic(context.getTopicConverter().getTarget(topic));
         }
     }
 }

@@ -13,35 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
+package com.jd.live.agent.plugin.router.rocketmq.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import org.apache.rocketmq.client.consumer.PullResult;
-import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.message.MessageQueue;
 
-import java.util.ArrayList;
+public class SubscribeInterceptor extends AbstractMQConsumerInterceptor {
 
-public class PullInterceptor extends AbstractMQConsumerInterceptor {
-
-    public PullInterceptor(InvocationContext context) {
+    public SubscribeInterceptor(InvocationContext context) {
         super(context);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        MessageQueue messageQueue = (MessageQueue) arguments[0];
-        String topic = context.getTopicConverter().getSource(messageQueue.getTopic());
-        if (!isConsumeReady(topic)) {
-            MethodContext mc = (MethodContext) ctx;
-            PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
-                    0, 0, new ArrayList<>());
-            mc.setResult(result);
-            mc.setSkip(true);
+        String topic = (String) arguments[0];
+        if (isEnabled(topic)) {
+            arguments[0] = context.getTopicConverter().getTarget(topic);
         }
     }
 }

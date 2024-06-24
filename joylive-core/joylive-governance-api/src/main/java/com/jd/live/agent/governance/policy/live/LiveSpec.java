@@ -20,6 +20,7 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.governance.policy.mq.MqPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -69,19 +70,9 @@ public class LiveSpec {
     @Setter
     private List<LiveVariable> variables;
 
-    public LiveSpec() {
-    }
-
-    public LiveSpec(String id) {
-        this.id = id;
-    }
-
-    public LiveSpec(String id, String code, String name, String tenantId) {
-        this.id = id;
-        this.code = code;
-        this.name = name;
-        this.tenantId = tenantId;
-    }
+    @Getter
+    @Setter
+    private MqPolicy mqPolicy;
 
     private final transient Cache<String, Unit> unitCache = new MapCache<>(new ListBuilder<>(() -> units, Unit::getCode));
     private final transient Cache<String, LiveDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LiveDomain::getHost));
@@ -122,6 +113,20 @@ public class LiveSpec {
         }
         return null;
     });
+
+    public LiveSpec() {
+    }
+
+    public LiveSpec(String id) {
+        this.id = id;
+    }
+
+    public LiveSpec(String id, String code, String name, String tenantId) {
+        this.id = id;
+        this.code = code;
+        this.name = name;
+        this.tenantId = tenantId;
+    }
 
     public Unit getUnit(String code) {
         return unitCache.get(code);
