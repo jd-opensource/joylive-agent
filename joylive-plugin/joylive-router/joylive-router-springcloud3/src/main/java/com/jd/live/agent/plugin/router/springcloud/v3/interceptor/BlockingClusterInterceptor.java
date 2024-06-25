@@ -45,6 +45,12 @@ public class BlockingClusterInterceptor extends InterceptorAdaptor {
         this.context = context;
     }
 
+    /**
+     * Enhanced logic before method execution
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor#intercept(HttpRequest, byte[], ClientHttpRequestExecution)
+     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;

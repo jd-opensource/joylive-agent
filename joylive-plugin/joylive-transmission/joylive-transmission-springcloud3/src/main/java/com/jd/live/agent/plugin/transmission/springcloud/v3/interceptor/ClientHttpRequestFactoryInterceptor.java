@@ -21,49 +21,39 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.CargoRequires;
-import com.jd.live.agent.governance.context.bag.Carrier;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.client.ClientHttpRequest;
 
+import java.net.URI;
 import java.util.List;
 
 /**
- * WebHandlerDecoratorInterceptor
+ * ClientHttpRequestFactoryInterceptor
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
+public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
 
     private final CargoRequire require;
 
-    public WebHandlerDecoratorInterceptor(List<CargoRequire> requires) {
+    public ClientHttpRequestFactoryInterceptor(List<CargoRequire> requires) {
         this.require = new CargoRequires(requires);
     }
 
     /**
-     * Enhanced logic before method execution
+     * Enhanced logic after method successfully executes. This method is called
+     * after the target method completes successfully without throwing any exceptions.
      *
      * @param ctx ExecutableContext
-     * @see org.springframework.web.server.handler.WebHandlerDecorator#handle(ServerWebExchange)
+     * @see org.springframework.http.client.ClientHttpRequestFactory#createRequest(URI, HttpMethod)
      */
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        HttpHeaders headers = exchange.getRequest().getHeaders();
-        Carrier carrier = RequestContext.create();
-        carrier.addCargo(require, HttpHeaders.writableHttpHeaders(headers));
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        HttpHeaders headers = exchange.getResponse().getHeaders();
-        Mono<Void> mono = (Mono<Void>) mc.getResult();
-        mono = mono.doFirst(() -> RequestContext.cargos(tag -> headers.addAll(tag.getKey(), tag.getValues())));
-        mc.setResult(mono);
+        ClientHttpRequest request = (ClientHttpRequest) ((MethodContext) ctx).getResult();
+        RequestContext.cargos(tag -> request.getHeaders().addAll(tag.getKey(), tag.getValues()));
+        mc.setResult(request);
     }
 }

@@ -121,6 +121,8 @@ agent:
       warmups: ${CONFIG_WARMUP_SERVICES:}
       excludes:
         - org.apache.dubbo.metadata.MetadataService
+      transmitPrefixes:
+        - x-service
     mq:
       group: ${group}${'_unit_'unit}${'_lane_'lane}
     router:
