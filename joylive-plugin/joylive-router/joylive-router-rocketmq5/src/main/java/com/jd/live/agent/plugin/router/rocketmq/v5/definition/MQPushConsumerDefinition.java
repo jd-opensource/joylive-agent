@@ -26,10 +26,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.GroupInterceptor;
 
 /**
- * DefaultMQPullConsumerDefinition
+ * MQPushConsumerDefinition
  *
  * @since 1.0.0
  */
@@ -47,9 +47,7 @@ public class MQPushConsumerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.MQPushConsumer";
 
-    private static final String METHOD_SUBSCRIBE = "subscribe";
-
-    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
+    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
@@ -58,8 +56,8 @@ public class MQPushConsumerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PUSH_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
-                        () -> new SubscribeInterceptor(context)
+                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP),
+                        () -> new GroupInterceptor(context)
                 )
         };
     }

@@ -36,7 +36,6 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import com.jd.live.agent.governance.request.MessageRoute;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -108,13 +107,6 @@ public interface InvocationContext {
      * @return An instance of {@code PolicySupplier} that supplies policies.
      */
     PolicySupplier getPolicySupplier();
-
-    /**
-     * Retrieves an instance of the MessageRoute interface.
-     *
-     * @return an instance of the MessageRoute interface.
-     */
-    MessageRoute getMessageRoute();
 
     /**
      * Retrieves a unit function by its name.
@@ -387,11 +379,6 @@ public interface InvocationContext {
         @Override
         public PolicySupplier getPolicySupplier() {
             return delegate.getPolicySupplier();
-        }
-
-        @Override
-        public MessageRoute getMessageRoute() {
-            return delegate.getMessageRoute();
         }
 
         @Override

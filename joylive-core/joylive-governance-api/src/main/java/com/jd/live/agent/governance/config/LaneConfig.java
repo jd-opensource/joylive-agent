@@ -27,6 +27,8 @@ import java.util.Set;
 @Setter
 public class LaneConfig {
 
+    private boolean modifyMQGroupEnabled = true;
+
     private Set<String> topics;
 
     public boolean withTopic(String topic) {

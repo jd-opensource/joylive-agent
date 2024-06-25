@@ -83,6 +83,7 @@ agent:
   switch:
     live:
       enabled: ${CONFIG_LIVE_ENABLED:true}
+      mq: ${CONFIG_LIVE_MQ_ENABLED:false}
       dubbo: true
       sofarpc: true
       jsf: true
@@ -123,8 +124,10 @@ agent:
         - org.apache.dubbo.metadata.MetadataService
     live:
       topics: ${CONFIG_LIVE_TOPICS}
+      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:true}
     lane:
       topics: ${CONFIG_LANE_TOPICS}
+      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:true}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
       phevos:

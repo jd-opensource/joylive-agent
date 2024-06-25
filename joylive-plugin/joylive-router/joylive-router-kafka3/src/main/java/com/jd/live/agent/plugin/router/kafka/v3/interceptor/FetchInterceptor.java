@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v3.message.KafkaConsumerMessage;
+import com.jd.live.agent.plugin.router.kafka.v3.message.KafkaMessage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 
@@ -37,10 +37,9 @@ public class FetchInterceptor extends AbstractMessageInterceptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         TopicPartition topicPartition = (TopicPartition) arguments[0];
-        String topic = getSource(topicPartition.topic());
-        if (isEnabled(topic)) {
+        if (isEnabled(topicPartition.topic())) {
             List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
-            filter(records, message -> allow(new KafkaConsumerMessage(message)) == MessageAction.CONSUME);
+            filter(records, message -> allow(new KafkaMessage(message)) == MessageAction.CONSUME);
         }
     }
 }

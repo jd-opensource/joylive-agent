@@ -13,21 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
+package com.jd.live.agent.plugin.router.rocketmq.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
-public class SubscribeInterceptor extends AbstractMessageInterceptor {
+/**
+ * ConsumerGroupInterceptor
+ *
+ * @since 1.0.0
+ */
+public class GroupInterceptor extends AbstractMessageInterceptor {
 
-    public SubscribeInterceptor(InvocationContext context) {
+    private static final Logger logger = LoggerFactory.getLogger(GroupInterceptor.class);
+
+    public GroupInterceptor(InvocationContext context) {
         super(context);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        arguments[0] = getTarget((String) arguments[0]);
+        String group = (String) arguments[0];
+        arguments[0] = getGroup(group, null);
+        if (!arguments[0].equals(group)) {
+            logger.info("Change consumer group of " + group + " to group " + arguments[0]);
+        }
     }
+
 }

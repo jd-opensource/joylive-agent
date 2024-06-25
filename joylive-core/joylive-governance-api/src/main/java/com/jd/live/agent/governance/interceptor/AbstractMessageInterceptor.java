@@ -23,14 +23,11 @@ import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.Message;
-import com.jd.live.agent.governance.request.Message.ProducerMessage;
-import com.jd.live.agent.governance.request.MessageRoute;
-
-import java.util.List;
 
 /**
  * AbstractMessageInterceptor
@@ -43,14 +40,11 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
 
     protected final Location location;
 
-    protected final MessageRoute messageRoute;
-
     protected final GovernanceConfig governanceConfig;
 
     public AbstractMessageInterceptor(InvocationContext context) {
         this.context = context;
         this.location = context.getLocation();
-        this.messageRoute = context.getMessageRoute();
         this.policySupplier = context.getPolicySupplier();
         this.governanceConfig = context.getGovernanceConfig();
     }
@@ -105,35 +99,6 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Determines whether a topic needs to be modified under the active-active architecture.
-     *
-     * @param topic the name of the topic to check
-     * @return {@code true} if the topic needs to be modified, {@code false} otherwise
-     */
-    protected boolean modifyTopicByLive(String topic) {
-        LiveConfig liveConfig = governanceConfig.getLiveConfig();
-        GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(location.getLiveSpaceId());
-        LiveSpec liveSpec = liveSpace == null ? null : liveSpace.getSpec();
-        List<Unit> units = liveSpec == null ? null : liveSpec.getUnits();
-        int size = units == null ? 0 : units.size();
-        if (liveConfig.withTopic(topic) || liveSpec != null && liveSpec.withTopic(topic)) {
-            return !liveConfig.isRetainTopicWhenOneUnit() || size != 1;
-        }
-        return false;
-    }
-
-    /**
-     * Determines whether a topic needs to be modified under the lane architecture.
-     *
-     * @param topic the name of the topic to check
-     * @return {@code true} if the topic needs to be modified because the lane feature is enabled, {@code false} otherwise
-     */
-    protected boolean modifyTopicByLane(String topic) {
-        return isLaneEnabled(topic);
-    }
-
-    /**
      * Checks if the specified topic has lane functionality enabled.
      *
      * @param topic the topic to check.
@@ -149,67 +114,49 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         return laneSpace != null && laneSpace.withTopic(topic);
     }
 
-    /**
-     * Determines the target topic based on the given topic and the current context's location.
-     *
-     * @param topic the original topic to be evaluated.
-     * @return the target topic after considering the unit and lane, or the original topic if no
-     * features are enabled.
-     */
-    protected String getTarget(String topic) {
-        String unit = modifyTopicByLive(topic) ? location.getUnit() : null;
-        String lane = modifyTopicByLane(topic) ? location.getLane() : null;
-        if (unit != null || lane != null) {
-            return messageRoute.getTarget(topic, unit, lane);
+    private boolean modifyGroupByLive(String topic) {
+        if (!context.isLiveEnabled()) {
+            return false;
+        } else if (!governanceConfig.getLiveConfig().isModifyMQGroupEnabled()) {
+            return false;
+        } else if (topic != null && !topic.isEmpty()) {
+            return isLiveEnabled(topic);
         }
-        return topic;
+        GovernancePolicy policy = policySupplier.getPolicy();
+        LiveSpace space = policy.getCurrentLiveSpace();
+        Unit unit = space == null ? null : space.getCurrentUnit();
+        return unit != null;
     }
 
-    /**
-     * Determines the target topic based on the given {@link Message} and the current context's location.
-     *
-     * @param message the {@link Message} from which to extract the topic and evaluate.
-     * @return the target topic after considering the unit and lane, or the original topic if no
-     *         features are enabled.
-     */
-    protected String getTarget(Message message) {
-        String topic = message.getTopic();
-        String unit = modifyTopicByLive(topic) ? getTargetUnit(message) : null;
-        String lane = modifyTopicByLane(topic) ? getTargetLane(message) : null;
-        if (unit != null || lane != null) {
-            return messageRoute.getTarget(topic, unit, lane);
+    private boolean modifyGroupByLane(String topic) {
+        if (!context.isLaneEnabled()) {
+            return false;
+        } else if (!governanceConfig.getLaneConfig().isModifyMQGroupEnabled()) {
+            return false;
+        } else if (topic != null && !topic.isEmpty()) {
+            return isLaneEnabled(topic);
         }
-        return topic;
+        GovernancePolicy policy = policySupplier.getPolicy();
+        LaneSpace space = policy.getCurrentLaneSpace();
+        Lane lane = space == null ? null : space.getCurrentLane();
+        return lane != null;
     }
 
-    /**
-     * Converts a given topic to its source representation using the topic converter.
-     *
-     * @param topic the topic name to convert.
-     * @return the source representation of the given topic.
-     */
-    protected String getSource(String topic) {
-        return messageRoute.getSource(topic);
+    protected String getGroup(String group, String topic) {
+        String unit = modifyGroupByLive(topic) ? location.getUnit() : null;
+        String lane = modifyGroupByLane(topic) ? location.getLane() : null;
+        int unitLength = unit == null ? 0 : unit.length();
+        int laneLength = lane == null ? 0 : lane.length();
+        if (unitLength > 0 && laneLength > 0) {
+            return group + "-unit-" + unit + "-lane-" + lane;
+        } else if (unitLength > 0) {
+            return group + "-unit-" + unit;
+        } else if (laneLength > 0) {
+            return group + "-lane-" + lane;
+        } else {
+            return group;
+        }
     }
-
-    /**
-     * Routes the given message to its target topic.
-     *
-     * @param message the {@link ProducerMessage} to be routed.
-     */
-    protected void route(ProducerMessage message) {
-        message.setTopic(getTarget(message));
-    }
-
-    /**
-     * Processes the given message by setting its topic and potentially adding a reply topic header.
-     *
-     * @param message the {@link ProducerMessage} to be processed.
-     */
-    protected void request(ProducerMessage message) {
-        message.setTopic(getTarget(message));
-    }
-
 
     /**
      * Determines if the given message is allowed to be consumed based on its topic and live/lane rules.
@@ -218,7 +165,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return the {@link MessageAction} indicating whether to consume or discard the message.
      */
     protected MessageAction allow(Message message) {
-        String topic = messageRoute.getSource(message.getTopic());
+        String topic = message.getTopic();
         if (!isEnabled(topic)) {
             return MessageAction.CONSUME;
         }

@@ -29,14 +29,16 @@ import java.lang.reflect.Field;
 public class FetcherInterceptor extends AbstractMessageInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(FetcherInterceptor.class);
+    private static final String TYPE_COMPLETED_FETCH = "org.apache.kafka.clients.consumer.internals.Fetcher.CompletedFetch";
+    private static final String FIELD_PARTITION = "partition";
 
     private Field partitionField;
 
     public FetcherInterceptor(InvocationContext context) {
         super(context);
         try {
-            Class<?> type = Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher.CompletedFetch");
-            partitionField = type.getDeclaredField("partition");
+            Class<?> type = Class.forName(TYPE_COMPLETED_FETCH);
+            partitionField = type.getDeclaredField(FIELD_PARTITION);
             partitionField.setAccessible(true);
         } catch (Throwable e) {
             logger.error("Error occurs while accessing partition field of CompletedFetch.", e);
@@ -49,8 +51,7 @@ public class FetcherInterceptor extends AbstractMessageInterceptor {
             try {
                 Object[] arguments = ctx.getArguments();
                 TopicPartition partition = (TopicPartition) partitionField.get(arguments[0]);
-                String topic = getSource(partition.topic());
-                if (isConsumeReady(topic)) {
+                if (isConsumeReady(partition.topic())) {
                     MethodContext mc = (MethodContext) ctx;
                     mc.setResult(Fetch.empty());
                     mc.setSkip(true);

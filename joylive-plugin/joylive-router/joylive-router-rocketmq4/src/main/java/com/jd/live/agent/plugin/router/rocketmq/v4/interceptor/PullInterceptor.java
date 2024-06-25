@@ -35,8 +35,7 @@ public class PullInterceptor extends AbstractMessageInterceptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         MessageQueue messageQueue = (MessageQueue) arguments[0];
-        String topic = getSource(messageQueue.getTopic());
-        if (!isConsumeReady(topic)) {
+        if (!isConsumeReady(messageQueue.getTopic())) {
             MethodContext mc = (MethodContext) ctx;
             PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
                     0, 0, new ArrayList<>());

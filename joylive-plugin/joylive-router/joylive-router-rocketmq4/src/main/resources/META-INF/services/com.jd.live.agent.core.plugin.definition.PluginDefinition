@@ -1,5 +1,4 @@
 com.jd.live.agent.plugin.router.rocketmq.v4.definition.LitePullConsumerDefinition
-com.jd.live.agent.plugin.router.rocketmq.v4.definition.MQProducerDefinition
 com.jd.live.agent.plugin.router.rocketmq.v4.definition.MQPullConsumerDefinition
 com.jd.live.agent.plugin.router.rocketmq.v4.definition.MQPushConsumerDefinition
 com.jd.live.agent.plugin.router.rocketmq.v4.definition.PullAPIWrapperDefinition

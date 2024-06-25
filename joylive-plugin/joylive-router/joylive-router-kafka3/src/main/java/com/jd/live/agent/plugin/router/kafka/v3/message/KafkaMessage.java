@@ -9,9 +9,9 @@ import java.util.Arrays;
 /**
  * A concrete implementation of {@link AbstractMessage} for Kafka messages.
  */
-public class KafkaConsumerMessage extends AbstractMessage {
+public class KafkaMessage extends AbstractMessage {
 
-    public KafkaConsumerMessage(ConsumerRecord<?, ?> record) {
+    public KafkaMessage(ConsumerRecord<?, ?> record) {
         super(record.topic(), key -> {
             Header header = record.headers().lastHeader(key);
             return header == null ? null : Arrays.toString(header.value());

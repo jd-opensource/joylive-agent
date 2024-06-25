@@ -71,27 +71,6 @@ public interface Message {
      * @return the lane of the message.
      */
     String getLane();
-
-    /**
-     * ProducerMessage is an interface that extends the Message interface.
-     * It provides additional functionality for setting the topic name for a message.
-     */
-    interface ProducerMessage extends Message {
-        /**
-         * Sets the topic name.
-         *
-         * @param topic the new topic name to set.
-         */
-        void setTopic(String topic);
-
-        /**
-         * Sets a header for the message.
-         *
-         * @param key   the header key.
-         * @param value the header value.
-         */
-        void setHeader(String key, String value);
-    }
 }
 
 

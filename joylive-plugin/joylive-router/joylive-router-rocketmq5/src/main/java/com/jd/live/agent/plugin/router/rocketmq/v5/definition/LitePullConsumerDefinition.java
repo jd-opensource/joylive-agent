@@ -26,15 +26,15 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.GroupInterceptor;
 
 /**
- * DefaultLitePullConsumerDefinition
+ * LitePullConsumerDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "DefaultLitePullConsumerDefinition_v5")
+@Extension(value = "LitePullConsumerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
@@ -47,9 +47,7 @@ public class LitePullConsumerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LITE_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.LitePullConsumer";
 
-    private static final String METHOD_SUBSCRIBE = "subscribe";
-
-    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
+    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
@@ -58,8 +56,8 @@ public class LitePullConsumerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_LITE_PULL_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
-                        () -> new SubscribeInterceptor(context)
+                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP),
+                        () -> new GroupInterceptor(context)
                 )
         };
     }

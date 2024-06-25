@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v5.definition;
+package com.jd.live.agent.plugin.router.kafka.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,44 +26,34 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.RequestInterceptor;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SendInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v3.interceptor.GroupInterceptor;
 
+/**
+ * ConsumerConfigDefinition
+ *
+ * @since 1.0.0
+ */
 @Injectable
-@Extension(value = "MQProducerDefinition_v5")
+@Extension(value = "ConsumerConfigDefinition_v3")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_MQ_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
-public class MQProducerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
+@ConditionalOnClass(ConsumerConfigDefinition.TYPE_CONSUMER_CONFIG)
+public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
-
-    private static final String METHOD_SEND = "send";
-
-    private static final String METHOD_SEND_ONEWAY = "sendOneway";
-
-    private static final String METHOD_REQUEST = "request";
-
-    private static final String METHOD_SEND_MESSAGE_IN_TRANSACTION = "sendMessageInTransaction";
+    protected static final String TYPE_CONSUMER_CONFIG = "org.apache.kafka.clients.consumer.ConsumerConfig";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public MQProducerDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PRODUCER);
+    public ConsumerConfigDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONFIG);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ONEWAY, METHOD_SEND_MESSAGE_IN_TRANSACTION),
-                        () -> new SendInterceptor(context)
-                ),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REQUEST),
-                        () -> new RequestInterceptor(context)
+                        MatcherBuilder.isConstructor(),
+                        () -> new GroupInterceptor(context)
                 )
         };
     }

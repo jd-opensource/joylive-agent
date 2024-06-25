@@ -27,7 +27,7 @@ import java.util.Set;
 @Setter
 public class LiveConfig {
 
-    private boolean retainTopicWhenOneUnit = true;
+    private boolean modifyMQGroupEnabled = true;
 
     private Set<String> topics;
 
