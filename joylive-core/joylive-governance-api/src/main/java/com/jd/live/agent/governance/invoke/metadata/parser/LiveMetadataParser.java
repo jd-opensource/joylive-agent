@@ -1,5 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata.parser;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.context.RequestContext;
@@ -88,7 +89,7 @@ public class LiveMetadataParser implements LiveParser {
         Unit centerUnit = liveSpace == null ? null : liveSpace.getCenter();
         Unit currentUnit = liveSpace == null ? null : liveSpace.getCurrentUnit();
         Cell currentCell = liveSpace == null ? null : liveSpace.getCurrentCell();
-        String unitRuleId = parseRuleId(liveConfig.getRuleIdKey());
+        String unitRuleId = parseRuleId();
         UnitRule unitRule = liveSpace == null || unitRuleId == null ? null : liveSpace.getUnitRule(unitRuleId);
         String variable = parseVariable();
         builder.liveConfig(liveConfig).
@@ -105,11 +106,10 @@ public class LiveMetadataParser implements LiveParser {
     /**
      * Parses the rule ID from the request context using a specified key.
      *
-     * @param key The key used to retrieve the rule ID from the request context.
      * @return The parsed rule ID as a Long, or null if the rule ID is not found or is not a valid number.
      */
-    protected String parseRuleId(String key) {
-        Cargo cargo = RequestContext.getCargo(key);
+    protected String parseRuleId() {
+        Cargo cargo = RequestContext.getCargo(Constants.LABEL_RULE_ID);
         String ruleId = cargo == null ? null : cargo.getFirstValue();
         ruleId = ruleId == null || ruleId.isEmpty() ? application.getLocation().getUnitRuleId() : ruleId;
         return ruleId;
@@ -121,7 +121,7 @@ public class LiveMetadataParser implements LiveParser {
      * @return The first value associated with the cargo for the specified variable key, or {@code null} if no such value exists.
      */
     protected String parseVariable() {
-        Cargo cargo = RequestContext.getCargo(liveConfig.getVariableKey());
+        Cargo cargo = RequestContext.getCargo(Constants.LABEL_VARIABLE);
         return cargo == null ? null : cargo.getFirstValue();
     }
 
@@ -230,7 +230,7 @@ public class LiveMetadataParser implements LiveParser {
             UnitRule unitRule = unitRuleId == null ? null : liveSpace.getUnitRule(unitRuleId);
             Carrier carrier = RequestContext.getOrCreate();
             // The gateway may have decrypted the user and placed it in the context attribute
-            String variable = carrier.getAttribute(liveConfig.getVariableKey());
+            String variable = carrier.getAttribute(Constants.LABEL_VARIABLE);
             if (variable == null) {
                 // Parse variables according to rules
                 variableName = variableName == null && unitRule != null ? unitRule.getVariable() : variableName;
@@ -274,13 +274,13 @@ public class LiveMetadataParser implements LiveParser {
             UnitRule unitRule = metadata.getUnitRule();
             Carrier carrier = RequestContext.getOrCreate();
             if (unitRule != null) {
-                carrier.setCargo(liveConfig.getSpaceIdKey(), liveSpace.getId());
-                carrier.setCargo(liveConfig.getRuleIdKey(), unitRule.getId());
-                carrier.setCargo(liveConfig.getVariableKey(), metadata.getVariable());
+                carrier.setCargo(Constants.LABEL_LIVE_SPACE_ID, liveSpace.getId());
+                carrier.setCargo(Constants.LABEL_RULE_ID, unitRule.getId());
+                carrier.setCargo(Constants.LABEL_VARIABLE, metadata.getVariable());
             } else {
-                carrier.removeCargo(liveConfig.getSpaceIdKey());
-                carrier.removeCargo(liveConfig.getRuleIdKey());
-                carrier.removeCargo(liveConfig.getVariableKey());
+                carrier.removeCargo(Constants.LABEL_LIVE_SPACE_ID);
+                carrier.removeCargo(Constants.LABEL_RULE_ID);
+                carrier.removeCargo(Constants.LABEL_VARIABLE);
             }
         }
     }

@@ -19,11 +19,11 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.thread.Camera;
 import com.jd.live.agent.core.thread.Snapshot;
+import com.jd.live.agent.governance.config.TransmitConfig;
 import com.jd.live.agent.plugin.transmission.thread.adapter.AbstractThreadAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.CallableAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.RunnableAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.RunnableAndCallableAdapter;
-import com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -44,11 +44,11 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
 
     private final Camera[] cameras;
 
-    private final ThreadConfig threadConfig;
+    private final TransmitConfig.ThreadConfig threadConfig;
 
     private final Map<Class<?>, Boolean> excludes = new ConcurrentHashMap<>();
 
-    public ExecutorInterceptor(List<Camera> cameras, ThreadConfig threadConfig) {
+    public ExecutorInterceptor(List<Camera> cameras, TransmitConfig.ThreadConfig threadConfig) {
         this.cameras = cameras == null ? new Camera[0] : cameras.toArray(new Camera[0]);
         this.threadConfig = threadConfig;
         this.callableField = getCallableField();

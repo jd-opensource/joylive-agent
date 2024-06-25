@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.thread.config;
+package com.jd.live.agent.governance.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +23,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class ThreadConfig {
+public class TransmitThreadConfig {
 
     public static final String CONFIG_THREAD_PREFIX = "agent.governance.transmission.thread";
 

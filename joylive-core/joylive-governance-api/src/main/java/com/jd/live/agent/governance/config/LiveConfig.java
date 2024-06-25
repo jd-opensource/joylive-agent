@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.config;
 
-import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,31 +22,10 @@ import java.util.Set;
 
 /**
  * LiveConfig is a configuration class that holds the keys for managing live settings within a system.
- * It provides constants for various live configuration properties such as rule ID, space ID, and live variable.
  */
 @Getter
 @Setter
 public class LiveConfig {
-
-    /**
-     * The name used to identify the live configuration component.
-     */
-    public static final String COMPONENT_LIVE_CONFIG = "liveConfig";
-
-    /**
-     * The space ID key used for live configuration.
-     */
-    private String spaceIdKey = Constants.LABEL_LIVE_SPACE_ID;
-
-    /**
-     * The variable key used for live configuration, which may represent a unique identifier for live sessions.
-     */
-    private String variableKey = Constants.LABEL_VARIABLE;
-
-    /**
-     * The rule ID key used for live configuration, which may determine the behavior of live sessions.
-     */
-    private String ruleIdKey = Constants.LABEL_RULE_ID;
 
     private Set<String> topics;
 

@@ -1,5 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata.parser;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.core.util.option.Converts;
@@ -82,7 +83,7 @@ public class LaneMetadataParser implements LaneParser {
      * @return The lane space object, or null if not found.
      */
     protected LaneSpace parseLaneSpace() {
-        Cargo cargo = RequestContext.getCargo(laneConfig.getSpaceIdKey());
+        Cargo cargo = RequestContext.getCargo(Constants.LABEL_LANE_SPACE_ID);
         String laneSpaceId = cargo == null ? null : Converts.getString(cargo.getFirstValue());
         laneSpaceId = laneSpaceId != null ? laneSpaceId : application.getLocation().getLaneSpaceId();
         return governancePolicy.getLaneSpace(laneSpaceId);
@@ -95,7 +96,7 @@ public class LaneMetadataParser implements LaneParser {
      * @return The lane code as a String, or null if not found.
      */
     protected String parseLane(LaneSpace laneSpace) {
-        Cargo cargo = RequestContext.getCargo(laneConfig.getLaneKey());
+        Cargo cargo = RequestContext.getCargo(Constants.LABEL_LANE);
         return cargo == null ? null : cargo.getFirstValue();
     }
 
@@ -197,11 +198,11 @@ public class LaneMetadataParser implements LaneParser {
             Lane targetLane = metadata.getTargetLane();
             Carrier carrier = RequestContext.getOrCreate();
             if (null != targetLane) {
-                carrier.setCargo(laneConfig.getSpaceIdKey(), laneSpace.getId());
-                carrier.setCargo(laneConfig.getLaneKey(), targetLane.getCode());
+                carrier.setCargo(Constants.LABEL_LANE_SPACE_ID, laneSpace.getId());
+                carrier.setCargo(Constants.LABEL_LANE, targetLane.getCode());
             } else {
-                carrier.removeCargo(laneConfig.getSpaceIdKey());
-                carrier.removeCargo(laneConfig.getLaneKey());
+                carrier.removeCargo(Constants.LABEL_LANE_SPACE_ID);
+                carrier.removeCargo(Constants.LABEL_LANE);
             }
         }
     }

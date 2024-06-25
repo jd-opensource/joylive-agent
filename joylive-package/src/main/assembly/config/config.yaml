@@ -121,8 +121,6 @@ agent:
       warmups: ${CONFIG_WARMUP_SERVICES:}
       excludes:
         - org.apache.dubbo.metadata.MetadataService
-      transmitPrefixes:
-        - x-service
     live:
       topics: ${CONFIG_LIVE_TOPICS}
     lane:
@@ -132,6 +130,16 @@ agent:
       phevos:
         groupExpression: ${unit}-${cell}-${group}
     transmission:
+      keys:
+        - x-live-space-id
+        - x-live-rule-id
+        - x-live-uid
+        - x-lane-space-id
+        - x-lane-code
+      prefixes:
+        - x-live-
+        - x-lane-
+        - x-service-
       thread:
         excludeExecutors:
           - org.apache.dubbo.common.threadpool.ThreadlessExecutor

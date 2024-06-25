@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.config;
 
-import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,26 +22,10 @@ import java.util.Set;
 
 /**
  * LaneConfig is a configuration class that holds the keys for identifying specific lanes within a system.
- * It provides constants for the component name and keys used to represent the space ID and lane code.
  */
 @Getter
 @Setter
 public class LaneConfig {
-
-    /**
-     * The name used to identify the lane configuration component.
-     */
-    public static final String COMPONENT_LANE_CONFIG = "laneConfig";
-
-    /**
-     * The space ID key used for lane configuration.
-     */
-    private String spaceIdKey = Constants.LABEL_LANE_SPACE_ID;
-
-    /**
-     * The code key used for lane configuration.
-     */
-    private String laneKey = Constants.LABEL_LANE;
 
     private Set<String> topics;
 

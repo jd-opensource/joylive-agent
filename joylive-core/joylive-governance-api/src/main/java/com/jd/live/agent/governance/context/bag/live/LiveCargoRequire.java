@@ -15,12 +15,13 @@
  */
 package com.jd.live.agent.governance.context.bag.live;
 
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.config.LiveConfig;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
+
+import java.util.Set;
 
 /**
  * LiveCargoRequire is an implementation of the CargoRequire interface that provides
@@ -34,19 +35,18 @@ import com.jd.live.agent.governance.context.bag.CargoRequire;
 @Extension("LiveCargoRequire")
 public class LiveCargoRequire implements CargoRequire {
 
-    @Inject(LiveConfig.COMPONENT_LIVE_CONFIG)
-    private LiveConfig liveConfig;
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
 
     @Override
     public String[] getNames() {
-        String spaceIdKey = liveConfig == null ? Constants.LABEL_LIVE_SPACE_ID : liveConfig.getSpaceIdKey();
-        String ruleIdKey = liveConfig == null ? Constants.LABEL_RULE_ID : liveConfig.getRuleIdKey();
-        String variableKey = liveConfig == null ? Constants.LABEL_VARIABLE : liveConfig.getVariableKey();
-        return new String[]{spaceIdKey, ruleIdKey, variableKey};
+        Set<String> keys = governanceConfig.getTransmitConfig().getKeys();
+        return keys == null || keys.isEmpty() ? new String[0] : keys.toArray(new String[0]);
     }
 
     @Override
     public String[] getPrefixes() {
-        return new String[]{Constants.LABEL_LIVE_PREFIX};
+        Set<String> keys = governanceConfig.getTransmitConfig().getPrefixes();
+        return keys == null || keys.isEmpty() ? new String[0] : keys.toArray(new String[0]);
     }
 }

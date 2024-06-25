@@ -15,10 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.LaneConfig;
-import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
@@ -173,14 +171,11 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
                 // remove rule id at frontend gateway
                 Carrier carrier = RequestContext.get();
                 if (carrier != null) {
-                    GovernanceConfig governanceConfig = context.getGovernanceConfig();
-                    LiveConfig liveConfig = governanceConfig.getLiveConfig();
-                    LaneConfig laneConfig = governanceConfig.getLaneConfig();
-                    carrier.removeCargo(liveConfig.getSpaceIdKey());
-                    carrier.removeCargo(liveConfig.getRuleIdKey());
-                    carrier.removeCargo(liveConfig.getVariableKey());
-                    carrier.removeCargo(laneConfig.getSpaceIdKey());
-                    carrier.removeCargo(laneConfig.getLaneKey());
+                    carrier.removeCargo(Constants.LABEL_LIVE_SPACE_ID);
+                    carrier.removeCargo(Constants.LABEL_RULE_ID);
+                    carrier.removeCargo(Constants.LABEL_VARIABLE);
+                    carrier.removeCargo(Constants.LABEL_LANE_SPACE_ID);
+                    carrier.removeCargo(Constants.LABEL_LANE);
                 }
             }
             super.parsePolicy();

@@ -21,19 +21,15 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperties;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.core.thread.Camera;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig;
 import com.jd.live.agent.plugin.transmission.thread.interceptor.ExecutorInterceptor;
 
 import java.util.List;
-
-import static com.jd.live.agent.plugin.transmission.thread.config.ThreadConfig.CONFIG_THREAD_PREFIX;
 
 /**
  * ScheduledExecutorServiceDefinition
@@ -61,15 +57,15 @@ public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter 
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<Camera> handlers;
 
-    @Config(CONFIG_THREAD_PREFIX)
-    private ThreadConfig threadConfig;
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
 
     public ScheduledExecutorServiceDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_SCHEDULED_EXECUTOR_SERVICE).
-                and(MatcherBuilder.not(MatcherBuilder.in(threadConfig.getExcludeExecutors())));
+                and(MatcherBuilder.not(MatcherBuilder.in(governanceConfig.getTransmitConfig().getThreadConfig().getExcludeExecutors())));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHODS).and(MatcherBuilder.isPublic()),
-                        () -> new ExecutorInterceptor(handlers, threadConfig))};
+                        () -> new ExecutorInterceptor(handlers, governanceConfig.getTransmitConfig().getThreadConfig()))};
     }
 
     @Override

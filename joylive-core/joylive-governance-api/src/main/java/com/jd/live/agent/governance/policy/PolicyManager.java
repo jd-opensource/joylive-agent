@@ -33,7 +33,9 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.governance.config.*;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.RegistryConfig;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -215,9 +217,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
-            source.add(LiveConfig.COMPONENT_LIVE_CONFIG, governanceConfig == null ? null : governanceConfig.getLiveConfig());
             source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig == null ? null : governanceConfig.getServiceConfig());
-            source.add(LaneConfig.COMPONENT_LANE_CONFIG, governanceConfig == null ? null : governanceConfig.getLaneConfig());
             source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig == null ? null : governanceConfig.getRegistryConfig());
         }
     }

@@ -102,6 +102,9 @@ public class GovernanceConfig {
     @Config("registry")
     private RegistryConfig registryConfig = new RegistryConfig();
 
+    @Config("transmission")
+    private TransmitConfig transmitConfig = new TransmitConfig();
+
     @Config
     private int initializeTimeout = 10 * 1000;
 
