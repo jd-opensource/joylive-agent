@@ -50,13 +50,13 @@ public interface ConcurrencyLimiterFactory {
         }
         AtomicReference<ConcurrencyLimiter> reference = CONCURRENCY_LIMITERS.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
         ConcurrencyLimiter concurrencyLimiter = reference.get();
-        if (concurrencyLimiter != null && concurrencyLimiter.getPolicy().getVersion() >= policy.getVersion()) {
+        if (concurrencyLimiter != null && concurrencyLimiter.getPolicy().getVersion() == policy.getVersion()) {
             return concurrencyLimiter;
         }
         ConcurrencyLimiter newLimiter = create(policy);
         while (true) {
             concurrencyLimiter = reference.get();
-            if (concurrencyLimiter == null || concurrencyLimiter.getPolicy().getVersion() < policy.getVersion()) {
+            if (concurrencyLimiter == null || concurrencyLimiter.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(concurrencyLimiter, newLimiter)) {
                     concurrencyLimiter = newLimiter;
                     break;
