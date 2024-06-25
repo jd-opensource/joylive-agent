@@ -37,7 +37,8 @@ import static com.jd.live.agent.plugin.transmission.sofarpc.definition.SofaRpcCl
 @Extension(value = "SofaRpcServerDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(SofaRpcServerDefinition.TYPE_PROVIDER_BAGGAGE_FILTER)
 public class SofaRpcServerDefinition extends PluginDefinitionAdapter {

@@ -35,7 +35,8 @@ import com.jd.live.agent.plugin.transmission.springcloud.v3.interceptor.ReactorL
 @Extension(value = "ReactorLoadBalancerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(ReactorLoadBalancerDefinition.TYPE_REACTOR_LOADBALANCER)
 @Deprecated

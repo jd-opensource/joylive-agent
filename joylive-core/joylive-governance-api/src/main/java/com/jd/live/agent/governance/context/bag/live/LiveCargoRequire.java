@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.context.bag.live;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 
@@ -26,7 +27,10 @@ import com.jd.live.agent.governance.context.bag.CargoRequire;
  * the necessary cargo requirements for live streaming scenarios. It uses
  * a LiveConfig instance to determine the specific keys required for space ID,
  * rule ID, and variables, as well as a common prefix for live-related configurations.
+ *
+ * @since 1.0.0
  */
+@Injectable
 @Extension("LiveCargoRequire")
 public class LiveCargoRequire implements CargoRequire {
 

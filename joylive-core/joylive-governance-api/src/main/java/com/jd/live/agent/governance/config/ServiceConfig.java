@@ -60,6 +60,16 @@ public class ServiceConfig {
     private Set<String> excludes;
 
     /**
+     * A collection of keys that need to be transmitted.
+     */
+    private Set<String> transmitKeys;
+
+    /**
+     * A collection of key prefixes that need to be transmitted.
+     */
+    private Set<String> transmitPrefixes;
+
+    /**
      * Retrieves the failover threshold for a given unit.
      *
      * @param unit the identifier of the unit to get the failover threshold for

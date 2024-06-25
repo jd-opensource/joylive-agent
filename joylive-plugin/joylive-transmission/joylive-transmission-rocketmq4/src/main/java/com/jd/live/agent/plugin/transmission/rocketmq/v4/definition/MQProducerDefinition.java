@@ -26,7 +26,8 @@ import com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor.MQProducerI
 @Extension(value = "MQProducerDefinition_v4", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
 @ConditionalOnClass(MessageDefinition.TYPE_CLIENT_LOGGER)

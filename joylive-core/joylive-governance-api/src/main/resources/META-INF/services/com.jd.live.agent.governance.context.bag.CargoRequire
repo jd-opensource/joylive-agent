@@ -1,2 +1,3 @@
 com.jd.live.agent.governance.context.bag.live.LiveCargoRequire
 com.jd.live.agent.governance.context.bag.lane.LaneCargoRequire
+com.jd.live.agent.governance.context.bag.service.ServiceCargoRequire

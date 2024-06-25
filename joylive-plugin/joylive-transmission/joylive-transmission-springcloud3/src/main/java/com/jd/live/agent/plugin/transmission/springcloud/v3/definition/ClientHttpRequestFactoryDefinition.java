@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.dubbo.v3.definition;
+package com.jd.live.agent.plugin.transmission.springcloud.v3.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -27,40 +27,44 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.plugin.transmission.dubbo.v3.interceptor.DubboConsumerInterceptor;
+import com.jd.live.agent.plugin.transmission.springcloud.v3.interceptor.ClientHttpRequestFactoryInterceptor;
 
 import java.util.List;
 
-@Extension(value = "DubboConsumerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
+/**
+ * ClientHttpRequestFactoryDefinition
+ *
+ * @author Zhiguo.Chen
+ * @since 1.0.0
+ */
 @Injectable
+@Extension(value = "ClientHttpRequestFactoryDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
-public class DubboConsumerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ClientHttpRequestFactoryDefinition.TYPE_CLIENT_HTTP_REQUEST_FACTORY)
+public class ClientHttpRequestFactoryDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_CONTEXT_FILTER = "org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter";
+    protected static final String TYPE_CLIENT_HTTP_REQUEST_FACTORY = "org.springframework.http.client.ClientHttpRequestFactory";
 
-    private static final String METHOD_INVOKE = "invoke";
+    private static final String METHOD_HANDLE = "createRequest";
 
-    protected static final String[] ARGUMENT_INVOKE = new String[]{
-            "org.apache.dubbo.rpc.Invoker",
-            "org.apache.dubbo.rpc.Invocation"
+    private static final String[] ARGUMENT_HANDLE = new String[]{
+            "java.net.URI", "org.springframework.http.HttpMethod"
     };
 
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
-    public DubboConsumerDefinition() {
-
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONTEXT_FILTER);
+    public ClientHttpRequestFactoryDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_CLIENT_HTTP_REQUEST_FACTORY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE).
-                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new DubboConsumerInterceptor(requires))};
+                        MatcherBuilder.named(METHOD_HANDLE).
+                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
+                        () -> new ClientHttpRequestFactoryInterceptor(requires))};
     }
 }

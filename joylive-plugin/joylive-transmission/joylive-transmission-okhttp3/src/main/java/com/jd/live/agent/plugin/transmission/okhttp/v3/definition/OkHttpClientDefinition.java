@@ -26,7 +26,8 @@ import com.jd.live.agent.plugin.transmission.okhttp.v3.interceptor.OkHttpClientI
 @Extension(value = "OkHttpClientDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(OkHttpClientDefinition.TYPE_OK_HTTPCLIENT)
 public class OkHttpClientDefinition extends PluginDefinitionAdapter {

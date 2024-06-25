@@ -37,7 +37,8 @@ import static com.jd.live.agent.plugin.transmission.dubbo.v2_6.definition.DubboC
 @Extension(value = "DubboProviderDefinition_v2.6", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(DubboProviderDefinition.TYPE_CONTEXT_FILTER)
 public class DubboProviderDefinition extends PluginDefinitionAdapter {
