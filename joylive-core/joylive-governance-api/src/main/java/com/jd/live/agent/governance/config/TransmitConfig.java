@@ -37,6 +37,11 @@ public class TransmitConfig {
     private Set<String> prefixes;
 
     /**
+     * A collection of key suffixes that need to be transmitted.
+     */
+    private Set<String> suffixes;
+
+    /**
      * Thread transmit config
      */
     @Config("thread")

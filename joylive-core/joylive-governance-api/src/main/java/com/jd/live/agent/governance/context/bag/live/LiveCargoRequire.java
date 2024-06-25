@@ -38,15 +38,23 @@ public class LiveCargoRequire implements CargoRequire {
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
 
+    private static final String[] EMPTY_ARRAY = new String[0];
+
     @Override
     public String[] getNames() {
         Set<String> keys = governanceConfig.getTransmitConfig().getKeys();
-        return keys == null || keys.isEmpty() ? new String[0] : keys.toArray(new String[0]);
+        return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
     }
 
     @Override
     public String[] getPrefixes() {
         Set<String> keys = governanceConfig.getTransmitConfig().getPrefixes();
-        return keys == null || keys.isEmpty() ? new String[0] : keys.toArray(new String[0]);
+        return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
+    }
+
+    @Override
+    public String[] getSuffixes() {
+        Set<String> keys = governanceConfig.getTransmitConfig().getSuffixes();
+        return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
     }
 }
