@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v4.definition;
+package com.jd.live.agent.plugin.router.rocketmq.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SubscribeInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
 
 @Injectable
 @Extension(value = "DefaultLitePullConsumerDefinition_v5")
@@ -35,11 +35,11 @@ import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SubscribeIntercep
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultLitePullConsumerDefinition.TYPE_DEFAULT_LITE_PULL_CONSUMER)
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)
-public class DefaultLitePullConsumerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(LitePullConsumerDefinition.TYPE_LITE_PULL_CONSUMER)
+@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
+public class LitePullConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_LITE_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultLitePullConsumer";
+    protected static final String TYPE_LITE_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.LitePullConsumer";
 
     private static final String METHOD_SUBSCRIBE = "subscribe";
 
@@ -48,8 +48,8 @@ public class DefaultLitePullConsumerDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultLitePullConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_LITE_PULL_CONSUMER);
+    public LitePullConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_LITE_PULL_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),

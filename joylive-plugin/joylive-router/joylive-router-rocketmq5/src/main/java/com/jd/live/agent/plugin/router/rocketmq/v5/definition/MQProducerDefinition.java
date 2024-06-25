@@ -26,34 +26,43 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.RequestInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SendInterceptor;
 
 @Injectable
-@Extension(value = "DefaultLitePullConsumerDefinition_v5")
+@Extension(value = "MQProducerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultLitePullConsumerDefinition.TYPE_DEFAULT_LITE_PULL_CONSUMER)
+@ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
-public class DefaultLitePullConsumerDefinition extends PluginDefinitionAdapter {
+public class MQProducerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_LITE_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultLitePullConsumer";
+    protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
 
-    private static final String METHOD_SUBSCRIBE = "subscribe";
+    private static final String METHOD_SEND = "send";
 
-    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
+    private static final String METHOD_SEND_ONEWAY = "sendOneway";
+
+    private static final String METHOD_REQUEST = "request";
+
+    private static final String METHOD_SEND_MESSAGE_IN_TRANSACTION = "sendMessageInTransaction";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultLitePullConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_LITE_PULL_CONSUMER);
+    public MQProducerDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PRODUCER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
-                        () -> new SubscribeInterceptor(context)
+                        MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ONEWAY, METHOD_SEND_MESSAGE_IN_TRANSACTION),
+                        () -> new SendInterceptor(context)
+                ),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_REQUEST),
+                        () -> new RequestInterceptor(context)
                 )
         };
     }

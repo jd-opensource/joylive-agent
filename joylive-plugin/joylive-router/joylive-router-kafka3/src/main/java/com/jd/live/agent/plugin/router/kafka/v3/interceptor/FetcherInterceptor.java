@@ -19,14 +19,14 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.kafka.clients.consumer.internals.Fetch;
 import org.apache.kafka.common.TopicPartition;
 
 import java.lang.reflect.Field;
 
-public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
+public class FetcherInterceptor extends AbstractMessageInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(FetcherInterceptor.class);
 
@@ -39,7 +39,7 @@ public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
             partitionField = type.getDeclaredField("partition");
             partitionField.setAccessible(true);
         } catch (Throwable e) {
-            logger.warn("Partition field is not found.", e);
+            logger.error("Error occurs while accessing partition field of CompletedFetch.", e);
         }
     }
 
@@ -49,13 +49,14 @@ public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
             try {
                 Object[] arguments = ctx.getArguments();
                 TopicPartition partition = (TopicPartition) partitionField.get(arguments[0]);
-                String topic = context.getTopicConverter().getSource(partition.topic());
+                String topic = getSource(partition.topic());
                 if (isConsumeReady(topic)) {
                     MethodContext mc = (MethodContext) ctx;
                     mc.setResult(Fetch.empty());
                     mc.setSkip(true);
                 }
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                logger.error("Error occurs while accessing partition field of CompletedFetch.", e);
             }
         }
     }

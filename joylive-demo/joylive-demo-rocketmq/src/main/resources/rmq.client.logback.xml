@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" scan="false">
+    <!-- Console log output -->
+
+    <property name="LOG_CONSOLE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5level ${PID} --- [%15.15t] %-40.40logger{39} : [RocketMQ] %m%n"/>
+
+    <appender name="CONSOLE_APPENDER" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                ${LOG_CONSOLE_PATTERN}
+            </pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.rocketmq.client" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="CONSOLE_APPENDER"/>
+    </logger>
+
+    <!-- Level: TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+    <root level="info">
+        <appender-ref ref="CONSOLE_APPENDER"/>
+    </root>
+</configuration>

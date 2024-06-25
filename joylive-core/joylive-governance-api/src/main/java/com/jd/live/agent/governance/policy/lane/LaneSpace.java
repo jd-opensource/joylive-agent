@@ -18,11 +18,11 @@ package com.jd.live.agent.governance.policy.lane;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.governance.policy.mq.MqPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 public class LaneSpace {
 
@@ -44,7 +44,7 @@ public class LaneSpace {
 
     @Getter
     @Setter
-    private MqPolicy mqPolicy;
+    private Set<String> topics;
 
     private final transient Cache<String, Lane> laneCache = new MapCache<>(new ListBuilder<>(() -> lanes, Lane::getCode));
 
@@ -68,6 +68,10 @@ public class LaneSpace {
 
     public LaneDomain getDomain(String host) {
         return domainCache.get(host);
+    }
+
+    public boolean withTopic(String topic) {
+        return topic != null && topics != null && topics.contains(topic);
     }
 
     public void locate(String lane) {

@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.ArrayList;
 
-public class PullInterceptor extends AbstractMQConsumerInterceptor {
+public class PullInterceptor extends AbstractMessageInterceptor {
 
     public PullInterceptor(InvocationContext context) {
         super(context);
@@ -35,7 +35,7 @@ public class PullInterceptor extends AbstractMQConsumerInterceptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         MessageQueue messageQueue = (MessageQueue) arguments[0];
-        String topic = context.getTopicConverter().getSource(messageQueue.getTopic());
+        String topic = getSource(messageQueue.getTopic());
         if (!isConsumeReady(topic)) {
             MethodContext mc = (MethodContext) ctx;
             PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],

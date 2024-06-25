@@ -16,13 +16,14 @@
 package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.rocketmq.v5.message.RocketMQMessage;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.Collection;
 
-public class SendInterceptor extends AbstractMQConsumerInterceptor {
+public class SendInterceptor extends AbstractMessageInterceptor {
 
     public SendInterceptor(InvocationContext context) {
         super(context);
@@ -33,19 +34,16 @@ public class SendInterceptor extends AbstractMQConsumerInterceptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         if (arguments[0] instanceof Message) {
-            updateTopic((Message) arguments[0]);
+            doRoute((Message) arguments[0]);
         } else if (arguments[0] instanceof Collection) {
             Collection<Message> messages = (Collection<Message>) arguments[0];
             for (Message message : messages) {
-                updateTopic(message);
+                doRoute(message);
             }
         }
     }
 
-    private void updateTopic(Message message) {
-        String topic = message.getTopic();
-        if (isEnabled(topic)) {
-            message.setTopic(context.getTopicConverter().getTarget(topic));
-        }
+    protected void doRoute(Message message) {
+        route(new RocketMQMessage(message));
     }
 }

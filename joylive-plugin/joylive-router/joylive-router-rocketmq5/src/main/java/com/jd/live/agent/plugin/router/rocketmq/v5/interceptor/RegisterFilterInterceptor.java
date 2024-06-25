@@ -16,19 +16,18 @@
 package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.rocketmq.v5.message.RocketMQMessage;
 import org.apache.rocketmq.client.hook.FilterMessageContext;
 import org.apache.rocketmq.client.hook.FilterMessageHook;
-import org.apache.rocketmq.common.message.MessageExt;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.filter;
 
-public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
+public class RegisterFilterInterceptor extends AbstractMessageInterceptor {
 
     public RegisterFilterInterceptor(InvocationContext context) {
         super(context);
@@ -47,53 +46,10 @@ public class RegisterFilterInterceptor extends AbstractMQConsumerInterceptor {
             }
 
             @Override
-            public void filterMessage(FilterMessageContext filterMessageContext) {
-                filter(filterMessageContext.getMsgList(), message -> isAllow(message) == MessageAction.CONSUME);
+            public void filterMessage(FilterMessageContext filterContext) {
+                filter(filterContext.getMsgList(), message -> allow(new RocketMQMessage(message)) == MessageAction.CONSUME);
             }
         });
         arguments[0] = result;
-    }
-
-    /**
-     * Determines whether the message is allowed based on live and lane checks.
-     *
-     * @param message the Kafka message to check.
-     * @return {@code MessageAction.CONSUME} if both live and lane checks allow the message;
-     *         otherwise returns the result of the live check.
-     */
-    private MessageAction isAllow(MessageExt message) {
-        String topic = context.getTopicConverter().getSource(message.getTopic());
-        if (!isEnabled(topic)) {
-            return MessageAction.CONSUME;
-        }
-        MessageAction result = isAllowLive(message);
-        return result == MessageAction.CONSUME ? isAllowLane(message) : result;
-    }
-
-    /**
-     * Determines whether the message is allowed based on lane checks.
-     *
-     * @param message the Kafka message to check.
-     * @return {@code MessageAction.CONSUME} if the lane checks allow the message;
-     *         {@code MessageAction.DISCARD} otherwise.
-     */
-    private MessageAction isAllowLane(MessageExt message) {
-        String laneSpaceId = message.getUserProperty(Constants.LABEL_LANE_SPACE_ID);
-        String lane = message.getUserProperty(Constants.LABEL_LANE);
-        return allowLane(laneSpaceId, lane);
-    }
-
-    /**
-     * Determines whether the message is allowed based on live checks.
-     *
-     * @param message the Kafka message to check.
-     * @return {@code MessageAction.CONSUME} if the live checks allow the message;
-     *         {@code MessageAction.DISCARD} or {@code MessageAction.REJECT} otherwise.
-     */
-    private MessageAction isAllowLive(MessageExt message) {
-        String liveSpaceId = message.getUserProperty(Constants.LABEL_LIVE_SPACE_ID);
-        String ruleId = message.getUserProperty(Constants.LABEL_RULE_ID);
-        String uid = message.getUserProperty(Constants.LABEL_VARIABLE);
-        return allowLive(liveSpaceId, ruleId, uid);
     }
 }

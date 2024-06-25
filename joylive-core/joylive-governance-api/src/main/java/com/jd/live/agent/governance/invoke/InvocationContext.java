@@ -30,13 +30,13 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.live.*;
-import com.jd.live.agent.governance.policy.mq.TopicConverter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.governance.request.MessageRoute;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -109,7 +109,12 @@ public interface InvocationContext {
      */
     PolicySupplier getPolicySupplier();
 
-    TopicConverter getTopicConverter();
+    /**
+     * Retrieves an instance of the MessageRoute interface.
+     *
+     * @return an instance of the MessageRoute interface.
+     */
+    MessageRoute getMessageRoute();
 
     /**
      * Retrieves a unit function by its name.
@@ -384,8 +389,8 @@ public interface InvocationContext {
         }
 
         @Override
-        public TopicConverter getTopicConverter() {
-            return delegate.getTopicConverter();
+        public MessageRoute getMessageRoute() {
+            return delegate.getMessageRoute();
         }
 
         @Override

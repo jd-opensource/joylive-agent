@@ -29,17 +29,17 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v5")
+@Extension(value = "MQPushConsumerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE_DEFAULT_MQ_PUSH_CONSUMER)
+@ConditionalOnClass(MQPushConsumerDefinition.TYPE_MQ_PUSH_CONSUMER)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
-public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
+public class MQPushConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
+    protected static final String TYPE_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.MQPushConsumer";
 
     private static final String METHOD_SUBSCRIBE = "subscribe";
 
@@ -48,8 +48,8 @@ public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultMQPushConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PUSH_CONSUMER);
+    public MQPushConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PUSH_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),

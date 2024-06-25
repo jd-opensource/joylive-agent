@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.mq;
+package com.jd.live.agent.governance.request;
+
+import com.jd.live.agent.core.extension.annotation.Extensible;
 
 /**
- * TopicConverter is an interface for converting topic names between source and target.
+ * MessageRoute is an interface for converting topic names between source and target.
  * It provides methods to get the target topic name from a source topic name and vice versa.
  */
-public interface TopicConverter {
+@Extensible("MessageRoute")
+public interface MessageRoute {
 
     /**
-     * Converts the given topic name to its target equivalent.
+     * Converts the given topic name to its target equivalent based on the specified unit and lane.
      *
-     * @param topic the original topic name
-     * @return the target topic name
+     * @param topic the original topic name.
+     * @param unit the unit context for the topic transformation.
+     * @param lane the lane context for the topic transformation.
+     * @return the target topic name after applying the unit and lane transformations.
      */
-    String getTarget(String topic);
+    String getTarget(String topic, String unit, String lane);
 
     /**
      * Converts the given topic name to its source equivalent.

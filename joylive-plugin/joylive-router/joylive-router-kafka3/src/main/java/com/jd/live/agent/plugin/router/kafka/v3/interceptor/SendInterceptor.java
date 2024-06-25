@@ -16,11 +16,12 @@
 package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.kafka.v3.message.KafkaProducerMessage;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-public class SendInterceptor extends AbstractMQConsumerInterceptor {
+public class SendInterceptor extends AbstractMessageInterceptor {
 
     public SendInterceptor(InvocationContext context) {
         super(context);
@@ -30,17 +31,6 @@ public class SendInterceptor extends AbstractMQConsumerInterceptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         ProducerRecord<?, ?> record = (ProducerRecord<?, ?>) arguments[0];
-        String topic = record.topic();
-        if (isEnabled(topic)) {
-            topic = context.getTopicConverter().getTarget(topic);
-            arguments[0] = new ProducerRecord<>(
-                    topic,
-                    record.partition(),
-                    record.timestamp(),
-                    record.key(),
-                    record.value(),
-                    record.headers());
-        }
-
+        route(new KafkaProducerMessage(record));
     }
 }

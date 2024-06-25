@@ -29,30 +29,30 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SubscribeInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v5")
+@Extension(value = "MQPullConsumerDefinition_v4")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE_DEFAULT_MQ_PUSH_CONSUMER)
+@ConditionalOnClass(MQPullConsumerDefinition.TYPE_MQ_PULL_CONSUMER)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)
-public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
+public class MQPullConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
+    protected static final String TYPE_MQ_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.MQPullConsumer";
 
-    private static final String METHOD_SUBSCRIBE = "subscribe";
+    private static final String METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE = "fetchMessageQueuesInBalance";
 
-    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
+    private static final String METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES = "fetchSubscribeMessageQueues";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultMQPushConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PUSH_CONSUMER);
+    public MQPullConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_MQ_PULL_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
+                        MatcherBuilder.in(METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE, METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES),
                         () -> new SubscribeInterceptor(context)
                 )
         };

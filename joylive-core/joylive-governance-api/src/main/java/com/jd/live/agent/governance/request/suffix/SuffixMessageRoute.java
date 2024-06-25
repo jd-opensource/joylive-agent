@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.mq.suffix;
+package com.jd.live.agent.governance.request.suffix;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.policy.mq.TopicName;
+import com.jd.live.agent.governance.request.MessageRoute;
 
 @Extension("suffix")
-public class SuffixTopicName implements TopicName {
+public class SuffixMessageRoute implements MessageRoute {
 
     private static final String LANE = "-lane-";
 
@@ -27,15 +27,23 @@ public class SuffixTopicName implements TopicName {
 
     @Override
     public String getTarget(String topic, String unit, String lane) {
-        if (unit == null || unit.isEmpty()) {
-            if (lane == null || lane.isEmpty()) {
-                return topic;
-            }
-            return topic + LANE + lane;
-        } else if (lane == null || lane.isEmpty()) {
-            return topic + UNIT + unit;
+        int unitLength = unit != null ? unit.length() : 0;
+        int lanLength = lane != null ? lane.length() : 0;
+        int length = topic.length() + unitLength + lanLength;
+        if (length == topic.length()) {
+            return topic;
         }
-        return topic + UNIT + unit + LANE + lane;
+
+        // Initialize the StringBuilder with the calculated final length
+        StringBuilder target = new StringBuilder(length).append(topic);
+        if (unitLength > 0) {
+            target.append(UNIT).append(unit);
+        }
+        if (lanLength > 0) {
+            target.append(LANE).append(lane);
+        }
+
+        return target.toString();
     }
 
     @Override

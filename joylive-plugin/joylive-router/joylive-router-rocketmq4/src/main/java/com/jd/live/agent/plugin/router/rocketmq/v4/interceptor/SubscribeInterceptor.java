@@ -16,10 +16,10 @@
 package com.jd.live.agent.plugin.router.rocketmq.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
-public class SubscribeInterceptor extends AbstractMQConsumerInterceptor {
+public class SubscribeInterceptor extends AbstractMessageInterceptor {
 
     public SubscribeInterceptor(InvocationContext context) {
         super(context);
@@ -28,9 +28,6 @@ public class SubscribeInterceptor extends AbstractMQConsumerInterceptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        String topic = (String) arguments[0];
-        if (isEnabled(topic)) {
-            arguments[0] = context.getTopicConverter().getTarget(topic);
-        }
+        arguments[0] = getTarget((String) arguments[0]);
     }
 }

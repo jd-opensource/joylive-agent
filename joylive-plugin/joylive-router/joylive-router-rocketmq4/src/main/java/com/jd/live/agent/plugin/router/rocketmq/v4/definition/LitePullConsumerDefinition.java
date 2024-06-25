@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v5.definition;
+package com.jd.live.agent.plugin.router.rocketmq.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,36 +26,34 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SendInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SubscribeInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQProducerDefinition_v5")
+@Extension(value = "LitePullConsumerDefinition_v4")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultMQProducerDefinition.TYPE_DEFAULT_MQ_PRODUCER_IMPL)
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
-public class DefaultMQProducerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(LitePullConsumerDefinition.TYPE_LITE_PULL_CONSUMER)
+@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)
+public class LitePullConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_MQ_PRODUCER_IMPL = "org.apache.rocketmq.client.impl.producer.DefaultMQProducer";
+    protected static final String TYPE_LITE_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.LitePullConsumer";
 
-    private static final String METHOD_SEND = "send";
+    private static final String METHOD_SUBSCRIBE = "subscribe";
 
-    private static final String METHOD_SEND_ONEWAY = "sendOneway";
-
-    private static final String METHOD_REQUEST = "request";
+    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultMQProducerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PRODUCER_IMPL);
+    public LitePullConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_LITE_PULL_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ONEWAY, METHOD_REQUEST),
-                        () -> new SendInterceptor(context)
+                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
+                        () -> new SubscribeInterceptor(context)
                 )
         };
     }

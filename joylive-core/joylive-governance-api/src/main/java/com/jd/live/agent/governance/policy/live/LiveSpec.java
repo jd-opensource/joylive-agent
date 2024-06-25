@@ -20,12 +20,12 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.governance.policy.mq.MqPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * LiveSpec
@@ -72,11 +72,14 @@ public class LiveSpec {
 
     @Getter
     @Setter
-    private MqPolicy mqPolicy;
+    private Set<String> topics;
 
     private final transient Cache<String, Unit> unitCache = new MapCache<>(new ListBuilder<>(() -> units, Unit::getCode));
+
     private final transient Cache<String, LiveDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LiveDomain::getHost));
+
     private final transient Cache<String, LiveVariable> variableCache = new MapCache<>(new ListBuilder<>(() -> variables, LiveVariable::getName));
+
     private final transient Cache<String, UnitRule> unitRuleCache = new MapCache<>(new ListBuilder<>(() -> unitRules, rule -> {
         List<UnitRoute> unitRoutes = rule.getUnitRoutes();
         if (unitRoutes != null) {
@@ -105,6 +108,7 @@ public class LiveSpec {
             }
         }
     }, UnitRule::getId));
+
     private final transient LazyObject<Unit> center = new LazyObject<>(() -> {
         for (Unit unit : units) {
             if (unit.getType() == UnitType.CENTER) {
@@ -142,6 +146,10 @@ public class LiveSpec {
 
     public UnitRule getUnitRule(String id) {
         return id == null ? null : unitRuleCache.get(id);
+    }
+
+    public boolean withTopic(String topic) {
+        return topic != null && topics != null && topics.contains(topic);
     }
 
     public Unit getCenter() {

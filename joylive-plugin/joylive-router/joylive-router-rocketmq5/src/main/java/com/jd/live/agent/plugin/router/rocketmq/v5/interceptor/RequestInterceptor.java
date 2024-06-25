@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.mq;
+package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.rocketmq.v5.message.RocketMQMessage;
+import org.apache.rocketmq.common.message.Message;
 
-import java.util.Set;
+public class RequestInterceptor extends SendInterceptor {
 
-@Getter
-@Setter
-public class MqPolicy {
+    public RequestInterceptor(InvocationContext context) {
+        super(context);
+    }
 
-    private boolean all;
-
-    private Set<String> topics;
-
-    public boolean include(String topic) {
-        return topic != null && !topic.isEmpty() && (all || topics != null && topics.contains(topic));
+    @Override
+    protected void doRoute(Message message) {
+        request(new RocketMQMessage(message));
     }
 }
