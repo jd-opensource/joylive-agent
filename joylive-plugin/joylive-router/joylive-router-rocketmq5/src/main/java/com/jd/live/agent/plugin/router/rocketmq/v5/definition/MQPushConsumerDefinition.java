@@ -39,6 +39,7 @@ import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeIntercep
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_MQ_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(MQPushConsumerDefinition.TYPE_MQ_PUSH_CONSUMER)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)

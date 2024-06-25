@@ -41,6 +41,7 @@ import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.RegisterFilterInt
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, relation = ConditionalRelation.OR, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_MQ_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_PULL_API_WRAPPER)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)

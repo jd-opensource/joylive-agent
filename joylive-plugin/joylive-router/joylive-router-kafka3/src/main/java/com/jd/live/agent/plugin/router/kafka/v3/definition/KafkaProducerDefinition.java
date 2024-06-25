@@ -40,6 +40,7 @@ import com.jd.live.agent.plugin.router.kafka.v3.interceptor.SendInterceptor;
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_MQ_ENABLED)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
 @ConditionalOnClass(KafkaProducerDefinition.TYPE_CONSUMER_CONFIG)
 public class KafkaProducerDefinition extends PluginDefinitionAdapter {

@@ -30,6 +30,8 @@ import com.jd.live.agent.governance.request.Message;
 import com.jd.live.agent.governance.request.Message.ProducerMessage;
 import com.jd.live.agent.governance.request.MessageRoute;
 
+import java.util.List;
+
 /**
  * AbstractMessageInterceptor
  */
@@ -103,6 +105,35 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
     }
 
     /**
+     * Determines whether a topic needs to be modified under the active-active architecture.
+     *
+     * @param topic the name of the topic to check
+     * @return {@code true} if the topic needs to be modified, {@code false} otherwise
+     */
+    protected boolean modifyTopicByLive(String topic) {
+        LiveConfig liveConfig = governanceConfig.getLiveConfig();
+        GovernancePolicy policy = policySupplier.getPolicy();
+        LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(location.getLiveSpaceId());
+        LiveSpec liveSpec = liveSpace == null ? null : liveSpace.getSpec();
+        List<Unit> units = liveSpec == null ? null : liveSpec.getUnits();
+        int size = units == null ? 0 : units.size();
+        if (liveConfig.withTopic(topic) || liveSpec != null && liveSpec.withTopic(topic)) {
+            return !liveConfig.isRetainTopicWhenOneUnit() || size != 1;
+        }
+        return false;
+    }
+
+    /**
+     * Determines whether a topic needs to be modified under the lane architecture.
+     *
+     * @param topic the name of the topic to check
+     * @return {@code true} if the topic needs to be modified because the lane feature is enabled, {@code false} otherwise
+     */
+    protected boolean modifyTopicByLane(String topic) {
+        return isLaneEnabled(topic);
+    }
+
+    /**
      * Checks if the specified topic has lane functionality enabled.
      *
      * @param topic the topic to check.
@@ -126,8 +157,8 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * features are enabled.
      */
     protected String getTarget(String topic) {
-        String unit = isLiveEnabled(topic) ? location.getUnit() : null;
-        String lane = isLaneEnabled(topic) ? location.getLane() : null;
+        String unit = modifyTopicByLive(topic) ? location.getUnit() : null;
+        String lane = modifyTopicByLane(topic) ? location.getLane() : null;
         if (unit != null || lane != null) {
             return messageRoute.getTarget(topic, unit, lane);
         }
@@ -143,8 +174,8 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      */
     protected String getTarget(Message message) {
         String topic = message.getTopic();
-        String unit = isLiveEnabled(topic) ? getTargetUnit(message) : null;
-        String lane = isLaneEnabled(topic) ? getTargetLane(message) : null;
+        String unit = modifyTopicByLive(topic) ? getTargetUnit(message) : null;
+        String lane = modifyTopicByLane(topic) ? getTargetLane(message) : null;
         if (unit != null || lane != null) {
             return messageRoute.getTarget(topic, unit, lane);
         }
@@ -219,13 +250,13 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             } else if (local == null) {
                 return MessageAction.DISCARD;
             } else if (rule == null) {
-                return MessageAction.DISCARD;
+                return MessageAction.CONSUME;
             } else {
                 UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
                 UnitRoute targetRoute = rule.getUnitRoute(message.getVariable(), func);
                 Unit targetUnit = targetRoute == null ? null : targetRoute.getUnit();
                 if (targetUnit == null) {
-                    return MessageAction.DISCARD;
+                    return MessageAction.CONSUME;
                 } else if (targetUnit == local) {
                     return MessageAction.CONSUME;
                 } else {
