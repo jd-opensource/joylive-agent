@@ -26,42 +26,39 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SetConsumerGroupInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
 
 /**
- * DefaultLitePullConsumerDefinition
+ * DefaultMQPullConsumerDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "DefaultLitePullConsumerDefinition_v5")
+@Extension(value = "MQPushConsumerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultLitePullConsumerDefinition.TYPE_DEFAULT_LITE_PULL_CONSUMER)
+@ConditionalOnClass(MQPushConsumerDefinition.TYPE_MQ_PUSH_CONSUMER)
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
-public class DefaultLitePullConsumerDefinition extends PluginDefinitionAdapter {
+public class MQPushConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_LITE_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultLitePullConsumer";
+    protected static final String TYPE_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.MQPushConsumer";
 
-    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
+    private static final String METHOD_SUBSCRIBE = "subscribe";
 
-    private static final String[] ARGUMENT_SET_CONSUMER_GROUP = new String[]{
-            "java.lang.String"
-    };
+    private static final String METHOD_UNSUBSCRIBE = "unsubscribe";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultLitePullConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_LITE_PULL_CONSUMER);
+    public MQPushConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PUSH_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP).
-                                and(MatcherBuilder.arguments(ARGUMENT_SET_CONSUMER_GROUP)),
-                        () -> new SetConsumerGroupInterceptor(context)
+                        MatcherBuilder.in(METHOD_SUBSCRIBE, METHOD_UNSUBSCRIBE),
+                        () -> new SubscribeInterceptor(context)
                 )
         };
     }

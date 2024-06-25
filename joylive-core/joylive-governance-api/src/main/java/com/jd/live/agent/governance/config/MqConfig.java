@@ -25,14 +25,26 @@ public class MqConfig {
 
     public static final String DEFAULT_GROUP = "${group}${'_unit_'unit}${'_lane_'lane}";
 
+    public static final String DEFAULT_TOPIC = "${topic}${'_unit_'unit}${'_lane_'lane}";
+
     @Getter
     @Setter
     private String group = DEFAULT_GROUP;
+
+    @Getter
+    @Setter
+    private String topic = DEFAULT_TOPIC;
 
     private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(group, 128));
 
     public Evaluator getGroupTemplate() {
         return groupTemplate.get();
+    }
+
+    private final LazyObject<Evaluator> topicTemplate = new LazyObject<>(() -> new Template(topic, 128));
+
+    public Evaluator getTopicTemplate() {
+        return topicTemplate.get();
     }
 
 }

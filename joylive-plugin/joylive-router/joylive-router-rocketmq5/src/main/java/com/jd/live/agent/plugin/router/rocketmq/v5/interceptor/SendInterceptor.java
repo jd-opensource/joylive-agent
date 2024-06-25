@@ -13,35 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v4.interceptor;
+package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import org.apache.rocketmq.client.consumer.PullResult;
-import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.message.MessageQueue;
+import com.jd.live.agent.plugin.router.rocketmq.v5.message.RocketMQMessage;
+import org.apache.rocketmq.common.message.Message;
 
-import java.util.ArrayList;
+import java.util.Collection;
 
-public class PullInterceptor extends AbstractMessageInterceptor {
+public class SendInterceptor extends AbstractMessageInterceptor {
 
-    public PullInterceptor(InvocationContext context) {
+    public SendInterceptor(InvocationContext context) {
         super(context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        MessageQueue messageQueue = (MessageQueue) arguments[0];
-        String topic = getSource(messageQueue.getTopic());
-        if (!isConsumeReady(topic)) {
-            MethodContext mc = (MethodContext) ctx;
-            PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
-                    0, 0, new ArrayList<>());
-            mc.setResult(result);
-            mc.setSkip(true);
+        if (arguments[0] instanceof Message) {
+            doRoute((Message) arguments[0]);
+        } else if (arguments[0] instanceof Collection) {
+            Collection<Message> messages = (Collection<Message>) arguments[0];
+            for (Message message : messages) {
+                doRoute(message);
+            }
         }
+    }
+
+    protected void doRoute(Message message) {
+        route(new RocketMQMessage(message));
     }
 }

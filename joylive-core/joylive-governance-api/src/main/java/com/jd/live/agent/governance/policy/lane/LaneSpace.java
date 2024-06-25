@@ -22,6 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 public class LaneSpace {
 
@@ -40,6 +41,10 @@ public class LaneSpace {
     @Getter
     @Setter
     private List<LaneRule> rules;
+
+    @Getter
+    @Setter
+    private Set<String> topics;
 
     private final transient Cache<String, Lane> laneCache = new MapCache<>(new ListBuilder<>(() -> lanes, Lane::getCode));
 
@@ -63,6 +68,10 @@ public class LaneSpace {
 
     public LaneDomain getDomain(String host) {
         return domainCache.get(host);
+    }
+
+    public boolean withTopic(String topic) {
+        return topic != null && topics != null && topics.contains(topic);
     }
 
     public void locate(String lane) {

@@ -17,36 +17,47 @@ package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import org.apache.kafka.clients.consumer.internals.Fetch;
-import org.apache.kafka.clients.consumer.internals.Fetcher;
+import org.apache.kafka.common.TopicPartition;
 
-/**
- * FetcherInterceptor
- *
- * @since 1.0.0
- */
-public class FetcherInterceptor extends AbstractMQConsumerInterceptor {
+import java.lang.reflect.Field;
+
+public class FetcherInterceptor extends AbstractMessageInterceptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(FetcherInterceptor.class);
+
+    private Field partitionField;
 
     public FetcherInterceptor(InvocationContext context) {
         super(context);
+        try {
+            Class<?> type = Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher.CompletedFetch");
+            partitionField = type.getDeclaredField("partition");
+            partitionField.setAccessible(true);
+        } catch (Throwable e) {
+            logger.error("Error occurs while accessing partition field of CompletedFetch.", e);
+        }
     }
 
-    /**
-     * Enhanced logic before method execution. This method is called before the
-     * target method is executed.
-     *
-     * @param ctx The execution context of the method being intercepted.
-     * @see org.apache.kafka.clients.consumer.internals.Fetcher #fetchRecords(Fetcher.CompletedFetch, int)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (isConsumeDisabled()) {
-            MethodContext mc = (MethodContext) ctx;
-            mc.setResult(Fetch.empty());
-            mc.setSkip(true);
+        if (partitionField != null) {
+            try {
+                Object[] arguments = ctx.getArguments();
+                TopicPartition partition = (TopicPartition) partitionField.get(arguments[0]);
+                String topic = getSource(partition.topic());
+                if (isConsumeReady(topic)) {
+                    MethodContext mc = (MethodContext) ctx;
+                    mc.setResult(Fetch.empty());
+                    mc.setSkip(true);
+                }
+            } catch (Throwable e) {
+                logger.error("Error occurs while accessing partition field of CompletedFetch.", e);
+            }
         }
-
     }
 }

@@ -20,6 +20,8 @@ import com.jd.live.agent.demo.util.EchoResponse;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQReplyListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -28,6 +30,8 @@ import java.util.Map;
 @Component
 @RocketMQMessageListener(topic = "${rocketmq.topic}", consumerGroup = "${rocketmq.consumer.group}")
 public class RocketmqConsumer implements RocketMQReplyListener<MessageExt, String> {
+
+    private static final Logger logger = LoggerFactory.getLogger(RocketmqConsumer.class);
 
     private final ConsumerService consumerService;
 
@@ -38,11 +42,14 @@ public class RocketmqConsumer implements RocketMQReplyListener<MessageExt, Strin
     @Override
     public String onMessage(MessageExt message) {
         Map<String, String> properties = message.getProperties();
+        String result;
         try {
             String msg = consumerService.echo(new String(message.getBody(), StandardCharsets.UTF_8));
-            return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, msg).toString();
+            result = new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, msg).toString();
         } catch (Throwable e) {
-            return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, e.getMessage()).toString();
+            result = new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, e.getMessage()).toString();
         }
+        logger.info(result);
+        return result;
     }
 }

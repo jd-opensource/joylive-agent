@@ -102,7 +102,7 @@ agent:
       sticky: ${CONFIG_STICKY_ENABLED:false}
       limit: ${CONFIG_LIMIT_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
-      virtual: ${CONFIG_VIRTUAL_ENABLED:false}
+      virtual: ${CONFIG_VIRTUAL_ENABLED:false}Gov
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
       mariadb: true
@@ -121,8 +121,10 @@ agent:
       warmups: ${CONFIG_WARMUP_SERVICES:}
       excludes:
         - org.apache.dubbo.metadata.MetadataService
-    mq:
-      group: ${group}${'_unit_'unit}${'_lane_'lane}
+    live:
+      topics: ${CONFIG_LIVE_TOPICS}
+    lane:
+      topics: ${CONFIG_LANE_TOPICS}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
       phevos:

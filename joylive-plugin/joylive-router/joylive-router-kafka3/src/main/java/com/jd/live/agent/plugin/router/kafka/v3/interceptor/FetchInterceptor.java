@@ -16,85 +16,31 @@
 package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.kafka.v3.message.KafkaConsumerMessage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.header.Header;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.filter;
 
-/**
- * FetchInterceptor
- *
- * @since 1.0.0
- */
-public class FetchInterceptor extends AbstractMQConsumerInterceptor {
+public class FetchInterceptor extends AbstractMessageInterceptor {
 
     public FetchInterceptor(InvocationContext context) {
         super(context);
     }
 
-    /**
-     * Enhanced logic before method execution. This method is called before the
-     * target method is executed.
-     *
-     * @param ctx The execution context of the method being intercepted.
-     * @see org.apache.kafka.clients.consumer.internals.Fetch#forPartition(TopicPartition, List, boolean)
-     */
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
-        filter(records, message -> isAllow(message) == MessageAction.CONSUME);
-    }
-
-    /**
-     * Determines whether the message is allowed based on live and lane checks.
-     *
-     * @param message the Kafka message to check.
-     * @return {@code MessageAction.CONSUME} if both live and lane checks allow the message;
-     * otherwise returns the result of the live check.
-     */
-    private MessageAction isAllow(ConsumerRecord<?, ?> message) {
-        MessageAction result = isAllowLive(message);
-        return result == MessageAction.CONSUME ? isAllowLane(message) : result;
-    }
-
-    /**
-     * Determines whether the message is allowed based on lane checks.
-     *
-     * @param message the Kafka message to check.
-     * @return {@code MessageAction.CONSUME} if the lane checks allow the message;
-     * {@code MessageAction.DISCARD} otherwise.
-     */
-    private MessageAction isAllowLane(ConsumerRecord<?, ?> message) {
-        String laneSpaceId = getHeader(message, Constants.LABEL_LANE_SPACE_ID);
-        String lane = getHeader(message, Constants.LABEL_LANE);
-        return allowLane(laneSpaceId, lane);
-    }
-
-    /**
-     * Determines whether the message is allowed based on live checks.
-     *
-     * @param message the Kafka message to check.
-     * @return {@code MessageAction.CONSUME} if the live checks allow the message;
-     * {@code MessageAction.DISCARD} or {@code MessageAction.REJECT} otherwise.
-     */
-    private MessageAction isAllowLive(ConsumerRecord<?, ?> message) {
-        String liveSpaceId = getHeader(message, Constants.LABEL_LIVE_SPACE_ID);
-        String ruleId = getHeader(message, Constants.LABEL_RULE_ID);
-        String uid = getHeader(message, Constants.LABEL_VARIABLE);
-        return allowLive(liveSpaceId, ruleId, uid);
-    }
-
-    private String getHeader(ConsumerRecord<?, ?> message, String key) {
-        Header header = message.headers().lastHeader(key);
-        return header == null ? null : Arrays.toString(header.value());
+        TopicPartition topicPartition = (TopicPartition) arguments[0];
+        String topic = getSource(topicPartition.topic());
+        if (isEnabled(topic)) {
+            List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
+            filter(records, message -> allow(new KafkaConsumerMessage(message)) == MessageAction.CONSUME);
+        }
     }
 }

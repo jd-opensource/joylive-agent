@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v4.definition;
+package com.jd.live.agent.plugin.router.rocketmq.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SetConsumerGroupInterceptor;
+import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.SubscribeInterceptor;
 
 /**
  * DefaultMQPushConsumerDefinition
@@ -34,34 +34,31 @@ import com.jd.live.agent.plugin.router.rocketmq.v4.interceptor.SetConsumerGroupI
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v4")
+@Extension(value = "MQPullConsumerDefinition_v5")
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE_DEFAULT_MQ_PUSH_CONSUMER)
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_CLIENT_LOGGER)
-public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(MQPullConsumerDefinition.TYPE_MQ_PULL_CONSUMER)
+@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
+public class MQPullConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
+    protected static final String TYPE_MQ_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.MQPullConsumer";
 
-    private static final String METHOD_SET_CONSUMER_GROUP = "setConsumerGroup";
+    private static final String METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE = "fetchMessageQueuesInBalance";
 
-    private static final String[] ARGUMENT_SET_CONSUMER_GROUP = new String[]{
-            "java.lang.String"
-    };
+    private static final String METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES = "fetchSubscribeMessageQueues";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DefaultMQPushConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_MQ_PUSH_CONSUMER);
+    public MQPullConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PULL_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SET_CONSUMER_GROUP).
-                                and(MatcherBuilder.arguments(ARGUMENT_SET_CONSUMER_GROUP)),
-                        () -> new SetConsumerGroupInterceptor(context)
+                        MatcherBuilder.in(METHOD_FETCH_MESSAGE_QUEUES_IN_BALANCE, METHOD_FETCH_SUBSCRIBE_MESSAGE_QUEUES),
+                        () -> new SubscribeInterceptor(context)
                 )
         };
     }

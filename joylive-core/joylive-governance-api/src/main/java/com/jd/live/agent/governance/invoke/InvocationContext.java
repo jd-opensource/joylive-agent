@@ -36,6 +36,7 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.governance.request.MessageRoute;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -68,10 +69,28 @@ public interface InvocationContext {
         return getApplication().getLocation();
     }
 
+    /**
+     * Checks if the live feature is enabled.
+     *
+     * @return {@code true} if the live feature is enabled, {@code false} otherwise
+     */
     boolean isLiveEnabled();
 
+    /**
+     * Checks if the lane feature is enabled.
+     *
+     * @return {@code true} if the lane feature is enabled, {@code false} otherwise
+     */
     boolean isLaneEnabled();
 
+    /**
+     * Checks if the governance context is ready.
+     * <p>
+     * This default implementation checks if the application's status is {@code AppStatus.READY}.
+     * </p>
+     *
+     * @return {@code true} if the governance context is ready, {@code false} otherwise
+     */
     default boolean isGovernReady() {
         return getApplication().getStatus() == AppStatus.READY;
     }
@@ -89,6 +108,13 @@ public interface InvocationContext {
      * @return An instance of {@code PolicySupplier} that supplies policies.
      */
     PolicySupplier getPolicySupplier();
+
+    /**
+     * Retrieves an instance of the MessageRoute interface.
+     *
+     * @return an instance of the MessageRoute interface.
+     */
+    MessageRoute getMessageRoute();
 
     /**
      * Retrieves a unit function by its name.
@@ -361,6 +387,11 @@ public interface InvocationContext {
         @Override
         public PolicySupplier getPolicySupplier() {
             return delegate.getPolicySupplier();
+        }
+
+        @Override
+        public MessageRoute getMessageRoute() {
+            return delegate.getMessageRoute();
         }
 
         @Override

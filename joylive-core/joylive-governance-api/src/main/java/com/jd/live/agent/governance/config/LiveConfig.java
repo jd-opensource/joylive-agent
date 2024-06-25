@@ -19,6 +19,8 @@ import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 /**
  * LiveConfig is a configuration class that holds the keys for managing live settings within a system.
  * It provides constants for various live configuration properties such as rule ID, space ID, and live variable.
@@ -46,6 +48,12 @@ public class LiveConfig {
      * The rule ID key used for live configuration, which may determine the behavior of live sessions.
      */
     private String ruleIdKey = Constants.LABEL_RULE_ID;
+
+    private Set<String> topics;
+
+    public boolean withTopic(String topic) {
+        return topic != null && topics != null && topics.contains(topic);
+    }
 
 }
 

@@ -17,38 +17,26 @@ package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.governance.interceptor.AbstractMQConsumerInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import org.apache.rocketmq.client.consumer.PullCallback;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.ArrayList;
 
-/**
- * PullInterceptor
- *
- * @since 1.0.0
- */
-public class PullInterceptor extends AbstractMQConsumerInterceptor {
+public class PullInterceptor extends AbstractMessageInterceptor {
 
     public PullInterceptor(InvocationContext context) {
         super(context);
     }
 
-    /**
-     * Enhanced logic before method execution. This method is called before the
-     * target method is executed.
-     *
-     * @param ctx The execution context of the method being intercepted.
-     * @see org.apache.rocketmq.client.impl.consumer.PullAPIWrapper#pullKernelImpl(MessageQueue, String, String, long, long, int, int, long, long, long, CommunicationMode, PullCallback)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (isConsumeDisabled()) {
-            Object[] arguments = ctx.getArguments();
+        Object[] arguments = ctx.getArguments();
+        MessageQueue messageQueue = (MessageQueue) arguments[0];
+        String topic = getSource(messageQueue.getTopic());
+        if (!isConsumeReady(topic)) {
             MethodContext mc = (MethodContext) ctx;
             PullResult result = new PullResult(PullStatus.NO_NEW_MSG, (Long) arguments[4],
                     0, 0, new ArrayList<>());
@@ -56,5 +44,4 @@ public class PullInterceptor extends AbstractMQConsumerInterceptor {
             mc.setSkip(true);
         }
     }
-
 }

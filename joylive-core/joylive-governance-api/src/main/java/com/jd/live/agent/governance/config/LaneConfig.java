@@ -19,6 +19,8 @@ import com.jd.live.agent.core.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 /**
  * LaneConfig is a configuration class that holds the keys for identifying specific lanes within a system.
  * It provides constants for the component name and keys used to represent the space ID and lane code.
@@ -41,6 +43,12 @@ public class LaneConfig {
      * The code key used for lane configuration.
      */
     private String laneKey = Constants.LABEL_LANE;
+
+    private Set<String> topics;
+
+    public boolean withTopic(String topic) {
+        return topic != null && topics != null && topics.contains(topic);
+    }
 
 }
 

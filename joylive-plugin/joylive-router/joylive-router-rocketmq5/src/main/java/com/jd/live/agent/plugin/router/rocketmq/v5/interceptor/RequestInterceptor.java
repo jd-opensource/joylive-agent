@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.rocketmq;
+package com.jd.live.agent.plugin.router.rocketmq.v5.interceptor;
 
-import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.rocketmq.v5.message.RocketMQMessage;
+import org.apache.rocketmq.common.message.Message;
 
-@EnableDiscoveryClient
-@SpringBootApplication
-public class RocketmqApplication {
+public class RequestInterceptor extends SendInterceptor {
 
-    public static void main(String[] args) {
-        System.setProperty("rocketmq.client.logUseSlf4j", "true");
-        SnapShotSwitch.setIsSnapShot(false);
-        SpringApplication.run(RocketmqApplication.class, args);
+    public RequestInterceptor(InvocationContext context) {
+        super(context);
+    }
+
+    @Override
+    protected void doRoute(Message message) {
+        request(new RocketMQMessage(message));
     }
 }

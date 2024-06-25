@@ -44,6 +44,7 @@ import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import com.jd.live.agent.governance.request.MessageRoute;
 import com.jd.live.agent.governance.service.PolicyService;
 import lombok.Getter;
 
@@ -89,6 +90,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Config(GovernanceConfig.CONFIG_AGENT_GOVERNANCE)
     private GovernanceConfig governanceConfig;
+
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private MessageRoute messageRoute;
 
     @Getter
     @Inject
@@ -160,6 +165,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Override
     public GovernancePolicy getPolicy() {
         return policy.get();
+    }
+
+    @Override
+    public MessageRoute getMessageRoute() {
+        return messageRoute;
     }
 
     @Override
