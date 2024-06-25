@@ -142,6 +142,9 @@ public abstract class HttpUtils {
      * @throws IOException If an I/O error occurs while reading from the InputStream.
      */
     private static <T> T read(InputStream stream, String encoding, ObjectReader<BufferedReader, T> reader) throws IOException {
+        if (stream == null) {
+            return null;
+        }
         InputStream is = stream;
         if (encoding != null && encoding.contains(ENCODING_GZIP)) {
             is = new GZIPInputStream(is);
