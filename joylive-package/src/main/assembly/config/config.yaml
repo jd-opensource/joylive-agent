@@ -56,7 +56,7 @@ agent:
     profile: null
   sync:
     liveSpace:
-      type: file # [file,multilive]
+      type: ${CONFIG_LIVE_SPACE_API_TYPE:file} # [file,multilive]
       url: ${CONFIG_LIVE_SPACE_API_URL:http://api.live.local:9090/v1}
       #spacesUrl: ${CONFIG_LIVE_SPACE_API_URL}/workspaces
       #spaceUrl: ${CONFIG_LIVE_SPACE_API_URL}/workspaces/${space_id}/version/${space_version}
@@ -72,7 +72,7 @@ agent:
       type: file
     microservice:
       enabled: true
-      type: file
+      type: ${CONFIG_SERVICE_API_TYPE:file}
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
       headers: ${CONFIG_SERVICE_API_HEADERS}
   watchdog:
