@@ -52,7 +52,7 @@ public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        ClientHttpRequest request = (ClientHttpRequest) ((MethodContext) ctx).getResult();
+        ClientHttpRequest request = (ClientHttpRequest) mc.getResult();
         RequestContext.cargos(tag -> request.getHeaders().addAll(tag.getKey(), tag.getValues()));
         mc.setResult(request);
     }
