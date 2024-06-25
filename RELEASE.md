@@ -17,4 +17,4 @@
 
 ## Limitations
 1. Dynamic enhancement injection (agentmain) is not fully functional; please do not use it.
-2. Message topics used for lane-based or unit-based routing will automatically undergo topic isolation, with the default suffix "-unit-topic" or "-lane-lane" appended. Additionally, for MQ consumers, applications need to manually configure different consumer groups.
+2. Message topics used for lane-based or unit-based routing will automatically undergo topic isolation, with the default suffix "-unit-${unit}" or "-lane-${lane}" appended. Additionally, for MQ consumers, applications need to manually configure different consumer groups.
