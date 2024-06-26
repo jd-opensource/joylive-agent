@@ -49,7 +49,7 @@ public class ClientHttpRequestFactoryDefinition extends PluginDefinitionAdapter 
 
     protected static final String TYPE_CLIENT_HTTP_REQUEST_FACTORY = "org.springframework.http.client.ClientHttpRequestFactory";
 
-    private static final String METHOD_HANDLE = "createRequest";
+    private static final String METHOD_CREATE_REQUEST = "createRequest";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
             "java.net.URI", "org.springframework.http.HttpMethod"
@@ -63,7 +63,7 @@ public class ClientHttpRequestFactoryDefinition extends PluginDefinitionAdapter 
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_CLIENT_HTTP_REQUEST_FACTORY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_HANDLE).
+                        MatcherBuilder.named(METHOD_CREATE_REQUEST).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
                         () -> new ClientHttpRequestFactoryInterceptor(requires))};
     }

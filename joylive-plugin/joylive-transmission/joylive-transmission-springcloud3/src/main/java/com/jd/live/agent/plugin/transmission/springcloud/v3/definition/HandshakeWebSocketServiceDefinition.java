@@ -49,7 +49,6 @@ public class HandshakeWebSocketServiceDefinition extends PluginDefinitionAdapter
             "org.springframework.web.reactive.socket.WebSocketHandler"
     };
 
-
     public HandshakeWebSocketServiceDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_REACTOR_LOADBALANCER);
         this.interceptors = new InterceptorDefinition[]{

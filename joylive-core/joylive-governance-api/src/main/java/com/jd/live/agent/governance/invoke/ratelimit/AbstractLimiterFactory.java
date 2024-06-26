@@ -58,13 +58,13 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
         }
         AtomicReference<RateLimiter> reference = rateLimiters.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
         RateLimiter rateLimiter = reference.get();
-        if (rateLimiter != null && rateLimiter.getPolicy().getVersion() >= policy.getVersion()) {
+        if (rateLimiter != null && rateLimiter.getPolicy().getVersion() == policy.getVersion()) {
             return rateLimiter;
         }
         RateLimiter newLimiter = create(policy);
         while (true) {
             rateLimiter = reference.get();
-            if (rateLimiter == null || rateLimiter.getPolicy().getVersion() < policy.getVersion()) {
+            if (rateLimiter == null || rateLimiter.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(rateLimiter, newLimiter)) {
                     rateLimiter = newLimiter;
                     break;

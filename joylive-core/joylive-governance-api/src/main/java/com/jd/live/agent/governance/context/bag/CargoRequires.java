@@ -35,6 +35,8 @@ public class CargoRequires implements CargoRequire {
 
     private final String[] prefixes;
 
+    private final String[] suffixes;
+
     public CargoRequires(List<CargoRequire> requires) {
         int size = requires == null ? 0 : requires.size();
         switch (size) {
@@ -42,16 +44,19 @@ public class CargoRequires implements CargoRequire {
                 names = new String[0];
                 nameSet = new HashSet<>();
                 prefixes = new String[0];
+                suffixes = new String[0];
                 break;
             case 1:
                 CargoRequire req = requires.get(0);
                 names = req.getNames() == null ? new String[0] : req.getNames();
                 nameSet = names == null ? new HashSet<>() : new HashSet<>(Arrays.asList(req.getNames()));
                 prefixes = req.getPrefixes() == null ? new String[0] : req.getPrefixes();
+                suffixes = req.getSuffixes() == null ? new String[0] : req.getSuffixes();
                 break;
             default:
                 nameSet = new HashSet<>();
                 Set<String> prefixNames = new HashSet<>();
+                Set<String> suffixNames = new HashSet<>();
                 for (CargoRequire require : requires) {
                     if (require.getNames() != null) {
                         nameSet.addAll(Arrays.asList(require.getNames()));
@@ -59,9 +64,13 @@ public class CargoRequires implements CargoRequire {
                     if (require.getPrefixes() != null) {
                         prefixNames.addAll(Arrays.asList(require.getPrefixes()));
                     }
+                    if (require.getSuffixes() != null) {
+                        suffixNames.addAll(Arrays.asList(require.getSuffixes()));
+                    }
                 }
                 names = nameSet.toArray(new String[0]);
                 prefixes = prefixNames.toArray(new String[0]);
+                suffixes = suffixNames.toArray(new String[0]);
         }
     }
 
@@ -73,6 +82,11 @@ public class CargoRequires implements CargoRequire {
     @Override
     public String[] getPrefixes() {
         return prefixes;
+    }
+
+    @Override
+    public String[] getSuffixes() {
+        return suffixes;
     }
 
     @Override
