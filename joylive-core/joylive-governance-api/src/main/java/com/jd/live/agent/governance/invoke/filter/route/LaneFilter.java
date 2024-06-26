@@ -18,8 +18,6 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.AppService;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -30,6 +28,7 @@ import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
@@ -44,23 +43,28 @@ public class LaneFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        // Extract lane metadata from the invocation
         LaneMetadata laneMetadata = invocation.getLaneMetadata();
         LaneSpace laneSpace = laneMetadata.getLaneSpace();
         Lane targetLane = laneMetadata.getTargetLane();
 
         // Check if a target lane is specified
         if (targetLane != null) {
+            // Get the application and gateway role from the invocation context
+            GatewayRole gatewayRole = invocation.getContext().getApplication().getService().getGateway();
             // Retrieve the service policy  from the service metadata
             ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+            Boolean autoJoin = gatewayRole == GatewayRole.FRONTEND
+                    ? Boolean.TRUE
+                    : (servicePolicy == null ? null : servicePolicy.getAutoLaneEnabled());
+            autoJoin = autoJoin == null ? laneMetadata.getLaneConfig().isAutoJoinEnabled() : autoJoin;
 
-            // Get the application and gateway role from the invocation context
-            Application application = invocation.getContext().getApplication();
-            AppService appService = application.getService();
-            GatewayRole gatewayRole = appService == null ? null : appService.getGateway();
+            LanePolicy lanePolicy = servicePolicy == null ? null : servicePolicy.getLanePolicy(laneSpace.getId());
+            String redirect = lanePolicy == null ? null : lanePolicy.getTarget(targetLane.getCode());
+            Lane routeLane = redirect == null || redirect.isEmpty()
+                    ? (autoJoin ? targetLane : null)
+                    : laneSpace.getOrDefault(redirect);
 
-            // Determine if the request should be routed based on the gateway role and lane policy
-            if (gatewayRole == GatewayRole.FRONTEND || servicePolicy != null && servicePolicy.getLanePolicy(laneSpace.getId()) != null) {
+            if (routeLane != null) {
                 // Retrieve the current route target
                 RouteTarget target = invocation.getRouteTarget();
 
@@ -68,8 +72,8 @@ public class LaneFilter implements RouteFilter {
                 Lane defaultLane = laneSpace.getDefaultLane();
                 boolean withDefaultLane = defaultLane != null && targetLane != defaultLane;
 
-                // Filter the route target based on the lane space ID and target lane code
-                int count = target.filter(e -> e.isLane(laneSpace.getId(), targetLane.getCode()), -1, !withDefaultLane);
+                // Filter the route target based on the lane space ID and route lane code
+                int count = target.filter(e -> e.isLane(laneSpace.getId(), routeLane.getCode()), -1, !withDefaultLane);
 
                 // If no matches and a default lane exists, use the default lane
                 if (count <= 0 && withDefaultLane) {

@@ -6,16 +6,11 @@ import com.jd.live.agent.governance.policy.service.annotation.Provider;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Represents a policy associated with a specific lane or pathway within a system, identified by a lane space ID.
- * This class is designed to manage policies related to individual lanes, such as traffic management, access control,
- * or resource allocation policies specific to certain pathways or channels.
- * <p>
- * The {@code LanePolicy} class extends {@link PolicyId} to uniquely identify each policy instance and implements
- * {@link PolicyInheritWithIdGen} to support policy inheritance and supplementation. This allows for flexible and
- * dynamic policy management where lane-specific policies can inherit or supplement their configurations from other
- * lane policies.
- * </p>
+ * Represents a policy associated with a specific lane or pathway within a system,
  *
  * @since 1.0.0
  */
@@ -29,19 +24,24 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
      */
     public static final String QUERY_LANE_SPACE_ID = "laneSpaceId";
 
-    /**
-     * The unique identifier of the lane space to which this policy applies. This ID is used to associate the policy
-     * with a specific lane or pathway within a system, enabling targeted policy enforcement and management.
-     */
     private String laneSpaceId;
+
+    private Map<String, String> lanes;
 
     @Override
     public void supplement(LanePolicy source) {
         if (source == null) {
             return;
         }
-        if (laneSpaceId == null && source.getLaneSpaceId() != null) {
+        if (laneSpaceId == null) {
             laneSpaceId = source.getLaneSpaceId();
         }
+        if (lanes == null && source.getLanes() != null) {
+            lanes = new HashMap<>(source.getLanes());
+        }
+    }
+
+    public String getTarget(String lane) {
+        return lane == null || lane.isEmpty() ? null : lanes.get(lane);
     }
 }

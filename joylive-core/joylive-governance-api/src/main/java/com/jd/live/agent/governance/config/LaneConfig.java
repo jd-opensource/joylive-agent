@@ -29,6 +29,8 @@ public class LaneConfig {
 
     private boolean modifyMQGroupEnabled = true;
 
+    private boolean autoJoinEnabled = true;
+
     private Set<String> topics;
 
     public boolean withTopic(String topic) {

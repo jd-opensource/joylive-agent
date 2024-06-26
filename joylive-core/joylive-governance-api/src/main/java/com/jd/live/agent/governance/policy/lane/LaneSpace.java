@@ -66,6 +66,10 @@ public class LaneSpace {
         return laneCache.get(code);
     }
 
+    public Lane getOrDefault(String code) {
+        return laneCache.get(code, defaultLane);
+    }
+
     public LaneDomain getDomain(String host) {
         return domainCache.get(host);
     }
