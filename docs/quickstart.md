@@ -1,11 +1,9 @@
 Quick Start
 ===
 
-## Start
+## 1. Quick Start
 
-### Quick Start
-
-#### Preparation
+### 1.1 Preparation
 
 > Please prepare the maven compilation environment in advance and execute the command to compile in the project root directory:
 > ```bash
@@ -16,7 +14,7 @@ Quick Start
 - **Compile** Demo binary product compressed package
 - **Download** and start Nacos
 
-#### Get Demo binary
+### 1.2 Get Demo binary
 
 - Gateway
 
@@ -26,7 +24,7 @@ Quick Start
 
   `joylive-demo-springcloud3-provider` Spring Cloud Application demo
 
-#### Modify Agent configuration
+### 1.3 Modify Agent configuration
 
 The JoyLive Agent package has the following directory structure:
 
@@ -117,7 +115,7 @@ The `config` directory contains relevant files for agent configuration, as well 
 
 In the policy configuration item, `type` corresponds to the monitoring type, and file represents the monitoring local file.
 
-#### Start gateway
+### 1.4 Start gateway
 
 In this example, instead of modifying the configuration file, we use the method of setting environment variables.。
 
@@ -153,7 +151,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-#### Start application
+### 1.5 Start application
 
 In this example, instead of modifying the configuration file, the method is to set environment variables.
 
@@ -215,7 +213,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-#### Effect verification
+### 1.6 Effect verification
 
 Visit the nacos registration center and check the metadata of the service instance. The following data indicates that the agent has been enhanced successfully.
 
@@ -225,7 +223,7 @@ x-live-unit=unit1
 x-live-cell=cell1
 ```
 
-#### Traffic test
+### 1.7 Traffic test
 
 ```bash
 # Access the application interface through the gateway, specify the unit variable unit 1, pointing to the access unit 1 unit
@@ -233,4 +231,80 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Hos
 
 # Access the application interface through the gateway, specify the unit variable unit 2, point to the access unit 2 unit
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Host:demo.live.local"
+```
+## 2. Debugging
+
+Debugging in an IDE, using IntelliJ IDEA as an example
+
+### 2.1 Prepare Local Domain Names
+
+Configure domain names in the `hosts` file
+
+```
+127.0.0.1 demo.live.local
+127.0.0.1 unit1-demo.live.local
+127.0.0.1 unit2-demo.live.local
+```
+
+### 2.2 Compile the Project
+
+1. Compile and install the `joylive-agent` project using `mvn clean install`.
+2. Obtain the full path of the compiled project output directory `target/live-${version}` from the `joylive-package`.
+
+### 2.3 Start the Application
+
+#### 2.3.1 Start the Registration Center
+
+Prepare and start the `Nacos` registration center, and obtain its address, username, and password.
+
+#### 2.3.2 Start the Gateway Project
+
+Run the gateway application `joylive-demo-gateway`.
+
+Configure parameters and environment variables.
+
+![pic](./image/debug.png)
+
+Add the following virtual machine parameter: `-javaagent:full-path-to-live-${version}`.
+
+Refer to the following environment variable configuration:
+
+| Name | Value | Description |
+|------|-------|-------------|
+| APPLICATION_LOCATION_CELL | cell4 | |
+| APPLICATION_LOCATION_LIVESPACE_ID | v4bEh4kd6Jvu5QBX09qYq-qlbcs | |
+| APPLICATION_LOCATION_UNIT | unit2 | |
+| APPLICATION_SERVICE_GATEWAY | FRONTEND | |
+| CONFIG_LOCALHOST_ENABLED | true | |
+| NACOS_ADDR | | |
+| NACOS_NAMESPACE | public | |
+| NACOS_PASSWORD | | |
+| NACOS_USERNAME | | |
+
+For unit partition configuration, refer to the `livespaces.json` configuration file in the `joylive-package` project.
+
+#### 2.3.3 Start the Service Project
+
+Run the microservice application `joylive-demo-provider`, referring to the gateway application's configuration.
+
+Refer to the following environment variable configuration:
+
+| Name | Value | Description |
+|------|-------|-------------|
+| APPLICATION_LOCATION_CELL | cell1 | |
+| APPLICATION_LOCATION_LIVESPACE_ID | v4bEh4kd6Jvu5QBX09qYq-qlbcs | |
+| APPLICATION_LOCATION_UNIT | unit1 | |
+| APPLICATION_SERVICE_GATEWAY | FRONTEND | |
+| CONFIG_LOCALHOST_ENABLED | true | |
+| NACOS_ADDR | | |
+| NACOS_NAMESPACE | public | |
+| NACOS_PASSWORD | | |
+| NACOS_USERNAME | | |
+
+### 2.4 Access Requests
+
+Use the following curl command to send a request:
+
+```sh
+curl -G 'demo.live.local:8888/service-provider/echo/hello?user=unit1'
 ```

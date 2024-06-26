@@ -1,11 +1,9 @@
 快速开始
 ===
 
-## 开始
+## 1. 快速开始
 
-### 快速开始
-
-#### 准备工作
+### 1.1 准备工作
 
 > 请提前准备好maven编译环境，项目根目录执行命令编译: 
 > ```bash
@@ -16,7 +14,7 @@
 - **编译获取** Demo二进制产物，路径：`joylive-demo/joylive-demo-springcloud3`下各项目的target目录内
 - **下载获取** 并启动Nacos
 
-#### 获取Demo二进制
+### 1.2 获取Demo二进制
 
 - 网关
 
@@ -26,7 +24,7 @@
 
   `joylive-demo-springcloud3-provider` Spring Cloud应用demo
 
-#### 修改Agent配置
+### 1.3 修改Agent配置
 
 JoyLive Agent包如下目录结构：
 
@@ -117,7 +115,7 @@ JoyLive Agent包如下目录结构：
 
 策略配置项中`type`对应监听类型，file代表监听本地文件。
 
-#### 启动网关
+### 1.4 启动网关
 
 本例子中采用非修改配置文件而是设置环境变量方式。
 
@@ -153,7 +151,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-#### 启动应用
+### 1.5 启动应用
 
 本例子中采用非修改配置文件而是设置环境变量方式。
 
@@ -215,7 +213,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-#### 效果验证
+### 1.6 效果验证
 
 访问nacos注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
 
@@ -225,7 +223,7 @@ x-live-unit=unit1
 x-live-cell=cell1
 ```
 
-#### 流量测试
+### 1.7 流量测试
 
 ```bash
 # 通过网关访问应用接口，指定单元变量unit1，指向访问unit1单元
@@ -234,3 +232,76 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Hos
 # 通过网关访问应用接口，指定单元变量unit2，指向访问unit2单元
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Host:demo.live.local"
 ```
+
+## 2. 调试
+
+在IDE中进行调试，以IntelliJ Idea为例说明
+
+### 2.1 准备本地域名
+
+在`hosts`文件中配置域名
+
+127.0.0.1 demo.live.local
+127.0.0.1 unit1-demo.live.local
+127.0.0.1 unit2-demo.live.local
+
+### 2.2 编译工程
+
+1. 对`joylive-agent`工程执行编译安装`mvn clean install`
+2. 获取到`joylive-package`编译后的工程输出目录`target/live-${version}`的全路径
+
+### 2.3 启动应用
+
+#### 2.3.1 启动注册中心
+
+准备并启动`Nacos`注册中心，获取其地址、用户和密码
+
+#### 2.3.2 启动网关项目
+
+运行网关应用 `joylive-demo-gateway`
+
+配置参数和环境变量
+
+![pic](../image/debug.png)
+
+虚拟机参数增加`-javeagent:live-${version}全路径`
+
+配置环境变量参考如下
+
+| 名称 | 值 | 说明                |
+|----|---|-------------------|
+| APPLICATION_LOCATION_CELL   | cell4  |  |
+| APPLICATION_LOCATION_LIVESPACE_ID   | v4bEh4kd6Jvu5QBX09qYq-qlbcs  |                   |
+| APPLICATION_LOCATION_UNIT   | unit2  |                   |
+| APPLICATION_SERVICE_GATEWAY   | FRONTEND  |                   |
+| CONFIG_LOCALHOST_ENABLED   | true  |                   |
+| NACOS_ADDR   |   |                   |
+| NACOS_NAMESPACE   | public  |                   |
+| NACOS_PASSWORD   |   |                   |
+| NACOS_USERNAME   |   |                   |
+
+单元分区的配置参考`joylive-package工程的`的配置文件`livespaces.json`
+
+#### 2.3.3 启动服务项目
+
+运行微服务应用 `joylive-demo-provider`，参考网关应用的配置
+
+配置环境变量参考如下
+
+| 名称 | 值                           | 说明                |
+|----|-----------------------------|-------------------|
+| APPLICATION_LOCATION_CELL   | cell1                       |  |
+| APPLICATION_LOCATION_LIVESPACE_ID   | v4bEh4kd6Jvu5QBX09qYq-qlbcs |                   |
+| APPLICATION_LOCATION_UNIT   | unit1                       |                   |
+| APPLICATION_SERVICE_GATEWAY   | FRONTEND                    |                   |
+| CONFIG_LOCALHOST_ENABLED   | true                        |                   |
+| NACOS_ADDR   |                             |                   |
+| NACOS_NAMESPACE   | public                      |                   |
+| NACOS_PASSWORD   |                             |                   |
+| NACOS_USERNAME   |                             |                   |
+
+### 2.4 访问请求
+
+curl -G 'demo.live.local:8888/service-provider/echo/hello?user=unit1'
+
+
