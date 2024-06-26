@@ -82,20 +82,20 @@ class AbstractService {
 }
 class AbstractSyncer~T, M~ {
   # getFault() long
-  # onUpdated() void
   # getInterval() long
+  # onUpdated() void
   # onNotModified() void
-  # getDelay() long
   # onFailed(Throwable) void
+  # getDelay() long
+  # doStop() CompletableFuture~Void~
   # doStart() CompletableFuture~Void~
+  # doSynchronize(SyncConfig, M) SyncResult~T, M~
   # syncAndUpdate() boolean
   # shouldPrint() boolean
   # updateOnce(T, M) boolean
-  # doStop() CompletableFuture~Void~
   # getSyncConfig() SyncConfig
   # random(long, int) long
   # run(long, CompletableFuture~Void~) void
-  # doSynchronize(SyncConfig, M) SyncResult~T, M~
   # createDaemon(CompletableFuture~Void~) Daemon
 }
 class AgentService {
@@ -114,17 +114,17 @@ class LiveSpaceFileSyncer {
 }
 class LiveSpaceSyncer {
   - getErrorMessage(HttpState, String) String
-  # onFailed(Throwable) void
+  - getErrorMessage(Throwable) String
+  - getSuccessMessage() String
+  - getErrorMessage(HttpState) String
   - syncSpace(String, long, SyncConfig, Map~String, Long~) LiveSpace?
   - newPolicy(List~LiveSpace~, Map~String, Long~, GovernancePolicy) GovernancePolicy
-  - getErrorMessage(Throwable) String
   # updateOnce(List~LiveSpace~, Map~String, Long~) boolean
   # onUpdated() void
-  - getSpaces(LiveSyncConfig) Map~String, Long~
-  - getSuccessMessage() String
-  # getSyncConfig() SyncConfig
   # onNotModified() void
-  - getErrorMessage(HttpState) String
+  # onFailed(Throwable) void
+  - getSpaces(LiveSyncConfig) Map~String, Long~
+  # getSyncConfig() SyncConfig
   - syncSpace(String, SyncConfig, Map~String, Long~) SyncResult~List~LiveSpace~, Map~String, Long~~?
   - configure(SyncConfig, HttpURLConnection) void
   - syncSpaces(SyncConfig, Map~String, Long~) SyncResult~List~LiveSpace~, Map~String, Long~~?
