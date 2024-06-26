@@ -9,15 +9,15 @@
 .
 └── plugin
     ├── dubbo
-    │   ├── joylive-registry-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-dubbo3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-transmission-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-transmission-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   └── joylive-transmission-dubbo3-1.0.0-SNAPSHOT.jar
+    │   ├── joylive-registry-dubbo2.6-1.0.0.jar
+    │   ├── joylive-registry-dubbo2.7-1.0.0.jar
+    │   ├── joylive-registry-dubbo3-1.0.0.jar
+    │   ├── joylive-router-dubbo2.6-1.0.0.jar
+    │   ├── joylive-router-dubbo2.7-1.0.0.jar
+    │   ├── joylive-router-dubbo3-1.0.0.jar
+    │   ├── joylive-transmission-dubbo2.6-1.0.0.jar
+    │   ├── joylive-transmission-dubbo2.7-1.0.0.jar
+    │   └── joylive-transmission-dubbo3-1.0.0.jar
 ```
 该dubbo插件，支持了3个版本，增强了注册中心，路由和链路透传的能力。
 

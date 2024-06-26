@@ -175,8 +175,8 @@ public class InterceptorTest {
 
     @Test
     public void testEnhanceClass() {
-        // instrumentation.appendToSystemClassLoaderSearch(new JarFile(new File(agentPath.getRoot().getParent() + "/joylive-test-bytebuddy-1.0.0-SNAPSHOT.jar")));
-        // + "/joylive-test-bytebuddy-1.0.0-SNAPSHOT.jar"
+        // instrumentation.appendToSystemClassLoaderSearch(new JarFile(new File(agentPath.getRoot().getParent() + "/joylive-test-bytebuddy-1.0.0.jar")));
+        // + "/joylive-test-bytebuddy-1.0.0.jar"
         Plugin plugin = new Plugin(new File(agentPath.getRoot().getParent()), PluginType.DYNAMIC, urls, extensionManager.build(PluginDefinition.class, coreClassLoader));
         plugin.load();
 

@@ -9,15 +9,15 @@ A plugin is packaged into a directory, as shown below:
 .
 └── plugin
     ├── dubbo
-    │   ├── joylive-registry-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-dubbo3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-transmission-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-transmission-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   └── joylive-transmission-dubbo3-1.0.0-SNAPSHOT.jar
+    │   ├── joylive-registry-dubbo2.6-1.0.0.jar
+    │   ├── joylive-registry-dubbo2.7-1.0.0.jar
+    │   ├── joylive-registry-dubbo3-1.0.0.jar
+    │   ├── joylive-router-dubbo2.6-1.0.0.jar
+    │   ├── joylive-router-dubbo2.7-1.0.0.jar
+    │   ├── joylive-router-dubbo3-1.0.0.jar
+    │   ├── joylive-transmission-dubbo2.6-1.0.0.jar
+    │   ├── joylive-transmission-dubbo2.7-1.0.0.jar
+    │   └── joylive-transmission-dubbo3-1.0.0.jar
 ```
 This Dubbo plugin supports 3 versions, enhancing the capabilities of the registry, routing, and link transmission.
 

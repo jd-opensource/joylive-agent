@@ -41,45 +41,45 @@ The JoyLive Agent package has the following directory structure:
 │   └── microservice.json
 ├── lib
 │   ├── core
-│   │   ├── joylive-core-api-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-core-framework-1.0.0-SNAPSHOT.jar
-│   │   └── joylive-governance-api-1.0.0-SNAPSHOT.jar
+│   │   ├── joylive-core-api-1.0.0.jar
+│   │   ├── joylive-core-framework-1.0.0.jar
+│   │   └── joylive-governance-api-1.0.0.jar
 │   ├── core.impl
-│   │   ├── joylive-bytekit-bytebuddy-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-command-lifecycle-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-event-logger-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-event-opentelemetry-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-eventbus-jbus-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-expression-jexl-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-flowcontrol-resilience4j-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-function-bkdrhash-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-logger-slf4j-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-parser-jackson-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-parser-properties-1.0.0-SNAPSHOT.jar
-│   │   ├── joylive-service-file-1.0.0-SNAPSHOT.jar
-│   │   └── joylive-service-watchdog-1.0.0-SNAPSHOT.jar
+│   │   ├── joylive-bytekit-bytebuddy-1.0.0.jar
+│   │   ├── joylive-command-lifecycle-1.0.0.jar
+│   │   ├── joylive-event-logger-1.0.0.jar
+│   │   ├── joylive-event-opentelemetry-1.0.0.jar
+│   │   ├── joylive-eventbus-jbus-1.0.0.jar
+│   │   ├── joylive-expression-jexl-1.0.0.jar
+│   │   ├── joylive-flowcontrol-resilience4j-1.0.0.jar
+│   │   ├── joylive-function-bkdrhash-1.0.0.jar
+│   │   ├── joylive-logger-slf4j-1.0.0.jar
+│   │   ├── joylive-parser-jackson-1.0.0.jar
+│   │   ├── joylive-parser-properties-1.0.0.jar
+│   │   ├── joylive-service-file-1.0.0.jar
+│   │   └── joylive-service-watchdog-1.0.0.jar
 │   └── system
-│       └── joylive-bootstrap-api-1.0.0-SNAPSHOT.jar
+│       └── joylive-bootstrap-api-1.0.0.jar
 ├── live.jar
 └── plugin
     ├── dubbo
-    │   ├── joylive-registry-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-dubbo3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-dubbo3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-transmission-dubbo2.6-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-transmission-dubbo2.7-1.0.0-SNAPSHOT.jar
-    │   └── joylive-transmission-dubbo3-1.0.0-SNAPSHOT.jar
+    │   ├── joylive-registry-dubbo2.6-1.0.0.jar
+    │   ├── joylive-registry-dubbo2.7-1.0.0.jar
+    │   ├── joylive-registry-dubbo3-1.0.0.jar
+    │   ├── joylive-router-dubbo2.6-1.0.0.jar
+    │   ├── joylive-router-dubbo2.7-1.0.0.jar
+    │   ├── joylive-router-dubbo3-1.0.0.jar
+    │   ├── joylive-transmission-dubbo2.6-1.0.0.jar
+    │   ├── joylive-transmission-dubbo2.7-1.0.0.jar
+    │   └── joylive-transmission-dubbo3-1.0.0.jar
     ├── spring
-    │   ├── joylive-application-springboot2-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-registry-springcloud3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-springcloud3-1.0.0-SNAPSHOT.jar
-    │   ├── joylive-router-springgateway3-1.0.0-SNAPSHOT.jar
-    │   └── joylive-transmission-springcloud3-1.0.0-SNAPSHOT.jar
+    │   ├── joylive-application-springboot2-1.0.0.jar
+    │   ├── joylive-registry-springcloud3-1.0.0.jar
+    │   ├── joylive-router-springcloud3-1.0.0.jar
+    │   ├── joylive-router-springgateway3-1.0.0.jar
+    │   └── joylive-transmission-springcloud3-1.0.0.jar
     └── system
-        └── joylive-classloader-springboot2-1.0.0-SNAPSHOT.jar
+        └── joylive-classloader-springboot2-1.0.0.jar
 ```
 
 - Modify basic application metadata

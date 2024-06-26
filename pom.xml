@@ -28,7 +28,7 @@
     </scm>
 
     <properties>
-        <revision>1.0.0-SNAPSHOT</revision>
+        <revision>1.0.0</revision>
         <lombok.version>1.18.30</lombok.version>
         <mockito-core.version>4.11.0</mockito-core.version>
         <junit-jupiter.version>5.10.1</junit-jupiter.version>
@@ -197,7 +197,7 @@
                     <version>${maven-release-plugin.version}</version>
                     <configuration>
                         <useReleaseProfile>false</useReleaseProfile>
-                        <arguments>-P restricted-release,sonatype-oss-release,full</arguments>
+                        <arguments>-P sonatype</arguments>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                         <allowTimestampedSnapshots>false</allowTimestampedSnapshots>
                         <tagNameFormat>${project.artifactId}-@{project.version}</tagNameFormat>

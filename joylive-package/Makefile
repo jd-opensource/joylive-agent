@@ -1,5 +1,5 @@
 version=1.0.0-$(shell git rev-parse --short HEAD)
-#version=1.0.0-SNAPSHOT
+#version=1.0.0
 repo ?= ghcr.io/jd-opensource
 
 all: clean build image-joylive push-joylive
