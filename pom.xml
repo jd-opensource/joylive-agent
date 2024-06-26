@@ -20,6 +20,24 @@
         <url>https://github.com/jd-opensource</url>
     </organization>
     <inceptionYear>2024</inceptionYear>
+    <developers>
+        <developer>
+            <name>hexiaofeng</name>
+            <email>hexiaofeng@jd.com</email>
+            <roles>
+                <role>admin</role>
+            </roles>
+            <organization>JoyLive</organization>
+        </developer>
+        <developer>
+            <name>chenzhiguo</name>
+            <email>chenzhiguo@jd.com</email>
+            <roles>
+                <role>admin</role>
+            </roles>
+            <organization>JoyLive</organization>
+        </developer>
+    </developers>
     <scm>
         <tag>main</tag>
         <connection>scm:git:https://github.com/jd-opensource/joylive-agent.git</connection>

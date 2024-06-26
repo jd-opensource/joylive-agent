@@ -6,6 +6,7 @@
     <groupId>com.jd.live</groupId>
     <artifactId>joylive-bom</artifactId>
     <version>${revision}</version>
+    <name>joylive-bom</name>
     <packaging>pom</packaging>
     <description>The parent pom of JoyLive agent.</description>
     <url>https://github.com/jd-opensource/joylive-agent</url>
@@ -20,6 +21,24 @@
         <name>JoyLive</name>
         <url>https://github.com/jd-opensource</url>
     </organization>
+    <developers>
+        <developer>
+            <name>hexiaofeng</name>
+            <email>hexiaofeng@jd.com</email>
+            <roles>
+                <role>admin</role>
+            </roles>
+            <organization>JoyLive</organization>
+        </developer>
+        <developer>
+            <name>chenzhiguo</name>
+            <email>chenzhiguo@jd.com</email>
+            <roles>
+                <role>admin</role>
+            </roles>
+            <organization>JoyLive</organization>
+        </developer>
+    </developers>
     <inceptionYear>2024</inceptionYear>
     <scm>
         <tag>main</tag>
