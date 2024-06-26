@@ -5,7 +5,7 @@ Application of multi-active usually includes intra-city multi-active and inter-c
 
 ## 1. Multi-Active Space
 
-A combination can have multiple multi-active spaces, structured as follows:
+A rent can have multiple multi-active spaces, structured as follows:
 ```
 .
 └── Multi-Active Space

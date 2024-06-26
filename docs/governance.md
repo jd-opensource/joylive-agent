@@ -62,21 +62,27 @@ The default strategy for a service is set on the default group `default`.
 }
 ```
 
-### 2.2 Lane Service Strategy
+### 2.2 Service Lane Strategy
 
-| Element       | Description                         |
-|---------------|-------------------------------------|
-| Lane Space    | Configure participating lane spaces |
+| Element        | Description                                                                                                                                           |
+|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Auto Join Lane | Whether to automatically join the lane routing when the application is deployed to a certain lane.<br/>`true` Automatically join;<br/>`false` Do not automatically join, follow the configured lane strategy;<br/>`null` Inherit the configuration from the parent or lane, with the default lane configuration being to automatically join |
+| Lane Space     | Configure participation in specific lane spaces and lane routes                                                                                       |
 
 ```json
 {
+  "autoLaneEnabled": true,
   "lanePolicies": [
     {
-      "laneSpaceId": "lane-space-1"
+      "laneSpaceId": "lane-space-1",
+      "lanes": {
+        "gray": "beta"
+      }
     }
   ]
 }
 ```
+> This strategy describes automatically joining lanes. In the lane space `lane-space-1`, it redirects the traffic of lane `gray` to lane `beta`.
 
 ### 2.3 Service Cluster Strategy
 

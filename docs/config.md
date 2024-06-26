@@ -75,7 +75,7 @@ Refer to [Microservice Governance Model](./governance.md).
 
 ## 1.5 `lanes.json`
 
-Refer to [Microservice Governance Model](./lane.md).
+Refer to [Lane Model](./lane.md).
 
 ## 2. Environment Variables
 
