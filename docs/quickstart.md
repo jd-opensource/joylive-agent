@@ -1,33 +1,6 @@
 Quick Start
 ===
 
-## Debugging
-
-Debugging in an IDE, using IntelliJ IDEA as an example
-
-### Prepare Local Domain Names
-
-Configure domain names in the `hosts` file
-
-```
-127.0.0.1 demo.live.local
-127.0.0.1 unit1-demo.live.local
-127.0.0.1 unit2-demo.live.local
-```
-
-### Compile the Project
-
-1. Compile and install the `joylive-agent` project using `mvn clean install`.
-2. Obtain the full path of the compiled project output directory `target/live-${version}` from the `joylive-package`.
-
-### Start the Application
-
-#### Start the Registration Center
-
-Prepare and start the `Nacos` registration center, and obtain its address, username, and password.
-
-## Quick Start
-
 ### 1. Quick Start
 
 #### 1.1 Obtain the Agent Program
