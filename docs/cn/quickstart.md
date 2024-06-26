@@ -3,7 +3,13 @@
 
 ## 1. 快速开始
 
-### 1.1 准备工作
+### 1.1 获取Agent程序
+
+#### 1.1.1 下载二进制包
+
+从[Release](https://github.com/jd-opensource/joylive-agent/releases)中下载最新的二进制包
+
+#### 1.1.2 手动编译
 
 > 请提前准备好maven编译环境，项目根目录执行命令编译: 
 > ```bash
@@ -11,10 +17,11 @@
 > ```
 
 - **编译获取** JoyLive Agent Release包，路径：`joylive-package/target/live-x.x.x-SNAPSHOT`
-- **编译获取** Demo二进制产物，路径：`joylive-demo/joylive-demo-springcloud3`下各项目的target目录内
-- **下载获取** 并启动Nacos
 
-### 1.2 获取Demo二进制
+
+### 1.2 获取Demo程序
+
+编译`joylive-agent`，获取`joylive-demo/joylive-demo-springcloud3`下各项目的二进制包
 
 - 网关
 
@@ -24,7 +31,7 @@
 
   `joylive-demo-springcloud3-provider` Spring Cloud应用demo
 
-### 1.3 修改Agent配置
+### 1.3 修改配置
 
 JoyLive Agent包如下目录结构：
 
@@ -47,15 +54,7 @@ JoyLive Agent包如下目录结构：
 │   │   ├── joylive-command-lifecycle-1.0.0.jar
 │   │   ├── joylive-event-logger-1.0.0.jar
 │   │   ├── joylive-event-opentelemetry-1.0.0.jar
-│   │   ├── joylive-eventbus-jbus-1.0.0.jar
-│   │   ├── joylive-expression-jexl-1.0.0.jar
-│   │   ├── joylive-flowcontrol-resilience4j-1.0.0.jar
-│   │   ├── joylive-function-bkdrhash-1.0.0.jar
-│   │   ├── joylive-logger-slf4j-1.0.0.jar
-│   │   ├── joylive-parser-jackson-1.0.0.jar
-│   │   ├── joylive-parser-properties-1.0.0.jar
-│   │   ├── joylive-service-file-1.0.0.jar
-│   │   └── joylive-service-watchdog-1.0.0.jar
+│   │   ├── ......
 │   └── system
 │       └── joylive-bootstrap-api-1.0.0.jar
 ├── live.jar
@@ -66,46 +65,19 @@ JoyLive Agent包如下目录结构：
     │   ├── joylive-registry-dubbo3-1.0.0.jar
     │   ├── joylive-router-dubbo2.6-1.0.0.jar
     │   ├── joylive-router-dubbo2.7-1.0.0.jar
-    │   ├── joylive-router-dubbo3-1.0.0.jar
-    │   ├── joylive-transmission-dubbo2.6-1.0.0.jar
-    │   ├── joylive-transmission-dubbo2.7-1.0.0.jar
-    │   └── joylive-transmission-dubbo3-1.0.0.jar
+    │   ├── ......
     ├── spring
     │   ├── joylive-application-springboot2-1.0.0.jar
     │   ├── joylive-registry-springcloud3-1.0.0.jar
-    │   ├── joylive-router-springcloud3-1.0.0.jar
-    │   ├── joylive-router-springgateway3-1.0.0.jar
-    │   └── joylive-transmission-springcloud3-1.0.0.jar
-    └── system
-        └── joylive-classloader-springboot2-1.0.0.jar
+    │   ├── ......
+    └── ......
 ```
 
-- 修改应用基础元数据
+- 修改配置文件
+  
+`config`目录下为agent配置相关文件以及多活流量治理，微服务流量治理，泳道策略配置文件。
 
-可以直接修改`config/bootstrap.properties`文件或者添加对应环境变量，环境变量信息如下：
-
-| **类型** | **名称**                          | **说明**           | **必需** | **默认值** | **说明**                                                 |
-| -------- | --------------------------------- | ------------------ | -------- | ---------- | -------------------------------------------------------- |
-| 环境变量 | APPLICATION_NAME                  | 应用名             | 是       |            | 建议和Spring的应用名称保持一致                           |
-| 环境变量 | APPLICATION_SERVICE_NAME          | 服务名             | 否       | 应用名称   | 建议和SpringCloud的应用名称保持一致                      |
-| 环境变量 | APPLICATION_LOCATION_LIVESPACE_ID | 实例所在多活空间ID | 是       |            |                                                          |
-| 环境变量 | APPLICATION_LOCATION_UNIT         | 实例所在单元编码   | 是       |            |                                                          |
-| 环境变量 | APPLICATION_LOCATION_CELL         | 实例所在分区编码   | 是       |            |                                                          |
-| 环境变量 | APPLICATION_LOCATION_LANESPACE_ID | 实例所在泳道空间ID | 否       |            | 当启用泳道服务时候配置                                   |
-| 环境变量 | APPLICATION_LOCATION_LANE         | 实例所在泳道编码   | 否       |            | 当启用泳道服务时候配置                                   |
-| 环境变量 | APPLICATION_LOCATION_REGION       | 实例所在地域       | 否       |            |                                                          |
-| 环境变量 | APPLICATION_LOCATION_ZONE         | 实例所在可用区     | 否       |            |                                                          |
-| 环境变量 | CONFIG_LIVE_ENABLED               | 启用多活流控       | 否       | true       | 是否要进行多活的流控                                     |
-| 环境变量 | CONFIG_POLICY_INITIALIZE_TIMEOUT  | 策略同步超时       | 否       | 10000(ms)  |                                                          |
-| 环境变量 | CONFIG_FLOW_CONTROL_ENABLED       | 启用服务流控       | 否       | true       | 启用服务流控，包括限流、熔断、负载均衡、标签路由等等策略 |
-| 环境变量 | CONFIG_LANE_ENABLED               | 启用泳道流控       | 否       | true       | 启用泳道流控                                             |
-| 环境变量 | APPLICATION_SERVICE_GATEWAY       | 网关类型           | 否       | NONE       | 若为入口网关设置为FRONTEND，普通应用设置为NONE           |
-
-注意：启动`joylive-demo-springcloud3-gateway` Spring Cloud Gateway网关demo时需设置为FRONTEND。启动`joylive-demo-springcloud3-provider` Spring Cloud应用demo则不需要设置，默认为NONE。
-
-- 修改策略同步
-
-`config`目录下为agent配置相关文件以及多活流量治理，微服务流量治理，泳道策略配置文件。配置位置对应`config/config.yaml`配置文件中位置如下：
+默认策略从本地文件加载，可以配置为远端加载
 
 | 位置                    | 策略类型      |
 | ----------------------- |-----------|
@@ -115,11 +87,36 @@ JoyLive Agent包如下目录结构：
 
 策略配置项中`type`对应监听类型，file代表监听本地文件。
 
+- 修改环境变量
+
+常用的环境变量如下，更多请参阅[配置参考手册](./config.md)
+
+| **名称**                          | **说明**           | **必需** | **默认值** | **说明**                                                 |
+| --------------------------------- | ------------------ | -------- | ---------- | -------------------------------------------------------- |
+| APPLICATION_NAME                  | 应用名             | 是       |            | 建议和Spring的应用名称保持一致                           |
+| APPLICATION_SERVICE_NAME          | 服务名             | 否       | 应用名称   | 建议和SpringCloud的应用名称保持一致                      |
+| APPLICATION_LOCATION_LIVESPACE_ID | 实例所在多活空间ID | 是       |            |                                                          |
+| APPLICATION_LOCATION_UNIT         | 实例所在单元编码   | 是       |            |                                                          |
+| APPLICATION_LOCATION_CELL         | 实例所在分区编码   | 是       |            |                                                          |
+| APPLICATION_LOCATION_LANESPACE_ID | 实例所在泳道空间ID | 否       |            | 当启用泳道服务时候配置                                   |
+| APPLICATION_LOCATION_LANE         | 实例所在泳道编码   | 否       |            | 当启用泳道服务时候配置                                   |
+| APPLICATION_LOCATION_REGION       | 实例所在地域       | 否       |            |                                                          |
+| APPLICATION_LOCATION_ZONE         | 实例所在可用区     | 否       |            |                                                          |
+| CONFIG_LIVE_ENABLED               | 启用多活流控       | 否       | true       | 是否要进行多活的流控                                     |
+| CONFIG_POLICY_INITIALIZE_TIMEOUT  | 策略同步超时       | 否       | 10000(ms)  |                                                          |
+| CONFIG_FLOW_CONTROL_ENABLED       | 启用服务流控       | 否       | true       | 启用服务流控，包括限流、熔断、负载均衡、标签路由等等策略 |
+| CONFIG_LANE_ENABLED               | 启用泳道流控       | 否       | true       | 启用泳道流控                                             |
+| APPLICATION_SERVICE_GATEWAY       | 网关类型           | 否       | NONE       | 若为入口网关设置为FRONTEND，普通应用设置为NONE           |
+
+注意：启动`joylive-demo-springcloud3-gateway` Spring Cloud Gateway网关demo时需设置为FRONTEND。启动`joylive-demo-springcloud3-provider` Spring Cloud应用demo则不需要设置，默认为NONE。
+
 ### 1.4 启动网关
 
 本例子中采用非修改配置文件而是设置环境变量方式。
 
-> 说明：${path_to_gateway_demo}为joylive-demo-springcloud3-gateway demo下载所在路径；${path_to_agent}为joylive-agent下载解压后所在路径；
+> 说明：
+> - ${path_to_gateway_demo}为joylive-demo-springcloud3-gateway.jar所在路径；
+> - ${path_to_agent}为joylive.jar所在路径。
 
 模拟单元1内启动网关实例，命令如下：
 
@@ -153,11 +150,7 @@ java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-d
 
 ### 1.5 启动应用
 
-本例子中采用非修改配置文件而是设置环境变量方式。
-
-> 说明：${path_to_provider_demo}为joylive-demo-springcloud3-provider demo下载所在路径；${path_to_agent}为joylive-agent下载解压后所在路径；
-
-模拟单元1内启动应用实例，命令如下：
+参考启动网关，模拟单元1内启动应用实例，命令如下：
 
 ```bash
 # Linux or macOS设置环境变量
@@ -213,9 +206,9 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.6 效果验证
+### 1.6 验证注册
 
-访问nacos注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
+访问`nacos`注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
 
 ```properties
 x-live-space-id=v4bEh4kd6Jvu5QBX09qYq-qlbcs
@@ -237,26 +230,18 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Hos
 
 在IDE中进行调试，以IntelliJ Idea为例说明
 
-### 2.1 准备本地域名
-
-在`hosts`文件中配置域名
-
-127.0.0.1 demo.live.local
-127.0.0.1 unit1-demo.live.local
-127.0.0.1 unit2-demo.live.local
-
-### 2.2 编译工程
+### 2.1 编译工程
 
 1. 对`joylive-agent`工程执行编译安装`mvn clean install`
 2. 获取到`joylive-package`编译后的工程输出目录`target/live-${version}`的全路径
 
-### 2.3 启动应用
+### 2.2 启动应用
 
-#### 2.3.1 启动注册中心
+#### 2.2.1 启动注册中心
 
 准备并启动`Nacos`注册中心，获取其地址、用户和密码
 
-#### 2.3.2 启动网关项目
+#### 2.2.2 启动网关项目
 
 运行网关应用 `joylive-demo-gateway`
 
@@ -282,7 +267,7 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Hos
 
 单元分区的配置参考`joylive-package工程的`的配置文件`livespaces.json`
 
-#### 2.3.3 启动服务项目
+#### 2.2.3 启动服务项目
 
 运行微服务应用 `joylive-demo-provider`，参考网关应用的配置
 
@@ -300,8 +285,6 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Hos
 | NACOS_PASSWORD   |                             |                   |
 | NACOS_USERNAME   |                             |                   |
 
-### 2.4 访问请求
+### 2.3 访问请求
 
-curl -G 'demo.live.local:8888/service-provider/echo/hello?user=unit1'
-
-
+curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Host:demo.live.local"

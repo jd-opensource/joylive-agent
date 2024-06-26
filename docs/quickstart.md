@@ -1,20 +1,53 @@
 Quick Start
 ===
 
-## 1. Quick Start
+## Debugging
 
-### 1.1 Preparation
+Debugging in an IDE, using IntelliJ IDEA as an example
 
-> Please prepare the maven compilation environment in advance and execute the command to compile in the project root directory:
+### Prepare Local Domain Names
+
+Configure domain names in the `hosts` file
+
+```
+127.0.0.1 demo.live.local
+127.0.0.1 unit1-demo.live.local
+127.0.0.1 unit2-demo.live.local
+```
+
+### Compile the Project
+
+1. Compile and install the `joylive-agent` project using `mvn clean install`.
+2. Obtain the full path of the compiled project output directory `target/live-${version}` from the `joylive-package`.
+
+### Start the Application
+
+#### Start the Registration Center
+
+Prepare and start the `Nacos` registration center, and obtain its address, username, and password.
+
+## Quick Start
+
+### 1. Quick Start
+
+#### 1.1 Obtain the Agent Program
+
+##### 1.1.1 Download the Binary Package
+
+Download the latest binary package from the [Release](https://github.com/jd-opensource/joylive-agent/releases) page.
+
+##### 1.1.2 Manual Compilation
+
+> Please ensure you have a Maven build environment ready. Compile the project from the root directory using:
 > ```bash
 > mvn package -f pom.xml -DskipTests=true
 > ```
 
-- **Compile** JoyLive Agent Release Package
-- **Compile** Demo binary product compressed package
-- **Download** and start Nacos
+- **Compile and obtain** the JoyLive Agent release package, located at: `joylive-package/target/live-x.x.x-SNAPSHOT`.
 
-### 1.2 Get Demo binary
+### 1.2 Obtain the Demo Program
+
+Compile `joylive-agent` and obtain the binary packages of various projects under `joylive-demo/joylive-demo-springcloud3`.
 
 - Gateway
 
@@ -22,9 +55,9 @@ Quick Start
 
 - Application
 
-  `joylive-demo-springcloud3-provider` Spring Cloud Application demo
+  `joylive-demo-springcloud3-provider` Spring Cloud application demo
 
-### 1.3 Modify Agent configuration
+### 1.3 Modify the Configuration
 
 The JoyLive Agent package has the following directory structure:
 
@@ -47,15 +80,7 @@ The JoyLive Agent package has the following directory structure:
 │   │   ├── joylive-command-lifecycle-1.0.0.jar
 │   │   ├── joylive-event-logger-1.0.0.jar
 │   │   ├── joylive-event-opentelemetry-1.0.0.jar
-│   │   ├── joylive-eventbus-jbus-1.0.0.jar
-│   │   ├── joylive-expression-jexl-1.0.0.jar
-│   │   ├── joylive-flowcontrol-resilience4j-1.0.0.jar
-│   │   ├── joylive-function-bkdrhash-1.0.0.jar
-│   │   ├── joylive-logger-slf4j-1.0.0.jar
-│   │   ├── joylive-parser-jackson-1.0.0.jar
-│   │   ├── joylive-parser-properties-1.0.0.jar
-│   │   ├── joylive-service-file-1.0.0.jar
-│   │   └── joylive-service-watchdog-1.0.0.jar
+│   │   ├── ......
 │   └── system
 │       └── joylive-bootstrap-api-1.0.0.jar
 ├── live.jar
@@ -66,84 +91,82 @@ The JoyLive Agent package has the following directory structure:
     │   ├── joylive-registry-dubbo3-1.0.0.jar
     │   ├── joylive-router-dubbo2.6-1.0.0.jar
     │   ├── joylive-router-dubbo2.7-1.0.0.jar
-    │   ├── joylive-router-dubbo3-1.0.0.jar
-    │   ├── joylive-transmission-dubbo2.6-1.0.0.jar
-    │   ├── joylive-transmission-dubbo2.7-1.0.0.jar
-    │   └── joylive-transmission-dubbo3-1.0.0.jar
+    │   ├── ......
     ├── spring
     │   ├── joylive-application-springboot2-1.0.0.jar
     │   ├── joylive-registry-springcloud3-1.0.0.jar
-    │   ├── joylive-router-springcloud3-1.0.0.jar
-    │   ├── joylive-router-springgateway3-1.0.0.jar
-    │   └── joylive-transmission-springcloud3-1.0.0.jar
-    └── system
-        └── joylive-classloader-springboot2-1.0.0.jar
+    │   ├── ......
+    └── ......
 ```
 
-- Modify basic application metadata
+- Modify the configuration files
 
-You can directly modify the `config/bootstrap.properties` file or add corresponding environment variables. The environment variable information is as follows:
+The `config` directory contains agent configuration files and configuration files for multi-active traffic governance, microservice traffic governance, and lane strategies.
 
-| **Type** | **Name**                          | **Explanation**                                                | **Required** | **DefaultValue** | **Description**                            |
-| -------- | --------------------------------- |----------------------------------------------------------------| -------- | ---------- |--------------------------------------------|
-| ENV | APPLICATION_NAME                  | ApplicationName                                                | Y       |            | 建议和Spring的应用名称保持一致                         |
-| ENV | APPLICATION_SERVICE_NAME          | ServiceName                                                    | N       | 应用名称   | 建议和SpringCloud的应用名称保持一致                    |
-| ENV | APPLICATION_LOCATION_LIVESPACE_ID | The ID of the multi-active space where the instance is located | Y       |            |                                            |
-| ENV | APPLICATION_LOCATION_UNIT         | The unit code where the instance is located                    | Y       |            |                                            |
-| ENV | APPLICATION_LOCATION_CELL         | The cell code where the instance is located                    | Y       |            |                                            |
-| ENV | APPLICATION_LOCATION_LANESPACE_ID | The lane space ID where the instance is located                | N       |            | Configure when enabling lane service       |
-| ENV | APPLICATION_LOCATION_LANE         | The lane code where the instance is located                    | N       |            | Configure when enabling lane service       |
-| ENV | APPLICATION_LOCATION_REGION       | The region where the instance is located                       | N       |            |                                            |
-| ENV | APPLICATION_LOCATION_ZONE         | Availability zone where the instance is located                | N       |            |                                            |
-| ENV | CONFIG_LIVE_ENABLED               | Enable multi-live flow control                                 | N       | true       | Whether to perform multi-live flow control |
-| ENV | CONFIG_POLICY_INITIALIZE_TIMEOUT  | Policy sync timeout                                                         | N       | 10000(ms)  |                                            |
-| ENV | CONFIG_FLOW_CONTROL_ENABLED       | Enable service flow control                                                         | N       | true       | Enable service flow control, including current limiting, circuit breaker, load balancing, label routing and other strategies               |
-| ENV | CONFIG_LANE_ENABLED               | Enable lane flow control                                                         | N       | true       | Enable lane flow control                                     |
-| ENV | APPLICATION_SERVICE_GATEWAY       | Gateway type                                                           | N       | NONE       | If it is set to FRONTEND for the entrance gateway, it is set to NONE for normal applications.              |
+The default strategy loads from local files, but can be configured to load remotely.
 
-Note: When starting the `joylive-demo-springcloud3-gateway` Spring Cloud Gateway gateway demo, it needs to be set to FRONTEND. When starting `joylive-demo-springcloud3-provider` Spring Cloud application demo does not need to be set, the default is NONE.
+| Location                   | Strategy Type     |
+|----------------------------|-------------------|
+| agent.sync.liveSpace       | Multi-active strategy    |
+| agent.sync.microservice    | Microservice traffic governance strategy |
+| agent.sync.laneSpace       | Lane strategy      |
 
-- Modify policy synchronization
+In the strategy configuration items, `type` corresponds to the listener type, with `file` representing listening to local files.
 
-The `config` directory contains relevant files for agent configuration, as well as multi-active traffic management, microservice traffic management, and swim lane policy configuration files. The configuration location corresponds to the location in the `config/config.yaml` configuration file as follows:
+- Modify environment variables
 
-| Location                    | StrategyType                           |
-| ----------------------- |----------------------------------------|
-| agent.sync.liveSpace    | Multi-active flow strategy             |
-| agent.sync.microservice | Microservice traffic management strategy |
-| agent.sync.laneSpace    | Swim lane strategy             |
+Common environment variables are listed below. For more details, please refer to the [Configuration Reference Manual](./config.md).
 
-In the policy configuration item, `type` corresponds to the monitoring type, and file represents the monitoring local file.
+| **Name**                          | **Description**       | **Required** | **Default** | **Notes**                                                 |
+|-----------------------------------|-----------------------|--------------|-------------|-----------------------------------------------------------|
+| APPLICATION_NAME                  | Application name      | Yes          |             | It is recommended to be consistent with the Spring application name. |
+| APPLICATION_SERVICE_NAME          | Service name          | No           | Application name | It is recommended to be consistent with the Spring Cloud application name. |
+| APPLICATION_LOCATION_LIVESPACE_ID | Instance's multi-active space ID | Yes |             |                                                           |
+| APPLICATION_LOCATION_UNIT         | Instance's unit code  | Yes          |             |                                                           |
+| APPLICATION_LOCATION_CELL         | Instance's partition code | Yes      |             |                                                           |
+| APPLICATION_LOCATION_LANESPACE_ID | Instance's lane space ID | No       |             | Configure when lane service is enabled.                   |
+| APPLICATION_LOCATION_LANE         | Instance's lane code  | No           |             | Configure when lane service is enabled.                   |
+| APPLICATION_LOCATION_REGION       | Instance's region     | No           |             |                                                           |
+| APPLICATION_LOCATION_ZONE         | Instance's availability zone | No   |             |                                                           |
+| CONFIG_LIVE_ENABLED               | Enable multi-active flow control | No | true       | Whether to enable multi-active flow control.              |
+| CONFIG_POLICY_INITIALIZE_TIMEOUT  | Strategy synchronization timeout | No | 10000(ms)  |                                                           |
+| CONFIG_FLOW_CONTROL_ENABLED       | Enable service flow control | No     | true       | Enable service flow control, including rate limiting, circuit breaking, load balancing, tag routing, etc. |
+| CONFIG_LANE_ENABLED               | Enable lane flow control | No       | true       | Enable lane flow control.                                 |
+| APPLICATION_SERVICE_GATEWAY       | Gateway type          | No           | NONE        | Set to FRONTEND for entry gateways, and NONE for regular applications. |
 
-### 1.4 Start gateway
+Note: When starting the `joylive-demo-springcloud3-gateway` Spring Cloud Gateway demo, set the gateway type to FRONTEND. For the `joylive-demo-springcloud3-provider` Spring Cloud application demo, the default is NONE.
 
-In this example, instead of modifying the configuration file, we use the method of setting environment variables.。
+### 1.4 Start the Gateway
 
-> Note: ${path_to_gateway_demo} is the path where joylive-demo-springcloud3-gateway demo is downloaded; ${path_to_agent} is the path where joylive-agent is downloaded and decompressed;
+In this example, environment variables are set instead of modifying configuration files.
 
-Start the gateway instance in simulation unit 1 with the following command:
+> Note:
+> - `${path_to_gateway_demo}` is the path to `joylive-demo-springcloud3-gateway.jar`.
+> - `${path_to_agent}` is the path to `live.jar`.
+
+To start a gateway instance in unit 1, use the following command:
 
 ```bash
-# Set env for Linux or macOS
+# Set environment variables on Linux or macOS
 export APPLICATION_NAME=springcloud3-gateway
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
 export APPLICATION_SERVICE_GATEWAY=FRONTEND
-# Set the startup nacos access address
+# Set the Nacos access address
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
 # Start
 java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar 
 
-# Set env for Windows(PowerShell)
+# Set environment variables on Windows (PowerShell)
 $env:APPLICATION_NAME="springcloud3-gateway"
 $env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
 $env:APPLICATION_LOCATION_UNIT="unit1"
 $env:APPLICATION_LOCATION_CELL="cell1"
 $env:APPLICATION_SERVICE_GATEWAY="FRONTEND"
-# Set the startup nacos access address
+# Set the Nacos access address
 $env:NACOS_ADDR="localhost:8848"
 $env:NACOS_USERNAME="nacos"
 $env:NACOS_PASSWORD="nacos"
@@ -151,33 +174,29 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-### 1.5 Start application
+### 1.5 Start the Application
 
-In this example, instead of modifying the configuration file, the method is to set environment variables.
-
-> Note: ${path_to_provider_demo} is the path where joylive-demo-springcloud3-provider demo is downloaded; ${path_to_agent} is the path where joylive-agent is downloaded and decompressed;
-
-Start the application instance in simulation unit 1 with the following command:
+Refer to the gateway startup process to simulate starting an application instance in unit 1 with the following command:
 
 ```bash
-# Set env for Linux or macOS
+# Set environment variables on Linux or macOS
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
-# Set the startup nacos access address
+# Set the Nacos access address
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
 # Start
 java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
 
-# Set env for Windows(PowerShell)
+# Set environment variables on Windows (PowerShell)
 $env:APPLICATION_NAME="springcloud3-provider"
 $env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
 $env:APPLICATION_LOCATION_UNIT="unit1"
 $env:APPLICATION_LOCATION_CELL="cell1"
-# Set the startup nacos access address
+# Set the Nacos access address
 $env:NACOS_ADDR="localhost:8848"
 $env:NACOS_USERNAME="nacos"
 $env:NACOS_PASSWORD="nacos"
@@ -185,27 +204,27 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-Start the application instance in simulation unit 2, the command is as follows:
+To simulate starting an application instance in unit 2, use the following command:
 
 ```bash
-# Set env for Linux or macOS
+# Set environment variables on Linux or macOS
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
 export APPLICATION_LOCATION_UNIT=unit2
 export APPLICATION_LOCATION_CELL=cell4
-# Set the startup nacos access address
+# Set the Nacos access address
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
 export NACOS_PASSWORD=nacos
 # Start
 java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
 
-# Set env for Windows(PowerShell)
+# Set environment variables on Windows (PowerShell)
 $env:APPLICATION_NAME="springcloud3-provider"
 $env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
 $env:APPLICATION_LOCATION_UNIT="unit2"
 $env:APPLICATION_LOCATION_CELL="cell4"
-# Set the startup nacos access address
+# Set the Nacos access address
 $env:NACOS_ADDR="localhost:8848"
 $env:NACOS_USERNAME="nacos"
 $env:NACOS_PASSWORD="nacos"
@@ -213,9 +232,9 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.6 Effect verification
+### 1.6 Verify Registration
 
-Visit the nacos registration center and check the metadata of the service instance. The following data indicates that the agent has been enhanced successfully.
+Access the `Nacos` registration center and check the metadata of the service instances. The following data indicates that the agent enhancement was successful:
 
 ```properties
 x-live-space-id=v4bEh4kd6Jvu5QBX09qYq-qlbcs
@@ -223,41 +242,32 @@ x-live-unit=unit1
 x-live-cell=cell1
 ```
 
-### 1.7 Traffic test
+### 1.7 Traffic Testing
 
 ```bash
-# Access the application interface through the gateway, specify the unit variable unit 1, pointing to the access unit 1 unit
+# Access the application interface through the gateway, specifying the unit variable unit1 to target unit1
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Host:demo.live.local"
 
-# Access the application interface through the gateway, specify the unit variable unit 2, point to the access unit 2 unit
+# Access the application interface through the gateway, specifying the unit variable unit2 to target unit2
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Host:demo.live.local"
 ```
+
 ## 2. Debugging
 
 Debugging in an IDE, using IntelliJ IDEA as an example
 
-### 2.1 Prepare Local Domain Names
-
-Configure domain names in the `hosts` file
-
-```
-127.0.0.1 demo.live.local
-127.0.0.1 unit1-demo.live.local
-127.0.0.1 unit2-demo.live.local
-```
-
-### 2.2 Compile the Project
+### 2.1 Compile the Project
 
 1. Compile and install the `joylive-agent` project using `mvn clean install`.
 2. Obtain the full path of the compiled project output directory `target/live-${version}` from the `joylive-package`.
 
-### 2.3 Start the Application
+### 2.2 Start the Application
 
-#### 2.3.1 Start the Registration Center
+#### 2.2.1 Start the Registration Center
 
 Prepare and start the `Nacos` registration center, and obtain its address, username, and password.
 
-#### 2.3.2 Start the Gateway Project
+#### 2.2.2 Start the Gateway Project
 
 Run the gateway application `joylive-demo-gateway`.
 
@@ -265,46 +275,44 @@ Configure parameters and environment variables.
 
 ![pic](./image/debug.png)
 
-Add the following virtual machine parameter: `-javaagent:full-path-to-live-${version}`.
+Add `-javaagent:live-${version} full path` to the VM options.
 
-Refer to the following environment variable configuration:
+Refer to the following for configuring environment variables:
 
-| Name | Value | Description |
-|------|-------|-------------|
-| APPLICATION_LOCATION_CELL | cell4 | |
-| APPLICATION_LOCATION_LIVESPACE_ID | v4bEh4kd6Jvu5QBX09qYq-qlbcs | |
-| APPLICATION_LOCATION_UNIT | unit2 | |
-| APPLICATION_SERVICE_GATEWAY | FRONTEND | |
-| CONFIG_LOCALHOST_ENABLED | true | |
-| NACOS_ADDR | | |
-| NACOS_NAMESPACE | public | |
-| NACOS_PASSWORD | | |
-| NACOS_USERNAME | | |
+| Name | Value | Description                |
+|----|---|-------------------|
+| APPLICATION_LOCATION_CELL   | cell4  |  |
+| APPLICATION_LOCATION_LIVESPACE_ID   | v4bEh4kd6Jvu5QBX09qYq-qlbcs  |                   |
+| APPLICATION_LOCATION_UNIT   | unit2  |                   |
+| APPLICATION_SERVICE_GATEWAY   | FRONTEND  |                   |
+| CONFIG_LOCALHOST_ENABLED   | true  |                   |
+| NACOS_ADDR   |   |                   |
+| NACOS_NAMESPACE   | public  |                   |
+| NACOS_PASSWORD   |   |                   |
+| NACOS_USERNAME   |   |                   |
 
-For unit partition configuration, refer to the `livespaces.json` configuration file in the `joylive-package` project.
+Refer to the `livespaces.json` configuration file in the `joylive-package` project for unit partition configuration.
 
-#### 2.3.3 Start the Service Project
+#### 2.2.3 Start the Service Project
 
 Run the microservice application `joylive-demo-provider`, referring to the gateway application's configuration.
 
-Refer to the following environment variable configuration:
+Refer to the following for configuring environment variables:
 
-| Name | Value | Description |
-|------|-------|-------------|
-| APPLICATION_LOCATION_CELL | cell1 | |
-| APPLICATION_LOCATION_LIVESPACE_ID | v4bEh4kd6Jvu5QBX09qYq-qlbcs | |
-| APPLICATION_LOCATION_UNIT | unit1 | |
-| APPLICATION_SERVICE_GATEWAY | FRONTEND | |
-| CONFIG_LOCALHOST_ENABLED | true | |
-| NACOS_ADDR | | |
-| NACOS_NAMESPACE | public | |
-| NACOS_PASSWORD | | |
-| NACOS_USERNAME | | |
+| Name | Value                           | Description                |
+|----|-----------------------------|-------------------|
+| APPLICATION_LOCATION_CELL   | cell1                       |  |
+| APPLICATION_LOCATION_LIVESPACE_ID   | v4bEh4kd6Jvu5QBX09qYq-qlbcs |                   |
+| APPLICATION_LOCATION_UNIT   | unit1                       |                   |
+| APPLICATION_SERVICE_GATEWAY   | FRONTEND                    |                   |
+| CONFIG_LOCALHOST_ENABLED   | true                        |                   |
+| NACOS_ADDR   |                             |                   |
+| NACOS_NAMESPACE   | public                      |                   |
+| NACOS_PASSWORD   |                             |                   |
+| NACOS_USERNAME   |                             |                   |
 
-### 2.4 Access Requests
+### 2.3 Access Requests
 
-Use the following curl command to send a request:
-
-```sh
-curl -G 'demo.live.local:8888/service-provider/echo/hello?user=unit1'
+```bash
+curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Host:demo.live.local"
 ```
