@@ -1,7 +1,7 @@
 Technical Architecture
 ===
 
-## 1. Classloader for isolation
+## 1. Classloader Isolation
 
 See [Classloader](classloader.md)
 
@@ -13,14 +13,26 @@ See [Extension System](extension.md)
 
 See [Plugin System](plugin.md)
 
-## 4. Link Transmission
+## 4. Full Link Transmission
 
-See [Link Transmission](transmission.md)
+See [Full Link Transmission](transmission.md)
 
 ## 5. Service Governance Model
 
 See [Service Governance Model](governance.md)
 
-## 6. LiveSpace Model
+## 6. Multi-Active Space Model
 
-See [LiveSpace Model](livespace.md)
+See [Multi-Active Space Model](livespace.md)
+
+## 7. Lane Space Model
+
+See [Lane Space Model](lane.md)
+
+## 8. Model Strategy Synchronization
+
+See [Model Strategy Synchronization](sync.md)
+
+## 9. Service Governance
+
+See [Service Governance](flowcontrol.md)
