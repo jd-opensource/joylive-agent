@@ -69,6 +69,84 @@ agent:
       type: ${CONFIG_LIVE_SPACE_API_TYPE:file} # [file,multilive]
 ```
 
+```mermaid
+classDiagram
+direction BT
+class AbstractService {
+  + isStarted() boolean
+  # doStop() CompletableFuture~Void~
+  # doStart() CompletableFuture~Void~
+  + getName() String
+  + start() CompletableFuture~Void~
+  + stop() CompletableFuture~Void~
+}
+class AbstractSyncer~T, M~ {
+  # getFault() long
+  # onUpdated() void
+  # getInterval() long
+  # onNotModified() void
+  # getDelay() long
+  # onFailed(Throwable) void
+  # doStart() CompletableFuture~Void~
+  # syncAndUpdate() boolean
+  # shouldPrint() boolean
+  # updateOnce(T, M) boolean
+  # doStop() CompletableFuture~Void~
+  # getSyncConfig() SyncConfig
+  # random(long, int) long
+  # run(long, CompletableFuture~Void~) void
+  # doSynchronize(SyncConfig, M) SyncResult~T, M~
+  # createDaemon(CompletableFuture~Void~) Daemon
+}
+class AgentService {
+<<Interface>>
+  + getName() String
+  + stop() CompletableFuture~Void~
+  + start() CompletableFuture~Void~
+}
+class LiveSpaceFileSyncer {
+  # parse(InputStreamReader) List~LiveSpace~
+  # getSyncConfig() SyncConfig
+  # updateOnce(List~LiveSpace~, FileDigest) boolean
+  - newPolicy(GovernancePolicy, List~LiveSpace~) GovernancePolicy
+  # getResource(SyncConfig) String
+  + getPolicyType() PolicyType
+}
+class LiveSpaceSyncer {
+  - getErrorMessage(HttpState, String) String
+  # onFailed(Throwable) void
+  - syncSpace(String, long, SyncConfig, Map~String, Long~) LiveSpace?
+  - newPolicy(List~LiveSpace~, Map~String, Long~, GovernancePolicy) GovernancePolicy
+  - getErrorMessage(Throwable) String
+  # updateOnce(List~LiveSpace~, Map~String, Long~) boolean
+  # onUpdated() void
+  - getSpaces(LiveSyncConfig) Map~String, Long~
+  - getSuccessMessage() String
+  # getSyncConfig() SyncConfig
+  # onNotModified() void
+  - getErrorMessage(HttpState) String
+  - syncSpace(String, SyncConfig, Map~String, Long~) SyncResult~List~LiveSpace~, Map~String, Long~~?
+  - configure(SyncConfig, HttpURLConnection) void
+  - syncSpaces(SyncConfig, Map~String, Long~) SyncResult~List~LiveSpace~, Map~String, Long~~?
+  - getSpace(String, Long, LiveSyncConfig) Response~LiveSpace~
+  + getPolicyType() PolicyType
+  # doSynchronize(SyncConfig, Map~String, Long~) SyncResult~List~LiveSpace~, Map~String, Long~~
+  + initialize() void
+}
+class PolicyService {
+<<Interface>>
+  + getPolicyType() PolicyType
+}
+
+PolicyService  --|>  AgentService
+AbstractService  ..|>  AgentService
+AbstractSyncer~T, M~  -->  AbstractService
+LiveSpaceSyncer  --|>  AbstractSyncer~T, M~
+LiveSpaceFileSyncer  --|>  AbstractSyncer~T, M~ 
+LiveSpaceFileSyncer  ..|>  PolicyService
+LiveSpaceSyncer  ..|>  PolicyService
+```
+
 ## 2.1 文件同步
 
 系统内置了多活空间、泳道空间和微服务的策略文件，支持动态更新
