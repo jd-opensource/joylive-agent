@@ -1,6 +1,9 @@
 name: Build and Push Docker Image to GHCR on Release
 
 on:
+  workflow_dispatch:
+    branches:
+      - *
   release:
     types:
       - created
