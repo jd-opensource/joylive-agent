@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
     branches:
 
+  push:
+    tags:
+      - '*'
+
   release:
     types:
       - created
