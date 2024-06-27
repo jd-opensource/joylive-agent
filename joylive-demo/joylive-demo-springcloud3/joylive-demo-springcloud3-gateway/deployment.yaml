@@ -55,6 +55,8 @@ spec:
               value: nacos
             - name: APPLICATION_NAME
               value: springcloud3-gateway
+            - name: APPLICATION_SERVICE_NAMESPACE
+              value: default
             - name: APPLICATION_LOCATION_REGION
               value: region1
             - name: APPLICATION_LOCATION_ZONE
@@ -136,6 +138,8 @@ spec:
               value: nacos
             - name: APPLICATION_NAME
               value: springcloud3-gateway-gray
+            - name: APPLICATION_SERVICE_NAMESPACE
+              value: default
             - name: APPLICATION_LOCATION_REGION
               value: region2
             - name: APPLICATION_LOCATION_LIVESPACE_ID

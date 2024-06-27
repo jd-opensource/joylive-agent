@@ -49,6 +49,8 @@ spec:
               value: springcloud3-rocketmq
             - name: APPLICATION_SERVICE_NAME
               value: service-rocketmq
+            - name: APPLICATION_SERVICE_NAMESPACE
+              value: default
             - name: APPLICATION_LOCATION_REGION
               value: region1
             - name: APPLICATION_LOCATION_ZONE
@@ -122,6 +124,8 @@ spec:
               value: springcloud3-rocketmq-gray
             - name: APPLICATION_SERVICE_NAME
               value: service-rocketmq
+            - name: APPLICATION_SERVICE_NAMESPACE
+              value: default
             - name: APPLICATION_LOCATION_REGION
               value: region2
             - name: APPLICATION_LOCATION_ZONE
