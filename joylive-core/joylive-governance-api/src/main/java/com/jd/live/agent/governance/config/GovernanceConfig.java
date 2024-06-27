@@ -66,6 +66,7 @@ public class GovernanceConfig {
     public static final String CONFIG_LIVE_MQ_ENABLED = CONFIG_SWITCH_LIVE + ".mq";
     public static final String CONFIG_LIVE_ROCKETMQ_ENABLED = CONFIG_SWITCH_LIVE + ".rocketmq";
     public static final String CONFIG_LIVE_KAFKA_ENABLED = CONFIG_SWITCH_LIVE + ".kafka";
+    public static final String CONFIG_LIVE_PULSAR_ENABLED = CONFIG_SWITCH_LIVE + ".pulsar";
 
     public static final String CONFIG_LANE_ENABLED = CONFIG_SWITCH_LANE + ENABLED;
 

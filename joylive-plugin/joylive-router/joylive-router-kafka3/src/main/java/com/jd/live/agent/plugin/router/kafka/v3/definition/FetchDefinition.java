@@ -41,7 +41,7 @@ import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetchInterceptor;
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, relation = ConditionalRelation.OR, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_MQ_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_PULSAR_ENABLED)
 @ConditionalOnClass(FetchDefinition.TYPE_FETCH)
 public class FetchDefinition extends PluginDefinitionAdapter {
 

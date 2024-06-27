@@ -141,6 +141,16 @@
             </includes>
         </dependencySet>
 
+        <!-- plugin/pulsar -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/pulsar</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-pulsar3</include>
+            </includes>
+        </dependencySet>
+
         <!-- plugin/kafka -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

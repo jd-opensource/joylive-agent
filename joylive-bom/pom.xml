@@ -255,6 +255,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-transmission-plusar3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-transmission-kafka3</artifactId>
                 <version>${revision}</version>
             </dependency>

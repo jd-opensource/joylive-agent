@@ -29,6 +29,7 @@
         <module>joylive-transmission-springcloud3</module>
         <module>joylive-transmission-thread</module>
         <module>joylive-transmission-nettyhttp1</module>
+        <module>joylive-transmission-plusar3</module>
     </modules>
 
 

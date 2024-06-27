@@ -39,7 +39,7 @@ import com.jd.live.agent.plugin.router.kafka.v3.interceptor.GroupInterceptor;
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_PULSAR_ENABLED)
 @ConditionalOnClass(ConsumerConfigDefinition.TYPE_CONSUMER_CONFIG)
 public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
 

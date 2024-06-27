@@ -40,7 +40,7 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
         String group = (String) arguments[0];
         arguments[0] = getGroup(group, null);
         if (!arguments[0].equals(group)) {
-            logger.info("Change consumer group of " + group + " to group " + arguments[0]);
+            logger.info("Change consumer group " + group + " to " + arguments[0]);
         }
     }
 

@@ -62,7 +62,7 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
         String newGroup = getGroup(group, null);
         properties.put(GROUP_ID_CONFIG, newGroup);
         if (!newGroup.equals(group)) {
-            logger.info("Change consumer group of " + group + " to group " + newGroup);
+            logger.info("Change consumer group " + group + " to " + newGroup);
         }
     }
 
@@ -71,7 +71,7 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
         String newGroup = getGroup(group, null);
         map.put(GROUP_ID_CONFIG, newGroup);
         if (!newGroup.equals(group)) {
-            logger.info("Change consumer group of " + group + " to group " + newGroup);
+            logger.info("Change consumer group " + group + " to " + newGroup);
         }
     }
 
