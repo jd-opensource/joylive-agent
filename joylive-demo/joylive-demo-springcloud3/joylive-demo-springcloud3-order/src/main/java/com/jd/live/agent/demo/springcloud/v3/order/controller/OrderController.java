@@ -32,28 +32,30 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Order getOrderById(@RequestParam Long userId, @PathVariable Long id) {
+    public Order getOrderById(@RequestParam("user") Long userId, @PathVariable Long id) {
         return orderService.getById(id);
     }
 
-    @GetMapping("/user/{userId}")
-    public List<Order> getOrdersByUserId(@PathVariable Long userId) {
-        return orderService.getOrdersByUserId(userId);
+    @GetMapping
+    public List<Order> getOrdersByUserId(@RequestParam Long userId,
+                                         @RequestParam(defaultValue = "1") int page,
+                                         @RequestParam(defaultValue = "10") int size) {
+        return orderService.getOrdersByUserId(userId, page, size);
     }
 
     @PostMapping
-    public boolean createOrder(@RequestParam Long userId, @RequestBody Order order) {
+    public boolean createOrder(@RequestParam("user") Long userId, @RequestBody Order order) {
         return orderService.save(order);
     }
 
     @PutMapping("/{id}")
-    public boolean updateOrder(@RequestParam Long userId, @PathVariable Long id, @RequestBody Order order) {
+    public boolean updateOrder(@RequestParam("user") Long userId, @PathVariable Long id, @RequestBody Order order) {
         order.setId(id);
         return orderService.updateById(order);
     }
 
     @DeleteMapping("/{id}")
-    public boolean deleteOrder(@RequestParam Long userId, @PathVariable Long id) {
+    public boolean deleteOrder(@RequestParam("user") Long userId, @PathVariable Long id) {
         return orderService.removeById(id);
     }
 }

@@ -15,8 +15,13 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.order.aspect;
 
-import com.jd.live.agent.demo.springcloud.v3.order.controller.OrderController;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
@@ -25,12 +30,15 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @ControllerAdvice
-public class OrderResponseBodyAdvice implements ResponseBodyAdvice<Object> {
+public class APIResponseBodyAdvice implements ResponseBodyAdvice<Object> {
+
+    @Value("${spring.application.name}")
+    private String applicationName;
 
     @Override
     public boolean supports(MethodParameter returnType,
                             Class<? extends HttpMessageConverter<?>> converterType) {
-        return returnType.getContainingClass().equals(OrderController.class);
+        return true;
     }
 
     @Override
@@ -40,6 +48,10 @@ public class OrderResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request,
                                   ServerHttpResponse response) {
-        return body;
+        HttpHeaders headers = request.getHeaders();
+        LiveResponse liveResponse = body instanceof LiveResponse ? (LiveResponse) body : new LiveResponse(body);
+        liveResponse.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", headers::getFirst)));
+        return liveResponse;
     }
 }

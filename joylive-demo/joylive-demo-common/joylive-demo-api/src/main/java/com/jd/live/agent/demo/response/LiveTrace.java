@@ -13,15 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.springcloud.v3.order.servcice;
+package com.jd.live.agent.demo.response;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.jd.live.agent.demo.springcloud.v3.order.entity.Order;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.List;
+import java.io.Serializable;
 
-public interface OrderService extends IService<Order> {
+@Getter
+@Setter
+public class LiveTrace implements Serializable {
 
-    List<Order> getOrdersByUserId(Long userId, int page, int size);
+    private String service;
 
+    private LiveLocation location;
+
+    private LiveTransmission transmission;
+
+    public LiveTrace() {
+    }
+
+    public LiveTrace(String service, LiveLocation location, LiveTransmission transmission) {
+        this.service = service;
+        this.location = location;
+        this.transmission = transmission;
+    }
 }
