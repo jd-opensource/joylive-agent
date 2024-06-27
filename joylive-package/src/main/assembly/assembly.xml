@@ -151,6 +151,16 @@
             </includes>
         </dependencySet>
 
+        <!-- plugin/rabbitmq -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/rabbitmq</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-transmission-rabbitmq5</include>
+            </includes>
+        </dependencySet>
+
         <!-- plugin/kafka -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

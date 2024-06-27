@@ -30,6 +30,7 @@
         <module>joylive-transmission-thread</module>
         <module>joylive-transmission-nettyhttp1</module>
         <module>joylive-transmission-plusar3</module>
+        <module>joylive-transmission-rabbitmq5</module>
     </modules>
 
 
