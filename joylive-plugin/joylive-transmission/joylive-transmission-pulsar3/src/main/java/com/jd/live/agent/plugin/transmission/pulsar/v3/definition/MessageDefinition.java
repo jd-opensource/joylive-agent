@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition;
+package com.jd.live.agent.plugin.transmission.pulsar.v3.definition;
 
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -27,33 +27,37 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor.GetBodyInterceptor;
+import com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor.MessageInterceptor;
 
 import java.util.List;
 
 @Injectable
-@Extension(value = "DeliveryDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "MessageDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DeliveryDefinition.TYPE_MESSAGE)
-public class DeliveryDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(MessageDefinition.TYPE_MESSAGE)
+public class MessageDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_MESSAGE = "com.rabbitmq.client.Delivery";
+    protected static final String TYPE_MESSAGE = "org.apache.pulsar.client.api.Message";
 
-    private static final String METHOD_GET_BODY = "getBody";
+    private static final String METHOD_GET_DATA = "getData";
+
+    private static final String METHOD_GET_VALUE = "getValue";
 
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
-    public DeliveryDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE);
+    public MessageDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MESSAGE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_GET_BODY), () -> new GetBodyInterceptor(requires))
+                        MatcherBuilder.in(METHOD_GET_DATA, METHOD_GET_VALUE),
+                        () -> new MessageInterceptor(requires)
+                )
         };
     }
 }

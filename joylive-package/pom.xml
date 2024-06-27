@@ -181,7 +181,7 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-transmission-plusar3</artifactId>
+            <artifactId>joylive-transmission-pulsar3</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

@@ -22,6 +22,8 @@ public interface Message {
 
     String TOPIC_REPLY = "x-topic-reply";
 
+    String LABEL_MESSAGE_ID = "x-message-id";
+
     /**
      * Retrieves the topic of the message.
      *

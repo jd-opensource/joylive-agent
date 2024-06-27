@@ -203,16 +203,35 @@ public class RequestContext {
      * @param consumer   the consumer that defines the action to be performed with the created Carrier
      */
     public static <T> void restore(T obj, Supplier<String> idSupplier, Consumer<Carrier> consumer) {
-        if (obj != null) {
+        if (obj != null && consumer != null) {
             String id = idSupplier != null ? idSupplier.get() : null;
             id = id != null ? id : String.valueOf(System.identityHashCode(obj));
             String name = obj.getClass().getSimpleName() + ":" + id;
             String restoreBy = getAttribute(Carrier.ATTRIBUTE_RESTORE_BY);
             if (restoreBy == null || !restoreBy.equals(name)) {
                 setAttribute(Carrier.ATTRIBUTE_RESTORE_BY, name);
-                if (consumer != null) {
+                consumer.accept(create());
+            }
+        }
+    }
+
+    /**
+     * Restores a {@link Carrier} instance using the provided {@link Supplier} and {@link Consumer}.
+     *
+     * @param idSupplier the supplier to provide an ID for restoration, can be null
+     * @param consumer   the consumer to accept the restored {@link Carrier} instance, can be null
+     */
+    public static void restore(Supplier<String> idSupplier, Consumer<Carrier> consumer) {
+        if (consumer != null) {
+            String id = idSupplier != null ? idSupplier.get() : null;
+            if (id != null && !id.isEmpty()) {
+                String restoreBy = getAttribute(Carrier.ATTRIBUTE_RESTORE_BY);
+                if (restoreBy == null || !restoreBy.equals(id)) {
+                    setAttribute(Carrier.ATTRIBUTE_RESTORE_BY, id);
                     consumer.accept(create());
                 }
+            } else {
+                consumer.accept(create());
             }
         }
     }

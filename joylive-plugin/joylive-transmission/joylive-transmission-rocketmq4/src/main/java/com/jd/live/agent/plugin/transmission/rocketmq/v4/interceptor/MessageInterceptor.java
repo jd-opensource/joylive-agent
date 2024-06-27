@@ -44,8 +44,9 @@ public class MessageInterceptor extends InterceptorAdaptor {
     }
 
     private void restoreCargo(Message message) {
-        RequestContext.restore(message,
-                () -> message instanceof MessageExt ? (message.getTopic() + ":" + ((MessageExt) message).getMsgId()) : null,
+        String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
+        String id = "Rocketmq4@" + message.getTopic() + "@" + messageId;
+        RequestContext.restore(() -> id,
                 carrier -> carrier.addCargo(require, message.getProperties(), Label::parseValue));
     }
 

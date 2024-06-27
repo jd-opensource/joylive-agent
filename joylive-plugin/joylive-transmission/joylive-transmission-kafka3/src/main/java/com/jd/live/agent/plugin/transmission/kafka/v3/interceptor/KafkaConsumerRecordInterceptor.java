@@ -40,8 +40,9 @@ public class KafkaConsumerRecordInterceptor extends InterceptorAdaptor {
     }
 
     private void restoreCargo(ConsumerRecord<?, ?> record) {
-        RequestContext.restore(record,
-                () -> record.topic() + ":" + record.partition() + "-" + record.offset(),
+        String messageId = record.partition() + "-" + record.offset();
+        String id = "Kafka3@" + record.topic() + "@" + messageId;
+        RequestContext.restore(() -> id,
                 carrier -> carrier.addCargo(require, record.headers(), Header::key, this::getValue));
     }
 

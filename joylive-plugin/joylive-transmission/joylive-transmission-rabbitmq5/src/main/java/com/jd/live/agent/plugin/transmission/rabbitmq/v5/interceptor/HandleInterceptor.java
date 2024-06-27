@@ -16,25 +16,23 @@
 package com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.Carrier;
-import com.rabbitmq.client.Delivery;
+import com.rabbitmq.client.BasicProperties;
+import com.rabbitmq.client.Envelope;
 
 import java.util.List;
 
-public class GetBodyInterceptor extends AbstractConsumerInterceptor {
+public class HandleInterceptor extends AbstractConsumerInterceptor {
 
-    public GetBodyInterceptor(List<CargoRequire> requires) {
+    public HandleInterceptor(List<CargoRequire> requires) {
         super(requires);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
-        if (isProducer == null || !isProducer) {
-            Delivery delivery = (Delivery) ctx.getTarget();
-            restore(delivery.getProperties(), delivery.getEnvelope());
-        }
+        Envelope envelope = ctx.getArgument(1);
+        BasicProperties props = ctx.getArgument(2);
+        restore(props, envelope);
     }
+
 }

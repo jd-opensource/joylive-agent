@@ -37,9 +37,7 @@ public class ChannelNDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_BASIC_PUBLISH = "basicPublish";
 
     public ChannelNDefinition() {
-        super(MatcherBuilder.isImplement(TYPE_CHANNEL_N),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_BASIC_PUBLISH),
-                        new PublishInterceptor()));
+        super(MatcherBuilder.named(TYPE_CHANNEL_N),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_BASIC_PUBLISH), new PublishInterceptor()));
     }
 }

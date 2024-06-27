@@ -13,36 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.plusar.v3.definition;
+package com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition;
 
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.InjectLoader;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.transmission.plusar.v3.interceptor.SendInterceptor;
+import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor.HandleInterceptor;
 
-@Extension(value = "MessageBuilderDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
+import java.util.List;
+
+@Injectable
+@Extension(value = "ConsumerDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(MessageBuilderDefinition.TYPE_TYPED_MESSAGE_BUILDER)
-public class MessageBuilderDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ConsumerDefinition.TYPE_CONSUMER)
+public class ConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_TYPED_MESSAGE_BUILDER = "org.apache.pulsar.client.api.TypedMessageBuilder";
+    protected static final String TYPE_CONSUMER = "com.rabbitmq.client.Consumer";
 
-    private static final String METHOD_SEND = "send";
+    private static final String METHOD_GET_BODY = "handleDelivery";
 
-    private static final String METHOD_SEND_ASYNC = "sendAsync";
+    @Inject
+    @InjectLoader(ResourcerType.CORE_IMPL)
+    private List<CargoRequire> requires;
 
-
-    public MessageBuilderDefinition() {
-        super(MatcherBuilder.isImplement(TYPE_TYPED_MESSAGE_BUILDER),
+    public ConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_CONSUMER);
+        this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ASYNC),
-                        new SendInterceptor()));
+                        MatcherBuilder.in(METHOD_GET_BODY), () -> new HandleInterceptor(requires))
+        };
     }
 }

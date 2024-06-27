@@ -1,2 +1,3 @@
 com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition.ChannelNDefinition
 com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition.DeliveryDefinition
+com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition.ConsumerDefinition

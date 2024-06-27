@@ -9,7 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-transmission-plusar3</artifactId>
+    <artifactId>joylive-transmission-pulsar3</artifactId>
 
     <properties>
         <pulsar-client.version>3.3.0</pulsar-client.version>

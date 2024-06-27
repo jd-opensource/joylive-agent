@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.plusar.v3.interceptor;
+package com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -39,8 +39,9 @@ public class MessageInterceptor extends InterceptorAdaptor {
         Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
         if (isProducer == null || !isProducer) {
             Message<?> message = (Message<?>) ctx.getTarget();
-            RequestContext.restore(message,
-                    () -> message.getMessageId().toString(),
+            String messageId = message.getMessageId().toString();
+            String id = "Pulsar3@" + message.getTopicName() + "@" + messageId;
+            RequestContext.restore(() -> id,
                     carrier -> carrier.addCargo(require, message.getProperties(), Label::parseValue));
         }
     }

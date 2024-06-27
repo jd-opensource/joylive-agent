@@ -19,11 +19,13 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.request.Message;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BasicProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PublishInterceptor extends InterceptorAdaptor {
 
@@ -38,6 +40,7 @@ public class PublishInterceptor extends InterceptorAdaptor {
             properties = p;
         }
         Map<String, Object> headers = properties.getHeaders();
+        String messageId = properties.getMessageId();
         if (headers == null) {
             headers = new HashMap<>();
             AMQP.BasicProperties p = properties instanceof AMQP.BasicProperties ?
@@ -45,10 +48,16 @@ public class PublishInterceptor extends InterceptorAdaptor {
                     new AMQP.BasicProperties(
                             properties.getContentType(), properties.getContentEncoding(), headers,
                             properties.getDeliveryMode(), properties.getPriority(), properties.getCorrelationId(),
-                            properties.getReplyTo(), properties.getExpiration(), properties.getMessageId(),
+                            properties.getReplyTo(), properties.getExpiration(), messageId,
                             properties.getTimestamp(), properties.getType(), properties.getUserId(),
                             properties.getAppId(), null);
             arguments[arguments.length - 2] = p;
+        }
+        if (messageId == null || messageId.isEmpty()) {
+            long timestamp = System.nanoTime();
+            int randomInt = ThreadLocalRandom.current().nextInt(1000000);
+            messageId = timestamp + "-" + randomInt;
+            headers.put(Message.LABEL_MESSAGE_ID, messageId);
         }
         RequestContext.cargos(headers::put);
     }
