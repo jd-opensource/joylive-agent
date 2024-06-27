@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: service-order
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR}
+        fail-fast: true
+        namespace: ${NACOS_NAMESPACE:public}
+        username: ${NACOS_USERNAME}
+        password: ${NACOS_PASSWORD}
+      username: ${NACOS_USERNAME}
+      password: ${NACOS_PASSWORD}
+  cache:
+    type: redis
+    redis:
+      host: ${REDIS_ADDR}
+      port: 6379
+  datasource:
+    url: jdbc:mariadb://${DB_ADDR}/order
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
+server:
+  port: ${SERVER_PORT:${random.int[12000,12999]}}
