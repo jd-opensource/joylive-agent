@@ -206,7 +206,7 @@ public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
                 int priority = cellRoute.getPriority(variable, localFirst ? localCell : null);
 
                 // Get the failover threshold for the cell using the provided function.
-                Integer threshold = !localFirst ? 0 : failoverThresholdFunc.apply(cell.getCode());
+                Integer threshold = !localFirst ? null : failoverThresholdFunc.apply(cell.getCode());
                 threshold = threshold == null ? 0 : threshold;
 
                 // Create a Candidate object and add it to the list of candidates.
