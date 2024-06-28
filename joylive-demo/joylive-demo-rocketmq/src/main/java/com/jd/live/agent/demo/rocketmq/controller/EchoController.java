@@ -41,7 +41,7 @@ public class EchoController {
 
     @GetMapping("/echo/{str}")
     public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
-        LiveResponse response= producerService.echo(str);
+        LiveResponse response = producerService.echo(str);
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;
