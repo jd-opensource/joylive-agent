@@ -18,6 +18,12 @@ spring:
             - Method=GET
           filters:
             - StripPrefix=1
+        - id: order
+          uri: lb://service-order
+          predicates:
+            - Path=/service-order/**
+          filters:
+            - StripPrefix=1
         - id: consumer
           uri: lb://service-consumer
           predicates:
