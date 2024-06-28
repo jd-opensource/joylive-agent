@@ -64,6 +64,7 @@ public class OrderController {
     public LiveResponse createOrder(@RequestParam("user") Long userId,
                                     @RequestBody Order order,
                                     HttpServletRequest request) {
+        order.setUserId(userId);
         boolean saved = orderService.save(order);
         LiveResponse response = saved ?
                 new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
