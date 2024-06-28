@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.rocketmq.service;
 
+import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.rocketmq.config.MqConfig;
 import com.jd.live.agent.demo.service.HelloService;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
@@ -32,7 +33,7 @@ public class ProducerService implements HelloService {
     private MqConfig mqConfig;
 
     @Override
-    public String echo(String str) {
-        return rocketMQTemplate.sendAndReceive(mqConfig.getTopic(), str, String.class, 10000);
+    public LiveResponse echo(String str) {
+        return rocketMQTemplate.sendAndReceive(mqConfig.getTopic(), str, LiveResponse.class, 10000);
     }
 }

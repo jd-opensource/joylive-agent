@@ -3,6 +3,12 @@ server:
 spring:
   application:
     name: spring-gateway
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      indent_output: true
   cloud:
     gateway:
       routes:

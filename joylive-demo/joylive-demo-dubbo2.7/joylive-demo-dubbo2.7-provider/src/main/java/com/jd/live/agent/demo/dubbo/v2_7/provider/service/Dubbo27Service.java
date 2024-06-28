@@ -15,17 +15,25 @@
  */
 package com.jd.live.agent.demo.dubbo.v2_7.provider.service;
 
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.service.HelloService;
-import com.jd.live.agent.demo.util.EchoResponse;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.apache.dubbo.rpc.RpcContext;
+import org.springframework.beans.factory.annotation.Value;
 
 @DubboService(group = "live-demo", interfaceClass = HelloService.class)
 public class Dubbo27Service implements HelloService {
 
+    @Value("${spring.application.name}")
+    private String applicationName;
+
     @Override
-    public String echo(String str) {
+    public LiveResponse echo(String str) {
         RpcContext context = RpcContext.getContext();
-        return new EchoResponse("dubbo2.7-provider", "attachment", context::getAttachment, str).toString();
+        return new LiveResponse(str).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("attachment", context::getAttachment)));
     }
 }

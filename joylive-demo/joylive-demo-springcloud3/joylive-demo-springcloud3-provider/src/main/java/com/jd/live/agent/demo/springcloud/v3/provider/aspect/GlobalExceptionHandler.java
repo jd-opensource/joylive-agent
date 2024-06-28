@@ -13,45 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.springcloud.v3.consumer.controller;
+package com.jd.live.agent.demo.springcloud.v3.provider.aspect;
 
 import com.jd.live.agent.demo.response.LiveLocation;
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
-import com.jd.live.agent.demo.springcloud.v3.consumer.service.FeignService;
-import com.jd.live.agent.demo.springcloud.v3.consumer.service.RestService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
-@RestController
-public class EchoController {
+@RestControllerAdvice
+public class GlobalExceptionHandler {
 
     @Value("${spring.application.name}")
     private String applicationName;
 
-    @Resource
-    private RestService restService;
-
-    @Resource
-    private FeignService feignService;
-
-    @GetMapping({"/echo-rest/{str}", "/echo/{str}"})
-    public LiveResponse echoRest(@PathVariable String str, HttpServletRequest request) {
-        LiveResponse response = restService.echo(str);
-        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
-        return response;
-    }
-
-    @GetMapping("/echo-feign/{str}")
-    public LiveResponse echoFeign(@PathVariable String str, HttpServletRequest request) {
-        LiveResponse response = feignService.echo(str);
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.OK)
+    public LiveResponse handleException(Exception e, HttpServletRequest request) {
+        LiveResponse response = new LiveResponse(500, "Internal Server Error: " + e.getMessage());
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;

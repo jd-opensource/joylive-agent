@@ -18,9 +18,11 @@ package com.jd.live.agent.demo.response;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
-public class LiveLocation {
+public class LiveLocation implements Serializable {
     private String liveSpaceId;
     private String unit;
     private String cell;

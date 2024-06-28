@@ -18,11 +18,12 @@ package com.jd.live.agent.demo.response;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
 @Getter
 @Setter
-public class LiveTransmission {
+public class LiveTransmission implements Serializable {
     public static final String X_LIVE_SPACE_ID = "x-live-space-id";
     public static final String X_LIVE_UNIT = "x-live-unit";
     public static final String X_LIVE_CELL = "x-live-cell";

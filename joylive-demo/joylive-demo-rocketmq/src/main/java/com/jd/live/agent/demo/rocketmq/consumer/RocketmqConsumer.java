@@ -15,13 +15,17 @@
  */
 package com.jd.live.agent.demo.rocketmq.consumer;
 
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.rocketmq.service.ConsumerService;
-import com.jd.live.agent.demo.util.EchoResponse;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQReplyListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -29,24 +33,29 @@ import java.util.Map;
 
 @Component
 @RocketMQMessageListener(topic = "${rocketmq.topic}", consumerGroup = "${rocketmq.consumer.group}")
-public class RocketmqConsumer implements RocketMQReplyListener<MessageExt, String> {
+public class RocketmqConsumer implements RocketMQReplyListener<MessageExt, LiveResponse> {
 
     private static final Logger logger = LoggerFactory.getLogger(RocketmqConsumer.class);
 
     private final ConsumerService consumerService;
+
+    @Value("${spring.application.name}")
+    private String applicationName;
 
     public RocketmqConsumer(ConsumerService consumerService) {
         this.consumerService = consumerService;
     }
 
     @Override
-    public String onMessage(MessageExt message) {
+    public LiveResponse onMessage(MessageExt message) {
         Map<String, String> properties = message.getProperties();
         try {
-            String msg = consumerService.echo(new String(message.getBody(), StandardCharsets.UTF_8));
-            return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, msg).toString();
+            LiveResponse response = consumerService.echo(new String(message.getBody(), StandardCharsets.UTF_8));
+            response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                    LiveTransmission.build("properties", properties::get)));
+            return response;
         } catch (Throwable e) {
-            return new EchoResponse("spring-rocketmq-consumer", "properties", properties::get, e.getMessage()).toString();
+            return new LiveResponse(LiveResponse.ERROR, e.getMessage());
         }
     }
 }

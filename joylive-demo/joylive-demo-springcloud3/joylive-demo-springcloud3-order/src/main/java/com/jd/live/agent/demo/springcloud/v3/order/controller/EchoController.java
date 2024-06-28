@@ -15,6 +15,11 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.order.controller;
 
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,14 +32,20 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class EchoController {
 
+    @Value("${spring.application.name}")
+    private String applicationName;
+
     private final CountDownLatch latch = new CountDownLatch(1);
 
     @GetMapping("/echo/{str}")
-    public String echo(@PathVariable String str, HttpServletRequest request) {
+    public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
         try {
             latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
         } catch (InterruptedException ignore) {
         }
-        return str;
+        LiveResponse response = new LiveResponse(str);
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 }

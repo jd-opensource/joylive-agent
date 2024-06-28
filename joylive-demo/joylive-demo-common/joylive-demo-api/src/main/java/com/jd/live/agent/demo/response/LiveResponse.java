@@ -30,6 +30,8 @@ public class LiveResponse implements Serializable {
 
     public static final int ERROR = 500;
 
+    public static final int NOT_FOUND = 404;
+
     private int code;
 
     private String message;
@@ -51,17 +53,19 @@ public class LiveResponse implements Serializable {
         this.message = message;
     }
 
-    public void addFirst(LiveTrace trace) {
+    public LiveResponse addFirst(LiveTrace trace) {
         if (traces == null) {
             traces = new ArrayList<>();
         }
         traces.add(0, trace);
+        return this;
     }
 
-    public void addLast(LiveTrace trace) {
+    public LiveResponse addLast(LiveTrace trace) {
         if (traces == null) {
             traces = new ArrayList<>();
         }
         traces.add(trace);
+        return this;
     }
 }

@@ -15,8 +15,13 @@
  */
 package com.jd.live.agent.demo.v3.consumer.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.service.HelloService;
-import com.jd.live.agent.demo.util.EchoResponse;
 import com.jd.live.agent.demo.v3.consumer.config.LiveConfig;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.rpc.RpcContext;
@@ -24,11 +29,14 @@ import org.apache.dubbo.rpc.RpcContextAttachment;
 import org.apache.dubbo.rpc.service.GenericService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +47,12 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
 
     @Resource
     private LiveConfig config;
+
+    @Value("${spring.application.name}")
+    private String applicationName;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @DubboReference(providedBy = "dubbo3-provider", group = "live-demo")
     private HelloService helloService;
@@ -78,14 +92,30 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     }
 
     private void doInvoke(RpcContextAttachment attachment) {
-        String result = helloService.echo("hello");
-        EchoResponse response = new EchoResponse("dubbo3-consumer", "attachment", attachment::getAttachment, result);
-        logger.info("Invoke result: \n\n{}", response);
+        LiveResponse result = helloService.echo("hello");
+        addTrace(attachment, result);
+        output("Invoke result: \n{}", result);
     }
 
+    @SuppressWarnings("unchecked")
     private void doGenericInvoke(RpcContextAttachment attachment) {
-        String result = (String) genericService.$invoke("echo", new String[]{"java.lang.String"}, new Object[]{"hello"});
-        EchoResponse response = new EchoResponse("dubbo3-consumer", "attachment", attachment::getAttachment, result);
-        logger.info("Generic invoke result: \n\n{}", response);
+        Map<String, Object> result = (Map<String, Object>) genericService.$invoke("echo",
+                new String[]{"java.lang.String"},
+                new Object[]{"hello"});
+        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
+        addTrace(attachment, response);
+        output("Generic invoke result: \n{}", response);
+    }
+
+    private void addTrace(RpcContextAttachment context, LiveResponse result) {
+        result.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("attachment", context::getAttachment)));
+    }
+
+    private void output(String format, LiveResponse result) {
+        try {
+            logger.info(format, objectMapper.writeValueAsString(result));
+        } catch (JsonProcessingException ignore) {
+        }
     }
 }

@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.demo.service;
 
+import com.jd.live.agent.demo.response.LiveResponse;
+
 public interface HelloService {
 
-    String echo(String str);
+    LiveResponse echo(String str);
 }

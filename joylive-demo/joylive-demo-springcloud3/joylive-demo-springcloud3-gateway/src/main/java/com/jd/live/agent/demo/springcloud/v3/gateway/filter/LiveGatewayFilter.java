@@ -15,13 +15,20 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.gateway.filter;
 
-import com.jd.live.agent.demo.util.EchoResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import org.reactivestreams.Publisher;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -31,10 +38,17 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
-
 @Component
 public class LiveGatewayFilter implements GlobalFilter, Ordered {
+
+    @Value("${spring.application.name}")
+    private String applicationName;
+
+    private final ObjectMapper objectMapper;
+
+    public LiveGatewayFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public int getOrder() {
@@ -45,31 +59,59 @@ public class LiveGatewayFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         ServerHttpResponse response = exchange.getResponse();
-        ServerHttpResponseDecorator decorator = new ServerHttpResponseDecorator(response) {
-            @Override
-            public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-                if (body instanceof Flux) {
-                    Flux<? extends DataBuffer> fluxBody = (Flux<? extends DataBuffer>) body;
-                    return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
-                        HttpHeaders headers = request.getHeaders();
-                        EchoResponse echoResponse = new EchoResponse("spring-gateway", "header", headers::getFirst);
-                        StringBuilder builder = new StringBuilder(echoResponse.toString());
-                        dataBuffers.forEach(dataBuffer -> {
-                            // probably should reuse buffers
-                            byte[] content = new byte[dataBuffer.readableByteCount()];
-                            dataBuffer.read(content);
-                            builder.append(new String(content, StandardCharsets.UTF_8));
-                            DataBufferUtils.release(dataBuffer);
-                        });
-                        byte[] data = builder.toString().getBytes(StandardCharsets.UTF_8);
-                        response.getHeaders().setContentLength(data.length);
-                        return response.bufferFactory().wrap(data);
-                    }));
-                }
-                return super.writeWith(body);
-            }
-        };
+        ServerHttpResponse decorator = new LiveTraceDecorator(response, request);
 
-        return chain.filter(exchange.mutate().response(decorator).build());
+        return chain.filter(exchange.mutate().response(decorator).build()).onErrorResume(throwable -> {
+            if (response.isCommitted()) {
+                return Mono.error(throwable);
+            }
+            LiveResponse liveResponse = new LiveResponse(LiveResponse.ERROR, throwable.getMessage());
+            addTrace(liveResponse, request.getHeaders());
+            try {
+                byte[] data = objectMapper.writeValueAsBytes(liveResponse);
+                request.getHeaders().setContentLength(data.length);
+                return response.writeWith(Mono.just(response.bufferFactory().wrap(data)));
+            } catch (JsonProcessingException e) {
+                return Mono.error(throwable);
+            }
+        });
+    }
+
+    private void addTrace(LiveResponse liveResponse, HttpHeaders headers) {
+        liveResponse.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", headers::getFirst)));
+    }
+
+    private class LiveTraceDecorator extends ServerHttpResponseDecorator {
+        private final ServerHttpRequest request;
+
+        LiveTraceDecorator(ServerHttpResponse response,
+                           ServerHttpRequest request) {
+            super(response);
+            this.request = request;
+        }
+
+        @Override
+        public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
+            if (body instanceof Flux) {
+                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                ServerHttpResponse delegate = getDelegate();
+                HttpHeaders headers = request.getHeaders();
+                return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
+                    DataBufferFactory dataBufferFactory = new DefaultDataBufferFactory();
+                    DataBuffer join = dataBufferFactory.join(dataBuffers);
+                    try {
+                        LiveResponse liveResponse = objectMapper.readValue(join.asInputStream(), LiveResponse.class);
+                        addTrace(liveResponse, headers);
+                        byte[] data = objectMapper.writeValueAsBytes(liveResponse);
+                        delegate.getHeaders().setContentLength(data.length);
+                        return delegate.bufferFactory().wrap(data);
+                    } catch (Throwable ignore) {
+                        return join;
+                    }
+                }));
+            }
+            return super.writeWith(body);
+        }
     }
 }

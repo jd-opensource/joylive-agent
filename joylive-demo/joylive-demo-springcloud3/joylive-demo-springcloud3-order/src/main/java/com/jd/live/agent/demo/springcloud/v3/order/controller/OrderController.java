@@ -15,15 +15,23 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.order.controller;
 
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v3.order.entity.Order;
 import com.jd.live.agent.demo.springcloud.v3.order.servcice.OrderService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
+
+    @Value("${spring.application.name}")
+    private String applicationName;
 
     private final OrderService orderService;
 
@@ -32,30 +40,64 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Order getOrderById(@RequestParam("user") Long userId, @PathVariable Long id) {
-        return orderService.getById(id);
+    public LiveResponse getOrderById(@RequestParam("user") Long userId,
+                                     @PathVariable Long id,
+                                     HttpServletRequest request) {
+        LiveResponse response = new LiveResponse(orderService.getById(id));
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 
     @GetMapping
-    public List<Order> getOrdersByUserId(@RequestParam Long userId,
-                                         @RequestParam(defaultValue = "1") int page,
-                                         @RequestParam(defaultValue = "10") int size) {
-        return orderService.getOrdersByUserId(userId, page, size);
+    public LiveResponse getOrdersByUserId(@RequestParam Long userId,
+                                          @RequestParam(defaultValue = "1") int page,
+                                          @RequestParam(defaultValue = "10") int size,
+                                          HttpServletRequest request) {
+        LiveResponse response = new LiveResponse(orderService.getOrdersByUserId(userId, page, size));
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 
     @PostMapping
-    public boolean createOrder(@RequestParam("user") Long userId, @RequestBody Order order) {
-        return orderService.save(order);
+    public LiveResponse createOrder(@RequestParam("user") Long userId,
+                                    @RequestBody Order order,
+                                    HttpServletRequest request) {
+        boolean saved = orderService.save(order);
+        LiveResponse response = saved ?
+                new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
+                new LiveResponse(LiveResponse.ERROR, "ERROR");
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 
     @PutMapping("/{id}")
-    public boolean updateOrder(@RequestParam("user") Long userId, @PathVariable Long id, @RequestBody Order order) {
+    public LiveResponse updateOrder(@RequestParam("user") Long userId,
+                                    @PathVariable Long id,
+                                    @RequestBody Order order,
+                                    HttpServletRequest request) {
         order.setId(id);
-        return orderService.updateById(order);
+        boolean updated = orderService.updateById(order);
+        LiveResponse response = updated ?
+                new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
+                new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 
     @DeleteMapping("/{id}")
-    public boolean deleteOrder(@RequestParam("user") Long userId, @PathVariable Long id) {
-        return orderService.removeById(id);
+    public LiveResponse deleteOrder(@RequestParam("user") Long userId,
+                                    @PathVariable Long id,
+                                    HttpServletRequest request) {
+        boolean removed = orderService.removeById(id);
+        LiveResponse response = removed ?
+                new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
+                new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 }

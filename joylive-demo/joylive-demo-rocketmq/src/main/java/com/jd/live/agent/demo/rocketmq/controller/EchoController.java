@@ -15,8 +15,12 @@
  */
 package com.jd.live.agent.demo.rocketmq.controller;
 
+import com.jd.live.agent.demo.response.LiveLocation;
+import com.jd.live.agent.demo.response.LiveResponse;
+import com.jd.live.agent.demo.response.LiveTrace;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.rocketmq.service.ProducerService;
-import com.jd.live.agent.demo.util.EchoResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,14 +32,19 @@ public class EchoController {
 
     private final ProducerService producerService;
 
+    @Value("${spring.application.name}")
+    private String applicationName;
+
     public EchoController(ProducerService producerService) {
         this.producerService = producerService;
     }
 
     @GetMapping("/echo/{str}")
-    public String echo(@PathVariable String str, HttpServletRequest request) {
-        String message = producerService.echo(str);
-        return new EchoResponse("spring-rocketmq-producer", "header", request::getHeader, message).toString();
+    public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
+        LiveResponse response= producerService.echo(str);
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
     }
 
 }

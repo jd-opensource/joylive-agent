@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.consumer.service;
 
+import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.service.HelloService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -28,7 +29,7 @@ public class RestService implements HelloService {
     private RestTemplate restTemplate;
 
     @Override
-    public String echo(String str) {
-        return restTemplate.getForObject("http://service-provider/echo/" + str, String.class);
+    public LiveResponse echo(String str) {
+        return restTemplate.getForObject("http://service-provider/echo/" + str, LiveResponse.class);
     }
 }
