@@ -53,7 +53,7 @@ public class OrderController {
     }
 
     @GetMapping
-    public LiveResponse getOrdersByUserCode(@RequestParam String userCode,
+    public LiveResponse getOrdersByUserCode(@RequestParam("user") String userCode,
                                             @RequestParam(defaultValue = "1") int page,
                                             @RequestParam(defaultValue = "10") int size,
                                             HttpServletRequest request) {
