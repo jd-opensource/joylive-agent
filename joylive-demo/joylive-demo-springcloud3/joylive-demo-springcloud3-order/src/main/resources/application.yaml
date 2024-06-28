@@ -17,12 +17,12 @@ spring:
       username: ${NACOS_USERNAME}
       password: ${NACOS_PASSWORD}
   cache:
-    type: redis
+    type: ${CACHE_TYPE:CAFFEINE}
     redis:
       host: ${REDIS_ADDR}
       port: 6379
   datasource:
-    url: jdbc:mariadb://${DB_ADDR}/order
+    url: jdbc:mariadb://${DB_ADDR}/live_demo
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
