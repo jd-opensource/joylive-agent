@@ -32,6 +32,8 @@ public class LiveResponse implements Serializable {
 
     public static final int NOT_FOUND = 404;
 
+    public static final int FORBIDDEN =  403;
+
     private int code;
 
     private String message;
