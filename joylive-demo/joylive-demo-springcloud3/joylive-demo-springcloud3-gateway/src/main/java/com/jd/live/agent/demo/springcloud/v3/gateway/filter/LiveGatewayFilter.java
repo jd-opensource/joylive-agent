@@ -69,7 +69,7 @@ public class LiveGatewayFilter implements GlobalFilter, Ordered {
             addTrace(liveResponse, request.getHeaders());
             try {
                 byte[] data = objectMapper.writeValueAsBytes(liveResponse);
-                request.getHeaders().setContentLength(data.length);
+                response.getHeaders().setContentLength(data.length);
                 return response.writeWith(Mono.just(response.bufferFactory().wrap(data)));
             } catch (JsonProcessingException e) {
                 return Mono.error(throwable);
