@@ -1,6 +1,11 @@
 spring:
   application:
     name: service-order
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    default-property-inclusion: non_null
+    serialization:
+      indent_output: true
   cloud:
     nacos:
       discovery:
