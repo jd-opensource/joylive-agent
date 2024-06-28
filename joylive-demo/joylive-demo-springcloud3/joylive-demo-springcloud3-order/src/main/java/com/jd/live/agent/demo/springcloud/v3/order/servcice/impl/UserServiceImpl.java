@@ -15,25 +15,25 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.order.servcice.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jd.live.agent.demo.springcloud.v3.order.entity.User;
 import com.jd.live.agent.demo.springcloud.v3.order.mapper.UserMapper;
 import com.jd.live.agent.demo.springcloud.v3.order.servcice.UserService;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Override
-    @Cacheable(value = "user", key = "#id")
-    public User getById(Long id) {
-        return super.getById(id);
+    public User getByCode(String code) {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("code", code);
+        return baseMapper.selectOne(queryWrapper);
     }
 
     @Override
-    @Cacheable(value = "userExists", key = "#id")
-    public boolean userExists(Long id) {
-        return getById(id) != null;
+    public boolean userExists(String code) {
+        return getByCode(code) != null;
     }
 }

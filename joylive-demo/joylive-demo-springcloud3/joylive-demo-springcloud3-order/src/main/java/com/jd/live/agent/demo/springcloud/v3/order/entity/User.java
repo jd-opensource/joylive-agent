@@ -26,6 +26,7 @@ import lombok.Setter;
 public class User {
     @TableId
     private Long id;
+    private String code;
     private String name;
     private String email;
 

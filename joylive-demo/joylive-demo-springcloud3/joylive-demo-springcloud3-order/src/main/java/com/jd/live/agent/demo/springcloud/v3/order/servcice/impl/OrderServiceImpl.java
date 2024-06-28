@@ -38,10 +38,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
-    public List<Order> getOrdersByUserId(Long userId, int page, int size) {
+    public List<Order> getOrdersByUserCode(String userCode, int page, int size) {
         Page<Order> orderPage = Page.of(page <= 0 ? 1 : page, size <= 0 ? 10 : size);
         orderPage.addOrder(OrderItem.desc("id"));
-        return lambdaQuery().eq(Order::getUserId, userId).list(orderPage);
+        return lambdaQuery().eq(Order::getUserCode, userCode).list(orderPage);
     }
 
     @Override

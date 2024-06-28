@@ -34,8 +34,8 @@ public class UserValidationAspect {
     @Before("execution(* com.jd.live.agent.demo.springcloud.v3.order.controller.OrderController.*(..))")
     public void validateUser(JoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
-        Long userId = (Long) args[0];
-        if (userId == null || !userService.userExists(userId)) {
+        String userCode = (String) args[0];
+        if (userCode == null || !userService.userExists(userCode)) {
             throw new IllegalArgumentException("User does not exist or userId is missing");
         }
     }

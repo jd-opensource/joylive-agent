@@ -18,8 +18,9 @@ package com.jd.live.agent.demo.springcloud.v3.order.servcice;
 import com.jd.live.agent.demo.springcloud.v3.order.entity.User;
 
 public interface UserService {
-    User getById(Long id);
 
-    boolean userExists(Long id);
+    User getByCode(String code);
+
+    boolean userExists(String code);
 
 }

@@ -22,6 +22,6 @@ import java.util.List;
 
 public interface OrderService extends IService<Order> {
 
-    List<Order> getOrdersByUserId(Long userId, int page, int size);
+    List<Order> getOrdersByUserCode(String userCode, int page, int size);
 
 }

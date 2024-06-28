@@ -40,31 +40,34 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public LiveResponse getOrderById(@RequestParam("user") Long userId,
+    public LiveResponse getOrderById(@RequestParam("user") String userCode,
                                      @PathVariable Long id,
                                      HttpServletRequest request) {
-        LiveResponse response = new LiveResponse(orderService.getById(id));
+        Order order = orderService.getById(id);
+        LiveResponse response = userCode.equals(order.getUserCode()) ?
+                new LiveResponse(order) :
+                new LiveResponse(LiveResponse.FORBIDDEN, "FORBIDDEN");
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;
     }
 
     @GetMapping
-    public LiveResponse getOrdersByUserId(@RequestParam Long userId,
-                                          @RequestParam(defaultValue = "1") int page,
-                                          @RequestParam(defaultValue = "10") int size,
-                                          HttpServletRequest request) {
-        LiveResponse response = new LiveResponse(orderService.getOrdersByUserId(userId, page, size));
+    public LiveResponse getOrdersByUserCode(@RequestParam String userCode,
+                                            @RequestParam(defaultValue = "1") int page,
+                                            @RequestParam(defaultValue = "10") int size,
+                                            HttpServletRequest request) {
+        LiveResponse response = new LiveResponse(orderService.getOrdersByUserCode(userCode, page, size));
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;
     }
 
     @PostMapping
-    public LiveResponse createOrder(@RequestParam("user") Long userId,
+    public LiveResponse createOrder(@RequestParam("user") String userCode,
                                     @RequestBody Order order,
                                     HttpServletRequest request) {
-        order.setUserId(userId);
+        order.setUserCode(userCode);
         boolean saved = orderService.save(order);
         LiveResponse response = saved ?
                 new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
@@ -75,28 +78,42 @@ public class OrderController {
     }
 
     @PutMapping("/{id}")
-    public LiveResponse updateOrder(@RequestParam("user") Long userId,
+    public LiveResponse updateOrder(@RequestParam("user") String userCode,
                                     @PathVariable Long id,
                                     @RequestBody Order order,
                                     HttpServletRequest request) {
         order.setId(id);
-        boolean updated = orderService.updateById(order);
-        LiveResponse response = updated ?
-                new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
-                new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        Order old = orderService.getById(id);
+        LiveResponse response;
+        if (old == null) {
+            response = new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        } else if (!userCode.equals(old.getUserCode())) {
+            response = new LiveResponse(LiveResponse.FORBIDDEN, "FORBIDDEN");
+        } else {
+            response = orderService.updateById(order) ?
+                    new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
+                    new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        }
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;
     }
 
     @DeleteMapping("/{id}")
-    public LiveResponse deleteOrder(@RequestParam("user") Long userId,
+    public LiveResponse deleteOrder(@RequestParam("user") String userCode,
                                     @PathVariable Long id,
                                     HttpServletRequest request) {
-        boolean removed = orderService.removeById(id);
-        LiveResponse response = removed ?
-                new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
-                new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        Order old = orderService.getById(id);
+        LiveResponse response;
+        if (old == null) {
+            response = new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        } else if (!userCode.equals(old.getUserCode())) {
+            response = new LiveResponse(LiveResponse.FORBIDDEN, "FORBIDDEN");
+        } else {
+            response = orderService.removeById(id) ?
+                    new LiveResponse(LiveResponse.SUCCESS, "SUCCESS") :
+                    new LiveResponse(LiveResponse.NOT_FOUND, "NOT_FOUND");
+        }
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;

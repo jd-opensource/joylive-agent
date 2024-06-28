@@ -26,7 +26,7 @@ import lombok.Setter;
 public class Order {
     @TableId
     private Long id;
-    private Long userId;
+    private String userCode;
     private String product;
     private Integer quantity;
     private Double price;
