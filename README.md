@@ -15,7 +15,7 @@ English | [简体中文](./README-zh.md)
 Java bytecode enhancement framework for traffic governance in multi-activity (unit) scenarios. Following the traditional sdk governance mode and sidecar governance mode, exploring the implementation of the new generation Proxyless mode based on microkernel extensible architecture, providing high performance, low resource consumption, and cost-effective traffic governance framework for enterprise Java ecosystem.
 
 ## Architecture
-1. Agent for multi-Live   
+1. Agent for multi-live   
 ![pic](docs/image/architect-0.png)
 
 2. Agent architect   

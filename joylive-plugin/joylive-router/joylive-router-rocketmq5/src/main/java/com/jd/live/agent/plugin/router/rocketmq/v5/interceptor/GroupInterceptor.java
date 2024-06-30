@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
 /**
- * ConsumerGroupInterceptor
+ * GroupInterceptor
  *
  * @since 1.0.0
  */

@@ -8,6 +8,8 @@ import java.util.Arrays;
 
 /**
  * A concrete implementation of {@link AbstractMessage} for Kafka messages.
+ *
+ * @since 1.0.0
  */
 public class KafkaMessage extends AbstractMessage {
 

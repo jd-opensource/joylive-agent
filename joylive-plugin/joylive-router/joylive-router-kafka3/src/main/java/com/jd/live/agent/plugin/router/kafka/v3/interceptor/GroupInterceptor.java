@@ -27,7 +27,7 @@ import java.util.Properties;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 
 /**
- * ConsumerConfigInterceptor
+ * GroupInterceptor
  *
  * @since 1.0.0
  */
