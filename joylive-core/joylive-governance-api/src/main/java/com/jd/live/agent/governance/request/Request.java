@@ -30,12 +30,12 @@ import com.jd.live.agent.core.Constants;
 public interface Request extends Attributes {
 
     /**
-     * A constant key used for identifying sticky sessions in live services.
+     * A constant key used for identifying sticky sessions.
      * <p>
      * This key can be used in request headers or parameters to maintain session stickiness across multiple requests.
      * </p>
      */
-    String KEY_STICKY_ID = Constants.LABEL_LIVE_PREFIX + "sticky-id";
+    String KEY_STICKY_ID = Constants.LABEL_SERVICE_PREFIX + "sticky-id";
 
 }
 
