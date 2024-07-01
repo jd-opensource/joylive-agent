@@ -610,6 +610,25 @@ Endpoint --> EndpointState
 style Endpoint fill:#8a1874
 ```
 
+The relevant routing plugins need to implement these abstract request objects. Using Dubbo3 as an example:
+
+```mermaid
+classDiagram
+direction BT
+class AbstractEndpoint
+class DubboEndpoint~T~ {
+    # computeWeight(ServiceRequest) int
+    + getTimestamp() Long
+    + getLabel(String) String
+    + getInvoker() Invoker~T~
+    + getPort() int
+    + getHost() String
+    + getState() EndpointState
+    + of(Invoker~?~) DubboEndpoint~?~$
+}
+
+DubboEndpoint~T~  -->  AbstractEndpoint 
+```
 ### 2.3 Processing Chain
 
 ```mermaid
@@ -914,6 +933,43 @@ LiveCluster~R, O, E, T~  --|>  StickyRequest
 ClusterInvoker --> LiveCluster
 
 ```
+
+The relevant routing plugins need to implement multi-active cluster objects. Using Dubbo3 as an example:
+
+```mermaid
+classDiagram
+direction BT
+class DubboCluster3 {
+    - getRetries(String) int
+    - getError(Throwable, DubboOutboundRequest, DubboEndpoint~?~) String
+    + invoke(DubboOutboundRequest, DubboEndpoint~?~) CompletionStage~DubboOutboundResponse~
+    + createResponse(Throwable, DubboOutboundRequest, DubboEndpoint~?~) DubboOutboundResponse
+    + isRetryable(Response) boolean
+    + setStickyId(String) void
+    + route(DubboOutboundRequest) CompletionStage~List~DubboEndpoint~?~~~
+    + isDestroyed() boolean
+    + getStickyId() String
+    + getDefaultPolicy(DubboOutboundRequest) ClusterPolicy
+    + createRetryExhaustedException(RetryExhaustedException, OutboundInvocation~DubboOutboundRequest~) RpcException
+    + createNoProviderException(DubboOutboundRequest) RpcException
+    + createException(Throwable, DubboOutboundRequest, DubboEndpoint~?~) RpcException
+    + createRejectException(RejectException, DubboOutboundRequest) RpcException
+    + createUnReadyException(DubboOutboundRequest) RpcException
+    + createUnReadyException(String, DubboOutboundRequest) RpcException
+}
+class LiveCluster~R, O, E, T~ {
+<<Interface>>
+  
+}
+class StickyRequest {
+<<Interface>>
+
+}
+
+DubboCluster3  ..|>  LiveCluster~R, O, E, T~ 
+LiveCluster~R, O, E, T~  --|>  StickyRequest
+```
+
 ### 2.6 Inbound Traffic
 
 #### 2.6.1 Interception Points

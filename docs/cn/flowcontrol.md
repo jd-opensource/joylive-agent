@@ -995,6 +995,42 @@ ClusterInvoker --> LiveCluster
 
 ```
 
+相关的路由插件里面需要实现多活集群对象，以Dubbo3为例
+
+```mermaid
+classDiagram
+direction BT
+class DubboCluster3 { 
+    - getRetries(String) int
+    - getError(Throwable, DubboOutboundRequest, DubboEndpoint~?~) String
+    + invoke(DubboOutboundRequest, DubboEndpoint~?~) CompletionStage~DubboOutboundResponse~
+    + createResponse(Throwable, DubboOutboundRequest, DubboEndpoint~?~) DubboOutboundResponse
+    + isRetryable(Response) boolean
+    + setStickyId(String) void
+    + route(DubboOutboundRequest) CompletionStage~List~DubboEndpoint~?~~~
+    + isDestroyed() boolean
+    + getStickyId() String
+    + getDefaultPolicy(DubboOutboundRequest) ClusterPolicy
+    + createRetryExhaustedException(RetryExhaustedException, OutboundInvocation~DubboOutboundRequest~) RpcException
+    + createNoProviderException(DubboOutboundRequest) RpcException
+    + createException(Throwable, DubboOutboundRequest, DubboEndpoint~?~) RpcException
+    + createRejectException(RejectException, DubboOutboundRequest) RpcException
+    + createUnReadyException(DubboOutboundRequest) RpcException
+    + createUnReadyException(String, DubboOutboundRequest) RpcException
+}
+class LiveCluster~R, O, E, T~ {
+<<Interface>>
+  
+}
+class StickyRequest {
+<<Interface>>
+
+}
+
+DubboCluster3  ..|>  LiveCluster~R, O, E, T~ 
+LiveCluster~R, O, E, T~  --|>  StickyRequest
+```
+
 ### 2.6 入流量
 
 #### 2.6.1 拦截点

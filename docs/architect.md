@@ -21,9 +21,9 @@ See [Full Link Transmission](transmission.md)
 
 See [Service Governance Model](governance.md)
 
-## 6. Multi-Active Space Model
+## 6. Live Space Model
 
-See [Multi-Active Space Model](livespace.md)
+See [Live Space Model](livespace.md)
 
 ## 7. Lane Space Model
 
