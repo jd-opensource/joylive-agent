@@ -113,10 +113,10 @@ The default strategy for a service is set on the default group `default`.
 
 ### 2.4 Service Load Balancing Strategy
 
-| Element | Description      |
-|---------|------------------|
-| Type    | Random Weight and Round Robin |
-| Sticky  | Whether to enable sticky sessions |
+| Element | Description                                                    |
+|---------|----------------------------------------------------------------|
+| Type    | Random weight and round-robin<br/>1. RANDOM: Random weight;<br/>2. ROUND_ROBIN: Round-robin |
+| Sticky  | Sticky strategy<br/>1. NONE: Not enabled;<br/>2. PREFERRED: Prefer to keep sticky nodes;<br/>3. FIXED: Fixed sticky nodes |
 
 ```json
 {

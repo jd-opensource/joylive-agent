@@ -489,8 +489,145 @@ AbstractHttpInboundRequest~T~  --|>  AbstractHttpRequest~T~
 AbstractHttpOutboundRequest~T~  --|>  AbstractHttpRequest~T~
 
 ```
+相关的路由插件里面需要实现这些抽象的请求对象，以Dubbo3为例
 
-### 2.2 处理链
+```mermaid
+classDiagram
+direction BT
+class AbstractRpcInboundRequest~T~
+class AbstractRpcOutboundRequest~T~
+class DubboInboundRequest
+class DubboOutboundRequest
+class DubboRequest {
+<<Interface>>
+
+}
+
+DubboInboundRequest  --|>  AbstractRpcInboundRequest~T~ 
+DubboInboundRequest  ..|>  DubboRequest 
+DubboOutboundRequest  --|>  AbstractRpcOutboundRequest~T~ 
+DubboOutboundRequest  ..|>  DubboRequest 
+
+```
+
+### 2.2 后端实例
+
+```mermaid
+classDiagram
+direction BT
+class AbstractEndpoint {
+    <<abstract>>
+  + getLiveSpaceId() String
+  + getLaneSpaceId() String
+  + getUnit() String
+  + getCell() String
+  + getLane() String
+  # computeWeight(ServiceRequest) int
+  + getWeight(ServiceRequest) Integer
+}
+class CellGroup {
+  + getUnit() String
+  + getCell() String
+  + getEndpoints() List~Endpoint~
+  + isEmpty() boolean
+  + add(Endpoint) void
+  + size() int
+}
+class Endpoint {
+<<Interface>>
+  + getId() String
+  + getTimestamp() Long
+  + getLabel(String, String) String
+  + getWeight(ServiceRequest) Integer
+  + getLiveSpaceId() String
+  + isLiveSpace(String) boolean
+  + getUnit() String
+  + isUnit(String) boolean
+  + isUnit(String, String) boolean
+  + getCell() String
+  + isCell(String) boolean
+  + isCell(String, String) boolean
+  + getLaneSpaceId() String
+  + isLaneSpace(String) boolean
+  + getLane() String
+  + isLane(String) boolean
+  + isLane(String, String) boolean
+  + getHost() String
+  + getAddress() String
+  + getZone() String
+  + getRegion() String
+  + getPort() int
+  + match(TagCondition) boolean
+  + getState() EndpointState
+  + isAccessible() boolean
+  + predicate() boolean
+  + getLabel(String) String
+  + getLabels(String) List~String~
+}
+class EndpointGroup {
+  + size() int
+  + isEmpty() boolean
+  + getEndpoints() List~Endpoint~
+  + getUnitGroup(String) UnitGroup
+}
+class EndpointState {
+    <<enumeration>>
+    +  SUSPEND
+    +  CLOSING
+    +  HEALTHY
+    +  DISABLE
+    +  RECOVER
+    +  WARMUP
+    +  WEAK
+    + valueOf(String) EndpointState
+    + values() EndpointState[]
+    + isAccessible() boolean
+}
+class UnitGroup {
+  + getUnit() String
+  + getEndpoints() List~Endpoint~
+  + isEmpty() boolean
+  + getCells() int
+  + size() int
+  + getCell(String) CellGroup
+  + getSize(String) Integer
+  + add(Endpoint) void
+}
+
+AbstractEndpoint  ..|>  Endpoint
+EndpointGroup o-- UnitGroup
+EndpointGroup *-- Endpoint
+UnitGroup o-- CellGroup
+UnitGroup *-- Endpoint
+CellGroup *-- Endpoint
+Endpoint --> EndpointState
+
+style Endpoint fill:#8a1874
+
+```
+
+相关的路由插件里面需要实现这些抽象的请求对象，以Dubbo3为例
+
+```mermaid
+classDiagram
+direction BT
+class AbstractEndpoint
+class DubboEndpoint~T~ {
+    # computeWeight(ServiceRequest) int
+    + getTimestamp() Long
+    + getLabel(String) String
+    + getInvoker() Invoker~T~
+    + getPort() int
+    + getHost() String
+    + getState() EndpointState
+    + of(Invoker~?~) DubboEndpoint~?~$
+}
+
+DubboEndpoint~T~  -->  AbstractEndpoint 
+
+```
+
+### 2.3 处理链
 
 ```mermaid
 classDiagram
@@ -602,7 +739,28 @@ style RouteFilter fill:#4c8045
 
 ```
 
-#### 2.2.1 元数据解析
+相关的路由插件里面需要实现调用对象，以Dubbo3为例
+
+```mermaid
+classDiagram
+direction BT
+class DubboInboundInvocation
+class DubboInvocation {
+<<Interface>>
+
+}
+class DubboOutboundInvocation
+class RpcInboundInvocation~T~
+class RpcOutboundInvocation~T~
+
+DubboInboundInvocation  ..|>  DubboInvocation 
+DubboInboundInvocation  --|>  RpcInboundInvocation~T~
+DubboOutboundInvocation  ..|>  DubboInvocation 
+DubboOutboundInvocation  --|>  RpcOutboundInvocation~T~ 
+
+```
+
+#### 2.3.1 元数据解析
 
 ```mermaid
 classDiagram
@@ -729,7 +887,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
 }
 ```
 
-### 2.3 调用上下文
+### 2.4 调用上下文
 
 调用上下文存放了治理相关的配置，以及过滤器和策略提供者等等相关扩展实现。
 
@@ -765,7 +923,7 @@ class InvocationContext {
 
 ```
 
-### 2.4 集群
+### 2.5 集群
 
 用于在路由处理链中，实现集群策略，目前已经实现的集群策略如下
 
@@ -837,9 +995,9 @@ ClusterInvoker --> LiveCluster
 
 ```
 
-### 2.5 入流量
+### 2.6 入流量
 
-#### 2.5.1 拦截点
+#### 2.6.1 拦截点
 
 拦截相关框架的入流量处理链的入口或靠前的处理器。
 
@@ -917,7 +1075,7 @@ public interface InvocationContext {
 }
 ```
 
-#### 2.5.2 过滤链
+#### 2.6.2 过滤链
 
 ```mermaid
 flowchart TB
@@ -945,9 +1103,9 @@ flowchart TB
 | FailoverInboundFilter    | 纠错过滤器   | 目前对错误流量只实现了拒绝               |
 
 
-### 2.6 出流量
+### 2.7 出流量
 
-#### 2.6.1 拦截点
+#### 2.7.1 拦截点
 
 1. 如果只开启了多活或泳道治理，则只需对后端实例进行过滤，可以拦截负载均衡或服务实例提供者相关方法
 
@@ -1094,7 +1252,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 }
 ```
 
-#### 2.6.2 过滤链
+#### 2.7.2 过滤链
 
 ```mermaid
 flowchart TB
@@ -1114,7 +1272,7 @@ flowchart TB
     HealthyFilter --> VirtualFilter
     VirtualFilter --> UnitRouteFilter
     UnitRouteFilter --> TagRouteFilter
-    TagRouteFilter --> CellRouteFilter
+    TagRouteFilter --> LaneFilter
     LaneFilter --> CellRouteFilter
     CellRouteFilter --> RetryFilter
     RetryFilter --> LoadBalanceFilter
