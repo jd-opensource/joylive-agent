@@ -20,6 +20,12 @@ image-joylive-demo-springcloud3-provider:
 push-joylive-demo-springcloud3-provider:
 	docker push ${repo}/joylive-demo-springcloud3-provider:${version}-AMD64
 
+image-joylive-demo-springcloud3-order:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud3-order:${version}-AMD64 ./joylive-demo-springcloud3/joylive-demo-springcloud3-order
+
+push-joylive-demo-springcloud3-order:
+	docker push ${repo}/joylive-demo-springcloud3-order:${version}-AMD64
+
 image-joylive-demo-springcloud3-gateway:
 	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud3-gateway:${version}-AMD64 ./joylive-demo-springcloud3/joylive-demo-springcloud3-gateway
 
