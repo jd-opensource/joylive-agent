@@ -17,18 +17,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: joylive-demo-springcloud3-provider
+    app: joylive-demo-springcloud3-order
     x-live-enabled: "true"
-  name: joylive-demo-springcloud3-provider
+  name: joylive-demo-springcloud3-order
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: joylive-demo-springcloud3-provider
+      app: joylive-demo-springcloud3-order
   template:
     metadata:
       labels:
-        app: joylive-demo-springcloud3-provider
+        app: joylive-demo-springcloud3-order
         x-live-enabled: "true"
     spec:
       containers:
@@ -54,9 +54,9 @@ spec:
             - name: NACOS_PASSWORD
               value: nacos
             - name: APPLICATION_NAME
-              value: springcloud3-provider
+              value: springcloud3-order
             - name: APPLICATION_SERVICE_NAME
-              value: service-provider
+              value: service-order
             - name: APPLICATION_SERVICE_NAMESPACE
               value: default
             - name: APPLICATION_LOCATION_REGION
@@ -73,9 +73,9 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-ce86e037-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-order:1.0.0-ce86e037-AMD64
           imagePullPolicy: Always
-          name: joylive-demo-springcloud3-provider
+          name: joylive-demo-springcloud3-order
           ports:
             - containerPort: 18081
               name: http
@@ -100,18 +100,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: joylive-demo-springcloud3-provider-gray
+    app: joylive-demo-springcloud3-order-gray
     x-live-enabled: "true"
-  name: joylive-demo-springcloud3-provider-gray
+  name: joylive-demo-springcloud3-order-gray
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: joylive-demo-springcloud3-provider-gray
+      app: joylive-demo-springcloud3-order-gray
   template:
     metadata:
       labels:
-        app: joylive-demo-springcloud3-provider-gray
+        app: joylive-demo-springcloud3-order-gray
         x-live-enabled: "true"
     spec:
       containers:
@@ -127,9 +127,9 @@ spec:
             - name: NACOS_PASSWORD
               value: nacos
             - name: APPLICATION_NAME
-              value: springcloud3-provider-gray
+              value: springcloud3-order-gray
             - name: APPLICATION_SERVICE_NAME
-              value: service-provider
+              value: service-order
             - name: APPLICATION_SERVICE_NAMESPACE
               value: default
             - name: APPLICATION_LOCATION_REGION
@@ -146,9 +146,9 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: beta
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider:1.0.0-ce86e037-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-order:1.0.0-ce86e037-AMD64
           imagePullPolicy: Always
-          name: joylive-demo-springcloud3-provider-gray
+          name: joylive-demo-springcloud3-order-gray
           ports:
             - containerPort: 18081
               name: http

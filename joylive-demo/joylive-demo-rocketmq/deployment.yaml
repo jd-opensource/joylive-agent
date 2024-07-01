@@ -65,7 +65,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-rocketmq:1.0.0-13d413c-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-rocketmq:1.0.0-ce86e037-AMD64
           imagePullPolicy: Always
           name: joylive-demo-rocketmq
           ports:
@@ -140,7 +140,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: beta
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-rocketmq:1.0.0-13d413c-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-rocketmq:1.0.0-ce86e037-AMD64
           imagePullPolicy: Always
           name: joylive-demo-rocketmq-gray
           ports:

@@ -99,13 +99,13 @@
 
     <build>
         <directory>${basedir}/target</directory>
-        <finalName>joylive-demo-springcloud3-provider</finalName>
+        <finalName>joylive-demo-springcloud3-order</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.jd.live.agent.demo.springcloud.v3.provider.SpringCloud3Provider</mainClass>
+                    <mainClass>com.jd.live.agent.demo.springcloud.v3.order.OrderApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
