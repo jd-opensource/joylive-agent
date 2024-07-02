@@ -40,13 +40,20 @@ public class PreferSameInstanceInterceptor extends InterceptorAdaptor {
     public PreferSameInstanceInterceptor() {
     }
 
+    /**
+     * Enhanced logic before method execution
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier@filteredBySameInstancePreference(List)
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         List<ServiceInstance> instances = (List<ServiceInstance>) arguments[0];
         if (fieldDesc == null) {
-            this.fieldDesc = ClassUtils.describe(SameInstancePreferenceServiceInstanceListSupplier.class).getFieldList().getField(FIELD_PREVIOUSLY_RETURNED_INSTANCE);
+            this.fieldDesc = ClassUtils.describe(SameInstancePreferenceServiceInstanceListSupplier.class)
+                    .getFieldList().getField(FIELD_PREVIOUSLY_RETURNED_INSTANCE);
         }
         ServiceInstance instance = (ServiceInstance) fieldDesc.get(ctx.getTarget());
         // convert to sticky id

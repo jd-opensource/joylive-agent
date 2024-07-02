@@ -36,9 +36,15 @@ import java.util.List;
 @Setter
 public class TagCondition extends Tag {
 
-    private OpType opType = OpType.EQUAL; // The operation type for matching the condition.
+    /**
+     * The operation type for matching the condition.
+     */
+    private OpType opType = OpType.EQUAL;
 
-    private String type; // An optional type field for additional condition criteria.
+    /**
+     * An optional type field for additional condition criteria.
+     */
+    private String type;
 
     /**
      * Default constructor for {@code TagCondition}.

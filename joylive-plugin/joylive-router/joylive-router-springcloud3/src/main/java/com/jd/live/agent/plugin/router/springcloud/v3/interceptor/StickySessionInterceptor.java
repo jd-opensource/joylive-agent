@@ -31,6 +31,12 @@ import java.util.List;
  */
 public class StickySessionInterceptor extends InterceptorAdaptor {
 
+    /**
+     * Enhanced logic before method execution
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier@selectInstance(List, String)
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
