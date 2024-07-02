@@ -16,9 +16,13 @@
 package com.jd.live.agent.governance.policy.service.circuitbreaker;
 
 import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
+import com.jd.live.agent.governance.policy.service.route.RoutePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Set;
 
 /**
@@ -28,14 +32,24 @@ import java.util.Set;
  */
 @Setter
 @Getter
-public class CircuitBreakerPolicy extends PolicyId {
+public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakerPolicy> {
 
+    public static final String QUERY_CIRCUIT_BREAKER = "circuitBreaker";
+
+    /**
+     * Name
+     */
+    private String name;
+
+    /**
+     * Level of circuit breaker policy
+     */
     private CircuitLevel level = CircuitLevel.INSTANCE;
 
     /**
      * Sliding window type (statistical window type): Count, time
      */
-    private String slidingWindowType;
+    private String slidingWindowType = "Count";
 
     /**
      * Sliding window size (statistical window size)
@@ -82,4 +96,16 @@ public class CircuitBreakerPolicy extends PolicyId {
      */
     private DegradeConfig degradeConfig;
 
+    @Override
+    public void supplement(CircuitBreakerPolicy source) {
+        if (source == null) {
+            return;
+        }
+        if (errorCodes == null) {
+            errorCodes = source.getErrorCodes();
+        }
+        if (degradeConfig == null) {
+            degradeConfig = source.getDegradeConfig();
+        }
+    }
 }

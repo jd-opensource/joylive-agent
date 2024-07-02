@@ -21,6 +21,7 @@ import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy.QUERY_CIRCUIT_BREAKER;
 import static com.jd.live.agent.governance.policy.service.lane.LanePolicy.QUERY_LANE_SPACE_ID;
 import static com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy.QUERY_CONCURRENCY_LIMIT;
 import static com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy.QUERY_RATE_LIMIT;
@@ -77,6 +79,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Getter
     private List<LanePolicy> lanePolicies;
 
+    @Setter
+    @Getter
+    private List<CircuitBreakerPolicy> circuitBreakerPolicies;
+
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
 
     public ServicePolicy() {
@@ -109,6 +115,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             lanePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_LANE_SPACE_ID, r.getLaneSpaceId()),
                     supplementTag(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
         }
+        if (circuitBreakerPolicies != null && !circuitBreakerPolicies.isEmpty()) {
+            circuitBreakerPolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_CIRCUIT_BREAKER, r.getName()),
+                    supplementTag(KEY_SERVICE_CIRCUIT_BREAKER, r.getName())));
+        }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
             clusterPolicy = copy(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
@@ -135,13 +145,19 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                         s -> addQuery(uri, QUERY_ROUTE, s.getName()),
                         s -> new String[]{KEY_SERVICE_ROUTE, s.getName()});
             }
-
             if ((lanePolicies == null || lanePolicies.isEmpty()) &&
                     (source.lanePolicies != null && !source.lanePolicies.isEmpty())) {
                 lanePolicies = copy(source.lanePolicies,
                         s -> new LanePolicy(),
                         s -> addQuery(uri, QUERY_LANE_SPACE_ID, s.getLaneSpaceId()),
                         s -> new String[]{KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()});
+            }
+            if ((circuitBreakerPolicies == null || circuitBreakerPolicies.isEmpty()) &&
+                    (source.circuitBreakerPolicies != null && !source.circuitBreakerPolicies.isEmpty())) {
+                circuitBreakerPolicies = copy(source.circuitBreakerPolicies,
+                        s -> new CircuitBreakerPolicy(),
+                        s -> addQuery(uri, QUERY_CIRCUIT_BREAKER, s.getName()),
+                        s -> new String[]{KEY_SERVICE_CIRCUIT_BREAKER, s.getName()});
             }
         }
     }

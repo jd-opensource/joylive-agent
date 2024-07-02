@@ -66,6 +66,8 @@ public class PolicyId implements PolicyIdGen {
 
     public static final String KEY_SERVICE_ROUTE = "service.route";
 
+    public static final String KEY_SERVICE_CIRCUIT_BREAKER = "service.circuitBreaker";
+
     /**
      * The default group name for the service.
      */
