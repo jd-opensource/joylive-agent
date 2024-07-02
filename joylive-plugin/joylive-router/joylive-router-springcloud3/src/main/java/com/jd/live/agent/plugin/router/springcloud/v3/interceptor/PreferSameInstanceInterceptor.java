@@ -44,7 +44,7 @@ public class PreferSameInstanceInterceptor extends InterceptorAdaptor {
      * Enhanced logic before method execution
      *
      * @param ctx The execution context of the method being intercepted.
-     * @see org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier@filteredBySameInstancePreference(List)
+     *            <p> see org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier#filteredBySameInstancePreference(List)
      */
     @SuppressWarnings("unchecked")
     @Override
