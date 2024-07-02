@@ -17,12 +17,9 @@ package com.jd.live.agent.governance.policy.service.circuitbreaker;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
-import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
-import com.jd.live.agent.governance.policy.service.route.RoutePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.Set;
 
 /**
