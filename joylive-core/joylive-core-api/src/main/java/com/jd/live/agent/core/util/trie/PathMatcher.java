@@ -29,6 +29,7 @@ import java.util.function.Function;
  * @param <T> The type of the value associated with each path.
  */
 public class PathMatcher<T> {
+    private static final String VARIABLE = ":";
     private final TrieNode<T> root;
     private final char delimiter;
 
@@ -58,12 +59,16 @@ public class PathMatcher<T> {
             String variableName = null;
             if (isVariable(part)) {
                 variableName = part.substring(1, part.length() - 1);
-                part = ":";
+                part = VARIABLE;
+            } else if (part.equals("*")) {
+                part = VARIABLE;
             }
-            int level = current[0].level + 1;
-            current[0] = current[0].getOrCreate(part);
+            TrieNode<T> parent = current[0];
+            int level = parent.level + 1;
+            current[0] = parent.getOrCreate(part);
             current[0].variableName = variableName;
             current[0].level = level;
+            parent.hasVariable = parent.hasVariable || VARIABLE.equals(part);
             return true;
         });
         current[0].isEnd = true;
@@ -87,10 +92,11 @@ public class PathMatcher<T> {
         final Map<String, String>[] bestVariables = new Map[]{null};
 
         int count = preprocessPath(path, part -> {
-            TrieNode<T> nextNode = current[0].get(part);
-            if (nextNode == null) {
-                nextNode = current[0].get(":");
-                if (nextNode != null) {
+            int size = current[0].size();
+            TrieNode<T> nextNode = size == 0 || (size == 1 && current[0].hasVariable) ? null : current[0].get(part);
+            if (nextNode == null && current[0].hasVariable) {
+                nextNode = current[0].get(VARIABLE);
+                if (nextNode != null && nextNode.variableName != null) {
                     if (variables[0] == null) {
                         variables[0] = new HashMap<>();
                     }
@@ -185,6 +191,7 @@ public class PathMatcher<T> {
     static class TrieNode<T> {
         Map<String, TrieNode<T>> children = new HashMap<>();
         int level;
+        boolean hasVariable;
         boolean isEnd;
         String variableName;
         T value;
@@ -195,6 +202,10 @@ public class PathMatcher<T> {
 
         TrieNode<T> get(String child) {
             return children.get(child);
+        }
+
+        int size() {
+            return children.size();
         }
     }
 

@@ -27,6 +27,7 @@ public class PathMatcherTest {
         matcher.addPath("/user", "UserHandler");
         matcher.addPath("/order/{id}/create", "OrderCreateHandler");
         matcher.addPath("/order/{id}", "OrderHandler");
+        matcher.addPath("/product/*/create", "ProductCreateHandler");
 
         Assertions.assertEquals(matcher.match("/").getValue(), "RootHandler");
         Assertions.assertEquals(matcher.match("/user").getValue(), "UserHandler");
@@ -34,5 +35,6 @@ public class PathMatcherTest {
         Assertions.assertEquals(matcher.match("/order/2").getValue(), "OrderHandler");
         Assertions.assertEquals(matcher.match("/order/2/update").getValue(), "OrderHandler");
         Assertions.assertEquals(matcher.match("/test").getValue(), "RootHandler");
+        Assertions.assertEquals(matcher.match("/product/123/create").getValue(), "ProductCreateHandler");
     }
 }
