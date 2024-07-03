@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.resilience4j.concurrencylimit;
+package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.invoke.concurrencylimit.ConcurrencyLimiter;
-import com.jd.live.agent.governance.invoke.concurrencylimit.ConcurrencyLimiterFactory;
-import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
 /**
- * Resilience4jConcurrencyLimiterFactory
+ * Resilience4jCircuitBreakerFactory
  *
- * @since 1.0.0
+ * @since 1.1.0
  */
 @Injectable
 @Extension(value = "Resilience4j")
-public class Resilience4jConcurrencyLimiterFactory implements ConcurrencyLimiterFactory {
+public class Resilience4jCircuitBreakerFactory implements CircuitBreakerFactory {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ConcurrencyLimiter create(ConcurrencyLimitPolicy policy) {
-        return new Resilience4jConcurrencyLimiter(policy);
+    public CircuitBreaker get(CircuitBreakerPolicy policy) {
+        return null;
     }
 }
