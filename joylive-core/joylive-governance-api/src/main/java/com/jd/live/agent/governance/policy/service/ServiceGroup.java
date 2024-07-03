@@ -15,11 +15,9 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
-import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.core.util.trie.PathMapTrie;
 import com.jd.live.agent.core.util.trie.PathMatchType;
+import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import com.jd.live.agent.core.util.trie.PathTrie;
-import com.jd.live.agent.core.util.trie.PathType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -44,9 +42,9 @@ public class ServiceGroup extends ServicePolicyOwner {
     @Setter
     private List<ServicePath> paths;
 
-    private transient final PathTrie<ServicePath> pathCache = new PathMapTrie<>(new ListBuilder<>(() -> paths, ServicePath::getPath));
-
     private transient ServiceType serviceType;
+
+    private transient final PathTrie<ServicePath> pathCache = new PathMatcherTrie<>(() -> serviceType.getPathType().getDelimiter(), () -> paths);
 
     public ServiceGroup() {
     }
@@ -106,15 +104,7 @@ public class ServiceGroup extends ServicePolicyOwner {
      * @return The service path, or {@code null} if not found.
      */
     public ServicePath getPath(String name, PathMatchType matchType) {
-        PathType pathType = serviceType.getPathType();
-        matchType = matchType == null ? serviceType.getMatchType() : matchType;
-        switch (matchType) {
-            case EQUAL:
-                return pathCache.get(name);
-            case PREFIX:
-            default:
-                return pathCache.match(name, pathType.getDelimiter(), pathType.isWithDelimiter());
-        }
+        return pathCache.match(name, matchType == null ? serviceType.getMatchType() : matchType);
     }
 
     /**
@@ -205,11 +195,14 @@ public class ServiceGroup extends ServicePolicyOwner {
         onUpdate(group.servicePolicy, merger, owner);
         List<ServicePath> targets = new ArrayList<>();
         Set<String> olds = new HashSet<>();
+        Map<String, ServicePath> newPaths = new HashMap<>();
+        if (group.paths != null) {
+            group.paths.forEach(path -> newPaths.put(path.getPath(), path));
+        }
         if (paths != null) {
             for (ServicePath old : paths) {
                 olds.add(old.getPath());
-                // Must use group.pathCache to get path
-                ServicePath update = group.pathCache.get(old.getPath());
+                ServicePath update = newPaths.get(old.getPath());
                 if (update == null) {
                     if (old.onDelete(merger, owner)) {
                         targets.add(old);
@@ -260,15 +253,22 @@ public class ServiceGroup extends ServicePolicyOwner {
         if (source != null && source.paths != null && !source.paths.isEmpty()) {
             List<ServicePath> targets = new ArrayList<>(source.paths.size());
             ServicePath target;
+
             Set<Long> ids = new HashSet<>();
+            Map<String, ServicePath> pathMap = new HashMap<>();
+            if (paths != null) {
+                paths.forEach(p -> pathMap.put(p.getPath(), p));
+            }
+
             for (ServicePath path : source.paths) {
-                target = pathCache.get(path.getPath());
+                target = pathMap.get(path.getPath());
                 if (target != null) {
                     ids.add(supplementPath(path, target).getId());
                 } else {
                     targets.add(supplementPath(path, new ServicePath(path.getPath())));
                 }
             }
+
             if (paths != null) {
                 for (ServicePath path : paths) {
                     if (path.getId() == null || !ids.contains(path.getId())) {
@@ -320,6 +320,6 @@ public class ServiceGroup extends ServicePolicyOwner {
         if (paths != null) {
             paths.forEach(ServicePath::cache);
         }
-        pathCache.get("");
+        getPath("");
     }
 }

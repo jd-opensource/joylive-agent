@@ -15,16 +15,21 @@
  */
 package com.jd.live.agent.core.util.trie;
 
-public interface PathTrie<T extends Path> extends Trie<T> {
+/**
+ * Interface representing a Trie data structure for matching paths.
+ *
+ * @param <T> The type of the path that extends the {@code Path} interface.
+ */
+public interface PathTrie<T extends Path> {
 
-    default T match(String key, char delimiter) {
-        return match(key, null, delimiter, false);
-    }
+    /**
+     * Matches a given path against the Trie and returns the corresponding path object.
+     *
+     * @param path The path to be matched.
+     * @param type The type of path matching to be performed.
+     * @return The matched path object of type {@code T}, or {@code null} if no match is found.
+     */
+    T match(String path, PathMatchType type);
 
-    default T match(String key, char delimiter, boolean withDelimiter) {
-        return match(key, null, delimiter, withDelimiter);
-    }
-
-    T match(String key, String suffix, char delimiter, boolean withDelimiter);
-
+    void clear();
 }

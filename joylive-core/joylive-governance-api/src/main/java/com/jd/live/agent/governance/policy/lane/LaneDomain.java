@@ -15,15 +15,13 @@
  */
 package com.jd.live.agent.governance.policy.lane;
 
-import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.core.util.trie.PathMapTrie;
+import com.jd.live.agent.core.util.trie.PathMatchType;
+import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import com.jd.live.agent.core.util.trie.PathTrie;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-
-import static com.jd.live.agent.core.util.trie.PathType.URL;
 
 public class LaneDomain {
 
@@ -35,10 +33,10 @@ public class LaneDomain {
     @Setter
     private List<LanePath> paths;
 
-    private final transient PathTrie<LanePath> pathTrie = new PathMapTrie<>(new ListBuilder<>(() -> paths, LanePath::getPath));
+    private final transient PathTrie<LanePath> pathTrie = new PathMatcherTrie<>(() -> paths);
 
     public LanePath getPath(String path) {
-        return pathTrie.match(path, URL.getDelimiter(), URL.isWithDelimiter());
+        return pathTrie.match(path, PathMatchType.PREFIX);
     }
 
     public void cache() {

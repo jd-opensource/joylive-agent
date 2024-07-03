@@ -20,7 +20,8 @@ import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.core.util.trie.PathMapTrie;
+import com.jd.live.agent.core.util.trie.PathMatchType;
+import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import com.jd.live.agent.core.util.trie.PathTrie;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.converter.LiveTypeDeserializer;
@@ -30,8 +31,6 @@ import lombok.Setter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.jd.live.agent.core.util.trie.PathType.URL;
 
 public class LiveDomain extends PolicyId {
 
@@ -80,14 +79,14 @@ public class LiveDomain extends PolicyId {
 
     private final transient Cache<String, UnitDomain> unitDomainCache = new MapCache<>(new ListBuilder<>(() -> unitDomains, UnitDomain::getUnit));
 
-    private final transient PathTrie<LivePath> pathTrie = new PathMapTrie<>(new ListBuilder<>(() -> paths, LivePath::getPath));
+    private final transient PathTrie<LivePath> pathTrie = new PathMatcherTrie<>(() -> paths);
 
     public UnitDomain getUnitDomain(String unit) {
         return unitDomainCache.get(unit);
     }
 
     public LivePath getPath(String path) {
-        return pathTrie.match(path, URL.getDelimiter(), URL.isWithDelimiter());
+        return pathTrie.match(path, PathMatchType.PREFIX);
     }
 
     protected void supplement() {
