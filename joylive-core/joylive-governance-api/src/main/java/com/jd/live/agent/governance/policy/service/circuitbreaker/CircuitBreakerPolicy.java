@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.policy.PolicyInherit;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -56,12 +57,12 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     /**
      * Minimum request threshold
      */
-    private int minCallThreshold = 10;
+    private int minCallsThreshold = 10;
 
     /**
      * Error code
      */
-    private Set<Integer> errorCodes;
+    private Set<String> errorCodes;
 
     /**
      * Failure rate threshold
@@ -74,19 +75,19 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     private float slowCallRateThreshold = 50;
 
     /**
-     * Maximum duration for slow invocation (milliseconds)
+     * Minimum duration for slow invocation (milliseconds)
      */
-    private int slowCallMaxTimeInMs = 10000;
+    private int slowCallDurationThreshold = 10000;
 
     /**
      * Fuse time (milliseconds)
      */
-    private int waitMsInOpenState = 60000;
+    private int waitDurationInOpenState = 60000;
 
     /**
      * In the half-open state, callable numbers
      */
-    private int permittedNumberOfCallsInHalfOpenState = 10;
+    private int allowedCallsInHalfOpenState = 10;
 
     /**
      * Downgrade configuration
@@ -98,11 +99,11 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
         if (source == null) {
             return;
         }
-        if (errorCodes == null) {
-            errorCodes = source.getErrorCodes();
+        if (errorCodes == null && source.getErrorCodes() != null) {
+            errorCodes = new HashSet<>(source.getErrorCodes());
         }
-        if (degradeConfig == null) {
-            degradeConfig = source.getDegradeConfig();
+        if (degradeConfig == null && source.getDegradeConfig() != null) {
+            degradeConfig = new DegradeConfig(source.getDegradeConfig());
         }
     }
 }

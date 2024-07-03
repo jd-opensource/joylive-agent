@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.policy.service.circuitbreaker;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,4 +36,12 @@ public class DegradeConfig {
 
     private Object responseBody;
 
+    public DegradeConfig() {
+    }
+
+    public DegradeConfig(DegradeConfig config) {
+        this.responseCode = config.responseCode;
+        this.attributes = config.attributes == null ? null : new HashMap<>(attributes);
+        this.responseBody = config.responseBody;
+    }
 }
