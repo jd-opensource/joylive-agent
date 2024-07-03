@@ -27,6 +27,8 @@ public class PathMatcherTest {
         matcher.addPath("/user", "UserHandler");
         matcher.addPath("/order/{id}/create", "OrderCreateHandler");
         matcher.addPath("/order/{id}", "OrderHandler");
+        matcher.addPath("/space/{id}/service/{name}", "ServiceCreateHandler");
+        matcher.addPath("/space/{id}/service/{name}/route/{name}", "RouteCreateHandler");
         matcher.addPath("/product/*/create", "ProductCreateHandler");
 
         Assertions.assertEquals(matcher.match("/").getValue(), "RootHandler");
@@ -35,6 +37,10 @@ public class PathMatcherTest {
         Assertions.assertEquals(matcher.match("/order/2").getValue(), "OrderHandler");
         Assertions.assertEquals(matcher.match("/order/2/update").getValue(), "OrderHandler");
         Assertions.assertEquals(matcher.match("/test").getValue(), "RootHandler");
+        Assertions.assertEquals(matcher.match("/space/1/service/service-consumer").getValue(), "ServiceCreateHandler");
+        Assertions.assertEquals(matcher.match("/space/1/service/service-provider").getValue(), "ServiceCreateHandler");
+        Assertions.assertEquals(matcher.match("/space/1/service/service-provider/route/abc").getValue(), "RouteCreateHandler");
+        Assertions.assertEquals(matcher.match("/space/1/service/service-provider/lb/abc").getValue(), "ServiceCreateHandler");
         Assertions.assertEquals(matcher.match("/product/123/create").getValue(), "ProductCreateHandler");
     }
 }
