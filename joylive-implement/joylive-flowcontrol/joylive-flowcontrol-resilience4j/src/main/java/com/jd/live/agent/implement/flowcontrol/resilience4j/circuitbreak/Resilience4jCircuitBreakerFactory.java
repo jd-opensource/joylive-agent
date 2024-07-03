@@ -17,9 +17,13 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+
+import java.time.Duration;
 
 /**
  * Resilience4jCircuitBreakerFactory
@@ -28,13 +32,24 @@ import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreaker
  */
 @Injectable
 @Extension(value = "Resilience4j")
-public class Resilience4jCircuitBreakerFactory implements CircuitBreakerFactory {
+public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFactory {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public CircuitBreaker get(CircuitBreakerPolicy policy) {
-        return null;
+    public CircuitBreaker create(CircuitBreakerPolicy policy) {
+        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+                .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.TIME_BASED)
+                .slidingWindowSize(policy.getSlidingWindowSize())
+                .minimumNumberOfCalls(policy.getMinCallsThreshold())
+                .failureRateThreshold(policy.getFailureRateThreshold())
+                .slowCallRateThreshold(policy.getSlowCallRateThreshold())
+                .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold()))
+                .waitDurationInOpenState(Duration.ofMillis(policy.getWaitDurationInOpenState()))
+                .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
+                .build();
+        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(policy.getName());
+        return new Resilience4jCircuitBreaker(policy, cb);
     }
 }

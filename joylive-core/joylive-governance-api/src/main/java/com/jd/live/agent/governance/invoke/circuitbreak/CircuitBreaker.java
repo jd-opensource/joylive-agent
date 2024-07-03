@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
-import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +29,7 @@ public interface CircuitBreaker {
     /**
      * Try to get a permit return the result
      *
-     * @return result
+     * @return permission
      */
     default boolean acquire() {
         return true;
@@ -68,5 +68,5 @@ public interface CircuitBreaker {
      *
      * @return policy
      */
-    RateLimitPolicy getPolicy();
+    CircuitBreakerPolicy getPolicy();
 }
