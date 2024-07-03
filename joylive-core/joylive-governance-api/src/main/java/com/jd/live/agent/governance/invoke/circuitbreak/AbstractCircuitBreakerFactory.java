@@ -16,10 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
-import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,6 +77,6 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      * @return A new circuit breaker instance that enforces the given policy.
      */
     protected abstract CircuitBreaker create(CircuitBreakerPolicy policy);
-    
+
 }
 
