@@ -22,5 +22,6 @@ package com.jd.live.agent.governance.policy.service.circuitbreaker;
  */
 public enum CircuitLevel {
     SERVICE,
+    API,
     INSTANCE;
 }

@@ -94,6 +94,11 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
      */
     private DegradeConfig degradeConfig;
 
+    /**
+     * The version of the policy.
+     */
+    private long version;
+
     @Override
     public void supplement(CircuitBreakerPolicy source) {
         if (source == null) {
