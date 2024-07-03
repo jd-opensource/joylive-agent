@@ -140,7 +140,7 @@ public class PathMatcher<T> {
      * @param path The path to be processed. If the path is exactly "/", a single empty string will be passed to the function.
      * @param func The function to be applied to each part of the path. The function should return {@code true} to continue processing,
      *             or {@code false} to terminate processing early.
-     * @return {@code true} if the function was successfully applied to all parts of the path, or {@code false} if processing was terminated early.
+     * @return The number of parts processed. If the function terminates early, the count will reflect the number of parts processed up to that point.
      */
     private int preprocessPath(String path, Function<String, Boolean> func) {
         if (path.equals("/")) {
