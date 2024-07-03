@@ -137,7 +137,6 @@ public class PathMatcher<T> {
      * @return {@code true} if the function was successfully applied to all parts of the path, or {@code false} if processing was terminated early.
      */
     private int preprocessPath(String path, Function<String, Boolean> func) {
-
         if (path.equals("/")) {
             func.apply("");
             return 0;
