@@ -672,11 +672,11 @@ class Invocation~T~ {
   + getError(String, String) String
   # parsePolicyId() PolicyId
 }
-class RouteFilter {
+class OutboundFilter {
 <<Interface>>
-  + filter(OutboundInvocation~T~, RouteFilterChain) void
+  + filter(OutboundInvocation~T~, OutboundFilterChain) void
 }
-class RouteFilterChain {
+class OutboundFilterChain {
 <<Interface>>
   + filter(OutboundInvocation~T~) void
 }
@@ -727,15 +727,15 @@ RpcOutboundInvocation~T~ --|> OutboundInvocation~T~
 HttpOutboundInvocation~T~ --|> OutboundInvocation~T~
 GatewayHttpOutboundInvocation~T~ --|> HttpOutboundInvocation~T~
 GatewayRpcOutboundInvocation~T~ --|> RpcOutboundInvocation~T~
-RouteFilterChain o-- RouteFilter
+OutboundFilterChain o-- OutboundFilter
 InboundFilterChain o-- InboundFilter
 InboundFilter --> InboundInvocation~T~
-RouteFilter --> OutboundInvocation~T~
+OutboundFilter --> OutboundInvocation~T~
 
 style InboundFilterChain fill:#4c8045
-style RouteFilterChain fill:#4c8045
+style OutboundFilterChain fill:#4c8045
 style InboundFilter fill:#4c8045
-style RouteFilter fill:#4c8045
+style OutboundFilter fill:#4c8045
 
 ```
 
@@ -902,9 +902,9 @@ class InvocationContext {
   + isGovernReady() boolean
   + getInboundFilters() InboundFilter[]
   + inbound(InboundInvocation~R~) void
-  + getRouteFilters() RouteFilter[]
+  + getOutboundFilters() OutboundFilter[]
   + route(OutboundInvocation~R~, List~Endpoint~) List~Endpoint~
-  + route(OutboundInvocation~R~, List~Endpoint~, RouteFilter[]) List~Endpoint~
+  + route(OutboundInvocation~R~, List~Endpoint~, OutboundFilter[]) List~Endpoint~
   + getOutboundFilters() OutboundFilter[]
   + outbound(OutboundInvocation~R~) void
   + getApplication() Application
