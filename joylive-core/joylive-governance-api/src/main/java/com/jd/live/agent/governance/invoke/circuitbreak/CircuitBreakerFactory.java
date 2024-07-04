@@ -16,7 +16,10 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+
+import java.util.function.Function;
 
 /**
  * A factory interface for creating instances of {@link CircuitBreaker}.
@@ -32,9 +35,10 @@ public interface CircuitBreakerFactory {
      * Retrieves a new instance of a {@link CircuitBreaker} based on the provided
      * circuit breaker policy.
      *
-     * @param policy the policy that defines the circuit breaker rules.
+     * @param policy      the policy that defines the circuit breaker rules.
+     * @param serviceFunc A function that provides service.
      * @return a new instance of a circuit breaker configured according to the policy.
      */
-    CircuitBreaker get(CircuitBreakerPolicy policy);
+    CircuitBreaker get(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc);
 
 }

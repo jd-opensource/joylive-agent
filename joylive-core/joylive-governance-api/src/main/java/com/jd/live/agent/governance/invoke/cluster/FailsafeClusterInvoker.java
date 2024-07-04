@@ -21,12 +21,14 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A {@code ClusterInvoker} that implements the failsafe (or fail-silent) invocation strategy.
@@ -63,8 +65,12 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
                                                   R request,
                                                   E endpoint,
                                                   LiveCluster<R, O, E, T> cluster,
+                                                  OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
-
+        CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
+        if (circuitBreaker != null) {
+            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, throwable);
+        }
         logger.error("Failsafe ignore exception: " + throwable.getMessage(), throwable);
         O response = cluster.createResponse(null, request, null);
         cluster.onSuccess(response, request, endpoint);

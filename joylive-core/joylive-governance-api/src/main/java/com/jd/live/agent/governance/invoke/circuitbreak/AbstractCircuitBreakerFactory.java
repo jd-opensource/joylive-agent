@@ -15,11 +15,18 @@
  */
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.service.*;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * AbstractCircuitBreakerFactory provides a base implementation for factories that create and manage circuit breakers.
@@ -37,16 +44,20 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      */
     protected final Map<Long, AtomicReference<CircuitBreaker>> circuitBreakers = new ConcurrentHashMap<>();
 
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     /**
      * Retrieves a circuit breaker for the given circuit breaker policy. If a circuit breaker for the policy
      * already exists and its version is greater than or equal to the policy version, it is returned.
      * Otherwise, a new circuit breaker is created using the {@link #create(CircuitBreakerPolicy)} method.
      *
-     * @param policy The circuit breaker policy for which to retrieve or create a circuit breaker.
+     * @param policy      The circuit breaker policy for which to retrieve or create a circuit breaker.
+     * @param serviceFunc A function that provides service.
      * @return A circuit breaker that corresponds to the given policy, or null if the policy is null.
      */
     @Override
-    public CircuitBreaker get(CircuitBreakerPolicy policy) {
+    public CircuitBreaker get(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc) {
         if (policy == null) {
             return null;
         }
@@ -61,11 +72,52 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
             if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(circuitBreaker, breaker)) {
                     circuitBreaker = breaker;
+                    addRecycleTask(policy, serviceFunc);
                     break;
                 }
             }
         }
         return circuitBreaker;
+    }
+
+    private void addRecycleTask(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc) {
+        long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
+        timer.delay("recycle-circuitbreaker-" + policy.getId(), delay, () -> recycle(policy, serviceFunc));
+    }
+
+    private void recycle(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc) {
+        AtomicReference<CircuitBreaker> ref = circuitBreakers.get(policy.getId());
+        CircuitBreaker circuitBreaker = ref == null ? null : ref.get();
+        if (circuitBreaker != null && serviceFunc != null) {
+            String serviceName = policy.getTag(PolicyId.KEY_SERVICE_NAME);
+            String serviceGroup = policy.getTag(PolicyId.KEY_SERVICE_GROUP);
+            String servicePath = policy.getTag(PolicyId.KEY_SERVICE_PATH);
+            String serviceMethod = policy.getTag(PolicyId.KEY_SERVICE_METHOD);
+
+            Service service = serviceFunc.apply(serviceName);
+            ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
+            ServicePath path = group == null ? null : group.getPath(servicePath);
+            ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
+
+            ServicePolicy servicePolicy = method != null ? method.getServicePolicy() : null;
+            servicePolicy = servicePolicy == null && path != null ? path.getServicePolicy() : servicePolicy;
+            servicePolicy = servicePolicy == null && group != null ? group.getServicePolicy() : servicePolicy;
+
+            boolean exists = false;
+            if (servicePolicy != null && servicePolicy.getCircuitBreakerPolicies() != null) {
+                for (CircuitBreakerPolicy circuitBreakerPolicy : servicePolicy.getCircuitBreakerPolicies()) {
+                    if (Objects.equals(circuitBreakerPolicy.getId(), policy.getId())) {
+                        exists = true;
+                        break;
+                    }
+                }
+            }
+            if (!exists) {
+                circuitBreakers.remove(policy.getId());
+            } else {
+                addRecycleTask(policy, serviceFunc);
+            }
+        }
     }
 
     /**

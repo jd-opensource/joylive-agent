@@ -64,6 +64,13 @@ public interface CircuitBreaker {
     void onResult(long duration, TimeUnit durationUnit, Object result);
 
     /**
+     * Register a listener to watch state change event.
+     *
+     * @param listener State change listener
+     */
+    void registerListener(CircuitBreakerStateListener listener);
+
+    /**
      * Get circuit-breaker policy
      *
      * @return policy

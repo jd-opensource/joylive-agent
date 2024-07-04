@@ -20,6 +20,7 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -27,6 +28,7 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -107,6 +109,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 E endpoint = null;
                 try {
                     List<? extends Endpoint> endpoints = context.route(invocation, v);
+                    CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
                     boolean empty = endpoints == null || endpoints.isEmpty();
                     if (!empty || !request.isInstanceSensitive()) {
                         endpoint = empty ? null : (E) endpoints.get(0);
@@ -114,24 +117,26 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                         cluster.onStartRequest(request, endpoint);
                         cluster.invoke(request, endpoint).whenComplete((o, r) -> {
                             if (r != null) {
-                                onException(r, request, instance, cluster, result);
+                                onException(r, request, instance, cluster, invocation, result);
                             } else if (o.getThrowable() != null) {
-                                onException(o.getThrowable(), request, instance, cluster, result);
+                                onException(o.getThrowable(), request, instance, cluster, invocation, result);
                             } else {
+                                circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS);
+                                circuitBreaker.onResult(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, o);
                                 cluster.onSuccess(o, request, instance);
                                 result.complete(o);
                             }
                         });
                     } else {
-                        onException(cluster.createNoProviderException(request), request, endpoint, cluster, result);
+                        onException(cluster.createNoProviderException(request), request, endpoint, cluster, invocation, result);
                     }
                 } catch (RejectException e) {
-                    onException(cluster.createRejectException(e, request), request, endpoint, cluster, result);
+                    onException(cluster.createRejectException(e, request), request, endpoint, cluster, invocation, result);
                 } catch (Throwable e) {
-                    onException(e, request, null, cluster, result);
+                    onException(e, request, null, cluster, invocation, result);
                 }
             } else {
-                onException(t, request, null, cluster, result);
+                onException(t, request, null, cluster, invocation, result);
             }
         });
         return result;
@@ -147,18 +152,19 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * and the characteristics of the cluster.
      * </p>
      *
-     * @param <R>       The type of the outbound request that extends {@link OutboundRequest}.
-     * @param <O>       The type of the outbound response that extends {@link OutboundResponse}.
-     * @param <E>       The type of the endpoint that extends {@link Endpoint}.
-     * @param <T>       The type of the throwable that extends {@link Throwable}.
-     * @param throwable The exception that occurred during the invocation.
-     * @param request   The request that was being processed when the exception occurred.
-     * @param endpoint  The endpoint to which the request was being sent, may be null if the exception
-     *                  occurred before an endpoint was selected.
-     * @param cluster   The live cluster context in which the invocation was taking place.
-     * @param result    The {@link CompletableFuture} that should be completed to signal the outcome of the
-     *                  invocation. Implementers can complete this future exceptionally or with a default
-     *                  response.
+     * @param <R>        The type of the outbound request that extends {@link OutboundRequest}.
+     * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
+     * @param <E>        The type of the endpoint that extends {@link Endpoint}.
+     * @param <T>        The type of the throwable that extends {@link Throwable}.
+     * @param throwable  The exception that occurred during the invocation.
+     * @param request    The request that was being processed when the exception occurred.
+     * @param endpoint   The endpoint to which the request was being sent, may be null if the exception
+     *                   occurred before an endpoint was selected.
+     * @param cluster    The live cluster context in which the invocation was taking place.
+     * @param invocation The {@link OutboundInvocation} representing the specific request and its routing information.
+     * @param result     The {@link CompletableFuture} that should be completed to signal the outcome of the
+     *                   invocation. Implementers can complete this future exceptionally or with a default
+     *                   response.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
@@ -167,7 +173,12 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   R request,
                                                   E endpoint,
                                                   LiveCluster<R, O, E, T> cluster,
+                                                  OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
+        CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
+        if (circuitBreaker != null) {
+            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, throwable);
+        }
         O response = cluster.createResponse(throwable, request, endpoint);
         // avoid the live exception class is not recognized in application classloader
         cluster.onError(response.getThrowable(), request, endpoint);

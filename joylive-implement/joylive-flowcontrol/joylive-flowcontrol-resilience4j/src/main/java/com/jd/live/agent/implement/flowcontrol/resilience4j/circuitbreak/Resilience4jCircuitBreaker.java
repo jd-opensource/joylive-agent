@@ -15,8 +15,10 @@
  */
 package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
+import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreaker;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import io.github.resilience4j.core.EventConsumer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,14 +27,13 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.1.0
  */
-public class Resilience4jCircuitBreaker implements CircuitBreaker {
-
-    private final CircuitBreakerPolicy policy;
+public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
 
     private final io.github.resilience4j.circuitbreaker.CircuitBreaker delegate;
 
-    public Resilience4jCircuitBreaker(CircuitBreakerPolicy policy, io.github.resilience4j.circuitbreaker.CircuitBreaker delegate) {
-        this.policy = policy;
+    public Resilience4jCircuitBreaker(CircuitBreakerPolicy policy,
+                                      io.github.resilience4j.circuitbreaker.CircuitBreaker delegate) {
+        super(policy);
         this.delegate = delegate;
     }
 
@@ -60,16 +61,6 @@ public class Resilience4jCircuitBreaker implements CircuitBreaker {
     }
 
     /**
-     * Get circuit-breaker policy
-     *
-     * @return policy
-     */
-    @Override
-    public CircuitBreakerPolicy getPolicy() {
-        return policy;
-    }
-
-    /**
      * Records a successful call. This method must be invoked when a call was
      * successful.
      *
@@ -93,4 +84,15 @@ public class Resilience4jCircuitBreaker implements CircuitBreaker {
         this.delegate.onError(duration, durationUnit, throwable);
     }
 
+    /**
+     * Register a listener to watch state change event.
+     *
+     * @param listener State change listener
+     */
+    @Override
+    public void registerListener(CircuitBreakerStateListener listener) {
+        if (listener instanceof EventConsumer) {
+            this.delegate.getEventPublisher().onStateTransition((EventConsumer) listener);
+        }
+    }
 }

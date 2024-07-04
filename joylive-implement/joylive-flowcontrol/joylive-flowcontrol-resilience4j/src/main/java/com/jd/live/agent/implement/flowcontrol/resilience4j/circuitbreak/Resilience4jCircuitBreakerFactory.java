@@ -20,6 +20,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitLevel;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
@@ -50,6 +51,10 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
                 .build();
         io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(policy.getName());
-        return new Resilience4jCircuitBreaker(policy, cb);
+        CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, cb);
+        if (policy.getLevel() == CircuitLevel.INSTANCE) {
+            circuitBreaker.registerListener(new InstanceCircuitBreakerStateListener(policy.getName()));
+        }
+        return circuitBreaker;
     }
 }
