@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.route;
+package com.jd.live.agent.governance.invoke.filter.outbound;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
@@ -26,20 +26,23 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
- * A filter that removes unhealthy instances from the list of route targets. This filter
- * is applied during the routing process to ensure that only instances in a healthy or
- * acceptable state are considered for routing requests.
+ * LocalhostFilter is a debug-mode filter that restricts the route targets to only those
+ * running on the localhost. This filter is useful for testing and debugging purposes, as
+ * it ensures that requests are only routed to local instances of the service.
  *
  * @since 1.0.0
  */
-@Extension(value = "HealthyFilter", order = OutboundFilter.ORDER_HEALTH)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class HealthyFilter implements OutboundFilter {
+@Extension(value = "LocalhostFilter", order = OutboundFilter.ORDER_LOCALHOST)
+@ConditionalOnProperty(GovernanceConfig.CONFIG_LOCALHOST_ENABLED)
+public class LocalhostFilter implements OutboundFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
-        target.filter(Endpoint::isAccessible);
+        String localIp = Ipv4.getLocalIp();
+        if (localIp != null) {
+            target.filter(endpoint -> endpoint.getHost().equals(localIp));
+        }
         chain.filter(invocation);
     }
 }

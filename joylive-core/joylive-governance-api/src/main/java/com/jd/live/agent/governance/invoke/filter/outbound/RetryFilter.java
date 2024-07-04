@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.route;
+package com.jd.live.agent.governance.invoke.filter.outbound;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -25,23 +24,29 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
+import java.util.Set;
+
 /**
- * LocalhostFilter is a debug-mode filter that restricts the route targets to only those
- * running on the localhost. This filter is useful for testing and debugging purposes, as
- * it ensures that requests are only routed to local instances of the service.
+ * RetryFilter is a filter that excludes endpoints that have previously failed
+ * during the current request's attempt history. This filter ensures that failed
+ * endpoints are not retried, which can help in avoiding repeated failures and
+ * potentially improve the system's reliability.
  *
  * @since 1.0.0
  */
-@Extension(value = "LocalhostFilter", order = OutboundFilter.ORDER_LOCALHOST)
-@ConditionalOnProperty(GovernanceConfig.CONFIG_LOCALHOST_ENABLED)
-public class LocalhostFilter implements OutboundFilter {
+@Extension(value = "RetryFilter", order = OutboundFilter.ORDER_RETRY)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+public class RetryFilter implements OutboundFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
-        String localIp = Ipv4.getLocalIp();
-        if (localIp != null) {
-            target.filter(endpoint -> endpoint.getHost().equals(localIp));
+        // Get the set of attempted endpoint IDs from the request
+        Set<String> attempts = invocation.getRequest().getAttempts();
+        // If there have been previous attempts, filter out the endpoints that have already failed
+        if (attempts != null && !attempts.isEmpty()) {
+            // Can retry on failed instances
+            target.filter(endpoint -> !attempts.contains(endpoint.getId()), -1, false);
         }
         chain.filter(invocation);
     }
