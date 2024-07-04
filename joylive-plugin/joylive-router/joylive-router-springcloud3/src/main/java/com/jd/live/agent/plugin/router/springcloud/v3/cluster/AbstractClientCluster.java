@@ -80,6 +80,12 @@ public abstract class AbstractClientCluster<
      */
     protected abstract boolean isRetryable();
 
+    /**
+     * Discover the service instances for the requested service.
+     *
+     * @param request The outbound request to be routed.
+     * @return ServiceInstance list
+     */
     @Override
     public CompletionStage<List<SpringEndpoint>> route(R request) {
         ServiceInstanceListSupplier supplier = request.getInstanceSupplier();
@@ -167,6 +173,7 @@ public abstract class AbstractClientCluster<
     protected NestedRuntimeException createException(HttpStatus status, String message) {
         return createException(status, message, null);
     }
+
     /**
      * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
      *

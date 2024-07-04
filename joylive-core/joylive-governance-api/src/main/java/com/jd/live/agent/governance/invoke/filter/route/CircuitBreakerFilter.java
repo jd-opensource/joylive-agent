@@ -13,28 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.outbound;
+package com.jd.live.agent.governance.invoke.filter.route;
 
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
- * UnitOutboundFilter
+ * CircuitBreakerFilter
  *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * @since 1.1.0
  */
-@Injectable
-@Extension(value = "UnitOutboundFilter", order = OutboundFilter.ORDER_OUTBOUND_LIVE_UNIT)
-public class UnitOutboundFilter implements OutboundFilter {
+@Extension(value = "CircuitBreakerFilter", order = OutboundFilter.ORDER_CIRCUIT_BREAKER)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAKER_ENABLED, matchIfMissing = true)
+public class CircuitBreakerFilter implements OutboundFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
+        RouteTarget target = invocation.getRouteTarget();
+//        target.filter(Endpoint::isAccessible);
         chain.filter(invocation);
     }
-
 }

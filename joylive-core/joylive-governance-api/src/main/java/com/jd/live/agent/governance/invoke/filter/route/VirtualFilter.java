@@ -22,8 +22,8 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.ArrayList;
@@ -35,12 +35,12 @@ import java.util.List;
  *
  * <p>This filter is enabled when flow control is enabled and the virtual governance feature is enabled.</p>
  *
- * @see RouteFilter
+ * @since 1.0.0
  */
 @Injectable
-@Extension(value = "VirtualFilter", order = RouteFilter.ORDER_VIRTUAL)
+@Extension(value = "VirtualFilter", order = OutboundFilter.ORDER_VIRTUAL)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_VIRTUAL_ENABLED)
-public class VirtualFilter implements RouteFilter {
+public class VirtualFilter implements OutboundFilter {
 
     /**
      * The maximum size of the instance list. If the number of instances is below this size, the list will be extended.
@@ -50,7 +50,7 @@ public class VirtualFilter implements RouteFilter {
     private int size = 500;
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         List<? extends Endpoint> instances = invocation.getInstances();
         if (size > 0 && instances != null && !instances.isEmpty() && instances.size() < size) {
             List<Endpoint> result = new ArrayList<>(size);

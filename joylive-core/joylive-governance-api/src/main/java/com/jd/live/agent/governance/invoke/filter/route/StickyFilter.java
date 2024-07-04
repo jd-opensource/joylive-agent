@@ -21,8 +21,8 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -31,13 +31,15 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  * StickyFilter is a filter that prioritizes routing to the same instance that was previously
  * used for a successful request. This is known as "stickiness" and can be useful for maintaining
  * session state or ensuring consistency in processing across multiple requests.
+ *
+ * @since 1.0.0
  */
-@Extension(value = "StickyFilter", order = RouteFilter.ORDER_STICKY)
+@Extension(value = "StickyFilter", order = OutboundFilter.ORDER_STICKY)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class StickyFilter implements RouteFilter {
+public class StickyFilter implements OutboundFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         StickyType stickyType = invocation.getServiceMetadata().getStickyType();
         if (stickyType != StickyType.NONE) {
             RouteTarget target = invocation.getRouteTarget();

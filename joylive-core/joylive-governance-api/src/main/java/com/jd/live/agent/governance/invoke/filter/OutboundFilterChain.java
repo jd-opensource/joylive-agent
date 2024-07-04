@@ -18,14 +18,13 @@ package com.jd.live.agent.governance.invoke.filter;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
- * Defines an interface for the outbound filter chain that handles outbound requests.
+ * Defines an interface for a routing filter chain that filters target instances.
  * <p>
- * This interface allows for the sequential processing of outbound requests through a chain of filters. Each filter can
- * perform its processing and decide to pass the request to the next filter in the chain by invoking the {@code filter}
- * method of the chain.
+ * This interface facilitates the sequential processing of outbound requests through a series of routing filters. Each filter
+ * can perform its own processing and decide whether to pass the request to the next filter in the chain.
  * </p>
  * <p>
  * The {@link Chain} inner class provides a concrete implementation of the {@code OutboundFilterChain}, managing the sequence
@@ -46,29 +45,30 @@ public interface OutboundFilterChain {
     <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation);
 
     /**
-     * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of outbound filters.
+     * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of routing filters.
      */
     class Chain implements OutboundFilterChain {
 
-        private int index; // Tracks the current position in the filter chain
-        private final OutboundFilter[] filters; // Array of filters in the chain
+        private int index; // Tracks the current position in the filter chain.
+        private final OutboundFilter[] filters; // Array of filters in the chain.
 
         /**
-         * Constructs a chain with a list of outbound filters.
+         * Constructs a chain with an array of routing filters.
          *
-         * @param filters A list of outbound filters. Can be null, in which case the chain will be empty.
+         * @param filters An array of routing filters. If null, the chain will be empty.
          */
-        public Chain(List<? extends OutboundFilter> filters) {
-            this.filters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
+        @SafeVarargs
+        public <K extends OutboundFilter> Chain(final K... filters) {
+            this.filters = filters == null ? new OutboundFilter[0] : filters;
         }
 
         /**
-         * Constructs a chain with an array of outbound filters.
+         * Constructs a chain with a collection of routing filters.
          *
-         * @param filters An array of outbound filters. Can be null, in which case the chain will be empty.
+         * @param filters A collection of routing filters. If null, the chain will be empty.
          */
-        public Chain(OutboundFilter... filters) {
-            this.filters = filters == null ? new OutboundFilter[0] : filters;
+        public Chain(final Collection<? extends OutboundFilter> filters) {
+            this.filters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
         }
 
         /**

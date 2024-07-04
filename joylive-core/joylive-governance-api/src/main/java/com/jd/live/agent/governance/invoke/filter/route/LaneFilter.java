@@ -22,8 +22,8 @@ import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
@@ -35,14 +35,16 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  * Filters route targets based on lane metadata. This filter ensures that only instances
  * belonging to the correct lane are considered for routing requests. If no instances are
  * found in the target lane, it may fall back to the default lane if one is specified.
+ *
+ * @since 1.0.0
  */
 @Injectable
-@Extension(value = "LaneFilter", order = RouteFilter.ORDER_LANE)
+@Extension(value = "LaneFilter", order = OutboundFilter.ORDER_LANE)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
-public class LaneFilter implements RouteFilter {
+public class LaneFilter implements OutboundFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         LaneMetadata laneMetadata = invocation.getLaneMetadata();
         LaneSpace laneSpace = laneMetadata.getLaneSpace();
         Lane targetLane = laneMetadata.getTargetLane();

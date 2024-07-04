@@ -20,8 +20,8 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.Set;
@@ -31,13 +31,15 @@ import java.util.Set;
  * during the current request's attempt history. This filter ensures that failed
  * endpoints are not retried, which can help in avoiding repeated failures and
  * potentially improve the system's reliability.
+ *
+ * @since 1.0.0
  */
-@Extension(value = "RetryFilter", order = RouteFilter.ORDER_RETRY)
+@Extension(value = "RetryFilter", order = OutboundFilter.ORDER_RETRY)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class RetryFilter implements RouteFilter {
+public class RetryFilter implements OutboundFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         // Get the set of attempted endpoint IDs from the request
         Set<String> attempts = invocation.getRequest().getAttempts();

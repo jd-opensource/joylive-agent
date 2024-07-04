@@ -21,21 +21,23 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
  * A filter that removes unhealthy instances from the list of route targets. This filter
  * is applied during the routing process to ensure that only instances in a healthy or
  * acceptable state are considered for routing requests.
+ *
+ * @since 1.0.0
  */
-@Extension(value = "HealthyFilter", order = RouteFilter.ORDER_HEALTH)
+@Extension(value = "HealthyFilter", order = OutboundFilter.ORDER_HEALTH)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class HealthyFilter implements RouteFilter {
+public class HealthyFilter implements OutboundFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         target.filter(Endpoint::isAccessible);
         chain.filter(invocation);

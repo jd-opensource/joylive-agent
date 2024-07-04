@@ -31,8 +31,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.*;
@@ -54,15 +54,15 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "CellRouteFilter", order = RouteFilter.ORDER_LIVE_CELL)
+@Extension(value = "CellRouteFilter", order = OutboundFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
+public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
 
     @Inject(Publisher.TRAFFIC)
     private Publisher<TrafficEvent> publisher;
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         UnitAction action = target.getUnitAction();
         if (action.getType() == UnitActionType.FORWARD && forward(invocation, target)) {

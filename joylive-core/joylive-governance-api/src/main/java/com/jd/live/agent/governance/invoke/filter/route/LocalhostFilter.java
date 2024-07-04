@@ -21,21 +21,23 @@ import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
  * LocalhostFilter is a debug-mode filter that restricts the route targets to only those
  * running on the localhost. This filter is useful for testing and debugging purposes, as
  * it ensures that requests are only routed to local instances of the service.
+ *
+ * @since 1.0.0
  */
-@Extension(value = "LocalhostFilter", order = RouteFilter.ORDER_LOCALHOST)
+@Extension(value = "LocalhostFilter", order = OutboundFilter.ORDER_LOCALHOST)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_LOCALHOST_ENABLED)
-public class LocalhostFilter implements RouteFilter {
+public class LocalhostFilter implements OutboundFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         String localIp = Ipv4.getLocalIp();
         if (localIp != null) {

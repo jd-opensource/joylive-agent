@@ -20,16 +20,14 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
- * Defines an interface for outbound filters that handle outbound requests.
+ * Defines the contract for route filters which are responsible for filtering target instances
+ * during the outbound request routing process. Implementations of this interface can be used to
+ * apply various criteria to select or modify the target instances based on attributes like
+ * liveliness, locality, retries, stickiness, health, tags, lanes, cell information, and load
+ * balancing strategies.
  * <p>
- * This interface specifies how outbound requests should be handled by defining a {@code filter} method. Implementations
- * of this interface can perform operations on the outbound requests and decide whether to pass the request to the next
- * filter in the chain or to terminate the processing.
- * </p>
- * <p>
- * Filters can be executed in a specified order, which is indicated by the constant {@code ORDER_OUTBOUND_LIVE_UNIT}. This allows
- * for a structured and predictable processing of outbound requests.
- * </p>
+ * Implementations can be ordered using predefined constants to determine the sequence in which
+ * filters are applied.
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
@@ -37,20 +35,44 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @Extensible(value = "OutboundFilter")
 public interface OutboundFilter {
 
-    // Constant defining the order of execution for the filters
-    int ORDER_OUTBOUND_LIVE_UNIT = 0; // Execution order for the live unit filter
+    int ORDER_STICKY = 100;
+
+    int ORDER_LOCALHOST = ORDER_STICKY + 100;
+
+    int ORDER_HEALTH = ORDER_LOCALHOST + 100;
+
+    int ORDER_VIRTUAL = ORDER_HEALTH + 100;
+
+    int ORDER_CIRCUIT_BREAKER = ORDER_VIRTUAL + 100;
+
+    int ORDER_LIVE_UNIT = ORDER_CIRCUIT_BREAKER + 100;
+
+    int ORDER_TAG_ROUTE = ORDER_LIVE_UNIT + 100;
+
+    int ORDER_LANE = ORDER_TAG_ROUTE + 100;
+
+    int ORDER_LIVE_CELL = ORDER_LANE + 100;
+
+    int ORDER_RETRY = ORDER_LIVE_CELL + 100;
+
+    int ORDER_LOADBALANCE = ORDER_LIVE_CELL + 100;
 
     /**
-     * Filters an outbound request.
-     * <p>
-     * Implementations should define this method to perform custom processing on outbound requests. Upon completion of processing,
-     * the implementation can choose to pass the control to the next filter in the chain or to stop the execution of the chain.
-     * </p>
+     * Applies the filter logic to the given outbound invocation. This method is called as part of a
+     * chain of filters, and it is responsible for invoking the next filter in the chain or terminating
+     * the chain if the criteria for routing are not met.
      *
-     * @param invocation Represents the invocation information of an outbound request.
-     * @param chain      Represents the filter chain, providing a way to pass control to the next filter in the chain.
      * @param <T>        The type of the outbound request.
+     * @param invocation The outbound invocation containing the request and additional routing information.
+     * @param chain      The chain of route filters that should be applied to the invocation.
      */
     <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain);
+
+    /**
+     * Represents a filter for live routes.
+     */
+    interface LiveRouteFilter extends OutboundFilter {
+
+    }
 
 }

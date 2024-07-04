@@ -40,7 +40,6 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
@@ -141,11 +140,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     @InjectLoader(ResourcerType.CORE_IMPL)
     private OutboundFilter[] outboundFilters;
-
-    @Getter
-    @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
-    private RouteFilter[] routeFilters;
 
     @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)
     private ServiceSupervisor serviceSupervisor;

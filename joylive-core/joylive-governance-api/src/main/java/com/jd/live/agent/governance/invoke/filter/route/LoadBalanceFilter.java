@@ -22,8 +22,8 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
@@ -39,13 +39,15 @@ import java.util.List;
  * LoadBalanceFilter applies load balancing to the list of route targets. It ensures that
  * requests are distributed across available instances in a balanced manner based on the
  * configured load balancing policy.
+ *
+ * @since 1.0.0
  */
-@Extension(value = "LoadBalanceFilter", order = RouteFilter.ORDER_LOADBALANCE)
+@Extension(value = "LoadBalanceFilter", order = OutboundFilter.ORDER_LOADBALANCE)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class LoadBalanceFilter implements RouteFilter {
+public class LoadBalanceFilter implements OutboundFilter {
 
     @Override
-    public <T extends ServiceRequest.OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends ServiceRequest.OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();

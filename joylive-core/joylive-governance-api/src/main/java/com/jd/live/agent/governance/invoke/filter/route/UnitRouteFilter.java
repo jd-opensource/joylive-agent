@@ -31,8 +31,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
-import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.*;
@@ -53,18 +53,18 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
  * UnitRouteFilter is a filter that routes requests to specific instances based on unit rules and policies.
  * It takes into account the live space, service policy, and unit rules to determine the best route for each request.
  *
- * @author Zhiguo.Chen
+ * @since 1.0.0
  */
 @Injectable
-@Extension(value = "UnitRouteFilter", order = RouteFilter.ORDER_LIVE_UNIT)
+@Extension(value = "UnitRouteFilter", order = OutboundFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class UnitRouteFilter implements RouteFilter.LiveRouteFilter {
+public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
 
     @Inject(Publisher.TRAFFIC)
     private Publisher<TrafficEvent> publisher;
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         LiveSpace liveSpace = invocation.getLiveMetadata().getLiveSpace();
         if (liveSpace != null) {

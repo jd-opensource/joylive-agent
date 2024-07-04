@@ -34,10 +34,17 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
 
     public static final String QUERY_CIRCUIT_BREAKER = "circuitBreaker";
 
+    public static final String DEFAULT_CIRCUIT_BREAKER_TYPE = "Resilience4j";
+
     /**
-     * Name
+     * Name of this policy
      */
     private String name;
+
+    /**
+     * Implementation types of circuit-breaker
+     */
+    private String type = DEFAULT_CIRCUIT_BREAKER_TYPE;
 
     /**
      * Level of circuit breaker policy
@@ -47,7 +54,7 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     /**
      * Sliding window type (statistical window type): Count, time
      */
-    private String slidingWindowType = "Count";
+    private String slidingWindowType = "time";
 
     /**
      * Sliding window size (statistical window size)
