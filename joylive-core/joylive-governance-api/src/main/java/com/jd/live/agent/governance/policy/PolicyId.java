@@ -18,9 +18,11 @@ package com.jd.live.agent.governance.policy;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.zip.CRC32;
 
 /**
  * The {@code PolicyId} class is an abstract implementation of the {@code IdGenerator} interface.
@@ -105,7 +107,10 @@ public class PolicyId implements PolicyIdGen {
             uri = url.get();
         }
         if (id == null && uri != null) {
-            id = Math.abs((long) uri.hashCode());
+            CRC32 crc32 = new CRC32();
+            byte[] bytes = uri.getBytes(StandardCharsets.UTF_8);
+            crc32.update(bytes, 0, bytes.length);
+            id = Math.abs(crc32.getValue());
         }
         this.tags = tags;
     }
