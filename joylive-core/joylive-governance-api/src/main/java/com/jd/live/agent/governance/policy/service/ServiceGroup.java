@@ -87,24 +87,24 @@ public class ServiceGroup extends ServicePolicyOwner {
     }
 
     /**
-     * Retrieves a service path by its name.
+     * Retrieves a service path by its path.
      *
-     * @param name The name of the service path.
+     * @param path The path of the service path.
      * @return The service path, or {@code null} if not found.
      */
-    public ServicePath getPath(String name) {
-        return getPath(name, null);
+    public ServicePath getPath(String path) {
+        return pathCache.get(path);
     }
 
     /**
-     * Retrieves a service path by its name, using the specified path match type.
+     * Retrieves a service path by its path, using the specified path match type.
      *
-     * @param name      The name of the service path.
+     * @param path      The path of the service path.
      * @param matchType The type of path matching to use.
      * @return The service path, or {@code null} if not found.
      */
-    public ServicePath getPath(String name, PathMatchType matchType) {
-        return pathCache.match(name, matchType == null ? serviceType.getMatchType() : matchType);
+    public ServicePath match(String path, PathMatchType matchType) {
+        return pathCache.match(path, matchType == null ? serviceType.getMatchType() : matchType);
     }
 
     /**
@@ -128,7 +128,7 @@ public class ServiceGroup extends ServicePolicyOwner {
      */
     public ServicePolicy getServicePolicy(String path, String method, PathMatchType matchType) {
         path = path == null && method != null ? DEFAULT_GROUP : path;
-        ServicePath servicePath = getPath(path, matchType);
+        ServicePath servicePath = match(path, matchType);
         return servicePath == null ? servicePolicy : servicePath.getServicePolicy(method);
     }
 
@@ -321,5 +321,6 @@ public class ServiceGroup extends ServicePolicyOwner {
             paths.forEach(ServicePath::cache);
         }
         getPath("");
+        match("", PathMatchType.EQUAL);
     }
 }

@@ -15,13 +15,20 @@
  */
 package com.jd.live.agent.governance.invoke.ratelimit;
 
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.service.*;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * AbstractLimiterFactory provides a base implementation for factories that create and manage rate limiters.
@@ -33,22 +40,13 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractLimiterFactory implements RateLimiterFactory {
 
-    /**
-     * A thread-safe map to store rate limiters associated with their respective policies.
-     * The keys are the policy IDs, and the values are atomic references to the rate limiters.
-     */
-    protected final Map<Long, AtomicReference<RateLimiter>> rateLimiters = new ConcurrentHashMap<>();
+    private final Map<Long, AtomicReference<RateLimiter>> rateLimiters = new ConcurrentHashMap<>();
 
-    /**
-     * Retrieves a rate limiter for the given rate limit policy. If a rate limiter for the policy
-     * already exists and its version is greater than or equal to the policy version, it is returned.
-     * Otherwise, a new rate limiter is created using the {@link #create(RateLimitPolicy)} method.
-     *
-     * @param policy The rate limit policy for which to retrieve or create a rate limiter.
-     * @return A rate limiter that corresponds to the given policy, or null if the policy is null.
-     */
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     @Override
-    public RateLimiter get(RateLimitPolicy policy) {
+    public RateLimiter get(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
         if (policy == null) {
             return null;
         }
@@ -67,11 +65,52 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
             if (rateLimiter == null || rateLimiter.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(rateLimiter, newLimiter)) {
                     rateLimiter = newLimiter;
+                    addRecycleTask(policy, serviceFunc);
                     break;
                 }
             }
         }
         return rateLimiter;
+    }
+
+    private void addRecycleTask(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
+        long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
+        timer.delay("recycle-ratelimiter-" + policy.getId(), delay, () -> recycle(policy, serviceFunc));
+    }
+
+    private void recycle(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
+        AtomicReference<RateLimiter> ref = rateLimiters.get(policy.getId());
+        RateLimiter limiter = ref == null ? null : ref.get();
+        if (limiter != null) {
+            String serviceName = policy.getTag(PolicyId.KEY_SERVICE_NAME);
+            String serviceGroup = policy.getTag(PolicyId.KEY_SERVICE_GROUP);
+            String servicePath = policy.getTag(PolicyId.KEY_SERVICE_PATH);
+            String serviceMethod = policy.getTag(PolicyId.KEY_SERVICE_METHOD);
+
+            Service service = serviceFunc == null ? null : serviceFunc.apply(serviceName);
+            ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
+            ServicePath path = group == null ? null : group.getPath(servicePath);
+            ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
+
+            ServicePolicy servicePolicy = method != null ? method.getServicePolicy() : null;
+            servicePolicy = servicePolicy == null && path != null ? path.getServicePolicy() : servicePolicy;
+            servicePolicy = servicePolicy == null && group != null ? group.getServicePolicy() : servicePolicy;
+
+            boolean exists = false;
+            if (servicePolicy != null && servicePolicy.getRateLimitPolicies() != null) {
+                for (RateLimitPolicy rateLimitPolicy : servicePolicy.getRateLimitPolicies()) {
+                    if (Objects.equals(rateLimitPolicy.getId(), policy.getId())) {
+                        exists = true;
+                        break;
+                    }
+                }
+            }
+            if (!exists) {
+                rateLimiters.remove(policy.getId());
+            } else {
+                addRecycleTask(policy, serviceFunc);
+            }
+        }
     }
 
     /**
@@ -83,5 +122,6 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
      * @return A new rate limiter instance that enforces the given policy.
      */
     protected abstract RateLimiter create(RateLimitPolicy policy);
+
 }
 

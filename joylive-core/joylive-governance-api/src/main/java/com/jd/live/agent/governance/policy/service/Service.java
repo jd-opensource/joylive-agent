@@ -122,7 +122,7 @@ public class Service extends PolicyOwner {
      * @param group The name of the service group.
      * @return The service group, or {@code null} if not found.
      */
-    protected ServiceGroup getGroup(String group) {
+    public ServiceGroup getGroup(String group) {
         return groupCache.get(group);
     }
 

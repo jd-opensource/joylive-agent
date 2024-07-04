@@ -16,25 +16,28 @@
 package com.jd.live.agent.governance.invoke.ratelimit;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 
+import java.util.function.Function;
+
 /**
- * A factory interface for creating instances of {@link RateLimiter}.
- * Implementations of this interface define how rate limiters are
- * instantiated based on a provided {@link RateLimitPolicy}.
- *
- * @since 1.0.0
+ * A factory interface for creating {@link RateLimiter} instances.
+ * Implementations of this interface are responsible for providing
+ * rate limiters based on the given policy and policy supplier.
  */
 @Extensible("RateLimiterFactory")
 public interface RateLimiterFactory {
 
     /**
-     * Retrieves a new instance of a {@link RateLimiter} based on the provided
-     * rate limit policy.
+     * Retrieves a {@link RateLimiter} based on the provided {@link RateLimitPolicy}
+     * and {@link PolicySupplier}.
      *
-     * @param policy the policy that defines the rate limiting rules.
-     * @return a new instance of a rate limiter configured according to the policy.
+     * @param policy         The rate limit policy that defines the rate limiting rules.
+     * @param serviceFunc    A function that provides service.
+     * @return A {@link RateLimiter} instance configured according to the provided policy.
      */
-    RateLimiter get(RateLimitPolicy policy);
-
+    RateLimiter get(RateLimitPolicy policy, Function<String, Service> serviceFunc);
 }
+

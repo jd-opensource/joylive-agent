@@ -15,30 +15,25 @@
  */
 package com.jd.live.agent.core.util.trie;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * A Trie-based implementation of the {@link PathTrie} interface for matching paths.
+ * A Trie-based implementation for matching and storing paths.
  *
- * @param <T> The type of the path that extends the {@code Path} interface.
+ * @param <T> The type of path objects stored in the Trie, which must extend the {@code Path} class.
  */
 public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
 
-    /**
-     * The delimiter used to separate path segments.
-     */
     private final Supplier<Character> delimiter;
 
-    /**
-     * A supplier providing a list of paths to be added to the Trie.
-     */
     private final Supplier<List<T>> supplier;
 
-    /**
-     * The underlying {@link PathMatcher} used for matching paths.
-     */
-    private PathMatcher<T> matcher;
+    private volatile Map<String, T> cache;
+
+    private volatile PathMatcher<T> matcher;
 
     /**
      * Constructs a {@code PathMatcherTrie} with the default delimiter.
@@ -56,10 +51,15 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
      * @param supplier  A supplier providing a list of paths to be added to the Trie.
      */
     public PathMatcherTrie(char delimiter, Supplier<List<T>> supplier) {
-        this.delimiter = () -> delimiter;
-        this.supplier = supplier;
+        this(() -> delimiter, supplier);
     }
 
+    /**
+     * Constructs a {@code PathMatcherTrie} with the specified delimiter supplier.
+     *
+     * @param delimiter A supplier providing the delimiter used to separate path segments.
+     * @param supplier  A supplier providing a list of paths to be added to the Trie.
+     */
     public PathMatcherTrie(Supplier<Character> delimiter, Supplier<List<T>> supplier) {
         this.delimiter = delimiter;
         this.supplier = supplier;
@@ -84,9 +84,46 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
         }
     }
 
+    /**
+     * Retrieves the path object associated with the given path.
+     *
+     * @param path The path whose associated path object is to be returned.
+     * @return The path object associated with the specified path, or {@code null} if no such path is found.
+     */
+    @Override
+    public T get(String path) {
+        return path == null ? null : getCache().get(path);
+    }
+
+    /**
+     * Clears all the paths stored in the Trie.
+     */
     @Override
     public void clear() {
         matcher = null;
+    }
+
+    /**
+     * Retrieves the cache of paths, initializing it if necessary.
+     *
+     * @return The cache of paths.
+     */
+    private Map<String, T> getCache() {
+        if (cache == null) {
+            synchronized (this) {
+                if (cache == null) {
+                    Map<String, T> map = new HashMap<>();
+                    if (supplier != null) {
+                        List<T> paths = supplier.get();
+                        if (paths != null) {
+                            paths.forEach(path -> map.put(path.getPath(), path));
+                        }
+                    }
+                    cache = map;
+                }
+            }
+        }
+        return cache;
     }
 
     /**
@@ -96,16 +133,21 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
      */
     private PathMatcher<T> getMatcher() {
         if (matcher == null) {
-            PathMatcher<T> result = new PathMatcher<>(delimiter.get());
-            if (supplier != null) {
-                List<T> paths = supplier.get();
-                if (paths != null) {
-                    paths.forEach(path -> result.addPath(path.getPath(), path));
+            synchronized (this) {
+                if (matcher == null) {
+                    PathMatcher<T> result = new PathMatcher<>(delimiter.get());
+                    if (supplier != null) {
+                        List<T> paths = supplier.get();
+                        if (paths != null) {
+                            paths.forEach(path -> result.addPath(path.getPath(), path));
+                        }
+                    }
+                    matcher = result;
                 }
             }
-            matcher = result;
         }
         return matcher;
     }
 }
+
 

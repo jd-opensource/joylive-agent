@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractLimiterFactory;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
@@ -28,6 +29,7 @@ import java.util.List;
  *
  * @since 1.0.0
  */
+@Injectable
 @Extension(value = "TokenBucket")
 public class TokenBucketLimiterFactory extends AbstractLimiterFactory {
 

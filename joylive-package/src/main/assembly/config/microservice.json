@@ -35,11 +35,11 @@
               "relationType": "AND",
               "conditions": [
                 {
-                  "type": "header",
+                  "type": "query",
                   "opType": "EQUAL",
-                  "key": "x-live-ext-demo",
-                  "value": [
-                    "abc"
+                  "key": "limiter",
+                  "values": [
+                    "true"
                   ]
                 }
               ]
@@ -93,20 +93,19 @@
           "loadBalancePolicy": {
             "policyType": "ROUND_ROBIN"
           },
-          "clusterPolicy": {
-            "type": "failover",
-            "retryPolicy": {
-              "retry": 10,
-              "retryInterval": 1000,
-              "timeout": 5000,
-              "retryStatuses": [
-                500,
-                502
-              ],
-              "retryExceptions": [
-                "java.lang.NullPointException"
-              ]
-            }
+          "retryPolicy": {
+            "type": "Resilience4j",
+            "retry": 10,
+            "retryInterval": 1000,
+            "timeout": 5000,
+            "retryStatuses": [
+              500,
+              502
+            ],
+            "retryExceptions": [
+              "java.lang.NullPointException"
+            ],
+            "version": 1704038400000
           },
           "rateLimitPolicies": [
             {
@@ -129,11 +128,11 @@
               "relationType": "AND",
               "conditions": [
                 {
-                  "type": "header",
+                  "type": "query",
                   "opType": "EQUAL",
-                  "key": "x-live-ext-demo",
-                  "value": [
-                    "abc"
+                  "key": "limiter",
+                  "values": [
+                    "true"
                   ]
                 }
               ]
@@ -151,11 +150,11 @@
               "relationType": "AND",
               "conditions": [
                 {
-                  "type": "header",
+                  "type": "query",
                   "opType": "EQUAL",
-                  "key": "x-live-ext-demo",
-                  "value": [
-                    "abc"
+                  "key": "limiter",
+                  "values": [
+                    "true"
                   ]
                 }
               ]

@@ -16,9 +16,9 @@
 package com.jd.live.agent.core.util.trie;
 
 /**
- * Interface representing a Trie data structure for matching paths.
+ * Interface representing a Trie data structure for storing and retrieving paths.
  *
- * @param <T> The type of the path that extends the {@code Path} interface.
+ * @param <T> The type of path objects stored in the Trie, which must extend the {@code Path} class.
  */
 public interface PathTrie<T extends Path> {
 
@@ -31,5 +31,17 @@ public interface PathTrie<T extends Path> {
      */
     T match(String path, PathMatchType type);
 
+    /**
+     * Retrieves the path object associated with the given path.
+     *
+     * @param path The path whose associated path object is to be returned.
+     * @return The path object associated with the specified path, or {@code null} if no such path is found.
+     */
+    T get(String path);
+
+    /**
+     * Clears all the paths stored in the Trie.
+     */
     void clear();
 }
+
