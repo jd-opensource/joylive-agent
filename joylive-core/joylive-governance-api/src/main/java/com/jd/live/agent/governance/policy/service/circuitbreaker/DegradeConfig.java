@@ -34,7 +34,7 @@ public class DegradeConfig {
 
     private Map<String, String> attributes;
 
-    private Object responseBody;
+    private String responseBody;
 
     public DegradeConfig() {
     }

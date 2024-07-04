@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.bootstrap.exception;
 
+import lombok.Getter;
+
 /**
  * RejectException
  *
@@ -121,6 +123,35 @@ public class RejectException extends LiveException {
 
         public RejectLimitException(Throwable cause) {
             super(cause);
+        }
+
+    }
+
+    /**
+     * RejectCircuitBreakException
+     */
+    @Getter
+    public static class RejectCircuitBreakException extends RejectException {
+
+        private final Object degradeConfig;
+
+        public RejectCircuitBreakException(Object degradeConfig) {
+            this.degradeConfig = degradeConfig;
+        }
+
+        public RejectCircuitBreakException(String message, Object degradeConfig) {
+            super(message);
+            this.degradeConfig = degradeConfig;
+        }
+
+        public RejectCircuitBreakException(String message, Throwable cause, Object degradeConfig) {
+            super(message, cause);
+            this.degradeConfig = degradeConfig;
+        }
+
+        public RejectCircuitBreakException(Throwable cause, Object degradeConfig) {
+            super(cause);
+            this.degradeConfig = degradeConfig;
         }
 
     }

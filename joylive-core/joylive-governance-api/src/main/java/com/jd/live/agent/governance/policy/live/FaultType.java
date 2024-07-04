@@ -43,6 +43,23 @@ public enum FaultType {
         }
     },
 
+    CIRCUIT_BREAK {
+        @Override
+        public RejectException reject(String reason) {
+            return new RejectException.RejectCircuitBreakException(reason);
+        }
+
+        @Override
+        public RejectException failover(String reason) {
+            return new RejectException.RejectCircuitBreakException(reason);
+        }
+
+        @Override
+        public RejectException degrade(String reason, Object degradeConfig) {
+            return new RejectException.RejectCircuitBreakException(reason, degradeConfig);
+        }
+    },
+
     UNIT {
         @Override
         public RejectException reject(String reason) {
@@ -70,5 +87,9 @@ public enum FaultType {
     public abstract RejectException reject(String reason);
 
     public abstract RejectException failover(String reason);
+
+    public RejectException degrade(String reason, Object degradeConfig) {
+        return null;
+    }
 
 }

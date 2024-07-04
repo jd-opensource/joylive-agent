@@ -33,6 +33,7 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.List;
@@ -67,9 +68,26 @@ public class CircuitBreakerFilter implements OutboundFilter {
                 circuitBreaker = new ComposeCircuitBreaker(factories, policies, invocation);
                 invocation.setCircuitBreaker(circuitBreaker);
             }
-            if (!circuitBreaker.acquire()) {
-                invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
-                invocation.reject(FaultType.LIMIT, "The traffic circuit-breaker policy rejects the request.");
+            if (circuitBreaker instanceof ComposeCircuitBreaker) {
+                for (CircuitBreaker breaker : ((ComposeCircuitBreaker) circuitBreaker).getCircuitBreakers()) {
+                    if (!breaker.acquire()) {
+                        DegradeConfig degradeConfig = breaker.getPolicy().getDegradeConfig();
+                        if (degradeConfig == null) {
+                            invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
+                            invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
+                        } else {
+                            invocation.degrade(FaultType.CIRCUIT_BREAK, "The fuse strategy triggers a downgrade response.", degradeConfig);
+                        }
+                    }
+                }
+            } else if (!circuitBreaker.acquire()) {
+                DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
+                if (degradeConfig == null) {
+                    invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
+                    invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
+                } else {
+                    invocation.degrade(FaultType.CIRCUIT_BREAK, "The fuse strategy triggers a downgrade response.", degradeConfig);
+                }
             }
         }
         // TODO filter blocked instance

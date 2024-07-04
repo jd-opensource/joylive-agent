@@ -45,7 +45,7 @@ public abstract class Resilience4jCircuitBreakerStateListener implements Circuit
             e.setTo(convertState(stateTransitionEvent.getStateTransition().getToState()));
             onStateChange(e);
             if (logger.isDebugEnabled()) {
-                logger.debug("CircuitBreaker State transition event: from" + stateTransitionEvent.getStateTransition().getFromState()
+                logger.debug("[CircuitBreak]CircuitBreaker State transition event: from" + stateTransitionEvent.getStateTransition().getFromState()
                         + " to " + stateTransitionEvent.getStateTransition().getToState() + ", name: " + event.getCircuitBreakerName());
             }
         }

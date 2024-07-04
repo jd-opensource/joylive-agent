@@ -95,6 +95,18 @@ public interface ServiceRequest extends Request {
     }
 
     /**
+     * Initiates a degradation for the request with the given fault type and reason.
+     *
+     * @param type   The type of fault.
+     * @param reason The reason for the failover.
+     * @param degradeConfig The degrade config.
+     * @throws RuntimeException Throws a runtime exception as defined by the fault type's failover method.
+     */
+    default void degrade(FaultType type, String reason, Object degradeConfig) {
+        throw type.degrade(reason, degradeConfig);
+    }
+
+    /**
      * Defines an interface for inbound service requests.
      * <p>
      * This interface represents requests that are received by a service from a client or another service.

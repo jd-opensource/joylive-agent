@@ -15,11 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
+import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
@@ -33,9 +35,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -123,6 +125,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     @Override
     public BlockingClusterResponse createResponse(Throwable throwable, BlockingClusterRequest request, SpringEndpoint endpoint) {
+        if (throwable instanceof RejectException.RejectCircuitBreakException) {
+            DegradeConfig degradeConfig = (DegradeConfig) ((RejectException.RejectCircuitBreakException) throwable).getDegradeConfig();
+            return new BlockingClusterResponse(createResponse(request, degradeConfig));
+        }
         return new BlockingClusterResponse(createException(throwable, request, endpoint));
     }
 
@@ -156,5 +162,46 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
                 request.getLbRequest(),
                 endpoint.getResponse(),
                 clientResponse)));
+    }
+
+    public static ClientHttpResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
+        return new ClientHttpResponse() {
+            @Override
+            public HttpStatus getStatusCode() throws IOException {
+                return HttpStatus.valueOf(degradeConfig.getResponseCode());
+            }
+
+            @Override
+            public int getRawStatusCode() throws IOException {
+                return degradeConfig.getResponseCode();
+            }
+
+            @Override
+            public String getStatusText() throws IOException {
+                return degradeConfig.getResponseBody();
+            }
+
+            @Override
+            public void close() {
+
+            }
+
+            @Override
+            public InputStream getBody() throws IOException {
+                return null;
+            }
+
+            @Override
+            public HttpHeaders getHeaders() {
+                HttpHeaders headers = new HttpHeaders();
+                for (Map.Entry<String, List<String>> stringListEntry : httpRequest.getHeaders().entrySet()) {
+                    headers.addAll(stringListEntry.getKey(), stringListEntry.getValue());
+                }
+                for (Map.Entry<String, String> stringStringEntry : degradeConfig.getAttributes().entrySet()) {
+                    headers.add(stringStringEntry.getKey(), stringStringEntry.getValue());
+                }
+                return headers;
+            }
+        };
     }
 }

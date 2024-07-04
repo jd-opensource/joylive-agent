@@ -60,13 +60,13 @@ public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBrea
     public void onStateChange(CircuitBreakerStateChangeEvent event) {
         if (event.getTo() == CircuitBreakerState.OPEN) {
             if (logger.isInfoEnabled()) {
-                logger.info("[JMSF][CircuitBreakerStateListener]This resource will be degraded! resourceName={}", event.getResourceName());
+                logger.info("[CircuitBreak]This resource will be degraded! resourceName={}", event.getResourceName());
             }
             //TODO 禁用某实例
         }
         if (event.getFrom() == CircuitBreakerState.OPEN) {
             if (logger.isInfoEnabled()) {
-                logger.info("[JMSF][CircuitBreakerStateListener]This resource will be recover! resourceName={}", event.getResourceName());
+                logger.info("[CircuitBreak]This resource will be recover! resourceName={}", event.getResourceName());
             }
             //TODO 解禁某实例
         }

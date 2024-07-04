@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitLevel;
 import com.jd.live.agent.governance.request.ServiceRequest;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.1.0
  */
+@Getter
 public class ComposeCircuitBreaker extends AbstractCircuitBreaker {
 
     private final List<CircuitBreaker> circuitBreakers = new ArrayList<>();

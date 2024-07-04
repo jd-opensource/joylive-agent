@@ -220,6 +220,17 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     }
 
     /**
+     * Initiates a degradation for the request with a specified fault type and reason.
+     *
+     * @param type          The type of fault.
+     * @param reason        The reason for the failover.
+     * @param degradeConfig The degrade config.
+     */
+    public void degrade(FaultType type, String reason, Object degradeConfig) {
+        request.degrade(type, reason, degradeConfig);
+    }
+
+    /**
      * Publishes a live event to a specified publisher using a configured live event builder.
      *
      * @param publisher The publisher to which the live event will be offered.
