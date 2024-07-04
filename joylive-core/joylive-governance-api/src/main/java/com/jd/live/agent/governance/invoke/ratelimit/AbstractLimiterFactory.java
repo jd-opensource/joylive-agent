@@ -81,13 +81,13 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
     private void recycle(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
         AtomicReference<RateLimiter> ref = rateLimiters.get(policy.getId());
         RateLimiter limiter = ref == null ? null : ref.get();
-        if (limiter != null) {
+        if (limiter != null && serviceFunc != null) {
             String serviceName = policy.getTag(PolicyId.KEY_SERVICE_NAME);
             String serviceGroup = policy.getTag(PolicyId.KEY_SERVICE_GROUP);
             String servicePath = policy.getTag(PolicyId.KEY_SERVICE_PATH);
             String serviceMethod = policy.getTag(PolicyId.KEY_SERVICE_METHOD);
 
-            Service service = serviceFunc == null ? null : serviceFunc.apply(serviceName);
+            Service service = serviceFunc.apply(serviceName);
             ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
             ServicePath path = group == null ? null : group.getPath(servicePath);
             ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
