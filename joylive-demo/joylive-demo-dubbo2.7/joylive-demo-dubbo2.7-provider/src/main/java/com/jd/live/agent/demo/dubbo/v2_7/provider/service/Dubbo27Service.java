@@ -36,4 +36,15 @@ public class Dubbo27Service implements HelloService {
         return new LiveResponse(str).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("attachment", context::getAttachment)));
     }
+
+    @Override
+    public LiveResponse status(int code) {
+        if (code >= 500) {
+            throw new RuntimeException("Code:" + code);
+        }
+        RpcContext context = RpcContext.getContext();
+        return new LiveResponse(code).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("attachment", context::getAttachment)));
+    }
+
 }

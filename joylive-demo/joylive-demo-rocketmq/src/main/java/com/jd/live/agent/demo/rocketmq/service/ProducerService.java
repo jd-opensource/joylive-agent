@@ -36,4 +36,9 @@ public class ProducerService implements HelloService {
     public LiveResponse echo(String str) {
         return rocketMQTemplate.sendAndReceive(mqConfig.getTopic(), str, LiveResponse.class, 10000);
     }
+
+    @Override
+    public LiveResponse status(int code) {
+        return rocketMQTemplate.sendAndReceive(mqConfig.getTopic(), code, LiveResponse.class, 10000);
+    }
 }
