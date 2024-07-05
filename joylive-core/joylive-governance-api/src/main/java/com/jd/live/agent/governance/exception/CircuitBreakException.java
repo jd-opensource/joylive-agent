@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.exception;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
-import lombok.Getter;
 
 /**
  * CircuitBreakException

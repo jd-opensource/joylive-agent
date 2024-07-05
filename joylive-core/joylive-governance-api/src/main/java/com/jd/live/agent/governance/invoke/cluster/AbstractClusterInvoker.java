@@ -38,7 +38,7 @@ import java.util.function.Predicate;
  * handling failures, and integrating with different cluster strategies.
  * <p>
  * Implementations must define how exceptions are handled by overriding the
- * {@link #onException(Throwable, OutboundRequest, Endpoint, LiveCluster, CompletableFuture)}
+ * {@link #onException(Throwable, OutboundRequest, Endpoint, LiveCluster, OutboundInvocation, CompletableFuture)}
  * method.
  */
 public abstract class AbstractClusterInvoker implements ClusterInvoker {
