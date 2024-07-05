@@ -17,8 +17,6 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * CircuitBreaker
  *
@@ -38,30 +36,18 @@ public interface CircuitBreaker {
     /**
      * Records a failed call. This method must be invoked when a call failed.
      *
-     * @param duration     The elapsed time duration of the call
-     * @param durationUnit The duration unit
+     * @param durationInMs The elapsed time duration of the call
      * @param throwable    The throwable which must be recorded
      */
-    void onError(long duration, TimeUnit durationUnit, Throwable throwable);
+    void onError(long durationInMs, Throwable throwable);
 
     /**
      * Records a successful call. This method must be invoked when a call was
      * successful.
      *
-     * @param duration     The elapsed time duration of the call
-     * @param durationUnit The duration unit
+     * @param durationInMs The elapsed time duration of the call
      */
-    void onSuccess(long duration, TimeUnit durationUnit);
-
-    /**
-     * This method must be invoked when a call returned a result
-     * and the result predicate should decide if the call was successful or not.
-     *
-     * @param duration     The elapsed time duration of the call
-     * @param durationUnit The duration unit
-     * @param result       The result of the protected function
-     */
-    void onResult(long duration, TimeUnit durationUnit, Object result);
+    void onSuccess(long durationInMs);
 
     /**
      * Register a listener to watch state change event.

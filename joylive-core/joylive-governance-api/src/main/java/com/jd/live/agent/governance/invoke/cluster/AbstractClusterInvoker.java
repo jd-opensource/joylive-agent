@@ -29,7 +29,6 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -123,12 +122,12 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                 onException(o.getThrowable(), request, instance, cluster, invocation, result);
                             } else {
                                 if (circuitBreaker != null) {
-                                    if (circuitBreaker.getPolicy().getErrorCodes() != null && circuitBreaker.getPolicy().getErrorCodes().contains(o.getCode())) {
+                                    if (circuitBreaker.getPolicy().getErrorCodes() != null
+                                            && circuitBreaker.getPolicy().getErrorCodes().contains(o.getCode())) {
                                         circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(),
-                                                TimeUnit.MILLISECONDS, new CircuitBreakException("Exception of fuse response code"));
+                                                new CircuitBreakException("Exception of fuse response code"));
                                     } else {
-                                        circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS);
-                                        circuitBreaker.onResult(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, o);
+                                        circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime());
                                     }
                                 }
                                 cluster.onSuccess(o, request, instance);
@@ -185,7 +184,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   CompletableFuture<O> result) {
         CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
         if (circuitBreaker != null) {
-            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, throwable);
+            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), throwable);
         }
         O response = cluster.createResponse(throwable, request, endpoint);
         // avoid the live exception class is not recognized in application classloader

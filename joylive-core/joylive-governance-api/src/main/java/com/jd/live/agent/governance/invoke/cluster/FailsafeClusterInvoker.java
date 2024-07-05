@@ -28,7 +28,6 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A {@code ClusterInvoker} that implements the failsafe (or fail-silent) invocation strategy.
@@ -69,7 +68,7 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
                                                   CompletableFuture<O> result) {
         CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
         if (circuitBreaker != null) {
-            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, throwable);
+            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), throwable);
         }
         logger.error("Failsafe ignore exception: " + throwable.getMessage(), throwable);
         O response = cluster.createResponse(null, request, null);

@@ -153,6 +153,5 @@ public class RejectException extends LiveException {
             super(cause);
             this.degradeConfig = degradeConfig;
         }
-
     }
 }

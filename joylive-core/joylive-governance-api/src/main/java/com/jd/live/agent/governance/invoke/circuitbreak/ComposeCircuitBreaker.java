@@ -24,7 +24,6 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * ComposeCircuitBreaker
@@ -74,15 +73,14 @@ public class ComposeCircuitBreaker extends AbstractCircuitBreaker {
     /**
      * Records a failed call. This method must be invoked when a call failed.
      *
-     * @param duration     The elapsed time duration of the call
-     * @param durationUnit The duration unit
+     * @param durationInMs The elapsed time duration of the call
      * @param throwable    The throwable which must be recorded
      */
     @Override
-    public void onError(long duration, TimeUnit durationUnit, Throwable throwable) {
+    public void onError(long durationInMs, Throwable throwable) {
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
             if (null != circuitBreaker) {
-              circuitBreaker.onError(duration, durationUnit, throwable);
+                circuitBreaker.onError(durationInMs, throwable);
             }
         }
     }
@@ -91,31 +89,13 @@ public class ComposeCircuitBreaker extends AbstractCircuitBreaker {
      * Records a successful call. This method must be invoked when a call was
      * successful.
      *
-     * @param duration     The elapsed time duration of the call
-     * @param durationUnit The duration unit
+     * @param durationInMs The elapsed time duration of the call
      */
     @Override
-    public void onSuccess(long duration, TimeUnit durationUnit) {
+    public void onSuccess(long durationInMs) {
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
             if (null != circuitBreaker) {
-                circuitBreaker.onSuccess(duration, durationUnit);
-            }
-        }
-    }
-
-    /**
-     * This method must be invoked when a call returned a result
-     * and the result predicate should decide if the call was successful or not.
-     *
-     * @param duration     The elapsed time duration of the call
-     * @param durationUnit The duration unit
-     * @param result       The result of the protected function
-     */
-    @Override
-    public void onResult(long duration, TimeUnit durationUnit, Object result) {
-        for (CircuitBreaker circuitBreaker : circuitBreakers) {
-            if (null != circuitBreaker) {
-                circuitBreaker.onResult(duration, durationUnit, result);
+                circuitBreaker.onSuccess(durationInMs);
             }
         }
     }
