@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 
+import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
@@ -41,7 +42,8 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
     @Override
     public CircuitBreaker create(CircuitBreakerPolicy policy) {
         CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
-                .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.TIME_BASED)
+                .slidingWindowType(policy.getSlidingWindowType().equalsIgnoreCase("time") ?
+                        CircuitBreakerConfig.SlidingWindowType.TIME_BASED : CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
                 .slidingWindowSize(policy.getSlidingWindowSize())
                 .minimumNumberOfCalls(policy.getMinCallsThreshold())
                 .failureRateThreshold(policy.getFailureRateThreshold())
@@ -49,6 +51,7 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold()))
                 .waitDurationInOpenState(Duration.ofMillis(policy.getWaitDurationInOpenState()))
                 .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
+                .recordException(exception -> exception instanceof RejectException.RejectCircuitBreakException)
                 .build();
         io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(policy.getName());
         CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, cb);
@@ -57,4 +60,5 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
         }
         return circuitBreaker;
     }
+
 }

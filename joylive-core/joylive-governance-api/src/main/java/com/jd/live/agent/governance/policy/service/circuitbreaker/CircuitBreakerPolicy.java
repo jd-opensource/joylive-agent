@@ -52,7 +52,7 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     private CircuitLevel level = CircuitLevel.INSTANCE;
 
     /**
-     * Sliding window type (statistical window type): Count, time
+     * Sliding window type (statistical window type): count, time
      */
     private String slidingWindowType = "time";
 
