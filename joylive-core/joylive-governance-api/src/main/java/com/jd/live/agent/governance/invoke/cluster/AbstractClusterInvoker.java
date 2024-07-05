@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.instance.AppStatus;
+import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -122,10 +123,14 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                 onException(o.getThrowable(), request, instance, cluster, invocation, result);
                             } else {
                                 if (circuitBreaker != null) {
-                                    circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS);
-                                    circuitBreaker.onResult(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, o);
+                                    if (circuitBreaker.getPolicy().getErrorCodes() != null && circuitBreaker.getPolicy().getErrorCodes().contains(o.getCode())) {
+                                        circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(),
+                                                TimeUnit.MILLISECONDS, new CircuitBreakException("Exception of fuse response code"));
+                                    } else {
+                                        circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS);
+                                        circuitBreaker.onResult(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, o);
+                                    }
                                 }
-                                //TODO 解析结果，匹配自定义异常码
                                 cluster.onSuccess(o, request, instance);
                                 result.complete(o);
                             }
