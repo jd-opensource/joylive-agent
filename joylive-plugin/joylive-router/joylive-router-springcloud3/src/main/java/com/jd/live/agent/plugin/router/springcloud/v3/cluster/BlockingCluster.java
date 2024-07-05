@@ -35,8 +35,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -178,7 +180,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
             @Override
             public String getStatusText() throws IOException {
-                return degradeConfig.getResponseBody();
+                return null;
             }
 
             @Override
@@ -188,6 +190,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
             @Override
             public InputStream getBody() throws IOException {
+                String responseBody = degradeConfig.getResponseBody();
+                if (responseBody != null && !responseBody.isEmpty()) {
+                    return new ByteArrayInputStream(responseBody.getBytes(StandardCharsets.UTF_8));
+                }
                 return null;
             }
 
