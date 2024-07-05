@@ -37,6 +37,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(null);
                 oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setCircuitBreakerPolicies(null);
                 oldPolicy.setLivePolicy(null);
             }
         }
@@ -49,6 +50,7 @@ public enum MergePolicy implements PolicyMerger {
             oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
             oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
             oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+            oldPolicy.setCircuitBreakerPolicies(newPolicy.getCircuitBreakerPolicies());
             oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
         }
     },
@@ -74,6 +76,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(null);
                 oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setCircuitBreakerPolicies(null);
             }
         }
 
@@ -86,6 +89,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
                 oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+                oldPolicy.setCircuitBreakerPolicies(newPolicy.getCircuitBreakerPolicies());
             }
         }
     },
@@ -102,6 +106,7 @@ public enum MergePolicy implements PolicyMerger {
             newPolicy.setLoadBalancePolicy(null);
             newPolicy.setConcurrencyLimitPolicies(null);
             newPolicy.setRateLimitPolicies(null);
+            newPolicy.setCircuitBreakerPolicies(null);
         }
 
         @Override
