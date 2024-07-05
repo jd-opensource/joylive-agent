@@ -121,8 +121,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                             } else if (o.getThrowable() != null) {
                                 onException(o.getThrowable(), request, instance, cluster, invocation, result);
                             } else {
-                                circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS);
-                                circuitBreaker.onResult(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, o);
+                                if (circuitBreaker != null) {
+                                    circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS);
+                                    circuitBreaker.onResult(System.currentTimeMillis() - invocation.getStartTime(), TimeUnit.MILLISECONDS, o);
+                                }
+                                //TODO 解析结果，匹配自定义异常码
                                 cluster.onSuccess(o, request, instance);
                                 result.complete(o);
                             }

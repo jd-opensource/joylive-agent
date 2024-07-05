@@ -57,4 +57,12 @@ public class EchoController {
         return response;
     }
 
+    @GetMapping({"/status-rest/{code}"})
+    public LiveResponse statusRest(@PathVariable int code, HttpServletRequest request) {
+        LiveResponse response = restService.status(code);
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return response;
+    }
+
 }

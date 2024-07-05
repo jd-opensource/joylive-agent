@@ -32,4 +32,9 @@ public class RestService implements HelloService {
     public LiveResponse echo(String str) {
         return restTemplate.getForObject("http://service-provider/echo/" + str, LiveResponse.class);
     }
+
+    @Override
+    public LiveResponse status(int code) {
+        return restTemplate.getForObject("http://service-provider/status/" + code, LiveResponse.class);
+    }
 }

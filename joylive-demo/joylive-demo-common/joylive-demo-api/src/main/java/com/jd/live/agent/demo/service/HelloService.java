@@ -20,4 +20,6 @@ import com.jd.live.agent.demo.response.LiveResponse;
 public interface HelloService {
 
     LiveResponse echo(String str);
+
+    LiveResponse status(int code);
 }

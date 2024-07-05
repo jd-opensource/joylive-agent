@@ -284,6 +284,32 @@
                 }
               ]
             }
+          ],
+          "circuitBreakerPolicies": [
+            {
+              "name": "cb1",
+              "level": "SERVICE",
+              "slidingWindowSize": 2,
+              "minCallsThreshold": 1,
+              "errorCodes": [
+                "500",
+                "502"
+              ],
+              "failureRateThreshold": 20,
+              "slowCallRateThreshold": 20,
+              "slowCallDurationThreshold": 1000,
+              "waitDurationInOpenState": 5000,
+              "allowedCallsInHalfOpenState": 3,
+              "degradeConfig": {
+                "responseCode": 200,
+                "attributes": {
+                  "degrade-header-1": "degraded1",
+                  "degrade-header-2": "degraded2"
+                },
+                "responseBody": "Hello, your request has been downgraded."
+              },
+              "version": 1704038400000
+            }
           ]
         },
         "paths": [

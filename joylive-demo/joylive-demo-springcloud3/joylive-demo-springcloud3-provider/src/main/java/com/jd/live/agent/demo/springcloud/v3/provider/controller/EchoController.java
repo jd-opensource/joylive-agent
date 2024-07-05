@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -48,4 +49,14 @@ public class EchoController {
                 LiveTransmission.build("header", request::getHeader)));
         return response;
     }
+
+    @GetMapping("/status/{code}")
+    public synchronized LiveResponse status(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) {
+        response.setStatus(code);
+        LiveResponse lr = new LiveResponse(code);
+        lr.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
+        return lr;
+    }
+
 }
