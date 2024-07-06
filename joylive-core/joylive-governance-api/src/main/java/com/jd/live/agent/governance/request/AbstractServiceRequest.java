@@ -22,13 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Provides an abstract base class for service requests.
- * <p>
- * This class encapsulates the fundamental behaviors and properties shared by all service requests,
- * including storage of the original request object and tracking of attempt identifiers. It defines
- * methods for accessing the original request, managing attempt identifiers, and adding new attempts.
- * </p>
- *
+ * Provides an abstract base class for service requests.*
  * @param <T> The type of the original request object this class wraps.
  */
 @Getter
@@ -46,14 +40,35 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
     protected Set<String> attempts;
 
     /**
+     * The timestamp when the service request was created.
+     */
+    protected long startTime;
+
+    /**
      * Constructs an instance of {@code AbstractServiceRequest} with the original request object.
      *
-     * @param request The original request object.
+     * <p>This constructor initializes the {@code request} field and sets the {@code startTime}
+     * to the current system time.
+     *
+     * @param request The original request object. Cannot be null.
+     * @throws IllegalArgumentException if the request is null.
      */
     public AbstractServiceRequest(T request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
         this.request = request;
+        this.startTime = System.currentTimeMillis();
     }
 
+    /**
+     * Adds an attempt identifier to the set of attempts.
+     *
+     * <p>This method is used to record an attempt made in the context of this service request.
+     * If the {@code attempts} set is null, it initializes the set before adding the attempt.
+     *
+     * @param attempt The identifier of the attempt to be added. If null, the method does nothing.
+     */
     public void addAttempt(String attempt) {
         if (attempt != null) {
             if (attempts == null) {
@@ -63,3 +78,4 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
         }
     }
 }
+

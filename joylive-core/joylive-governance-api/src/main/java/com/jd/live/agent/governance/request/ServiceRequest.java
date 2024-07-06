@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.governance.policy.live.FaultType;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 
 import java.util.Set;
 
@@ -59,6 +60,23 @@ public interface ServiceRequest extends Request {
     String getPath();
 
     /**
+     * Returns the start time.
+     *
+     * @return the start time in milliseconds since the epoch (January 1, 1970, 00:00:00 GMT).
+     */
+    long getStartTime();
+
+    /**
+     * Calculates the duration from the start time to the current time.
+     * This is a default method that uses the {@link #getStartTime()} method to determine the start time.
+     *
+     * @return the duration in milliseconds from the start time to the current time.
+     */
+    default long getDuration() {
+        return System.currentTimeMillis() - this.getStartTime();
+    }
+
+    /**
      * Indicates whether the invocation is performed asynchronously.
      * <p>
      * This default implementation returns {@code false}, indicating that the invocation is
@@ -99,11 +117,11 @@ public interface ServiceRequest extends Request {
      *
      * @param type   The type of fault.
      * @param reason The reason for the failover.
-     * @param degradeConfig The degrade config.
+     * @param config The degrade config.
      * @throws RuntimeException Throws a runtime exception as defined by the fault type's failover method.
      */
-    default void degrade(FaultType type, String reason, Object degradeConfig) {
-        throw type.degrade(reason, degradeConfig);
+    default void degrade(FaultType type, String reason, DegradeConfig config) {
+        throw type.degrade(reason, config);
     }
 
     /**

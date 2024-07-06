@@ -16,80 +16,119 @@
 package com.jd.live.agent.governance.policy.live;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 
+/**
+ * Enumeration representing different types of faults that can occur.
+ */
 public enum FaultType {
 
+    /**
+     * Represents a state where the system is not ready.
+     */
     UNREADY {
         @Override
         public RejectException reject(String reason) {
-            return new RejectException.RejectCellException();
+            return new RejectCellException();
         }
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectException.RejectCellException();
+            return new RejectCellException();
         }
     },
 
+    /**
+     * Represents a state where a limit has been reached.
+     */
     LIMIT {
         @Override
         public RejectException reject(String reason) {
-            return new RejectException.RejectLimitException(reason);
+            return new RejectLimitException(reason);
         }
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectException.RejectLimitException(reason);
+            return new RejectLimitException(reason);
         }
     },
 
+    /**
+     * Represents a state where a circuit break has occurred.
+     */
     CIRCUIT_BREAK {
         @Override
         public RejectException reject(String reason) {
-            return new RejectException.RejectCircuitBreakException(reason);
+            return new RejectCircuitBreakException(reason);
         }
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectException.RejectCircuitBreakException(reason);
+            return new RejectCircuitBreakException(reason);
         }
 
         @Override
-        public RejectException degrade(String reason, Object degradeConfig) {
-            return new RejectException.RejectCircuitBreakException(reason, degradeConfig);
+        public RejectException degrade(String reason, DegradeConfig config) {
+            return new RejectCircuitBreakException(reason, config);
         }
     },
 
+    /**
+     * Represents a state where a unit fault has occurred.
+     */
     UNIT {
         @Override
         public RejectException reject(String reason) {
-            return new RejectException.RejectUnitException(reason);
+            return new RejectUnitException(reason);
         }
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectException.RejectEscapeException(reason);
+            return new RejectEscapeException(reason);
         }
     },
 
+    /**
+     * Represents a state where a cell fault has occurred.
+     */
     CELL {
+
         @Override
         public RejectException reject(String reason) {
-            return new RejectException.RejectCellException();
+            return new RejectCellException();
         }
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectException.RejectCellException();
+            return new RejectCellException();
         }
     };
 
+    /**
+     * Rejects the request with a specific exception.
+     *
+     * @param reason the reason for rejection
+     * @return a {@link RejectException}
+     */
     public abstract RejectException reject(String reason);
 
+    /**
+     * Fails over the request with a specific exception.
+     *
+     * @param reason the reason for failover
+     * @return a {@link RejectException}
+     */
     public abstract RejectException failover(String reason);
 
-    public RejectException degrade(String reason, Object degradeConfig) {
+    /**
+     * Degrades the request with a specific exception.
+     *
+     * @param reason the reason for degradation
+     * @param config the configuration for degradation
+     * @return a {@link RejectException}, or {@code null} if not supported
+     */
+    public RejectException degrade(String reason, DegradeConfig config) {
         return null;
     }
-
 }

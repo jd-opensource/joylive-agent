@@ -19,7 +19,6 @@ import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.OutboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.RpcOutboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LiveParser;
@@ -58,16 +57,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     private RouteTarget routeTarget;
 
     /**
-     * Compose circuit breaker
-     */
-    private CircuitBreaker circuitBreaker;
-
-    /**
-     * Outbound request start time
-     */
-    private final long startTime;
-
-    /**
      * Constructs an OutboundInvocation with a request and invocation context.
      *
      * @param request the request associated with this invocation
@@ -75,7 +64,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      */
     public OutboundInvocation(T request, InvocationContext context) {
         super(request, context);
-        this.startTime = System.currentTimeMillis();
     }
 
     /**
@@ -92,7 +80,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         this.laneMetadata = invocation.getLaneMetadata();
         ServiceParser serviceParser = createServiceParser();
         this.serviceMetadata = serviceParser.configure(serviceParser.parse(), liveMetadata.getUnitRule());
-        this.startTime = System.currentTimeMillis();
     }
 
     @Override

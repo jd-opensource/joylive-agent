@@ -17,11 +17,9 @@ package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.instance.AppStatus;
-import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -58,14 +56,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * Invokes a service method on a cluster of endpoints. This method handles the routing of the
      * request to the appropriate endpoint(s) based on the cluster strategy and an optional predicate
      * that can further refine the selection of endpoints or influence the routing decision.
-     * <p>
-     * If the predicate is provided and evaluates to true for the given request, or if no specific
-     * instances are provided for routing, the method will query the cluster to determine the suitable
-     * endpoints. If the predicate is null, not provided, or evaluates to false, and specific instances
-     * are provided, those instances will be used directly for the invocation.
-     * <p>
-     * The method then attempts to invoke the service on the selected endpoint. If the invocation
-     * fails, {@link #onException} is called to handle the exception.
      *
      * @param <R>        The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
@@ -109,7 +99,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 E endpoint = null;
                 try {
                     List<? extends Endpoint> endpoints = context.route(invocation, v);
-                    CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
                     boolean empty = endpoints == null || endpoints.isEmpty();
                     if (!empty || !request.isInstanceSensitive()) {
                         endpoint = empty ? null : (E) endpoints.get(0);
@@ -121,17 +110,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                             } else if (o.getThrowable() != null) {
                                 onException(o.getThrowable(), request, instance, cluster, invocation, result);
                             } else {
-                                if (circuitBreaker != null) {
-                                    if (circuitBreaker.getPolicy().getErrorCodes() != null
-                                            && circuitBreaker.getPolicy().getErrorCodes().contains(o.getCode())) {
-                                        circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(),
-                                                new CircuitBreakException("Exception of fuse response code"));
-                                    } else {
-                                        circuitBreaker.onSuccess(System.currentTimeMillis() - invocation.getStartTime());
-                                    }
-                                }
-                                cluster.onSuccess(o, request, instance);
-                                result.complete(o);
+                                onSuccess(cluster, invocation, o, request, instance, result);
                             }
                         });
                     } else {
@@ -140,7 +119,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 } catch (RejectException e) {
                     onException(cluster.createRejectException(e, request), request, endpoint, cluster, invocation, result);
                 } catch (Throwable e) {
-                    onException(e, request, null, cluster, invocation, result);
+                    onException(e, request, endpoint, cluster, invocation, result);
                 }
             } else {
                 onException(t, request, null, cluster, invocation, result);
@@ -150,14 +129,37 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     }
 
     /**
+     * Handles a successful request response.
+     *
+     * @param <R>        the type of the outbound request
+     * @param <O>        the type of the outbound response
+     * @param <E>        the type of the endpoint
+     * @param <T>        the type of the throwable
+     * @param cluster    the live cluster instance representing the current active cluster
+     * @param invocation the outbound invocation instance representing the outbound call
+     * @param response   the instance representing the outbound response
+     * @param request    the instance representing the outbound request
+     * @param instance   the endpoint instance representing the endpoint
+     * @param result     the CompletableFuture instance representing the result of an asynchronous computation
+     */
+    protected <R extends OutboundRequest,
+            O extends OutboundResponse,
+            E extends Endpoint,
+            T extends Throwable> void onSuccess(LiveCluster<R, O, E, T> cluster,
+                                                OutboundInvocation<R> invocation,
+                                                O response,
+                                                R request,
+                                                E instance,
+                                                CompletableFuture<O> result) {
+        invocation.onSuccess(request, response);
+        cluster.onSuccess(response, request, instance);
+        result.complete(response);
+    }
+
+    /**
      * Handles exceptions that occur during the invocation process. Subclasses must implement this
      * method to define custom exception handling logic, which may include logging, retrying the
      * invocation, or failing the request.
-     * <p>
-     * This method is a critical component of the invoker's fault tolerance mechanism. It allows
-     * implementers to respond to exceptions in a way that aligns with their specific requirements
-     * and the characteristics of the cluster.
-     * </p>
      *
      * @param <R>        The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
@@ -182,10 +184,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
-        CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
-        if (circuitBreaker != null) {
-            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), throwable);
-        }
+        invocation.onFailure(request, throwable);
         O response = cluster.createResponse(throwable, request, endpoint);
         // avoid the live exception class is not recognized in application classloader
         cluster.onError(response.getThrowable(), request, endpoint);

@@ -35,10 +35,14 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.response.ServiceResponse;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +54,7 @@ import java.util.Map;
  *
  * @param <T> the type of service request this invocation is handling
  */
-public abstract class Invocation<T extends ServiceRequest> implements Matcher<TagCondition> {
+public abstract class Invocation<T extends ServiceRequest> implements RequestListener, Matcher<TagCondition> {
 
     public static final String FAILOVER_UNIT_NOT_ACCESSIBLE = "failover when unit is not accessible.";
     public static final String REJECT_NO_UNIT = "reject when local unit is not found.";
@@ -84,6 +88,8 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
 
     @Getter
     protected LaneMetadata laneMetadata;
+
+    protected List<RequestListener> listeners;
 
     /**
      * The policy id for this invocation
@@ -222,12 +228,42 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     /**
      * Initiates a degradation for the request with a specified fault type and reason.
      *
-     * @param type          The type of fault.
-     * @param reason        The reason for the failover.
-     * @param degradeConfig The degrade config.
+     * @param type   The type of fault.
+     * @param reason The reason for the failover.
+     * @param config The degrade config.
      */
-    public void degrade(FaultType type, String reason, Object degradeConfig) {
-        request.degrade(type, reason, degradeConfig);
+    public void degrade(FaultType type, String reason, DegradeConfig config) {
+        request.degrade(type, reason, config);
+    }
+
+    /**
+     * Adds a {@link RequestListener} to the list of listeners.
+     *
+     * @param listener the {@link RequestListener} to add, if it is not null
+     */
+    public void addListener(RequestListener listener) {
+        if (listener != null) {
+            if (listeners == null) {
+                listeners = new ArrayList<>();
+            }
+            listeners.add(listener);
+        }
+    }
+
+    @Override
+    public void onSuccess(ServiceRequest request, ServiceResponse response) {
+        // TODO publish event in this method, include traffic event
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onSuccess(request, response));
+        }
+    }
+
+    @Override
+    public void onFailure(ServiceRequest request, Throwable throwable) {
+        // TODO publish event in this method, include traffic event
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onFailure(request, throwable));
+        }
     }
 
     /**

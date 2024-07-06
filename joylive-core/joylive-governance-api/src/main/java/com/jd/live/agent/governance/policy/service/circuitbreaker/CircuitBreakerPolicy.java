@@ -118,4 +118,8 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
             degradeConfig = new DegradeConfig(source.getDegradeConfig());
         }
     }
+
+    public boolean containsError(String errorCode) {
+        return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
+    }
 }

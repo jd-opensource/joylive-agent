@@ -21,7 +21,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -66,11 +65,9 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
-        CircuitBreaker circuitBreaker = invocation.getCircuitBreaker();
-        if (circuitBreaker != null) {
-            circuitBreaker.onError(System.currentTimeMillis() - invocation.getStartTime(), throwable);
-        }
         logger.error("Failsafe ignore exception: " + throwable.getMessage(), throwable);
+        // TODO Whether to fuse
+        invocation.onFailure(request, throwable);
         O response = cluster.createResponse(null, request, null);
         cluster.onSuccess(response, request, endpoint);
         result.complete(response);
