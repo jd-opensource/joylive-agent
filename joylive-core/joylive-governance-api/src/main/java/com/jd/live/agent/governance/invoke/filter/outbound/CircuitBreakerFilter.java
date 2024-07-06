@@ -130,8 +130,10 @@ public class CircuitBreakerFilter implements OutboundFilter {
 
         @Override
         public void onFailure(ServiceRequest request, Throwable throwable) {
-            for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                circuitBreaker.onError(request.getDuration(), throwable);
+            if (!(throwable instanceof CircuitBreakException)) {
+                for (CircuitBreaker circuitBreaker : circuitBreakers) {
+                    circuitBreaker.onError(request.getDuration(), throwable);
+                }
             }
         }
     }
