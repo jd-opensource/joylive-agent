@@ -21,7 +21,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * CircuitBreakerPolicy
@@ -102,9 +104,14 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     private DegradeConfig degradeConfig;
 
     /**
-     * The version of the policy.
+     * The version of the policy
      */
     private long version;
+
+    /**
+     * Map of temporarily blocked endpoints, key is endpoint id and value is the end time of block
+     */
+    private Map<String, Long> blockedEndpoints = new ConcurrentHashMap<>();
 
     @Override
     public void supplement(CircuitBreakerPolicy source) {
@@ -122,4 +129,5 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     public boolean containsError(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
     }
+
 }

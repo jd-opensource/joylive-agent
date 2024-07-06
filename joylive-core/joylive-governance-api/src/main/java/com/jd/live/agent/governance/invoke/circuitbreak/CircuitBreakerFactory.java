@@ -41,4 +41,14 @@ public interface CircuitBreakerFactory {
      */
     CircuitBreaker get(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc);
 
+    /**
+     * Retrieves a new instance of a {@link CircuitBreaker} based on the provided
+     * circuit breaker policy.
+     *
+     * @param policy      the policy that defines the circuit breaker rules.
+     * @param resourceKey the resourceKey of the circuit breaker.
+     * @param serviceFunc A function that provides service.
+     * @return a new instance of a circuit breaker configured according to the policy.
+     */
+    CircuitBreaker get(CircuitBreakerPolicy policy, String resourceKey, Function<String, Service> serviceFunc);
 }

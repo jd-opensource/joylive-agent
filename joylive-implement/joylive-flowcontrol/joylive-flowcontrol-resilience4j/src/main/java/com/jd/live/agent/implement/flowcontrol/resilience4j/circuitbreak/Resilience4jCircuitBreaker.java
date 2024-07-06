@@ -31,6 +31,8 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
 
     private final io.github.resilience4j.circuitbreaker.CircuitBreaker delegate;
 
+    private String resourceKey;
+
     public Resilience4jCircuitBreaker(CircuitBreakerPolicy policy,
                                       io.github.resilience4j.circuitbreaker.CircuitBreaker delegate) {
         super(policy);
@@ -51,7 +53,7 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
      * Records a successful call. This method must be invoked when a call was
      * successful.
      *
-     * @param durationInMs     The elapsed time duration of the call
+     * @param durationInMs The elapsed time duration of the call
      */
     @Override
     public void onSuccess(long durationInMs) {
@@ -61,7 +63,7 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
     /**
      * Records a failed call. This method must be invoked when a call failed.
      *
-     * @param durationInMs     The elapsed time duration of the call
+     * @param durationInMs The elapsed time duration of the call
      * @param throwable    The throwable which must be recorded
      */
     @Override
@@ -80,4 +82,25 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
             this.delegate.getEventPublisher().onStateTransition((EventConsumer) listener);
         }
     }
+
+    /**
+     * Get resource key
+     *
+     * @return Resource key
+     */
+    @Override
+    public String getResourceKey() {
+        return resourceKey;
+    }
+
+    /**
+     * Set resource key
+     *
+     * @param resourceKey Resource key
+     */
+    @Override
+    public void setResourceKey(String resourceKey) {
+        this.resourceKey = resourceKey;
+    }
+
 }

@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateChangeEvent;
+import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
 /**
  * InstanceCircuitBreakerStateListener
@@ -29,20 +30,13 @@ public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBrea
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceCircuitBreakerStateListener.class);
 
-    private final String name;
+    private final CircuitBreakerPolicy policy;
 
-    public InstanceCircuitBreakerStateListener(String name) {
-        this.name = name;
-    }
+    private final String instanceId;
 
-    /**
-     * Return a name for listener
-     *
-     * @return name string
-     */
-    @Override
-    public String getName() {
-        return name;
+    public InstanceCircuitBreakerStateListener(CircuitBreakerPolicy policy, String instanceId) {
+        this.policy = policy;
+        this.instanceId = instanceId;
     }
 
     /**
@@ -62,13 +56,13 @@ public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBrea
             if (logger.isInfoEnabled()) {
                 logger.info("[CircuitBreak]This resource will be degraded! resourceName={}", event.getResourceName());
             }
-            //TODO 禁用某实例
+            policy.getBlockedEndpoints().put(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
         }
         if (event.getFrom() == CircuitBreakerState.OPEN) {
             if (logger.isInfoEnabled()) {
                 logger.info("[CircuitBreak]This resource will be recover! resourceName={}", event.getResourceName());
             }
-            //TODO 解禁某实例
+            policy.getBlockedEndpoints().remove(instanceId);
         }
     }
 }

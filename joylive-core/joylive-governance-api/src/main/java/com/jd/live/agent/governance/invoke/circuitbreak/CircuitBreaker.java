@@ -42,8 +42,7 @@ public interface CircuitBreaker {
     void onError(long durationInMs, Throwable throwable);
 
     /**
-     * Records a successful call. This method must be invoked when a call was
-     * successful.
+     * Records a successful call. This method must be invoked when a call was successful.
      *
      * @param durationInMs The elapsed time duration of the call
      */
@@ -62,4 +61,22 @@ public interface CircuitBreaker {
      * @return policy
      */
     CircuitBreakerPolicy getPolicy();
+
+    /**
+     * Get resource key
+     *
+     * @return Resource key
+     */
+    default String getResourceKey() {
+        return null;
+    }
+
+    /**
+     * Set resource key
+     *
+     * @param resourceKey Resource key
+     */
+    default void setResourceKey(String resourceKey) {
+    }
+
 }

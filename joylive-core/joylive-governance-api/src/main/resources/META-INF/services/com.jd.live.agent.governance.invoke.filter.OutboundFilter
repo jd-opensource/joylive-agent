@@ -9,3 +9,4 @@ com.jd.live.agent.governance.invoke.filter.outbound.HealthyFilter
 com.jd.live.agent.governance.invoke.filter.outbound.StickyFilter
 com.jd.live.agent.governance.invoke.filter.outbound.VirtualFilter
 com.jd.live.agent.governance.invoke.filter.outbound.CircuitBreakerFilter
+com.jd.live.agent.governance.invoke.filter.outbound.InstanceCircuitBreakerFilter

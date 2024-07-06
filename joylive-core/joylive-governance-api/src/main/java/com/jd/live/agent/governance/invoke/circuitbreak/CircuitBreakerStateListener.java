@@ -23,15 +23,6 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
 public interface CircuitBreakerStateListener {
 
     /**
-     * Return a name for listener
-     *
-     * @return name string
-     */
-    default String getName() {
-        return "default";
-    }
-
-    /**
      * <p>Observer method triggered when circuit breaker state changed. The transformation could be:</p>
      * <ul>
      * <li>From {@code CLOSED} to {@code OPEN} (with the triggered metric)</li>

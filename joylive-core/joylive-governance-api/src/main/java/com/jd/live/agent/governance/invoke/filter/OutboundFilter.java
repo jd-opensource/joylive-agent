@@ -57,6 +57,8 @@ public interface OutboundFilter {
 
     int ORDER_LOADBALANCE = ORDER_LIVE_CELL + 100;
 
+    int ORDER_INSTANCE_CIRCUIT_BREAKER = ORDER_LOADBALANCE + 100;
+
     /**
      * Applies the filter logic to the given outbound invocation. This method is called as part of a
      * chain of filters, and it is responsible for invoking the next filter in the chain or terminating

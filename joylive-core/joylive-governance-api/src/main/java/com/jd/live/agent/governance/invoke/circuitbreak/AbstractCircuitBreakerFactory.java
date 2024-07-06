@@ -50,7 +50,7 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
     /**
      * Retrieves a circuit breaker for the given circuit breaker policy. If a circuit breaker for the policy
      * already exists and its version is greater than or equal to the policy version, it is returned.
-     * Otherwise, a new circuit breaker is created using the {@link #create(CircuitBreakerPolicy)} method.
+     * Otherwise, a new circuit breaker is created using the {@link #create(CircuitBreakerPolicy, String)} method.
      *
      * @param policy      The circuit breaker policy for which to retrieve or create a circuit breaker.
      * @param serviceFunc A function that provides service.
@@ -66,7 +66,41 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         if (circuitBreaker != null && circuitBreaker.getPolicy().getVersion() == policy.getVersion()) {
             return circuitBreaker;
         }
-        CircuitBreaker breaker = create(policy);
+        CircuitBreaker breaker = create(policy, policy.getId().toString());
+        while (true) {
+            circuitBreaker = reference.get();
+            if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() != policy.getVersion()) {
+                if (reference.compareAndSet(circuitBreaker, breaker)) {
+                    circuitBreaker = breaker;
+                    addRecycleTask(policy, serviceFunc);
+                    break;
+                }
+            }
+        }
+        return circuitBreaker;
+    }
+
+    /**
+     * Retrieves a circuit breaker for the given circuit breaker policy. If a circuit breaker for the policy
+     * already exists and its version is greater than or equal to the policy version, it is returned.
+     * Otherwise, a new circuit breaker is created using the {@link #create(CircuitBreakerPolicy, String)} method.
+     *
+     * @param policy      The circuit breaker policy for which to retrieve or create a circuit breaker.
+     * @param resourceKey the resourceKey of the circuit breaker.
+     * @param serviceFunc A function that provides service.
+     * @return A circuit breaker that corresponds to the given policy, or null if the policy is null.
+     */
+    @Override
+    public CircuitBreaker get(CircuitBreakerPolicy policy, String resourceKey, Function<String, Service> serviceFunc) {
+        if (policy == null) {
+            return null;
+        }
+        AtomicReference<CircuitBreaker> reference = circuitBreakers.computeIfAbsent(policy.generateId(() -> resourceKey), n -> new AtomicReference<>());
+        CircuitBreaker circuitBreaker = reference.get();
+        if (circuitBreaker != null && circuitBreaker.getPolicy().getVersion() == policy.getVersion()) {
+            return circuitBreaker;
+        }
+        CircuitBreaker breaker = create(policy, resourceKey);
         while (true) {
             circuitBreaker = reference.get();
             if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() != policy.getVersion()) {
@@ -125,10 +159,11 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      * This method is abstract and must be implemented by subclasses to provide the specific
      * circuit breaker creation logic.
      *
-     * @param policy The circuit breaker policy to be used for creating the circuit breaker.
+     * @param policy      The circuit breaker policy to be used for creating the circuit breaker.
+     * @param resourceKey The resource key of the circuit breaker.
      * @return A new circuit breaker instance that enforces the given policy.
      */
-    protected abstract CircuitBreaker create(CircuitBreakerPolicy policy);
+    protected abstract CircuitBreaker create(CircuitBreakerPolicy policy, String resourceKey);
 
 }
 

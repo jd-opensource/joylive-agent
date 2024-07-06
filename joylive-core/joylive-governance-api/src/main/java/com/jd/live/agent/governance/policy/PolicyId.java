@@ -147,7 +147,6 @@ public class PolicyId implements PolicyIdGen {
         return result;
     }
 
-
     /**
      * Retrieves the value of the tag associated with the given key.
      *
@@ -158,5 +157,21 @@ public class PolicyId implements PolicyIdGen {
         return tags == null ? null : tags.get(key);
     }
 
+    /**
+     * Generates a new id based on the given additional string.
+     *
+     * @param additional Aditional string to be used for generating the id.
+     * @return id
+     */
+    public Long generateId(Supplier<String> additional) {
+        String newUri = uri == null ? additional.get() : uri + additional.get();
+        if (newUri != null) {
+            CRC32 crc32 = new CRC32();
+            byte[] bytes = newUri.getBytes(StandardCharsets.UTF_8);
+            crc32.update(bytes, 0, bytes.length);
+            return Math.abs(crc32.getValue());
+        }
+        return 0L;
+    }
 }
 

@@ -40,7 +40,7 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
      * {@inheritDoc}
      */
     @Override
-    public CircuitBreaker create(CircuitBreakerPolicy policy) {
+    public CircuitBreaker create(CircuitBreakerPolicy policy, String resourceKey) {
         CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
                 .slidingWindowType(policy.getSlidingWindowType().equalsIgnoreCase("time") ?
                         CircuitBreakerConfig.SlidingWindowType.TIME_BASED : CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
@@ -53,10 +53,10 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
                 .recordException(exception -> exception instanceof RejectException.RejectCircuitBreakException)
                 .build();
-        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(policy.getName());
+        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(resourceKey);
         CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, cb);
         if (policy.getLevel() == CircuitLevel.INSTANCE) {
-            circuitBreaker.registerListener(new InstanceCircuitBreakerStateListener(policy.getName()));
+            circuitBreaker.registerListener(new InstanceCircuitBreakerStateListener(policy, resourceKey));
         }
         return circuitBreaker;
     }
