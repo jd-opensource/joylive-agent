@@ -27,6 +27,7 @@ import com.alipay.sofa.rpc.log.LogCodes;
 import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -43,7 +44,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
 import static com.alipay.sofa.rpc.core.exception.RpcErrorType.CLIENT_ROUTER;
@@ -121,9 +121,11 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
                 providers.add(directProvider);
             }
         }
-        return CompletableFuture.completedFuture(providers.stream()
-                .map(e -> new SofaRpcEndpoint(e, this::isConnected))
-                .collect(Collectors.toList()));
+        List<SofaRpcEndpoint> endpoints = new ArrayList<>(providers.size());
+        for (ProviderInfo provider : providers) {
+            endpoints.add(new SofaRpcEndpoint(provider, this::isConnected));
+        }
+        return CompletableFuture.completedFuture(endpoints);
     }
 
     @Override
@@ -202,7 +204,24 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
+    public SofaRpcException createLimitException(RejectException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
+    }
+
+    @Override
+    public SofaRpcException createCircuitBreakException(RejectException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
+    }
+
+    @Override
     public SofaRpcException createRejectException(RejectException exception, SofaRpcOutboundRequest request) {
+        if (exception instanceof RejectNoProviderException) {
+            return createNoProviderException(request);
+        } else if (exception instanceof RejectException.RejectLimitException) {
+            return createLimitException(exception, request);
+        } else if (exception instanceof RejectException.RejectCircuitBreakException) {
+            return createCircuitBreakException(exception, request);
+        }
         return new SofaRpcException(CLIENT_ROUTER, exception.getMessage());
     }
 

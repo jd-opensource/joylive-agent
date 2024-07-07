@@ -231,6 +231,24 @@ public interface LiveCluster<R extends OutboundRequest,
     T createNoProviderException(R request);
 
     /**
+     * Creates an exception to be thrown when a limit is reached for the requested service.
+     *
+     * @param exception The {@link RejectException} that caused the limit to be reached.
+     * @param request   The request for which the limit has been reached.
+     * @return An exception of type T indicating that a limit has been reached.
+     */
+    T createLimitException(RejectException exception, R request);
+
+    /**
+     * Creates an exception to be thrown when a circuit breaker is triggered for the requested service.
+     *
+     * @param exception The {@link RejectException} that caused the circuit breaker to be triggered.
+     * @param request   The request for which the circuit breaker has been triggered.
+     * @return An exception of type T indicating that a circuit breaker has been triggered.
+     */
+    T createCircuitBreakException(RejectException exception, R request);
+
+    /**
      * Creates an exception to be thrown when a request is explicitly rejected.
      *
      * @param exception The original rejection exception.

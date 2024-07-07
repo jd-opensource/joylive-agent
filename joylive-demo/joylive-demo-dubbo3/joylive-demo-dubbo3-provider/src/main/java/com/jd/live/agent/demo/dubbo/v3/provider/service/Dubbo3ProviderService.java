@@ -33,9 +33,7 @@ public class Dubbo3ProviderService implements HelloService {
 
     @Override
     public LiveResponse echo(String str) {
-        RpcContextAttachment attachment = RpcContext.getServerAttachment();
-        return new LiveResponse(str).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("attachment", attachment::getAttachment)));
+        return createResponse(str);
     }
 
     @Override
@@ -43,8 +41,12 @@ public class Dubbo3ProviderService implements HelloService {
         if (code >= 500) {
             throw new RuntimeException("Code:" + code);
         }
+        return createResponse(code);
+    }
+
+    private LiveResponse createResponse(Object data) {
         RpcContextAttachment attachment = RpcContext.getServerAttachment();
-        return new LiveResponse(code).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+        return new LiveResponse(data).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("attachment", attachment::getAttachment)));
     }
 }

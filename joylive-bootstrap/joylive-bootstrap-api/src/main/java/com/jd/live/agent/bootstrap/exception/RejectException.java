@@ -40,6 +40,28 @@ public class RejectException extends LiveException {
     }
 
     /**
+     * RejectNoProviderException
+     */
+    public static class RejectNoProviderException extends RejectException {
+
+        public RejectNoProviderException() {
+        }
+
+        public RejectNoProviderException(String message) {
+            super(message);
+        }
+
+        public RejectNoProviderException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public RejectNoProviderException(Throwable cause) {
+            super(cause);
+        }
+
+    }
+
+    /**
      * RejectCellException
      */
     public static class RejectCellException extends RejectException {

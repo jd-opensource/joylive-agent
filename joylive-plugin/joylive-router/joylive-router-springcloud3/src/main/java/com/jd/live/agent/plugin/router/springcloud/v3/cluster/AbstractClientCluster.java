@@ -16,6 +16,9 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectLimitException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -120,7 +123,24 @@ public abstract class AbstractClientCluster<
     }
 
     @Override
+    public NestedRuntimeException createLimitException(RejectException exception, R request) {
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    }
+
+    @Override
+    public NestedRuntimeException createCircuitBreakException(RejectException exception, R request) {
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    }
+
+    @Override
     public NestedRuntimeException createRejectException(RejectException exception, R request) {
+        if (exception instanceof RejectNoProviderException) {
+            return createNoProviderException(request);
+        } else if (exception instanceof RejectLimitException) {
+            return createLimitException(exception, request);
+        } else if (exception instanceof RejectCircuitBreakException) {
+            return createCircuitBreakException(exception, request);
+        }
         return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage());
     }
 
@@ -170,7 +190,7 @@ public abstract class AbstractClientCluster<
      * @param message the error message
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    protected NestedRuntimeException createException(HttpStatus status, String message) {
+    public static NestedRuntimeException createException(HttpStatus status, String message) {
         return createException(status, message, null);
     }
 
@@ -182,7 +202,7 @@ public abstract class AbstractClientCluster<
      * @param throwable the exception
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    protected NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
         return new ResponseStatusException(status, message, throwable);
     }
 }

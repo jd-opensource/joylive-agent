@@ -23,7 +23,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
@@ -63,12 +62,8 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
         try {
             invoked.forEach(p -> request.addAttempt(p.getHost() + ":" + p.getPort()));
-            List<? extends Endpoint> endpoints = context.route(invocation);
-            if (endpoints != null && !endpoints.isEmpty()) {
-                mc.setResult(((SofaRpcEndpoint) endpoints.get(0)).getProvider());
-            } else {
-                mc.setThrowable(cluster.createNoProviderException(request));
-            }
+            SofaRpcEndpoint endpoint = context.route(invocation);
+            mc.setResult(endpoint.getProvider());
         } catch (RejectException e) {
             mc.setThrowable(cluster.createRejectException(e, request));
         }

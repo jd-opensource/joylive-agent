@@ -32,9 +32,7 @@ public class Dubbo27Service implements HelloService {
 
     @Override
     public LiveResponse echo(String str) {
-        RpcContext context = RpcContext.getContext();
-        return new LiveResponse(str).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("attachment", context::getAttachment)));
+        return createResponse(str);
     }
 
     @Override
@@ -42,8 +40,12 @@ public class Dubbo27Service implements HelloService {
         if (code >= 500) {
             throw new RuntimeException("Code:" + code);
         }
+        return createResponse(code);
+    }
+
+    private LiveResponse createResponse(Object data) {
         RpcContext context = RpcContext.getContext();
-        return new LiveResponse(code).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+        return new LiveResponse(data).addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("attachment", context::getAttachment)));
     }
 

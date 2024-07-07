@@ -29,7 +29,9 @@ import com.jd.live.agent.governance.policy.live.Cell;
 import com.jd.live.agent.governance.policy.live.Unit;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.RpcRequest.RpcOutboundRequest;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -44,12 +46,14 @@ import java.util.List;
  */
 @Setter
 @Getter
-public abstract class OutboundInvocation<T extends OutboundRequest> extends Invocation<T> {
+public abstract class OutboundInvocation<T extends OutboundRequest> extends Invocation<T> implements OutboundListener {
 
     /**
      * A list of endpoints that this outbound invocation targets.
      */
     private List<? extends Endpoint> instances;
+
+    protected List<OutboundListener> listeners;
 
     /**
      * The target route for this outbound invocation.
@@ -92,6 +96,36 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     protected LiveParser createLiveParser() {
         return new OutboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
                 context.getApplication(), governancePolicy);
+    }
+
+    /**
+     * Adds a {@link OutboundListener} to the list of listeners.
+     *
+     * @param listener the {@link OutboundListener} to add, if it is not null
+     */
+    public void addListener(OutboundListener listener) {
+        if (listener != null) {
+            if (listeners == null) {
+                listeners = new ArrayList<>();
+            }
+            listeners.add(listener);
+        }
+    }
+
+    @Override
+    public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
+        // TODO publish event in this method, include traffic event
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onSuccess(endpoint, request, response));
+        }
+    }
+
+    @Override
+    public void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable) {
+        // TODO publish event in this method, include traffic event
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onFailure(endpoint, request, throwable));
+        }
     }
 
     /**

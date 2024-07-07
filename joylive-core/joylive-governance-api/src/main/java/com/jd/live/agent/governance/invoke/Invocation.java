@@ -20,7 +20,6 @@ import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
@@ -38,12 +37,9 @@ import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest;
-import com.jd.live.agent.governance.response.ServiceResponse;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,7 +51,7 @@ import java.util.Map;
  *
  * @param <T> the type of service request this invocation is handling
  */
-public abstract class Invocation<T extends ServiceRequest> implements RequestListener, Matcher<TagCondition> {
+public abstract class Invocation<T extends ServiceRequest> implements Matcher<TagCondition> {
 
     public static final String FAILOVER_UNIT_NOT_ACCESSIBLE = "failover when unit is not accessible.";
     public static final String REJECT_NO_UNIT = "reject when local unit is not found.";
@@ -89,8 +85,6 @@ public abstract class Invocation<T extends ServiceRequest> implements RequestLis
 
     @Getter
     protected LaneMetadata laneMetadata;
-
-    protected List<RequestListener> listeners;
 
     /**
      * The policy id for this invocation
@@ -235,36 +229,6 @@ public abstract class Invocation<T extends ServiceRequest> implements RequestLis
      */
     public void degrade(FaultType type, String reason, DegradeConfig config) {
         request.degrade(type, reason, config);
-    }
-
-    /**
-     * Adds a {@link RequestListener} to the list of listeners.
-     *
-     * @param listener the {@link RequestListener} to add, if it is not null
-     */
-    public void addListener(RequestListener listener) {
-        if (listener != null) {
-            if (listeners == null) {
-                listeners = new ArrayList<>();
-            }
-            listeners.add(listener);
-        }
-    }
-
-    @Override
-    public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
-        // TODO publish event in this method, include traffic event
-        if (listeners != null) {
-            listeners.forEach(listener -> listener.onSuccess(endpoint, request, response));
-        }
-    }
-
-    @Override
-    public void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable) {
-        // TODO publish event in this method, include traffic event
-        if (listeners != null) {
-            listeners.forEach(listener -> listener.onFailure(endpoint, request, throwable));
-        }
     }
 
     /**

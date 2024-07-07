@@ -23,6 +23,7 @@ import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.type.ClassDesc;
@@ -214,7 +215,24 @@ public class DubboCluster26 implements LiveCluster<DubboOutboundRequest, DubboOu
     }
 
     @Override
+    public RpcException createLimitException(RejectException exception, DubboOutboundRequest request) {
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+    }
+
+    @Override
+    public RpcException createCircuitBreakException(RejectException exception, DubboOutboundRequest request) {
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+    }
+
+    @Override
     public RpcException createRejectException(RejectException exception, DubboOutboundRequest request) {
+        if (exception instanceof RejectNoProviderException) {
+            return createNoProviderException(request);
+        } else if (exception instanceof RejectException.RejectLimitException) {
+            return createLimitException(exception, request);
+        } else if (exception instanceof RejectException.RejectCircuitBreakException) {
+            return createCircuitBreakException(exception, request);
+        }
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }
 

@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 /**
  * Interface for handling service request callbacks.
  */
-public interface RequestListener {
+public interface OutboundListener {
 
     /**
      * Called when the service request completes successfully.

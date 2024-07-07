@@ -17,6 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
@@ -33,10 +35,14 @@ import org.springframework.cloud.client.loadbalancer.Request;
 import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
 import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster.createException;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -85,12 +91,26 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             Flux<List<ServiceInstance>> flux = (Flux<List<ServiceInstance>>) result;
             OutboundInvocation<HttpOutboundRequest> invocation = buildInvocation((Request<?>) arguments[0]);
             if (invocation != null) {
-                mc.setResult(flux.map(instances -> {
-                    invocation.setInstances(instances.stream().map(SpringEndpoint::new).collect(Collectors.toList()));
-                    context.route(invocation);
-                    return invocation.getEndpoints().stream().map(endpoint -> ((SpringEndpoint) endpoint).getInstance()).collect(Collectors.toList());
-                }));
+                mc.setResult(flux.map(instances -> route(invocation, instances)));
             }
+        }
+    }
+
+    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation,
+                                        List<ServiceInstance> instances) {
+        List<SpringEndpoint> endpoints = new ArrayList<>(instances.size());
+        for (ServiceInstance instance : instances) {
+            endpoints.add(new SpringEndpoint(instance));
+        }
+        invocation.setInstances(endpoints);
+        try {
+            SpringEndpoint endpoint = context.route(invocation);
+            return Collections.singletonList(endpoint.getInstance());
+        } catch (RejectNoProviderException e) {
+            throw createException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "LoadBalancer does not contain an instance for the service " + invocation.getRequest().getService());
+        } catch (RejectException e) {
+            throw createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage());
         }
     }
 

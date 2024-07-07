@@ -98,24 +98,18 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             if (t == null) {
                 E endpoint = null;
                 try {
-                    List<? extends Endpoint> endpoints = context.route(invocation, v);
-                    boolean empty = endpoints == null || endpoints.isEmpty();
-                    if (!empty || !request.isInstanceSensitive()) {
-                        endpoint = empty ? null : (E) endpoints.get(0);
-                        E instance = endpoint;
-                        cluster.onStartRequest(request, endpoint);
-                        cluster.invoke(request, endpoint).whenComplete((o, r) -> {
-                            if (r != null) {
-                                onException(r, request, instance, cluster, invocation, result);
-                            } else if (o.getThrowable() != null) {
-                                onException(o.getThrowable(), request, instance, cluster, invocation, result);
-                            } else {
-                                onSuccess(cluster, invocation, o, request, instance, result);
-                            }
-                        });
-                    } else {
-                        onException(cluster.createNoProviderException(request), request, endpoint, cluster, invocation, result);
-                    }
+                    endpoint = context.route(invocation, v);
+                    E instance = endpoint;
+                    cluster.onStartRequest(request, instance);
+                    cluster.invoke(request, instance).whenComplete((o, r) -> {
+                        if (r != null) {
+                            onException(r, request, instance, cluster, invocation, result);
+                        } else if (o.getThrowable() != null) {
+                            onException(o.getThrowable(), request, instance, cluster, invocation, result);
+                        } else {
+                            onSuccess(cluster, invocation, o, request, instance, result);
+                        }
+                    });
                 } catch (RejectException e) {
                     onException(cluster.createRejectException(e, request), request, endpoint, cluster, invocation, result);
                 } catch (Throwable e) {

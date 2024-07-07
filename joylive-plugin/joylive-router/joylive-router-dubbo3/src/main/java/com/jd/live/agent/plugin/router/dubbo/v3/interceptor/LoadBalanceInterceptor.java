@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
@@ -32,7 +31,6 @@ import org.apache.dubbo.rpc.cluster.support.DubboCluster3;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * LoadBalanceInterceptor
@@ -64,16 +62,11 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
         DubboCluster3 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster3::new);
         try {
-            List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
             if (invoked != null) {
                 invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));
             }
-            List<? extends Endpoint> endpoints = context.route(invocation, instances);
-            if (endpoints != null && !endpoints.isEmpty()) {
-                mc.setResult(((DubboEndpoint<?>) endpoints.get(0)).getInvoker());
-            } else {
-                mc.setThrowable(cluster.createNoProviderException(request));
-            }
+            DubboEndpoint<?> endpoint = context.route(invocation, invokers, DubboEndpoint::of);
+            mc.setResult(endpoint.getInvoker());
         } catch (RejectException e) {
             mc.setThrowable(cluster.createRejectException(e, request));
         }

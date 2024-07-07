@@ -26,7 +26,7 @@ import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.RequestListener;
+import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
@@ -121,7 +121,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         }
     }
 
-    public static class CircuitBreakerListener implements RequestListener {
+    public static class CircuitBreakerListener implements OutboundListener {
 
         private final List<CircuitBreaker> circuitBreakers;
 
