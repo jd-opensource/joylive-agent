@@ -24,6 +24,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RequestListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -129,7 +130,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         }
 
         @Override
-        public void onSuccess(ServiceRequest request, ServiceResponse response) {
+        public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
                 CircuitBreakerPolicy policy = circuitBreaker.getPolicy();
                 if (policy.containsError(response.getCode())) {
@@ -141,7 +142,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         }
 
         @Override
-        public void onFailure(ServiceRequest request, Throwable throwable) {
+        public void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable) {
             if (!(throwable instanceof CircuitBreakException)) {
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
                     circuitBreaker.onError(request.getDuration(), throwable);

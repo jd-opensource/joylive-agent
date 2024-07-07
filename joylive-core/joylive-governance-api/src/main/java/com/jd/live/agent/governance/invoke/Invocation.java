@@ -20,6 +20,7 @@ import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
@@ -251,18 +252,18 @@ public abstract class Invocation<T extends ServiceRequest> implements RequestLis
     }
 
     @Override
-    public void onSuccess(ServiceRequest request, ServiceResponse response) {
+    public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
         // TODO publish event in this method, include traffic event
         if (listeners != null) {
-            listeners.forEach(listener -> listener.onSuccess(request, response));
+            listeners.forEach(listener -> listener.onSuccess(endpoint, request, response));
         }
     }
 
     @Override
-    public void onFailure(ServiceRequest request, Throwable throwable) {
+    public void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable) {
         // TODO publish event in this method, include traffic event
         if (listeners != null) {
-            listeners.forEach(listener -> listener.onFailure(request, throwable));
+            listeners.forEach(listener -> listener.onFailure(endpoint, request, throwable));
         }
     }
 

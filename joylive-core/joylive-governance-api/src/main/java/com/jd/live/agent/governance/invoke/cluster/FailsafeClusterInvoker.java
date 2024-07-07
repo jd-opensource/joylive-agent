@@ -67,7 +67,7 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
                                                   CompletableFuture<O> result) {
         logger.error("Failsafe ignore exception: " + throwable.getMessage(), throwable);
         // TODO Whether to fuse
-        invocation.onFailure(request, throwable);
+        invocation.onFailure(endpoint, request, throwable);
         O response = cluster.createResponse(null, request, null);
         cluster.onSuccess(response, request, endpoint);
         result.complete(response);

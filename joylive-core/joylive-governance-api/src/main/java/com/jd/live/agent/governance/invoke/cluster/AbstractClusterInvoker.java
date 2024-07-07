@@ -139,7 +139,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param invocation the outbound invocation instance representing the outbound call
      * @param response   the instance representing the outbound response
      * @param request    the instance representing the outbound request
-     * @param instance   the endpoint instance representing the endpoint
+     * @param endpoint   the endpoint instance representing the endpoint
      * @param result     the CompletableFuture instance representing the result of an asynchronous computation
      */
     protected <R extends OutboundRequest,
@@ -149,10 +149,10 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                 OutboundInvocation<R> invocation,
                                                 O response,
                                                 R request,
-                                                E instance,
+                                                E endpoint,
                                                 CompletableFuture<O> result) {
-        invocation.onSuccess(request, response);
-        cluster.onSuccess(response, request, instance);
+        invocation.onSuccess(endpoint, request, response);
+        cluster.onSuccess(response, request, endpoint);
         result.complete(response);
     }
 
@@ -184,7 +184,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
-        invocation.onFailure(request, throwable);
+        invocation.onFailure(endpoint, request, throwable);
         O response = cluster.createResponse(throwable, request, endpoint);
         // avoid the live exception class is not recognized in application classloader
         cluster.onError(response.getThrowable(), request, endpoint);
