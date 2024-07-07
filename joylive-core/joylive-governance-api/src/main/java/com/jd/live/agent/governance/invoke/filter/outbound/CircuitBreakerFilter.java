@@ -110,6 +110,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
             if (!circuitBreaker.acquire()) {
                 DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
                 if (degradeConfig == null) {
+                    // TODO more circuit breaker metrics data
                     invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
                     invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
                 } else {
