@@ -85,17 +85,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
             }
             if (policy.getLevel() == CircuitLevel.INSTANCE) {
                 long currentTime = System.currentTimeMillis();
-                target.filter(endpoint -> {
-                    Long endTime = policy.getBlockedEndpoints().get(endpoint.getId());
-                    if (endTime == null) {
-                        return true;
-                    }
-                    if (endTime <= currentTime) {
-                        policy.getBlockedEndpoints().remove(endpoint.getId());
-                        return true;
-                    }
-                    return false;
-                });
+                target.filter(endpoint -> !policy.isBroken(endpoint.getId(), currentTime));
             }
         }
         return circuitBreakers;
@@ -125,8 +115,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         @Override
         public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                CircuitBreakerPolicy policy = circuitBreaker.getPolicy();
-                if (policy.containsError(response.getCode())) {
+                if (circuitBreaker.getPolicy().containsError(response.getCode())) {
                     circuitBreaker.onError(request.getDuration(), new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(request.getDuration());

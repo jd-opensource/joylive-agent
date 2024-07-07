@@ -111,7 +111,7 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     /**
      * Map of temporarily blocked endpoints, key is endpoint id and value is the end time of block
      */
-    private Map<String, Long> blockedEndpoints = new ConcurrentHashMap<>();
+    private Map<String, Long> broken = new ConcurrentHashMap<>();
 
     @Override
     public void supplement(CircuitBreakerPolicy source) {
@@ -126,8 +126,57 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
         }
     }
 
+    /**
+     * Checks if the specified error code is present in the list of error codes.
+     *
+     * @param errorCode the error code to check.
+     * @return {@code true} if the error code is present, {@code false} otherwise.
+     */
     public boolean containsError(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
+    }
+
+    /**
+     * Checks if the circuit for the given ID is currently broken.
+     *
+     * @param id  the identifier of the circuit.
+     * @param now the current time in milliseconds.
+     * @return {@code true} if the circuit is broken, {@code false} otherwise.
+     */
+    public boolean isBroken(String id, long now) {
+        // TODO lost broken when policy recreate
+        Long endTime = id == null ? null : broken.get(id);
+        if (endTime == null) {
+            return false;
+        }
+        if (endTime <= now) {
+            broken.remove(id);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Adds an entry to the broken circuits with the specified ID and timestamp.
+     *
+     * @param id  the identifier of the circuit.
+     * @param now the current time in milliseconds when the circuit was broken.
+     */
+    public void addBroken(String id, long now) {
+        if (id != null) {
+            broken.put(id, now);
+        }
+    }
+
+    /**
+     * Removes the entry of the broken circuit with the specified ID.
+     *
+     * @param id the identifier of the circuit to remove.
+     */
+    public void removeBroken(String id) {
+        if (id != null) {
+            broken.remove(id);
+        }
     }
 
 }

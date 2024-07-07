@@ -56,13 +56,13 @@ public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBrea
             if (logger.isInfoEnabled()) {
                 logger.info("[CircuitBreak]This resource will be degraded! resourceName={}", event.getResourceName());
             }
-            policy.getBlockedEndpoints().put(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
+            policy.addBroken(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
         }
         if (event.getFrom() == CircuitBreakerState.OPEN) {
             if (logger.isInfoEnabled()) {
                 logger.info("[CircuitBreak]This resource will be recover! resourceName={}", event.getResourceName());
             }
-            policy.getBlockedEndpoints().remove(instanceId);
+            policy.removeBroken(instanceId);
         }
     }
 }
