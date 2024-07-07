@@ -17,11 +17,13 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -107,6 +109,13 @@ public interface InvocationContext {
      * @return An instance of {@code GovernanceConfig} representing the governance configurations.
      */
     GovernanceConfig getGovernanceConfig();
+
+    /**
+     * Retrieves a {@link Publisher} that emits {@link TrafficEvent} instances.
+     *
+     * @return A {@link Publisher} that provides a stream of {@link TrafficEvent} objects.
+     */
+    Publisher<TrafficEvent> getTrafficPublisher();
 
     /**
      * Retrieves the policy supplier associated with this invocation context.
@@ -232,8 +241,14 @@ public interface InvocationContext {
      *                   processing.
      */
     default <R extends InboundRequest> void inbound(InboundInvocation<R> invocation) {
-        InboundFilterChain.Chain chain = new InboundFilterChain.Chain(getInboundFilters());
-        chain.filter(invocation);
+        try {
+            InboundFilterChain.Chain chain = new InboundFilterChain.Chain(getInboundFilters());
+            chain.filter(invocation);
+            invocation.onForward(invocation.getRequest());
+        } catch (RejectException e) {
+            invocation.onFailure(invocation.getRequest(), e);
+            throw e;
+        }
     }
 
     /**
@@ -394,6 +409,11 @@ public interface InvocationContext {
         @Override
         public GovernanceConfig getGovernanceConfig() {
             return delegate.getGovernanceConfig();
+        }
+
+        @Override
+        public Publisher<TrafficEvent> getTrafficPublisher() {
+            return delegate.getTrafficPublisher();
         }
 
         @Override

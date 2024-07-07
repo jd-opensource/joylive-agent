@@ -15,14 +15,12 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
@@ -48,9 +46,6 @@ public class RateLimitInboundFilter implements InboundFilter {
     @InjectLoader
     private Map<String, RateLimiterFactory> factories;
 
-    @Inject(Publisher.TRAFFIC)
-    private Publisher<TrafficEvent> publisher;
-
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
@@ -63,7 +58,6 @@ public class RateLimitInboundFilter implements InboundFilter {
                     RateLimiter rateLimiter = rateLimiterFactory.get(policy,
                             name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name));
                     if (null != rateLimiter && !rateLimiter.acquire()) {
-                        invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
                         invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");
                     }
                 }

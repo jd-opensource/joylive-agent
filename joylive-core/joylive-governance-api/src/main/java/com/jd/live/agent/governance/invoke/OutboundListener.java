@@ -25,20 +25,30 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 public interface OutboundListener {
 
     /**
+     * Called when the service request is forwarded.
+     *
+     * @param endpoint the target endpoint.
+     * @param request  the service request that was made.
+     */
+    default void onForward(Endpoint endpoint, ServiceRequest request) {
+
+    }
+
+    /**
      * Called when the service request completes successfully.
      *
-     * @param endpoint the target endpoint
-     * @param request  the service request that was made
-     * @param response the response received from the service
+     * @param endpoint the target endpoint.
+     * @param request  the service request that was made.
+     * @param response the response received from the service.
      */
     void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response);
 
     /**
      * Called when the service request fails.
      *
-     * @param endpoint the target endpoint
-     * @param request   the service request that was made
-     * @param throwable the exception that caused the failure
+     * @param endpoint the target endpoint.
+     * @param request  the service request that was made.
+     * @param throwable the exception that caused the failure.
      */
     void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable);
 

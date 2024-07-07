@@ -15,10 +15,13 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.event.TrafficEvent;
+import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
@@ -37,9 +40,13 @@ import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.live.Place;
 import com.jd.live.agent.governance.request.HttpRequest.HttpInboundRequest;
 import com.jd.live.agent.governance.request.RpcRequest.RpcInboundRequest;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract class that represents an inbound invocation of a service with a request of type T.
@@ -50,7 +57,7 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public abstract class InboundInvocation<T extends InboundRequest> extends Invocation<T> {
+public abstract class InboundInvocation<T extends InboundRequest> extends Invocation<T> implements InboundListener {
 
     /**
      * The action to be performed at the unit level.
@@ -61,6 +68,8 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
      * The action to be performed at the cell level.
      */
     protected CellAction cellAction;
+
+    protected List<InboundListener> listeners;
 
     /**
      * Constructs an InboundInvocation with the specified request and context.
@@ -87,6 +96,47 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
     @Override
     protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
         return super.configure(builder).componentType(ComponentType.SERVICE).direction(Direction.INBOUND);
+    }
+
+    /**
+     * Adds a {@link InboundListener} to the list of listeners.
+     *
+     * @param listener the {@link InboundListener} to add, if it is not null
+     */
+    public void addListener(InboundListener listener) {
+        if (listener != null) {
+            if (listeners == null) {
+                listeners = new ArrayList<>();
+            }
+            listeners.add(listener);
+        }
+    }
+
+    @Override
+    public void onForward(ServiceRequest request) {
+        publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onForward(request));
+        }
+    }
+
+    @Override
+    public void onFailure(ServiceRequest request, Throwable throwable) {
+        // TODO Whether to split the type of rejection
+        if (throwable instanceof RejectUnreadyException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectUnitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectCellException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectEscapeException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectLimitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        }
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onFailure(request, throwable));
+        }
     }
 
     /**

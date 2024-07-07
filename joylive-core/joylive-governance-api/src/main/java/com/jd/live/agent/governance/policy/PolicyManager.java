@@ -36,6 +36,7 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -74,6 +75,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject(Publisher.SYSTEM)
     private Publisher<AgentEvent> systemPublisher;
+
+    @Getter
+    @Inject(Publisher.TRAFFIC)
+    private Publisher<TrafficEvent> trafficPublisher;
 
     @Getter
     @Inject(Application.COMPONENT_APPLICATION)

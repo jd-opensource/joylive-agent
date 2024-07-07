@@ -15,6 +15,12 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCellException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnitException;
+import com.jd.live.agent.governance.event.TrafficEvent;
+import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
@@ -113,8 +119,12 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     @Override
+    public void onForward(Endpoint endpoint, ServiceRequest request) {
+        publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+    }
+
+    @Override
     public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
-        // TODO publish event in this method, include traffic event
         if (listeners != null) {
             listeners.forEach(listener -> listener.onSuccess(endpoint, request, response));
         }
@@ -122,7 +132,16 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
     @Override
     public void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable) {
-        // TODO publish event in this method, include traffic event
+        // TODO Whether to split the type of rejection
+        if (throwable instanceof RejectUnitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectCellException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectNoProviderException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        } else if (throwable instanceof RejectCircuitBreakException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+        }
         if (listeners != null) {
             listeners.forEach(listener -> listener.onFailure(endpoint, request, throwable));
         }

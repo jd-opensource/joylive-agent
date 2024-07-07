@@ -15,14 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.CellAction;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.UnitAction;
@@ -37,13 +32,9 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Injectable
 @Extension(value = "FailoverInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_FAILOVER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class FailoverInboundFilter implements InboundFilter {
-
-    @Inject(Publisher.TRAFFIC)
-    private Publisher<TrafficEvent> publisher;
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
@@ -59,17 +50,14 @@ public class FailoverInboundFilter implements InboundFilter {
             failoverCell(invocation, cellAction);
             return;
         }
-        invocation.publish(publisher, TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
         chain.filter(invocation);
     }
 
     protected <T extends InboundRequest> void failoverUnit(InboundInvocation<T> invocation, UnitAction unitAction) {
-        invocation.publish(publisher, TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
         invocation.failover(FaultType.UNIT, unitAction.getMessage());
     }
 
     protected <T extends InboundRequest> void failoverCell(InboundInvocation<T> invocation, CellAction cellAction) {
-        invocation.publish(publisher, TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
         invocation.failover(FaultType.CELL, cellAction.getMessage());
     }
 

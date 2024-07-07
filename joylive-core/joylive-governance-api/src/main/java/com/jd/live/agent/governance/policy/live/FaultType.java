@@ -30,12 +30,12 @@ public enum FaultType {
     UNREADY {
         @Override
         public RejectException reject(String reason) {
-            return new RejectCellException();
+            return new RejectUnreadyException();
         }
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectCellException();
+            return new RejectUnreadyException();
         }
     },
 

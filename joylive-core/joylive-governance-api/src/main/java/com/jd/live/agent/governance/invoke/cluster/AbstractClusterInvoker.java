@@ -99,6 +99,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 E endpoint = null;
                 try {
                     endpoint = context.route(invocation, v);
+                    invocation.onForward(endpoint, request);
                     E instance = endpoint;
                     cluster.onStartRequest(request, instance);
                     cluster.invoke(request, instance).whenComplete((o, r) -> {

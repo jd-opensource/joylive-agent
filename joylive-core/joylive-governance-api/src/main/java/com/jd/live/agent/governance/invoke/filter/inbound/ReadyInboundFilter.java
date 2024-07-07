@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -23,8 +22,6 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
@@ -39,16 +36,12 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class ReadyInboundFilter implements InboundFilter {
 
-    @Inject(Publisher.TRAFFIC)
-    private Publisher<TrafficEvent> publisher;
-
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         if (!application.getStatus().inbound()) {
-            invocation.publish(publisher, TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
             invocation.reject(FaultType.UNREADY, "Service instance is not ready,"
                     + " service=" + application.getService().getName()
                     + " address=" + Ipv4.getLocalIp());

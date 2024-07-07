@@ -15,15 +15,11 @@
  */
 package com.jd.live.agent.governance.invoke.filter.outbound;
 
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.EndpointGroup;
 import com.jd.live.agent.governance.instance.UnitGroup;
@@ -60,9 +56,6 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
 
-    @Inject(Publisher.TRAFFIC)
-    private Publisher<TrafficEvent> publisher;
-
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
@@ -76,7 +69,6 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
         if (action.getType() == UnitActionType.FORWARD) {
             chain.filter(invocation);
         } else {
-            invocation.publish(publisher, TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
             invocation.reject(FaultType.UNIT, action.getMessage());
         }
     }

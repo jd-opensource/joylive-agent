@@ -15,16 +15,11 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
@@ -44,13 +39,9 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Injectable
 @Extension(value = "UnitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_UNIT)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class UnitInboundFilter implements InboundFilter {
-
-    @Inject(Publisher.TRAFFIC)
-    private Publisher<TrafficEvent> publisher;
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
@@ -68,7 +59,6 @@ public class UnitInboundFilter implements InboundFilter {
                 break;
             case REJECT:
             case REJECT_ESCAPED:
-                invocation.publish(publisher, TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
                 invocation.reject(FaultType.UNIT, unitAction.getMessage());
         }
     }

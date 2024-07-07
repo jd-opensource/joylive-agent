@@ -15,14 +15,12 @@
  */
 package com.jd.live.agent.governance.invoke.filter.outbound;
 
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -59,9 +57,6 @@ public class InstanceCircuitBreakerFilter implements OutboundFilter {
     @InjectLoader
     private Map<String, CircuitBreakerFactory> factories;
 
-    @Inject(Publisher.TRAFFIC)
-    private Publisher<TrafficEvent> publisher;
-
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
@@ -85,8 +80,6 @@ public class InstanceCircuitBreakerFilter implements OutboundFilter {
                     if (!circuitBreaker.acquire()) {
                         DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
                         if (degradeConfig == null) {
-                            // TODO more circuit breaker metrics data
-                            invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
                             invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejects the request.");
                         } else {
                             invocation.degrade(FaultType.CIRCUIT_BREAK, "The circuit break policy triggers a downgrade response.", degradeConfig);
