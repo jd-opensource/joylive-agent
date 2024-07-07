@@ -65,47 +65,59 @@ public class CircuitBreakerFilter implements OutboundFilter {
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         // TODO only service circuit, how api circuit work?
-        RouteTarget target = invocation.getRouteTarget();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<CircuitBreakerPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakerPolicies();
         if (null != policies && !policies.isEmpty()) {
-            List<CircuitBreaker> circuitBreakers = new ArrayList<>(policies.size());
-            for (CircuitBreakerPolicy policy : policies) {
-                if (policy.getLevel() != CircuitLevel.SERVICE) {
-                    CircuitBreakerFactory circuitBreakerFactory = factories.get(policy.getType());
-                    CircuitBreaker circuitBreaker = circuitBreakerFactory.get(policy,
-                            name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name));
-                    circuitBreakers.add(circuitBreaker);
-                }
-                if (policy.getLevel() == CircuitLevel.INSTANCE) {
-                    long currentTime = System.currentTimeMillis();
-                    target.filter(endpoint -> {
-                        Long endTime = policy.getBlockedEndpoints().get(endpoint.getId());
-                        if (endTime == null) {
-                            return true;
-                        }
-                        if (endTime <= currentTime) {
-                            policy.getBlockedEndpoints().remove(endpoint.getId());
-                            return true;
-                        }
-                        return false;
-                    });
-                }
-            }
-            for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                if (!circuitBreaker.acquire()) {
-                    DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
-                    if (degradeConfig == null) {
-                        invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
-                        invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
-                    } else {
-                        invocation.degrade(FaultType.CIRCUIT_BREAK, "The fuse strategy triggers a downgrade response.", degradeConfig);
-                    }
-                }
-            }
+            List<CircuitBreaker> circuitBreakers = getCircuitBreakers(invocation, policies);
+            // add listener before acquire permit
             invocation.addListener(new CircuitBreakerListener(circuitBreakers));
+            acquire(invocation, circuitBreakers);
         }
         chain.filter(invocation);
+    }
+
+    private <T extends OutboundRequest> List<CircuitBreaker> getCircuitBreakers(OutboundInvocation<T> invocation,
+                                                                                List<CircuitBreakerPolicy> policies) {
+        RouteTarget target = invocation.getRouteTarget();
+        List<CircuitBreaker> circuitBreakers = new ArrayList<>(policies.size());
+        for (CircuitBreakerPolicy policy : policies) {
+            // TODO why not service?
+            if (policy.getLevel() != CircuitLevel.SERVICE) {
+                CircuitBreakerFactory circuitBreakerFactory = factories.get(policy.getType());
+                CircuitBreaker circuitBreaker = circuitBreakerFactory.get(policy,
+                        name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name));
+                circuitBreakers.add(circuitBreaker);
+            }
+            if (policy.getLevel() == CircuitLevel.INSTANCE) {
+                long currentTime = System.currentTimeMillis();
+                target.filter(endpoint -> {
+                    Long endTime = policy.getBlockedEndpoints().get(endpoint.getId());
+                    if (endTime == null) {
+                        return true;
+                    }
+                    if (endTime <= currentTime) {
+                        policy.getBlockedEndpoints().remove(endpoint.getId());
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }
+        return circuitBreakers;
+    }
+
+    private <T extends OutboundRequest> void acquire(OutboundInvocation<T> invocation, List<CircuitBreaker> circuitBreakers) {
+        for (CircuitBreaker circuitBreaker : circuitBreakers) {
+            if (!circuitBreaker.acquire()) {
+                DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
+                if (degradeConfig == null) {
+                    invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
+                    invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
+                } else {
+                    invocation.degrade(FaultType.CIRCUIT_BREAK, "The fuse strategy triggers a downgrade response.", degradeConfig);
+                }
+            }
+        }
     }
 
     public static class CircuitBreakerListener implements RequestListener {
