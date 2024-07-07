@@ -131,7 +131,6 @@ public class CircuitBreakerFilter implements OutboundFilter {
                 } else {
                     circuitBreaker.onSuccess(request.getDuration());
                 }
-                circuitBreaker.release();
             }
         }
 
@@ -140,7 +139,6 @@ public class CircuitBreakerFilter implements OutboundFilter {
             if (!(throwable instanceof CircuitBreakException)) {
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
                     circuitBreaker.onError(request.getDuration(), throwable);
-                    circuitBreaker.release();
                 }
             }
         }

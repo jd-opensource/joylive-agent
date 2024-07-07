@@ -42,7 +42,7 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
     /**
      * Try to get a permit return the result
      *
-     * @return permission
+     * @return {@code true} if a permission was acquired and {@code false} otherwise
      */
     @Override
     public boolean acquire() {
