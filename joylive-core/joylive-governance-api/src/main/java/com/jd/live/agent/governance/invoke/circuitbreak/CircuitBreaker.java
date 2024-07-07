@@ -34,6 +34,13 @@ public interface CircuitBreaker {
     }
 
     /**
+     * Release the permission
+     */
+    default void release() {
+        // do nothing
+    }
+
+    /**
      * Records a failed call. This method must be invoked when a call failed.
      *
      * @param durationInMs The elapsed time duration of the call
