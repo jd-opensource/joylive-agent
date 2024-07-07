@@ -28,8 +28,7 @@ import io.github.resilience4j.core.EventConsumer;
 /**
  * Resilience4jCircuitBreakerStateListener
  *
- * @author Zhiguo.Chen
- * @version 20210825
+ * @since 1.1.0
  */
 public abstract class Resilience4jCircuitBreakerStateListener implements CircuitBreakerStateListener, EventConsumer<CircuitBreakerEvent> {
 

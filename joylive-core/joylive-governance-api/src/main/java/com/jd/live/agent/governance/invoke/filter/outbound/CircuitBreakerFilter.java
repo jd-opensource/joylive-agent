@@ -82,8 +82,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         RouteTarget target = invocation.getRouteTarget();
         List<CircuitBreaker> circuitBreakers = new ArrayList<>(policies.size());
         for (CircuitBreakerPolicy policy : policies) {
-            // TODO why not service?
-            if (policy.getLevel() != CircuitLevel.SERVICE) {
+            if (policy.getLevel() == CircuitLevel.SERVICE) {
                 CircuitBreakerFactory circuitBreakerFactory = factories.get(policy.getType());
                 CircuitBreaker circuitBreaker = circuitBreakerFactory.get(policy,
                         name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name));
@@ -112,6 +111,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
             if (!circuitBreaker.acquire()) {
                 DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
                 if (degradeConfig == null) {
+                    // TODO more circuit breaker metrics data
                     invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
                     invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
                 } else {
