@@ -87,9 +87,9 @@ public class InstanceCircuitBreakerFilter implements OutboundFilter {
                         if (degradeConfig == null) {
                             // TODO more circuit breaker metrics data
                             invocation.publish(publisher, TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).requests(1));
-                            invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit-breaker policy rejects the request.");
+                            invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejects the request.");
                         } else {
-                            invocation.degrade(FaultType.CIRCUIT_BREAK, "The fuse strategy triggers a downgrade response.", degradeConfig);
+                            invocation.degrade(FaultType.CIRCUIT_BREAK, "The circuit break policy triggers a downgrade response.", degradeConfig);
                         }
                     }
                 }

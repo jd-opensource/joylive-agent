@@ -50,6 +50,14 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
     }
 
     /**
+     * Release the permission
+     */
+    @Override
+    public void release() {
+        this.delegate.releasePermission();
+    }
+
+    /**
      * Records a successful call. This method must be invoked when a call was
      * successful.
      *
