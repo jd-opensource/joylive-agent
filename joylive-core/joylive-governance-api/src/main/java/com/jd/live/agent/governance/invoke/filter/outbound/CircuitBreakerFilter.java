@@ -192,7 +192,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         public void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response) {
             long duration = invocation.getRequest().getDuration();
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                if (circuitBreaker.getPolicy().containsError(response.getCode())) {
+                if (response != null && circuitBreaker.getPolicy().containsError(response.getCode())) {
                     circuitBreaker.onError(duration, new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(duration);
