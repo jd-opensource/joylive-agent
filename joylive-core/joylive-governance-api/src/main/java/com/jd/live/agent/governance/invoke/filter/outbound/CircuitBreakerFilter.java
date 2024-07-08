@@ -78,9 +78,14 @@ public class CircuitBreakerFilter implements OutboundFilter {
                 }
             }
 
-            List<CircuitBreaker> circuitBreakers = getCircuitBreakers(servicePolicies,
+            List<CircuitBreaker> serviceBreakers = getCircuitBreakers(servicePolicies,
                     (policy, factory) -> factory.get(policy,
                             name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name)));
+            // add listener before acquire permit
+            invocation.addListener(new CircuitBreakerListener(invocation, serviceBreakers, instancePolicies));
+            // acquire service permit
+            acquire(invocation, serviceBreakers);
+            // filter broken instance
             if (!instancePolicies.isEmpty()) {
                 RouteTarget target = invocation.getRouteTarget();
                 long currentTime = System.currentTimeMillis();
@@ -88,10 +93,6 @@ public class CircuitBreakerFilter implements OutboundFilter {
                     target.filter(endpoint -> !policy.isBroken(endpoint.getId(), currentTime));
                 }
             }
-            // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(invocation, circuitBreakers, instancePolicies));
-            // acquire service permit
-            acquire(invocation, circuitBreakers);
         }
         chain.filter(invocation);
     }
@@ -122,7 +123,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         }
     }
 
-    public class CircuitBreakerListener implements OutboundListener {
+    private class CircuitBreakerListener implements OutboundListener {
 
         private final OutboundInvocation<?> invocation;
 
@@ -140,7 +141,8 @@ public class CircuitBreakerFilter implements OutboundFilter {
 
         @Override
         public void onForward(Endpoint endpoint, ServiceRequest request) {
-            if (instancePolicies != null && !instancePolicies.isEmpty()) {
+            // TODO filter half_close instance before lb
+            if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
                 List<CircuitBreaker> breakers = getCircuitBreakers(instancePolicies,
                         (policy, factory) -> factory.get(policy, policy.generateId(endpoint::getId).toString(),
                                 name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name)));
