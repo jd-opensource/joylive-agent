@@ -67,7 +67,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
         List<CircuitBreakerPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakerPolicies();
         if (null != policies && !policies.isEmpty()) {
             PolicySupplier policySupplier = invocation.getContext().getPolicySupplier();
-            List<CircuitBreakerPolicy> instancePolicies = new ArrayList<>(policies.size());
+            List<CircuitBreakerPolicy> instancePolicies = null;
             List<CircuitBreaker> serviceBreakers = new ArrayList<>(policies.size());
             CircuitBreaker breaker;
             for (CircuitBreakerPolicy policy : policies) {
@@ -86,6 +86,9 @@ public class CircuitBreakerFilter implements OutboundFilter {
                         }
                         break;
                     default:
+                        if (instancePolicies == null) {
+                            instancePolicies = new ArrayList<>(policies.size());
+                        }
                         instancePolicies.add(policy);
                 }
             }
@@ -94,7 +97,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
             // acquire service permit
             acquire(invocation, serviceBreakers);
             // filter broken instance
-            if (!instancePolicies.isEmpty()) {
+            if (instancePolicies != null && !instancePolicies.isEmpty()) {
                 RouteTarget target = invocation.getRouteTarget();
                 long currentTime = System.currentTimeMillis();
                 for (CircuitBreakerPolicy policy : instancePolicies) {
