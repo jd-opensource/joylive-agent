@@ -18,6 +18,9 @@ package com.jd.live.agent.governance.policy.service;
 import com.jd.live.agent.core.util.trie.PathMatchType;
 import com.jd.live.agent.core.util.trie.PathType;
 
+/**
+ * Enum representing different types of services and their corresponding path and match types.
+ */
 public enum ServiceType {
 
     /**
@@ -32,6 +35,11 @@ public enum ServiceType {
         @Override
         public PathMatchType getMatchType() {
             return PathMatchType.PREFIX;
+        }
+
+        @Override
+        public String normalize(String path) {
+            return path == null || path.isEmpty() ? "/" : path;
         }
     },
 
@@ -48,6 +56,11 @@ public enum ServiceType {
         public PathMatchType getMatchType() {
             return PathMatchType.EQUAL;
         }
+
+        @Override
+        public String normalize(String path) {
+            return path == null || path.isEmpty() ? "" : path;
+        }
     },
 
     /**
@@ -63,10 +76,33 @@ public enum ServiceType {
         public PathMatchType getMatchType() {
             return PathMatchType.EQUAL;
         }
+
+        @Override
+        public String normalize(String path) {
+            return path == null || path.isEmpty() ? "/" : path;
+        }
     };
 
+    /**
+     * Gets the path type associated with the service type.
+     *
+     * @return The {@link PathType} associated with the service type.
+     */
     public abstract PathType getPathType();
 
+    /**
+     * Gets the match type associated with the service type.
+     *
+     * @return The {@link PathMatchType} associated with the service type.
+     */
     public abstract PathMatchType getMatchType();
+
+    /**
+     * Normalizes the given path based on the service type.
+     *
+     * @param path The path to be normalized. It can be {@code null} or empty.
+     * @return The normalized path.
+     */
+    public abstract String normalize(String path);
 
 }

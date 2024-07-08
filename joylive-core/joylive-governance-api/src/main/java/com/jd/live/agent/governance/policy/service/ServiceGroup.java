@@ -104,7 +104,9 @@ public class ServiceGroup extends ServicePolicyOwner {
      * @return The service path, or {@code null} if not found.
      */
     public ServicePath match(String path, PathMatchType matchType) {
-        return pathCache.match(path, matchType == null ? serviceType.getMatchType() : matchType);
+        path = serviceType.normalize(path);
+        matchType = matchType == null ? serviceType.getMatchType() : matchType;
+        return pathCache.match(path, matchType);
     }
 
     /**
@@ -127,7 +129,6 @@ public class ServiceGroup extends ServicePolicyOwner {
      * @return The corresponding service policy, or {@code null} if not found.
      */
     public ServicePolicy getServicePolicy(String path, String method, PathMatchType matchType) {
-        path = path == null && method != null ? DEFAULT_GROUP : path;
         ServicePath servicePath = match(path, matchType);
         return servicePath == null ? servicePolicy : servicePath.getServicePolicy(method);
     }

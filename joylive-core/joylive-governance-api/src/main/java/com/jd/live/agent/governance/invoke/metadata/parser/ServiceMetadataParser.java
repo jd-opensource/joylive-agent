@@ -66,7 +66,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         String serviceName = parseServiceName();
         String serviceGroup = parseServiceGroup();
         Service service = parseService(serviceName);
-        String path = parsePath();
+        String path = service.getServiceType().normalize(parsePath());
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
         boolean isWrite = parseWrite(servicePolicy);
