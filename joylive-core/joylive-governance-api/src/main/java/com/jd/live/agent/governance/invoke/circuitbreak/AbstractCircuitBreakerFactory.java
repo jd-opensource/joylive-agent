@@ -84,7 +84,7 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         CircuitBreaker circuitBreaker = ref == null ? null : ref.get();
         if (circuitBreaker != null && policySupplier != null) {
             ServicePolicy servicePolicy = policySupplier.getPolicy().getServicePolicy(uri);
-
+            // TODO clean instance circuit breaker
             boolean exists = false;
             if (servicePolicy != null && servicePolicy.getCircuitBreakerPolicies() != null) {
                 for (CircuitBreakerPolicy circuitBreakerPolicy : servicePolicy.getCircuitBreakerPolicies()) {
