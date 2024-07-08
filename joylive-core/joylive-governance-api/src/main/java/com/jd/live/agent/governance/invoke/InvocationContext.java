@@ -261,7 +261,7 @@ public interface InvocationContext {
      * @param instances  an initial list of {@code Endpoint}s considered for the invocation.
      * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
      * @throws RejectNoProviderException if no provider is found for the invocation.
-     * @throws RejectException if the request is rejected during filtering.
+     * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
         return route(invocation, instances, (OutboundFilter[]) null, true);
@@ -280,7 +280,7 @@ public interface InvocationContext {
      * @param converter  a {@code Function<P, E>} used to convert instances of type {@code P} to {@code E}.
      * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
      * @throws RejectNoProviderException if no provider is found for the invocation.
-     * @throws RejectException     if the request is rejected during filtering.
+     * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest,
             E extends Endpoint, P> E route(OutboundInvocation<R> invocation,
@@ -304,7 +304,7 @@ public interface InvocationContext {
      *                   its initially considered endpoints.
      * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
      * @throws RejectNoProviderException if no provider is found for the invocation.
-     * @throws RejectException if the request is rejected during filtering.
+     * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
         return route(invocation, null, (OutboundFilter[]) null, true);
@@ -316,18 +316,18 @@ public interface InvocationContext {
      * filters if none are provided) to the given list of instances (endpoints), modifying the
      * invocation's endpoints based on the filtering logic.
      *
-     * @param <R>        The type of the outbound request, extending {@link OutboundRequest}.
-     * @param <E>        The type of the endpoints, extending {@link Endpoint}.
-     * @param invocation The {@link OutboundInvocation} representing the outbound request and
-     *                   containing information necessary for routing.
-     * @param instances  A list of initial {@link Endpoint} instances to be considered for the request.
-     * @param filters    A collection of {@link OutboundFilter} instances to apply to the endpoints. If
-     *                   {@code null} or empty, the default set of route filters is used.
+     * @param <R>            The type of the outbound request, extending {@link OutboundRequest}.
+     * @param <E>            The type of the endpoints, extending {@link Endpoint}.
+     * @param invocation     The {@link OutboundInvocation} representing the outbound request and
+     *                       containing information necessary for routing.
+     * @param instances      A list of initial {@link Endpoint} instances to be considered for the request.
+     * @param filters        A collection of {@link OutboundFilter} instances to apply to the endpoints. If
+     *                       {@code null} or empty, the default set of route filters is used.
      * @param notifyListener Whether to notify the listeners upon success or failure.
      * @return An {@link Endpoint} instance that has been filtered according to the
      * specified (or default) filters and is deemed suitable for the outbound request.
      * @throws RejectNoProviderException if no provider is found for the invocation.
-     * @throws RejectException if the request is rejected during filtering.
+     * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
     default <R extends OutboundRequest,
