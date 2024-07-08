@@ -18,7 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateChangeEvent;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateEvent;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.event.CircuitBreakerEvent;
@@ -36,8 +36,8 @@ public abstract class Resilience4jCircuitBreakerStateListener implements Circuit
 
     @Override
     public void consumeEvent(CircuitBreakerEvent event) {
-        CircuitBreakerStateChangeEvent e = new CircuitBreakerStateChangeEvent();
-        e.setResourceName(event.getCircuitBreakerName());
+        CircuitBreakerStateEvent e = new CircuitBreakerStateEvent();
+        e.setUri(event.getCircuitBreakerName());
         if (event instanceof CircuitBreakerOnStateTransitionEvent) {
             CircuitBreakerOnStateTransitionEvent stateTransitionEvent = (CircuitBreakerOnStateTransitionEvent) event;
             e.setFrom(convertState(stateTransitionEvent.getStateTransition().getFromState()));
@@ -76,6 +76,6 @@ public abstract class Resilience4jCircuitBreakerStateListener implements Circuit
      *  @param event state change event
      */
     @Override
-    public abstract void onStateChange(CircuitBreakerStateChangeEvent event);
+    public abstract void onStateChange(CircuitBreakerStateEvent event);
 
 }

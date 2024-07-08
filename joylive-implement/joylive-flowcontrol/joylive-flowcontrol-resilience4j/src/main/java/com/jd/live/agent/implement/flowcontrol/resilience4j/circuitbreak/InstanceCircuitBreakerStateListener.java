@@ -18,7 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateChangeEvent;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateEvent;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
 /**
@@ -51,16 +51,16 @@ public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBrea
      * @param event state change event
      */
     @Override
-    public void onStateChange(CircuitBreakerStateChangeEvent event) {
+    public void onStateChange(CircuitBreakerStateEvent event) {
         if (event.getTo() == CircuitBreakerState.OPEN) {
             if (logger.isInfoEnabled()) {
-                logger.info("[CircuitBreak]This resource will be degraded! resourceName={}", event.getResourceName());
+                logger.info("[CircuitBreak]This resource will be degraded! resourceName={}", event.getUri());
             }
             policy.addBroken(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
         }
         if (event.getFrom() == CircuitBreakerState.OPEN) {
             if (logger.isInfoEnabled()) {
-                logger.info("[CircuitBreak]This resource will be recover! resourceName={}", event.getResourceName());
+                logger.info("[CircuitBreak]This resource will be recover! resourceName={}", event.getUri());
             }
             policy.removeBroken(instanceId);
         }

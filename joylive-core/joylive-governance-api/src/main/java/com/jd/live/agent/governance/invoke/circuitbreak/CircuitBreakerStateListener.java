@@ -33,6 +33,6 @@ public interface CircuitBreakerStateListener {
      *
      * @param event state change event
      */
-    void onStateChange(CircuitBreakerStateChangeEvent event);
+    void onStateChange(CircuitBreakerStateEvent event);
 
 }

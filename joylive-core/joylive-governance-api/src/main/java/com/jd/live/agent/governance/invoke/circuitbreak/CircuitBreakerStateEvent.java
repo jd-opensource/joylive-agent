@@ -19,15 +19,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * CircuitBreakerStateChangeEvent
+ * CircuitBreakerStateEvent
  *
  * @since 1.1.0
  */
 @Setter
 @Getter
-public class CircuitBreakerStateChangeEvent {
+public class CircuitBreakerStateEvent {
 
-    private String resourceName;
+    private String uri;
 
     private CircuitBreakerState from;
 
