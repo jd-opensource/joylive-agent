@@ -24,12 +24,23 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 public interface OutboundListener {
 
     /**
-     * Called when an outbound invocation is forwarded. This is a default method and does nothing by default.
+     * Called when an outbound invocation is forwarded. This is a default method and returns true by default.
      *
-     * @param endpoint  the endpoint to which the invocation is forwarded.
+     * @param endpoint   the endpoint to which the invocation is forwarded.
      * @param invocation the outbound invocation that was forwarded.
+     * @return true if the forwarding was successful, false otherwise.
      */
-    default void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
+    default boolean onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
+        return true;
+    }
+
+    /**
+     * Called when an endpoint is canceled. This is a default method and does nothing by default.
+     *
+     * @param endpoint   the endpoint to which the invocation was sent.
+     * @param invocation the outbound invocation that was canceled.
+     */
+    default void onCancel(Endpoint endpoint, OutboundInvocation<?> invocation) {
     }
 
     /**

@@ -58,7 +58,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      */
     private List<? extends Endpoint> instances;
 
-    protected List<OutboundListener> listeners;
+    private List<OutboundListener> listeners;
 
     /**
      * The target route for this outbound invocation.
@@ -118,12 +118,36 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     /**
-     * Handles the forwarding of an invocation to the specified endpoint, publishing a forward traffic event.
+     * Handles the forwarding of an invocation to the specified endpoint. It checks the endpoint predicate
+     * and notifies listeners. If any listener returns false, the forwarding is aborted.
      *
      * @param endpoint the endpoint to which the invocation is forwarded.
+     * @return true if the forwarding was successful, false otherwise.
      */
-    public void onForward(Endpoint endpoint) {
+    public boolean onForward(Endpoint endpoint) {
+        if (!endpoint.predicate()) {
+            return false;
+        }
+        if (listeners != null) {
+            for (OutboundListener listener : listeners) {
+                if (!listener.onForward(endpoint, this)) {
+                    return false;
+                }
+            }
+        }
         publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+        return true;
+    }
+
+    /**
+     * Handles the cancellation of an endpoint, notifying listeners of the cancellation.
+     *
+     * @param endpoint the endpoint to which the invocation was sent.
+     */
+    public void onCancel(Endpoint endpoint) {
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onCancel(endpoint, this));
+        }
     }
 
     /**

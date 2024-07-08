@@ -127,9 +127,11 @@ public class CircuitBreakerFilter implements OutboundFilter {
 
         private final CircuitBreakerFactory factory;
 
-        private final List<CircuitBreaker> circuitBreakers;
+        private List<CircuitBreaker> circuitBreakers;
 
         private final List<CircuitBreakerPolicy> instancePolicies;
+
+        private final int index;
 
         CircuitBreakerListener(CircuitBreakerFactory factory,
                                List<CircuitBreaker> circuitBreakers,
@@ -137,25 +139,35 @@ public class CircuitBreakerFilter implements OutboundFilter {
             this.factory = factory;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
+            this.index = circuitBreakers.size();
         }
 
         @Override
-        public void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
-            // TODO filter half_open instance before lb
+        public boolean onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
-
-                int size = circuitBreakers.size();
                 PolicySupplier policySupplier = invocation.getContext().getPolicySupplier();
                 for (CircuitBreakerPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
                     CircuitBreaker breaker = factory.get(policy, uri, policySupplier);
                     if (breaker != null) {
-                        circuitBreakers.add(breaker);
+                        if (breaker.acquire()) {
+                            circuitBreakers.add(breaker);
+                        } else {
+                            return false;
+                        }
                     }
                 }
-                if (circuitBreakers.size() > size) {
-                    acquire(invocation, circuitBreakers.subList(size, circuitBreakers.size()));
-                }
+            }
+            return true;
+        }
+
+        @Override
+        public void onCancel(Endpoint endpoint, OutboundInvocation<?> invocation) {
+            int size = circuitBreakers.size();
+            if (size > index) {
+                List<CircuitBreaker> breakers = circuitBreakers.subList(index, size);
+                breakers.forEach(CircuitBreaker::release);
+                circuitBreakers = circuitBreakers.subList(0, index);
             }
         }
 

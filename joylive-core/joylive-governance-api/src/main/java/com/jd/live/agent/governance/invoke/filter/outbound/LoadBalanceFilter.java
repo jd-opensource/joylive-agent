@@ -29,7 +29,7 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,16 +47,14 @@ import java.util.List;
 public class LoadBalanceFilter implements OutboundFilter {
 
     @Override
-    public <T extends ServiceRequest.OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
         StickyType stickyType = loadBalancePolicy == null ? null : loadBalancePolicy.getStickyType();
         stickyType = stickyType == null ? StickyType.NONE : stickyType;
         if (!target.isEmpty()) {
-            List<? extends Endpoint> candidates = stickyType == StickyType.PREFERRED
-                    ? preferSticky(target)
-                    : null;
+            List<? extends Endpoint> candidates = stickyType == StickyType.PREFERRED ? preferSticky(target, invocation) : null;
             if (candidates != null && !candidates.isEmpty()) {
                 target.setEndpoints(candidates);
             } else {
@@ -67,9 +65,10 @@ public class LoadBalanceFilter implements OutboundFilter {
                         Endpoint backend = loadBalancer.choose(backends, invocation);
                         if (backend == null) {
                             return null;
-                        }
-                        if (backend.predicate()) {
+                        } else if (invocation.onForward(backend)) {
                             return Collections.singletonList(backend);
+                        } else {
+                            invocation.onCancel(backend);
                         }
                         backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
                         backends.remove(backend);
@@ -95,25 +94,24 @@ public class LoadBalanceFilter implements OutboundFilter {
     }
 
     /**
-     * Attempts to select an endpoint based on a sticky identifier from the provided route target.
-     * <p>
-     * This method retrieves a preferred sticky identifier from the request context and attempts
-     * to find an endpoint from the route target that matches this identifier. If a matching
-     * endpoint is found and it satisfies any associated predicate, it is returned. Otherwise,
-     * this method returns {@code null}, indicating no suitable sticky endpoint was found.
-     * </p>
+     * Attempts to prefer a sticky endpoint for the given route target and outbound invocation.
      *
-     * @param target The {@link RouteTarget} containing potential endpoints to stick to.
-     * @return A list containing the matched endpoint if one is found and satisfies the predicate;
-     *         otherwise, {@code null}.
+     * @param target     the route target containing the list of endpoints.
+     * @param invocation the outbound invocation to be forwarded.
+     * @return a list containing the preferred sticky endpoint if forwarding is successful, or null if no sticky endpoint is found or forwarding fails.
      */
-    private List<? extends Endpoint> preferSticky(RouteTarget target) {
+    private List<? extends Endpoint> preferSticky(RouteTarget target, OutboundInvocation<?> invocation) {
         // preferred sticky id
         String id = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
         if (id != null) {
-            List<? extends Endpoint> backends = RouteTarget.tryCopy(target.getEndpoints(), endpoint -> id.equals(endpoint.getId()), 1);
-            if (!backends.isEmpty() && backends.get(0).predicate()) {
-                return backends;
+            List<? extends Endpoint> backends = RouteTarget.tryCopy(target.getEndpoints(),
+                    endpoint -> id.equals(endpoint.getId()), 1);
+            if (!backends.isEmpty()) {
+                Endpoint endpoint = backends.get(0);
+                if (invocation.onForward(endpoint)) {
+                    return backends;
+                }
+                invocation.onCancel(endpoint);
             }
         }
         return null;
