@@ -58,11 +58,12 @@ public class URI {
      *
      * @param schema     the URI schema (e.g., "http", "https").
      * @param host       the host name or IP address.
+     * @param port       the port.
      * @param path       the path component of the URI.
      * @param parameters the query parameters as a map.
      */
     @Builder
-    public URI(String schema, String host, String path, Map<String, String> parameters) {
+    public URI(String schema, String host, Integer port, String path, Map<String, String> parameters) {
         this.schema = schema;
         this.host = host;
         this.path = path;
@@ -76,7 +77,7 @@ public class URI {
      * @return a new URI instance with the updated host.
      */
     public URI host(String host) {
-        return new URI(schema, host, path, parameters);
+        return new URI(schema, host, port, path, parameters);
     }
 
     /**
@@ -86,7 +87,7 @@ public class URI {
      * @return a new URI instance with the updated port.
      */
     public URI port(Integer port) {
-        return new URI(schema, host, path, parameters);
+        return new URI(schema, host, port, path, parameters);
     }
 
     /**
@@ -96,7 +97,7 @@ public class URI {
      * @return a new URI instance with the updated path.
      */
     public URI path(String path) {
-        return new URI(schema, host, path, parameters);
+        return new URI(schema, host, port, path, parameters);
     }
 
     /**
@@ -112,7 +113,7 @@ public class URI {
         }
         Map<String, String> newParameters = parameters == null ? new HashMap<>() : new HashMap<>(parameters);
         newParameters.put(key, value);
-        return new URI(schema, host, path, newParameters);
+        return new URI(schema, host, port, path, newParameters);
     }
 
     /**
@@ -132,7 +133,7 @@ public class URI {
             int valueIdx = keyIdx + 1;
             newParameters.put(keyValues[keyIdx], valueIdx >= keyValues.length ? null : keyValues[valueIdx]);
         }
-        return new URI(schema, host, path, newParameters);
+        return new URI(schema, host, port, path, newParameters);
     }
 
     /**
@@ -200,5 +201,67 @@ public class URI {
     @Override
     public String toString() {
         return getUri();
+    }
+
+    /**
+     * Parses a given URI string into a {@link URI} object. This method processes the input string to extract
+     * the protocol, host, port, path, and query parameters.
+     *
+     * @param uri The URI string to be parsed.
+     * @return A {@link URI} object representing the parsed components of the input string, or {@code null} if the input is {@code null} or empty.
+     */
+    public static URI parse(String uri) {
+        String url = uri == null ? null : uri.trim();
+        if (uri == null || uri.isEmpty()) {
+            return null;
+        }
+        String protocol = null;
+        String host = null;
+        int port = 0;
+        String path = null;
+        Map<String, String> parameters = null;
+
+        int i = url.indexOf("?");
+        if (i >= 0) {
+            // parameter
+            if (i < url.length() - 1) {
+                String[] parts = url.substring(i + 1).split("&");
+                parameters = new HashMap<>(10);
+                for (String part : parts) {
+                    part = part.trim();
+                    if (!part.isEmpty()) {
+                        int j = part.indexOf('=');
+                        String name = j > 0 ? part.substring(0, j) : part;
+                        String value = j > 0 && j < part.length() - 1 ? part.substring(j + 1) : "";
+                        parameters.put(name, value);
+                    }
+                }
+            }
+            url = url.substring(0, i);
+        }
+        i = url.indexOf("://");
+        if (i > 0) {
+            protocol = url.substring(0, i);
+            url = url.substring(i + 3);
+        }
+        i = url.indexOf("/");
+        if (i >= 0) {
+            path = url.substring(i);
+            url = url.substring(0, i);
+        }
+        i = url.lastIndexOf(':');
+        if (i > 0 && i < url.length() - 1) {
+            try {
+                port = Integer.parseInt(url.substring(i + 1));
+                host = url.substring(0, i);
+            } catch (NumberFormatException e) {
+                // Handle invalid port number
+                port = 0;
+                host = url;  // Fallback to full URL as host
+            }
+        } else {
+            host = url;
+        }
+        return new URI(protocol, host, port, path, parameters);
     }
 }
