@@ -20,6 +20,7 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -98,7 +99,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             if (t == null) {
                 E endpoint = null;
                 try {
-                    endpoint = context.route(invocation, v);
+                    endpoint = context.route(invocation, v, (OutboundFilter[]) null, false);
                     E instance = endpoint;
                     cluster.onStartRequest(request, instance);
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
