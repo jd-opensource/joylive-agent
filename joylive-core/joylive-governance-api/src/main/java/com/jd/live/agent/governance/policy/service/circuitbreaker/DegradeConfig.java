@@ -41,7 +41,7 @@ public class DegradeConfig {
 
     public DegradeConfig(DegradeConfig config) {
         this.responseCode = config.responseCode;
-        this.attributes = config.attributes == null ? null : new HashMap<>(attributes);
+        this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
         this.responseBody = config.responseBody;
     }
 }
