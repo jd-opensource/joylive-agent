@@ -38,7 +38,6 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
         this.delegate = delegate;
     }
 
-
     @Override
     public boolean acquire() {
         return this.delegate.tryAcquirePermission();

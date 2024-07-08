@@ -289,7 +289,8 @@
             {
               "name": "cb1",
               "level": "SERVICE",
-              "slidingWindowSize": 2,
+              "slidingWindowType": "count",
+              "slidingWindowSize": 5,
               "minCallsThreshold": 1,
               "errorCodes": [
                 "500",
