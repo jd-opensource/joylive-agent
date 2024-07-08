@@ -289,3 +289,25 @@ Refer to the following for configuring environment variables:
 ```bash
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Host:demo.live.local"
 ```
+
+## 3. Supplement
+
+### 3.1 Rocketmq
+
+1. Prepare the Rocketmq environment and start the related services.
+2. Refer to the above application configuration to prepare the runtime environment for `joylive-demo-rocketmq`. The following additional environment variables need to be configured:
+
+| Variable | Name           | Description                             |
+|----------|----------------|-----------------------------------------|
+| CONFIG_LIVE_MQ_ENABLED   | Enable MQ Flag       | Whether to enable MQ<li>true Enable</li><li>Not Enable |
+| CONFIG_LIVE_TOPICS   | Participating Multi-Active Topic Names     | Multiple topics separated by commas                      |
+| ROCKETMQ_ADDR   | Rocketmq Service Address | IP:Port                          |
+
+3. Refer to the above configuration to start `joylive-demo-springcloud3-gateway` for unit 1.
+4. Refer to the above configuration to start `joylive-demo-springcloud3-provider` for unit 1.
+5. Refer to the above configuration to start `joylive-demo-rocketmq` for unit 1.
+6. Access verification
+```shell
+curl -G 'demo.live.local:8888/service-rocketmq/echo/hello?user=unit1
+```
+```

@@ -288,3 +288,24 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Hos
 ### 2.3 访问请求
 
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Host:demo.live.local"
+
+## 3. 补充
+
+### 3.1 Rocketmq
+
+1. 准备好Rocketmq环境，启动好相关服务
+2. 参考上述的应用配置，准备`joylive-demo-rocketmq`的运行环境。需要额外配置如下环境变量
+
+| 变量 | 名词           | 说明                             |
+|----|--------------|--------------------------------|
+| CONFIG_LIVE_MQ_ENABLED   | 启用MQ标识       | 是否要启用MQ<li>true 启用</li><li>不启用 |
+| CONFIG_LIVE_TOPICS   | 参与多活主题名称     | 多个主题用逗号分隔                      |
+| ROCKETMQ_ADDR   | Rocketmq服务地址 | IP:端口                          |
+
+3. 参考上述配置启动单元1的 `joylive-demo-springcloud3-gateway`
+4. 参考上述配置启动单元1的 `joylive-demo-springcloud3-provider`
+5. 参考上述配置启动单元1的 `joylive-demo-rocketmq`
+6. 访问验证
+```shell
+curl -G 'demo.live.local:8888/service-rocketmq/echo/hello?user=unit1
+```
