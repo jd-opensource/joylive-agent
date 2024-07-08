@@ -105,11 +105,25 @@ public class CircuitBreakerFilter implements OutboundFilter {
         chain.filter(invocation);
     }
 
+    /**
+     * Retrieves a circuit breaker for the given policy, URI, and policy supplier.
+     *
+     * @param policy         the circuit breaker policy.
+     * @param uri            the URI for the circuit breaker.
+     * @param policySupplier the policy supplier.
+     * @return the circuit breaker, or null if no factory is found for the policy type.
+     */
     private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri, PolicySupplier policySupplier) {
         CircuitBreakerFactory factory = factories.get(policy.getType());
         return factory == null ? null : factory.get(policy, uri, policySupplier);
     }
 
+    /**
+     * Acquires permits from the list of circuit breakers for the given invocation.
+     *
+     * @param invocation      the outbound invocation.
+     * @param circuitBreakers the list of circuit breakers.
+     */
     private static void acquire(OutboundInvocation<?> invocation, List<CircuitBreaker> circuitBreakers) {
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
             if (!circuitBreaker.acquire()) {
@@ -123,6 +137,9 @@ public class CircuitBreakerFilter implements OutboundFilter {
         }
     }
 
+    /**
+     * A listener that handles circuit breaker events for outbound invocations.
+     */
     private static class CircuitBreakerListener implements OutboundListener {
 
         private final CircuitBreakerFactory factory;
