@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy;
 
 import com.jd.live.agent.core.instance.Location;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
@@ -28,9 +29,7 @@ import com.jd.live.agent.governance.policy.live.LiveDomain;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.live.UnitDomain;
-import com.jd.live.agent.governance.policy.service.PolicyMerger;
-import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.policy.service.ServiceOp;
+import com.jd.live.agent.governance.policy.service.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -176,6 +175,32 @@ public class GovernancePolicy {
      */
     public Service getService(String name) {
         return serviceCache.get(name);
+    }
+
+    /**
+     * Retrieves the {@link ServicePolicy} for a given URI.
+     *
+     * @param uri The {@link URI} from which to extract the service information.
+     * @return The {@link ServicePolicy} associated with the URI, or {@code null} if no policy is found.
+     */
+    public ServicePolicy getServicePolicy(URI uri) {
+        if (uri == null) {
+            return null;
+        }
+        String serviceName = uri.getHost();
+        String servicePath = uri.getPath();
+        String serviceGroup = uri.getParameter(PolicyId.KEY_SERVICE_GROUP);
+        String serviceMethod = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
+
+        Service service = getService(serviceName);
+        ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
+        ServicePath path = group == null ? null : group.getPath(servicePath);
+        ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
+
+        ServicePolicy servicePolicy = method != null ? method.getServicePolicy() : null;
+        servicePolicy = servicePolicy == null && path != null ? path.getServicePolicy() : servicePolicy;
+        servicePolicy = servicePolicy == null && group != null ? group.getServicePolicy() : servicePolicy;
+        return servicePolicy;
     }
 
     /**

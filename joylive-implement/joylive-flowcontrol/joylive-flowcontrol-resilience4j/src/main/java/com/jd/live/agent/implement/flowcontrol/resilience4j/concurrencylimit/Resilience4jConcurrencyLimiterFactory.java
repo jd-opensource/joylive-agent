@@ -17,8 +17,8 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.concurrencylimit;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.invoke.concurrencylimit.AbstractConcurrencyLimiterFactory;
 import com.jd.live.agent.governance.invoke.concurrencylimit.ConcurrencyLimiter;
-import com.jd.live.agent.governance.invoke.concurrencylimit.ConcurrencyLimiterFactory;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 
 /**
@@ -28,7 +28,7 @@ import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
  */
 @Injectable
 @Extension(value = "Resilience4j")
-public class Resilience4jConcurrencyLimiterFactory implements ConcurrencyLimiterFactory {
+public class Resilience4jConcurrencyLimiterFactory extends AbstractConcurrencyLimiterFactory {
 
     /**
      * {@inheritDoc}

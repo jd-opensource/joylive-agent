@@ -17,7 +17,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.ratelimit;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.invoke.ratelimit.AbstractLimiterFactory;
+import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterFactory;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
@@ -32,7 +32,7 @@ import java.util.List;
  */
 @Injectable
 @Extension(value = "Resilience4j")
-public class Resilience4jRateLimiterFactory extends AbstractLimiterFactory {
+public class Resilience4jRateLimiterFactory extends AbstractRateLimiterFactory {
 
     /**
      * {@inheritDoc}

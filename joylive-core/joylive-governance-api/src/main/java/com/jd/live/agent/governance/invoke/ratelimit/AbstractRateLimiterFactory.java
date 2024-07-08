@@ -16,11 +16,9 @@
 package com.jd.live.agent.governance.invoke.ratelimit;
 
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.service.*;
+import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
@@ -39,15 +37,18 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @since 1.0.0
  */
-public abstract class AbstractLimiterFactory implements RateLimiterFactory {
+public abstract class AbstractRateLimiterFactory implements RateLimiterFactory {
 
-    private final Map<Long, AtomicReference<RateLimiter>> rateLimiters = new ConcurrentHashMap<>();
+    private final Map<Long, AtomicReference<RateLimiter>> limiters = new ConcurrentHashMap<>();
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
+    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
+    private PolicySupplier policySupplier;
+
     @Override
-    public RateLimiter get(RateLimitPolicy policy, PolicySupplier policySupplier) {
+    public RateLimiter get(RateLimitPolicy policy) {
         if (policy == null) {
             return null;
         }
@@ -55,7 +56,7 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
         if (windows == null || windows.isEmpty()) {
             return null;
         }
-        AtomicReference<RateLimiter> reference = rateLimiters.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
+        AtomicReference<RateLimiter> reference = limiters.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
         RateLimiter rateLimiter = reference.get();
         if (rateLimiter != null && rateLimiter.getPolicy().getVersion() == policy.getVersion()) {
             return rateLimiter;
@@ -66,7 +67,7 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
             if (rateLimiter == null || rateLimiter.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(rateLimiter, newLimiter)) {
                     rateLimiter = newLimiter;
-                    addRecycleTask(policy, policySupplier);
+                    addRecycleTask(policy);
                     break;
                 }
             }
@@ -74,29 +75,16 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
         return rateLimiter;
     }
 
-    private void addRecycleTask(RateLimitPolicy policy, PolicySupplier policySupplier) {
+    private void addRecycleTask(RateLimitPolicy policy) {
         long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
-        timer.delay("recycle-ratelimiter-" + policy.getId(), delay, () -> recycle(policy, policySupplier));
+        timer.delay("recycle-ratelimiter-" + policy.getId(), delay, () -> recycle(policy));
     }
 
-    private void recycle(RateLimitPolicy policy, PolicySupplier policySupplier) {
-        AtomicReference<RateLimiter> ref = rateLimiters.get(policy.getId());
+    private void recycle(RateLimitPolicy policy) {
+        AtomicReference<RateLimiter> ref = limiters.get(policy.getId());
         RateLimiter limiter = ref == null ? null : ref.get();
         if (limiter != null && policySupplier != null) {
-            URI uri = policy.getUri();
-            String serviceName = uri.getHost();
-            String servicePath = uri.getPath();
-            String serviceGroup = uri.getParameter(PolicyId.KEY_SERVICE_GROUP);
-            String serviceMethod = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
-
-            Service service = policySupplier.getPolicy().getService(serviceName);
-            ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
-            ServicePath path = group == null ? null : group.getPath(servicePath);
-            ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
-
-            ServicePolicy servicePolicy = method != null ? method.getServicePolicy() : null;
-            servicePolicy = servicePolicy == null && path != null ? path.getServicePolicy() : servicePolicy;
-            servicePolicy = servicePolicy == null && group != null ? group.getServicePolicy() : servicePolicy;
+            ServicePolicy servicePolicy = policySupplier.getPolicy().getServicePolicy(policy.getUri());
 
             boolean exists = false;
             if (servicePolicy != null && servicePolicy.getRateLimitPolicies() != null) {
@@ -108,9 +96,9 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
                 }
             }
             if (!exists) {
-                rateLimiters.remove(policy.getId());
+                limiters.remove(policy.getId());
             } else {
-                addRecycleTask(policy, policySupplier);
+                addRecycleTask(policy);
             }
         }
     }

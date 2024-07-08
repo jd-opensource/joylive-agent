@@ -76,6 +76,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -268,7 +269,7 @@ public class Bootstrap implements AgentLifecycle {
                 //depend on agentConfig
                 throw new InitializeException("the jvm version is not supported enhancement.");
             }
-            sourceSuppliers = createSourceSuppliers();  //
+            createSourceSuppliers();  //
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
@@ -569,8 +570,18 @@ public class Bootstrap implements AgentLifecycle {
         return extensionManager.getOrLoadExtension(ByteSupplier.class, classLoaderManager.getCoreImplLoader());
     }
 
-    private List<InjectSourceSupplier> createSourceSuppliers() {
-        return extensionManager.getOrLoadExtensible(InjectSourceSupplier.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+    private void createSourceSuppliers() {
+        sourceSuppliers = new ArrayList<>();
+        Injector backup = injector;
+        injector = target -> {
+            if (target instanceof InjectSourceSupplier) {
+                // add source supplier first for injection
+                sourceSuppliers.add((InjectSourceSupplier) target);
+            }
+            backup.inject(target);
+        };
+        extensionManager.getOrLoadExtensible(InjectSourceSupplier.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+        injector = backup;
     }
 
     private void setupLogger() {

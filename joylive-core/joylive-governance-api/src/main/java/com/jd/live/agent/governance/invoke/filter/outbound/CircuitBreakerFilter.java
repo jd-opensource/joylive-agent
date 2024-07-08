@@ -33,7 +33,6 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
@@ -66,21 +65,20 @@ public class CircuitBreakerFilter implements OutboundFilter {
         ServicePolicy servicePolicy = metadata.getServicePolicy();
         List<CircuitBreakerPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakerPolicies();
         if (null != policies && !policies.isEmpty()) {
-            PolicySupplier policySupplier = invocation.getContext().getPolicySupplier();
             List<CircuitBreakerPolicy> instancePolicies = null;
             List<CircuitBreaker> serviceBreakers = new ArrayList<>(policies.size());
             CircuitBreaker breaker;
             for (CircuitBreakerPolicy policy : policies) {
                 switch (policy.getLevel()) {
                     case SERVICE:
-                        breaker = getCircuitBreaker(policy, policy.getUri(), policySupplier);
+                        breaker = getCircuitBreaker(policy, policy.getUri());
                         if (null != breaker) {
                             serviceBreakers.add(breaker);
                         }
                         break;
                     case API:
                         URI api = policy.getUri().path(metadata.getPath()).parameters(PolicyId.KEY_SERVICE_METHOD, metadata.getMethod());
-                        breaker = getCircuitBreaker(policy, api, policySupplier);
+                        breaker = getCircuitBreaker(policy, api);
                         if (null != breaker) {
                             serviceBreakers.add(breaker);
                         }
@@ -109,16 +107,15 @@ public class CircuitBreakerFilter implements OutboundFilter {
     }
 
     /**
-     * Retrieves a circuit breaker for the given policy, URI, and policy supplier.
+     * Retrieves a circuit breaker for the given policy, URI.
      *
      * @param policy         the circuit breaker policy.
      * @param uri            the URI for the circuit breaker.
-     * @param policySupplier the policy supplier.
      * @return the circuit breaker, or null if no factory is found for the policy type.
      */
-    private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri, PolicySupplier policySupplier) {
+    private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
         CircuitBreakerFactory factory = factories.get(policy.getType());
-        return factory == null ? null : factory.get(policy, uri, policySupplier);
+        return factory == null ? null : factory.get(policy, uri);
     }
 
     /**
@@ -165,10 +162,9 @@ public class CircuitBreakerFilter implements OutboundFilter {
         @Override
         public boolean onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
-                PolicySupplier policySupplier = invocation.getContext().getPolicySupplier();
                 for (CircuitBreakerPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
-                    CircuitBreaker breaker = factory.get(policy, uri, policySupplier);
+                    CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {
                         if (breaker.acquire()) {
                             circuitBreakers.add(breaker);
