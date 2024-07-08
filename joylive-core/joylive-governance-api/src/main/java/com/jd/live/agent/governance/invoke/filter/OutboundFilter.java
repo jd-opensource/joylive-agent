@@ -35,7 +35,9 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @Extensible(value = "OutboundFilter")
 public interface OutboundFilter {
 
-    int ORDER_STICKY = 100;
+    int ORDER_CIRCUIT_BREAKER = 100;
+
+    int ORDER_STICKY = ORDER_CIRCUIT_BREAKER + 100;
 
     int ORDER_LOCALHOST = ORDER_STICKY + 100;
 
@@ -43,9 +45,7 @@ public interface OutboundFilter {
 
     int ORDER_VIRTUAL = ORDER_HEALTH + 100;
 
-    int ORDER_CIRCUIT_BREAKER = ORDER_VIRTUAL + 100;
-
-    int ORDER_LIVE_UNIT = ORDER_CIRCUIT_BREAKER + 100;
+    int ORDER_LIVE_UNIT = ORDER_VIRTUAL + 100;
 
     int ORDER_TAG_ROUTE = ORDER_LIVE_UNIT + 100;
 

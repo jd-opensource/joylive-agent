@@ -33,7 +33,6 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitLevel;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -42,6 +41,7 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * CircuitBreakerFilter
@@ -60,38 +60,56 @@ public class CircuitBreakerFilter implements OutboundFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
-        // TODO only service circuit, how api circuit work?
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<CircuitBreakerPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakerPolicies();
         if (null != policies && !policies.isEmpty()) {
-            List<CircuitBreaker> circuitBreakers = getCircuitBreakers(invocation, policies);
+            List<CircuitBreakerPolicy> servicePolicies = new ArrayList<>(policies.size());
+            List<CircuitBreakerPolicy> instancePolicies = new ArrayList<>(policies.size());
+            for (CircuitBreakerPolicy policy : policies) {
+                switch (policy.getLevel()) {
+                    case SERVICE:
+                        servicePolicies.add(policy);
+                        break;
+                    case API:
+                        // TODO handle api
+                        break;
+                    default:
+                        instancePolicies.add(policy);
+                }
+            }
+
+            List<CircuitBreaker> circuitBreakers = getCircuitBreakers(servicePolicies,
+                    (policy, factory) -> factory.get(policy,
+                            name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name)));
+            if (!instancePolicies.isEmpty()) {
+                RouteTarget target = invocation.getRouteTarget();
+                long currentTime = System.currentTimeMillis();
+                for (CircuitBreakerPolicy policy : instancePolicies) {
+                    target.filter(endpoint -> !policy.isBroken(endpoint.getId(), currentTime));
+                }
+            }
             // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(circuitBreakers));
+            invocation.addListener(new CircuitBreakerListener(invocation, circuitBreakers, instancePolicies));
+            // acquire service permit
             acquire(invocation, circuitBreakers);
         }
         chain.filter(invocation);
     }
 
-    private <T extends OutboundRequest> List<CircuitBreaker> getCircuitBreakers(OutboundInvocation<T> invocation,
-                                                                                List<CircuitBreakerPolicy> policies) {
-        RouteTarget target = invocation.getRouteTarget();
+    private List<CircuitBreaker> getCircuitBreakers(List<CircuitBreakerPolicy> policies,
+                                                    BiFunction<CircuitBreakerPolicy, CircuitBreakerFactory, CircuitBreaker> breakerFunction) {
         List<CircuitBreaker> circuitBreakers = new ArrayList<>(policies.size());
         for (CircuitBreakerPolicy policy : policies) {
-            if (policy.getLevel() == CircuitLevel.SERVICE) {
-                CircuitBreakerFactory circuitBreakerFactory = factories.get(policy.getType());
-                CircuitBreaker circuitBreaker = circuitBreakerFactory.get(policy,
-                        name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name));
+            CircuitBreakerFactory circuitBreakerFactory = factories.get(policy.getType());
+            CircuitBreaker circuitBreaker = breakerFunction.apply(policy, circuitBreakerFactory);
+            if (circuitBreaker != null) {
                 circuitBreakers.add(circuitBreaker);
-            }
-            if (policy.getLevel() == CircuitLevel.INSTANCE) {
-                long currentTime = System.currentTimeMillis();
-                target.filter(endpoint -> !policy.isBroken(endpoint.getId(), currentTime));
             }
         }
         return circuitBreakers;
     }
 
-    private <T extends OutboundRequest> void acquire(OutboundInvocation<T> invocation, List<CircuitBreaker> circuitBreakers) {
+    private void acquire(OutboundInvocation<?> invocation, List<CircuitBreaker> circuitBreakers) {
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
             if (!circuitBreaker.acquire()) {
                 DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
@@ -104,12 +122,31 @@ public class CircuitBreakerFilter implements OutboundFilter {
         }
     }
 
-    public static class CircuitBreakerListener implements OutboundListener {
+    public class CircuitBreakerListener implements OutboundListener {
+
+        private final OutboundInvocation<?> invocation;
 
         private final List<CircuitBreaker> circuitBreakers;
 
-        CircuitBreakerListener(List<CircuitBreaker> circuitBreakers) {
+        private final List<CircuitBreakerPolicy> instancePolicies;
+
+        CircuitBreakerListener(OutboundInvocation<?> invocation,
+                               List<CircuitBreaker> circuitBreakers,
+                               List<CircuitBreakerPolicy> instancePolicies) {
+            this.invocation = invocation;
             this.circuitBreakers = circuitBreakers;
+            this.instancePolicies = instancePolicies;
+        }
+
+        @Override
+        public void onForward(Endpoint endpoint, ServiceRequest request) {
+            if (instancePolicies != null && !instancePolicies.isEmpty()) {
+                List<CircuitBreaker> breakers = getCircuitBreakers(instancePolicies,
+                        (policy, factory) -> factory.get(policy, policy.generateId(endpoint::getId).toString(),
+                                name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name)));
+                circuitBreakers.addAll(breakers);
+                acquire(invocation, breakers);
+            }
         }
 
         @Override
