@@ -18,8 +18,10 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitLevel;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
@@ -40,7 +42,7 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
      * {@inheritDoc}
      */
     @Override
-    public CircuitBreaker create(CircuitBreakerPolicy policy, String resourceKey) {
+    public CircuitBreaker create(CircuitBreakerPolicy policy, URI uri) {
         CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
                 .slidingWindowType(policy.getSlidingWindowType().equalsIgnoreCase("time") ?
                         CircuitBreakerConfig.SlidingWindowType.TIME_BASED : CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
@@ -53,10 +55,10 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
                 .recordException(exception -> exception instanceof RejectException.RejectCircuitBreakException)
                 .build();
-        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(resourceKey);
-        CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, cb);
+        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(uri.toString());
+        CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, uri, cb);
         if (policy.getLevel() == CircuitLevel.INSTANCE) {
-            circuitBreaker.registerListener(new InstanceCircuitBreakerStateListener(policy, resourceKey));
+            circuitBreaker.registerListener(new InstanceCircuitBreakerStateListener(policy, uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT)));
         }
         return circuitBreaker;
     }

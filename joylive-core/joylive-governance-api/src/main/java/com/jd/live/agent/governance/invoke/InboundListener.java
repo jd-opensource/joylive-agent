@@ -15,27 +15,24 @@
  */
 package com.jd.live.agent.governance.invoke;
 
-import com.jd.live.agent.governance.request.ServiceRequest;
-
 /**
- * Interface for handling inbound service request callbacks.
+ * Interface for handling inbound invocation callbacks.
  */
 public interface InboundListener {
 
     /**
-     * Called when the service request completes successfully.
+     * Called when an inbound invocation is forwarded.
      *
-     * @param request the service request that was made
+     * @param invocation the inbound invocation that was forwarded.
      */
-    void onForward(ServiceRequest request);
+    void onForward(InboundInvocation<?> invocation);
 
     /**
-     * Called when the service request fails.
+     * Called when an inbound invocation fails.
      *
-     * @param request   the service request that was made
-     * @param throwable the exception that caused the failure
+     * @param invocation the inbound invocation that failed.
+     * @param throwable  the exception that caused the failure.
      */
-    void onFailure(ServiceRequest request, Throwable throwable);
-
+    void onFailure(InboundInvocation<?> invocation, Throwable throwable);
 }
 

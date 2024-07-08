@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.Location;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
@@ -260,6 +261,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         LaneSpace laneSpace = laneMetadata.getLaneSpace();
         Lane currentLane = laneMetadata.getCurrentLane();
         Lane targetLane = laneMetadata.getTargetLane();
+        URI uri = policyId == null ? null : policyId.getUri();
         return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).
                 unitRuleId(unitRule == null ? null : unitRule.getId()).
                 localUnit(currentUnit == null ? null : currentUnit.getCode()).
@@ -268,10 +270,10 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
                 localLane(currentLane == null ? null : currentLane.getCode()).
                 targetLane(targetLane == null ? null : targetLane.getCode()).
                 policyId(policyId == null ? null : policyId.getId()).
-                service(policyId == null ? null : policyId.getTag(PolicyId.KEY_SERVICE_NAME)).
-                group(policyId == null ? null : policyId.getTag(PolicyId.KEY_SERVICE_GROUP)).
-                path(policyId == null ? null : policyId.getTag(PolicyId.KEY_SERVICE_PATH)).
-                method(policyId == null ? null : policyId.getTag(PolicyId.KEY_SERVICE_METHOD));
+                service(uri == null ? null : uri.getHost()).
+                group(uri == null ? null : uri.getParameter(PolicyId.KEY_SERVICE_GROUP)).
+                path(uri == null ? null : uri.getPath()).
+                method(uri == null ? null : uri.getParameter(PolicyId.KEY_SERVICE_METHOD));
     }
 
     /**

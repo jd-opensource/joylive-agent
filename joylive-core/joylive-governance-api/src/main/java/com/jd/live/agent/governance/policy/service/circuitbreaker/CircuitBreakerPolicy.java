@@ -34,8 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakerPolicy> {
 
-    public static final String QUERY_CIRCUIT_BREAKER = "circuitBreaker";
-
     public static final String DEFAULT_CIRCUIT_BREAKER_TYPE = "Resilience4j";
 
     /**

@@ -16,8 +16,10 @@
 package com.jd.live.agent.governance.invoke.ratelimit;
 
 import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.service.*;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
@@ -28,7 +30,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 /**
  * AbstractLimiterFactory provides a base implementation for factories that create and manage rate limiters.
@@ -46,7 +47,7 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
     private Timer timer;
 
     @Override
-    public RateLimiter get(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
+    public RateLimiter get(RateLimitPolicy policy, PolicySupplier policySupplier) {
         if (policy == null) {
             return null;
         }
@@ -65,7 +66,7 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
             if (rateLimiter == null || rateLimiter.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(rateLimiter, newLimiter)) {
                     rateLimiter = newLimiter;
-                    addRecycleTask(policy, serviceFunc);
+                    addRecycleTask(policy, policySupplier);
                     break;
                 }
             }
@@ -73,21 +74,22 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
         return rateLimiter;
     }
 
-    private void addRecycleTask(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
+    private void addRecycleTask(RateLimitPolicy policy, PolicySupplier policySupplier) {
         long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
-        timer.delay("recycle-ratelimiter-" + policy.getId(), delay, () -> recycle(policy, serviceFunc));
+        timer.delay("recycle-ratelimiter-" + policy.getId(), delay, () -> recycle(policy, policySupplier));
     }
 
-    private void recycle(RateLimitPolicy policy, Function<String, Service> serviceFunc) {
+    private void recycle(RateLimitPolicy policy, PolicySupplier policySupplier) {
         AtomicReference<RateLimiter> ref = rateLimiters.get(policy.getId());
         RateLimiter limiter = ref == null ? null : ref.get();
-        if (limiter != null && serviceFunc != null) {
-            String serviceName = policy.getTag(PolicyId.KEY_SERVICE_NAME);
-            String serviceGroup = policy.getTag(PolicyId.KEY_SERVICE_GROUP);
-            String servicePath = policy.getTag(PolicyId.KEY_SERVICE_PATH);
-            String serviceMethod = policy.getTag(PolicyId.KEY_SERVICE_METHOD);
+        if (limiter != null && policySupplier != null) {
+            URI uri = policy.getUri();
+            String serviceName = uri.getHost();
+            String servicePath = uri.getPath();
+            String serviceGroup = uri.getParameter(PolicyId.KEY_SERVICE_GROUP);
+            String serviceMethod = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
 
-            Service service = serviceFunc.apply(serviceName);
+            Service service = policySupplier.getPolicy().getService(serviceName);
             ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
             ServicePath path = group == null ? null : group.getPath(servicePath);
             ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
@@ -108,7 +110,7 @@ public abstract class AbstractLimiterFactory implements RateLimiterFactory {
             if (!exists) {
                 rateLimiters.remove(policy.getId());
             } else {
-                addRecycleTask(policy, serviceFunc);
+                addRecycleTask(policy, policySupplier);
             }
         }
     }

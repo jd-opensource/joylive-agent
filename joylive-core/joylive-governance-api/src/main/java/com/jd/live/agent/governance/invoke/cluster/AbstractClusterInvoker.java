@@ -99,7 +99,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 E endpoint = null;
                 try {
                     endpoint = context.route(invocation, v);
-                    invocation.onForward(endpoint, request);
+                    invocation.onForward(endpoint);
                     E instance = endpoint;
                     cluster.onStartRequest(request, instance);
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
@@ -146,7 +146,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                 R request,
                                                 E endpoint,
                                                 CompletableFuture<O> result) {
-        invocation.onSuccess(endpoint, request, response);
+        invocation.onSuccess(endpoint, response);
         cluster.onSuccess(response, request, endpoint);
         result.complete(response);
     }
@@ -179,7 +179,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
-        invocation.onFailure(endpoint, request, throwable);
+        invocation.onFailure(endpoint, throwable);
         O response = cluster.createResponse(throwable, request, endpoint);
         // avoid the live exception class is not recognized in application classloader
         cluster.onError(response.getThrowable(), request, endpoint);

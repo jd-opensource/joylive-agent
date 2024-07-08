@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
 /**
@@ -69,21 +70,6 @@ public interface CircuitBreaker {
      */
     CircuitBreakerPolicy getPolicy();
 
-    /**
-     * Get resource key
-     *
-     * @return Resource key
-     */
-    default String getResourceKey() {
-        return null;
-    }
-
-    /**
-     * Set resource key
-     *
-     * @param resourceKey Resource key
-     */
-    default void setResourceKey(String resourceKey) {
-    }
+    URI getUri();
 
 }

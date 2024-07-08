@@ -15,38 +15,30 @@
  */
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import lombok.Getter;
 
 /**
  * AbstractCircuitBreaker
  *
  * @since 1.1.0
  */
+@Getter
 public abstract class AbstractCircuitBreaker implements CircuitBreaker {
 
     private final CircuitBreakerPolicy policy;
 
-    public AbstractCircuitBreaker(CircuitBreakerPolicy policy) {
+    private final URI uri;
+
+    public AbstractCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
         this.policy = policy;
+        this.uri = uri;
     }
 
-    /**
-     * Register a listener to watch state change event.
-     *
-     * @param listener State change listener
-     */
     @Override
     public void registerListener(CircuitBreakerStateListener listener) {
 
     }
 
-    /**
-     * Get circuit-breaker policy
-     *
-     * @return policy
-     */
-    @Override
-    public CircuitBreakerPolicy getPolicy() {
-        return policy;
-    }
 }

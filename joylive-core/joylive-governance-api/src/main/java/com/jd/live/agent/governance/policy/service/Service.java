@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
@@ -22,7 +23,10 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
@@ -33,7 +37,7 @@ import java.util.function.BiConsumer;
  */
 public class Service extends PolicyOwner {
 
-    public static final String SERVICE_PREFIX = "service://";
+    private static final URI SERVICE_URI = URI.builder().schema("service").build();
 
     @Getter
     @Setter
@@ -147,11 +151,11 @@ public class Service extends PolicyOwner {
         if (serviceType == null) {
             serviceType = ServiceType.HTTP;
         }
-        supplement(() -> SERVICE_PREFIX + name, supplementTag(KEY_SERVICE_NAME, name));
+        supplement(() -> SERVICE_URI.host(name));
         if (groups != null) {
             for (ServiceGroup group : groups) {
                 group.setServiceType(serviceType);
-                group.supplement(() -> addPath(uri, group.getName()), supplementTag(KEY_SERVICE_GROUP, group.getName()));
+                group.supplement(() -> uri.parameter(KEY_SERVICE_GROUP, group.getName()));
                 if (group.isDefaultGroup() && group != defaultGroup) {
                     defaultGroup = group;
                 }
@@ -187,7 +191,6 @@ public class Service extends PolicyOwner {
         Service result = new Service();
         result.id = id;
         result.uri = uri;
-        result.tags = tags == null ? null : new HashMap<>(tags);
         result.name = name;
         result.serviceType = serviceType;
         result.version = version;

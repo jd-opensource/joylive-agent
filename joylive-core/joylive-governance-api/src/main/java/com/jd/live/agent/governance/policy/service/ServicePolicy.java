@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
@@ -35,12 +36,6 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import static com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy.QUERY_CIRCUIT_BREAKER;
-import static com.jd.live.agent.governance.policy.service.lane.LanePolicy.QUERY_LANE_SPACE_ID;
-import static com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy.QUERY_CONCURRENCY_LIMIT;
-import static com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy.QUERY_RATE_LIMIT;
-import static com.jd.live.agent.governance.policy.service.route.RoutePolicy.QUERY_ROUTE;
 
 /**
  * ServicePolicy
@@ -100,24 +95,19 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             livePolicy.setId(id);
         }
         if (rateLimitPolicies != null && !rateLimitPolicies.isEmpty()) {
-            rateLimitPolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_RATE_LIMIT, r.getName()),
-                    supplementTag(KEY_SERVICE_RATE_LIMIT, r.getName())));
+            rateLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_RATE_LIMIT, r.getName())));
         }
         if (concurrencyLimitPolicies != null && !concurrencyLimitPolicies.isEmpty()) {
-            concurrencyLimitPolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_CONCURRENCY_LIMIT, r.getName()),
-                    supplementTag(KEY_SERVICE_CONCURRENCY_LIMIT, r.getName())));
+            concurrencyLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, r.getName())));
         }
         if (routePolicies != null && !routePolicies.isEmpty()) {
-            routePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_ROUTE, r.getName()),
-                    supplementTag(KEY_SERVICE_ROUTE, r.getName())));
+            routePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_ROUTE, r.getName())));
         }
         if (lanePolicies != null && !lanePolicies.isEmpty()) {
-            lanePolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_LANE_SPACE_ID, r.getLaneSpaceId()),
-                    supplementTag(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
+            lanePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
         }
         if (circuitBreakerPolicies != null && !circuitBreakerPolicies.isEmpty()) {
-            circuitBreakerPolicies.forEach(r -> r.supplement(() -> addQuery(uri, QUERY_CIRCUIT_BREAKER, r.getName()),
-                    supplementTag(KEY_SERVICE_CIRCUIT_BREAKER, r.getName())));
+            circuitBreakerPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, r.getName())));
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
@@ -128,36 +118,31 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                     (source.rateLimitPolicies != null && !source.rateLimitPolicies.isEmpty())) {
                 rateLimitPolicies = copy(source.rateLimitPolicies,
                         s -> new RateLimitPolicy(),
-                        s -> addQuery(uri, QUERY_RATE_LIMIT, s.getName()),
-                        s -> new String[]{KEY_SERVICE_RATE_LIMIT, s.getName()});
+                        s -> uri.parameter(KEY_SERVICE_RATE_LIMIT, s.getName()));
             }
             if ((concurrencyLimitPolicies == null || concurrencyLimitPolicies.isEmpty()) &&
                     (source.concurrencyLimitPolicies != null && !source.concurrencyLimitPolicies.isEmpty())) {
                 concurrencyLimitPolicies = copy(source.concurrencyLimitPolicies,
                         s -> new ConcurrencyLimitPolicy(),
-                        s -> addQuery(uri, QUERY_CONCURRENCY_LIMIT, s.getName()),
-                        s -> new String[]{KEY_SERVICE_CONCURRENCY_LIMIT, s.getName()});
+                        s -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, s.getName()));
             }
             if ((routePolicies == null || routePolicies.isEmpty()) &&
                     (source.routePolicies != null && !source.routePolicies.isEmpty())) {
                 routePolicies = copy(source.routePolicies,
                         s -> new RoutePolicy(),
-                        s -> addQuery(uri, QUERY_ROUTE, s.getName()),
-                        s -> new String[]{KEY_SERVICE_ROUTE, s.getName()});
+                        s -> uri.parameter(KEY_SERVICE_ROUTE, s.getName()));
             }
             if ((lanePolicies == null || lanePolicies.isEmpty()) &&
                     (source.lanePolicies != null && !source.lanePolicies.isEmpty())) {
                 lanePolicies = copy(source.lanePolicies,
                         s -> new LanePolicy(),
-                        s -> addQuery(uri, QUERY_LANE_SPACE_ID, s.getLaneSpaceId()),
-                        s -> new String[]{KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()});
+                        s -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()));
             }
             if ((circuitBreakerPolicies == null || circuitBreakerPolicies.isEmpty()) &&
                     (source.circuitBreakerPolicies != null && !source.circuitBreakerPolicies.isEmpty())) {
                 circuitBreakerPolicies = copy(source.circuitBreakerPolicies,
                         s -> new CircuitBreakerPolicy(),
-                        s -> addQuery(uri, QUERY_CIRCUIT_BREAKER, s.getName()),
-                        s -> new String[]{KEY_SERVICE_CIRCUIT_BREAKER, s.getName()});
+                        s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, s.getName()));
             }
         }
     }
@@ -177,12 +162,11 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     protected <T extends PolicyInheritWithIdGen<T>> List<T> copy(List<T> sources,
                                                                  Function<T, T> creator,
-                                                                 Function<T, String> urlFunc,
-                                                                 Function<T, String[]> tagFunc) {
+                                                                 Function<T, URI> uriFunc) {
         List<T> result = new ArrayList<>(sources.size());
         for (T source : sources) {
             T newPolicy = creator.apply(source);
-            newPolicy.supplement(() -> urlFunc.apply(source), supplementTag(tagFunc.apply(source)));
+            newPolicy.supplement(() -> uriFunc.apply(source));
             newPolicy.supplement(source);
             result.add(newPolicy);
         }

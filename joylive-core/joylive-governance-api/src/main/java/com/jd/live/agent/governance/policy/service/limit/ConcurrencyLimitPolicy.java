@@ -42,11 +42,6 @@ import java.util.List;
 public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements PolicyInheritWithIdGen<ConcurrencyLimitPolicy> {
 
     /**
-     * The query parameter name for concurrency limit.
-     */
-    public static final String QUERY_CONCURRENCY_LIMIT = "concurrencyLimit";
-
-    /**
      * The maximum number of concurrent requests allowed.
      */
     private int maxConcurrency;

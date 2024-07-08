@@ -40,7 +40,6 @@ import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.live.Place;
 import com.jd.live.agent.governance.request.HttpRequest.HttpInboundRequest;
 import com.jd.live.agent.governance.request.RpcRequest.RpcInboundRequest;
-import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import lombok.Getter;
 import lombok.Setter;
@@ -57,7 +56,7 @@ import java.util.List;
  */
 @Setter
 @Getter
-public abstract class InboundInvocation<T extends InboundRequest> extends Invocation<T> implements InboundListener {
+public abstract class InboundInvocation<T extends InboundRequest> extends Invocation<T> {
 
     /**
      * The action to be performed at the unit level.
@@ -112,16 +111,23 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         }
     }
 
-    @Override
-    public void onForward(ServiceRequest request) {
+    /**
+     * Handles the forwarding of an invocation, publishing a forward traffic event and notifying listeners.
+     */
+    public void onForward() {
         publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
         if (listeners != null) {
-            listeners.forEach(listener -> listener.onForward(request));
+            listeners.forEach(listener -> listener.onForward(this));
         }
     }
 
-    @Override
-    public void onFailure(ServiceRequest request, Throwable throwable) {
+    /**
+     * Handles the failure of an invocation, publishing a reject traffic event based on the type of exception
+     * and notifying listeners.
+     *
+     * @param throwable the exception that caused the failure.
+     */
+    public void onFailure(Throwable throwable) {
         // TODO Whether to split the type of rejection
         if (throwable instanceof RejectUnreadyException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
@@ -135,7 +141,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
         }
         if (listeners != null) {
-            listeners.forEach(listener -> listener.onFailure(request, throwable));
+            listeners.forEach(listener -> listener.onFailure(this, throwable));
         }
     }
 

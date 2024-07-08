@@ -16,41 +16,38 @@
 package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 /**
- * Interface for handling service request callbacks.
+ * Interface for handling outbound service request callbacks.
  */
 public interface OutboundListener {
 
     /**
-     * Called when the service request is forwarded.
+     * Called when an outbound invocation is forwarded. This is a default method and does nothing by default.
      *
-     * @param endpoint the target endpoint.
-     * @param request  the service request that was made.
+     * @param endpoint  the endpoint to which the invocation is forwarded.
+     * @param invocation the outbound invocation that was forwarded.
      */
-    default void onForward(Endpoint endpoint, ServiceRequest request) {
-
+    default void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
     }
 
     /**
-     * Called when the service request completes successfully.
+     * Called when an outbound invocation completes successfully.
      *
-     * @param endpoint the target endpoint.
-     * @param request  the service request that was made.
-     * @param response the response received from the service.
+     * @param endpoint   the endpoint to which the invocation was sent.
+     * @param invocation the outbound invocation that was successful.
+     * @param response   the response received from the service.
      */
-    void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response);
+    void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response);
 
     /**
-     * Called when the service request fails.
+     * Called when an outbound invocation fails.
      *
-     * @param endpoint the target endpoint.
-     * @param request  the service request that was made.
-     * @param throwable the exception that caused the failure.
+     * @param endpoint   the endpoint to which the invocation was sent.
+     * @param invocation the outbound invocation that failed.
+     * @param throwable  the exception that caused the failure.
      */
-    void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable);
-
+    void onFailure(Endpoint endpoint, OutboundInvocation<?> invocation, Throwable throwable);
 }
 

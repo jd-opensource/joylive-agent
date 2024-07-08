@@ -18,8 +18,6 @@ package com.jd.live.agent.governance.policy.service;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
-
 /**
  * ServiceMethod
  */
@@ -45,7 +43,6 @@ public class ServiceMethod extends ServicePolicyOwner {
         ServiceMethod result = new ServiceMethod();
         result.id = id;
         result.uri = uri;
-        result.tags = tags == null ? null : new HashMap<>(tags);
         result.servicePolicy = servicePolicy == null ? null : servicePolicy.clone();
         result.name = name;
         result.owners.addOwner(owners);

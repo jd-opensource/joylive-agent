@@ -19,11 +19,6 @@ import java.util.Map;
 @Provider
 public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LanePolicy> {
 
-    /**
-     * The query parameter name for the lane space ID.
-     */
-    public static final String QUERY_LANE_SPACE_ID = "laneSpaceId";
-
     private String laneSpaceId;
 
     private Map<String, String> lanes;

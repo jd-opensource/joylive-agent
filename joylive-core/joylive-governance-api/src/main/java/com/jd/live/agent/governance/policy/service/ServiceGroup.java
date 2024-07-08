@@ -168,7 +168,6 @@ public class ServiceGroup extends ServicePolicyOwner {
         ServiceGroup result = new ServiceGroup();
         result.id = id;
         result.uri = uri;
-        result.tags = tags == null ? null : new HashMap<>(tags);
         result.name = name;
         result.serviceType = serviceType;
         result.servicePolicy = servicePolicy == null ? null : servicePolicy.clone();
@@ -305,7 +304,7 @@ public class ServiceGroup extends ServicePolicyOwner {
         String path = target.getPath() == null || target.getPath().isEmpty() ? ServicePath.DEFAULT_NAME : target.getPath();
         target.setPath(path);
         target.setServiceType(serviceType);
-        target.supplement(() -> addPath(uri, path), supplementTag(KEY_SERVICE_PATH, target.getPath()));
+        target.supplement(() -> uri.path(path));
         target.supplement(source == null ? null : source.getServicePolicy());
         target.supplement(servicePolicy);
         target.supplementMethod(source);

@@ -16,8 +16,10 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.service.*;
 import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
 
@@ -26,7 +28,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 /**
  * AbstractCircuitBreakerFactory provides a base implementation for factories that create and manage circuit breakers.
@@ -42,37 +43,28 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      * A thread-safe map to store circuit breakers associated with their respective policies.
      * The keys are the policy IDs, and the values are atomic references to the circuit breakers.
      */
-    protected final Map<Long, AtomicReference<CircuitBreaker>> circuitBreakers = new ConcurrentHashMap<>();
+    protected final Map<String, AtomicReference<CircuitBreaker>> circuitBreakers = new ConcurrentHashMap<>();
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
-    /**
-     * Retrieves a circuit breaker for the given circuit breaker policy. If a circuit breaker for the policy
-     * already exists and its version is greater than or equal to the policy version, it is returned.
-     * Otherwise, a new circuit breaker is created using the {@link #create(CircuitBreakerPolicy, String)} method.
-     *
-     * @param policy      The circuit breaker policy for which to retrieve or create a circuit breaker.
-     * @param serviceFunc A function that provides service.
-     * @return A circuit breaker that corresponds to the given policy, or null if the policy is null.
-     */
     @Override
-    public CircuitBreaker get(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc) {
+    public CircuitBreaker get(CircuitBreakerPolicy policy, URI uri, PolicySupplier policySupplier) {
         if (policy == null) {
             return null;
         }
-        AtomicReference<CircuitBreaker> reference = circuitBreakers.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
+        AtomicReference<CircuitBreaker> reference = circuitBreakers.computeIfAbsent(uri.toString(), n -> new AtomicReference<>());
         CircuitBreaker circuitBreaker = reference.get();
         if (circuitBreaker != null && circuitBreaker.getPolicy().getVersion() == policy.getVersion()) {
             return circuitBreaker;
         }
-        CircuitBreaker breaker = create(policy, policy.getId().toString());
+        CircuitBreaker breaker = create(policy, uri);
         while (true) {
             circuitBreaker = reference.get();
             if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() != policy.getVersion()) {
                 if (reference.compareAndSet(circuitBreaker, breaker)) {
                     circuitBreaker = breaker;
-                    addRecycleTask(policy, serviceFunc);
+                    addRecycleTask(policy, policySupplier);
                     break;
                 }
             }
@@ -80,55 +72,22 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         return circuitBreaker;
     }
 
-    /**
-     * Retrieves a circuit breaker for the given circuit breaker policy. If a circuit breaker for the policy
-     * already exists and its version is greater than or equal to the policy version, it is returned.
-     * Otherwise, a new circuit breaker is created using the {@link #create(CircuitBreakerPolicy, String)} method.
-     *
-     * @param policy      The circuit breaker policy for which to retrieve or create a circuit breaker.
-     * @param resourceKey the resourceKey of the circuit breaker.
-     * @param serviceFunc A function that provides service.
-     * @return A circuit breaker that corresponds to the given policy, or null if the policy is null.
-     */
-    @Override
-    public CircuitBreaker get(CircuitBreakerPolicy policy, String resourceKey, Function<String, Service> serviceFunc) {
-        if (policy == null) {
-            return null;
-        }
-        AtomicReference<CircuitBreaker> reference = circuitBreakers.computeIfAbsent(policy.generateId(() -> resourceKey), n -> new AtomicReference<>());
-        CircuitBreaker circuitBreaker = reference.get();
-        if (circuitBreaker != null && circuitBreaker.getPolicy().getVersion() == policy.getVersion()) {
-            return circuitBreaker;
-        }
-        CircuitBreaker breaker = create(policy, resourceKey);
-        while (true) {
-            circuitBreaker = reference.get();
-            if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() != policy.getVersion()) {
-                if (reference.compareAndSet(circuitBreaker, breaker)) {
-                    circuitBreaker = breaker;
-                    addRecycleTask(policy, serviceFunc);
-                    break;
-                }
-            }
-        }
-        return circuitBreaker;
-    }
-
-    private void addRecycleTask(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc) {
+    private void addRecycleTask(CircuitBreakerPolicy policy, PolicySupplier policySupplier) {
         long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
-        timer.delay("recycle-circuitbreaker-" + policy.getId(), delay, () -> recycle(policy, serviceFunc));
+        timer.delay("recycle-circuitbreaker-" + policy.getId(), delay, () -> recycle(policy, policySupplier));
     }
 
-    private void recycle(CircuitBreakerPolicy policy, Function<String, Service> serviceFunc) {
-        AtomicReference<CircuitBreaker> ref = circuitBreakers.get(policy.getId());
+    private void recycle(CircuitBreakerPolicy policy, PolicySupplier policySupplier) {
+        URI uri = policy.getUri();
+        AtomicReference<CircuitBreaker> ref = circuitBreakers.get(uri.toString());
         CircuitBreaker circuitBreaker = ref == null ? null : ref.get();
-        if (circuitBreaker != null && serviceFunc != null) {
-            String serviceName = policy.getTag(PolicyId.KEY_SERVICE_NAME);
-            String serviceGroup = policy.getTag(PolicyId.KEY_SERVICE_GROUP);
-            String servicePath = policy.getTag(PolicyId.KEY_SERVICE_PATH);
-            String serviceMethod = policy.getTag(PolicyId.KEY_SERVICE_METHOD);
+        if (circuitBreaker != null && policySupplier != null) {
+            String serviceName = uri.getHost();
+            String servicePath = uri.getPath();
+            String serviceGroup = uri.getParameter(PolicyId.KEY_SERVICE_GROUP);
+            String serviceMethod = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
 
-            Service service = serviceFunc.apply(serviceName);
+            Service service = policySupplier.getPolicy().getService(serviceName);
             ServiceGroup group = service == null ? null : service.getGroup(serviceGroup);
             ServicePath path = group == null ? null : group.getPath(servicePath);
             ServiceMethod method = path == null ? null : path.getMethod(serviceMethod);
@@ -147,9 +106,9 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
                 }
             }
             if (!exists) {
-                circuitBreakers.remove(policy.getId());
+                circuitBreakers.remove(uri.toString());
             } else {
-                addRecycleTask(policy, serviceFunc);
+                addRecycleTask(policy, policySupplier);
             }
         }
     }
@@ -159,11 +118,11 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      * This method is abstract and must be implemented by subclasses to provide the specific
      * circuit breaker creation logic.
      *
-     * @param policy      The circuit breaker policy to be used for creating the circuit breaker.
-     * @param resourceKey The resource key of the circuit breaker.
+     * @param policy The circuit breaker policy to be used for creating the circuit breaker.
+     * @param uri The resource uri.
      * @return A new circuit breaker instance that enforces the given policy.
      */
-    protected abstract CircuitBreaker create(CircuitBreakerPolicy policy, String resourceKey);
+    protected abstract CircuitBreaker create(CircuitBreakerPolicy policy, URI uri);
 
 }
 

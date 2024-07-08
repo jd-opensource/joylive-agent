@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.live;
 
 import com.jd.live.agent.core.parser.json.DeserializeConverter;
 import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
@@ -29,12 +30,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class LiveDomain extends PolicyId {
 
-    public static final String GATEWAY_PREFIX = "gateway://";
+    public static final URI LIVE_ROOT = URI.builder().schema("live").build();
 
     @Getter
     @Setter
@@ -90,13 +90,12 @@ public class LiveDomain extends PolicyId {
     }
 
     protected void supplement() {
-        supplement(() -> GATEWAY_PREFIX + host, supplementTag(KEY_SERVICE_NAME, host));
+        supplement(() -> LIVE_ROOT.host(host));
         if (paths != null) {
             for (LivePath livePath : paths) {
                 String path = livePath.getPath() == null || livePath.getPath().isEmpty() ? "/" : livePath.getPath();
                 livePath.setPath(path);
-                Map<String, String> map = supplementTag(KEY_SERVICE_PATH, path, KEY_SERVICE_GROUP, DEFAULT_GROUP);
-                livePath.supplement(() -> addPath(uri, path), map);
+                livePath.supplement(() -> uri.path(path));
                 livePath.supplementVariable();
             }
         }

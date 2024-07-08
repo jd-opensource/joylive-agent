@@ -23,7 +23,10 @@ import com.jd.live.agent.core.util.trie.PathMatchType;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
@@ -111,7 +114,6 @@ public class ServicePath extends ServicePolicyOwner implements Path {
         ServicePath result = new ServicePath();
         result.id = id;
         result.uri = uri;
-        result.tags = tags == null ? null : new HashMap<>(tags);
         result.path = path;
         result.serviceType = serviceType;
         result.matchType = matchType;
@@ -236,8 +238,7 @@ public class ServicePath extends ServicePolicyOwner implements Path {
      * @return The supplemented target service method.
      */
     private ServiceMethod supplementMethod(ServiceMethod source, ServiceMethod target) {
-        target.supplement(() -> addPath(uri, target.getName()),
-                supplementTag(ServiceMethod.KEY_SERVICE_METHOD, target.getName()));
+        target.supplement(() -> uri.parameter(KEY_SERVICE_METHOD, target.getName()));
         target.supplement(source == null ? null : source.getServicePolicy());
         target.supplement(servicePolicy);
         return target;

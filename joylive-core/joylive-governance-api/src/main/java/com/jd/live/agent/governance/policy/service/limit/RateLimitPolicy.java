@@ -48,11 +48,6 @@ import java.util.List;
 public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheritWithIdGen<RateLimitPolicy> {
 
     /**
-     * A constant key used for querying rate limit information.
-     */
-    public static final String QUERY_RATE_LIMIT = "rateLimit";
-
-    /**
      * A list of sliding windows that define the rate limits. Each sliding window specifies
      * a time frame and the maximum number of actions allowed within that frame.
      */

@@ -26,6 +26,7 @@ import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiterFactory;
+import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
@@ -51,12 +52,12 @@ public class RateLimitInboundFilter implements InboundFilter {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<RateLimitPolicy> policies = servicePolicy == null ? null : servicePolicy.getRateLimitPolicies();
         if (null != policies && !policies.isEmpty()) {
+            PolicySupplier policySupplier = invocation.getContext().getPolicySupplier();
             for (RateLimitPolicy policy : policies) {
                 // match logic
                 if (policy.match(invocation)) {
                     RateLimiterFactory rateLimiterFactory = factories.get(policy.getStrategyType());
-                    RateLimiter rateLimiter = rateLimiterFactory.get(policy,
-                            name -> invocation.getContext().getPolicySupplier().getPolicy().getService(name));
+                    RateLimiter rateLimiter = rateLimiterFactory.get(policy, policySupplier);
                     if (null != rateLimiter && !rateLimiter.acquire()) {
                         invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");
                     }

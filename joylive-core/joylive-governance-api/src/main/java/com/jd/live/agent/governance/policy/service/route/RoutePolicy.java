@@ -37,9 +37,6 @@ import java.util.List;
 @Consumer
 public class RoutePolicy extends PolicyId implements PolicyInheritWithIdGen<RoutePolicy>, Serializable {
 
-    //Constant string defining query routing
-    public static final String QUERY_ROUTE = "route";
-
     //The name of the routing policy
     private String name;
 

@@ -35,7 +35,6 @@ import com.jd.live.agent.governance.policy.live.Cell;
 import com.jd.live.agent.governance.policy.live.Unit;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.RpcRequest.RpcOutboundRequest;
-import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
 import lombok.Getter;
@@ -52,7 +51,7 @@ import java.util.List;
  */
 @Setter
 @Getter
-public abstract class OutboundInvocation<T extends OutboundRequest> extends Invocation<T> implements OutboundListener {
+public abstract class OutboundInvocation<T extends OutboundRequest> extends Invocation<T> {
 
     /**
      * A list of endpoints that this outbound invocation targets.
@@ -118,20 +117,35 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
     }
 
-    @Override
-    public void onForward(Endpoint endpoint, ServiceRequest request) {
+    /**
+     * Handles the forwarding of an invocation to the specified endpoint, publishing a forward traffic event.
+     *
+     * @param endpoint the endpoint to which the invocation is forwarded.
+     */
+    public void onForward(Endpoint endpoint) {
         publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
     }
 
-    @Override
-    public void onSuccess(Endpoint endpoint, ServiceRequest request, ServiceResponse response) {
+    /**
+     * Handles the successful completion of an invocation, notifying listeners with the response.
+     *
+     * @param endpoint the endpoint to which the invocation was sent.
+     * @param response the response received from the service.
+     */
+    public void onSuccess(Endpoint endpoint, ServiceResponse response) {
         if (listeners != null) {
-            listeners.forEach(listener -> listener.onSuccess(endpoint, request, response));
+            listeners.forEach(listener -> listener.onSuccess(endpoint, this, response));
         }
     }
 
-    @Override
-    public void onFailure(Endpoint endpoint, ServiceRequest request, Throwable throwable) {
+    /**
+     * Handles the failure of an invocation, publishing a reject traffic event based on the type of exception
+     * and notifying listeners.
+     *
+     * @param endpoint  the endpoint to which the invocation was sent.
+     * @param throwable the exception that caused the failure.
+     */
+    public void onFailure(Endpoint endpoint, Throwable throwable) {
         // TODO Whether to split the type of rejection
         if (throwable instanceof RejectUnitException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
@@ -143,7 +157,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
         }
         if (listeners != null) {
-            listeners.forEach(listener -> listener.onFailure(endpoint, request, throwable));
+            listeners.forEach(listener -> listener.onFailure(endpoint, this, throwable));
         }
     }
 

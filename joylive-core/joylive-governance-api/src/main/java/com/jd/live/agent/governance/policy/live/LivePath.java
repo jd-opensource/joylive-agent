@@ -92,8 +92,7 @@ public class LivePath extends PolicyId implements Path {
     protected void supplementVariable() {
         if (bizVariableRules != null) {
             for (LiveVariableRule variableRule : bizVariableRules) {
-                variableRule.supplement(() -> addQuery(uri, QUERY_VARIABLE, variableRule.getValue()),
-                        supplementTag(KEY_SERVICE_VARIABLE, variableRule.getValue()));
+                variableRule.supplement(() -> uri.parameter(QUERY_VARIABLE, variableRule.getValue()));
             }
         }
 

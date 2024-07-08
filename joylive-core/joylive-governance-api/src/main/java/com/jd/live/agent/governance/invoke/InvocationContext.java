@@ -244,9 +244,9 @@ public interface InvocationContext {
         try {
             InboundFilterChain.Chain chain = new InboundFilterChain.Chain(getInboundFilters());
             chain.filter(invocation);
-            invocation.onForward(invocation.getRequest());
+            invocation.onForward();
         } catch (RejectException e) {
-            invocation.onFailure(invocation.getRequest(), e);
+            invocation.onFailure(e);
             throw e;
         }
     }
@@ -342,13 +342,13 @@ public interface InvocationContext {
             List<? extends Endpoint> endpoints = invocation.getEndpoints();
             Endpoint endpoint = endpoints != null && !endpoints.isEmpty() ? endpoints.get(0) : null;
             if (endpoint != null || !invocation.getRequest().isInstanceSensitive()) {
-                invocation.onSuccess(endpoint, invocation.getRequest(), null);
+                invocation.onSuccess(endpoint, null);
                 return (E) endpoint;
             } else {
                 throw new RejectNoProviderException("There is no provider for invocation");
             }
         } catch (RejectException e) {
-            invocation.onFailure(null, invocation.getRequest(), e);
+            invocation.onFailure(null, e);
             throw e;
         }
     }

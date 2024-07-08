@@ -39,7 +39,7 @@ public class ServicePolicyOwner extends PolicyOwner {
             servicePolicy = new ServicePolicy();
         }
         if (servicePolicy != null) {
-            servicePolicy.supplement(() -> uri, supplementTag());
+            servicePolicy.supplement(() -> uri);
             servicePolicy.supplement(source);
         }
     }
