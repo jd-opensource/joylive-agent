@@ -76,7 +76,7 @@ public abstract class AbstractRpcRequest<T> extends AbstractServiceRequest<T> im
         this.service = service;
         this.group = group;
         this.method = method;
-        this.path = path != null && path.equals(service) ? null : path;
+        this.path = normalizePath(path);
         this.arguments = arguments;
         this.attachments = attachments;
     }
@@ -118,6 +118,21 @@ public abstract class AbstractRpcRequest<T> extends AbstractServiceRequest<T> im
     @Override
     public Object getAttachment(String key) {
         return key == null || attachments == null ? null : attachments.get(key);
+    }
+
+    /**
+     * Normalizes the given path. If the path is {@code null}, empty, or equals the service name, it returns "/".
+     * Otherwise, it returns the original path.
+     *
+     * @param path The path to be normalized.
+     * @return The normalized path. If the input path is {@code null}, empty, or equals the service name, returns "/".
+     *         Otherwise, returns the original path.
+     */
+    private String normalizePath(String path) {
+        if (path == null || path.isEmpty() || path.equals(service)) {
+            return "/";
+        }
+        return path;
     }
 
     /**
