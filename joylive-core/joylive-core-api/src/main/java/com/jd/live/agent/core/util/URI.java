@@ -152,13 +152,17 @@ public class URI {
      */
     public String getUri() {
         if (url == null) {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(128);
             sb.append(schema).append("://").append(host);
             if (port != null) {
                 sb.append(":").append(port);
             }
             if (path != null) {
-                sb.append("/").append(path);
+                if (path.startsWith("/")) {
+                    sb.append(path);
+                } else {
+                    sb.append("/").append(path);
+                }
             }
             if (parameters != null && !parameters.isEmpty()) {
                 sb.append('?');
