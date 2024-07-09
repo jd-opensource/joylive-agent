@@ -70,6 +70,11 @@ public interface CircuitBreaker {
      */
     CircuitBreakerPolicy getPolicy();
 
+    /**
+     * Obtain the URI related to the circuit breaker
+     *
+     * @return URI (Uniform Resource Identifier)
+     */
     URI getUri();
 
 }

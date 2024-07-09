@@ -45,8 +45,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     }
 
     /**
-     * Enhanced logic before method execution<br>
-     * <p>
+     * Enhanced logic before method execution
      *
      * @see org.springframework.cloud.client.serviceregistry.ServiceRegistry#register(Registration)
      */

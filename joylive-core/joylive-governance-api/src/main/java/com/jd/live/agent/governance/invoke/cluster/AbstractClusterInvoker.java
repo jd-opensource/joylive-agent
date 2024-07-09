@@ -20,7 +20,6 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -92,14 +91,14 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         }
         R request = invocation.getRequest();
         List<? extends Endpoint> instances = invocation.getInstances();
-        CompletionStage<List<E>> stage = instances == null || instances.isEmpty() || predicate != null && predicate.test(request)
+        CompletionStage<List<E>> discoveryStage = instances == null || instances.isEmpty() || predicate != null && predicate.test(request)
                 ? cluster.route(request)
                 : CompletableFuture.completedFuture((List<E>) instances);
-        stage.whenComplete((v, t) -> {
+        discoveryStage.whenComplete((v, t) -> {
             if (t == null) {
                 E endpoint = null;
                 try {
-                    endpoint = context.route(invocation, v, (OutboundFilter[]) null, false);
+                    endpoint = context.route(invocation, v, null, false);
                     E instance = endpoint;
                     cluster.onStartRequest(request, instance);
                     cluster.invoke(request, instance).whenComplete((o, r) -> {

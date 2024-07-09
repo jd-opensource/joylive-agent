@@ -18,15 +18,17 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * AbstractCircuitBreakerFactory provides a base implementation for factories that create and manage circuit breakers.
@@ -40,9 +42,15 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
 
     /**
      * A thread-safe map to store circuit breakers associated with their respective policies.
-     * The keys are the policy IDs, and the values are atomic references to the circuit breakers.
+     * Key is the string URI of the policy, and the values are atomic references to the circuit breakers.
      */
     private final Map<String, AtomicReference<CircuitBreaker>> circuitBreakers = new ConcurrentHashMap<>();
+
+    private final Map<String, Set<String>> instanceUris = new ConcurrentHashMap<>();
+
+    private final Map<String, List<? extends Endpoint>> serviceEndpoints = new ConcurrentHashMap<>();
+
+    private final AtomicReference<Long> updateTimestamps = new AtomicReference<>(0L);
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
@@ -52,13 +60,17 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
 
     @Override
     public CircuitBreaker get(CircuitBreakerPolicy policy, URI uri) {
-        if (policy == null) {
+        if (policy == null || uri == null) {
             return null;
         }
         AtomicReference<CircuitBreaker> reference = circuitBreakers.computeIfAbsent(uri.toString(), n -> new AtomicReference<>());
         CircuitBreaker circuitBreaker = reference.get();
         if (circuitBreaker != null && circuitBreaker.getPolicy().getVersion() == policy.getVersion()) {
             return circuitBreaker;
+        }
+        String instanceId = uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT);
+        if (instanceId != null) {
+            instanceUris.computeIfAbsent(instanceId, n -> new HashSet<>()).add(uri.toString());
         }
         CircuitBreaker breaker = create(policy, uri);
         while (true) {
@@ -74,9 +86,26 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         return circuitBreaker;
     }
 
+    @Override
+    public void setServiceEndpoints(String serviceId, List<? extends Endpoint> endpoints) {
+        Long latestUpdate = updateTimestamps.get();
+        long currentUpdate = System.currentTimeMillis();
+        if (currentUpdate > latestUpdate && updateTimestamps.compareAndSet(latestUpdate, currentUpdate + 60000)) {
+            List<? extends Endpoint> oldEndpoints = serviceEndpoints.put(serviceId, endpoints);
+            if (oldEndpoints != null) {
+                addRecycleTask(serviceId, endpoints, oldEndpoints);
+            }
+        }
+    }
+
     private void addRecycleTask(CircuitBreakerPolicy policy, URI uri) {
         long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
         timer.delay("recycle-circuitbreaker-" + policy.getId(), delay, () -> recycle(policy, uri));
+    }
+
+    private void addRecycleTask(String serviceId, List<? extends Endpoint> newEndpoints, List<? extends Endpoint> oldEndpoints) {
+        long delay = 1000 + ThreadLocalRandom.current().nextInt(1000 * 4);
+        timer.delay("recycle-instance-circuitbreaker-" + serviceId, delay, () -> recycle(newEndpoints, oldEndpoints));
     }
 
     private void recycle(CircuitBreakerPolicy policy, URI uri) {
@@ -84,7 +113,6 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         CircuitBreaker circuitBreaker = ref == null ? null : ref.get();
         if (circuitBreaker != null && policySupplier != null) {
             ServicePolicy servicePolicy = policySupplier.getPolicy().getServicePolicy(uri);
-            // TODO clean instance circuit breaker
             boolean exists = false;
             if (servicePolicy != null && servicePolicy.getCircuitBreakerPolicies() != null) {
                 for (CircuitBreakerPolicy circuitBreakerPolicy : servicePolicy.getCircuitBreakerPolicies()) {
@@ -102,13 +130,28 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         }
     }
 
+    private void recycle(List<? extends Endpoint> newEndpoints, List<? extends Endpoint> oldEndpoints) {
+        Set<String> newEndpointIds = newEndpoints.stream()
+                .map(Endpoint::getId)
+                .collect(Collectors.toSet());
+        List<Endpoint> recycledEndpoints = oldEndpoints.stream()
+                .filter(oldEndpoint -> !newEndpointIds.contains(oldEndpoint.getId()))
+                .collect(Collectors.toList());
+        recycledEndpoints.forEach(recycledEndpoint -> {
+            Set<String> uris = instanceUris.get(recycledEndpoint.getId());
+            if (uris != null) {
+                uris.forEach(circuitBreakers::remove);
+            }
+        });
+    }
+
     /**
      * Creates a new circuit breaker instance based on the provided circuit breaker policy.
      * This method is abstract and must be implemented by subclasses to provide the specific
      * circuit breaker creation logic.
      *
      * @param policy The circuit breaker policy to be used for creating the circuit breaker.
-     * @param uri The resource uri.
+     * @param uri    The resource uri.
      * @return A new circuit breaker instance that enforces the given policy.
      */
     protected abstract CircuitBreaker create(CircuitBreakerPolicy policy, URI uri);

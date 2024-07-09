@@ -91,7 +91,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
                 }
             }
             // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, serviceBreakers, instancePolicies));
+            invocation.addListener(new CircuitBreakerListener(factories, serviceBreakers, instancePolicies));
             // acquire service permit
             acquire(invocation, serviceBreakers);
             // filter broken instance
@@ -142,7 +142,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
      */
     private static class CircuitBreakerListener implements OutboundListener {
 
-        private final CircuitBreakerFactory factory;
+        private final Map<String, CircuitBreakerFactory> factories;
 
         private List<CircuitBreaker> circuitBreakers;
 
@@ -150,10 +150,10 @@ public class CircuitBreakerFilter implements OutboundFilter {
 
         private final int index;
 
-        CircuitBreakerListener(CircuitBreakerFactory factory,
+        CircuitBreakerListener(Map<String, CircuitBreakerFactory> factories,
                                List<CircuitBreaker> circuitBreakers,
                                List<CircuitBreakerPolicy> instancePolicies) {
-            this.factory = factory;
+            this.factories = factories;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
             this.index = circuitBreakers.size();
@@ -164,6 +164,8 @@ public class CircuitBreakerFilter implements OutboundFilter {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
                 for (CircuitBreakerPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
+                    CircuitBreakerFactory factory = factories.get(policy.getType());
+                    factory.setServiceEndpoints(invocation.getServiceMetadata().getServiceName(), invocation.getEndpoints());
                     CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {
                         if (breaker.acquire()) {
