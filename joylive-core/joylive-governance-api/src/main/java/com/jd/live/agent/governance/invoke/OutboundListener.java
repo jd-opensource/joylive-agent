@@ -24,18 +24,19 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 public interface OutboundListener {
 
     /**
-     * Called when an outbound invocation is forwarded. This is a default method and returns true by default.
+     * Called when a load balancer selects an instance.
      *
      * @param endpoint   the endpoint to which the invocation is forwarded.
      * @param invocation the outbound invocation that was forwarded.
-     * @return true if the forwarding was successful, false otherwise.
+     * @return true if the selected node is appropriate, false otherwise.
      */
     default boolean onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
         return true;
     }
 
     /**
-     * Called when an endpoint is canceled. This is a default method and does nothing by default.
+     * Called when the selected instance by the load balancer is not appropriate,
+     * commonly used to release related resources.
      *
      * @param endpoint   the endpoint to which the invocation was sent.
      * @param invocation the outbound invocation that was canceled.
