@@ -13,15 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.circuitbreaker;
+package com.jd.live.agent.governance.policy.service.circuitbreak;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * CircuitLevel
+ * DegradeConfig
  *
  * @since 1.1.0
  */
-public enum CircuitLevel {
-    SERVICE,
-    API,
-    INSTANCE;
+@Setter
+@Getter
+public class DegradeConfig {
+
+    private int responseCode;
+
+    private Map<String, String> attributes;
+
+    private String responseBody;
+
+    public DegradeConfig() {
+    }
+
+    public DegradeConfig(DegradeConfig config) {
+        this.responseCode = config.responseCode;
+        this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
+        this.responseBody = config.responseBody;
+    }
 }

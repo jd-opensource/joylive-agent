@@ -36,7 +36,7 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.*;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;

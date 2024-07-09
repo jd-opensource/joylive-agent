@@ -301,6 +301,7 @@
               "slowCallDurationThreshold": 1000,
               "waitDurationInOpenState": 5000,
               "allowedCallsInHalfOpenState": 3,
+              "forceOpen": false,
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {

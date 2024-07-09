@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.circuitbreaker;
+package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
@@ -95,6 +95,11 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
      * In the half-open state, callable numbers
      */
     private int allowedCallsInHalfOpenState = 10;
+
+    /**
+     * Whether to force the circuit breaker to be turned on
+     */
+    private boolean forceOpen = false;
 
     /**
      * Downgrade configuration

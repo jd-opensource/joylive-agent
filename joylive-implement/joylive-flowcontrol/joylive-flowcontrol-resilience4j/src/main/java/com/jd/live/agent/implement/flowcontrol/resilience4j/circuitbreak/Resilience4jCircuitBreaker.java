@@ -18,7 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.core.EventConsumer;
 

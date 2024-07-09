@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 import lombok.Getter;
 
 /**

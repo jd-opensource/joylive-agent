@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 /**
- * CircuitBreaker State Enum
+ * CircuitBreaker States
  *
  * @since 1.1.0
  */

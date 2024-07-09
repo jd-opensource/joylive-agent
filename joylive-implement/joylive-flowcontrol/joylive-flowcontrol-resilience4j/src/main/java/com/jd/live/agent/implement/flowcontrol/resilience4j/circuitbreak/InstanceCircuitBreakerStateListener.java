@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateEvent;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 
 /**
  * InstanceCircuitBreakerStateListener

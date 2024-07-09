@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.policy.live;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
 /**
  * Enumeration representing different types of faults that can occur.

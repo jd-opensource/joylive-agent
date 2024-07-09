@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.governance.policy.live.FaultType;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
 import java.util.Set;
 

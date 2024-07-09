@@ -22,8 +22,8 @@ import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitBreakerPolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreaker.CircuitLevel;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitLevel;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
@@ -56,6 +56,9 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .recordException(exception -> exception instanceof CircuitBreakException)
                 .build();
         io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(uri.toString());
+        if (policy.isForceOpen()) {
+            cb.transitionToForcedOpenState();
+        }
         CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, uri, cb);
         if (policy.getLevel() == CircuitLevel.INSTANCE) {
             circuitBreaker.registerListener(new InstanceCircuitBreakerStateListener(policy, uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT)));
