@@ -260,6 +260,69 @@ The default strategy for a service is set on the default group `default`.
 }
 ```
 
+### 2.8 Service Circuit Breaker Strategy
+
+```mermaid
+stateDiagram-v2
+    Closed --> Open : fail [threshold reached]
+    Closed --> Closed : fail [under threshold]
+    Open --> HalfOpen : reset timeout
+    HalfOpen --> Closed : success
+    HalfOpen --> Open : fail
+    
+    Closed --> Closed : success
+    Open --> Open : call / raise circuit open
+```
+
+| Element  | Description                           |
+|----------|---------------------------------------|
+| name     | Policy name                           |
+| level       | SERVICE: service level; API: API level; INSTANCE: instance level  |
+| slidingWindowType   | Specify the type of sliding window, count: number of times; time: duration           |
+| slidingWindowSize   | Specify the size of the sliding window, if it is count, it represents the number of calls; if it is time, it represents seconds |
+| minCallsThreshold   | Protect the threshold to prevent applications with too few calls from experiencing a fuse due to occasional failures     |
+| errorCodes      | If one of the response codes in the list is returned, it will be recorded as a failure by the circuit breaker      |
+| failureRateThreshold   | Failure rate threshold to trigger circuit breaker                        |
+| slowCallRateThreshold  | Threshold for the slow call count ratio that triggers circuit breaking                       |
+| slowCallDurationThreshold  | How long does a call take to be considered slow                         |
+| waitDurationInOpenState     | When the circuit breaker is triggered (status is open), how long should access tokens not be granted           |
+| allowedCallsInHalfOpenState | When the circuit breaker enters the half-open state, how many attempts can be allowed for trial access             |
+| forceOpen     | Forced to open the fuse                                |
+| degradeConfig     | When a fuse occurs, if the degradation configuration is performed, the configuration data will be returned as a response       |
+
+```json
+{
+  "circuitBreakerPolicies": [
+    {
+      "name": "cb1",
+      "level": "SERVICE",
+      "slidingWindowType": "count",
+      "slidingWindowSize": 5,
+      "minCallsThreshold": 1,
+      "errorCodes": [
+        "500",
+        "502"
+      ],
+      "failureRateThreshold": 20,
+      "slowCallRateThreshold": 20,
+      "slowCallDurationThreshold": 1000,
+      "waitDurationInOpenState": 5000,
+      "allowedCallsInHalfOpenState": 3,
+      "forceOpen": false,
+      "degradeConfig": {
+        "responseCode": 200,
+        "attributes": {
+          "degrade-header-1": "degraded1",
+          "degrade-header-2": "degraded2"
+        },
+        "responseBody": "Hello, your request has been downgraded."
+      },
+      "version": 1704038400000
+    }
+  ]
+}
+```
+
 ### 3. Complete Service Strategy Skeleton
 
 Below is the complete service strategy in JSON format.

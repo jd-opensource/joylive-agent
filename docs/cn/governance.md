@@ -259,6 +259,69 @@
 }
 ```
 
+### 2.8 服务熔断降级策略
+
+```mermaid
+stateDiagram-v2
+    Closed --> Open : fail [threshold reached]
+    Closed --> Closed : fail [under threshold]
+    Open --> HalfOpen : reset timeout
+    HalfOpen --> Closed : success
+    HalfOpen --> Open : fail
+    
+    Closed --> Closed : success
+    Open --> Open : call / raise circuit open
+```
+
+| 元素             | 说明                                                  |
+| ---------------- | ----------------------------------------------------- |
+| 名称             | 策略名称                                              |
+| 级别             | SERVICE：服务级别；API：API级别；INSTANCE：实例级别          |
+| 滑动窗口类型     | 指定滑动窗口的类型，count：次数；time：时间                  |
+| 滑动窗口大小     | 指定滑动窗口的大小，如果是count，则为调用次数，如果是time，则为秒 |
+| 最小调用次数     | 保护阈值，防止调用次数过小的应用因为偶发故障产生熔断         |
+| 错误码           | 请求返回列表中的响应码之一，则会被熔断器所记录一次失败       |
+| 熔断失败比率     | 触发熔断的失败次数比率阈值                                   |
+| 熔断慢调用比例   | 触发熔断的慢调用次数比率阈值                                 |
+| 慢调用界定阈值   | 调用耗时多长以上算是慢调用                                   |
+| 熔断时间         | 触发熔断时（状态为开启），多长时间内不允许授予访问令牌       |
+| 半开状态调用次数 | 熔断器进入半开状态时，可以允许多少次尝试性访问               |
+| 强制开启         | 强制开启熔断                                          |
+| 降级配置         | 熔断发生时，若进行降级配置，则会返回配置数据作为响应         |
+
+```json
+{
+  "circuitBreakerPolicies": [
+    {
+      "name": "cb1",
+      "level": "SERVICE",
+      "slidingWindowType": "count",
+      "slidingWindowSize": 5,
+      "minCallsThreshold": 1,
+      "errorCodes": [
+        "500",
+        "502"
+      ],
+      "failureRateThreshold": 20,
+      "slowCallRateThreshold": 20,
+      "slowCallDurationThreshold": 1000,
+      "waitDurationInOpenState": 5000,
+      "allowedCallsInHalfOpenState": 3,
+      "forceOpen": false,
+      "degradeConfig": {
+        "responseCode": 200,
+        "attributes": {
+          "degrade-header-1": "degraded1",
+          "degrade-header-2": "degraded2"
+        },
+        "responseBody": "Hello, your request has been downgraded."
+      },
+      "version": 1704038400000
+    }
+  ]
+}
+```
+
 ### 3. 服务策略完整骨架
 
 下面以json格式展示了服务策略
@@ -309,5 +372,4 @@
   }
 ]
 ```
-
 
