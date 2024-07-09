@@ -73,14 +73,14 @@ public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheri
      * Constructs a new rate limit policy with detailed specifications.
      *
      * @param name           the name of the rate limit policy
-     * @param strategyType   the strategy type of the rate limit policy
+     * @param realizeType    the realize type of the rate limit policy
      * @param conditions     a list of conditions (tags) for the rate limit policy
      * @param slidingWindows a list of sliding windows that define the rate limits
      * @param version        the version of the rate limit policy
      */
-    public RateLimitPolicy(String name, String strategyType, List<TagCondition> conditions,
+    public RateLimitPolicy(String name, String realizeType, List<TagCondition> conditions,
                            List<SlidingWindow> slidingWindows, long version) {
-        super(name, strategyType, conditions, version);
+        super(name, realizeType, conditions, version);
         this.slidingWindows = slidingWindows;
     }
 

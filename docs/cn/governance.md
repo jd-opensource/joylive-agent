@@ -143,7 +143,7 @@
     {
       "name": "limit-rule-1",
       "version": 1704038400000,
-      "strategyType": "Resilience4j",
+      "realizeType": "Resilience4j",
       "slidingWindows": [
         {
           "threshold": 1,
@@ -190,7 +190,7 @@
     {
       "name": "limit-rule-2",
       "version": 1704038400000,
-      "strategyType": "Resilience4j",
+      "realizeType": "Resilience4j",
       "maxConcurrency": 10,
       "maxWaitMs": 100,
       "actionParameters": {

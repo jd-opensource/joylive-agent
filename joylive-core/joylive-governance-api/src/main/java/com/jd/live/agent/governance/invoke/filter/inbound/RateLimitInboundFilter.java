@@ -54,7 +54,7 @@ public class RateLimitInboundFilter implements InboundFilter {
             for (RateLimitPolicy policy : policies) {
                 // match logic
                 if (policy.match(invocation)) {
-                    RateLimiterFactory rateLimiterFactory = factories.get(policy.getStrategyType());
+                    RateLimiterFactory rateLimiterFactory = factories.get(policy.getRealizeType());
                     RateLimiter rateLimiter = rateLimiterFactory.get(policy);
                     if (null != rateLimiter && !rateLimiter.acquire()) {
                         invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");

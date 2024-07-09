@@ -114,7 +114,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
      * @return the circuit breaker, or null if no factory is found for the policy type.
      */
     private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
-        CircuitBreakerFactory factory = factories.get(policy.getType());
+        CircuitBreakerFactory factory = factories.get(policy.getRealizeType());
         return factory == null ? null : factory.get(policy, uri);
     }
 
@@ -164,7 +164,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
                 for (CircuitBreakerPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
-                    CircuitBreakerFactory factory = factories.get(policy.getType());
+                    CircuitBreakerFactory factory = factories.get(policy.getRealizeType());
                     factory.setServiceEndpoints(invocation.getServiceMetadata().getServiceName(), invocation.getEndpoints());
                     CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {

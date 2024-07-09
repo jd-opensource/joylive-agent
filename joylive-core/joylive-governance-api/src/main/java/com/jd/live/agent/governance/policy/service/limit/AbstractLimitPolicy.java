@@ -62,7 +62,7 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
      * Examples include FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j, etc.
      * </p>
      */
-    private String strategyType;
+    private String realizeType;
 
     /**
      * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
@@ -98,28 +98,28 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     /**
      * Constructs a new limiting policy with detailed specifications.
      *
-     * @param name          the name of the limiting policy
-     * @param strategyType  the strategy type of the limiting policy
-     * @param conditions    a list of conditions (tags) for the limiting policy
-     * @param version       the version of the limiting policy
+     * @param name        the name of the limiting policy
+     * @param realizeType the realize type of the limiting policy
+     * @param conditions  a list of conditions (tags) for the limiting policy
+     * @param version     the version of the limiting policy
      */
-    public AbstractLimitPolicy(String name, String strategyType, List<TagCondition> conditions, long version) {
-        this(name, strategyType, RelationType.AND, conditions, version);
+    public AbstractLimitPolicy(String name, String realizeType, List<TagCondition> conditions, long version) {
+        this(name, realizeType, RelationType.AND, conditions, version);
     }
 
     /**
      * Constructs a new limiting policy with comprehensive specifications including relation type.
      *
-     * @param name          the name of the limiting policy
-     * @param strategyType  the strategy type of the limiting policy
-     * @param relationType  how conditions are related when evaluating the applicability of the policy
-     * @param conditions    a list of conditions (tags) for the limiting policy
-     * @param version       the version of the limiting policy
+     * @param name         the name of the limiting policy
+     * @param realizeType  the realize type of the limiting policy
+     * @param relationType how conditions are related when evaluating the applicability of the policy
+     * @param conditions   a list of conditions (tags) for the limiting policy
+     * @param version      the version of the limiting policy
      */
-    public AbstractLimitPolicy(String name, String strategyType, RelationType relationType,
+    public AbstractLimitPolicy(String name, String realizeType, RelationType relationType,
                                List<TagCondition> conditions, long version) {
         this.name = name;
-        this.strategyType = strategyType;
+        this.realizeType = realizeType;
         this.relationType = relationType;
         this.conditions = conditions;
         this.version = version;
@@ -145,8 +145,8 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
         if (conditions == null) {
             conditions = source.conditions;
         }
-        if (strategyType == null) {
-            strategyType = source.strategyType;
+        if (realizeType == null) {
+            realizeType = source.realizeType;
         }
         if (actionParameters == null) {
             actionParameters = source.actionParameters;

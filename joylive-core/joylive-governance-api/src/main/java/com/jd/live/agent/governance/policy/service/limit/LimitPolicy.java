@@ -55,15 +55,15 @@ public interface LimitPolicy extends ConditionalMatcher<TagCondition>, Serializa
     long getVersion();
 
     /**
-     * Gets the strategy type of the limit policy.
+     * Gets the realize type of the limit policy.
      *
      * <p>This method returns a string that identifies the type of strategy
      * this limit policy uses to apply limitations. The strategy type helps
      * in understanding the approach taken by this policy.</p>
      *
-     * @return the strategy type of the limit policy.
+     * @return the realize type of the limit policy.
      */
-    String getStrategyType();
+    String getRealizeType();
 
     /**
      * Gets the action parameters of the limit policy.

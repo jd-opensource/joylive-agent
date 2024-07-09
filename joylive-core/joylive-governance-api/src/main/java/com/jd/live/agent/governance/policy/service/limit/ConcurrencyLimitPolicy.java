@@ -65,14 +65,14 @@ public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements Polic
      * Constructs a new {@code ConcurrencyLimitPolicy} with detailed specifications.
      *
      * @param name           the name of the concurrency limit policy
-     * @param strategyType   the strategy type of the rate limiting policy
+     * @param realizeType    the realize type of the rate limiting policy
      * @param matchSource    a list of conditions (tags) for the rate limiting policy
      * @param maxConcurrency the maximum number of concurrent requests allowed
      * @param version        the version of the rate limiting policy
      */
-    public ConcurrencyLimitPolicy(String name, String strategyType, List<TagCondition> matchSource,
+    public ConcurrencyLimitPolicy(String name, String realizeType, List<TagCondition> matchSource,
                                   int maxConcurrency, long version) {
-        super(name, strategyType, matchSource, version);
+        super(name, realizeType, matchSource, version);
         this.maxConcurrency = maxConcurrency;
     }
 

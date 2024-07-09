@@ -56,7 +56,7 @@ public class ConcurrencyLimitInboundFilter implements InboundFilter {
             for (ConcurrencyLimitPolicy policy : concurrencyLimitPolicies) {
                 // match logic
                 if (policy.match(invocation)) {
-                    ConcurrencyLimiterFactory concurrencyLimiterFactory = factories.get(policy.getStrategyType());
+                    ConcurrencyLimiterFactory concurrencyLimiterFactory = factories.get(policy.getRealizeType());
                     ConcurrencyLimiter limiter = concurrencyLimiterFactory.get(policy);
                     if (null != limiter && !limiter.acquire()) {
                         invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");
