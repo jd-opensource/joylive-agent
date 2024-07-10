@@ -351,6 +351,8 @@ Below is the complete service strategy in JSON format.
           "concurrencyLimitPolicies": [
           ],
           "routePolicies": [
+          ],
+          "circuitBreakerPolicies": [
           ]
         },
         "paths": [

@@ -350,6 +350,8 @@ stateDiagram-v2
           "concurrencyLimitPolicies": [
           ],
           "routePolicies": [
+          ],
+          "circuitBreakerPolicies": [
           ]
         },
         "paths": [
