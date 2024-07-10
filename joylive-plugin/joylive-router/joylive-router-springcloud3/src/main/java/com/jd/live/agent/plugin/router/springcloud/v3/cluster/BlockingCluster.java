@@ -127,11 +127,21 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     @Override
     public BlockingClusterResponse createResponse(Throwable throwable, BlockingClusterRequest request, SpringEndpoint endpoint) {
-        if (throwable instanceof RejectException.RejectCircuitBreakException) {
-            DegradeConfig degradeConfig = (DegradeConfig) ((RejectException.RejectCircuitBreakException) throwable).getDegradeConfig();
-            return new BlockingClusterResponse(createResponse(request, degradeConfig));
+        RejectException.RejectCircuitBreakException rejectException = extractRejectCircuitBreakException(throwable);
+        if (rejectException != null) {
+            DegradeConfig degradeConfig = (DegradeConfig) rejectException.getDegradeConfig();
+            return new BlockingClusterResponse(createResponse(request, degradeConfig), rejectException);
         }
         return new BlockingClusterResponse(createException(throwable, request, endpoint));
+    }
+
+    private RejectException.RejectCircuitBreakException extractRejectCircuitBreakException(Throwable throwable) {
+        if (throwable instanceof RejectException.RejectCircuitBreakException) {
+            return (RejectException.RejectCircuitBreakException) throwable;
+        } else if (throwable.getCause() instanceof RejectException.RejectCircuitBreakException) {
+            return (RejectException.RejectCircuitBreakException) throwable.getCause();
+        }
+        return null;
     }
 
     @Override

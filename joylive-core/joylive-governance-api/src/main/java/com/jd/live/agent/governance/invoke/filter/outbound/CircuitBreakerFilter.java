@@ -229,5 +229,4 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
         }
     }
 
-
 }

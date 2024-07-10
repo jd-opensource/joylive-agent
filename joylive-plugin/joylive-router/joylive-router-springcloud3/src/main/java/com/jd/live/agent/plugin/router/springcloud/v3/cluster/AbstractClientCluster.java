@@ -129,7 +129,7 @@ public abstract class AbstractClientCluster<
 
     @Override
     public NestedRuntimeException createCircuitBreakException(RejectException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
     }
 
     @Override
