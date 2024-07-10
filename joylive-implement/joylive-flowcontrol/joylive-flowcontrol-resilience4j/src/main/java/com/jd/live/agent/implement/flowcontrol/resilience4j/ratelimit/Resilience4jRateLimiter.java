@@ -46,27 +46,8 @@ public class Resilience4jRateLimiter extends AbstractRateLimiter {
                 .build());
     }
 
-    /**
-     * Try to get some permits within a duration and return the result
-     *
-     * @param permits Permits
-     * @return result
-     */
     @Override
-    public boolean acquire(int permits) {
-        return permits > 0 && limiter.acquirePermission(permits);
-    }
-
-    /**
-     * Try to get some permits within a duration and return the result
-     *
-     * @param permits  Permits
-     * @param timeout  Wait time
-     * @param timeUnit Time unit
-     * @return result
-     */
-    @Override
-    public boolean acquire(int permits, long timeout, TimeUnit timeUnit) {
+    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
         return permits > 0 && limiter.acquirePermission(permits, timeout, timeUnit);
     }
 }

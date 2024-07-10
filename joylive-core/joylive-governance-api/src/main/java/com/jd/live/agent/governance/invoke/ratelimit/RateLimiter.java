@@ -38,6 +38,13 @@ public interface RateLimiter {
     }
 
     /**
+     * Retrieves the timestamp of the last successful acquisition.
+     *
+     * @return the timestamp of the last acquisition in milliseconds.
+     */
+    long getLastAcquireTime();
+
+    /**
      * Try to get a permit within a duration and return the result
      *
      * @param timeout  Wait time

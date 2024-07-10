@@ -13,35 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.concurrencylimit;
+package com.jd.live.agent.governance.config;
 
-import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * ConcurrencyLimiter
- *
- * @since 1.0.0
+ * Configuration class for rate limiter settings.
  */
-public interface ConcurrencyLimiter {
+@Getter
+@Setter
+public class RateLimiterConfig {
 
     /**
-     * Try to get a permit return the result
-     *
-     * @return result
+     * The type of the rate limiter. Default is "Resilience4j".
      */
-    boolean acquire();
+    private String type = "Resilience4j";
 
     /**
-     * Retrieves the timestamp of the last successful acquisition.
-     *
-     * @return the timestamp of the last acquisition in milliseconds.
+     * The interval in milliseconds at which the rate limiter should clean up expired entries.
+     * Default is 30,000 milliseconds (30 seconds).
      */
-    long getLastAcquireTime();
+    private long cleanInterval = 30000;
 
     /**
-     * Get concurrency-limit policy
-     *
-     * @return policy
+     * The time in milliseconds after which the rate limiter entries expire.
+     * Default is 60,000 milliseconds (60 seconds).
      */
-    ConcurrencyLimitPolicy getPolicy();
+    private long expireTime = 60000;
+
 }
+

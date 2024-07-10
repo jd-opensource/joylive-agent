@@ -71,6 +71,8 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
                     }
                     break;
                 }
+            } else {
+                break;
             }
         }
         return circuitBreaker;

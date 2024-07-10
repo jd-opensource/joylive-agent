@@ -44,7 +44,7 @@ public class Resilience4jConcurrencyLimiter extends AbstractConcurrencyLimiter {
     }
 
     @Override
-    public boolean acquire() {
+    public boolean doAcquire() {
         return bulkhead.tryAcquirePermission();
     }
 }

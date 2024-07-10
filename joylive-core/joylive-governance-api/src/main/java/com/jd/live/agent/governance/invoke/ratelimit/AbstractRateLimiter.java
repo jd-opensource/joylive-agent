@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.invoke.ratelimit;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
+import lombok.Getter;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     /**
      * The rate limit policy that defines the limits for the rate limiter.
      */
+    @Getter
     protected final RateLimitPolicy policy;
 
     /**
@@ -46,6 +48,9 @@ public abstract class AbstractRateLimiter implements RateLimiter {
      * The option that contains additional settings that may affect the behavior of the rate limiter.
      */
     protected final Option option;
+
+    @Getter
+    private long lastAcquireTime;
 
     /**
      * Constructs a new AbstractRateLimiter with the specified rate limit policy.
@@ -59,21 +64,31 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     }
 
     @Override
-    public RateLimitPolicy getPolicy() {
-        return policy;
-    }
-
-    @Override
     public boolean acquire() {
+        this.lastAcquireTime = System.currentTimeMillis();
         return acquire(1, timeout.toNanos(), TimeUnit.NANOSECONDS);
     }
 
     @Override
     public boolean acquire(int permits) {
-        return acquire(permits, timeout.toNanos(), TimeUnit.NANOSECONDS);
+        this.lastAcquireTime = System.currentTimeMillis();
+        return doAcquire(permits, timeout.toNanos(), TimeUnit.NANOSECONDS);
     }
 
     @Override
-    public abstract boolean acquire(int permits, long timeout, TimeUnit timeUnit);
+    public boolean acquire(int permits, long timeout, TimeUnit timeUnit) {
+        this.lastAcquireTime = System.currentTimeMillis();
+        return doAcquire(permits, timeout, timeUnit);
+    }
+
+    /**
+     * Try to get some permits within a duration and return the result
+     *
+     * @param permits  Permits
+     * @param timeout  Wait time
+     * @param timeUnit Time unit
+     * @return result
+     */
+    public abstract boolean doAcquire(int permits, long timeout, TimeUnit timeUnit);
 }
 

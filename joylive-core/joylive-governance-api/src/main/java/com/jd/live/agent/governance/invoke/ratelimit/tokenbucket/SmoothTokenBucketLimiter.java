@@ -65,26 +65,18 @@ public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
         this.storedPermits = 0.0;
     }
 
-    /**
-     * Try to get some permits within a duration and return the result
-     *
-     * @param permits Permits
-     * @return result
-     */
+    @Override
+    public boolean acquire() {
+        return acquire(1, timeout.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    @Override
     public boolean acquire(int permits) {
         return acquire(permits, timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Try to get some permits within a duration and return the result
-     *
-     * @param permits  Permits
-     * @param timeout  Wait time
-     * @param timeUnit Time unit
-     * @return result
-     */
     @Override
-    public boolean acquire(int permits, long timeout, TimeUnit timeUnit) {
+    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
         if (permits <= 0) {
             return false;
         }

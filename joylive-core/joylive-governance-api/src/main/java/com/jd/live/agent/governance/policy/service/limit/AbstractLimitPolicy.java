@@ -60,9 +60,6 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
 
     /**
      * Specifies the algorithm or component used for implementing the limiting logic.
-     * <p>
-     * Examples include FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j, etc. Default is Resilience4j.
-     * </p>
      */
     private String realizeType = DEFAULT_LIMIT_REALIZE_TYPE;
 

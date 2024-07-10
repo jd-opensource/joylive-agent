@@ -48,6 +48,9 @@ public class ConcurrencyLimitInboundFilter implements InboundFilter {
     @InjectLoader
     private Map<String, ConcurrencyLimiterFactory> factories;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
@@ -56,8 +59,7 @@ public class ConcurrencyLimitInboundFilter implements InboundFilter {
             for (ConcurrencyLimitPolicy policy : concurrencyLimitPolicies) {
                 // match logic
                 if (policy.match(invocation)) {
-                    ConcurrencyLimiterFactory concurrencyLimiterFactory = factories.get(policy.getRealizeType());
-                    ConcurrencyLimiter limiter = concurrencyLimiterFactory.get(policy);
+                    ConcurrencyLimiter limiter = getConcurrencyLimiter(policy);
                     if (null != limiter && !limiter.acquire()) {
                         invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");
                     }
@@ -65,5 +67,25 @@ public class ConcurrencyLimitInboundFilter implements InboundFilter {
             }
         }
         chain.filter(invocation);
+    }
+
+    /**
+     * Retrieves a concurrency limiter based on the given policy.
+     * If the policy's realize type is not specified, it falls back to the default type
+     * from the service configuration. If the factory for the specified type is not found,
+     * it uses the first available factory.
+     *
+     * @param policy the concurrency limit policy.
+     * @return the concurrency limiter, or null if no factory is found for the policy type.
+     */
+    private ConcurrencyLimiter getConcurrencyLimiter(ConcurrencyLimitPolicy policy) {
+        String realizeType = policy.getRealizeType();
+        if (realizeType == null || realizeType.isEmpty()) {
+            realizeType = governanceConfig.getServiceConfig().getConcurrencyLimiter().getType();
+        }
+        ConcurrencyLimiterFactory factory = realizeType != null && !realizeType.isEmpty()
+                ? factories.get(realizeType)
+                : factories.entrySet().iterator().next().getValue();
+        return factory == null ? null : factory.get(policy);
     }
 }

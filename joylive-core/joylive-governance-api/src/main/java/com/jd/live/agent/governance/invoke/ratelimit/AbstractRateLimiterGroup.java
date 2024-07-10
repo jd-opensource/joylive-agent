@@ -61,7 +61,7 @@ public abstract class AbstractRateLimiterGroup extends AbstractRateLimiter {
     protected abstract RateLimiter create(SlidingWindow window, String name);
 
     @Override
-    public boolean acquire(int permits, long timeout, TimeUnit timeUnit) {
+    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
         if (permits <= 0) {
             return false;
         }

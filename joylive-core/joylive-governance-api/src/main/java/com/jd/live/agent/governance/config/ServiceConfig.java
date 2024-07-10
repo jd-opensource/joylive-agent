@@ -65,6 +65,16 @@ public class ServiceConfig {
     private CircuitBreakerConfig circuitBreaker;
 
     /**
+     * The config of concurrency limiter
+     */
+    private ConcurrencyLimiterConfig concurrencyLimiter;
+
+    /**
+     * The config of rate limiter
+     */
+    private RateLimiterConfig rateLimiter;
+
+    /**
      * Retrieves the failover threshold for a given unit.
      *
      * @param unit the identifier of the unit to get the failover threshold for
