@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -40,14 +41,24 @@ import java.util.Map;
 @Injectable
 @Extension(value = "LimitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class RateLimitInboundFilter implements InboundFilter {
+public class RateLimitInboundFilter implements InboundFilter, ExtensionInitializer {
 
     @Inject
     @InjectLoader
     private Map<String, RateLimiterFactory> factories;
 
+    @Inject(nullable = true)
+    private RateLimiterFactory defaultFactory;
+
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
+
+    private String defaultType;
+
+    @Override
+    public void initialize() {
+        defaultType = governanceConfig.getServiceConfig().getRateLimiter().getType();
+    }
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
@@ -77,14 +88,10 @@ public class RateLimitInboundFilter implements InboundFilter {
      * @return the rate limiter instance based on the given policy.
      */
     private RateLimiter getRateLimiter(RateLimitPolicy policy) {
-        String realizeType = policy.getRealizeType();
-        if (realizeType == null || realizeType.isEmpty()) {
-            realizeType = governanceConfig.getServiceConfig().getRateLimiter().getType();
-        }
-        RateLimiterFactory factory = realizeType != null && !realizeType.isEmpty()
-                ? factories.get(realizeType)
-                : factories.entrySet().iterator().next().getValue();
-        return factory.get(policy);
+        String type = policy.getRealizeType() == null || policy.getRealizeType().isEmpty() ? defaultType : policy.getRealizeType();
+        RateLimiterFactory factory = type != null ? factories.get(type) : null;
+        factory = factory == null ? defaultFactory : factory;
+        return factory == null ? null : factory.get(policy);
     }
 
 }

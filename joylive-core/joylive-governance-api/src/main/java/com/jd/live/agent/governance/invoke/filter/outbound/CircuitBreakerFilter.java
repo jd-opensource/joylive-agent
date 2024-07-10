@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.governance.invoke.filter.outbound;
 
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -53,14 +53,23 @@ import java.util.Map;
 @Extension(value = "CircuitBreakerFilter", order = OutboundFilter.ORDER_CIRCUIT_BREAKER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAKER_ENABLED, matchIfMissing = true)
-public class CircuitBreakerFilter implements OutboundFilter {
+public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitializer {
 
     @Inject
-    @InjectLoader
     private Map<String, CircuitBreakerFactory> factories;
+
+    @Inject(nullable = true)
+    private CircuitBreakerFactory defaultFactory;
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
+
+    private String defaultType;
+
+    @Override
+    public void initialize() {
+        defaultType = governanceConfig.getServiceConfig().getCircuitBreaker().getType();
+    }
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
@@ -119,11 +128,10 @@ public class CircuitBreakerFilter implements OutboundFilter {
     private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
         String type = policy.getRealizeType();
         if (type == null || type.isEmpty()) {
-            type = governanceConfig.getServiceConfig().getCircuitBreaker().getType();
+            type = defaultType;
         }
-        CircuitBreakerFactory factory = type != null && !type.isEmpty()
-                ? factories.get(type)
-                : factories.entrySet().iterator().next().getValue();
+        CircuitBreakerFactory factory = type != null ? factories.get(type) : null;
+        factory = factory == null ? defaultFactory : factory;
         return factory == null ? null : factory.get(policy, uri);
     }
 
