@@ -118,25 +118,36 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     /**
-     * Handles the forwarding of an invocation to the specified endpoint. It checks the endpoint predicate
-     * and notifies listeners. If any listener returns false, the forwarding is aborted.
+     * Handles the election process for a given endpoint.
      *
-     * @param endpoint the endpoint to which the invocation is forwarded.
-     * @return true if the forwarding was successful, false otherwise.
+     * @param endpoint the endpoint to be elected.
+     * @return true if the election process is successful and all listeners approve, false otherwise.
      */
-    public boolean onForward(Endpoint endpoint) {
+    public boolean onElect(Endpoint endpoint) {
         if (!endpoint.predicate()) {
             return false;
         }
         if (listeners != null) {
             for (OutboundListener listener : listeners) {
-                if (!listener.onForward(endpoint, this)) {
+                if (!listener.onElect(endpoint, this)) {
                     return false;
                 }
             }
         }
-        publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
         return true;
+    }
+
+    /**
+     * Handles the forwarding of an invocation to the specified endpoint.
+     *
+     * @param endpoint the endpoint to which the invocation is forwarded.
+     */
+    public void onForward(Endpoint endpoint) {
+        request.addAttempt(endpoint.getId());
+        publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+        if (listeners != null) {
+            listeners.forEach(listener -> listener.onForward(endpoint, this));
+        }
     }
 
     /**

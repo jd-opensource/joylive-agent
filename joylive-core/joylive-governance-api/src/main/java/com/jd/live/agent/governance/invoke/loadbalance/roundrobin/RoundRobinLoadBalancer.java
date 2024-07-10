@@ -18,6 +18,8 @@ package com.jd.live.agent.governance.invoke.loadbalance.roundrobin;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
+import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
+import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
@@ -37,7 +39,7 @@ import java.util.function.Function;
  * within the context of the policy.
  */
 @Extension(value = RoundRobinLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_ROUND_ROBIN)
-public class RoundRobinLoadBalancer implements LoadBalancer {
+public class RoundRobinLoadBalancer extends AbstractLoadBalancer {
 
     /**
      * The name assigned to this load balancer.
@@ -61,7 +63,7 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
     private final AtomicLong global = new AtomicLong(0);
 
     @Override
-    public <T extends Endpoint> T doSelect(List<T> endpoints, Invocation<?> invocation) {
+    public <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
         AtomicLong counter = global;
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
@@ -74,7 +76,8 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
             count = counter.getAndIncrement();
         }
         // Ensure the index is within the bounds of the endpoints list.
-        return endpoints.get((int) (count % endpoints.size()));
+        int index = (int) (count % endpoints.size());
+        return new Candidate<>(endpoints.get(index), index);
     }
 }
 

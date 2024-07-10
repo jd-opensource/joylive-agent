@@ -19,7 +19,9 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
@@ -56,9 +58,22 @@ public class StickyFilter implements OutboundFilter {
                     RequestContext.setAttribute(Request.KEY_STICKY_ID, stickyId);
                 }
             }
+            invocation.addListener(new StickyListener());
         } else {
             RequestContext.removeAttribute(Request.KEY_STICKY_ID);
         }
         chain.filter(invocation);
+    }
+
+    /**
+     * A listener that sets a sticky ID on the request of an outbound invocation.
+     */
+    private static class StickyListener implements OutboundListener {
+
+        @Override
+        public void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
+            invocation.getRequest().setStickyId(endpoint.getId());
+        }
+
     }
 }

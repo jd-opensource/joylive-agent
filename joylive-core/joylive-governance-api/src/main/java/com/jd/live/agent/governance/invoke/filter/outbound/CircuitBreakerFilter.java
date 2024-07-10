@@ -177,7 +177,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
         }
 
         @Override
-        public boolean onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
+        public boolean onElect(Endpoint endpoint, OutboundInvocation<?> invocation) {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
                 for (CircuitBreakerPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());

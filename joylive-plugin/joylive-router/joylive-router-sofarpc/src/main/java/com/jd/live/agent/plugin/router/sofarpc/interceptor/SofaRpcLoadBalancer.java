@@ -4,13 +4,14 @@ import com.alipay.sofa.rpc.common.RpcConstants;
 import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
+import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
-import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer.LoadBalancerDelegate;
+import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancerAdapter;
 
 import java.util.List;
 
 /**
- * A specialized {@link LoadBalancerDelegate} designed for use within the SOFA RPC framework.
+ * A specialized {@link LoadBalancerAdapter} designed for use within the SOFA RPC framework.
  * This class overrides the {@code doSelect} method to add functionality for measuring the time taken
  * to select an endpoint from a list of available endpoints. The selection time is then recorded in the
  * {@link RpcInvokeContext} for monitoring, debugging, or other purposes.
@@ -20,21 +21,20 @@ import java.util.List;
  * SOFA RPC environment. This class demonstrates a practical application of the Decorator pattern to enhance
  * or modify the behavior of an existing load balancer with minimal impact on the existing infrastructure.</p>
  *
- * @see LoadBalancerDelegate
+ * @see LoadBalancerAdapter
  */
-class SofaRpcLoadBalancer extends LoadBalancerDelegate {
+class SofaRpcLoadBalancer extends LoadBalancerAdapter {
 
     SofaRpcLoadBalancer(LoadBalancer delegate) {
         super(delegate);
     }
 
     @Override
-    public <T extends Endpoint> T doSelect(List<T> endpoints, Invocation<?> invocation) {
+    public <T extends Endpoint> Candidate<T> elect(List<T> endpoints, Invocation<?> invocation) {
         long loadBalanceStartTime = System.nanoTime();
-        T result = super.doSelect(endpoints, invocation);
+        Candidate<T> candidate = super.elect(endpoints, invocation);
         RpcInvokeContext.getContext().put(RpcConstants.INTERNAL_KEY_CLIENT_BALANCER_TIME_NANO,
                 System.nanoTime() - loadBalanceStartTime);
-        return result;
-
+        return candidate;
     }
 }

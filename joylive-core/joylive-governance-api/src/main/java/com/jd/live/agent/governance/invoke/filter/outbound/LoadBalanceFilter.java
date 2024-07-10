@@ -24,15 +24,16 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
-import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -49,45 +50,31 @@ public class LoadBalanceFilter implements OutboundFilter {
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
-        StickyType stickyType = loadBalancePolicy == null ? null : loadBalancePolicy.getStickyType();
-        stickyType = stickyType == null ? StickyType.NONE : stickyType;
         if (!target.isEmpty()) {
-            List<? extends Endpoint> candidates = stickyType == StickyType.PREFERRED ? preferSticky(target, invocation) : null;
-            if (candidates != null && !candidates.isEmpty()) {
-                target.setEndpoints(candidates);
+            List<? extends Endpoint> prefers = preferSticky(target, invocation);
+            if (prefers != null && !prefers.isEmpty()) {
+                target.setEndpoints(prefers);
             } else {
                 LoadBalancer loadBalancer = getLoadBalancer(invocation);
                 target.choose(endpoints -> {
                     List<? extends Endpoint> backends = endpoints;
                     do {
-                        Endpoint backend = loadBalancer.choose(backends, invocation);
+                        Candidate<? extends Endpoint> candidate = loadBalancer.elect(backends, invocation);
+                        Endpoint backend = candidate == null ? null : candidate.getTarget();
                         if (backend == null) {
                             return null;
-                        } else if (invocation.onForward(backend)) {
+                        } else if (invocation.onElect(backend)) {
+                            invocation.onForward(backend);
                             return Collections.singletonList(backend);
                         } else {
                             invocation.onCancel(backend);
                         }
                         backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
-                        backends.remove(backend);
+                        backends.remove(candidate.getIndex());
                     } while (!backends.isEmpty());
                     return null;
                 });
             }
-            if (stickyType != StickyType.NONE) {
-                candidates = target.getEndpoints();
-                if (candidates != null && !candidates.isEmpty()) {
-                    invocation.getRequest().setStickyId(candidates.get(0).getId());
-                }
-            }
-        }
-
-        T request = invocation.getRequest();
-        if (!target.isEmpty()) {
-            Endpoint endpoint = target.getEndpoints().get(0);
-            request.addAttempt(endpoint.getId());
         }
 
         chain.filter(invocation);
@@ -103,15 +90,20 @@ public class LoadBalanceFilter implements OutboundFilter {
     private List<? extends Endpoint> preferSticky(RouteTarget target, OutboundInvocation<?> invocation) {
         // preferred sticky id
         String id = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
-        if (id != null) {
-            List<? extends Endpoint> backends = RouteTarget.tryCopy(target.getEndpoints(),
-                    endpoint -> id.equals(endpoint.getId()), 1);
-            if (!backends.isEmpty()) {
-                Endpoint endpoint = backends.get(0);
-                if (invocation.onForward(endpoint)) {
-                    return backends;
+        if (id != null && !id.isEmpty()) {
+            Iterator<? extends Endpoint> iterator = target.getEndpoints().iterator();
+            Endpoint endpoint;
+            while (iterator.hasNext()) {
+                endpoint = iterator.next();
+                if (id.equals(endpoint.getId())) {
+                    if (invocation.onElect(endpoint)) {
+                        invocation.onForward(endpoint);
+                        return Collections.singletonList(endpoint);
+                    }
+                    invocation.onCancel(endpoint);
+                    iterator.remove();
+                    break;
                 }
-                invocation.onCancel(endpoint);
             }
         }
         return null;

@@ -75,7 +75,7 @@ public class TagRouteFilter implements OutboundFilter {
     private <T extends OutboundRequest> boolean match(OutboundInvocation<T> invocation, RoutePolicy policy) {
         for (TagRule rule : policy.getTagRules()) {
             if (rule.match(invocation)) {
-                TagDestination destination = RandomWeight.select(rule.getDestinations(), TagDestination::getWeight);
+                TagDestination destination = RandomWeight.choose(rule.getDestinations(), TagDestination::getWeight);
                 if (destination != null) {
                     invocation.getRouteTarget().filter(destination::match);
                 }

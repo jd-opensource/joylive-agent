@@ -30,8 +30,17 @@ public interface OutboundListener {
      * @param invocation the outbound invocation that was forwarded.
      * @return true if the selected node is appropriate, false otherwise.
      */
-    default boolean onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
+    default boolean onElect(Endpoint endpoint, OutboundInvocation<?> invocation) {
         return true;
+    }
+
+    /**
+     * Called when a load balancer forward an instance.
+     *
+     * @param endpoint   the endpoint to which the invocation is forwarded.
+     * @param invocation the outbound invocation that was forwarded.
+     */
+    default void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
     }
 
     /**
@@ -51,7 +60,9 @@ public interface OutboundListener {
      * @param invocation the outbound invocation that was successful.
      * @param response   the response received from the service.
      */
-    void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response);
+    default void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response) {
+
+    }
 
     /**
      * Called when an outbound invocation fails.
@@ -60,6 +71,8 @@ public interface OutboundListener {
      * @param invocation the outbound invocation that failed.
      * @param throwable  the exception that caused the failure.
      */
-    void onFailure(Endpoint endpoint, OutboundInvocation<?> invocation, Throwable throwable);
+    default void onFailure(Endpoint endpoint, OutboundInvocation<?> invocation, Throwable throwable) {
+
+    }
 }
 
