@@ -130,7 +130,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         RejectException.RejectCircuitBreakException rejectException = extractRejectCircuitBreakException(throwable);
         if (rejectException != null) {
             DegradeConfig degradeConfig = (DegradeConfig) rejectException.getDegradeConfig();
-            return new BlockingClusterResponse(createResponse(request, degradeConfig), rejectException);
+            return new BlockingClusterResponse(createResponse(request, degradeConfig));
         }
         return new BlockingClusterResponse(createException(throwable, request, endpoint));
     }
