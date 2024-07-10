@@ -41,6 +41,8 @@ import java.util.Map;
 @Setter
 public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolicy {
 
+    public static final String DEFAULT_LIMIT_REALIZE_TYPE = "Resilience4j";
+
     /**
      * The name of the limiting policy.
      */
@@ -59,10 +61,10 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     /**
      * Specifies the algorithm or component used for implementing the limiting logic.
      * <p>
-     * Examples include FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j, etc.
+     * Examples include FixedWindow, LeakyBucket, TokenBucket, Sentinel, Resilience4j, etc. Default is Resilience4j.
      * </p>
      */
-    private String realizeType;
+    private String realizeType = DEFAULT_LIMIT_REALIZE_TYPE;
 
     /**
      * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
