@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateEvent;
+import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 
 /**
@@ -26,7 +27,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPo
  *
  * @since 1.1.0
  */
-public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBreakerStateListener {
+public class InstanceCircuitBreakerStateListener implements CircuitBreakerStateListener {
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceCircuitBreakerStateListener.class);
 
@@ -39,29 +40,14 @@ public class InstanceCircuitBreakerStateListener extends Resilience4jCircuitBrea
         this.instanceId = instanceId;
     }
 
-    /**
-     * <p>Observer method triggered when circuit breaker state changed. The transformation could be:</p>
-     * <ul>
-     * <li>From {@code CLOSED} to {@code OPEN} (with the triggered metric)</li>
-     * <li>From {@code OPEN} to {@code HALF_OPEN}</li>
-     * <li>From {@code OPEN} to {@code CLOSED}</li>
-     * <li>From {@code HALF_OPEN} to {@code OPEN} (with the triggered metric)</li>
-     * </ul>
-     *
-     * @param event state change event
-     */
     @Override
     public void onStateChange(CircuitBreakerStateEvent event) {
-        if (event.getTo() == CircuitBreakerState.OPEN) {
-            if (logger.isInfoEnabled()) {
-                logger.info("[CircuitBreak]This resource will be degraded! resourceName={}", event.getUri());
-            }
-            policy.addBroken(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
+        if (logger.isDebugEnabled()) {
+            logger.debug("[CircuitBreak]Instance state is transitioned from " + event.getFrom() + " to " + event.getTo() + ", uri=" + event.getUri());
         }
-        if (event.getFrom() == CircuitBreakerState.OPEN) {
-            if (logger.isInfoEnabled()) {
-                logger.info("[CircuitBreak]This resource will be recover! resourceName={}", event.getUri());
-            }
+        if (event.getTo() == CircuitBreakerState.OPEN) {
+            policy.addBroken(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
+        } else if (event.getFrom() == CircuitBreakerState.OPEN) {
             policy.removeBroken(instanceId);
         }
     }

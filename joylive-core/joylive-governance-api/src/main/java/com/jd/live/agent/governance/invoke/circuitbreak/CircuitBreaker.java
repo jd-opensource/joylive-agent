@@ -35,6 +35,13 @@ public interface CircuitBreaker {
     }
 
     /**
+     * Retrieves the timestamp of the last acquisition.
+     *
+     * @return the timestamp of the last acquisition in milliseconds.
+     */
+    long getLastAcquireTime();
+
+    /**
      * Release the permission
      */
     default void release() {
@@ -61,7 +68,7 @@ public interface CircuitBreaker {
      *
      * @param listener State change listener
      */
-    void registerListener(CircuitBreakerStateListener listener);
+    void addListener(CircuitBreakerStateListener listener);
 
     /**
      * Get circuit-breaker policy

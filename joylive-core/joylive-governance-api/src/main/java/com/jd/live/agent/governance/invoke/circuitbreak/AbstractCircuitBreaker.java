@@ -37,7 +37,7 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
     }
 
     @Override
-    public void registerListener(CircuitBreakerStateListener listener) {
+    public void addListener(CircuitBreakerStateListener listener) {
 
     }
 

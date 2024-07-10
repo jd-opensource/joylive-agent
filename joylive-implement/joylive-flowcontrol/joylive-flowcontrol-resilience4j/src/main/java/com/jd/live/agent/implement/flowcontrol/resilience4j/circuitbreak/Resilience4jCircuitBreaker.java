@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.core.EventConsumer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,36 +32,46 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
 
     private final io.github.resilience4j.circuitbreaker.CircuitBreaker delegate;
 
+    private final Resilience4jCircuitBreakerEventConsumer eventConsumer;
+
+    private long lastAcquireTime;
+
     public Resilience4jCircuitBreaker(CircuitBreakerPolicy policy, URI uri, CircuitBreaker delegate) {
         super(policy, uri);
         this.delegate = delegate;
+        this.eventConsumer = new Resilience4jCircuitBreakerEventConsumer();
+        this.delegate.getEventPublisher().onStateTransition(eventConsumer);
     }
 
     @Override
     public boolean acquire() {
-        return this.delegate.tryAcquirePermission();
+        lastAcquireTime = System.currentTimeMillis();
+        return delegate.tryAcquirePermission();
+    }
+
+    @Override
+    public long getLastAcquireTime() {
+        return lastAcquireTime;
     }
 
     @Override
     public void release() {
-        this.delegate.releasePermission();
+        delegate.releasePermission();
     }
 
     @Override
     public void onSuccess(long durationInMs) {
-        this.delegate.onSuccess(durationInMs, TimeUnit.MILLISECONDS);
+        delegate.onSuccess(durationInMs, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void onError(long durationInMs, Throwable throwable) {
-        this.delegate.onError(durationInMs, TimeUnit.MILLISECONDS, throwable);
+        delegate.onError(durationInMs, TimeUnit.MILLISECONDS, throwable);
     }
 
     @Override
-    public void registerListener(CircuitBreakerStateListener listener) {
-        if (listener instanceof EventConsumer) {
-            this.delegate.getEventPublisher().onStateTransition((EventConsumer) listener);
-        }
+    public void addListener(CircuitBreakerStateListener listener) {
+        eventConsumer.addListener(listener);
     }
 
 }
