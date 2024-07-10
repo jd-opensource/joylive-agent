@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.springcloud.v3.consumer.aspect;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jd.live.agent.demo.response.LiveLocation;
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
@@ -24,7 +25,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientResponseException;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
@@ -33,10 +36,26 @@ public class GlobalExceptionHandler {
     @Value("${spring.application.name}")
     private String applicationName;
 
+    @Resource
+    private ObjectMapper objectMapper;
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.OK)
     public LiveResponse handleException(Exception e, HttpServletRequest request) {
+        LiveResponse source = null;
+        byte[] body = e instanceof RestClientResponseException ? ((RestClientResponseException) e).getResponseBodyAsByteArray() : null;
+        if (body != null) {
+            try {
+                source = objectMapper.readValue(body, LiveResponse.class);
+            } catch (Throwable ignore) {
+            }
+        }
         LiveResponse response = new LiveResponse(500, "Internal Server Error: " + e.getMessage());
+        if (source != null) {
+            for (LiveTrace trace : source.getTraces()) {
+                response.addLast(trace);
+            }
+        }
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
         return response;
