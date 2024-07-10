@@ -52,6 +52,18 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
     }
 
     @Override
+    public boolean isOpen() {
+        switch (delegate.getState()) {
+            case OPEN:
+            case FORCED_OPEN:
+            case HALF_OPEN:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void onSuccess(long durationInMs) {
         delegate.onSuccess(durationInMs, TimeUnit.MILLISECONDS);
     }

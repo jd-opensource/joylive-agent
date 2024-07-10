@@ -59,6 +59,9 @@ public class CircuitBreakerFilter implements OutboundFilter {
     @InjectLoader
     private Map<String, CircuitBreakerFactory> factories;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
@@ -91,7 +94,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
                 }
             }
             // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(factories, serviceBreakers, instancePolicies));
+            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, serviceBreakers, instancePolicies));
             // acquire service permit
             acquire(invocation, serviceBreakers);
             // filter broken instance
@@ -107,14 +110,20 @@ public class CircuitBreakerFilter implements OutboundFilter {
     }
 
     /**
-     * Retrieves a circuit breaker for the given policy, URI.
+     * Retrieves a circuit breaker for the given policy and URI.
      *
-     * @param policy         the circuit breaker policy.
-     * @param uri            the URI for the circuit breaker.
+     * @param policy the circuit breaker policy.
+     * @param uri the URI for the circuit breaker.
      * @return the circuit breaker, or null if no factory is found for the policy type.
      */
     private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
-        CircuitBreakerFactory factory = factories.get(policy.getRealizeType());
+        String type = policy.getRealizeType();
+        if (type == null || type.isEmpty()) {
+            type = governanceConfig.getServiceConfig().getCircuitBreaker().getType();
+        }
+        CircuitBreakerFactory factory = type != null && !type.isEmpty()
+                ? factories.get(type)
+                : factories.entrySet().iterator().next().getValue();
         return factory == null ? null : factory.get(policy, uri);
     }
 
@@ -142,7 +151,7 @@ public class CircuitBreakerFilter implements OutboundFilter {
      */
     private static class CircuitBreakerListener implements OutboundListener {
 
-        private final Map<String, CircuitBreakerFactory> factories;
+        private final CircuitBreakerFactory factory;
 
         private List<CircuitBreaker> circuitBreakers;
 
@@ -150,10 +159,10 @@ public class CircuitBreakerFilter implements OutboundFilter {
 
         private final int index;
 
-        CircuitBreakerListener(Map<String, CircuitBreakerFactory> factories,
+        CircuitBreakerListener(CircuitBreakerFactory factory,
                                List<CircuitBreaker> circuitBreakers,
                                List<CircuitBreakerPolicy> instancePolicies) {
-            this.factories = factories;
+            this.factory = factory;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
             this.index = circuitBreakers.size();
@@ -164,8 +173,6 @@ public class CircuitBreakerFilter implements OutboundFilter {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
                 for (CircuitBreakerPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
-                    CircuitBreakerFactory factory = factories.get(policy.getRealizeType());
-                    factory.setServiceEndpoints(invocation.getServiceMetadata().getServiceName(), invocation.getEndpoints());
                     CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {
                         if (breaker.acquire()) {
@@ -211,4 +218,6 @@ public class CircuitBreakerFilter implements OutboundFilter {
             }
         }
     }
+
+
 }

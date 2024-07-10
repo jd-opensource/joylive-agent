@@ -60,6 +60,11 @@ public class ServiceConfig {
     private Set<String> excludes;
 
     /**
+     * The config of circuit breaker
+     */
+    private CircuitBreakerConfig circuitBreaker;
+
+    /**
      * Retrieves the failover threshold for a given unit.
      *
      * @param unit the identifier of the unit to get the failover threshold for

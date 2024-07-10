@@ -44,7 +44,7 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     /**
      * Implementation types of circuit-breaker
      */
-    private String realizeType = DEFAULT_CIRCUIT_BREAKER_TYPE;
+    private String realizeType;
 
     /**
      * Level of circuit breaker policy

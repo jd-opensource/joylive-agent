@@ -19,69 +19,75 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 
 /**
- * CircuitBreaker
+ * CircuitBreaker interface defines the contract for a circuit breaker implementation.
  *
  * @since 1.1.0
  */
 public interface CircuitBreaker {
 
     /**
-     * Try to get a permit return the result
+     * Attempts to acquire a permit and returns the result.
      *
-     * @return permission
+     * @return true if the permit is acquired successfully, false otherwise.
      */
     default boolean acquire() {
         return true;
     }
 
     /**
-     * Retrieves the timestamp of the last acquisition.
+     * Retrieves the timestamp of the last successful acquisition.
      *
      * @return the timestamp of the last acquisition in milliseconds.
      */
     long getLastAcquireTime();
 
     /**
-     * Release the permission
+     * Checks if the circuit breaker is currently open.
+     *
+     * @return true if the circuit breaker is open, false otherwise.
+     */
+    boolean isOpen();
+
+    /**
+     * Releases the acquired permit.
      */
     default void release() {
         // do nothing
     }
 
     /**
-     * Records a failed call. This method must be invoked when a call failed.
+     * Records a failed call. This method should be invoked when a call fails.
      *
-     * @param durationInMs The elapsed time duration of the call
-     * @param throwable    The throwable which must be recorded
+     * @param durationInMs The elapsed time duration of the call in milliseconds.
+     * @param throwable    The throwable that represents the failure.
      */
     void onError(long durationInMs, Throwable throwable);
 
     /**
-     * Records a successful call. This method must be invoked when a call was successful.
+     * Records a successful call. This method should be invoked when a call is successful.
      *
-     * @param durationInMs The elapsed time duration of the call
+     * @param durationInMs The elapsed time duration of the call in milliseconds.
      */
     void onSuccess(long durationInMs);
 
     /**
-     * Register a listener to watch state change event.
+     * Registers a listener to watch for state change events.
      *
-     * @param listener State change listener
+     * @param listener The state change listener to register.
      */
     void addListener(CircuitBreakerStateListener listener);
 
     /**
-     * Get circuit-breaker policy
+     * Retrieves the policy that governs the behavior of the circuit breaker.
      *
-     * @return policy
+     * @return the circuit breaker policy.
      */
     CircuitBreakerPolicy getPolicy();
 
     /**
-     * Obtain the URI related to the circuit breaker
+     * Obtains the URI related to the circuit breaker.
      *
-     * @return URI (Uniform Resource Identifier)
+     * @return the URI (Uniform Resource Identifier) associated with the circuit breaker.
      */
     URI getUri();
-
 }

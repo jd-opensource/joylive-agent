@@ -18,17 +18,13 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
 
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * AbstractCircuitBreakerFactory provides a base implementation for factories that create and manage circuit breakers.
@@ -46,17 +42,13 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      */
     private final Map<String, AtomicReference<CircuitBreaker>> circuitBreakers = new ConcurrentHashMap<>();
 
-    private final Map<String, Set<String>> instanceUris = new ConcurrentHashMap<>();
-
-    private final Map<String, List<? extends Endpoint>> serviceEndpoints = new ConcurrentHashMap<>();
-
-    private final AtomicReference<Long> updateTimestamps = new AtomicReference<>(0L);
-
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
+    private final AtomicBoolean recycled = new AtomicBoolean(false);
 
     @Override
     public CircuitBreaker get(CircuitBreakerPolicy policy, URI uri) {
@@ -68,17 +60,15 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         if (circuitBreaker != null && circuitBreaker.getPolicy().getVersion() == policy.getVersion()) {
             return circuitBreaker;
         }
-        String instanceId = uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT);
-        if (instanceId != null) {
-            instanceUris.computeIfAbsent(instanceId, n -> new HashSet<>()).add(uri.toString());
-        }
         CircuitBreaker breaker = create(policy, uri);
         while (true) {
             circuitBreaker = reference.get();
-            if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() != policy.getVersion()) {
+            if (circuitBreaker == null || circuitBreaker.getPolicy().getVersion() < policy.getVersion()) {
                 if (reference.compareAndSet(circuitBreaker, breaker)) {
                     circuitBreaker = breaker;
-                    addRecycleTask(policy, uri);
+                    if (recycled.compareAndSet(false, true)) {
+                        addRecycler();
+                    }
                     break;
                 }
             }
@@ -86,63 +76,39 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
         return circuitBreaker;
     }
 
-    @Override
-    public void setServiceEndpoints(String serviceId, List<? extends Endpoint> endpoints) {
-        Long latestUpdate = updateTimestamps.get();
-        long currentUpdate = System.currentTimeMillis();
-        if (currentUpdate > latestUpdate && updateTimestamps.compareAndSet(latestUpdate, currentUpdate + 60000)) {
-            List<? extends Endpoint> oldEndpoints = serviceEndpoints.put(serviceId, endpoints);
-            if (oldEndpoints != null) {
-                addRecycleTask(serviceId, endpoints, oldEndpoints);
-            }
-        }
+    /**
+     * Schedules a recurring task to recycle circuit breakers based on their expiration time.
+     * This method retrieves the clean interval from the configuration and sets up a delayed task
+     * that calls the {@link #recycle()} method and reschedules itself.
+     */
+    private void addRecycler() {
+        long cleanInterval = governanceConfig.getServiceConfig().getCircuitBreaker().getCleanInterval();
+        timer.delay("recycle-circuitbreaker", cleanInterval, () -> {
+            recycle();
+            addRecycler();
+        });
     }
 
-    private void addRecycleTask(CircuitBreakerPolicy policy, URI uri) {
-        long delay = 60000 + ThreadLocalRandom.current().nextInt(60000 * 4);
-        timer.delay("recycle-circuitbreaker-" + policy.getId(), delay, () -> recycle(policy, uri));
-    }
-
-    private void addRecycleTask(String serviceId, List<? extends Endpoint> newEndpoints, List<? extends Endpoint> oldEndpoints) {
-        long delay = 1000 + ThreadLocalRandom.current().nextInt(1000 * 4);
-        timer.delay("recycle-instance-circuitbreaker-" + serviceId, delay, () -> recycle(newEndpoints, oldEndpoints));
-    }
-
-    private void recycle(CircuitBreakerPolicy policy, URI uri) {
-        AtomicReference<CircuitBreaker> ref = circuitBreakers.get(uri.toString());
-        CircuitBreaker circuitBreaker = ref == null ? null : ref.get();
-        if (circuitBreaker != null && policySupplier != null) {
-            ServicePolicy servicePolicy = policySupplier.getPolicy().getServicePolicy(uri);
-            boolean exists = false;
-            if (servicePolicy != null && servicePolicy.getCircuitBreakerPolicies() != null) {
-                for (CircuitBreakerPolicy circuitBreakerPolicy : servicePolicy.getCircuitBreakerPolicies()) {
-                    if (Objects.equals(circuitBreakerPolicy.getId(), policy.getId())) {
-                        exists = true;
-                        break;
+    /**
+     * Recycles expired circuit breakers. This method checks each circuit breaker to see if it has
+     * expired based on the current time and the configured expiration time. If a circuit breaker
+     * is not open and has exceeded its expiration time, it is removed from the collection.
+     */
+    private void recycle() {
+        long expireTime = governanceConfig.getServiceConfig().getCircuitBreaker().getExpireTime();
+        for (Map.Entry<String, AtomicReference<CircuitBreaker>> entry : circuitBreakers.entrySet()) {
+            AtomicReference<CircuitBreaker> reference = entry.getValue();
+            CircuitBreaker circuitBreaker = reference.get();
+            if (circuitBreaker != null && !circuitBreaker.isOpen() && (System.currentTimeMillis() - circuitBreaker.getLastAcquireTime()) > expireTime) {
+                reference = circuitBreakers.remove(entry.getKey());
+                if (reference != null) {
+                    circuitBreaker = reference.get();
+                    if (circuitBreaker != null && (System.currentTimeMillis() - circuitBreaker.getLastAcquireTime()) <= expireTime) {
+                        circuitBreakers.putIfAbsent(entry.getKey(), reference);
                     }
                 }
             }
-            if (!exists) {
-                circuitBreakers.remove(uri.toString());
-            } else {
-                addRecycleTask(policy, uri);
-            }
         }
-    }
-
-    private void recycle(List<? extends Endpoint> newEndpoints, List<? extends Endpoint> oldEndpoints) {
-        Set<String> newEndpointIds = newEndpoints.stream()
-                .map(Endpoint::getId)
-                .collect(Collectors.toSet());
-        List<Endpoint> recycledEndpoints = oldEndpoints.stream()
-                .filter(oldEndpoint -> !newEndpointIds.contains(oldEndpoint.getId()))
-                .collect(Collectors.toList());
-        recycledEndpoints.forEach(recycledEndpoint -> {
-            Set<String> uris = instanceUris.get(recycledEndpoint.getId());
-            if (uris != null) {
-                uris.forEach(circuitBreakers::remove);
-            }
-        });
     }
 
     /**

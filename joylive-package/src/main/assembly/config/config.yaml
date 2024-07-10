@@ -122,6 +122,10 @@ agent:
       warmups: ${CONFIG_WARMUP_SERVICES:}
       excludes:
         - org.apache.dubbo.metadata.MetadataService
+      circuitBreaker:
+        type: Resilience4j
+        cleanInterval: 30000
+        expireTime: 60000
     live:
       topics: ${CONFIG_LIVE_TOPICS}
       modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:true}
