@@ -32,6 +32,8 @@ public class DegradeConfig {
 
     private int responseCode;
 
+    private String contentType = "application/json";
+
     private Map<String, String> attributes;
 
     private String responseBody;
@@ -41,6 +43,7 @@ public class DegradeConfig {
 
     public DegradeConfig(DegradeConfig config) {
         this.responseCode = config.responseCode;
+        this.contentType = config.contentType;
         this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
         this.responseBody = config.responseBody;
     }

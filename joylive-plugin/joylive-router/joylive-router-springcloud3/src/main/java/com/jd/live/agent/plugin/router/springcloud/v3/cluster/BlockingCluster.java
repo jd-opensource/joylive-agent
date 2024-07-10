@@ -210,12 +210,18 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             @Override
             public HttpHeaders getHeaders() {
                 HttpHeaders headers = new HttpHeaders();
-                for (Map.Entry<String, List<String>> stringListEntry : httpRequest.getHeaders().entrySet()) {
-                    headers.addAll(stringListEntry.getKey(), stringListEntry.getValue());
+                Map<String, List<String>> requestHeaders = httpRequest.getHeaders();
+                if (requestHeaders != null) {
+                    headers.putAll(requestHeaders);
                 }
-                for (Map.Entry<String, String> stringStringEntry : degradeConfig.getAttributes().entrySet()) {
-                    headers.add(stringStringEntry.getKey(), stringStringEntry.getValue());
+                Map<String, String> attributes = degradeConfig.getAttributes();
+                if (attributes != null) {
+                    attributes.forEach(headers::add);
                 }
+                headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+                String body = degradeConfig.getResponseBody();
+                int length = body == null ? 0 : body.length();
+                headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
                 return headers;
             }
         };

@@ -308,7 +308,7 @@
                   "degrade-header-1": "service1",
                   "degrade-header-2": "service2"
                 },
-                "responseBody": "Hello, your request has been downgraded by service level."
+                "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":502}"
               },
               "version": 1
             },
@@ -334,7 +334,7 @@
                   "degrade-header-1": "api1",
                   "degrade-header-2": "api2"
                 },
-                "responseBody": "Hello, your request has been downgraded by api level."
+                "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":502}"
               },
               "version": 1
             },
@@ -360,7 +360,7 @@
                   "degrade-header-1": "instance1",
                   "degrade-header-2": "instance2"
                 },
-                "responseBody": "Hello, your request has been downgraded by instance level."
+                "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":502}"
               },
               "version": 1
             }
