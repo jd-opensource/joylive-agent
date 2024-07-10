@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.bootstrap.exception;
 
-import lombok.Getter;
-
 /**
  * RejectException
  *
@@ -174,28 +172,32 @@ public class RejectException extends LiveException {
     /**
      * RejectCircuitBreakException
      */
-    @Getter
     public static class RejectCircuitBreakException extends RejectException {
 
-        private final Object degradeConfig;
+        private final Object config;
 
-        public RejectCircuitBreakException(Object degradeConfig) {
-            this.degradeConfig = degradeConfig;
+        public RejectCircuitBreakException(Object config) {
+            this.config = config;
         }
 
-        public RejectCircuitBreakException(String message, Object degradeConfig) {
+        public RejectCircuitBreakException(String message, Object config) {
             super(message);
-            this.degradeConfig = degradeConfig;
+            this.config = config;
         }
 
-        public RejectCircuitBreakException(String message, Throwable cause, Object degradeConfig) {
+        public RejectCircuitBreakException(String message, Throwable cause, Object config) {
             super(message, cause);
-            this.degradeConfig = degradeConfig;
+            this.config = config;
         }
 
-        public RejectCircuitBreakException(Throwable cause, Object degradeConfig) {
+        public RejectCircuitBreakException(Throwable cause, Object config) {
             super(cause);
-            this.degradeConfig = degradeConfig;
+            this.config = config;
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T getConfig() {
+            return (T) config;
         }
     }
 }

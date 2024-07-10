@@ -173,6 +173,21 @@ public abstract class AbstractClientCluster<
     }
 
     /**
+     * Checks if the provided throwable or its cause is an instance of {@link RejectCircuitBreakException}.
+     *
+     * @param throwable the throwable to check for {@link RejectCircuitBreakException}.
+     * @return the {@link RejectCircuitBreakException} if found, otherwise null.
+     */
+    protected RejectCircuitBreakException getCircuitBreakException(Throwable throwable) {
+        if (throwable instanceof RejectCircuitBreakException) {
+            return (RejectCircuitBreakException) throwable;
+        } else if (throwable.getCause() instanceof RejectCircuitBreakException) {
+            return (RejectCircuitBreakException) throwable.getCause();
+        }
+        return null;
+    }
+
+    /**
      * Creates an {@link HttpHeaders} instance from a map of header names to lists of header values.
      * If the input map is {@code null}, this method returns an empty {@link HttpHeaders} instance.
      *

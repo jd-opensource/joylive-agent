@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
@@ -127,21 +127,14 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     @Override
     public BlockingClusterResponse createResponse(Throwable throwable, BlockingClusterRequest request, SpringEndpoint endpoint) {
-        RejectException.RejectCircuitBreakException rejectException = extractRejectCircuitBreakException(throwable);
-        if (rejectException != null) {
-            DegradeConfig degradeConfig = (DegradeConfig) rejectException.getDegradeConfig();
-            return new BlockingClusterResponse(createResponse(request, degradeConfig));
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                return new BlockingClusterResponse(createResponse(request, config));
+            }
         }
         return new BlockingClusterResponse(createException(throwable, request, endpoint));
-    }
-
-    private RejectException.RejectCircuitBreakException extractRejectCircuitBreakException(Throwable throwable) {
-        if (throwable instanceof RejectException.RejectCircuitBreakException) {
-            return (RejectException.RejectCircuitBreakException) throwable;
-        } else if (throwable.getCause() instanceof RejectException.RejectCircuitBreakException) {
-            return (RejectException.RejectCircuitBreakException) throwable.getCause();
-        }
-        return null;
     }
 
     @Override
@@ -176,54 +169,74 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
                 clientResponse)));
     }
 
-    public static ClientHttpResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
-        return new ClientHttpResponse() {
-            @Override
-            public HttpStatus getStatusCode() throws IOException {
-                return HttpStatus.valueOf(degradeConfig.getResponseCode());
-            }
+    /**
+     * Creates a {@link ClientHttpResponse} based on the provided {@link BlockingClusterRequest} and {@link DegradeConfig}.
+     * The response is configured with the status code, headers, and body specified in the degrade configuration.
+     *
+     * @param httpRequest   the original HTTP request containing headers.
+     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
+     * @return a {@link ClientHttpResponse} configured according to the degrade configuration.
+     */
+    private ClientHttpResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
+        return new DegradeResponse(degradeConfig, httpRequest);
+    }
 
-            @Override
-            public int getRawStatusCode() throws IOException {
-                return degradeConfig.getResponseCode();
-            }
+    /**
+     * A {@link ClientHttpResponse} implementation that uses {@link DegradeConfig} for response configuration.
+     */
+    private static class DegradeResponse implements ClientHttpResponse {
+        private final DegradeConfig degradeConfig;
+        private final BlockingClusterRequest httpRequest;
+        private final int length;
+        private final InputStream bodyStream;
 
-            @Override
-            public String getStatusText() throws IOException {
-                return null;
-            }
+        DegradeResponse(DegradeConfig degradeConfig, BlockingClusterRequest httpRequest) {
+            this.degradeConfig = degradeConfig;
+            this.httpRequest = httpRequest;
+            String body = degradeConfig.getResponseBody();
+            this.length = body == null ? 0 : body.length();
+            this.bodyStream = body == null ? null : new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+        }
 
-            @Override
-            public void close() {
+        @Override
+        public HttpStatus getStatusCode() throws IOException {
+            return HttpStatus.valueOf(degradeConfig.getResponseCode());
+        }
 
-            }
+        @Override
+        public int getRawStatusCode() throws IOException {
+            return degradeConfig.getResponseCode();
+        }
 
-            @Override
-            public InputStream getBody() throws IOException {
-                String responseBody = degradeConfig.getResponseBody();
-                if (responseBody != null && !responseBody.isEmpty()) {
-                    return new ByteArrayInputStream(responseBody.getBytes(StandardCharsets.UTF_8));
-                }
-                return null;
-            }
+        @Override
+        public String getStatusText() throws IOException {
+            return null;
+        }
 
-            @Override
-            public HttpHeaders getHeaders() {
-                HttpHeaders headers = new HttpHeaders();
-                Map<String, List<String>> requestHeaders = httpRequest.getHeaders();
-                if (requestHeaders != null) {
-                    headers.putAll(requestHeaders);
-                }
-                Map<String, String> attributes = degradeConfig.getAttributes();
-                if (attributes != null) {
-                    attributes.forEach(headers::add);
-                }
-                headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
-                String body = degradeConfig.getResponseBody();
-                int length = body == null ? 0 : body.length();
-                headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
-                return headers;
+        @Override
+        public void close() {
+
+        }
+
+        @Override
+        public InputStream getBody() throws IOException {
+            return bodyStream;
+        }
+
+        @Override
+        public HttpHeaders getHeaders() {
+            HttpHeaders headers = new HttpHeaders();
+            Map<String, List<String>> requestHeaders = httpRequest.getHeaders();
+            if (requestHeaders != null) {
+                headers.putAll(requestHeaders);
             }
-        };
+            Map<String, String> attributes = degradeConfig.getAttributes();
+            if (attributes != null) {
+                attributes.forEach(headers::add);
+            }
+            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+            headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
+            return headers;
+        }
     }
 }
