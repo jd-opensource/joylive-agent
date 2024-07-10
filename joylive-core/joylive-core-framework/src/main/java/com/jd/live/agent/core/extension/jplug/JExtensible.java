@@ -20,8 +20,6 @@ import com.jd.live.agent.core.extension.ExtensionDesc;
 import com.jd.live.agent.core.extension.Name;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 /**
@@ -45,17 +43,17 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
     /**
      * A map to hold providers for the extensions, allowing retrieval by a unique key.
      */
-    private final Map<String, ExtensionDesc<T>> providers = new ConcurrentHashMap<>();
+    private final Map<String, ExtensionDesc<T>> providers = new HashMap<>();
 
     /**
      * A map to hold the best (typically highest priority) extension descriptor for each name.
      */
-    private final Map<String, ExtensionDesc<T>> nameBests = new ConcurrentHashMap<>();
+    private final Map<String, ExtensionDesc<T>> nameBests = new LinkedHashMap<>();
 
     /**
      * A map to hold all extension descriptors associated with each name.
      */
-    private final Map<String, List<ExtensionDesc<T>>> nameAll = new ConcurrentHashMap<>();
+    private final Map<String, List<ExtensionDesc<T>>> nameAll = new HashMap<>();
 
     /**
      * A flag indicating whether all contained extensions are singletons.
@@ -67,6 +65,8 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
      */
     private volatile List<T> plugs;
 
+    private volatile Map<String, T> namePlugs;
+
     /**
      * Constructs a JExtensible container with a given name and a list of extension descriptors.
      *
@@ -75,7 +75,7 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
      */
     public JExtensible(Name<T> name, List<ExtensionDesc<T>> extensions) {
         this.name = name;
-        this.extensions = extensions;
+        this.extensions = Collections.unmodifiableList(extensions);
         for (ExtensionDesc<T> extension : extensions) {
             String naming = extension.getName().getName();
             String provider = extension.getProvider();
@@ -83,7 +83,7 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
                 providers.putIfAbsent(naming + "@" + provider, extension);
             }
             nameBests.putIfAbsent(naming, extension);
-            nameAll.computeIfAbsent(naming, s -> new CopyOnWriteArrayList<>()).add(extension);
+            nameAll.computeIfAbsent(naming, s -> new ArrayList<>()).add(extension);
             if (!extension.isSingleton()) {
                 singleton = false;
             }
@@ -135,25 +135,46 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
 
     @Override
     public List<T> getExtensions() {
-        return getOrCreate();
+        return getOrCreateExtensions();
     }
 
     @Override
     public Map<String, T> getExtensionMap() {
-        Map<String, T> result = new HashMap<>(nameBests.size());
-        for (Map.Entry<String, ExtensionDesc<T>> entry : nameBests.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().getTarget());
+        Map<String, T> result;
+        if (singleton) {
+            result = namePlugs;
+            if (result == null) {
+                synchronized (this) {
+                    if (namePlugs == null) {
+                        result = createExtensionMap();
+                        namePlugs = result;
+                    } else {
+                        result = namePlugs;
+                    }
+                }
+            }
+        } else {
+            result = createExtensionMap();
         }
         return result;
     }
 
-    private List<T> getOrCreate() {
-        List<T> targets = plugs;
+    private Map<String, T> createExtensionMap() {
+        Map<String, T> result = new LinkedHashMap<>(nameBests.size());
+        for (Map.Entry<String, ExtensionDesc<T>> entry : nameBests.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().getTarget());
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    private List<T> getOrCreateExtensions() {
+        List<T> targets;
         if (singleton) {
+            targets = plugs;
             if (targets == null) {
-                targets = create();
                 synchronized (this) {
                     if (plugs == null) {
+                        targets = createExtensions();
                         plugs = targets;
                     } else {
                         targets = plugs;
@@ -161,12 +182,12 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
                 }
             }
         } else {
-            targets = create();
+            targets = createExtensions();
         }
         return targets;
     }
 
-    private List<T> create() {
+    private List<T> createExtensions() {
         List<T> result = new LinkedList<>();
         for (ExtensionDesc<T> desc : extensions) {
             result.add(desc.getTarget());
@@ -176,7 +197,7 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
 
     @Override
     public Iterable<T> getExtensions(Predicate<T> predicate, boolean reverse) {
-        List<T> targets = getOrCreate();
+        List<T> targets = getOrCreateExtensions();
         if (targets.isEmpty() || predicate == null && !reverse)
             return targets;
         else {
@@ -189,7 +210,7 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
                         result.addFirst(target);
                 }
             }
-            return result;
+            return Collections.unmodifiableList(result);
         }
     }
 
@@ -200,7 +221,15 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
 
     @Override
     public List<String> contains(List<String> names) {
-        return null;
+        List<String> result = new ArrayList<>();
+        if (names != null) {
+            for (String n : names) {
+                if (nameBests.containsKey(n)) {
+                    result.add(n);
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -215,6 +244,7 @@ public class JExtensible<T> implements ExtensibleDesc<T> {
 
     @Override
     public Iterable<ExtensionDesc<T>> getExtensionDescs(String name) {
-        return name == null || name.isEmpty() ? new ArrayList<>(0) : nameAll.get(name);
+        List<ExtensionDesc<T>> result = name == null || name.isEmpty() ? new ArrayList<>(0) : nameAll.get(name);
+        return Collections.unmodifiableList(result);
     }
 }
