@@ -150,7 +150,6 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
      * @return {@code true} if the circuit is broken, {@code false} otherwise.
      */
     public boolean isBroken(String id, long now) {
-        // TODO lost broken when policy recreate
         Long endTime = id == null ? null : broken.get(id);
         if (endTime == null) {
             return false;
