@@ -31,14 +31,25 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
 
     private final URI uri;
 
+    private long lastAcquireTime;
+
     public AbstractCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
         this.policy = policy;
         this.uri = uri;
     }
 
     @Override
-    public void addListener(CircuitBreakerStateListener listener) {
-
+    public boolean acquire() {
+        lastAcquireTime = System.currentTimeMillis();
+        return doAcquire();
     }
+
+    /**
+     * Performs the actual acquisition logic.
+     * Subclasses must implement this method to define the specific acquisition behavior.
+     *
+     * @return true if the acquisition is successful, false otherwise.
+     */
+    protected abstract boolean doAcquire();
 
 }

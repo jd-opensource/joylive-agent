@@ -34,8 +34,6 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
 
     private final Resilience4jCircuitBreakerEventConsumer eventConsumer;
 
-    private long lastAcquireTime;
-
     public Resilience4jCircuitBreaker(CircuitBreakerPolicy policy, URI uri, CircuitBreaker delegate) {
         super(policy, uri);
         this.delegate = delegate;
@@ -44,14 +42,8 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
     }
 
     @Override
-    public boolean acquire() {
-        lastAcquireTime = System.currentTimeMillis();
+    protected boolean doAcquire() {
         return delegate.tryAcquirePermission();
-    }
-
-    @Override
-    public long getLastAcquireTime() {
-        return lastAcquireTime;
     }
 
     @Override
