@@ -127,6 +127,9 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
         if (degradeConfig == null && source.getDegradeConfig() != null) {
             degradeConfig = new DegradeConfig(source.getDegradeConfig());
         }
+        if (source.getVersion() == version) {
+            broken.putAll(source.getBroken());
+        }
     }
 
     /**

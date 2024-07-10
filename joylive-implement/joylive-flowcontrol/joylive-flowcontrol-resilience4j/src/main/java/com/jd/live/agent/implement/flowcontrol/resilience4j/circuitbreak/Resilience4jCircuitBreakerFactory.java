@@ -61,7 +61,6 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
         }
         CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, uri, cb);
         if (policy.getLevel() == CircuitLevel.INSTANCE) {
-            // TODO policy object will recreated
             circuitBreaker.addListener(new InstanceCircuitBreakerStateListener(policy, uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT)));
         }
         return circuitBreaker;

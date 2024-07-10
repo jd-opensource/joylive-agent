@@ -35,9 +35,9 @@ public class Resilience4jCircuitBreakerEventConsumer implements EventConsumer<Ci
 
     @Override
     public void consumeEvent(CircuitBreakerOnStateTransitionEvent event) {
+        CircuitBreaker.StateTransition transition = event.getStateTransition();
         CircuitBreakerStateEvent e = new CircuitBreakerStateEvent();
         e.setUri(event.getCircuitBreakerName());
-        CircuitBreaker.StateTransition transition = event.getStateTransition();
         e.setFrom(convertState(transition.getFromState()));
         e.setTo(convertState(transition.getToState()));
         for (CircuitBreakerStateListener listener : listeners) {
