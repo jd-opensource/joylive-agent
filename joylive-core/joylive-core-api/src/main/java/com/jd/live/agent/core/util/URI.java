@@ -66,6 +66,7 @@ public class URI {
     public URI(String schema, String host, Integer port, String path, Map<String, String> parameters) {
         this.schema = schema;
         this.host = host;
+        this.port = port;
         this.path = path;
         this.parameters = parameters;
     }
