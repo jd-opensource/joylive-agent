@@ -28,11 +28,15 @@ import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
@@ -40,13 +44,18 @@ import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
 
+import java.io.StringReader;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
 import static com.alipay.sofa.rpc.core.exception.RpcErrorType.CLIENT_ROUTER;
+import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
 /**
  * Represents a live cluster specifically designed for managing Sofa RPC communications.
@@ -63,10 +72,14 @@ import static com.alipay.sofa.rpc.core.exception.RpcErrorType.CLIENT_ROUTER;
  */
 public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaRpcOutboundResponse, SofaRpcEndpoint, SofaRpcException> {
 
+    private static final Logger logger = LoggerFactory.getLogger(SofaRpcCluster.class);
+
     /**
      * The underlying abstract cluster that this live cluster is part of.
      */
     private final AbstractCluster cluster;
+
+    private final ObjectParser parser;
 
     /**
      * The identifier used for stickiness. This ID is used to route requests to
@@ -74,13 +87,9 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
      */
     private String stickyId;
 
-    /**
-     * Constructs a new LiveCluster that wraps an abstract cluster.
-     *
-     * @param cluster the abstract cluster to be wrapped by this live cluster
-     */
-    public SofaRpcCluster(AbstractCluster cluster) {
+    public SofaRpcCluster(AbstractCluster cluster, ObjectParser parser) {
         this.cluster = cluster;
+        this.parser = parser;
     }
 
     @Override
@@ -142,6 +151,18 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     public SofaRpcOutboundResponse createResponse(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
         if (throwable == null) {
             return new SofaRpcOutboundResponse(new SofaResponse());
+        }
+        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                try {
+                    return new SofaRpcOutboundResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new SofaRpcOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+                }
+            }
         }
         return new SofaRpcOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
     }
@@ -314,6 +335,38 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
         return "Failed to call " + sofaRequest.getInterfaceName() + "." + sofaRequest.getMethodName()
                 + " on remote server: " + endpoint.getProvider() + ", cause by: "
                 + throwable.getClass().getName() + ", message is: " + throwable.getMessage();
+    }
+
+    /**
+     * Creates a {@link SofaResponse} based on the provided {@link SofaRpcOutboundRequest} and {@link DegradeConfig}.
+     * The response is configured with the status code, headers, and body specified in the degrade configuration.
+     *
+     * @param request       the original request containing headers.
+     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
+     * @return a {@link SofaResponse} configured according to the degrade configuration.
+     */
+    private SofaResponse createResponse(SofaRpcOutboundRequest request, DegradeConfig degradeConfig) {
+        SofaRequest sofaRequest = request.getRequest();
+        String body = degradeConfig.getResponseBody();
+        SofaResponse result = new SofaResponse();
+        if (degradeConfig.getAttributes() != null) {
+            result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
+        }
+        if (body != null) {
+            // TODO generic & callback & async
+            Method method = sofaRequest.getMethod();
+            Type type = method.getGenericReturnType();
+            Object value;
+            if (void.class == type) {
+                // happens when generic invoke or void return
+                value = null;
+            } else {
+                value = parser.read(new StringReader(body), type);
+            }
+            result.setAppResponse(value);
+        }
+
+        return result;
     }
 }
 

@@ -22,6 +22,7 @@ import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
@@ -39,10 +40,13 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
+    private final ObjectParser parser;
+
     private final Map<AbstractCluster, SofaRpcCluster> clusters = new ConcurrentHashMap<>();
 
-    public LoadBalanceInterceptor(InvocationContext context) {
+    public LoadBalanceInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     /**
@@ -57,7 +61,8 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
         List<ProviderInfo> invoked = (List<ProviderInfo>) arguments[1];
-        SofaRpcCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(), SofaRpcCluster::new);
+        SofaRpcCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(),
+                c -> new SofaRpcCluster(c, parser));
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
         SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
         try {

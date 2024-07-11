@@ -154,6 +154,9 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
         body = body == null ? "" : body;
         byte[] data = body.getBytes(StandardCharsets.UTF_8);
         Map<String, Collection<String>> headers = new HashMap<>(feignRequest.headers());
+        if (degradeConfig.getAttributes() != null) {
+            degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
+        }
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
         headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
 

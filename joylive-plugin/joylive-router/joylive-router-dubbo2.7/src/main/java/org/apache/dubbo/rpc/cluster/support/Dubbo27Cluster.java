@@ -320,6 +320,7 @@ public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
         AppResponse response = new AppResponse();
         response.setAttachments(degradeConfig.getAttributes());
         if (body != null) {
+            // TODO generic & callback & async
             Type[] types = RpcUtils.getReturnTypes(invocation);
             Object value;
             if (types == null || types.length == 0) {
