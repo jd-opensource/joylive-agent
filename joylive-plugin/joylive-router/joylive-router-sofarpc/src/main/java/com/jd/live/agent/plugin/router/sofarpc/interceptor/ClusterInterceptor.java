@@ -37,7 +37,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final ObjectParser parser
+    private final ObjectParser parser;
 
     private final Map<AbstractCluster, SofaRpcCluster> clusters = new ConcurrentHashMap<>();
 
