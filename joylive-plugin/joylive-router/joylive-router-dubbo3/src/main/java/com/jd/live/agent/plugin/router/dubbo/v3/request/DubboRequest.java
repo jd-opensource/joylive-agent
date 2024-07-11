@@ -32,6 +32,8 @@ import static org.apache.dubbo.common.constants.RegistryConstants.*;
  */
 public interface DubboRequest {
 
+    String METADATA_SERVICE = "org.apache.dubbo.metadata.MetadataService";
+
     /**
      * Represents an inbound request in a Dubbo RPC communication.
      * <p>
@@ -45,17 +47,20 @@ public interface DubboRequest {
      */
     class DubboInboundRequest extends AbstractRpcInboundRequest<Invocation> implements DubboRequest {
 
+        private final String interfaceName;
+
         public DubboInboundRequest(Invocation request) {
             super(request);
             URL url = request.getInvoker().getUrl();
+            this.interfaceName = url.getServiceInterface();
             boolean requestMode = SERVICE_REGISTRY_TYPE.equals(request.getAttachment(REGISTRY_TYPE_KEY));
             String registryType = url.getParameter(REGISTRY_TYPE_KEY, DEFAULT_REGISTER_MODE_ALL);
             boolean serviceMode = SERVICE_REGISTRY_TYPE.equals(registryType) || DEFAULT_REGISTER_MODE_ALL.equals(registryType);
             if (requestMode && serviceMode) {
                 this.service = url.getApplication();
-                this.path = url.getServiceInterface();
+                this.path = interfaceName;
             } else {
-                this.service = url.getServiceInterface();
+                this.service = interfaceName;
                 this.path = null;
             }
 
@@ -63,6 +68,11 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public boolean isSystem() {
+            return METADATA_SERVICE.equals(interfaceName);
         }
     }
 
@@ -79,16 +89,24 @@ public interface DubboRequest {
      */
     class DubboOutboundRequest extends AbstractRpcOutboundRequest<Invocation> implements DubboRequest {
 
+        private final String interfaceName;
+
         public DubboOutboundRequest(Invocation request) {
             super(request);
             URL url = request.getInvoker().getUrl();
             String providedBy = url.getParameter(PROVIDED_BY);
-            this.service = providedBy == null ? url.getServiceInterface() : providedBy;
+            this.interfaceName = url.getServiceInterface();
+            this.service = providedBy == null ? interfaceName : providedBy;
             this.group = url.getParameter(CommonConstants.GROUP_KEY);
-            this.path = providedBy == null ? null : url.getServiceInterface();
+            this.path = providedBy == null ? null : interfaceName;
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public boolean isSystem() {
+            return METADATA_SERVICE.equals(interfaceName);
         }
 
         @Override

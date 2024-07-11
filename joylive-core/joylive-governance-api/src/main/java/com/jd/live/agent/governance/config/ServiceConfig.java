@@ -55,11 +55,6 @@ public class ServiceConfig {
     private Set<String> warmups;
 
     /**
-     * A set of exclude class full name.
-     */
-    private Set<String> excludes;
-
-    /**
      * The config of circuit breaker
      */
     private CircuitBreakerConfig circuitBreaker;
@@ -92,10 +87,6 @@ public class ServiceConfig {
      */
     public Integer getCellFailoverThreshold(String cell) {
         return cell == null || cellFailoverThresholds == null ? null : cellFailoverThresholds.get(cell);
-    }
-
-    public boolean isExclude(String type) {
-        return type != null && excludes != null && excludes.contains(type);
     }
 }
 

@@ -63,19 +63,20 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[2];
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
-        DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-        Dubbo3Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
-                invoker -> new Dubbo3Cluster(invoker, parser));
-        try {
-            if (invoked != null) {
-                invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));
+        if (!request.isSystem() && !request.isDisabled()) {
+            Dubbo3Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
+                    invoker -> new Dubbo3Cluster(invoker, parser));
+            try {
+                if (invoked != null) {
+                    invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));
+                }
+                DubboEndpoint<?> endpoint = context.route(new DubboOutboundInvocation(request, context), invokers, DubboEndpoint::of);
+                mc.setResult(endpoint.getInvoker());
+            } catch (RejectException e) {
+                mc.setThrowable(cluster.createRejectException(e, request));
             }
-            DubboEndpoint<?> endpoint = context.route(invocation, invokers, DubboEndpoint::of);
-            mc.setResult(endpoint.getInvoker());
-        } catch (RejectException e) {
-            mc.setThrowable(cluster.createRejectException(e, request));
+            mc.setSkip(true);
         }
-        mc.setSkip(true);
     }
 
 }

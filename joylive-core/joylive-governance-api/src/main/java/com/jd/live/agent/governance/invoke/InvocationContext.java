@@ -292,7 +292,7 @@ public interface InvocationContext {
                 endpoints.add(converter.apply(instance));
             }
         }
-        return route(invocation, endpoints, (OutboundFilter[]) null, true);
+        return route(invocation, endpoints, null, true);
     }
 
     /**
@@ -307,7 +307,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-        return route(invocation, null, (OutboundFilter[]) null, true);
+        return route(invocation, null, null, true);
     }
 
     /**

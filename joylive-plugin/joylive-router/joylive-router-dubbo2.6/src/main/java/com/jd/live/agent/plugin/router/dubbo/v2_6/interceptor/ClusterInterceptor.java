@@ -68,13 +68,15 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);
-        DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-        DubboOutboundResponse response = cluster.request(context, invocation, instances);
-        if (response.getThrowable() != null) {
-            mc.setThrowable(response.getThrowable());
-        } else {
-            mc.setResult(response.getResponse());
+        if (!request.isSystem() && !request.isDisabled()) {
+            DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
+            DubboOutboundResponse response = cluster.request(context, invocation, instances);
+            if (response.getThrowable() != null) {
+                mc.setThrowable(response.getThrowable());
+            } else {
+                mc.setResult(response.getResponse());
+            }
+            mc.setSkip(true);
         }
-        mc.setSkip(true);
     }
 }

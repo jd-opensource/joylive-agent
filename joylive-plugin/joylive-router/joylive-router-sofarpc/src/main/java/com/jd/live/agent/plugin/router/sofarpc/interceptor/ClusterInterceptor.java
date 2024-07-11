@@ -53,13 +53,15 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         SofaRpcCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(),
                 c -> new SofaRpcCluster(c, parser));
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
-        SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
-        SofaRpcOutboundResponse response = cluster.request(context, invocation, null);
-        if (response.getThrowable() != null) {
-            mc.setThrowable(response.getThrowable());
-        } else {
-            mc.setResult(response.getResponse());
+        if (!request.isSystem() && !request.isDisabled()) {
+            SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
+            SofaRpcOutboundResponse response = cluster.request(context, invocation, null);
+            if (response.getThrowable() != null) {
+                mc.setThrowable(response.getThrowable());
+            } else {
+                mc.setResult(response.getResponse());
+            }
+            mc.setSkip(true);
         }
-        mc.setSkip(true);
     }
 }

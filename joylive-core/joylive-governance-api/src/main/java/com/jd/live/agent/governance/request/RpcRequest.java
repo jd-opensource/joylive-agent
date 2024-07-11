@@ -27,29 +27,20 @@ package com.jd.live.agent.governance.request;
 public interface RpcRequest extends ServiceRequest {
 
     /**
-     * Determines if the request is a heartbeat message.
-     *
-     * @return {@code true} if the request is a heartbeat; {@code false} otherwise.
-     */
-    default boolean isHeartbeat() {
-        return false;
-    }
-
-    /**
-     * Determines if the request is for registry operations.
-     *
-     * @return {@code true} if the request is for registry operations; {@code false} otherwise.
-     */
-    default boolean isRegistry() {
-        return false;
-    }
-
-    /**
      * Retrieves the arguments passed with the RPC request.
      *
      * @return An array of {@link Object} containing the arguments.
      */
     Object[] getArguments();
+
+    /**
+     * Determines if the request is a system message.
+     *
+     * @return {@code true} if the request is a system message; {@code false} otherwise.
+     */
+    default boolean isSystem() {
+        return false;
+    }
 
     /**
      * Retrieves a specific argument from the RPC request based on its index.
@@ -93,5 +84,13 @@ public interface RpcRequest extends ServiceRequest {
      */
     interface RpcOutboundRequest extends RpcRequest, OutboundRequest {
 
+        /**
+         * Determine if the current request has disabled traffic management.
+         *
+         * @return {@code true} if the current request is disabled; {@code false} otherwise.
+         */
+        default boolean isDisabled() {
+            return false;
+        }
     }
 }

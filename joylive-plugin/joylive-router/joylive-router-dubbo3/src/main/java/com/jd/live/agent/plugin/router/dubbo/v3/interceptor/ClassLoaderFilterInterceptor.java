@@ -48,12 +48,15 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = mc.getArguments();
         Invocation invocation = (Invocation) arguments[1];
-        try {
-            context.inbound(new DubboInboundInvocation(new DubboInboundRequest(invocation), context));
-        } catch (RejectException e) {
-            Result result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
-            mc.setResult(result);
-            mc.setSkip(true);
+        DubboInboundRequest request = new DubboInboundRequest(invocation);
+        if (!request.isSystem()) {
+            try {
+                context.inbound(new DubboInboundInvocation(request, context));
+            } catch (RejectException e) {
+                Result result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
+                mc.setResult(result);
+                mc.setSkip(true);
+            }
         }
     }
 }

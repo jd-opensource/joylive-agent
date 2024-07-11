@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboInboundInvocation;
@@ -49,12 +48,10 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = mc.getArguments();
         Invocation invocation = (Invocation) arguments[1];
-        String serviceInterface = invocation.getInvoker().getUrl().getServiceInterface();
-        ServiceConfig serviceConfig = context.getGovernanceConfig().getServiceConfig();
-        boolean exclude = serviceConfig != null && serviceConfig.isExclude(serviceInterface);
-        if (!exclude) {
+        DubboInboundRequest request = new DubboInboundRequest(invocation);
+        if (!request.isSystem()) {
             try {
-                context.inbound(new DubboInboundInvocation(new DubboInboundRequest(invocation), context));
+                context.inbound(new DubboInboundInvocation(request, context));
             } catch (RejectException e) {
                 Result result = new AppResponse(new RpcException(RpcException.FORBIDDEN_EXCEPTION, e.getMessage()));
                 mc.setResult(result);

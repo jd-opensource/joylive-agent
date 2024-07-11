@@ -120,8 +120,6 @@ agent:
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
     service:
       warmups: ${CONFIG_WARMUP_SERVICES:}
-      excludes:
-        - org.apache.dubbo.metadata.MetadataService
       concurrencyLimiter:
         type: Resilience4j
         cleanInterval: 30000
