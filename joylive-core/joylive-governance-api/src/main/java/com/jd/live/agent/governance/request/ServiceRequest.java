@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Defines an interface for service requests, extending the basic {@link Request} interface.
@@ -207,6 +208,35 @@ public interface ServiceRequest extends Request {
         default boolean isInstanceSensitive() {
             return true;
         }
+
+        /**
+         * Returns the error code associated with the given {@link Throwable}.
+         * This default implementation returns {@code null}.
+         *
+         * @param throwable the {@link Throwable} for which to get the error code
+         * @return the error code as a {@link String}, or {@code null} if not available
+         */
+        default String getErrorCode(Throwable throwable) {
+            return null;
+        }
+
+        /**
+         * Returns the cause of the given {@link Throwable}.
+         * This default implementation returns the provided {@link Throwable} itself.
+         *
+         * @param throwable the {@link Throwable} for which to get the cause
+         * @return the cause of the given {@link Throwable}, or the {@link Throwable} itself if no cause is available
+         */
+        default Throwable getCause(Throwable throwable) {
+            if (throwable instanceof ExecutionException) {
+                Throwable cause = throwable.getCause();
+                if (cause != null) {
+                    return cause;
+                }
+            }
+            return throwable;
+        }
+
 
     }
 }

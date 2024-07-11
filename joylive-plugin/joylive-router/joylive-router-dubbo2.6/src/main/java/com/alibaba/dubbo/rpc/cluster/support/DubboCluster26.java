@@ -192,6 +192,8 @@ public class DubboCluster26 implements LiveCluster<DubboOutboundRequest, DubboOu
             return null;
         } else if (throwable instanceof RpcException) {
             return (RpcException) throwable;
+        } else if (throwable instanceof RejectException) {
+            return createRejectException((RejectException) throwable, request);
         } else {
             String message = getError(throwable, request, endpoint);
             Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;

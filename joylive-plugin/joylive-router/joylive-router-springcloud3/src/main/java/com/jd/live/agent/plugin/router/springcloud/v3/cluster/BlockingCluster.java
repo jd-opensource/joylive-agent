@@ -45,6 +45,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
+
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
  * mechanism for handling HTTP requests, integrating load balancing and retry logic. It utilizes

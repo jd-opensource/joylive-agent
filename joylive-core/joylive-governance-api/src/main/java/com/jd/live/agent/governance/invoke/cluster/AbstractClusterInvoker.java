@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.AppStatus;
@@ -114,8 +113,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                             onSuccess(cluster, invocation, o, request, instance, result);
                         }
                     });
-                } catch (RejectException e) {
-                    onException(cluster.createRejectException(e, request), request, endpoint, cluster, invocation, result);
                 } catch (Throwable e) {
                     onException(e, request, endpoint, cluster, invocation, result);
                 }

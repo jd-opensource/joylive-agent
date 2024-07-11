@@ -27,6 +27,7 @@ import com.jd.live.agent.core.parser.TypeReference;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -95,6 +96,19 @@ public abstract class AbstractJacksonParser implements ConfigParser, ObjectParse
         }
         try {
             return (T) mapper.readValue(reader, new SimpleTypeReference(reference.getType()));
+        } catch (IOException e) {
+            throw new ParseException("read error. caused by " + e.getMessage(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T read(Reader reader, Type type) {
+        if (reader == null || type == null) {
+            return null;
+        }
+        try {
+            return (T) mapper.readValue(reader, new SimpleTypeReference(type));
         } catch (IOException e) {
             throw new ParseException("read error. caused by " + e.getMessage(), e);
         }

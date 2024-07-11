@@ -44,16 +44,6 @@ public interface OutboundListener {
     }
 
     /**
-     * Called when the selected instance by the load balancer is not appropriate,
-     * commonly used to release related resources.
-     *
-     * @param endpoint   the endpoint to which the invocation was sent.
-     * @param invocation the outbound invocation that was canceled.
-     */
-    default void onCancel(Endpoint endpoint, OutboundInvocation<?> invocation) {
-    }
-
-    /**
      * Called when an outbound invocation completes successfully.
      *
      * @param endpoint   the endpoint to which the invocation was sent.

@@ -19,6 +19,7 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
 
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Type;
 
 /**
  * Defines the contract for parsers that can serialize and deserialize objects to and from different formats
@@ -65,6 +66,16 @@ public interface ObjectParser {
      * @return The deserialized object of type {@code T}.
      */
     <T> T read(Reader reader, TypeReference<T> reference);
+
+    /**
+     * Reads the data from the given {@link Reader} and deserializes it into an object of the specified type.
+     *
+     * @param <T>    the type of the desired object
+     * @param reader the {@link Reader} to read the JSON data from
+     * @param type   the {@link Type} of the desired object
+     * @return an object of type {@code T} deserialized from the JSON data
+     */
+    <T> T read(Reader reader, Type type);
 
     /**
      * Serializes the provided object into a specified format and writes it using the given {@link Writer}.

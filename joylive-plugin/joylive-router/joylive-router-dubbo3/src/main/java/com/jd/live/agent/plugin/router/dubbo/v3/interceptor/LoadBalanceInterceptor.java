@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
@@ -26,7 +27,7 @@ import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.D
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import org.apache.dubbo.rpc.cluster.support.DubboCluster3;
+import org.apache.dubbo.rpc.cluster.support.Dubbo3Cluster;
 
 import java.util.List;
 import java.util.Map;
@@ -39,10 +40,13 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster3> clusters = new ConcurrentHashMap<>();
+    private final ObjectParser parser;
 
-    public LoadBalanceInterceptor(InvocationContext context) {
+    private final Map<AbstractClusterInvoker<?>, Dubbo3Cluster> clusters = new ConcurrentHashMap<>();
+
+    public LoadBalanceInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     /**
@@ -60,7 +64,8 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
         DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-        DubboCluster3 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster3::new);
+        Dubbo3Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
+                invoker -> new Dubbo3Cluster(invoker, parser));
         try {
             if (invoked != null) {
                 invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));

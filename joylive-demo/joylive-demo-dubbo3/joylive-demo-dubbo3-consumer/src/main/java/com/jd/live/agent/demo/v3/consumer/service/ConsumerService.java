@@ -72,18 +72,26 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         RpcContextAttachment attachment = RpcContext.getClientAttachment();
         config.transmit(attachment::setAttachment);
         long counter = 0;
+        long status = 0;
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                if (counter++ % 2 == 0) {
-                    doInvoke(attachment);
-                } else {
-                    doGenericInvoke(attachment);
+                int remain = (int) (counter++ % 3);
+                switch (remain) {
+                    case 0:
+                        doEcho(attachment);
+                        break;
+                    case 1:
+                        doGenericEcho(attachment);
+                        break;
+                    default:
+                        doStatus(attachment, (status++ % 20) == 0 ? 200 : 500);
+                        break;
                 }
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
             }
             try {
-                countDownLatch.await(3000L, TimeUnit.MILLISECONDS);
+                countDownLatch.await(1000L, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -91,14 +99,20 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
 
     }
 
-    private void doInvoke(RpcContextAttachment attachment) {
+    private void doStatus(RpcContextAttachment attachment, int code) {
+        LiveResponse result = helloService.status(code);
+        addTrace(attachment, result);
+        output("Invoke status: \n{}", result);
+    }
+
+    private void doEcho(RpcContextAttachment attachment) {
         LiveResponse result = helloService.echo("hello");
         addTrace(attachment, result);
         output("Invoke result: \n{}", result);
     }
 
     @SuppressWarnings("unchecked")
-    private void doGenericInvoke(RpcContextAttachment attachment) {
+    private void doGenericEcho(RpcContextAttachment attachment) {
         Map<String, Object> result = (Map<String, Object>) genericService.$invoke("echo",
                 new String[]{"java.lang.String"},
                 new Object[]{"hello"});

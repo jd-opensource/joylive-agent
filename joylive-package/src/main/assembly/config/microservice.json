@@ -438,7 +438,50 @@
             "writeProtect": false,
             "cellPolicy": "PREFER_LOCAL_CELL"
           }
-        }
+        },
+        "paths": [
+          {
+            "path": "com.jd.live.agent.demo.service.HelloService",
+            "matchType": "EQUAL",
+            "methods": [
+              {
+                "name": "status",
+                "servicePolicy": {
+                  "circuitBreakerPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "java.lang.RuntimeException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 5000,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   }

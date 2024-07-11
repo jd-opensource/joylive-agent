@@ -199,5 +199,20 @@ public class RejectException extends LiveException {
         public <T> T getConfig() {
             return (T) config;
         }
+
+        /**
+         * Checks if the provided throwable or its cause is an instance of {@link RejectCircuitBreakException}.
+         *
+         * @param throwable the throwable to check for {@link RejectCircuitBreakException}.
+         * @return the {@link RejectCircuitBreakException} if found, otherwise null.
+         */
+        public static RejectCircuitBreakException getCircuitBreakException(Throwable throwable) {
+            if (throwable instanceof RejectCircuitBreakException) {
+                return (RejectCircuitBreakException) throwable;
+            } else if (throwable.getCause() instanceof RejectCircuitBreakException) {
+                return (RejectCircuitBreakException) throwable.getCause();
+            }
+            return null;
+        }
     }
 }

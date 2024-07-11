@@ -72,6 +72,11 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     private Set<String> errorCodes;
 
     /**
+     * Exception full class names.
+     */
+    private Set<String> exceptions;
+
+    /**
      * Failure rate threshold
      */
     private float failureRateThreshold = 50;
@@ -140,6 +145,16 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
      */
     public boolean containsError(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
+    }
+
+    /**
+     * Checks if the specified exception is present in the list of exceptions.
+     *
+     * @param throwable the exception to check.
+     * @return {@code true} if the error code is present, {@code false} otherwise.
+     */
+    public boolean containsException(Throwable throwable) {
+        return throwable != null && exceptions != null && exceptions.contains(throwable.getClass().getName());
     }
 
     /**

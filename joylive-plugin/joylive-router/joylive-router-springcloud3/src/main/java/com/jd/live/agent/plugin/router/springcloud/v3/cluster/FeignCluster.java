@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
@@ -42,6 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
 
 public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, FeignClusterResponse> {
@@ -99,7 +101,7 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     @Override
     public FeignClusterResponse createResponse(Throwable throwable, FeignClusterRequest request, SpringEndpoint endpoint) {
-        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
             if (config != null) {

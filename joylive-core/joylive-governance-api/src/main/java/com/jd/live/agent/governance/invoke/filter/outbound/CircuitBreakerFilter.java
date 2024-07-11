@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.filter.outbound;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -44,6 +45,7 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * CircuitBreakerFilter
@@ -144,16 +146,48 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
      * @param circuitBreakers the list of circuit breakers.
      */
     private static void acquire(OutboundInvocation<?> invocation, List<CircuitBreaker> circuitBreakers) {
+        acquire(circuitBreakers, breaker -> {
+            DegradeConfig config = breaker.getPolicy().getDegradeConfig();
+            if (config == null) {
+                invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejects the request.");
+            } else {
+                invocation.degrade(FaultType.CIRCUIT_BREAK, "The circuit break policy triggers a downgrade response.", config);
+            }
+        });
+    }
+
+    /**
+     * Acquires permits from the list of circuit breakers.
+     * If acquiring a permit from any circuit breaker fails, it rolls back all previously acquired permits
+     * and executes the provided fallback action.
+     *
+     * @param circuitBreakers the list of circuit breakers
+     * @param fallback        the fallback action to be executed if acquiring a permit fails, may be {@code null}
+     * @return {@code true} if permits were successfully acquired from all circuit breakers, {@code false} otherwise
+     */
+    private static boolean acquire(List<CircuitBreaker> circuitBreakers, Consumer<CircuitBreaker> fallback) {
+        int acquires = 0;
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
             if (!circuitBreaker.acquire()) {
-                DegradeConfig degradeConfig = circuitBreaker.getPolicy().getDegradeConfig();
-                if (degradeConfig == null) {
-                    invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejects the request.");
-                } else {
-                    invocation.degrade(FaultType.CIRCUIT_BREAK, "The circuit break policy triggers a downgrade response.", degradeConfig);
+                if (acquires > 0) {
+                    // rollback
+                    int rollbacks = 0;
+                    for (CircuitBreaker breaker : circuitBreakers) {
+                        if (rollbacks++ < acquires) {
+                            breaker.release();
+                        } else {
+                            break;
+                        }
+                    }
                 }
+                if (fallback != null) {
+                    fallback.accept(circuitBreaker);
+                }
+                return false;
             }
+            acquires++;
         }
+        return true;
     }
 
     /**
@@ -185,25 +219,18 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
                     CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {
-                        if (breaker.acquire()) {
-                            circuitBreakers.add(breaker);
-                        } else {
-                            return false;
-                        }
+                        circuitBreakers.add(breaker);
+                    }
+                }
+                int size = circuitBreakers.size();
+                if (size > index) {
+                    if (!acquire(circuitBreakers.subList(index, size), null)) {
+                        circuitBreakers = circuitBreakers.subList(0, index);
+                        return false;
                     }
                 }
             }
             return true;
-        }
-
-        @Override
-        public void onCancel(Endpoint endpoint, OutboundInvocation<?> invocation) {
-            int size = circuitBreakers.size();
-            if (size > index) {
-                List<CircuitBreaker> breakers = circuitBreakers.subList(index, size);
-                breakers.forEach(CircuitBreaker::release);
-                circuitBreakers = circuitBreakers.subList(0, index);
-            }
         }
 
         @Override
@@ -220,10 +247,18 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
 
         @Override
         public void onFailure(Endpoint endpoint, OutboundInvocation<?> invocation, Throwable throwable) {
-            if (!(throwable instanceof CircuitBreakException)) {
-                long duration = invocation.getRequest().getDuration();
+            if (!(throwable instanceof RejectCircuitBreakException)) {
+                OutboundRequest request = invocation.getRequest();
+                long duration = request.getDuration();
+                String code = request.getErrorCode(throwable);
+                Throwable cause = request.getCause(throwable);
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                    circuitBreaker.onError(duration, throwable);
+                    CircuitBreakerPolicy policy = circuitBreaker.getPolicy();
+                    if (policy.containsError(code) || policy.containsException(cause)) {
+                        circuitBreaker.onError(duration, cause);
+                    } else {
+                        circuitBreaker.onSuccess(duration);
+                    }
                 }
             }
         }

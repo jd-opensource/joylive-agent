@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutbou
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invocation;
+import org.apache.dubbo.rpc.RpcException;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -88,6 +89,23 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public String getErrorCode(Throwable throwable) {
+            if (throwable instanceof RpcException) {
+                return String.valueOf(((RpcException) throwable).getCode());
+            }
+            return super.getErrorCode(throwable);
+        }
+
+        @Override
+        public Throwable getCause(Throwable throwable) {
+            if (throwable instanceof RpcException) {
+                Throwable cause = throwable.getCause();
+                return cause != null ? cause : throwable;
+            }
+            return super.getCause(throwable);
         }
     }
 }

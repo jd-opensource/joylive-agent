@@ -112,6 +112,8 @@ public abstract class AbstractClientCluster<
     public NestedRuntimeException createException(Throwable throwable, R request, SpringEndpoint endpoint) {
         if (throwable instanceof NestedRuntimeException) {
             return (NestedRuntimeException) throwable;
+        } else if (throwable instanceof RejectException) {
+            return createRejectException((RejectException) throwable, request);
         }
         return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
     }
@@ -170,21 +172,6 @@ public abstract class AbstractClientCluster<
                 throwable,
                 request.getLbRequest(),
                 endpoint == null ? new DefaultResponse(null) : endpoint.getResponse())));
-    }
-
-    /**
-     * Checks if the provided throwable or its cause is an instance of {@link RejectCircuitBreakException}.
-     *
-     * @param throwable the throwable to check for {@link RejectCircuitBreakException}.
-     * @return the {@link RejectCircuitBreakException} if found, otherwise null.
-     */
-    protected RejectCircuitBreakException getCircuitBreakException(Throwable throwable) {
-        if (throwable instanceof RejectCircuitBreakException) {
-            return (RejectCircuitBreakException) throwable;
-        } else if (throwable.getCause() instanceof RejectCircuitBreakException) {
-            return (RejectCircuitBreakException) throwable.getCause();
-        }
-        return null;
     }
 
     /**

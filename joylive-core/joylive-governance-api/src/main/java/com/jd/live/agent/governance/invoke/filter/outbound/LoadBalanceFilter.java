@@ -66,8 +66,6 @@ public class LoadBalanceFilter implements OutboundFilter {
                         } else if (invocation.onElect(backend)) {
                             invocation.onForward(backend);
                             return Collections.singletonList(backend);
-                        } else {
-                            invocation.onCancel(backend);
                         }
                         backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
                         backends.remove(candidate.getIndex());
@@ -100,7 +98,6 @@ public class LoadBalanceFilter implements OutboundFilter {
                         invocation.onForward(endpoint);
                         return Collections.singletonList(endpoint);
                     }
-                    invocation.onCancel(endpoint);
                     iterator.remove();
                     break;
                 }

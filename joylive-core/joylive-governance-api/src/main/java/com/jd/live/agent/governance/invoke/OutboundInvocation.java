@@ -151,17 +151,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     /**
-     * Handles the cancellation of an endpoint, notifying listeners of the cancellation.
-     *
-     * @param endpoint the endpoint to which the invocation was sent.
-     */
-    public void onCancel(Endpoint endpoint) {
-        if (listeners != null) {
-            listeners.forEach(listener -> listener.onCancel(endpoint, this));
-        }
-    }
-
-    /**
      * Handles the successful completion of an invocation, notifying listeners with the response.
      *
      * @param endpoint the endpoint to which the invocation was sent.

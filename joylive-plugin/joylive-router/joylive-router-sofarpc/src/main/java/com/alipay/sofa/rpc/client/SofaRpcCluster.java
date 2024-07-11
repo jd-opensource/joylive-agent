@@ -186,6 +186,8 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
             return null;
         } else if (throwable instanceof SofaRpcException) {
             return (SofaRpcException) throwable;
+        } else if (throwable instanceof RejectException) {
+            return createRejectException((RejectException) throwable, request);
         } else {
             String message = getError(throwable, request, endpoint);
             if (throwable instanceof LiveException) {
