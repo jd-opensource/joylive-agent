@@ -34,15 +34,6 @@ public interface RpcRequest extends ServiceRequest {
     Object[] getArguments();
 
     /**
-     * Determines if the request is a system message.
-     *
-     * @return {@code true} if the request is a system message; {@code false} otherwise.
-     */
-    default boolean isSystem() {
-        return false;
-    }
-
-    /**
      * Retrieves a specific argument from the RPC request based on its index.
      *
      * @param index The index of the argument to retrieve.

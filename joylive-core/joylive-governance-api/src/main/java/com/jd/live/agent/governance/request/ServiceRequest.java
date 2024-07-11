@@ -93,6 +93,15 @@ public interface ServiceRequest extends Request {
     }
 
     /**
+     * Determines if the request is a system message.
+     *
+     * @return {@code true} if the request is a system message; {@code false} otherwise.
+     */
+    default boolean isSystem() {
+        return false;
+    }
+
+    /**
      * Rejects the request with the given fault type and reason.
      *
      * @param type   The type of fault.
