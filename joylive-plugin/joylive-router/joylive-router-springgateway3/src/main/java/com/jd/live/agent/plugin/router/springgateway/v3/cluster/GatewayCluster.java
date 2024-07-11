@@ -15,11 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
@@ -34,9 +36,16 @@ import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactor
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -86,6 +95,13 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     @Override
     public GatewayClusterResponse createResponse(Throwable throwable, GatewayClusterRequest request, SpringEndpoint endpoint) {
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                return new GatewayClusterResponse(createResponse(request, config));
+            }
+        }
         return new GatewayClusterResponse(createException(throwable, request, endpoint));
     }
 
@@ -123,4 +139,36 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                         ? new ResponseData(new RequestData(request.getRequest()), response.getResponse())
                         : new ResponseData(response.getResponse(), new RequestData(request.getRequest())))));
     }
+
+    /**
+     * Creates a {@link ServerHttpResponse} based on the provided {@link GatewayClusterRequest} and {@link DegradeConfig}.
+     * The response is configured with the status code, headers, and body specified in the degrade configuration.
+     *
+     * @param httpRequest   the original HTTP request containing headers.
+     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
+     * @return a {@link ServerHttpResponse} configured according to the degrade configuration.
+     */
+    private ServerHttpResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
+        ServerHttpResponse response = httpRequest.getExchange().getResponse();
+        ServerHttpRequest request = httpRequest.getExchange().getRequest();
+
+        String body = degradeConfig.getResponseBody();
+        int length = body == null ? 0 : body.length();
+        byte[] bytes = length == 0 ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+        DataBuffer buffer = response.bufferFactory().wrap(bytes);
+
+        HttpHeaders headers = response.getHeaders();
+        headers.putAll(request.getHeaders());
+        Map<String, String> attributes = degradeConfig.getAttributes();
+        if (attributes != null) {
+            attributes.forEach(headers::add);
+        }
+        response.setRawStatusCode(degradeConfig.getResponseCode());
+        response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
+        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+
+        response.writeWith(Flux.just(buffer)).block();
+        return response;
+    }
+
 }
