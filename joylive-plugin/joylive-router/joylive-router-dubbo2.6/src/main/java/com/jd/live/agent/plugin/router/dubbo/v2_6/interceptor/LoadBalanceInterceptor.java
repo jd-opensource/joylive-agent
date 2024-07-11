@@ -18,10 +18,11 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import com.alibaba.dubbo.rpc.cluster.support.DubboCluster26;
+import com.alibaba.dubbo.rpc.cluster.support.Dubbo26Cluster;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
@@ -39,10 +40,13 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster26> clusters = new ConcurrentHashMap<>();
+    private final ObjectParser parser;
 
-    public LoadBalanceInterceptor(InvocationContext context) {
+    private final Map<AbstractClusterInvoker<?>, Dubbo26Cluster> clusters = new ConcurrentHashMap<>();
+
+    public LoadBalanceInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     /**
@@ -60,7 +64,8 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
         DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-        DubboCluster26 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster26::new);
+        Dubbo26Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
+                invoker -> new Dubbo26Cluster(invoker, parser));
         try {
             if (invoked != null) {
                 invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));

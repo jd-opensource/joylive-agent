@@ -18,9 +18,10 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import com.alibaba.dubbo.rpc.cluster.support.DubboCluster26;
+import com.alibaba.dubbo.rpc.cluster.support.Dubbo26Cluster;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
@@ -41,10 +42,13 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster26> clusters = new ConcurrentHashMap<>();
+    private final ObjectParser parser;
 
-    public ClusterInterceptor(InvocationContext context) {
+    private final Map<AbstractClusterInvoker<?>, Dubbo26Cluster> clusters = new ConcurrentHashMap<>();
+
+    public ClusterInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     /**
@@ -59,7 +63,8 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        DubboCluster26 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster26::new);
+        Dubbo26Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
+                invoker -> new Dubbo26Cluster(invoker, parser));
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);

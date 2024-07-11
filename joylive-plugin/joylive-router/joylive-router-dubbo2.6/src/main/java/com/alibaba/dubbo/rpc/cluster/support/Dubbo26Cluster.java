@@ -24,6 +24,9 @@ import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.type.ClassDesc;
@@ -35,6 +38,7 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
@@ -42,6 +46,8 @@ import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.response.DubboResponse.DubboOutboundResponse;
 
+import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +56,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
 
 /**
@@ -62,9 +70,13 @@ import java.util.stream.Collectors;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
-public class DubboCluster26 implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
+public class Dubbo26Cluster implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
+
+    private static final Logger logger = LoggerFactory.getLogger(Dubbo26Cluster.class);
 
     private final AbstractClusterInvoker cluster;
+
+    private final ObjectParser parser;
 
     private final AtomicBoolean destroyed;
 
@@ -74,13 +86,9 @@ public class DubboCluster26 implements LiveCluster<DubboOutboundRequest, DubboOu
      */
     private String stickyId;
 
-    /**
-     * Constructs a new LiveCluster that wraps an abstract cluster.
-     *
-     * @param cluster the abstract cluster to be wrapped by this live cluster
-     */
-    public DubboCluster26(AbstractClusterInvoker cluster) {
+    public Dubbo26Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
         this.cluster = cluster;
+        this.parser = parser;
         ClassDesc describe = ClassUtils.describe(cluster.getClass());
         FieldList fieldList = describe.getFieldList();
         FieldDesc field = fieldList.getField("destroyed");
@@ -152,6 +160,18 @@ public class DubboCluster26 implements LiveCluster<DubboOutboundRequest, DubboOu
     public DubboOutboundResponse createResponse(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         if (throwable == null) {
             return new DubboOutboundResponse(new RpcResult());
+        }
+        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                try {
+                    return new DubboOutboundResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+                }
+            }
         }
         return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
     }
@@ -287,6 +307,37 @@ public class DubboCluster26 implements LiveCluster<DubboOutboundRequest, DubboOu
         return "Failed to call " + invocation.getInvoker().getInterface().getName() + "." + invocation.getMethodName()
                 + " on remote server: " + endpoint.getInvoker().getUrl().getAddress() + ", cause by: "
                 + throwable.getClass().getName() + ", message is: " + throwable.getMessage();
+    }
+
+    /**
+     * Creates a {@link Result} based on the provided {@link DubboOutboundRequest} and {@link DegradeConfig}.
+     * The response is configured with the status code, headers, and body specified in the degrade configuration.
+     *
+     * @param request       the original request containing headers.
+     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
+     * @return a {@link Result} configured according to the degrade configuration.
+     */
+    private Result createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
+        RpcInvocation invocation = (RpcInvocation) request.getRequest();
+        String body = degradeConfig.getResponseBody();
+        RpcResult result = new RpcResult();
+        result.setAttachments(degradeConfig.getAttributes());
+        if (body != null) {
+            Type[] types = RpcUtils.getReturnTypes(invocation);
+            Object value;
+            if (types == null || types.length == 0) {
+                // happens when generic invoke or void return
+                value = null;
+            } else if (types.length == 1) {
+                Class<?> type = (Class<?>) types[0];
+                value = String.class == type ? body : parser.read(new StringReader(body), type);
+            } else {
+                value = parser.read(new StringReader(body), types[1]);
+            }
+            result.setValue(value);
+        }
+
+        return result;
     }
 
 }
