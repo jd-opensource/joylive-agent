@@ -285,7 +285,7 @@
               ]
             }
           ],
-          "circuitBreakerPolicies": [
+          "circuitBreakPolicies": [
             {
               "name": "cb1",
               "level": "SERVICE",
@@ -447,7 +447,7 @@
               {
                 "name": "status",
                 "servicePolicy": {
-                  "circuitBreakerPolicies": [
+                  "circuitBreakPolicies": [
                     {
                       "name": "cb1",
                       "level": "SERVICE",
@@ -508,7 +508,7 @@
               {
                 "name": "status",
                 "servicePolicy": {
-                  "circuitBreakerPolicies": [
+                  "circuitBreakPolicies": [
                     {
                       "name": "cb1",
                       "level": "SERVICE",

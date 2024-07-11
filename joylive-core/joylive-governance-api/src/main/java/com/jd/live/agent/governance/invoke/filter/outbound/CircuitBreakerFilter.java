@@ -37,7 +37,7 @@ import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
@@ -79,12 +79,12 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         ServicePolicy servicePolicy = metadata.getServicePolicy();
-        List<CircuitBreakerPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakerPolicies();
+        List<CircuitBreakPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakPolicies();
         if (null != policies && !policies.isEmpty()) {
-            List<CircuitBreakerPolicy> instancePolicies = null;
+            List<CircuitBreakPolicy> instancePolicies = null;
             List<CircuitBreaker> serviceBreakers = new ArrayList<>(policies.size());
             CircuitBreaker breaker;
-            for (CircuitBreakerPolicy policy : policies) {
+            for (CircuitBreakPolicy policy : policies) {
                 switch (policy.getLevel()) {
                     case SERVICE:
                         breaker = getCircuitBreaker(policy, policy.getUri());
@@ -114,7 +114,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
             if (instancePolicies != null && !instancePolicies.isEmpty()) {
                 RouteTarget target = invocation.getRouteTarget();
                 long currentTime = System.currentTimeMillis();
-                for (CircuitBreakerPolicy policy : instancePolicies) {
+                for (CircuitBreakPolicy policy : instancePolicies) {
                     target.filter(endpoint -> !policy.isBroken(endpoint.getId(), currentTime));
                 }
             }
@@ -129,7 +129,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
      * @param uri the URI for the circuit breaker.
      * @return the circuit breaker, or null if no factory is found for the policy type.
      */
-    private CircuitBreaker getCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
+    private CircuitBreaker getCircuitBreaker(CircuitBreakPolicy policy, URI uri) {
         String type = policy.getRealizeType();
         if (type == null || type.isEmpty()) {
             type = defaultType;
@@ -199,13 +199,13 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
 
         private List<CircuitBreaker> circuitBreakers;
 
-        private final List<CircuitBreakerPolicy> instancePolicies;
+        private final List<CircuitBreakPolicy> instancePolicies;
 
         private final int index;
 
         CircuitBreakerListener(CircuitBreakerFactory factory,
                                List<CircuitBreaker> circuitBreakers,
-                               List<CircuitBreakerPolicy> instancePolicies) {
+                               List<CircuitBreakPolicy> instancePolicies) {
             this.factory = factory;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
@@ -215,7 +215,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
         @Override
         public boolean onElect(Endpoint endpoint, OutboundInvocation<?> invocation) {
             if (endpoint != null && instancePolicies != null && !instancePolicies.isEmpty()) {
-                for (CircuitBreakerPolicy policy : instancePolicies) {
+                for (CircuitBreakPolicy policy : instancePolicies) {
                     URI uri = policy.getUri().parameter(PolicyId.KEY_SERVICE_ENDPOINT, endpoint.getId());
                     CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {
@@ -253,7 +253,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
                 String code = request.getErrorCode(throwable);
                 Throwable cause = request.getCause(throwable);
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                    CircuitBreakerPolicy policy = circuitBreaker.getPolicy();
+                    CircuitBreakPolicy policy = circuitBreaker.getPolicy();
                     if (policy.containsError(code) || policy.containsException(cause)) {
                         circuitBreaker.onError(duration, cause);
                     } else {

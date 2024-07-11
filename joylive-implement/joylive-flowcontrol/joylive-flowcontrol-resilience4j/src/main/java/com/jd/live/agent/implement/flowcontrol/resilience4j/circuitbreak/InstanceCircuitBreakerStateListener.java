@@ -20,7 +20,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateEvent;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 
 /**
  * InstanceCircuitBreakerStateListener
@@ -31,11 +31,11 @@ public class InstanceCircuitBreakerStateListener implements CircuitBreakerStateL
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceCircuitBreakerStateListener.class);
 
-    private final CircuitBreakerPolicy policy;
+    private final CircuitBreakPolicy policy;
 
     private final String instanceId;
 
-    public InstanceCircuitBreakerStateListener(CircuitBreakerPolicy policy, String instanceId) {
+    public InstanceCircuitBreakerStateListener(CircuitBreakPolicy policy, String instanceId) {
         this.policy = policy;
         this.instanceId = instanceId;
     }

@@ -19,7 +19,7 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +51,7 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
     private final AtomicBoolean recycled = new AtomicBoolean(false);
 
     @Override
-    public CircuitBreaker get(CircuitBreakerPolicy policy, URI uri) {
+    public CircuitBreaker get(CircuitBreakPolicy policy, URI uri) {
         if (policy == null || uri == null) {
             return null;
         }
@@ -122,7 +122,7 @@ public abstract class AbstractCircuitBreakerFactory implements CircuitBreakerFac
      * @param uri    The resource uri.
      * @return A new circuit breaker instance that enforces the given policy.
      */
-    protected abstract CircuitBreaker create(CircuitBreakerPolicy policy, URI uri);
+    protected abstract CircuitBreaker create(CircuitBreakPolicy policy, URI uri);
 
 }
 

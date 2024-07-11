@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 
 /**
  * CircuitBreaker interface defines the contract for a circuit breaker implementation.
@@ -82,7 +82,7 @@ public interface CircuitBreaker {
      *
      * @return the circuit breaker policy.
      */
-    CircuitBreakerPolicy getPolicy();
+    CircuitBreakPolicy getPolicy();
 
     /**
      * Obtains the URI related to the circuit breaker.

@@ -291,7 +291,7 @@ stateDiagram-v2
 
 ```json
 {
-  "circuitBreakerPolicies": [
+  "circuitBreakPolicies": [
     {
       "name": "cb1",
       "level": "SERVICE",
@@ -351,7 +351,7 @@ stateDiagram-v2
           ],
           "routePolicies": [
           ],
-          "circuitBreakerPolicies": [
+          "circuitBreakPolicies": [
           ]
         },
         "paths": [

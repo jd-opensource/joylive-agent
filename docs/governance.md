@@ -292,7 +292,7 @@ stateDiagram-v2
 
 ```json
 {
-  "circuitBreakerPolicies": [
+  "circuitBreakPolicies": [
     {
       "name": "cb1",
       "level": "SERVICE",
@@ -352,7 +352,7 @@ Below is the complete service strategy in JSON format.
           ],
           "routePolicies": [
           ],
-          "circuitBreakerPolicies": [
+          "circuitBreakPolicies": [
           ]
         },
         "paths": [

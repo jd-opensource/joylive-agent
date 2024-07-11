@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import lombok.Getter;
 
 /**
@@ -27,13 +27,13 @@ import lombok.Getter;
 @Getter
 public abstract class AbstractCircuitBreaker implements CircuitBreaker {
 
-    private final CircuitBreakerPolicy policy;
+    private final CircuitBreakPolicy policy;
 
     private final URI uri;
 
     private long lastAcquireTime;
 
-    public AbstractCircuitBreaker(CircuitBreakerPolicy policy, URI uri) {
+    public AbstractCircuitBreaker(CircuitBreakPolicy policy, URI uri) {
         this.policy = policy;
         this.uri = uri;
     }

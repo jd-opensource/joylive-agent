@@ -21,7 +21,7 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitLevel;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -41,7 +41,7 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
      * {@inheritDoc}
      */
     @Override
-    public CircuitBreaker create(CircuitBreakerPolicy policy, URI uri) {
+    public CircuitBreaker create(CircuitBreakPolicy policy, URI uri) {
         CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
                 .slidingWindowType(policy.getSlidingWindowType().equalsIgnoreCase("time") ?
                         CircuitBreakerConfig.SlidingWindowType.TIME_BASED : CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)

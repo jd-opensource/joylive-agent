@@ -22,7 +22,7 @@ import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
@@ -76,7 +76,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Setter
     @Getter
-    private List<CircuitBreakerPolicy> circuitBreakerPolicies;
+    private List<CircuitBreakPolicy> circuitBreakPolicies;
 
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
 
@@ -106,8 +106,8 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (lanePolicies != null && !lanePolicies.isEmpty()) {
             lanePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
         }
-        if (circuitBreakerPolicies != null && !circuitBreakerPolicies.isEmpty()) {
-            circuitBreakerPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, r.getName())));
+        if (circuitBreakPolicies != null && !circuitBreakPolicies.isEmpty()) {
+            circuitBreakPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, r.getName())));
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
@@ -138,10 +138,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                         s -> new LanePolicy(),
                         s -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()));
             }
-            if ((circuitBreakerPolicies == null || circuitBreakerPolicies.isEmpty()) &&
-                    (source.circuitBreakerPolicies != null && !source.circuitBreakerPolicies.isEmpty())) {
-                circuitBreakerPolicies = copy(source.circuitBreakerPolicies,
-                        s -> new CircuitBreakerPolicy(),
+            if ((circuitBreakPolicies == null || circuitBreakPolicies.isEmpty()) &&
+                    (source.circuitBreakPolicies != null && !source.circuitBreakPolicies.isEmpty())) {
+                circuitBreakPolicies = copy(source.circuitBreakPolicies,
+                        s -> new CircuitBreakPolicy(),
                         s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, s.getName()));
             }
         }

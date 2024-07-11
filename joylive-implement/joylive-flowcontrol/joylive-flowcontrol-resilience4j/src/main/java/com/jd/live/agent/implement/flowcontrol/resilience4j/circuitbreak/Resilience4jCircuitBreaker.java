@@ -18,7 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakerPolicy;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 
 import java.util.concurrent.TimeUnit;
@@ -34,7 +34,7 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
 
     private final Resilience4jCircuitBreakerEventConsumer eventConsumer;
 
-    public Resilience4jCircuitBreaker(CircuitBreakerPolicy policy, URI uri, CircuitBreaker delegate) {
+    public Resilience4jCircuitBreaker(CircuitBreakPolicy policy, URI uri, CircuitBreaker delegate) {
         super(policy, uri);
         this.delegate = delegate;
         this.eventConsumer = new Resilience4jCircuitBreakerEventConsumer();

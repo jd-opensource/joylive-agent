@@ -26,13 +26,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * CircuitBreakerPolicy
+ * CircuitBreakPolicy
  *
  * @since 1.1.0
  */
 @Setter
 @Getter
-public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakerPolicy> {
+public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy> {
 
     public static final String DEFAULT_CIRCUIT_BREAKER_TYPE = "Resilience4j";
 
@@ -122,7 +122,7 @@ public class CircuitBreakerPolicy extends PolicyId implements PolicyInherit.Poli
     private Map<String, Long> broken = new ConcurrentHashMap<>();
 
     @Override
-    public void supplement(CircuitBreakerPolicy source) {
+    public void supplement(CircuitBreakPolicy source) {
         if (source == null) {
             return;
         }
