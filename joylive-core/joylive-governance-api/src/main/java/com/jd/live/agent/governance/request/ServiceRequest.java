@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
@@ -228,7 +229,8 @@ public interface ServiceRequest extends Request {
          * @return the cause of the given {@link Throwable}, or the {@link Throwable} itself if no cause is available
          */
         default Throwable getCause(Throwable throwable) {
-            if (throwable instanceof ExecutionException) {
+            if (throwable instanceof LiveException
+                    || throwable instanceof ExecutionException) {
                 Throwable cause = throwable.getCause();
                 if (cause != null) {
                     return cause;

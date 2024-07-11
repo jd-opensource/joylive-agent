@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
+import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
@@ -56,7 +57,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
         RetryContext<R, O, E, T> retryContext = new RetryContext<>(retryPolicy, cluster);
-        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, context, invocation, r -> retryContext.getCount() > 0);
+        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, context, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
         return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e -> {
             Throwable throwable = e instanceof RetryExhaustedException
@@ -165,10 +166,10 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                         }
                         break;
                     case EXHAUSTED:
-                        future.completeExceptionally(new RetryExhaustedException("max retries is reached out.", retryPolicy.getRetry()));
+                        future.completeExceptionally(new RetryExhaustedException("max retries is reached out.", v.getThrowable(), retryPolicy.getRetry()));
                         break;
                     case TIMEOUT:
-                        future.completeExceptionally(new RetryTimeoutException("retry is timeout.", retryPolicy.getTimeout()));
+                        future.completeExceptionally(new RetryTimeoutException("retry is timeout.", v.getThrowable(), retryPolicy.getTimeout()));
                         break;
                     default:
                         if (e != null) {
@@ -204,6 +205,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                 return RetryType.EXHAUSTED;
             } else if (retryPolicy.isRetry(e)) {
                 return RetryType.RETRY;
+            } else if (e instanceof RejectException) {
+                return RetryType.NONE;
             } else {
                 return response != null && (
                         retryPolicy.isRetry(response.getThrowable())

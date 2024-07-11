@@ -28,7 +28,6 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 /**
  * Abstract implementation of {@link ClusterInvoker} that manages the invocation of services
@@ -41,7 +40,7 @@ import java.util.function.Predicate;
  */
 public abstract class AbstractClusterInvoker implements ClusterInvoker {
 
-    private static Logger logger = LoggerFactory.getLogger(AbstractClusterInvoker.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractClusterInvoker.class);
 
     @Override
     public <R extends OutboundRequest,
@@ -52,7 +51,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
         cluster.onStart(invocation.getRequest());
-        return invoke(cluster, context, invocation, null);
+        return invoke(cluster, context, invocation, 0);
     }
 
     /**
@@ -67,10 +66,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param cluster    The {@link LiveCluster} managing the distribution and processing of the request.
      * @param context    The {@link InvocationContext} providing additional information and context for the invocation.
      * @param invocation The {@link OutboundInvocation} representing the specific request and its routing information.
-     * @param predicate  An optional {@link Predicate} that applies additional filtering or conditions on the request
-     *                   before routing. If the predicate evaluates to true or is null, the cluster is queried for routing.
-     *                   If the predicate is provided and evaluates to false, and specific instances are provided,
-     *                   those instances are used for the invocation.
+     * @param counter    The counter that records the current number of retry attempts..
      * @return A {@link CompletionStage} that completes with the result of the service invocation.
      * This future may complete exceptionally if the invocation fails or if no suitable endpoints
      * can be found.
@@ -82,7 +78,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             T extends Throwable> CompletionStage<O> invoke(LiveCluster<R, O, E, T> cluster,
                                                            InvocationContext context,
                                                            OutboundInvocation<R> invocation,
-                                                           Predicate<R> predicate) {
+                                                           int counter) {
         CompletableFuture<O> result = new CompletableFuture<>();
         AppStatus appStatus = context.getAppStatus();
         if (!appStatus.outbound()) {
@@ -94,7 +90,10 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         }
         R request = invocation.getRequest();
         List<? extends Endpoint> instances = invocation.getInstances();
-        CompletionStage<List<E>> discoveryStage = instances == null || instances.isEmpty() || predicate != null && predicate.test(request)
+        if (counter > 0) {
+            invocation.reset();
+        }
+        CompletionStage<List<E>> discoveryStage = instances == null || instances.isEmpty() || counter > 0
                 ? cluster.route(request)
                 : CompletableFuture.completedFuture((List<E>) instances);
         discoveryStage.whenComplete((v, t) -> {

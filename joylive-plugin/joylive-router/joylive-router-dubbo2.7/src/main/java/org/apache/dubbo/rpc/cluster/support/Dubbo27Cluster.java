@@ -20,13 +20,17 @@ import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.network.Ipv4;
-import com.jd.live.agent.governance.exception.RetryException;
+import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
@@ -37,6 +41,8 @@ import org.apache.dubbo.common.Version;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.rpc.*;
 
+import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
+import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
 import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
 
@@ -59,9 +66,13 @@ import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
-public class DubboCluster27 implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
+public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
+
+    private static final Logger logger = LoggerFactory.getLogger(Dubbo27Cluster.class);
 
     private final AbstractClusterInvoker cluster;
+
+    private final ObjectParser parser;
 
     /**
      * The identifier used for stickiness. This ID is used to route requests to
@@ -69,13 +80,9 @@ public class DubboCluster27 implements LiveCluster<DubboOutboundRequest, DubboOu
      */
     private String stickyId;
 
-    /**
-     * Constructs a new LiveCluster that wraps an abstract cluster.
-     *
-     * @param cluster the abstract cluster to be wrapped by this live cluster
-     */
-    public DubboCluster27(AbstractClusterInvoker cluster) {
+    public Dubbo27Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
         this.cluster = cluster;
+        this.parser = parser;
     }
 
     @Override
@@ -143,6 +150,18 @@ public class DubboCluster27 implements LiveCluster<DubboOutboundRequest, DubboOu
     public DubboOutboundResponse createResponse(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         if (throwable == null) {
             return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
+        }
+        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                try {
+                    return new DubboOutboundResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+                }
+            }
         }
         return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
     }
@@ -230,7 +249,7 @@ public class DubboCluster27 implements LiveCluster<DubboOutboundRequest, DubboOu
     }
 
     @Override
-    public RpcException createRetryExhaustedException(RetryException.RetryExhaustedException exception, OutboundInvocation<DubboOutboundRequest> invocation) {
+    public RpcException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<DubboOutboundRequest> invocation) {
         String methodName = RpcUtils.getMethodName(invocation.getRequest().getRequest());
         Throwable cause = exception.getCause();
         RpcException le = cause instanceof RpcException ? (RpcException) cause : null;
@@ -285,6 +304,37 @@ public class DubboCluster27 implements LiveCluster<DubboOutboundRequest, DubboOu
         return "Failed to call " + invocation.getServiceName() + "." + invocation.getMethodName()
                 + " on remote server: " + endpoint.getInvoker().getUrl().getAddress() + ", cause by: "
                 + throwable.getClass().getName() + ", message is: " + throwable.getMessage();
+    }
+
+    /**
+     * Creates a {@link Result} based on the provided {@link DubboOutboundRequest} and {@link DegradeConfig}.
+     * The response is configured with the status code, headers, and body specified in the degrade configuration.
+     *
+     * @param request       the original request containing headers.
+     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
+     * @return a {@link Result} configured according to the degrade configuration.
+     */
+    private Result createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
+        RpcInvocation invocation = (RpcInvocation) request.getRequest();
+        String body = degradeConfig.getResponseBody();
+        AppResponse response = new AppResponse();
+        response.setAttachments(degradeConfig.getAttributes());
+        if (body != null) {
+            Type[] types = RpcUtils.getReturnTypes(invocation);
+            Object value;
+            if (types == null || types.length == 0) {
+                // happens when generic invoke or void return
+                value = null;
+            } else if (types.length == 1) {
+                Class<?> type = (Class<?>) types[0];
+                value = String.class == type ? body : parser.read(new StringReader(body), type);
+            } else {
+                value = parser.read(new StringReader(body), types[1]);
+            }
+            response.setValue(value);
+        }
+
+        return AsyncRpcResult.newDefaultAsyncResult(response, invocation);
     }
 
 }

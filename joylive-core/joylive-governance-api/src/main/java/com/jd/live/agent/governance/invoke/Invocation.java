@@ -165,6 +165,14 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     }
 
     /**
+     * Resets the state of the instance.
+     * This method is typically used to restore the instance to its initial state.
+     */
+    public void reset() {
+
+    }
+
+    /**
      * Determines if a place is accessible based on the current request's write status and the place's access mode.
      *
      * @param place The place to check for accessibility.

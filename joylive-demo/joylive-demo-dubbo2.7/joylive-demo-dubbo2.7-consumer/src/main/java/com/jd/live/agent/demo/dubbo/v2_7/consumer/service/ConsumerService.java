@@ -71,32 +71,46 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         RpcContext context = RpcContext.getContext();
         config.transmit(context::setAttachment);
         long counter = 0;
+        long status = 0;
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                if (counter++ % 2 == 0) {
-                    doInvoke(context);
-                } else {
-                    doGenericInvoke(context);
+                int remain = (int) (counter++ % 3);
+                switch (remain) {
+                    case 0:
+                        doEcho(context);
+                        break;
+                    case 1:
+                        doGenericEcho(context);
+                        break;
+                    default:
+                        doStatus(context, (status++ % 20) == 0 ? 200 : 500);
+                        break;
                 }
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
             }
             try {
-                countDownLatch.await(3000L, TimeUnit.MILLISECONDS);
+                countDownLatch.await(1000L, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
     }
 
-    private void doInvoke(RpcContext context) {
+    private void doStatus(RpcContext context, int code) {
+        LiveResponse result = helloService.status(code);
+        addTrace(context, result);
+        output("Invoke status: \n{}", result);
+    }
+
+    private void doEcho(RpcContext context) {
         LiveResponse result = helloService.echo("hello");
         addTrace(context, result);
         output("Invoke result: \n{}", result);
     }
 
     @SuppressWarnings("unchecked")
-    private void doGenericInvoke(RpcContext context) {
+    private void doGenericEcho(RpcContext context) {
         Map<String, Object> result = (Map<String, Object>) genericService.$invoke("echo",
                 new String[]{"java.lang.String"},
                 new Object[]{"hello"});

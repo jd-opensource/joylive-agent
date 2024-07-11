@@ -103,6 +103,12 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
                 context.getApplication(), governancePolicy);
     }
 
+    @Override
+    public void reset() {
+        listeners = null;
+        routeTarget = null;
+    }
+
     /**
      * Adds a {@link OutboundListener} to the list of listeners.
      *

@@ -73,7 +73,7 @@ public class Dubbo3Cluster implements LiveCluster<DubboOutboundRequest, DubboOut
 
     private final AbstractClusterInvoker cluster;
 
-    private ObjectParser parser;
+    private final ObjectParser parser;
 
     /**
      * The identifier used for stickiness. This ID is used to route requests to

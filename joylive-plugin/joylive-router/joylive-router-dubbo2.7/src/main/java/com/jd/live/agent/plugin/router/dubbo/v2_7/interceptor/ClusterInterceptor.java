@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
@@ -26,7 +27,7 @@ import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOu
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import org.apache.dubbo.rpc.cluster.support.DubboCluster27;
+import org.apache.dubbo.rpc.cluster.support.Dubbo27Cluster;
 
 import java.util.List;
 import java.util.Map;
@@ -41,10 +42,13 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<AbstractClusterInvoker<?>, DubboCluster27> clusters = new ConcurrentHashMap<>();
+    private final ObjectParser parser;
 
-    public ClusterInterceptor(InvocationContext context) {
+    private final Map<AbstractClusterInvoker<?>, Dubbo27Cluster> clusters = new ConcurrentHashMap<>();
+
+    public ClusterInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     /**
@@ -58,7 +62,8 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        DubboCluster27 cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(), DubboCluster27::new);
+        Dubbo27Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
+                invoker -> new Dubbo27Cluster(invoker, parser));
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);

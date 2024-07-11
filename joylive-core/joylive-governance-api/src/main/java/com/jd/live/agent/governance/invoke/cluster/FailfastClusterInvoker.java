@@ -50,6 +50,6 @@ public class FailfastClusterInvoker extends AbstractClusterInvoker {
                                                             InvocationContext context,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
-        return invoke(cluster, context, invocation, null);
+        return invoke(cluster, context, invocation, 0);
     }
 }
