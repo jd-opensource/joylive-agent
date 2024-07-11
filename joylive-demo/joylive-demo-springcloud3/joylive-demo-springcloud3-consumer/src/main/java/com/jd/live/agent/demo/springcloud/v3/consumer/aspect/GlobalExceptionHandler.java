@@ -20,6 +20,7 @@ import com.jd.live.agent.demo.response.LiveLocation;
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,7 +44,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.OK)
     public LiveResponse handleException(Exception e, HttpServletRequest request) {
         LiveResponse source = null;
-        byte[] body = e instanceof RestClientResponseException ? ((RestClientResponseException) e).getResponseBodyAsByteArray() : null;
+        byte[] body = null;
+        if (e instanceof RestClientResponseException) {
+            body = ((RestClientResponseException) e).getResponseBodyAsByteArray();
+        } else if (e instanceof feign.FeignException) {
+            body = ((FeignException) e).content();
+        }
         if (body != null) {
             try {
                 source = objectMapper.readValue(body, LiveResponse.class);

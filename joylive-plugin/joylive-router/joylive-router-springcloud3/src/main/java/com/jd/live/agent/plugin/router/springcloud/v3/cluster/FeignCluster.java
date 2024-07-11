@@ -15,11 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
+import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
@@ -34,14 +38,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 
 public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, FeignClusterResponse> {
+
+    private static final Logger logger = LoggerFactory.getLogger(FeignCluster.class);
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -94,6 +99,18 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     @Override
     public FeignClusterResponse createResponse(Throwable throwable, FeignClusterRequest request, SpringEndpoint endpoint) {
+        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                try {
+                    return new FeignClusterResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new FeignClusterResponse(createException(throwable, request, endpoint));
+                }
+            }
+        }
         return new FeignClusterResponse(createException(throwable, request, endpoint));
     }
 
@@ -119,5 +136,31 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
                 useRawStatusCodeInResponseData
                         ? new ResponseData(responseHeaders, null, requestData, status)
                         : new ResponseData(httpStatus, responseHeaders, null, requestData))));
+    }
+
+    /**
+     * Creates a {@link feign.Response} based on the provided {@link FeignClusterRequest} and {@link DegradeConfig}.
+     * The response is configured with the status code, headers, and body specified in the degrade configuration.
+     *
+     * @param request       the original HTTP request containing headers.
+     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
+     * @return a {@link feign.Response} configured according to the degrade configuration.
+     */
+    private feign.Response createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
+        Request feignRequest = request.getRequest();
+        String body = degradeConfig.getResponseBody();
+        body = body == null ? "" : body;
+        byte[] data = body.getBytes(StandardCharsets.UTF_8);
+        Map<String, Collection<String>> headers = new HashMap<>(feignRequest.headers());
+        headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
+        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
+
+        return feign.Response.builder()
+                .status(degradeConfig.getResponseCode())
+                .body(data)
+                .headers(headers)
+                .request(feignRequest)
+                .requestTemplate(feignRequest.requestTemplate())
+                .build();
     }
 }

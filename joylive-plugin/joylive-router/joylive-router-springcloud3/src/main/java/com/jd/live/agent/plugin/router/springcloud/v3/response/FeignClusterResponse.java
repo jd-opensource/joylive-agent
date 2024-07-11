@@ -15,8 +15,14 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import feign.Response;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * FeignOutboundResponse
@@ -26,15 +32,31 @@ import feign.Response;
 public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response> {
 
     public FeignClusterResponse(Response response) {
-        super(response, null);
+        this(response, null);
     }
 
     public FeignClusterResponse(Throwable throwable) {
-        super(null, throwable);
+        this(null, throwable);
     }
 
     public FeignClusterResponse(Response response, Throwable throwable) {
         super(response, throwable);
+        headers = new LazyObject<>(() -> parserHeader(response));
+    }
+
+    private Map<String, List<String>> parserHeader(Response response) {
+        if (response == null || response.headers() == null) {
+            return null;
+        }
+        Map<String, List<String>> headers = new HashMap<>();
+        response.headers().forEach((k, v) -> {
+            if (v instanceof List) {
+                headers.put(k, (List<String>) v);
+            } else {
+                headers.put(k, new ArrayList<>(v));
+            }
+        });
+        return headers;
     }
 
     @Override

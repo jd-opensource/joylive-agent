@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
@@ -55,6 +57,8 @@ import java.util.concurrent.CompletionStage;
  * @see AbstractClientCluster
  */
 public class BlockingCluster extends AbstractClientCluster<BlockingClusterRequest, BlockingClusterResponse> {
+
+    private static final Logger logger = LoggerFactory.getLogger(BlockingCluster.class);
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -131,7 +135,12 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
             if (config != null) {
-                return new BlockingClusterResponse(createResponse(request, config));
+                try {
+                    return new BlockingClusterResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new BlockingClusterResponse(createException(throwable, request, endpoint));
+                }
             }
         }
         return new BlockingClusterResponse(createException(throwable, request, endpoint));

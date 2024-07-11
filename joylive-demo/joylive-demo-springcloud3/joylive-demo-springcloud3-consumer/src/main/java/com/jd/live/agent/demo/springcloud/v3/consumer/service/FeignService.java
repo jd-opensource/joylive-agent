@@ -25,4 +25,7 @@ public interface FeignService {
 
     @GetMapping("/echo/{str}")
     LiveResponse echo(@PathVariable("str") String str);
+
+    @GetMapping("/status/{code}")
+    LiveResponse status(@PathVariable("code") int code);
 }

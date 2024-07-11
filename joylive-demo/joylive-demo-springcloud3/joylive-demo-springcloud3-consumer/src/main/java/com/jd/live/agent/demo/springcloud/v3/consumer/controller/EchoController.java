@@ -44,25 +44,34 @@ public class EchoController {
     @GetMapping({"/echo-rest/{str}", "/echo/{str}"})
     public LiveResponse echoRest(@PathVariable String str, HttpServletRequest request) {
         LiveResponse response = restService.echo(str);
-        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
+        addTrace(request, response);
         return response;
     }
 
     @GetMapping("/echo-feign/{str}")
     public LiveResponse echoFeign(@PathVariable String str, HttpServletRequest request) {
         LiveResponse response = feignService.echo(str);
-        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
+        addTrace(request, response);
+        return response;
+    }
+
+    @GetMapping("/status-feign/{code}")
+    public LiveResponse echoFeign(@PathVariable int code, HttpServletRequest request) {
+        LiveResponse response = feignService.status(code);
+        addTrace(request, response);
         return response;
     }
 
     @GetMapping({"/status-rest/{code}"})
     public LiveResponse statusRest(@PathVariable int code, HttpServletRequest request) {
         LiveResponse response = restService.status(code);
+        addTrace(request, response);
+        return response;
+    }
+
+    private void addTrace(HttpServletRequest request, LiveResponse response) {
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
-        return response;
     }
 
 }

@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
@@ -53,11 +55,13 @@ import java.util.stream.Collectors;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
+@Getter
 public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest, GatewayClusterResponse> {
+
+    private static final Logger logger = LoggerFactory.getLogger(GatewayCluster.class);
 
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
 
-    @Getter
     private final LoadBalancerClientFactory clientFactory;
 
     public GatewayCluster(GlobalFilter filter) {
@@ -99,7 +103,12 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
             if (config != null) {
-                return new GatewayClusterResponse(createResponse(request, config));
+                try {
+                    return new GatewayClusterResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new GatewayClusterResponse(createException(throwable, request, endpoint));
+                }
             }
         }
         return new GatewayClusterResponse(createException(throwable, request, endpoint));

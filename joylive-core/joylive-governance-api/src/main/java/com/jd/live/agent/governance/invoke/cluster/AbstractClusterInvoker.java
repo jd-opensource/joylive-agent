@@ -16,6 +16,8 @@
 package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -39,6 +41,8 @@ import java.util.function.Predicate;
  * method.
  */
 public abstract class AbstractClusterInvoker implements ClusterInvoker {
+
+    private static Logger logger = LoggerFactory.getLogger(AbstractClusterInvoker.class);
 
     @Override
     public <R extends OutboundRequest,
@@ -145,9 +149,14 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                 R request,
                                                 E endpoint,
                                                 CompletableFuture<O> result) {
-        invocation.onSuccess(endpoint, response);
-        cluster.onSuccess(response, request, endpoint);
-        result.complete(response);
+        try {
+            invocation.onSuccess(endpoint, response);
+            cluster.onSuccess(response, request, endpoint);
+        } catch (Throwable e) {
+            logger.warn("Exception occurred when onSuccess, caused by " + e.getMessage(), e);
+        } finally {
+            result.complete(response);
+        }
     }
 
     /**
@@ -178,10 +187,15 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
                                                   CompletableFuture<O> result) {
-        invocation.onFailure(endpoint, throwable);
         O response = cluster.createResponse(throwable, request, endpoint);
-        // avoid the live exception class is not recognized in application classloader
-        cluster.onError(response.getThrowable(), request, endpoint);
-        result.complete(response);
+        try {
+            invocation.onFailure(endpoint, throwable);
+            // avoid the live exception class is not recognized in application classloader
+            cluster.onError(response.getThrowable(), request, endpoint);
+        } catch (Throwable e) {
+            logger.warn("Exception occurred when onException, caused by " + e.getMessage(), e);
+        } finally {
+            result.complete(response);
+        }
     }
 }

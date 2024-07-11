@@ -44,22 +44,13 @@ public class FeignClusterDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_EXECUTE = "execute";
 
-    private static final String[] ARGUMENT_FILTER = new String[]{
-            "feign.Request",
-            "feign.Request.Options"
-    };
-
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
     public FeignClusterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE).
-                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
-                        () -> new FeignClusterInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignClusterInterceptor(context))
         };
     }
 }

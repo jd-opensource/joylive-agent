@@ -18,11 +18,7 @@ package com.jd.live.agent.governance.response;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.request.Cookie;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,7 +116,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
 
     @Override
     public Map<String, List<String>> getHeaders() {
-        return headers.get();
+        return headers == null ? null : headers.get();
     }
 
     @Override
@@ -236,39 +232,6 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      */
     protected String parseScheme() {
         return uri.getScheme();
-    }
-
-    /**
-     * Parses query parameters from a query string.
-     *
-     * @param query The query string from the URI.
-     * @return A map of query parameter names to their values.
-     */
-    protected Map<String, List<String>> parseQuery(String query) {
-        Map<String, List<String>> result = new HashMap<>();
-        if (query == null || query.isEmpty()) {
-            return result;
-        }
-        int idx;
-        String key, value;
-        String[] pairs = query.split("&");
-        for (String pair : pairs) {
-            idx = pair.indexOf('=');
-            if (idx > 0) {
-                key = pair.substring(0, idx);
-                value = pair.substring(idx + 1);
-                if (!value.isEmpty()) {
-                    try {
-                        // Assuming encoding is UTF-8. If not, change the encoding accordingly.
-                        key = URLDecoder.decode(key, "UTF-8");
-                        value = URLDecoder.decode(value, "UTF-8");
-                        result.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                }
-            }
-        }
-        return result;
     }
 
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>
