@@ -20,7 +20,6 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -41,21 +40,17 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     private static final String ACTUATE_PREFIX = "org.springframework.boot.actuate.";
 
+    private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.servlet.resource.ResourceHttpRequestHandler";
+
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
 
-    private static Class<?> ERROR_CONTROLLER_CLASS;
+    private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE);
+
+    private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE);
 
     private final Object handler;
 
     private final Predicate<String> systemPredicate;
-
-    static {
-        try {
-            ERROR_CONTROLLER_CLASS = HttpServletRequest.class.getClassLoader().loadClass(ERROR_CONTROLLER_TYPE);
-        } catch (Throwable ignored) {
-            ERROR_CONTROLLER_CLASS = null;
-        }
-    }
 
     public ServletInboundRequest(HttpServletRequest request, Object handler, Predicate<String> systemPredicate) {
         super(request);
@@ -84,7 +79,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     @Override
     public boolean isSystem() {
         if (handler != null) {
-            if (handler instanceof ResourceHttpRequestHandler) {
+            if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
                 return true;
             } else if (handler instanceof HandlerMethod
                     && ERROR_CONTROLLER_CLASS != null
@@ -116,6 +111,23 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     protected String parseHost() {
         String result = super.parseHost();
         return result == null ? request.getServerName() : result;
+    }
+
+    private static Class<?> loadClass(String className) {
+        ClassLoader classLoader = HttpServletRequest.class.getClassLoader();
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            return classLoader.loadClass(className);
+        } catch (Throwable e) {
+            if (classLoader != contextClassLoader) {
+                try {
+                    return contextClassLoader.loadClass(className);
+                } catch (Throwable ignored) {
+
+                }
+            }
+            return null;
+        }
     }
 
     private Map<String, List<String>> parseCookie(HttpServletRequest request) {
