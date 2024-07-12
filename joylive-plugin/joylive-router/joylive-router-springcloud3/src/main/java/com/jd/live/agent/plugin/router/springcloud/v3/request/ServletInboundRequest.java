@@ -19,6 +19,8 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
+import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * ServletHttpInboundRequest
@@ -41,9 +44,12 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     private final Object handler;
 
-    public ServletInboundRequest(HttpServletRequest request, Object handler) {
+    private final Predicate<String> systemPredicate;
+
+    public ServletInboundRequest(HttpServletRequest request, Object handler, Predicate<String> systemPredicate) {
         super(request);
         this.handler = handler;
+        this.systemPredicate = systemPredicate;
         URI u = null;
         try {
             u = new URI(request.getRequestURI());
@@ -69,9 +75,14 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         if (handler != null) {
             if (handler instanceof ResourceHttpRequestHandler) {
                 return true;
+            } else if (handler instanceof HandlerMethod && ((HandlerMethod) handler).getBean() instanceof BasicErrorController) {
+                return true;
             } else if (handler.getClass().getName().startsWith(ACTUATE)) {
                 return true;
             }
+        }
+        if (systemPredicate != null && systemPredicate.test(getPath())) {
+            return true;
         }
         return super.isSystem();
     }

@@ -15,9 +15,14 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.util.trie.Path.PrefixPath;
+import com.jd.live.agent.core.util.trie.PathMatchType;
+import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,8 +30,6 @@ import java.util.Set;
  * ServiceConfig is a configuration class that defines various settings for service behavior,
  * including failover thresholds and warmup configurations.
  */
-@Getter
-@Setter
 public class ServiceConfig {
 
     /**
@@ -37,37 +40,66 @@ public class ServiceConfig {
     /**
      * A flag to determine if the service should prioritize local resources first.
      */
+    @Getter
+    @Setter
     private boolean localFirst = false;
 
     /**
      * A map of unit failover thresholds, where the key is the unit identifier and the value is the threshold integer.
      */
+    @Getter
+    @Setter
     private Map<String, Integer> unitFailoverThresholds;
 
     /**
      * A map of cell failover thresholds, where the key is the cell identifier and the value is the threshold integer.
      */
+    @Getter
+    @Setter
     private Map<String, Integer> cellFailoverThresholds;
 
     /**
      * A set of warmup identifiers for initialization or pre-warming up processes.
      */
+    @Getter
+    @Setter
     private Set<String> warmups;
 
     /**
      * The config of circuit breaker
      */
+    @Getter
+    @Setter
     private CircuitBreakerConfig circuitBreaker;
 
     /**
      * The config of concurrency limiter
      */
+    @Getter
+    @Setter
     private ConcurrencyLimiterConfig concurrencyLimiter;
 
     /**
      * The config of rate limiter
      */
+    @Getter
+    @Setter
     private RateLimiterConfig rateLimiter;
+
+    /**
+     * The config of system http inbound paths
+     */
+    @Getter
+    @Setter
+    private Set<String> systemPaths;
+
+    private final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
+        List<PrefixPath> result = new ArrayList<>();
+        if (systemPaths != null) {
+            systemPaths.forEach(path -> result.add(new PrefixPath(path)));
+        }
+        return result;
+    });
 
     /**
      * Retrieves the failover threshold for a given unit.
@@ -87,6 +119,17 @@ public class ServiceConfig {
      */
     public Integer getCellFailoverThreshold(String cell) {
         return cell == null || cellFailoverThresholds == null ? null : cellFailoverThresholds.get(cell);
+    }
+
+    /**
+     * Determines if the given path is system path.
+     *
+     * @param path the path to check.
+     * @return {@code true} if the path is system path; {@code false} otherwise.
+     */
+    public boolean isSystem(String path) {
+        return path != null && systemPaths != null && !systemPaths.isEmpty()
+                && systemPathTrie.match(path, PathMatchType.PREFIX) != null;
     }
 }
 

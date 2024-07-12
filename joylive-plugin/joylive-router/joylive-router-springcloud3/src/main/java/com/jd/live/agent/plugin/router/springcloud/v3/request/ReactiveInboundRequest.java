@@ -23,6 +23,8 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
+import java.util.function.Predicate;
+
 /**
  * ReactiveInboundRequest
  *
@@ -31,12 +33,23 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
  */
 public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHttpRequest> {
 
-    public ReactiveInboundRequest(ServerHttpRequest request) {
+    private final Predicate<String> systemPredicate;
+
+    public ReactiveInboundRequest(ServerHttpRequest request, Predicate<String> systemPredicate) {
         super(request);
+        this.systemPredicate = systemPredicate;
         this.uri = request.getURI();
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
+    }
+
+    @Override
+    public boolean isSystem() {
+        if (systemPredicate != null && systemPredicate.test(getPath())) {
+            return true;
+        }
+        return super.isSystem();
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
@@ -53,18 +54,21 @@ public class FilteringWebHandlerInterceptor extends InterceptorAdaptor {
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        ServiceConfig config = context.getGovernanceConfig().getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
-        try {
-            ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest());
-            InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
-                    ? new GatewayInboundInvocation<>(request, context)
-                    : new HttpInboundInvocation<>(request, context);
-            context.inbound(invocation);
-        } catch (RejectException e) {
-            mc.setResult(Mono.error(new ResponseStatusException(
-                    HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage(), e)));
-            mc.setSkip(true);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), config::isSystem);
+        if (!request.isSystem()) {
+            try {
+                InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
+                        ? new GatewayInboundInvocation<>(request, context)
+                        : new HttpInboundInvocation<>(request, context);
+                context.inbound(invocation);
+            } catch (RejectException e) {
+                mc.setResult(Mono.error(new ResponseStatusException(
+                        HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage(), e)));
+                mc.setSkip(true);
+            }
         }
     }
 }

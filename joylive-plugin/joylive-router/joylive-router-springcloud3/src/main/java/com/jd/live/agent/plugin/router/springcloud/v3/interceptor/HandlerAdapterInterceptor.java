@@ -21,6 +21,7 @@ import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ServletInboundRequest;
@@ -45,10 +46,12 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        ServiceConfig config =  context.getGovernanceConfig().getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
         HttpServletResponse response = (HttpServletResponse) arguments[1];
-        ServletInboundRequest request = new ServletInboundRequest((HttpServletRequest) arguments[0], arguments[2]);
+        ServletInboundRequest request = new ServletInboundRequest(
+                (HttpServletRequest) arguments[0], arguments[2], config::isSystem);
         if (!request.isSystem()) {
             try {
                 context.inbound(new HttpInboundInvocation<>(request, context));
