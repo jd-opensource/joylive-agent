@@ -60,4 +60,10 @@ spring:
 
 logging:
   level:
+    org:
+      springframework:
+        cloud:
+          gateway: ${LIVE_LOG_LEVEL:INFO}
+    reactor:
+      netty: ${LIVE_LOG_LEVEL:INFO}
     root: ${LIVE_LOG_LEVEL:INFO}

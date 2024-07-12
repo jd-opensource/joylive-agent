@@ -36,13 +36,13 @@ spec:
             - name: CONFIG_LIVE_SPACE_API_TYPE
               value: multilive
             - name: CONFIG_LIVE_SPACE_API_URL
-              value: http://11.159.56.136:30305/v1
+              value: http://api.live.local/v1
             - name: CONFIG_LIVE_SPACE_API_HEADERS
-              value: x-jdcloud-pin=amRhcA==
+              value: pin=demo
             - name: CONFIG_SERVICE_API_TYPE
               value: jmsf
             - name: CONFIG_SERVICE_API_URL
-              value: http://11.159.56.136:31842/v1
+              value: http://api.jmsf.local/v1
             - name: LIVE_LOG_LEVEL
               value: info
             - name: CONFIG_LANE_ENABLED
