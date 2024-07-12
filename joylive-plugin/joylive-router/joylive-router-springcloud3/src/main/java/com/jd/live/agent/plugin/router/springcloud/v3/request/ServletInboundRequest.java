@@ -19,7 +19,6 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
-import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
@@ -40,11 +39,23 @@ import java.util.function.Predicate;
  */
 public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServletRequest> {
 
-    private static final String ACTUATE = "org.springframework.boot.actuate.";
+    private static final String ACTUATE_PREFIX = "org.springframework.boot.actuate.";
+
+    private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
+
+    private static Class<?> ERROR_CONTROLLER_CLASS;
 
     private final Object handler;
 
     private final Predicate<String> systemPredicate;
+
+    static {
+        try {
+            ERROR_CONTROLLER_CLASS = HttpServletRequest.class.getClassLoader().loadClass(ERROR_CONTROLLER_TYPE);
+        } catch (Throwable ignored) {
+            ERROR_CONTROLLER_CLASS = null;
+        }
+    }
 
     public ServletInboundRequest(HttpServletRequest request, Object handler, Predicate<String> systemPredicate) {
         super(request);
@@ -75,9 +86,11 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         if (handler != null) {
             if (handler instanceof ResourceHttpRequestHandler) {
                 return true;
-            } else if (handler instanceof HandlerMethod && ((HandlerMethod) handler).getBean() instanceof BasicErrorController) {
+            } else if (handler instanceof HandlerMethod
+                    && ERROR_CONTROLLER_CLASS != null
+                    && ERROR_CONTROLLER_CLASS.isInstance(((HandlerMethod) handler).getBean())) {
                 return true;
-            } else if (handler.getClass().getName().startsWith(ACTUATE)) {
+            } else if (handler.getClass().getName().startsWith(ACTUATE_PREFIX)) {
                 return true;
             }
         }
