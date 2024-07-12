@@ -30,6 +30,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
@@ -93,21 +94,22 @@ public class LiveGatewayFilter implements GlobalFilter, Ordered {
 
         @Override
         public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-            if (body instanceof Flux) {
+            if (getDelegate().getStatusCode() == HttpStatus.OK && body instanceof Flux) {
                 Flux<? extends DataBuffer> fluxBody = Flux.from(body);
                 ServerHttpResponse delegate = getDelegate();
                 HttpHeaders headers = request.getHeaders();
                 return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
                     DataBufferFactory dataBufferFactory = new DefaultDataBufferFactory();
                     DataBuffer join = dataBufferFactory.join(dataBuffers);
+                    byte[] array = join.asByteBuffer().array();
                     try {
-                        LiveResponse liveResponse = objectMapper.readValue(join.asInputStream(), LiveResponse.class);
+                        LiveResponse liveResponse = objectMapper.readValue(array, LiveResponse.class);
                         addTrace(liveResponse, headers);
                         byte[] data = objectMapper.writeValueAsBytes(liveResponse);
                         delegate.getHeaders().setContentLength(data.length);
                         return delegate.bufferFactory().wrap(data);
                     } catch (Throwable ignore) {
-                        return join;
+                        return delegate.bufferFactory().wrap(array);
                     }
                 }));
             }
