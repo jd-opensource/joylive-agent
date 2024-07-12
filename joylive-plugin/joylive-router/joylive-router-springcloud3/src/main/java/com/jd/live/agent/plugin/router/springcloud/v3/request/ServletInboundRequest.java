@@ -38,21 +38,17 @@ import java.util.function.Predicate;
  */
 public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServletRequest> {
 
-    private static final String ACTUATE_PREFIX = "org.springframework.boot.actuate.";
-
     private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.servlet.resource.ResourceHttpRequestHandler";
 
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
 
     private static final String ACTUATOR_SERVLET_TYPE = "org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$WebMvcEndpointHandlerMethod";
 
-    private static final String ACTUATOR_REACTIVE_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
+    private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE, HttpServletRequest.class.getClassLoader());
 
-    private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE);
+    private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, HttpServletRequest.class.getClassLoader());
 
-    private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE);
-
-    private static final Class<?> ACTUATOR_SERVLET_CLASS = loadClass(ACTUATOR_SERVLET_TYPE);
+    private static final Class<?> ACTUATOR_SERVLET_CLASS = loadClass(ACTUATOR_SERVLET_TYPE, HttpServletRequest.class.getClassLoader());
 
     private final Object handler;
 
@@ -119,8 +115,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         return result == null ? request.getServerName() : result;
     }
 
-    private static Class<?> loadClass(String className) {
-        ClassLoader classLoader = HttpServletRequest.class.getClassLoader();
+    public static Class<?> loadClass(String className, ClassLoader classLoader) {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             return classLoader.loadClass(className);

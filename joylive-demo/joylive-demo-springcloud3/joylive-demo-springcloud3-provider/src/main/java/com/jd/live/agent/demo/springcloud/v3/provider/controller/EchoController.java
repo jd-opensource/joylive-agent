@@ -23,9 +23,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +48,7 @@ public class EchoController {
         } catch (InterruptedException ignore) {
         }
         LiveResponse response = new LiveResponse(str);
-        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
+        configure(request, response);
         return response;
     }
 
@@ -54,9 +56,29 @@ public class EchoController {
     public synchronized LiveResponse status(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) {
         response.setStatus(code);
         LiveResponse lr = new LiveResponse(code);
-        lr.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
+        configure(request, lr);
         return lr;
+    }
+
+    @GetMapping("/mono")
+    public Mono<LiveResponse> mono(HttpServletRequest request) {
+        return Mono.create(monoSink -> {
+            LiveResponse response = new LiveResponse("mono");
+            configure(request, response);
+            monoSink.success(response);
+        });
+    }
+
+    @GetMapping("/flux")
+    public Flux<LiveResponse> fluxTest(HttpServletRequest request) {
+        LiveResponse response = new LiveResponse("flux");
+        configure(request, response);
+        return Flux.fromIterable(Collections.singletonList(response));
+    }
+
+    private void configure(HttpServletRequest request, LiveResponse response) {
+        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                LiveTransmission.build("header", request::getHeader)));
     }
 
 }

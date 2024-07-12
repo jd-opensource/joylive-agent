@@ -33,6 +33,8 @@ import java.util.function.Predicate;
  */
 public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHttpRequest> {
 
+    private static final String ACTUATOR_REACTIVE_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
+
     private final Predicate<String> systemPredicate;
 
     public ReactiveInboundRequest(ServerHttpRequest request, Predicate<String> systemPredicate) {
