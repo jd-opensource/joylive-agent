@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
+import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -36,8 +37,13 @@ import java.util.Map;
  */
 public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServletRequest> {
 
-    public ServletInboundRequest(HttpServletRequest request) {
+    private static final String ACTUATE = "org.springframework.boot.actuate.";
+
+    private final Object handler;
+
+    public ServletInboundRequest(HttpServletRequest request, Object handler) {
         super(request);
+        this.handler = handler;
         URI u = null;
         try {
             u = new URI(request.getRequestURI());
@@ -56,6 +62,18 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    @Override
+    public boolean isSystem() {
+        if (handler != null) {
+            if (handler instanceof ResourceHttpRequestHandler) {
+                return true;
+            } else if (handler.getClass().getName().startsWith(ACTUATE)) {
+                return true;
+            }
+        }
+        return super.isSystem();
     }
 
     @Override

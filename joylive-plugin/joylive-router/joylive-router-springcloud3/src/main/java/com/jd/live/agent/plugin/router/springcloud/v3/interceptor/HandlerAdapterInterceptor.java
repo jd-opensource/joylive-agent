@@ -31,45 +31,36 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * DispatcherServletInterceptor
- *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * HandlerAdapterInterceptor
  */
-public class DispatcherServletInterceptor extends InterceptorAdaptor {
+public class HandlerAdapterInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(DispatcherServletInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(HandlerAdapterInterceptor.class);
 
     private final InvocationContext context;
 
-    public DispatcherServletInterceptor(InvocationContext context) {
+    public HandlerAdapterInterceptor(InvocationContext context) {
         this.context = context;
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * <p>
-     * see org.springframework.web.servlet.DispatcherServlet#doService(HttpServletRequest, HttpServletResponse)
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
         HttpServletResponse response = (HttpServletResponse) arguments[1];
-        try {
-            ServletInboundRequest request = new ServletInboundRequest((HttpServletRequest) arguments[0]);
-            context.inbound(new HttpInboundInvocation<>(request, context));
-        } catch (RejectException e) {
-            mc.setSkip(true);
-            if (response != null) {
-                response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
-                try {
-                    response.getWriter().print(e.getMessage());
-                } catch (IOException err) {
-                    logger.error("Write unit reject response error!", err);
+        ServletInboundRequest request = new ServletInboundRequest((HttpServletRequest) arguments[0], arguments[2]);
+        if (!request.isSystem()) {
+            try {
+                context.inbound(new HttpInboundInvocation<>(request, context));
+            } catch (RejectException e) {
+                mc.setSkip(true);
+                if (response != null) {
+                    response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                    try {
+                        response.getWriter().print(e.getMessage());
+                    } catch (IOException err) {
+                        logger.error("Write unit reject response error!", err);
+                    }
                 }
             }
         }

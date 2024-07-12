@@ -24,16 +24,15 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.DispatcherServletInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.HandlerAdapterInterceptor;
 
 /**
- * DispatcherServletPluginDefinition
+ * HandlerAdapterDefinition
  *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * @since 1.1.0
  */
 @Injectable
-@Extension(value = "DispatcherServletPluginDefinition_v3")
+@Extension(value = "HandlerAdapterDefinition_v3")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
@@ -42,29 +41,30 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.DispatcherServ
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
-@ConditionalOnClass(DispatcherServletDefinition.TYPE_DISPATCHER_SERVLET)
-public class DispatcherServletDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(HandlerAdapterDefinition.TYPE_HANDLER_ADAPTER)
+public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
+    protected static final String TYPE_HANDLER_ADAPTER = "org.springframework.web.servlet.HandlerAdapter";
 
-    private static final String METHOD_DO_DISPATCH = "doDispatch";
+    private static final String METHOD_HANDLE = "handle";
 
-    private static final String[] ARGUMENT_DO_DISPATCH = new String[]{
+    private static final String[] ARGUMENT_HANDLE = new String[]{
             "javax.servlet.http.HttpServletRequest",
             "javax.servlet.http.HttpServletResponse",
+            "java.lang.Object"
     };
 
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DispatcherServletDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
+    public HandlerAdapterDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_HANDLER_ADAPTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_DO_DISPATCH).
-                                and(MatcherBuilder.arguments(ARGUMENT_DO_DISPATCH)),
-                        () -> new DispatcherServletInterceptor(context)
+                        MatcherBuilder.named(METHOD_HANDLE).
+                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
+                        () -> new HandlerAdapterInterceptor(context)
                 )
         };
     }
