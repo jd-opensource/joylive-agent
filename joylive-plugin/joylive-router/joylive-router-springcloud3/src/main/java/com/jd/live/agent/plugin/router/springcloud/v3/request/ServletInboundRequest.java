@@ -44,9 +44,15 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
 
+    private static final String ACTUATOR_SERVLET_TYPE = "org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$WebMvcEndpointHandlerMethod";
+
+    private static final String ACTUATOR_REACTIVE_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
+
     private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE);
 
     private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE);
+
+    private static final Class<?> ACTUATOR_SERVLET_CLASS = loadClass(ACTUATOR_SERVLET_TYPE);
 
     private final Object handler;
 
@@ -85,7 +91,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
                     && ERROR_CONTROLLER_CLASS != null
                     && ERROR_CONTROLLER_CLASS.isInstance(((HandlerMethod) handler).getBean())) {
                 return true;
-            } else if (handler.getClass().getName().startsWith(ACTUATE_PREFIX)) {
+            } else if (ACTUATOR_SERVLET_CLASS != null && ACTUATOR_SERVLET_CLASS.isInstance(handler)) {
                 return true;
             }
         }
