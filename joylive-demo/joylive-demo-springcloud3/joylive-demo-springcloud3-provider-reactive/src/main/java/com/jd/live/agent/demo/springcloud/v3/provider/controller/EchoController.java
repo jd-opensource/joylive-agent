@@ -20,12 +20,14 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -39,27 +41,42 @@ public class EchoController {
     private final CountDownLatch latch = new CountDownLatch(1);
 
     @GetMapping("/echo/{str}")
-    public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
+    public Mono<LiveResponse> echo(@PathVariable String str, ServerWebExchange exchange) {
         try {
             latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
         } catch (InterruptedException ignore) {
         }
-        LiveResponse response = new LiveResponse(str);
-        configure(request, response);
-        return response;
+        return Mono.fromSupplier(() -> {
+            LiveResponse response = new LiveResponse(str);
+            configure(exchange, response);
+            return response;
+        });
     }
 
     @GetMapping("/status/{code}")
-    public synchronized LiveResponse status(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) {
-        response.setStatus(code);
-        LiveResponse lr = new LiveResponse(code);
-        configure(request, lr);
-        return lr;
+    public Mono<LiveResponse> status(@PathVariable int code, ServerWebExchange exchange) {
+        return Mono.defer(() -> {
+            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+            try {
+                status = HttpStatus.valueOf(code);
+            } catch (Exception ignored) {
+            }
+            exchange.getResponse().setStatusCode(status);
+            LiveResponse response = new LiveResponse(code);
+            configure(exchange, response);
+            return Mono.just(response);
+        });
     }
 
-    private void configure(HttpServletRequest request, LiveResponse response) {
+    @GetMapping("/exception")
+    public Mono<LiveResponse> exception(ServerWebExchange exchange) {
+        throw new RuntimeException("exception");
+    }
+
+    private void configure(ServerWebExchange exchange, LiveResponse response) {
+        HttpHeaders headers = exchange.getRequest().getHeaders();
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
+                LiveTransmission.build("header", headers::getFirst)));
     }
 
 }

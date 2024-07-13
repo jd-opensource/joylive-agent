@@ -21,6 +21,7 @@
 
     <modules>
         <module>joylive-demo-springcloud3-provider</module>
+        <module>joylive-demo-springcloud3-provider-reactive</module>
         <module>joylive-demo-springcloud3-consumer</module>
         <module>joylive-demo-springcloud3-gateway</module>
         <module>joylive-demo-springcloud3-order</module>

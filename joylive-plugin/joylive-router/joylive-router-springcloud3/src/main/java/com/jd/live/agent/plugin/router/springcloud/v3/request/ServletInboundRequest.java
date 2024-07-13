@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+
 /**
  * ServletHttpInboundRequest
  *
@@ -113,22 +115,6 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     protected String parseHost() {
         String result = super.parseHost();
         return result == null ? request.getServerName() : result;
-    }
-
-    public static Class<?> loadClass(String className, ClassLoader classLoader) {
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            return classLoader.loadClass(className);
-        } catch (Throwable e) {
-            if (classLoader != contextClassLoader) {
-                try {
-                    return contextClassLoader.loadClass(className);
-                } catch (Throwable ignored) {
-
-                }
-            }
-            return null;
-        }
     }
 
     private Map<String, List<String>> parseCookie(HttpServletRequest request) {

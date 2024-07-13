@@ -28,36 +28,26 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveInboundReq
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.handler.FilteringWebHandler;
 import reactor.core.publisher.Mono;
 
 /**
- * FilteringWebHandlerInterceptor
- *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * DispatcherHandlerInterceptor
  */
-public class FilteringWebHandlerInterceptor extends InterceptorAdaptor {
+public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public FilteringWebHandlerInterceptor(InvocationContext context) {
+    public DispatcherHandlerInterceptor(InvocationContext context) {
         this.context = context;
     }
 
-    /**
-     * Enhanced logic before method execution
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     * @see FilteringWebHandler#handle(ServerWebExchange)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         ServiceConfig config = context.getGovernanceConfig().getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), config::isSystem);
+        Object handler = mc.getArguments()[1];
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, config::isSystem);
         if (!request.isSystem()) {
             try {
                 InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()

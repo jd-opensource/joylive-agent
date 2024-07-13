@@ -22,8 +22,11 @@ import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInbo
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.server.ServerWebExchange;
 
 import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * ReactiveInboundRequest
@@ -33,12 +36,21 @@ import java.util.function.Predicate;
  */
 public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHttpRequest> {
 
-    private static final String ACTUATOR_REACTIVE_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
+    private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.reactive.function.server.ResourceHandlerFunction";
+
+    private final static Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
 
     private final Predicate<String> systemPredicate;
 
-    public ReactiveInboundRequest(ServerHttpRequest request, Predicate<String> systemPredicate) {
-        super(request);
+    private final Object handler;
+
+    private final ServerWebExchange exchange;
+
+
+    public ReactiveInboundRequest(ServerWebExchange exchange, Object handler, Predicate<String> systemPredicate) {
+        super(exchange.getRequest());
+        this.exchange = exchange;
+        this.handler = handler;
         this.systemPredicate = systemPredicate;
         this.uri = request.getURI();
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
@@ -49,6 +61,9 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     @Override
     public boolean isSystem() {
         if (systemPredicate != null && systemPredicate.test(getPath())) {
+            return true;
+        }
+        if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
             return true;
         }
         return super.isSystem();

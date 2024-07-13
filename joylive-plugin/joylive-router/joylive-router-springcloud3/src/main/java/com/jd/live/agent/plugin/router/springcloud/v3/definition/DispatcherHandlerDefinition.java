@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FilteringWebHandlerInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.DispatcherHandlerInterceptor;
 
 /**
  * FilteringWebHandlerPluginDefinition
@@ -33,7 +33,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FilteringWebHa
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FilteringWebHandlerPluginDefinition_v3")
+@Extension(value = "DispatcherHandlerDefinition_v3")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
@@ -42,16 +42,17 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FilteringWebHa
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
-@ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_FILTERING_WEB_HANDLER)
-@ConditionalOnClass(FilteringWebHandlerDefinition.REACTOR_MONO)
-public class FilteringWebHandlerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(DispatcherHandlerDefinition.TYPE_DISPATCHER_HANDLER)
+@ConditionalOnClass(DispatcherHandlerDefinition.REACTOR_MONO)
+public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.web.server.handler.FilteringWebHandler";
+    protected static final String TYPE_DISPATCHER_HANDLER = "org.springframework.web.reactive.DispatcherHandler";
 
-    private static final String METHOD_HANDLE = "handle";
+    private static final String METHOD_HANDLE = "invokeHandler";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
-            "org.springframework.web.server.ServerWebExchange"
+            "org.springframework.web.server.ServerWebExchange",
+            "java.lang.Object"
     };
 
     protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
@@ -59,13 +60,13 @@ public class FilteringWebHandlerDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FilteringWebHandlerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
+    public DispatcherHandlerDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new FilteringWebHandlerInterceptor(context)
+                        () -> new DispatcherHandlerInterceptor(context)
                 )
         };
     }

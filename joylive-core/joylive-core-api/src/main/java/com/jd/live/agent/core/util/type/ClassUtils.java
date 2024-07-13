@@ -72,6 +72,28 @@ public class ClassUtils {
         return TypeScanner.UNTIL_OBJECT.test(type);
     }
 
+    /**
+     * Load the class with the specified class name using the provided class loader.
+     *
+     * @param className   the name of the class to load
+     * @param classLoader the class loader to use for loading the class
+     * @return the loaded class, or null if the class cannot be loaded
+     */
+    public static Class<?> loadClass(String className, ClassLoader classLoader) {
+        try {
+            return classLoader.loadClass(className);
+        } catch (Throwable e) {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            if (classLoader != contextClassLoader) {
+                try {
+                    return contextClassLoader.loadClass(className);
+                } catch (Throwable ignored) {
+                }
+            }
+            return null;
+        }
+    }
+
 }
 
 
