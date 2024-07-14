@@ -20,6 +20,7 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v3.consumer.service.FeignService;
+import com.jd.live.agent.demo.springcloud.v3.consumer.service.ReactiveService;
 import com.jd.live.agent.demo.springcloud.v3.consumer.service.RestService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,9 @@ public class EchoController {
     @Resource
     private FeignService feignService;
 
+    @Resource
+    private ReactiveService reactiveService;
+
     @GetMapping({"/echo-rest/{str}", "/echo/{str}"})
     public LiveResponse echoRest(@PathVariable String str, HttpServletRequest request) {
         LiveResponse response = restService.echo(str);
@@ -55,6 +59,13 @@ public class EchoController {
         return response;
     }
 
+    @GetMapping({"/echo-reactive/{str}"})
+    public LiveResponse echoReactive(@PathVariable String str, HttpServletRequest request) {
+        LiveResponse response = reactiveService.echo(str);
+        addTrace(request, response);
+        return response;
+    }
+
     @GetMapping("/status-feign/{code}")
     public LiveResponse echoFeign(@PathVariable int code, HttpServletRequest request) {
         LiveResponse response = feignService.status(code);
@@ -65,6 +76,13 @@ public class EchoController {
     @GetMapping({"/status-rest/{code}"})
     public LiveResponse statusRest(@PathVariable int code, HttpServletRequest request) {
         LiveResponse response = restService.status(code);
+        addTrace(request, response);
+        return response;
+    }
+
+    @GetMapping({"/status-reactive/{code}"})
+    public LiveResponse statusReactive(@PathVariable int code, HttpServletRequest request) {
+        LiveResponse response = reactiveService.status(code);
         addTrace(request, response);
         return response;
     }

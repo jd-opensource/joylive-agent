@@ -31,6 +31,14 @@ spring:
             - Method=GET
           filters:
             - StripPrefix=1
+        - id: provider-reactive
+          uri: lb://service-provider-reactive
+          predicates:
+            - Path=/service-provider-reactive/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+            - Retry=5
         - id: provider
           uri: lb://service-provider
           predicates:

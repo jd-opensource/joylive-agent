@@ -29,8 +29,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 public class EchoController {
@@ -42,10 +40,6 @@ public class EchoController {
 
     @GetMapping("/echo/{str}")
     public Mono<LiveResponse> echo(@PathVariable String str, ServerWebExchange exchange) {
-        try {
-            latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
-        } catch (InterruptedException ignore) {
-        }
         return Mono.fromSupplier(() -> {
             LiveResponse response = new LiveResponse(str);
             configure(exchange, response);

@@ -21,7 +21,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.governance.response.AbstractServiceResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
@@ -56,10 +55,10 @@ public class ReactiveClusterInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         ReactiveCluster cluster = clusters.computeIfAbsent((LoadBalancedExchangeFilterFunction) ctx.getTarget(), ReactiveCluster::new);
         ReactiveClusterRequest request = new ReactiveClusterRequest((ClientRequest) arguments[0],
-                cluster.getLoadBalancerFactory(), (ExchangeFunction) arguments[0]);
+                cluster.getLoadBalancerFactory(), (ExchangeFunction) arguments[1]);
         HttpOutboundInvocation<ReactiveClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         CompletionStage<ReactiveClusterResponse> response = cluster.invoke(context, invocation);
-        Mono<ClientResponse> mono = Mono.fromFuture(Futures.future(response).thenApply(AbstractServiceResponse::getResponse));
+        Mono<ClientResponse> mono = Mono.fromFuture(Futures.future(response).thenApply(ReactiveClusterResponse::getResponse));
         mc.setResult(mono);
         mc.setSkip(true);
     }

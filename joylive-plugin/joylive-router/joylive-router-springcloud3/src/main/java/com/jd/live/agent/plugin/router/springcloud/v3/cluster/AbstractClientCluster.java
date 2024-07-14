@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.SpringClusterRequest;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.CompletionContext;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
@@ -38,6 +39,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,11 +93,24 @@ public abstract class AbstractClientCluster<
      */
     @Override
     public CompletionStage<List<SpringEndpoint>> route(R request) {
+        CompletableFuture<List<SpringEndpoint>> future = new CompletableFuture<>();
         ServiceInstanceListSupplier supplier = request.getInstanceSupplier();
-        return supplier == null
-                ? CompletableFuture.completedFuture(new ArrayList<>())
-                : supplier.get(request.getLbRequest()).next().map(
-                v -> v.stream().map(SpringEndpoint::new).collect(Collectors.toList())).toFuture();
+        if (supplier == null) {
+            future.complete(new ArrayList<>());
+        } else {
+            Mono<List<ServiceInstance>> mono = supplier.get(request.getLbRequest()).next();
+            mono.subscribe(
+                    v -> {
+                        List<SpringEndpoint> endpoints = new ArrayList<>();
+                        if (v != null) {
+                            v.forEach(i -> endpoints.add(new SpringEndpoint(i)));
+                        }
+                        future.complete(endpoints);
+                    },
+                    future::completeExceptionally
+            );
+        }
+        return future;
     }
 
     @Override
