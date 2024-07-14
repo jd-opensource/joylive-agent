@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectEscapeException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -54,9 +56,14 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                         ? new GatewayInboundInvocation<>(request, context)
                         : new HttpInboundInvocation<>(request, context);
                 context.inbound(invocation);
+            } catch (RejectEscapeException e) {
+                mc.setResult(Mono.error(new ResponseStatusException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage(), e)));
+                mc.setSkip(true);
+            } catch (RejectNoProviderException e) {
+                mc.setResult(Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e)));
+                mc.setSkip(true);
             } catch (RejectException e) {
-                mc.setResult(Mono.error(new ResponseStatusException(
-                        HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage(), e)));
+                mc.setResult(Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e)));
                 mc.setSkip(true);
             }
         }
