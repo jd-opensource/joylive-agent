@@ -47,7 +47,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
         Object handler = mc.getArguments()[1];
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, config::isSystem);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, config::isSystem);
         if (!request.isSystem()) {
             try {
                 InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()

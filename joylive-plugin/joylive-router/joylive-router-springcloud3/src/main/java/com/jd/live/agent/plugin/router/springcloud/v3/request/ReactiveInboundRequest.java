@@ -36,6 +36,10 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  */
 public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHttpRequest> {
 
+    private static final String ACTUATOR_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
+
+    private static final Class<?> ACTUATOR_CLASS = loadClass(ACTUATOR_TYPE, ServerWebExchange.class.getClassLoader());
+
     private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.reactive.function.server.ResourceHandlerFunction";
 
     private final static Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
@@ -44,12 +48,8 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     private final Object handler;
 
-    private final ServerWebExchange exchange;
-
-
-    public ReactiveInboundRequest(ServerWebExchange exchange, Object handler, Predicate<String> systemPredicate) {
-        super(exchange.getRequest());
-        this.exchange = exchange;
+    public ReactiveInboundRequest(ServerHttpRequest request, Object handler, Predicate<String> systemPredicate) {
+        super(request);
         this.handler = handler;
         this.systemPredicate = systemPredicate;
         this.uri = request.getURI();
@@ -60,10 +60,11 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     public boolean isSystem() {
-        if (systemPredicate != null && systemPredicate.test(getPath())) {
-            return true;
-        }
         if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
+            return true;
+        } else if (ACTUATOR_CLASS != null && ACTUATOR_CLASS.isInstance(handler)) {
+            return true;
+        } else if (systemPredicate != null && systemPredicate.test(getPath())) {
             return true;
         }
         return super.isSystem();
