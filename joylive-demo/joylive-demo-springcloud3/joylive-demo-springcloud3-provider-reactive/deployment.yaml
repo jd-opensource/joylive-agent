@@ -17,18 +17,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: joylive-demo-springcloud3-provider-reactuve
+    app: joylive-demo-springcloud3-provider-reactive
     x-live-enabled: "true"
-  name: joylive-demo-springcloud3-provider-reactuve
+  name: joylive-demo-springcloud3-provider-reactive
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: joylive-demo-springcloud3-provider-reactuve
+      app: joylive-demo-springcloud3-provider-reactive
   template:
     metadata:
       labels:
-        app: joylive-demo-springcloud3-provider-reactuve
+        app: joylive-demo-springcloud3-provider-reactive
         x-live-enabled: "true"
     spec:
       containers:
@@ -73,9 +73,9 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider-reactuve:1.0.0-ce86e037-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider-reactive:1.0.0-ce86e037-AMD64
           imagePullPolicy: Always
-          name: joylive-demo-springcloud3-provider-reactuve
+          name: joylive-demo-springcloud3-provider-reactive
           ports:
             - containerPort: 18081
               name: http
@@ -100,18 +100,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: joylive-demo-springcloud3-provider-reactuve-gray
+    app: joylive-demo-springcloud3-provider-reactive-gray
     x-live-enabled: "true"
-  name: joylive-demo-springcloud3-provider-reactuve-gray
+  name: joylive-demo-springcloud3-provider-reactive-gray
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: joylive-demo-springcloud3-provider-reactuve-gray
+      app: joylive-demo-springcloud3-provider-reactive-gray
   template:
     metadata:
       labels:
-        app: joylive-demo-springcloud3-provider-reactuve-gray
+        app: joylive-demo-springcloud3-provider-reactive-gray
         x-live-enabled: "true"
     spec:
       containers:
@@ -146,9 +146,9 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: beta
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider-reactuve:1.0.0-ce86e037-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-provider-reactive:1.0.0-ce86e037-AMD64
           imagePullPolicy: Always
-          name: joylive-demo-springcloud3-provider-reactuve-gray
+          name: joylive-demo-springcloud3-provider-reactive-gray
           ports:
             - containerPort: 18081
               name: http
