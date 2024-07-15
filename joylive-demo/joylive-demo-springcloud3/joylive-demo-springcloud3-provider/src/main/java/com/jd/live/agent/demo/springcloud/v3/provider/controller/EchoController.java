@@ -50,9 +50,9 @@ public class EchoController {
     }
 
     @GetMapping("/status/{code}")
-    public synchronized LiveResponse status(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) {
+    public LiveResponse status(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) {
         response.setStatus(code);
-        LiveResponse lr = new LiveResponse(code);
+        LiveResponse lr = new LiveResponse(code, null, code);
         configure(request, lr);
         return lr;
     }

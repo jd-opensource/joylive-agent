@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -43,27 +44,34 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.OK)
     public LiveResponse handleException(Exception e, HttpServletRequest request) {
-        LiveResponse source = null;
-        byte[] body = null;
-        if (e instanceof RestClientResponseException) {
-            body = ((RestClientResponseException) e).getResponseBodyAsByteArray();
-        } else if (e instanceof feign.FeignException) {
-            body = ((FeignException) e).content();
-        }
-        if (body != null) {
-            try {
-                source = objectMapper.readValue(body, LiveResponse.class);
-            } catch (Throwable ignore) {
-            }
-        }
-        LiveResponse response = new LiveResponse(500, "Internal Server Error: " + e.getMessage());
-        if (source != null) {
-            for (LiveTrace trace : source.getTraces()) {
-                response.addLast(trace);
-            }
+        LiveResponse response = getResponse(e);
+        if (response == null) {
+            response = new LiveResponse(500, "Internal Server Error: " + e.getMessage());
         }
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
+        return response;
+    }
+
+    private LiveResponse getResponse(Exception e) {
+        LiveResponse response = null;
+        byte[] body = null;
+        if (e instanceof RestClientResponseException) {
+            RestClientResponseException exception = (RestClientResponseException) e;
+            body = exception.getResponseBodyAsByteArray();
+        } else if (e instanceof FeignException) {
+            FeignException exception = (FeignException) e;
+            body = exception.content();
+        } else if (e instanceof WebClientResponseException) {
+            WebClientResponseException responseException = (WebClientResponseException) e;
+            body = responseException.getResponseBodyAsByteArray();
+        }
+        if (body != null) {
+            try {
+                response = objectMapper.readValue(body, LiveResponse.class);
+            } catch (Throwable ignore) {
+            }
+        }
         return response;
     }
 

@@ -55,6 +55,12 @@ public class LiveResponse implements Serializable {
         this.message = message;
     }
 
+    public LiveResponse(int code, String message, Object data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+    }
+
     public LiveResponse addFirst(LiveTrace trace) {
         if (traces == null) {
             traces = new ArrayList<>();

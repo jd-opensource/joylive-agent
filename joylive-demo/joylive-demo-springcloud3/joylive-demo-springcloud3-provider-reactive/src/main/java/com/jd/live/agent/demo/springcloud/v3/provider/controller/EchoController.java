@@ -56,7 +56,7 @@ public class EchoController {
             } catch (Exception ignored) {
             }
             exchange.getResponse().setStatusCode(status);
-            LiveResponse response = new LiveResponse(code);
+            LiveResponse response = new LiveResponse(code, null, code);
             configure(exchange, response);
             return Mono.just(response);
         });
@@ -64,7 +64,7 @@ public class EchoController {
 
     @GetMapping("/exception")
     public Mono<LiveResponse> exception(ServerWebExchange exchange) {
-        throw new RuntimeException("exception");
+        return Mono.error(new RuntimeException("exception"));
     }
 
     private void configure(ServerWebExchange exchange, LiveResponse response) {
