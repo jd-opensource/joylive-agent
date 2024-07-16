@@ -3,6 +3,8 @@
 [![Build](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml/badge.svg)](https://github.com/jd-opensource/joylive-agent/actions/workflows/build.yml)
 ![License](https://img.shields.io/github/license/jd-opensource/joylive-agent.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/com.jd.live/joylive-agent.svg?label=maven%20central)](https://search.maven.org/search?q=g:com.jd.live)
+[![GitHub repo](https://img.shields.io/badge/GitHub-repo-blue)](https://github.com/jd-opensource/joylive-agent)
+[![GitHub release](https://img.shields.io/github/release/jd-opensource/joylive-agent.svg)](https://github.com/jd-opensource/joylive-agent/releases)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
 
