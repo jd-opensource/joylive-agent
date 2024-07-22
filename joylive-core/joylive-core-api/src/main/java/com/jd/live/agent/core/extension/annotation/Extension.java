@@ -27,6 +27,8 @@ import java.lang.annotation.Target;
  * is used to specify the loading or execution priority of multiple extensions (with lower values having higher priority),
  * and {@code singleton} indicates whether a single instance of the extension should be used or a new instance can be
  * created each time it is needed.
+ *
+ * @since 1.0.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

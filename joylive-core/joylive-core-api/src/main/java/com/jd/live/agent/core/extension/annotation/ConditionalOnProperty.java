@@ -30,6 +30,8 @@ import java.lang.annotation.*;
  * The {@code @Conditional} annotation specifies that the conditionality is determined by the presence and value
  * of the specified property. The evaluation logic is provided by the implementation of the {@code @Conditional}
  * annotation.
+ *
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

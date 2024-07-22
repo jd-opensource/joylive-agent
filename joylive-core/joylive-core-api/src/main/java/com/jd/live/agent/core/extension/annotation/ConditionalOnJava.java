@@ -28,6 +28,8 @@ import java.lang.annotation.*;
  * conditionality is determined by the Java version. The {@code value} attribute
  * should contain a version expression that can be used to match against the
  * current Java version.
+ *
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

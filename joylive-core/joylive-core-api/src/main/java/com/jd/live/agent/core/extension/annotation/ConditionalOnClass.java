@@ -29,7 +29,7 @@ import java.lang.annotation.*;
  * This annotation can be repeated using {@code @ConditionalOnClasses} to define multiple class
  * presence conditions on the same element.
  *
- * @since 2024-01-21
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
