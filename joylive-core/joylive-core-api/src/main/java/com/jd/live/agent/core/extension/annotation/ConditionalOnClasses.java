@@ -29,7 +29,7 @@ import java.lang.annotation.*;
  * This annotation is also marked with {@code @Conditional(dependOnLoader = true)}, signifying
  * that the conditions it represents depend on the class loader.
  *
- * @since 2024-01-21
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

@@ -20,11 +20,13 @@ import java.lang.annotation.*;
 /**
  * An annotation that serves as a container for multiple {@code @ConditionalOnProperty} annotations. It allows
  * specifying multiple property-based conditions on a single element. For the annotated element to be considered,
- * all of the property conditions contained within this annotation must be satisfied.
+ * all the property conditions contained within this annotation must be satisfied.
  * <p>
  * This annotation inherits the conditional behavior from the {@code @Conditional} annotation, which means that the
  * evaluation process of whether the conditions are met is determined by the logic provided by the {@code @Conditional}
  * annotation's implementation.
+ *
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

@@ -25,6 +25,8 @@ import java.lang.annotation.*;
  * <p>
  * The annotation is marked with {@code @Conditional(dependOnLoader = true)}, which indicates
  * that the condition depends on the class loader's ability to load the specified class.
+ *
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

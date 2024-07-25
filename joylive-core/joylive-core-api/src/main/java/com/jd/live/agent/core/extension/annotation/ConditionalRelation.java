@@ -17,6 +17,8 @@ package com.jd.live.agent.core.extension.annotation;
 
 /**
  * Defines the types of logical relations that can be used to combine multiple conditions or criteria.
+ *
+ * @since 1.0.0
  */
 public enum ConditionalRelation {
 

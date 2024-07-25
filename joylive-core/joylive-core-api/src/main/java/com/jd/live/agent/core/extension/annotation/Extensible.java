@@ -26,6 +26,8 @@ import java.lang.annotation.Target;
  * can be extended by users. The {@code value} attribute is used to specify the name of the extensibility,
  * which can be useful for documentation purposes or for retrieving more information about the nature of the
  * extensibility at runtime through reflection.
+ *
+ * @since 1.0.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

@@ -23,7 +23,7 @@ import java.lang.annotation.*;
  * name is provided as the value of the annotation. This annotation can be used to mark classes
  * that should only be loaded, instantiated, or processed when the specified conditions are true.
  *
- * @since 2024-01-21
+ * @since 1.0.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

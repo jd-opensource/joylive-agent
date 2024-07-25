@@ -29,13 +29,14 @@ data:
       prometheus:
         endpoint: 0.0.0.0:8889
         namespace: ''
+      logging: {}
     service:
       extensions: [zpages]
       pipelines:
         traces/1:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [prometheus]
+          exporters: [logging]
         metrics:
           receivers: [otlp]
           processors: [batch]

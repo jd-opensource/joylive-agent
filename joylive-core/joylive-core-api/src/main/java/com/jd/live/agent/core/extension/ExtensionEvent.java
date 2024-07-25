@@ -23,8 +23,7 @@ import lombok.Getter;
  * an optional throwable if the event represents an error, and an optional instance
  * of the extension if the event is about its creation.
  *
- * @author Your Name
- * @since Version Number
+ * @since 1.0.0
  */
 @Getter
 public class ExtensionEvent {
