@@ -36,7 +36,7 @@ Java bytecode enhancement framework for traffic governance in multi-activity (un
 
 ## Related Projects
 
-1. [joylive-injector](../../joylive-injector), used for cloud-native scenario auto-injection of `joylive-agent`.
+1. [joylive-injector](https://github.com/jd-opensource/joylive-injector), used for cloud-native scenario auto-injection of `joylive-agent`.
 
 ## How to use
 
