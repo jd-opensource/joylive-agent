@@ -22,6 +22,7 @@ import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
+import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
@@ -78,6 +79,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Getter
     private List<CircuitBreakPolicy> circuitBreakPolicies;
 
+    @Setter
+    @Getter
+    private List<AuthPolicy> authPolicies;
+
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
 
     public ServicePolicy() {
@@ -107,7 +112,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             lanePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
         }
         if (circuitBreakPolicies != null && !circuitBreakPolicies.isEmpty()) {
-            circuitBreakPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, r.getName())));
+            circuitBreakPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, r.getName())));
+        }
+        if (authPolicies != null && !authPolicies.isEmpty()) {
+            authPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
@@ -142,7 +150,13 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                     (source.circuitBreakPolicies != null && !source.circuitBreakPolicies.isEmpty())) {
                 circuitBreakPolicies = copy(source.circuitBreakPolicies,
                         s -> new CircuitBreakPolicy(),
-                        s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAKER, s.getName()));
+                        s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, s.getName()));
+            }
+            if ((authPolicies == null || authPolicies.isEmpty()) &&
+                    (source.authPolicies != null && !source.authPolicies.isEmpty())) {
+                authPolicies = copy(source.authPolicies,
+                        s -> new AuthPolicy(),
+                        s -> uri.parameter(KEY_SERVICE_AUTH, s.getName()));
             }
         }
     }
