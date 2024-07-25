@@ -36,7 +36,7 @@
 
 ## 关联项目
 
-1. [joylive-injector](https://github.com/jd-opensource/joylive-injector)，用于云原生场景自动注入`joylive-agent`
+1. [joylive-injector](../../joylive-injector)，用于云原生场景自动注入`joylive-agent`
 
 ## 如何使用
 
