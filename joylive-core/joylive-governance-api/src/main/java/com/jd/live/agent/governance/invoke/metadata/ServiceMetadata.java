@@ -54,6 +54,11 @@ public class ServiceMetadata {
     private Service service;
 
     /**
+     * The consumer for this service.
+     */
+    private String consumer;
+
+    /**
      * The service policy applicable to this invocation.
      */
     private ServicePolicy servicePolicy;

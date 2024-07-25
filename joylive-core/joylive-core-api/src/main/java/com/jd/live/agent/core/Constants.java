@@ -112,6 +112,11 @@ public interface Constants {
     String LABEL_SERVICE_ID = LABEL_SERVICE_PREFIX + "id";
 
     /**
+     * Constant for the service consumer.
+     */
+    String LABEL_SERVICE_CONSUMER = LABEL_SERVICE_PREFIX + "consumer";
+
+    /**
      * Default value for labels.
      */
     String DEFAULT_VALUE = "";

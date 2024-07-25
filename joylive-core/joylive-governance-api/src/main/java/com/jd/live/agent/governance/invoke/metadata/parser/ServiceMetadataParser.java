@@ -1,8 +1,11 @@
 package com.jd.live.agent.governance.invoke.metadata.parser;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -63,6 +66,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
 
     @Override
     public ServiceMetadata parse() {
+        String consumer = parseConsumer();
         String serviceName = parseServiceName();
         String serviceGroup = parseServiceGroup();
         Service service = parseService(serviceName);
@@ -71,6 +75,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
         boolean isWrite = parseWrite(servicePolicy);
         return ServiceMetadata.builder().
+                consumer(consumer).
                 serviceConfig(serviceConfig).
                 serviceName(serviceName).
                 serviceGroup(serviceGroup).
@@ -81,6 +86,13 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                 write(isWrite).
                 build();
     }
+
+    /**
+     * Parses and returns the consumer name from.
+     *
+     * @return the parsed consumer name
+     */
+    protected abstract String parseConsumer();
 
     /**
      * Parses and returns the service name from either the application context or the service request.
@@ -162,6 +174,12 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
+        protected String parseConsumer() {
+            RequestContext.getOrCreate().setCargo(Constants.LABEL_SERVICE_CONSUMER, application.getName());
+            return application.getName();
+        }
+
+        @Override
         protected String parseServiceName() {
             return request.getService();
         }
@@ -182,6 +200,12 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         public InboundServiceMetadataParser(ServiceRequest request, ServiceConfig serviceConfig,
                                             Application application, GovernancePolicy governancePolicy) {
             super(request, serviceConfig, application, governancePolicy);
+        }
+
+        @Override
+        protected String parseConsumer() {
+            Cargo cargo = RequestContext.getCargo(Constants.LABEL_SERVICE_CONSUMER);
+            return cargo == null ? null : cargo.getFirstValue();
         }
 
         @Override
