@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.extension.jplug;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.*;
 import com.jd.live.agent.core.extension.ExtensionEvent.EventType;
 import com.jd.live.agent.core.extension.annotation.Extensible;
@@ -33,6 +35,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 1.0.0
  */
 public class JExtensionManager implements ExtensionManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(JExtensionManager.class);
 
     private final ConditionMatcher matcher;
 
@@ -153,6 +157,9 @@ public class JExtensionManager implements ExtensionManager {
         // Sort
         Comparator<ExtensionDesc<?>> c = ExtensionDesc.AscendingComparator.INSTANCE;
         extensionDescList.sort(c);
+        if (logger.isInfoEnabled()) {
+            logger.info("Load extensible {} success", name);
+        }
         // No need to cache objects in the loading method
         return new JExtensible<>(name, extensionDescList);
     }
