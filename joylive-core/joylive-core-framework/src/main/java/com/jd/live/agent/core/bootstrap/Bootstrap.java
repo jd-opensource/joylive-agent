@@ -36,6 +36,7 @@ import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
+import com.jd.live.agent.core.extension.ExtensionDesc;
 import com.jd.live.agent.core.extension.ExtensionEvent.EventType;
 import com.jd.live.agent.core.extension.ExtensionManager;
 import com.jd.live.agent.core.extension.condition.ConditionManager;
@@ -197,7 +198,7 @@ public class Bootstrap implements AgentLifecycle {
     /**
      * Manages extensions to the agent.
      */
-    private ExtensionManager extensionManager;
+    private JExtensionManager extensionManager;
 
     /**
      * Supplies bytecode for instrumentation.
@@ -276,6 +277,7 @@ public class Bootstrap implements AgentLifecycle {
             commandManager = createCommandManager();
             subscriptions = createSubscriptions();
             subscribe();
+            printExtensions();
             serviceManager.start().join();
             // TODO In AgentMain mode, it is necessary to enhance the registry first to obtain the service strategy, and then enhance the routing plugin
             if (pluginManager.install(dynamic)) {
@@ -371,6 +373,24 @@ public class Bootstrap implements AgentLifecycle {
                 }
             });
         }
+    }
+
+    private void printExtensions() {
+        StringBuilder builder = new StringBuilder();
+        extensionManager.forEach(extensible -> {
+            builder.delete(0, builder.length());
+            builder.append(extensible.getName().getClazz().getName()).append(": ");
+            Iterable<? extends ExtensionDesc<?>> extensionDescs = extensible.getExtensionDescs();
+            int i = 0;
+            for (ExtensionDesc<?> extensionDesc : extensionDescs) {
+                if (i++ > 0) {
+                    builder.append(", ");
+                }
+                builder.append(extensionDesc.getName().getName());
+            }
+            logger.info("Load extensions " + builder);
+        });
+
     }
 
     /**
@@ -551,7 +571,7 @@ public class Bootstrap implements AgentLifecycle {
                 DEPEND_ON_LOADER.negate());
     }
 
-    private ExtensionManager createExtensionManager() {
+    private JExtensionManager createExtensionManager() {
         return new JExtensionManager(conditionMatcher);
     }
 
