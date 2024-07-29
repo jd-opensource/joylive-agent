@@ -40,6 +40,21 @@ public enum FaultType {
     },
 
     /**
+     * Represents a state where an authentication has been reached.
+     */
+    AUTHENTICATED {
+        @Override
+        public RejectException reject(String reason) {
+            return new RejectAuthException(reason);
+        }
+
+        @Override
+        public RejectException failover(String reason) {
+            return new RejectAuthException(reason);
+        }
+    },
+
+    /**
      * Represents a state where a limit has been reached.
      */
     LIMIT {

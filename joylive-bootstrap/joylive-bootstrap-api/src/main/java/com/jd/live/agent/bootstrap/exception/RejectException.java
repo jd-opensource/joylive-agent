@@ -148,6 +148,28 @@ public class RejectException extends LiveException {
     }
 
     /**
+     * RejectAuthException
+     */
+    public static class RejectAuthException extends RejectException {
+
+        public RejectAuthException() {
+        }
+
+        public RejectAuthException(String message) {
+            super(message);
+        }
+
+        public RejectAuthException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public RejectAuthException(Throwable cause) {
+            super(cause);
+        }
+
+    }
+
+    /**
      * RejectLimitException
      */
     public static class RejectLimitException extends RejectException {

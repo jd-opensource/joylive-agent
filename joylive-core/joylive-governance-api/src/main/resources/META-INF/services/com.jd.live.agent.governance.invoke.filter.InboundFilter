@@ -1,3 +1,4 @@
+com.jd.live.agent.governance.invoke.filter.inbound.AuthInboundFilter
 com.jd.live.agent.governance.invoke.filter.inbound.UnitInboundFilter
 com.jd.live.agent.governance.invoke.filter.inbound.CellInboundFilter
 com.jd.live.agent.governance.invoke.filter.inbound.FailoverInboundFilter

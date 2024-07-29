@@ -107,6 +107,44 @@
             ],
             "version": 1704038400000
           },
+          "authPolicies": [
+            {
+              "name": "auth-rule-1",
+              "version": 1704038400000,
+              "consumer": "service-consumer",
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "auth",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ],
+              "type": "WHITE",
+              "order": 10
+            },
+            {
+              "name": "auth-rule-2",
+              "version": 1704038400001,
+              "consumer": "service-consumer",
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "auth",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ],
+              "type": "BLACK",
+              "order": 15
+            }
+          ],
           "rateLimitPolicies": [
             {
               "name": "limit-rule-1",

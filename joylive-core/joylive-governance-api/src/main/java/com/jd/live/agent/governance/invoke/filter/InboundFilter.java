@@ -38,6 +38,11 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 public interface InboundFilter {
 
     /**
+     * Execution order for the request auth filter
+     */
+    int ORDER_INBOUND_AUTH = -20;
+
+    /**
      * Execution order for the request limiter filter
      */
     int ORDER_INBOUND_LIMITER = -10;
