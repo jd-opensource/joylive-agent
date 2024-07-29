@@ -123,8 +123,7 @@
                   ]
                 }
               ],
-              "type": "WHITE",
-              "order": 10
+              "type": "WHITE"
             },
             {
               "name": "auth-rule-2",
@@ -141,8 +140,7 @@
                   ]
                 }
               ],
-              "type": "BLACK",
-              "order": 15
+              "type": "BLACK"
             }
           ],
           "rateLimitPolicies": [

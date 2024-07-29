@@ -62,11 +62,6 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
     private AuthType type;
 
     /**
-     * Priority of Policy Activation
-     */
-    private int order;
-
-    /**
      * The version of the authentication policy.
      */
     private long version;

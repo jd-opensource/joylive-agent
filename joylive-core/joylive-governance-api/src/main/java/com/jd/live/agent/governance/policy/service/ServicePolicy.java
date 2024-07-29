@@ -35,7 +35,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -117,7 +116,6 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         }
         if (authPolicies != null && !authPolicies.isEmpty()) {
             authPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
-            authPolicies.sort(Comparator.comparingInt(AuthPolicy::getOrder));
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
@@ -159,7 +157,6 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                 authPolicies = copy(source.authPolicies,
                         s -> new AuthPolicy(),
                         s -> uri.parameter(KEY_SERVICE_AUTH, s.getName()));
-                authPolicies.sort(Comparator.comparingInt(AuthPolicy::getOrder));
             }
         }
     }
