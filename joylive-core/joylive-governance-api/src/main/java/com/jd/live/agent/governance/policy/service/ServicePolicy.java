@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.core.util.map.MapBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
@@ -35,7 +36,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -84,6 +87,19 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     private List<AuthPolicy> authPolicies;
 
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
+
+    private final transient Cache<String, List<AuthPolicy>> authPolicyCache = new MapCache<>(new MapBuilder<String, List<AuthPolicy>>() {
+        @Override
+        public Map<String, List<AuthPolicy>> build() {
+            Map<String, List<AuthPolicy>> result = new HashMap<>();
+            if (authPolicies != null) {
+                for (AuthPolicy authPolicy : authPolicies) {
+                    result.computeIfAbsent(authPolicy.getConsumer(), k -> new ArrayList<>()).add(authPolicy);
+                }
+            }
+            return result;
+        }
+    });
 
     public ServicePolicy() {
     }
@@ -191,8 +207,13 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         return lanePolicyCache.get(laneSpaceId);
     }
 
+    public List<AuthPolicy> getAuthPolicy(String consumer) {
+        return authPolicyCache.get(consumer);
+    }
+
     protected void cache() {
         getLanePolicy("");
+        getAuthPolicy("");
         if (livePolicy != null) {
             livePolicy.cache();
         }

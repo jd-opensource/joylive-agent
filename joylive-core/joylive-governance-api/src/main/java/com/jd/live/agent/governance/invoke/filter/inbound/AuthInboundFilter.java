@@ -49,15 +49,12 @@ public class AuthInboundFilter implements InboundFilter, ExtensionInitializer {
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         String consumer = invocation.getServiceMetadata().getConsumer();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        List<AuthPolicy> policies = servicePolicy == null ? null : servicePolicy.getAuthPolicies();
-        if (null != policies && !policies.isEmpty() && null != consumer && !consumer.isEmpty()) {
+        List<AuthPolicy> policies = servicePolicy == null ? null : servicePolicy.getAuthPolicy(consumer);
+        if (null != policies && !policies.isEmpty()) {
             boolean hasWhiteList = false;
             boolean passedWhiteList = false;
             boolean blockedByBlackList = false;
             for (AuthPolicy policy : policies) {
-                if (!policy.getConsumer().equals(consumer)) {
-                    continue;
-                }
                 // match logic
                 boolean policyResult = policy.match(invocation);
                 if (policy.getType() == AuthType.WHITE) {
