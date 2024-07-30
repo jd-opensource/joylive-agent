@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.request;
 
+import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
@@ -62,6 +63,11 @@ public interface SofaRpcRequest {
             this.method = request.getMethodName();
             this.arguments = request.getMethodArgs();
             this.attachments = request.getRequestProps();
+        }
+
+        @Override
+        public String getClientIp() {
+            return RpcInternalContext.getContext().getRemoteAddress().getAddress().getHostAddress();
         }
     }
 

@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
+import java.net.InetSocketAddress;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
@@ -56,6 +57,16 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
+    }
+
+    @Override
+    public String getClientIp() {
+        String result = super.getClientIp();
+        if (result != null && !result.isEmpty()) {
+            return result;
+        }
+        InetSocketAddress address = request.getRemoteAddress();
+        return address == null ? null : address.getAddress().getHostAddress();
     }
 
     @Override

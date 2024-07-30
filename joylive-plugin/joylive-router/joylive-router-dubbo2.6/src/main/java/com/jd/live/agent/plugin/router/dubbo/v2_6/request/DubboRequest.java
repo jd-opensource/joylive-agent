@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.request;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invocation;
+import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
@@ -50,6 +51,11 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public String getClientIp() {
+            return RpcContext.getContext().getRemoteHost();
         }
     }
 

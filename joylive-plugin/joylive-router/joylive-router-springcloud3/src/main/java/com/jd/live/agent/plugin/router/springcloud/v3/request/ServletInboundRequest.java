@@ -81,6 +81,12 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     }
 
     @Override
+    public String getClientIp() {
+        String result = super.getClientIp();
+        return result != null && !result.isEmpty() ? result : request.getRemoteAddr();
+    }
+
+    @Override
     public boolean isSystem() {
         if (handler != null) {
             if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {

@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutbou
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invocation;
+import org.apache.dubbo.rpc.RpcContext;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -67,6 +68,11 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public String getClientIp() {
+            return RpcContext.getContext().getRemoteHost();
         }
 
         @Override

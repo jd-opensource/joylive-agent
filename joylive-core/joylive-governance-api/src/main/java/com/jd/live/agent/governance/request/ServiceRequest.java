@@ -146,6 +146,15 @@ public interface ServiceRequest extends Request {
      */
     interface InboundRequest extends ServiceRequest {
 
+        /**
+         * Gets the client IP address associated with the request.
+         *
+         * @return the client IP address.
+         */
+        default String getClientIp() {
+            return "";
+        }
+
     }
 
     /**

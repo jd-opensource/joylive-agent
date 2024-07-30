@@ -142,6 +142,31 @@ public interface HttpRequest extends ServiceRequest {
      */
     interface HttpInboundRequest extends HttpRequest, InboundRequest {
 
+        @Override
+        default String getClientIp() {
+            String ipAddress = getHeader("X-Forwarded-For");
+            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = getHeader("Proxy-Client-IP");
+            }
+            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = getHeader("WL-Proxy-Client-IP");
+            }
+            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = getHeader("HTTP_CLIENT_IP");
+            }
+            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = getHeader("HTTP_X_FORWARDED_FOR");
+            }
+            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                return null;
+            } else {
+                int pos = ipAddress.indexOf(',');
+                if (pos > 0) {
+                    return ipAddress.substring(0, pos);
+                }
+                return ipAddress;
+            }
+        }
     }
 
     /**
