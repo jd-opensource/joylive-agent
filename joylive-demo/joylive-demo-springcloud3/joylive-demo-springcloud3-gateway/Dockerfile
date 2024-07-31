@@ -8,4 +8,4 @@ COPY ./target/joylive-demo-springcloud3-gateway.jar /export/servers/
 
 VOLUME ["/export/servers/logs", "/export/servers/config"]
 EXPOSE 18081
-ENTRYPOINT ["/bin/bash", "-c", "java ${SGM_OPTS} ${JAVA_OPTS} -jar /export/servers/joylive-demo-springcloud3-gateway.jar"]
+ENTRYPOINT ["/bin/bash", "-c", "java ${JAVA_OPTS} -jar /export/servers/joylive-demo-springcloud3-gateway.jar"]
