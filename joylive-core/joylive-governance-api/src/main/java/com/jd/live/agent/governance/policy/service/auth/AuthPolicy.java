@@ -42,11 +42,6 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
     private String name;
 
     /**
-     * The application that initiated the request.
-     */
-    private String consumer;
-
-    /**
      * Defines how conditions are related (e.g., AND, OR) when evaluating whether the policy applies.
      */
     protected RelationType relationType;
@@ -69,9 +64,8 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
     public AuthPolicy() {
     }
 
-    public AuthPolicy(String name, String consumer, RelationType relationType, List<TagCondition> conditions, AuthType type, long version) {
+    public AuthPolicy(String name, RelationType relationType, List<TagCondition> conditions, AuthType type, long version) {
         this.name = name;
-        this.consumer = consumer;
         this.relationType = relationType;
         this.conditions = conditions;
         this.type = type;
@@ -88,9 +82,6 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
     public void supplement(AuthPolicy source) {
         if (source == null) {
             return;
-        }
-        if (consumer == null && source.getConsumer() != null) {
-            consumer = source.getConsumer();
         }
         if (relationType == null && source.getRelationType() != null) {
             relationType = source.getRelationType();

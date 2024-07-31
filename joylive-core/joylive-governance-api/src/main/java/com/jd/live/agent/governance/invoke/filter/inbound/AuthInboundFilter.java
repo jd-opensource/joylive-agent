@@ -47,9 +47,8 @@ public class AuthInboundFilter implements InboundFilter, ExtensionInitializer {
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
-        String consumer = invocation.getServiceMetadata().getConsumer();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        List<AuthPolicy> policies = servicePolicy == null ? null : servicePolicy.getAuthPolicy(consumer);
+        List<AuthPolicy> policies = servicePolicy == null ? null : servicePolicy.getAuthPolicies();
         if (null != policies && !policies.isEmpty()) {
             boolean hasWhiteList = false;
             boolean passedWhiteList = false;
