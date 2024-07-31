@@ -62,11 +62,13 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
 
     @Override
     public String getCookie(String key) {
-        String result = null;
-        if (request instanceof ServerHttpRequest) {
-            HttpCookie cookie = ((ServerHttpRequest) request).getCookies().getFirst(key);
-            result = cookie == null ? null : cookie.getValue();
+        if (key == null || key.isEmpty()) {
+            return null;
+        } else if (request instanceof ServerHttpRequest) {
+            ServerHttpRequest httpRequest = (ServerHttpRequest) request;
+            HttpCookie cookie = httpRequest.getCookies().getFirst(key);
+            return cookie == null ? null : cookie.getValue();
         }
-        return result;
+        return super.getCookie(key);
     }
 }

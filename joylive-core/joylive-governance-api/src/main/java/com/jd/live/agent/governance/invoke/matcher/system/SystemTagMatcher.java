@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.matcher.query;
+package com.jd.live.agent.governance.invoke.matcher.system;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
-import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
-import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
+import java.util.Map;
 
-/**
- * QueryTagMatcher is an implementation of the {@link TagMatcher} interface that matches
- * request tags based on query parameters present in the incoming HTTP request.
- *
- * @since 1.0.0
- */
-@Extension(value = "query")
-public class QueryTagMatcher extends AbstractTagMatcher {
+@Injectable
+@Extension(value = "system")
+public class SystemTagMatcher extends AbstractTagMatcher {
+
+    @Inject
+    private Map<String, SystemTagProvider> providers;
 
     @Override
     protected List<String> getValues(TagCondition condition, Request request) {
-        return request instanceof HttpRequest ? ((HttpRequest) request).getQueries(condition.getKey()) : null;
+        SystemTagProvider provider = providers.get(condition.getKey());
+        return provider == null ? null : provider.getValues(request, condition.getKey());
     }
 }

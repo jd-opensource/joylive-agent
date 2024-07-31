@@ -63,11 +63,6 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
         }
     }
 
-    @Override
-    public String getCookie(String key) {
-        return request.cookies().getFirst(key);
-    }
-
     public ExchangeFunction getNext() {
         return next;
     }

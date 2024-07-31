@@ -27,7 +27,6 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.util.MultiValueMapAdapter;
 
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractClusterRequest}
@@ -75,15 +74,6 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
         } catch (IllegalArgumentException ignore) {
             return null;
         }
-    }
-
-    @Override
-    public String getCookie(String key) {
-        if (key == null) {
-            return null;
-        }
-        List<String> values = cookies.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     @Override

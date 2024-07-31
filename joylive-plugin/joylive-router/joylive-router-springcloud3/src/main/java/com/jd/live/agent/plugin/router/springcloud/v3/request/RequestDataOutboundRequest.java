@@ -55,13 +55,4 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
             return null;
         }
     }
-
-    @Override
-    public String getCookie(String key) {
-        String result = null;
-        if (request != null) {
-            result = request.getCookies().getFirst(key);
-        }
-        return result;
-    }
 }

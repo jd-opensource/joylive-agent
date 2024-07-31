@@ -83,12 +83,6 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     }
 
     @Override
-    public String getCookie(String key) {
-        HttpCookie cookie = request.getCookies().getFirst(key);
-        return cookie == null ? null : cookie.getValue();
-    }
-
-    @Override
     public String getForwardHostExpression() {
         String result = null;
         if (loadBalancerFactory != null) {

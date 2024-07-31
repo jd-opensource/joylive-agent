@@ -111,11 +111,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     public String getCookie(String key) {
-        String result = null;
-        if (key != null) {
-            HttpCookie cookie = request.getCookies().getFirst(key);
-            result = cookie == null ? null : cookie.getValue();
-        }
-        return result;
+        HttpCookie cookie = key == null ? null : request.getCookies().getFirst(key);
+        return cookie == null ? null : cookie.getValue();
     }
 }

@@ -122,20 +122,6 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     }
 
     @Override
-    public String getHeader(String key) {
-        if (key == null) return null;
-        List<String> values = headers.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
-    }
-
-    @Override
-    public String getQuery(String key) {
-        if (key == null) return null;
-        List<String> values = queries.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
-    }
-
-    @Override
     public Map<String, List<String>> getQueries() {
         return queries.get();
     }
@@ -143,15 +129,6 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     @Override
     public Map<String, List<String>> getCookies() {
         return cookies.get();
-    }
-
-    @Override
-    public String getCookie(String key) {
-        if (key == null) {
-            return null;
-        }
-        List<String> values = cookies.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     @Override

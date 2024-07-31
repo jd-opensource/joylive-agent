@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.matcher.cookie;
+package com.jd.live.agent.governance.invoke.matcher.system;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
-import com.jd.live.agent.governance.request.HttpRequest;
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
 
-/**
- * CookieTagMatcher is an implementation of the TagMatcher interface that matches
- * request tags based on cookies present in the incoming HTTP request.
- *
- * @since 1.0.0
- */
-@Extension(value = "cookie")
-public class CookieTagMatcher extends AbstractTagMatcher {
+@Extension(value = "consumer")
+public class ConsumerTagProvider implements SystemTagProvider {
 
     @Override
-    protected List<String> getValues(TagCondition condition, Request request) {
-        return request instanceof HttpRequest ? ((HttpRequest) request).getCookies(condition.getKey()) : null;
+    public List<String> getValues(Request request, String key) {
+        Cargo cargo = RequestContext.getCargo(Constants.LABEL_SERVICE_CONSUMER);
+        return cargo == null ? null : cargo.getValues();
     }
 }

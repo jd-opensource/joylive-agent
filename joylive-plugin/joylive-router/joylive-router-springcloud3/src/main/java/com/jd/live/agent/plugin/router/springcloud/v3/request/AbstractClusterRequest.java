@@ -111,11 +111,15 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
 
     @Override
     public String getCookie(String key) {
-        if (request instanceof ServerHttpRequest) {
-            HttpCookie cookie = ((ServerHttpRequest) request).getCookies().getFirst(key);
+        if (key == null || key.isEmpty()) {
+            return null;
+        } else if (request instanceof ServerHttpRequest) {
+            ServerHttpRequest httpRequest = (ServerHttpRequest) request;
+            HttpCookie cookie = httpRequest.getCookies().getFirst(key);
             return cookie == null ? null : cookie.getValue();
+        } else {
+            return super.getCookie(key);
         }
-        return super.getCookie(key);
     }
 
     @Override

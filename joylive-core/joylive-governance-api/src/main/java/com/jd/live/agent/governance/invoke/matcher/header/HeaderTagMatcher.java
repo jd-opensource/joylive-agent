@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.matcher.header;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.Request;
@@ -32,10 +33,10 @@ import java.util.List;
  * @since 1.0.0
  */
 @Extension(value = "header")
-public class HeaderTagMatcher implements TagMatcher {
+public class HeaderTagMatcher extends AbstractTagMatcher {
 
     @Override
-    public boolean match(TagCondition condition, Request request) {
+    protected List<String> getValues(TagCondition condition, Request request) {
         List<String> values = null;
         if (request instanceof HttpRequest) {
             values = ((HttpRequest) request).getHeaders(condition.getKey());
@@ -45,6 +46,6 @@ public class HeaderTagMatcher implements TagMatcher {
                 values = Label.parseValue((String) value);
             }
         }
-        return condition.match(values);
+        return values;
     }
 }
