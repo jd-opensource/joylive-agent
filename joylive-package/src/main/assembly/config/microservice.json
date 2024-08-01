@@ -111,7 +111,6 @@
             {
               "name": "auth-rule-1",
               "version": 1704038400000,
-              "consumer": "service-consumer",
               "relationType": "AND",
               "conditions": [
                 {
@@ -128,7 +127,6 @@
             {
               "name": "auth-rule-2",
               "version": 1704038400001,
-              "consumer": "service-consumer",
               "relationType": "AND",
               "conditions": [
                 {
