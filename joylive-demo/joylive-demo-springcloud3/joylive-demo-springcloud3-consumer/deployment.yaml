@@ -59,6 +59,8 @@ spec:
               value: service-consumer
             - name: APPLICATION_SERVICE_NAMESPACE
               value: default
+            - name: SERVER_PORT
+              value: "18080"
             - name: APPLICATION_LOCATION_REGION
               value: region1
             - name: APPLICATION_LOCATION_ZONE
@@ -73,7 +75,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-consumer:1.0.0-ce86e037-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-consumer:1.1.0-310d12bd-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-consumer
           ports:
@@ -116,6 +118,16 @@ spec:
     spec:
       containers:
         - env:
+            - name: CONFIG_LIVE_SPACE_API_TYPE
+              value: multilive
+            - name: CONFIG_LIVE_SPACE_API_URL
+              value: http://api.live.local/v1
+            - name: CONFIG_LIVE_SPACE_API_HEADERS
+              value: pin=demo
+            - name: CONFIG_SERVICE_API_TYPE
+              value: jmsf
+            - name: CONFIG_SERVICE_API_URL
+              value: http://api.jmsf.local/v1
             - name: LIVE_LOG_LEVEL
               value: info
             - name: CONFIG_LANE_ENABLED
@@ -132,6 +144,8 @@ spec:
               value: service-consumer
             - name: APPLICATION_SERVICE_NAMESPACE
               value: default
+            - name: SERVER_PORT
+              value: "18080"
             - name: APPLICATION_LOCATION_REGION
               value: region2
             - name: APPLICATION_LOCATION_ZONE
@@ -146,7 +160,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: beta
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-consumer:1.0.0-ce86e037-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-consumer:1.1.0-310d12bd-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-consumer-gray
           ports:
