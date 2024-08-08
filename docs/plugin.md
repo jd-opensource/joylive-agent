@@ -50,7 +50,7 @@ public interface InterceptorDefinition {
 }
 ```
 
-### 1.2 Interceptor Interface
+### 1.3 Interceptor Interface
 
 This interface describes method interception points.
 
@@ -67,7 +67,7 @@ public interface Interceptor {
 }
 ```
 
-### 1.2 Context Object
+### 1.4 Context Object
 
 `ExecutableContext` has different implementations for intercepting member methods and constructors, namely `MethodContext` and `ConstructorContext`.
 

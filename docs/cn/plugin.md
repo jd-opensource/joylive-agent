@@ -50,7 +50,7 @@ public interface InterceptorDefinition {
 }
 ```
 
-### 1.2 拦截器接口
+### 1.3 拦截器接口
 
 该接口描述了方法的拦截点
 
@@ -67,7 +67,7 @@ public interface Interceptor {
 }
 ```
 
-### 1.2 上下文对象
+### 1.4 上下文对象
 
 `ExecutableContext`在拦截成员方法和构造函数的时候，分别有不同的实现`MethodContext`和`ConstructorContext`
 
