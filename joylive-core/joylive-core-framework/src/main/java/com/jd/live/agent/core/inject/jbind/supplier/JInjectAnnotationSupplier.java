@@ -60,6 +60,13 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return null;
     }
 
+    /**
+     * Creates a Sourcer based on the given FieldDesc and name.
+     *
+     * @param fieldDesc the FieldDesc object containing information about the field
+     * @param name the name of the Sourcer
+     * @return the created Sourcer object
+     */
     protected Sourcer createdSourcer(FieldDesc fieldDesc, String name) {
         Class<?> fieldType = fieldDesc.getType();
         if (fieldType.equals(Publisher.class)) {
@@ -78,6 +85,15 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return new JComponentSourcer(name, fieldType);
     }
 
+    /**
+     * Builds a Sourcer based on the given extensible class, name, field description, and factory.
+     *
+     * @param extensible the extensible class type
+     * @param name the name of the Sourcer
+     * @param fieldDesc the field description
+     * @param factory the factory to create the Sourcer
+     * @return a new Sourcer instance
+     */
     protected Sourcer build(Class<?> extensible, String name, FieldDesc fieldDesc, SourcerFactory factory) {
         if (extensible != null && extensible.isInterface() && extensible.isAnnotationPresent(Extensible.class)) {
             Inject inject = fieldDesc.getAnnotation(Inject.class);
@@ -91,16 +107,34 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return new JInjectAnnotationInjection(injectType);
     }
 
+    /**
+     * Retrieves the extensible class type from an array field.
+     *
+     * @param fieldDesc the field description
+     * @return the component class type if the field is an array, or null otherwise
+     */
     protected Class<?> getExtensibleByArray(FieldDesc fieldDesc) {
         Type type = getComponentType(fieldDesc);
         return type instanceof Class ? (Class<?>) type : null;
     }
 
+    /**
+     * Retrieves the extensible class type from a list field.
+     *
+     * @param fieldDesc the field description
+     * @return the parameterized class type of the list if available, or null otherwise
+     */
     protected Class<?> getExtensibleByList(FieldDesc fieldDesc) {
         Type[] types = getParameterizedTypes(fieldDesc);
         return types != null && types.length > 0 && types[0] instanceof Class ? (Class<?>) types[0] : null;
     }
 
+    /**
+     * Retrieves the extensible class type from a map field.
+     *
+     * @param fieldDesc the field description
+     * @return the class type of the map's value if the key is a String and the value type is a class or parameterized type, or null otherwise
+     */
     protected Class<?> getExtensibleByMap(FieldDesc fieldDesc) {
         Type[] types = getParameterizedTypes(fieldDesc);
         if (types != null && types.length == 2 && types[0].equals(String.class)) {
@@ -114,6 +148,12 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return null;
     }
 
+    /**
+     * Get the parameterized types of a field.
+     *
+     * @param fieldDesc the field description
+     * @return an array of Type objects representing the actual type arguments of the parameterized type, or null if the type is not parameterized
+     */
     protected Type[] getParameterizedTypes(FieldDesc fieldDesc) {
         Type genericType = fieldDesc.getGeneric().getType();
         if (genericType instanceof ParameterizedType) {
@@ -122,6 +162,12 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         return null;
     }
 
+    /**
+     * Get the component type of a field.
+     *
+     * @param fieldDesc the field description
+     * @return the component type of the array if the field type is an array, or null if the field type is not an array
+     */
     protected Type getComponentType(FieldDesc fieldDesc) {
         Type genericType = fieldDesc.getGeneric().getType();
         if (genericType instanceof Class) {
