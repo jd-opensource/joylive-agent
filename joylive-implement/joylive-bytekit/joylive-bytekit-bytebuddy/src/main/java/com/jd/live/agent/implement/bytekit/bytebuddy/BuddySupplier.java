@@ -15,13 +15,11 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.ByteBuilder;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 
 import java.util.List;
@@ -37,7 +35,6 @@ import java.util.List;
 public class BuddySupplier implements ByteSupplier {
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<BuilderHandler> handlers;
 
     @Inject(value = ConditionMatcher.COMPONENT_CONDITION_MATCHER)

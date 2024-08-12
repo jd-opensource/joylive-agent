@@ -15,14 +15,12 @@
  */
 package com.jd.live.agent.core.service;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 
 import java.util.List;
@@ -51,7 +49,6 @@ public class ServiceManager implements ServiceSupervisor {
      * The list of services that this manager is responsible for.
      */
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<AgentService> services;
 
     @Override

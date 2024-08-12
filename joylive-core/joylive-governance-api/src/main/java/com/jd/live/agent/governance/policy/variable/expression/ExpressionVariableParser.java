@@ -15,10 +15,8 @@
  */
 package com.jd.live.agent.governance.policy.variable.expression;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.expression.Expression;
 import com.jd.live.agent.core.util.expression.ExpressionEngine;
@@ -36,7 +34,6 @@ public class ExpressionVariableParser implements VariableParser<RpcRequest, Expr
     private static final String KEY_ARGS = "args";
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private ExpressionEngine engine;
 
     @Override

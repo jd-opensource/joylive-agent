@@ -15,11 +15,9 @@
  */
 package com.jd.live.agent.plugin.transmission.rocketmq.v5.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
@@ -49,7 +47,6 @@ public class MessageDefinition extends PluginDefinitionAdapter {
     public static final String TYPE_ACK_CALLBACK = "org.apache.rocketmq.client.consumer.AckCallback";
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
     public MessageDefinition() {

@@ -151,14 +151,12 @@ private Application application;
 声明在扩展接口字段上，则注入该扩展的最高优先级的实现
 ```java
 @Inject
-@InjectLoader(ResourcerType.CORE_IMPL)
 private LoadBalancer loadBalancer;
 ```
 
 声明在扩展接口的映射字段上，则注入所有扩展实现
 ```java
 @Inject
-@InjectLoader(ResourcerType.CORE_IMPL)
 private Map<String, LoadBalancer> loadBalancers;
 ```
 

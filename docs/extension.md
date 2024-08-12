@@ -152,7 +152,6 @@ Declare on an extension interface field to inject the highest priority implement
 
 ```java
 @Inject
-@InjectLoader(ResourcerType.CORE_IMPL)
 private LoadBalancer loadBalancer;
 ```
 
@@ -160,7 +159,6 @@ Declare on a map field of the extension interface to inject all extension implem
 
 ```java
 @Inject
-@InjectLoader(ResourcerType.CORE_IMPL)
 private Map<String, LoadBalancer> loadBalancers;
 ```
 

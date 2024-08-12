@@ -20,7 +20,6 @@ import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -59,7 +58,6 @@ import java.util.function.Consumer;
 public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitializer {
 
     @Inject
-    @InjectLoader
     private Map<String, CircuitBreakerFactory> factories;
 
     @Inject(nullable = true)

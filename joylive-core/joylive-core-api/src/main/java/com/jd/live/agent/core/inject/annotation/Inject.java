@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.inject.annotation;
 
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
+
 import java.lang.annotation.*;
 
 /**
@@ -45,6 +47,15 @@ public @interface Inject {
      * @return {@code true} if the field can be injected with a null value; {@code false} otherwise.
      */
     boolean nullable() default false;
+
+    /**
+     * Specifies the type of resource or class implementation to be loaded for the annotated field.
+     * The default is set to {@code ResourcerType.CORE_IMPL}, indicating a core implementation resource
+     * type will be loaded.
+     *
+     * @return The resource type to be loaded for the field.
+     */
+    ResourcerType loader() default ResourcerType.CORE_IMPL;
 
 }
 

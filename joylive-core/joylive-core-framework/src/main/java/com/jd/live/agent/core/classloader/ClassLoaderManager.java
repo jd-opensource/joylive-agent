@@ -17,8 +17,8 @@ package com.jd.live.agent.core.classloader;
 
 import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
 import com.jd.live.agent.bootstrap.classloader.ResourceFilter;
-import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.config.AgentPath;
+import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.util.Close;
 import lombok.Getter;
 

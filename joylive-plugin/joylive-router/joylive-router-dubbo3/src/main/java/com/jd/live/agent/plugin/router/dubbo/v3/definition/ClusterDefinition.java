@@ -20,7 +20,6 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -52,7 +51,6 @@ public class ClusterDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     @Inject(ObjectParser.JSON)
-    @InjectLoader
     private ObjectParser parser;
 
     public ClusterDefinition() {

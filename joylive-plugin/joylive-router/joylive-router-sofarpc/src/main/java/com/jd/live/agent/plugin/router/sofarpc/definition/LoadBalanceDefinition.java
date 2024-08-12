@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.sofarpc.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -54,7 +53,6 @@ public class LoadBalanceDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     @Inject(ObjectParser.JSON)
-    @InjectLoader
     private ObjectParser parser;
 
     public LoadBalanceDefinition() {

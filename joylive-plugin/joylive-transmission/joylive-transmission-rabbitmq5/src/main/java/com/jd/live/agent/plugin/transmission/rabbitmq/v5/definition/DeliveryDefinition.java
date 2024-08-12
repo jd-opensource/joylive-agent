@@ -15,11 +15,9 @@
  */
 package com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
@@ -46,7 +44,6 @@ public class DeliveryDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_GET_BODY = "getBody";
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
     public DeliveryDefinition() {

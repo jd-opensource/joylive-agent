@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.policy;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -26,7 +25,6 @@ import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
@@ -98,52 +96,42 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, UnitFunction> unitFunctions;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, VariableFunction> variableFunctions;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, VariableParser<?, ?>> variableParsers;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, TagMatcher> tagMatchers;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, LoadBalancer> loadBalancers;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private LoadBalancer loadBalancer;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, ClusterInvoker> clusterInvokers;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private ClusterInvoker clusterInvoker;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private InboundFilter[] inboundFilters;
 
     @Getter
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private OutboundFilter[] outboundFilters;
 
     @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)

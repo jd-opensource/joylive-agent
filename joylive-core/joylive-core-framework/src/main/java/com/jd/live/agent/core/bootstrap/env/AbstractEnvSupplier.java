@@ -15,13 +15,11 @@
  */
 package com.jd.live.agent.core.bootstrap.env;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.util.StringUtils;
 
@@ -46,7 +44,6 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
     private final static String[] PREFIX = new String[]{"", "BOOT-INF/classes/", "WEB-INF/classes/"};
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, ConfigParser> parsers;
 
     /**

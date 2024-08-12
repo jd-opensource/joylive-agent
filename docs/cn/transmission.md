@@ -148,7 +148,6 @@ public class DubboConsumerDefinition extends PluginDefinitionAdapter {
     };
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
     public DubboConsumerDefinition() {
@@ -213,7 +212,6 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_INVOKE = "invoke";
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<CargoRequire> requires;
 
     public DubboProviderDefinition() {

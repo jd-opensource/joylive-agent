@@ -15,14 +15,12 @@
  */
 package com.jd.live.agent.plugin.transmission.thread.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperties;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.core.thread.Camera;
@@ -54,7 +52,6 @@ public class ScheduledExecutorServiceDefinition extends PluginDefinitionAdapter 
     private static final String[] METHODS = {METHOD_SCHEDULE, METHOD_SCHEDULE_AT_FIXED_RATE, METHOD_SCHEDULE_WITH_FIXED_DELAY};
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private List<Camera> handlers;
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)

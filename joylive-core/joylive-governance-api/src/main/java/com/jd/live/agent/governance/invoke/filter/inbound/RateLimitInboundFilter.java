@@ -19,7 +19,6 @@ import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -44,7 +43,6 @@ import java.util.Map;
 public class RateLimitInboundFilter implements InboundFilter, ExtensionInitializer {
 
     @Inject
-    @InjectLoader
     private Map<String, RateLimiterFactory> factories;
 
     @Inject(nullable = true)

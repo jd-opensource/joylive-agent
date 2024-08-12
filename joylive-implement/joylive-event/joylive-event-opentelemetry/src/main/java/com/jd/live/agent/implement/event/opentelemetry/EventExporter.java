@@ -15,14 +15,16 @@
  */
 package com.jd.live.agent.implement.event.opentelemetry;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.*;
+import com.jd.live.agent.core.inject.annotation.Config;
+import com.jd.live.agent.core.inject.annotation.Configurable;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -122,7 +124,6 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
     private Application application;
 
     @Inject
-    @InjectLoader(ResourcerType.CORE_IMPL)
     private Map<String, ExporterFactory> factoryMap;
 
     private OpenTelemetrySdk sdk;

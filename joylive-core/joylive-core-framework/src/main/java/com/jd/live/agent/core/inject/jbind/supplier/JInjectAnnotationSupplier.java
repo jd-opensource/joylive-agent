@@ -22,7 +22,6 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.Injection;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.InjectLoader;
 import com.jd.live.agent.core.inject.jbind.*;
 import com.jd.live.agent.core.inject.jbind.InjectType.InjectField;
 import com.jd.live.agent.core.util.cache.CacheObject;
@@ -81,8 +80,8 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
 
     protected Sourcer build(Class<?> extensible, String name, FieldDesc fieldDesc, SourcerFactory factory) {
         if (extensible != null && extensible.isInterface() && extensible.isAnnotationPresent(Extensible.class)) {
-            InjectLoader injectLoader = fieldDesc.getAnnotation(InjectLoader.class);
-            return factory.build(name, extensible, fieldDesc.getOwner(), injectLoader == null ? null : injectLoader.value());
+            Inject inject = fieldDesc.getAnnotation(Inject.class);
+            return factory.build(name, extensible, fieldDesc.getOwner(), inject == null ? null : inject.loader());
         }
         return new JComponentSourcer(name, fieldDesc.getType());
     }

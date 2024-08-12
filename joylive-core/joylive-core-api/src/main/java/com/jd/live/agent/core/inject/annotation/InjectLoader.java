@@ -28,6 +28,7 @@ import java.lang.annotation.*;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
+@Deprecated
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
