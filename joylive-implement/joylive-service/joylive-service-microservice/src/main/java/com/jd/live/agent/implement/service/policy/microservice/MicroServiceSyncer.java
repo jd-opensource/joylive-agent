@@ -205,7 +205,7 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
      * @param meta       the service synchronization metadata.
      */
     private void onOk(PolicySubscriber subscriber, Service service, ServiceSyncMeta meta) {
-        if (update(subscriber.getName(), service)) {
+        if (service.getName() != null && update(subscriber.getName(), service)) {
             meta.version = service.getVersion();
             subscriber.complete(getName());
             logger.info(meta.getSuccessMessage(HttpStatus.OK));
