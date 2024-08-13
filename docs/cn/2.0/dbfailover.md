@@ -1,8 +1,8 @@
-# 数据库切换
+# 数据集群切换
 
-## 数据库多活策略
+## 数据集群多活策略
 
-在多活空间中导入多活数据库，配置其关系和数据同步
+在多活空间中导入多活数据集群，配置其关系和数据同步
 
 ```mermaid
 classDiagram
@@ -50,9 +50,9 @@ classDiagram
 
 ```
 
-## 多活数据源
+## JDBC
 
-多活数据源
+### 多活数据源
 ```mermaid
 classDiagram
     direction BT
@@ -96,7 +96,7 @@ classDiagram
     LiveDataSourceFactory ..> LiveDataSource
 
 ```
-### Druid
+#### Druid
 
 ```mermaid
 classDiagram
@@ -114,7 +114,7 @@ classDiagram
     
 ```
 
-### C3P0
+#### C3P0
 
 ```mermaid
 classDiagram
@@ -134,7 +134,7 @@ classDiagram
     
 ```
 
-### Hikari
+#### Hikari
 
 ```mermaid
 classDiagram
@@ -154,7 +154,7 @@ classDiagram
     
 ```
 
-### DBCP
+#### DBCP
 
 ```mermaid
 classDiagram
@@ -199,7 +199,17 @@ classDiagram
 DataSourceBuilderInterceptor拦截build方法，订阅数据库策略，构造LiveDataSource返回
 在Statement中进行禁读禁写的判断
 
-## 数据库切换
+### Redis
+
+#### Jedis
+
+#### Redisson
+
+#### Lettuce
+
+### MongoDB
+
+## 数据集群切换
 
 ### 切换开关
 
