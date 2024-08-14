@@ -18,7 +18,9 @@ package com.jd.live.agent.governance.rule;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import lombok.Getter;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,9 +49,12 @@ public enum OpType {
             if (values.size() != args.size()) {
                 return false;
             }
-            Collections.sort(values);
-            Collections.sort(args);
-            return values.equals(args);
+            for (String arg : args) {
+                if (!values.contains(arg)) {
+                    return false;
+                }
+            }
+            return true;
         }
     },
 
@@ -66,13 +71,12 @@ public enum OpType {
             if (values.size() != args.size()) {
                 return true;
             }
-            // 创建副本，以免修改原列表
-            List<String> sortedValues = new ArrayList<>(values);
-            List<String> sortedArgs = new ArrayList<>(args);
-            Collections.sort(sortedValues);
-            Collections.sort(sortedArgs);
-            // 检查排序后的列表是否相等
-            return !sortedValues.equals(sortedArgs);
+            for (String arg : args) {
+                if (!values.contains(arg)) {
+                    return true;
+                }
+            }
+            return false;
         }
     },
 
