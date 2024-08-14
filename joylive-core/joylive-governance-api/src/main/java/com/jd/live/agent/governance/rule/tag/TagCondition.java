@@ -100,30 +100,13 @@ public class TagCondition extends Tag {
     }
 
     /**
-     * Checks if the target value matches the tag condition.
-     *
-     * @param target The target value to be matched against the tag condition.
-     * @return {@code true} if the target value satisfies the tag condition; {@code false} otherwise.
-     */
-    public boolean match(String target) {
-        return opType.isMatch(values, target);
-    }
-
-    /**
      * Checks if any value in the list of target values matches the tag condition.
      *
      * @param targets The list of target values to be matched against the tag condition.
      * @return {@code true} if at least one value in the list satisfies the tag condition; {@code false} otherwise.
      */
     public boolean match(List<String> targets) {
-        if (targets != null) {
-            for (String target : targets) {
-                if (opType.isMatch(values, target)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return opType.isMatch(values, targets);
     }
 }
 

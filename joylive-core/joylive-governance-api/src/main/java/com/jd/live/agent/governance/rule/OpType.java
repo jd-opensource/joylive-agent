@@ -18,9 +18,7 @@ package com.jd.live.agent.governance.rule;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import lombok.Getter;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,8 +40,16 @@ public enum OpType {
     @JsonAlias("eq")
     EQUAL("eq", "equal") {
         @Override
-        public boolean isMatch(List<String> values, String arg) {
-            return values != null && values.size() == 1 && arg != null && arg.equals(values.get(0));
+        public boolean isMatch(List<String> values, List<String> args) {
+            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+                return false;
+            }
+            if (values.size() != args.size()) {
+                return false;
+            }
+            Collections.sort(values);
+            Collections.sort(args);
+            return values.equals(args);
         }
     },
 
@@ -53,8 +59,20 @@ public enum OpType {
     @JsonAlias("ne")
     NOT_EQUAL("ne", "not equal") {
         @Override
-        public boolean isMatch(List<String> values, String arg) {
-            return values == null || values.size() != 1 || arg == null || !arg.equals(values.get(0));
+        public boolean isMatch(List<String> values, List<String> args) {
+            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+                return false;
+            }
+            if (values.size() != args.size()) {
+                return true;
+            }
+            // 创建副本，以免修改原列表
+            List<String> sortedValues = new ArrayList<>(values);
+            List<String> sortedArgs = new ArrayList<>(args);
+            Collections.sort(sortedValues);
+            Collections.sort(sortedArgs);
+            // 检查排序后的列表是否相等
+            return !sortedValues.equals(sortedArgs);
         }
     },
 
@@ -64,8 +82,16 @@ public enum OpType {
     @JsonAlias("nin")
     NOT_IN("nin", "not in") {
         @Override
-        public boolean isMatch(List<String> values, String arg) {
-            return values == null || !values.contains(arg);
+        public boolean isMatch(List<String> values, List<String> args) {
+            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+                return false;
+            }
+            for (String value : values) {
+                if (args.contains(value)) {
+                    return false;
+                }
+            }
+            return true;
         }
     },
 
@@ -75,8 +101,16 @@ public enum OpType {
     @JsonAlias("in")
     IN("in", "in") {
         @Override
-        public boolean isMatch(List<String> values, String arg) {
-            return values != null && values.contains(arg);
+        public boolean isMatch(List<String> values, List<String> args) {
+            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+                return false;
+            }
+            for (String value : values) {
+                if (!args.contains(value)) {
+                    return false;
+                }
+            }
+            return true;
         }
     },
 
@@ -86,12 +120,24 @@ public enum OpType {
     @JsonAlias("regular")
     REGULAR("regular", "regular") {
         @Override
-        public boolean isMatch(List<String> values, String arg) {
-            if (values == null || values.size() != 1 || arg == null || arg.isEmpty()) {
+        public boolean isMatch(List<String> values, List<String> args) {
+            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
                 return false;
             }
-            Pattern pattern = PATTERNS.computeIfAbsent(arg, Pattern::compile);
-            return pattern.matcher(values.get(0)).matches();
+            for (String value : values) {
+                Pattern pattern = PATTERNS.computeIfAbsent(value, Pattern::compile);
+                boolean matchFound = false;
+                for (String arg : args) {
+                    if (pattern.matcher(arg).matches()) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+                if (!matchFound) {
+                    return false;
+                }
+            }
+            return true;
         }
     },
 
@@ -101,8 +147,23 @@ public enum OpType {
     @JsonAlias("prefix")
     PREFIX("prefix", "prefix") {
         @Override
-        public boolean isMatch(List<String> values, String arg) {
-            return values != null && values.size() == 1 && arg != null && values.get(0).startsWith(arg);
+        public boolean isMatch(List<String> values, List<String> args) {
+            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+                return false;
+            }
+            for (String value : values) {
+                boolean matchFound = false;
+                for (String arg : args) {
+                    if (arg.startsWith(value)) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+                if (!matchFound) {
+                    return false;
+                }
+            }
+            return true;
         }
     };
 
@@ -140,10 +201,10 @@ public enum OpType {
      * for this operation type.
      *
      * @param values the list of values to match against
-     * @param arg    the argument to test for a match
+     * @param args    the list of arguments to test for a match
      * @return true if the argument matches the criteria, false otherwise
      */
-    public boolean isMatch(List<String> values, String arg) {
+    public boolean isMatch(List<String> values, List<String> args) {
         return false;
     }
 
