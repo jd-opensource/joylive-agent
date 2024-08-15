@@ -69,7 +69,7 @@ spec:
               value: cell1
             - name: APPLICATION_SERVICE_GATEWAY
               value: FRONTEND
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.1.0-310d12bd-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.1.0-74961f50-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-gateway
           ports:
@@ -78,11 +78,11 @@ spec:
               protocol: TCP
           resources:
             requests:
-              cpu: "4"
-              memory: "8Gi"
+              cpu: "1"
+              memory: "1Gi"
             limits:
-              cpu: "4"
-              memory: "8Gi"
+              cpu: "1"
+              memory: "1Gi"
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
@@ -150,7 +150,7 @@ spec:
               value: cell4
             - name: APPLICATION_SERVICE_GATEWAY
               value: FRONTEND
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.1.0-310d12bd-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud3-gateway:1.1.0-74961f50-AMD64
           imagePullPolicy: Always
           name: joylive-demo-springcloud3-gateway-gray
           ports:
@@ -159,11 +159,11 @@ spec:
               protocol: TCP
           resources:
             requests:
-              cpu: "4"
-              memory: "8Gi"
+              cpu: "1"
+              memory: "1Gi"
             limits:
-              cpu: "4"
-              memory: "8Gi"
+              cpu: "1"
+              memory: "1Gi"
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       dnsPolicy: ClusterFirst

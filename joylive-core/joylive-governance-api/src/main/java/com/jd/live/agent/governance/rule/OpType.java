@@ -69,7 +69,7 @@ public enum OpType {
             if (values == null || values.isEmpty()) {
                 return args != null && !args.isEmpty();
             }
-            if (values.size() != args.size()) {
+            if (args == null || values.size() != args.size()) {
                 return true;
             }
             for (String arg : args) {
