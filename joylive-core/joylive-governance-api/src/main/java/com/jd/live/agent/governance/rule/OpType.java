@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
+@Getter
 public enum OpType {
 
     /**
@@ -65,8 +66,8 @@ public enum OpType {
     NOT_EQUAL("ne", "not equal") {
         @Override
         public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
-                return false;
+            if (values == null || values.isEmpty()) {
+                return args != null && !args.isEmpty();
             }
             if (values.size() != args.size()) {
                 return true;
@@ -88,7 +89,7 @@ public enum OpType {
         @Override
         public boolean isMatch(List<String> values, List<String> args) {
             if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
-                return false;
+                return true;
             }
             for (String value : values) {
                 if (args.contains(value)) {
@@ -128,10 +129,10 @@ public enum OpType {
             if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
                 return false;
             }
-            for (String value : values) {
-                Pattern pattern = PATTERNS.computeIfAbsent(value, Pattern::compile);
+            for (String arg : args) {
                 boolean matchFound = false;
-                for (String arg : args) {
+                for (String value : values) {
+                    Pattern pattern = PATTERNS.computeIfAbsent(value, Pattern::compile);
                     if (pattern.matcher(arg).matches()) {
                         matchFound = true;
                         break;
@@ -155,9 +156,9 @@ public enum OpType {
             if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
                 return false;
             }
-            for (String value : values) {
+            for (String arg : args) {
                 boolean matchFound = false;
-                for (String arg : args) {
+                for (String value : values) {
                     if (arg.startsWith(value)) {
                         matchFound = true;
                         break;
@@ -171,8 +172,6 @@ public enum OpType {
         }
     };
 
-    // Class-level documentation for the static fields and methods would go here.
-
     private static final Map<String, OpType> TYPES = Arrays.stream(values()).collect(Collectors.toMap(OpType::getCode, o -> o));
 
     private static final Map<String, Pattern> PATTERNS = new ConcurrentHashMap<>();
@@ -180,13 +179,11 @@ public enum OpType {
     /**
      * The code associated with this operation type.
      */
-    @Getter
     private final String code;
 
     /**
      * The description of this operation type.
      */
-    @Getter
     private final String description;
 
     /**
