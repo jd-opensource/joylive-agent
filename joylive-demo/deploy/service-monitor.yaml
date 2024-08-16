@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    meta.helm.sh/release-name: brolly
+    meta.helm.sh/release-namespace: brolly
+  labels:
+    app.kubernetes.io/instance: brolly
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: monitor
+    app.kubernetes.io/system: brolly
+    inputType: integrations  # 必备标签，固定值
+    integration: tpaas-mysql # 必备标签，取值为 IntegrationDefinition 的 name
+    release: brolly # 必备标签，固定值
+  name: multilive-service-monitor
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 10s
+      metricRelabelings:
+        - action: labeldrop
+          regex: ^cluster$
+
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: opentelemetry
+      component: otel-collector

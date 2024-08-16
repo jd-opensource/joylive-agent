@@ -47,6 +47,8 @@ kind: Service
 metadata:
   name: otel-collector
   labels:
+    app.kubernetes.io/managed-by: paas
+    app.kubernetes.io/name: opentelemetry
     app: opentelemetry
     component: otel-collector
 spec:
