@@ -119,8 +119,19 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     protected String parseHost() {
-        String result = super.parseHost();
-        return result == null ? request.getServerName() : result;
+        String result = uri.getHost();
+        if (result == null || !isDomain(result)) {
+            String candidate = parseHostByHeader();
+            if (candidate != null && isDomain(candidate)) {
+                result = candidate;
+            } else {
+                candidate = request.getServerName();
+                if (candidate != null && isDomain(candidate)) {
+                    result = candidate;
+                }
+            }
+        }
+        return result;
     }
 
     private Map<String, List<String>> parseCookie(HttpServletRequest request) {

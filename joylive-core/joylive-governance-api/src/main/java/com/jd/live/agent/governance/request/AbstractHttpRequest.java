@@ -20,6 +20,7 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Provides an abstract base class for HTTP requests, implementing the {@link HttpRequest} interface.
@@ -41,6 +42,8 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * Key for the "serviceGroup" header in HTTP requests.
      */
     protected static final String HEAD_GROUP_KEY = "serviceGroup";
+
+    protected static final Pattern IPV4_PATTERN = Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$");
 
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
@@ -199,6 +202,16 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     }
 
     /**
+     * Checks if the given host string represents a domain name rather than an IP address.
+     *
+     * @param host The host string to check
+     * @return true if the host string is a domain name, false otherwise
+     */
+    protected boolean isDomain(String host) {
+        return host != null && host.charAt(0) != '[' && !IPV4_PATTERN.matcher(host).matches();
+    }
+
+    /**
      * Parses the host from the "Host" header when it is not directly available from the URI.
      *
      * @return The host parsed from the header, or null if it cannot be determined.
@@ -248,6 +261,20 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
         public AbstractHttpInboundRequest(T request) {
             super(request);
         }
+
+        @Override
+        protected String parseHost() {
+            String result = uri.getHost();
+            if (result == null || !isDomain(result)) {
+                String candidate = parseHostByHeader();
+                if (candidate != null && isDomain(candidate)) {
+                    result = candidate;
+                }
+            }
+            return result;
+        }
+
+
     }
 
     /**
