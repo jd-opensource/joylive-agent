@@ -133,7 +133,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      * @return the retrieved service object
      */
     protected Service parseService(String serviceName) {
-        return governancePolicy.getService(serviceName);
+        return governancePolicy == null ? null : governancePolicy.getService(serviceName);
     }
 
     /**
