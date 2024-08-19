@@ -9,18 +9,14 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: monitor
     app.kubernetes.io/system: brolly
-    inputType: integrations  # 必备标签，固定值
-    integration: tpaas-mysql # 必备标签，取值为 IntegrationDefinition 的 name
-    release: brolly # 必备标签，固定值
+    inputType: k8s
+    release: brolly
   name: multilive-service-monitor
 spec:
   endpoints:
     - port: metrics
       path: /metrics
       interval: 10s
-      metricRelabelings:
-        - action: labeldrop
-          regex: ^cluster$
 
   namespaceSelector:
     any: true
