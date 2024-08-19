@@ -79,8 +79,6 @@ public class MicroServiceSyncer extends AbstractService implements PolicyService
 
     private static final int INTERVALS = 10;
 
-    private static final String POLICY_TYPE = "policy_type";
-
     private static final String SPACE = "space";
 
     private static final String SERVICE_NAME = "service_name";
