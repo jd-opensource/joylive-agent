@@ -33,14 +33,14 @@ data:
     service:
       extensions: [zpages]
       pipelines:
-        traces/1:
+        traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
           exporters: [logging]
         metrics:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [prometheus]
+          processors: [memory_limiter, batch]
+          exporters: [logging, prometheus]
 ---
 apiVersion: v1
 kind: Service
@@ -63,6 +63,9 @@ spec:
       targetPort: 4318
     - name: metrics # Default endpoint for querying metrics.
       port: 8888
+    - name: prometheus
+      port: 8889
+
   type: NodePort
   selector:
     component: otel-collector

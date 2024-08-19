@@ -14,8 +14,7 @@ metadata:
   name: multilive-service-monitor
 spec:
   endpoints:
-    - port: metrics
-      path: /metrics
+    - port: prometheus
       interval: 10s
 
   namespaceSelector:
