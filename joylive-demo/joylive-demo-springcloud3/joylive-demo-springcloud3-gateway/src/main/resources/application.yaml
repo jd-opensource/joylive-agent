@@ -55,15 +55,13 @@ spring:
           filters:
             - StripPrefix=1
             - Retry=5
-      #        - id: http
-      #          uri: http://demo.live.local:15088
-      #          predicates:
-      #            - Path=/http/**
-      #            - Method=GET
-      #          filters:
-      #            - StripPrefix=1
-      #          metadata:
-      #            hostExpression: ${unit}-${host}
+        - id: http
+          uri: http://demo.live.local:11813/
+          predicates:
+            - Path=/http/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
       discovery:
         locator:
           enabled: true
