@@ -35,7 +35,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -198,9 +197,6 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             livePolicy.cache();
         }
         if (routePolicies != null) {
-            synchronized (routePolicies) {
-                routePolicies.sort(Comparator.comparingInt(RoutePolicy::getOrder));
-            }
             for (RoutePolicy policy : routePolicies) {
                 policy.cache();
             }
