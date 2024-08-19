@@ -211,9 +211,11 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
             for (int i = header.length() - 1; i > 0; i--) {
                 ch = header.charAt(i);
                 if (ch == ':') {
+                    // port
                     result = header.substring(0, i);
                     break;
                 } else if (!Character.isDigit(ch)) {
+                    result = header;
                     break;
                 }
             }
