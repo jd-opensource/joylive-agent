@@ -134,10 +134,10 @@ agent:
         expireTime: 60000
     live:
       topics: ${CONFIG_LIVE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:true}
+      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:false}
     lane:
       topics: ${CONFIG_LANE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:true}
+      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:false}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
       phevos:

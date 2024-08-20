@@ -43,7 +43,7 @@ Following the traditional SDK governance model and Sidecar governance model, an 
 
 ### Requirements
 
-Compile requirement: JDK 8+ and Maven 3.2.5+ 
+Compile requirement: JDK 17+ and Maven 3.2.5+ 
 
 ## Main Features
 
