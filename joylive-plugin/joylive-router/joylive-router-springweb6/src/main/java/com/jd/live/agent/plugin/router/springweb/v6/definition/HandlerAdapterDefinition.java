@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.definition;
+package com.jd.live.agent.plugin.router.springweb.v6.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -24,16 +24,15 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.DispatcherHandlerInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v6.interceptor.HandlerAdapterInterceptor;
 
 /**
- * FilteringWebHandlerPluginDefinition
+ * HandlerAdapterDefinition
  *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * @since 1.1.0
  */
 @Injectable
-@Extension(value = "DispatcherHandlerDefinition_v3")
+@Extension(value = "HandlerAdapterDefinition_v6")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
@@ -42,34 +41,31 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.DispatcherHand
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
-@ConditionalOnClass(DispatcherHandlerDefinition.TYPE_DISPATCHER_HANDLER)
-@ConditionalOnClass(DispatcherHandlerDefinition.REACTOR_MONO)
-public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(HandlerAdapterDefinition.TYPE_HANDLER_ADAPTER)
+@ConditionalOnClass(DispatcherHandlerDefinition.TYPE_ERROR_RESPONSE)
+public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DISPATCHER_HANDLER = "org.springframework.web.reactive.DispatcherHandler";
+    protected static final String TYPE_HANDLER_ADAPTER = "org.springframework.web.servlet.HandlerAdapter";
 
-    private static final String METHOD_INVOKE_HANDLER = "invokeHandler";
-
-    // For spring web 6
-    private static final String METHOD_HANDLE_REQUEST_WITH = "handleRequestWith";
+    private static final String METHOD_HANDLE = "handle";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
-            "org.springframework.web.server.ServerWebExchange",
+            "javax.servlet.http.HttpServletRequest",
+            "javax.servlet.http.HttpServletResponse",
             "java.lang.Object"
     };
 
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public DispatcherHandlerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_HANDLER);
+    public HandlerAdapterDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_HANDLER_ADAPTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_INVOKE_HANDLER, METHOD_HANDLE_REQUEST_WITH).
+                        MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new DispatcherHandlerInterceptor(context)
+                        () -> new HandlerAdapterInterceptor(context)
                 )
         };
     }

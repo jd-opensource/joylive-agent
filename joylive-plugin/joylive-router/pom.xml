@@ -12,7 +12,10 @@
     <artifactId>joylive-router</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>joylive-router-springweb5</module>
+        <module>joylive-router-springweb6</module>
         <module>joylive-router-springcloud3</module>
+        <module>joylive-router-springcloud4</module>
         <module>joylive-router-dubbo3</module>
         <module>joylive-router-sofarpc</module>
         <module>joylive-router-dubbo2.7</module>

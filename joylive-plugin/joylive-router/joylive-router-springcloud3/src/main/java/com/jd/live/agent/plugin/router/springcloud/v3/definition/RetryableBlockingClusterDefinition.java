@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -39,6 +40,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.BlockingCluste
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(RetryableBlockingClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
 @ConditionalOnClass(RetryableBlockingClusterDefinition.TYPE_RETRY_TEMPLATE)
+@ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class RetryableBlockingClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_RETRY_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor";

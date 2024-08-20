@@ -14,9 +14,7 @@
     <properties>
         <package.plugin.type>plugin</package.plugin.type>
         <spring.cloud.version>3.1.8</spring.cloud.version>
-        <spring.boot.version>2.7.18</spring.boot.version>
-        <spring.version>5.3.31</spring.version>
-        <servlet.api.version>4.0.4</servlet.api.version>
+        <spring-web.version>5.3.31</spring-web.version>
         <openfeign.version>11.10</openfeign.version>
     </properties>
 
@@ -41,32 +39,8 @@
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
             <artifactId>spring-webflux</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>${servlet.api.version}</version>
+            <version>${spring-web.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

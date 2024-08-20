@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
+package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
@@ -26,7 +26,7 @@ import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveInboundRequest;
+import com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;

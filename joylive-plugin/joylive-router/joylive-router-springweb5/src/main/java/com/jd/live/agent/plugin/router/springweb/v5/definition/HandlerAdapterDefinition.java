@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.definition;
+package com.jd.live.agent.plugin.router.springweb.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.HandlerAdapterInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v5.interceptor.HandlerAdapterInterceptor;
 
 /**
  * HandlerAdapterDefinition
@@ -32,7 +32,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.HandlerAdapter
  * @since 1.1.0
  */
 @Injectable
-@Extension(value = "HandlerAdapterDefinition_v3")
+@Extension(value = "HandlerAdapterDefinition_v5")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
@@ -42,6 +42,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.HandlerAdapter
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(HandlerAdapterDefinition.TYPE_HANDLER_ADAPTER)
+@ConditionalOnMissingClass(DispatcherHandlerDefinition.TYPE_ERROR_RESPONSE)
 public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_HANDLER_ADAPTER = "org.springframework.web.servlet.HandlerAdapter";

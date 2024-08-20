@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.request;
+package com.jd.live.agent.plugin.router.springweb.v6.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -137,7 +138,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     private Map<String, List<String>> parseCookie(HttpServletRequest request) {
         Map<String, List<String>> result = new HashMap<>();
         if (request.getCookies() != null) {
-            for (javax.servlet.http.Cookie cookie : request.getCookies()) {
+            for (Cookie cookie : request.getCookies()) {
                 result.computeIfAbsent(cookie.getName(), name -> new ArrayList<>()).add(cookie.getValue());
             }
         }
