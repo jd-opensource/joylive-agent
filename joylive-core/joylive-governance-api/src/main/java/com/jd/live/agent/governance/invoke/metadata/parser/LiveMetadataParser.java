@@ -85,7 +85,7 @@ public class LiveMetadataParser implements LiveParser {
      * @return The configured live metadata builder.
      */
     protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
-        LiveSpace liveSpace = governancePolicy.getCurrentLiveSpace();
+        LiveSpace liveSpace = governancePolicy == null ? null : governancePolicy.getCurrentLiveSpace();
         Unit centerUnit = liveSpace == null ? null : liveSpace.getCenter();
         Unit currentUnit = liveSpace == null ? null : liveSpace.getCurrentUnit();
         Cell currentCell = liveSpace == null ? null : liveSpace.getCurrentCell();
