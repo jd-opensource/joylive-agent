@@ -180,6 +180,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-springgateway4</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-registry-dubbo3</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -206,6 +211,11 @@
             <dependency>
                 <groupId>com.jd.live</groupId>
                 <artifactId>joylive-router-springgateway3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-router-springgateway4</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

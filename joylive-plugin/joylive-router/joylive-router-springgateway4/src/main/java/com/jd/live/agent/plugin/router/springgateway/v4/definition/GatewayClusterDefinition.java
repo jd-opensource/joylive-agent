@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.definition;
+package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -25,8 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClusterInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayClusterInterceptor;
 
 /**
  * ReactiveLoadBalancerClientFilter
@@ -46,7 +46,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClust
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";

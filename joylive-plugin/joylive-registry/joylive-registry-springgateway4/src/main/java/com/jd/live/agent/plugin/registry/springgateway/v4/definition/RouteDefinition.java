@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.springgateway.v3.definition;
+package com.jd.live.agent.plugin.registry.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.registry.springgateway.v3.interceptor.RouteInterceptor;
+import com.jd.live.agent.plugin.registry.springgateway.v4.interceptor.RouteInterceptor;
 
 /**
  * RouteDefinition
@@ -38,7 +38,7 @@ import com.jd.live.agent.plugin.registry.springgateway.v3.interceptor.RouteInter
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(RouteDefinition.TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR)
-@ConditionalOnMissingClass(RouteDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(RouteDefinition.TYPE_HTTP_STATUS_CODE)
 public class RouteDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR = "org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator";

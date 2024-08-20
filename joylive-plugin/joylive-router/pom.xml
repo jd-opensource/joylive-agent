@@ -18,6 +18,7 @@
         <module>joylive-router-dubbo2.7</module>
         <module>joylive-router-dubbo2.6</module>
         <module>joylive-router-springgateway3</module>
+        <module>joylive-router-springgateway4</module>
         <module>joylive-router-rocketmq5</module>
         <module>joylive-router-rocketmq4</module>
         <module>joylive-router-kafka3</module>

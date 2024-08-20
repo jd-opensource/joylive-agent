@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.definition;
+package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -21,7 +21,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.FilteringWebHandlerInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.FilteringWebHandlerInterceptor;
 
 /**
  * FilteringWebHandlerPluginDefinition
@@ -41,7 +41,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.FilteringWeb
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(FilteringWebHandlerDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
 public class FilteringWebHandlerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";

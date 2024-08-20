@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.definition;
+package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.RetryGatewayFilterInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.RetryGatewayFilterInterceptor;
 
 /**
  * RetryGatewayFilterDefinition
@@ -36,7 +35,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.RetryGateway
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(RetryGatewayFilterDefinition.TYPE_RETRY_GATEWAY_FILTER_FACTORY)
-@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
 public class RetryGatewayFilterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_RETRY_GATEWAY_FILTER_FACTORY = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory";
