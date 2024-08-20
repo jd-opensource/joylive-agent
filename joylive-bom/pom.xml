@@ -330,7 +330,7 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-transmission-springcloud3</artifactId>
+                <artifactId>joylive-transmission-springweb5</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

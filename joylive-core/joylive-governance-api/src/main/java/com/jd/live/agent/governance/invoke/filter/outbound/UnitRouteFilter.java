@@ -395,7 +395,8 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
                 return null;
             }
             boolean accessible = invocation.isAccessible(unit);
-            UnitRoute unitRoute = invocation.getLiveMetadata().getUnitRule().getUnitRoute(unit.getCode());
+            UnitRule unitRule = invocation.getLiveMetadata().getUnitRule();
+            UnitRoute unitRoute = unitRule == null ? null : unitRule.getUnitRoute(unit.getCode());
             UnitGroup group = instanceGroup.getUnitGroup(unit.getCode());
             int instances = group == null ? 0 : group.size();
             return new Candidate(unit, unitRoute, instances, accessible);

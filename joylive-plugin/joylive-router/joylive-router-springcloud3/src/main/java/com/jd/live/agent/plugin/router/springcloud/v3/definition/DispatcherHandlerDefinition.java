@@ -48,7 +48,10 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISPATCHER_HANDLER = "org.springframework.web.reactive.DispatcherHandler";
 
-    private static final String METHOD_HANDLE = "invokeHandler";
+    private static final String METHOD_INVOKE_HANDLER = "invokeHandler";
+
+    // For spring web 6
+    private static final String METHOD_HANDLE_REQUEST_WITH = "handleRequestWith";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
             "org.springframework.web.server.ServerWebExchange",
@@ -64,7 +67,7 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_HANDLE).
+                        MatcherBuilder.in(METHOD_INVOKE_HANDLER, METHOD_HANDLE_REQUEST_WITH).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
                         () -> new DispatcherHandlerInterceptor(context)
                 )

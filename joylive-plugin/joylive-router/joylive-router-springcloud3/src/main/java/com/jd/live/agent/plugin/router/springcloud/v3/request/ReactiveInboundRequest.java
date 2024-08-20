@@ -87,25 +87,11 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
         if (method == null) {
             return null;
         }
-        switch (method) {
-            case GET:
-                return HttpMethod.GET;
-            case PUT:
-                return HttpMethod.PUT;
-            case POST:
-                return HttpMethod.POST;
-            case DELETE:
-                return HttpMethod.DELETE;
-            case HEAD:
-                return HttpMethod.HEAD;
-            case PATCH:
-                return HttpMethod.PATCH;
-            case OPTIONS:
-                return HttpMethod.OPTIONS;
-            case TRACE:
-                return HttpMethod.TRACE;
-            default:
-                return null;
+        try {
+            // Compatible with spring web 6(class) & 5(enum).
+            return HttpMethod.valueOf(method.name());
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 

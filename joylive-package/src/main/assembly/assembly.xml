@@ -94,7 +94,7 @@
                 <include>com.jd.live:joylive-registry-springgateway3</include>
                 <include>com.jd.live:joylive-router-springcloud3</include>
                 <include>com.jd.live:joylive-router-springgateway3</include>
-                <include>com.jd.live:joylive-transmission-springcloud3</include>
+                <include>com.jd.live:joylive-transmission-springweb5</include>
             </includes>
         </dependencySet>
 
