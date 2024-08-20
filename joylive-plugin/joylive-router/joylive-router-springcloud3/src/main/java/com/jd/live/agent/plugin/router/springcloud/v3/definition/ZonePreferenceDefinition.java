@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
@@ -33,6 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ZonePreference
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ZonePreferenceDefinition.TYPE_ZONE_PREFERENCE_SERVICE_INSTANCE_LIST_SUPPLIER)
+@ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ZonePreferenceDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_ZONE_PREFERENCE_SERVICE_INSTANCE_LIST_SUPPLIER = "org.springframework.cloud.loadbalancer.core.ZonePreferenceServiceInstanceListSupplier";

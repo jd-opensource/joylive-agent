@@ -220,7 +220,7 @@ public abstract class AbstractClientCluster<
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
     public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
-        return new ResponseStatusException(status, message, throwable);
+        return new ResponseStatusException(status.value(), message, throwable);
     }
 }
 

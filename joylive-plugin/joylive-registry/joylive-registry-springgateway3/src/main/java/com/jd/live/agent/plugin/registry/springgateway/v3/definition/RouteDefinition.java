@@ -38,9 +38,12 @@ import com.jd.live.agent.plugin.registry.springgateway.v3.interceptor.RouteInter
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(RouteDefinition.TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR)
+@ConditionalOnMissingClass(RouteDefinition.TYPE_HTTP_STATUS_CODE)
 public class RouteDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR = "org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator";
+
+    protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
 
     private static final String METHOD_CONVERT_TO_ROUTE = "convertToRoute";
 

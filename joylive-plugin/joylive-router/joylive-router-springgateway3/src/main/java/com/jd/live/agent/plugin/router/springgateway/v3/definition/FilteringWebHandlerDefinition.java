@@ -41,9 +41,12 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.FilteringWeb
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(FilteringWebHandlerDefinition.REACTOR_MONO)
+@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
 public class FilteringWebHandlerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
+
+    protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
 
     private static final String METHOD_HANDLE = "handle";
 
