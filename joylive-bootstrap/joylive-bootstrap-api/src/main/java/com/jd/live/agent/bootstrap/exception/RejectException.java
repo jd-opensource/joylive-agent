@@ -23,18 +23,19 @@ package com.jd.live.agent.bootstrap.exception;
 public class RejectException extends LiveException {
 
     public RejectException() {
+        super(null, null, false, false);
     }
 
     public RejectException(String message) {
-        super(message);
+        super(message, null, false, false);
     }
 
     public RejectException(String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, false);
     }
 
     public RejectException(Throwable cause) {
-        super(cause);
+        super(cause == null ? null : cause.getMessage(), cause, false, false);
     }
 
     /**
