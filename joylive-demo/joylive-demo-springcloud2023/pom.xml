@@ -25,6 +25,7 @@
         <module>joylive-demo-springcloud2023-provider-reactive</module>
         <module>joylive-demo-springcloud2023-consumer</module>
         <module>joylive-demo-springcloud2023-gateway</module>
+        <module>joylive-demo-springcloud2023-gateway-tomcat</module>
     </modules>
 
     <dependencyManagement>
