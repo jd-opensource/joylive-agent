@@ -135,7 +135,7 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
                 if (endpoint.isUnit(liveSpaceId, currentUnit.getCode())) {
                     unitEndpoints.add(endpoint);
                 }
-                if (endpoint.isCell(liveSpaceId, currentUnit.getCode())) {
+                if (endpoint.isCell(liveSpaceId, currentCell.getCode())) {
                     cellEndpoints.add(endpoint);
                 }
             }
