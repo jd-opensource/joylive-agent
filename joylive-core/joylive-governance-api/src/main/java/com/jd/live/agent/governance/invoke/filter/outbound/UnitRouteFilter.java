@@ -90,6 +90,11 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
         UnitPolicy unitPolicy = serviceMetadata.getUnitPolicy();
         switch (unitPolicy) {
             case NONE:
+                UnitRule rule = liveMetadata.getUnitRule();
+                List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
+                if (routes != null && routes.size() == 1) {
+                    return RouteTarget.forward(endpoints, routes.get(0));
+                }
                 // Arbitrary call
                 return RouteTarget.forward(endpoints);
             case CENTER:
