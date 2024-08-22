@@ -18,6 +18,7 @@
         <module>joylive-demo-common</module>
         <module>joylive-demo-multilive</module>
         <module>joylive-demo-rocketmq</module>
+        <module>joylive-demo-sofarpc</module>
     </modules>
 
     <properties>
