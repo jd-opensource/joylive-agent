@@ -39,6 +39,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -76,6 +77,30 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
+
+        // The service does not participate in cell traffic scheduling but needs to exclude disabled cells.
+        if (cellPolicy == null && target.getInstanceGroup().getUnitGroups() != null) {
+            List<Endpoint> cellEndpoints = new ArrayList<>();
+            for (Map.Entry<String, UnitGroup> unitGroupEntry : target.getInstanceGroup().getUnitGroups().entrySet()) {
+                UnitGroup unitGroup = unitGroupEntry.getValue();
+                LiveSpace liveSpace = liveMetadata.getLiveSpace();
+                Unit unit = liveSpace.getUnit(unitGroupEntry.getKey());
+                if (invocation.isAccessible(unit) && unitGroup.getCellGroups() != null) {
+                    for (Map.Entry<String, CellGroup> cellGroupEntry : unitGroup.getCellGroups().entrySet()) {
+                        Cell cell = unit.getCell(cellGroupEntry.getKey());
+                        if (invocation.isAccessible(cell)) {
+                            List<Endpoint> eps = unitGroup.getCell(cell.getCode()).getEndpoints();
+                            if (eps != null) {
+                                cellEndpoints.addAll(eps);
+                            }
+                        }
+                    }
+                }
+            }
+            target.setEndpoints(cellEndpoints);
+            return true;
+        }
+
         boolean localFirst = cellPolicy == CellPolicy.PREFER_LOCAL_CELL || cellPolicy == null && serviceConfig.isLocalFirst();
         Function<String, Integer> thresholdFunc = !localFirst ? null : (
                 cellPolicy == CellPolicy.PREFER_LOCAL_CELL
@@ -89,23 +114,8 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
             }
             return true;
         }
+
         UnitGroup unitGroup = target.getUnitGroup();
-        // The service does not participate in cell traffic scheduling but needs to exclude disabled cells.
-        if (cellPolicy == null && unitGroup != null && target.getUnitRoute().getCells() != null) {
-            List<Endpoint> cellEndpoints = new ArrayList<>();
-            for (CellRoute cellRoute : target.getUnitRoute().getCells()) {
-                Cell cell = cellRoute.getCell();
-                // Check if the cell is accessible and has a non-empty route.
-                if (invocation.isAccessible(cell) && !cellRoute.isEmpty()) {
-                    List<Endpoint> eps = unitGroup.getCell(cell.getCode()).getEndpoints();
-                    if (eps != null) {
-                        cellEndpoints.addAll(eps);
-                    }
-                }
-            }
-            target.setEndpoints(cellEndpoints);
-            return true;
-        }
         // previous filters may filtrate the endpoints
         unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints() && unitGroup.size() == target.size()
                 ? unitGroup
