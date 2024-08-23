@@ -45,6 +45,7 @@ public class RouteTarget {
     /**
      * The group of endpoints that this route target is associated with.
      */
+    @Getter
     private final EndpointGroup instanceGroup;
 
     /**
@@ -99,7 +100,7 @@ public class RouteTarget {
                        Unit unit, UnitAction unitAction, UnitRoute unitRoute, CellRoute cellRoute) {
         this.instances = instances == null && instanceGroup != null ? instanceGroup.getEndpoints() : instances;
         this.unit = unit == null && unitRoute != null ? unitRoute.getUnit() : unit;
-        this.instanceGroup = instanceGroup == null && instances != null && this.unit != null ? new EndpointGroup(instances) : instanceGroup;
+        this.instanceGroup = instanceGroup == null && instances != null ? new EndpointGroup(instances) : instanceGroup;
         this.unitGroup = this.instanceGroup == null || this.unit == null ? null : this.instanceGroup.getUnitGroup(this.unit.getCode());
         this.unitAction = unitAction;
         this.unitRoute = unitRoute;
