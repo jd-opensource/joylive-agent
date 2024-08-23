@@ -37,9 +37,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -80,24 +78,26 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
 
         // The service does not participate in cell traffic scheduling but needs to exclude disabled cells.
         if (cellPolicy == null && target.getInstanceGroup().getUnitGroups() != null) {
-            List<Endpoint> cellEndpoints = new ArrayList<>();
+            Set<String> unavailableCells = new HashSet<>();
             for (Map.Entry<String, UnitGroup> unitGroupEntry : target.getInstanceGroup().getUnitGroups().entrySet()) {
                 UnitGroup unitGroup = unitGroupEntry.getValue();
                 LiveSpace liveSpace = liveMetadata.getLiveSpace();
                 Unit unit = liveSpace.getUnit(unitGroupEntry.getKey());
-                if (invocation.isAccessible(unit) && unitGroup.getCellGroups() != null) {
+                if (unitGroup.getCellGroups() == null) {
+                    continue;
+                }
+                if (!invocation.isAccessible(unit)) {
+                    unavailableCells.addAll(unitGroup.getCellGroups().keySet());
+                } else {
                     for (Map.Entry<String, CellGroup> cellGroupEntry : unitGroup.getCellGroups().entrySet()) {
                         Cell cell = unit.getCell(cellGroupEntry.getKey());
-                        if (invocation.isAccessible(cell)) {
-                            List<Endpoint> eps = unitGroup.getCell(cell.getCode()).getEndpoints();
-                            if (eps != null) {
-                                cellEndpoints.addAll(eps);
-                            }
+                        if (!invocation.isAccessible(cell)) {
+                            unavailableCells.add(cellGroupEntry.getKey());
                         }
                     }
                 }
             }
-            target.setEndpoints(cellEndpoints);
+            target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
             return true;
         }
 

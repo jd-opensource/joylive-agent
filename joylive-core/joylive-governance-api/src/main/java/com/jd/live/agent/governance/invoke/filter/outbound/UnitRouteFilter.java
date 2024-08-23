@@ -38,12 +38,9 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.jd.live.agent.governance.invoke.Invocation.*;
 
@@ -123,41 +120,26 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
     private RouteTarget filterUnit(OutboundInvocation<?> invocation,
                                    List<? extends Endpoint> endpoints,
                                    LiveMetadata liveMetadata) {
-        EndpointGroup instanceGroup = new EndpointGroup(endpoints);
-        CandidateBuilder builder = new CandidateBuilder(invocation, instanceGroup);
-        Election election = new Election();
-
         LiveSpace liveSpace = liveMetadata.getLiveSpace();
         List<Unit> units = (liveSpace != null) ? liveSpace.getUnits() : Collections.emptyList();
-
-        if (units.isEmpty()) {
-            election = new Election();
+        UnitRule rule = liveMetadata.getUnitRule();
+        List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
+        RouteTarget routeTarget;
+        if (routes != null && routes.size() == 1) {
+            routeTarget = RouteTarget.forward(endpoints, routes.get(0));
         } else {
-            Election finalElection = election;
-            units.forEach(unit -> finalElection.add(builder.build(unit), Candidate::isAvailable));
+            routeTarget = RouteTarget.forward(endpoints);
         }
-        if (election.isEmpty()) {
-            return RouteTarget.reject(invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
-        }
-        List<Candidate> candidates = election.getCandidates();
-        if (candidates.size() == 1) {
-            Candidate target = candidates.get(0);
-            Unit unit = target.getUnit();
-
-            if (!target.isAvailable()) {
-                return RouteTarget.reject(unit, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE, unit.getCode()));
-            } else if (target.getRoute() == null) {
-                return RouteTarget.reject(unit, invocation.getError(REJECT_NO_UNIT_ROUTE, unit.getCode()));
+        Set<String> unavailableUnits = new HashSet<>();
+        for (Unit unit : units) {
+            if (!invocation.isAccessible(unit)) {
+                unavailableUnits.add(unit.getCode());
             }
-            return RouteTarget.forward(instanceGroup, unit, target.getRoute());
-        } else {
-            List<Endpoint> availableEndpoints = candidates.stream()
-                    .filter(Candidate::isAvailable)
-                    .flatMap(candidate -> instanceGroup.getUnitGroup(candidate.getUnit().getCode()).getEndpoints().stream())
-                    .collect(Collectors.toList());
-
-            return RouteTarget.forward(availableEndpoints);
         }
+        if (!unavailableUnits.isEmpty()) {
+            routeTarget.filter(endpoint -> !unavailableUnits.contains(endpoint.getUnit()));
+        }
+        return routeTarget;
     }
 
     /**
@@ -294,9 +276,9 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
      * @return An election object containing the preferred units for the election.
      */
     private Election getAvailableUnits(LiveMetadata liveMetadata,
-                                                 UnitRoute targetRoute,
-                                                 CandidateBuilder builder,
-                                                 List<Unit> units) {
+                                       UnitRoute targetRoute,
+                                       CandidateBuilder builder,
+                                       List<Unit> units) {
         Election result = new Election();
         for (Unit unit : units) {
             result.add(builder.build(unit), Candidate::isAvailable);
