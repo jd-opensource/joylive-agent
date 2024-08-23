@@ -179,12 +179,13 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
      * Returns a set of cell codes that are not available.
      *
      * @param invocation   The outbound invocation containing metadata for the election.
-     * @param liveSpace    The live space providing information about the current unit and cell.
      * @return A set of cell codes that are not accessible for the given invocation and live metadata.
      */
-    private Set<String> getUnavailableCells(OutboundInvocation<?> invocation, LiveSpace liveSpace) {
-        List<Unit> units = liveSpace.getSpec().getUnits();
+    private Set<String> getUnavailableCells(OutboundInvocation<?> invocation) {
         Set<String> unavailableCells = new HashSet<>();
+        LiveMetadata liveMetadata = invocation.getLiveMetadata();
+        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+        List<Unit> units = liveSpace == null ? null : liveSpace.getSpec().getUnits();
         if (units != null) {
             for (Unit unit : units) {
                 boolean unitAccessible = invocation.isAccessible(unit);
@@ -196,6 +197,7 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
                     }
                 }
             }
+            // TODO add cell route access mode
         }
         return unavailableCells;
     }
@@ -231,6 +233,7 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
 
         // Iterate through the cells in the unit route.
         for (CellRoute cellRoute : unitRoute.getCells()) {
+            // TODO add cell route access mode
             Cell cell = cellRoute.getCell();
             // Check if the cell is accessible and has a non-empty route.
             if (invocation.isAccessible(cell) && !cellRoute.isEmpty()) {

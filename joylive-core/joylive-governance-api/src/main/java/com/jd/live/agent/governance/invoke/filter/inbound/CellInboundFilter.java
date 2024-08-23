@@ -64,6 +64,7 @@ public class CellInboundFilter implements InboundFilter {
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
         LiveMetadata metadata = invocation.getLiveMetadata();
         if (metadata.getUnitRule() != null && !invocation.isAccessible(metadata.getCurrentCell())) {
+            // TODO add cell route access mode
             return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));
         } else {
             return new CellAction(CellActionType.FORWARD, null);
