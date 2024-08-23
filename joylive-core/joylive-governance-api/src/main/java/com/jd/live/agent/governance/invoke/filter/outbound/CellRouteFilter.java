@@ -73,7 +73,6 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
      * @return true if the routing decision was successful and endpoints were set, false otherwise.
      */
     private boolean forward(OutboundInvocation<?> invocation, RouteTarget target) {
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
         ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
@@ -84,15 +83,28 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
                 cellPolicy == CellPolicy.PREFER_LOCAL_CELL
                         ? livePolicy::getCellThreshold
                         : serviceConfig::getCellFailoverThreshold);
-        Unit unit = target.getUnit();
-        if (unit == null) {
+        if (target.getUnit() == null) {
             // unit policy is none.
-            return routeNoneUnitPolicy(invocation, target, liveMetadata,
-                    localFirst ? liveMetadata.getCurrentUnit() : null,
-                    localFirst ? liveMetadata.getCurrentCell() : null,
-                    thresholdFunc);
+            return routeAny(invocation, target, localFirst, thresholdFunc);
         }
+        return routeUnit(invocation, target, localFirst, thresholdFunc);
+    }
 
+    /**
+     * Routes an outbound invocation to a suitable unit.
+     *
+     * @param invocation    The outbound invocation containing metadata for the election.
+     * @param target        The {@code RouteTarget} containing the endpoints to be filtered.
+     * @param localFirst    Indicates whether the local unit should be preferred for routing.
+     * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
+     *                      those endpoints are preferred.
+     * @return true if the routing decision was successful and endpoints were set, false otherwise.
+     */
+    private boolean routeUnit(OutboundInvocation<?> invocation,
+                              RouteTarget target,
+                              boolean localFirst,
+                              Function<String, Integer> thresholdFunc) {
+        Unit unit = target.getUnit();
         UnitGroup unitGroup = target.getUnitGroup();
         // previous filters may filtrate the endpoints
         unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints() && unitGroup.size() == target.size()
@@ -119,26 +131,25 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
     }
 
     /**
-     * Filters the endpoints in the given {@code RouteTarget} based on their locality to the current unit and cell.
+     * Routes an outbound invocation to suitable endpoints
      *
      * @param invocation The outbound invocation containing metadata for the election.
      * @param target The {@code RouteTarget} containing the endpoints to be filtered.
-     * @param liveMetadata The live metadata providing information about the current unit and cell.
-     * @param preferUnit The preferred unit for routing.
-     * @param preferCell The preferred cell for routing.
+     * @param localFirst Indicates whether the local cell or unit should be preferred for routing.
      * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
      * those endpoints are preferred.
-     * @return true if the routing decision was successful and endpoints were set, false otherwise.
+     * @return true if the routing decision was successful, false otherwise.
      */
-    private boolean routeNoneUnitPolicy(OutboundInvocation<?> invocation,
-                                        RouteTarget target,
-                                        LiveMetadata liveMetadata,
-                                        Unit preferUnit,
-                                        Cell preferCell,
-                                        Function<String, Integer> thresholdFunc) {
+    private boolean routeAny(OutboundInvocation<?> invocation,
+                             RouteTarget target,
+                             boolean localFirst,
+                             Function<String, Integer> thresholdFunc) {
+        LiveMetadata liveMetadata = invocation.getLiveMetadata();
+        Unit preferUnit = localFirst ? liveMetadata.getCurrentUnit() : null;
+        Cell preferCell = localFirst ? liveMetadata.getCurrentCell() : null;
         LiveSpace liveSpace = liveMetadata.getLiveSpace();
         if (liveSpace != null) {
-            Set<String> unavailableCells = getUnavailableCells(invocation, liveSpace, liveMetadata);
+            Set<String> unavailableCells = getUnavailableCells(invocation, liveSpace);
             if (!unavailableCells.isEmpty()) {
                 target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
             }
@@ -165,14 +176,13 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
     }
 
     /**
-     * Returns a set of cell codes that are not available for the given {@code OutboundInvocation} considering the provided {@code LiveMetadata}.
+     * Returns a set of cell codes that are not available.
      *
      * @param invocation   The outbound invocation containing metadata for the election.
      * @param liveSpace    The live space providing information about the current unit and cell.
-     * @param liveMetadata The live metadata containing additional information about the cells.
      * @return A set of cell codes that are not accessible for the given invocation and live metadata.
      */
-    private Set<String> getUnavailableCells(OutboundInvocation<?> invocation, LiveSpace liveSpace, LiveMetadata liveMetadata) {
+    private Set<String> getUnavailableCells(OutboundInvocation<?> invocation, LiveSpace liveSpace) {
         List<Unit> units = liveSpace.getSpec().getUnits();
         Set<String> unavailableCells = new HashSet<>();
         if (units != null) {
