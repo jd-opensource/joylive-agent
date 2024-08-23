@@ -38,7 +38,10 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import lombok.Getter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
@@ -89,13 +92,7 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
         UnitPolicy unitPolicy = serviceMetadata.getUnitPolicy();
         switch (unitPolicy) {
             case NONE:
-                UnitRule rule = liveMetadata.getUnitRule();
-                List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
-                if (routes != null && !routes.isEmpty()) {
-                    return filterUnit(invocation, endpoints, liveMetadata);
-                }
-                // Arbitrary call
-                return RouteTarget.forward(endpoints);
+                return routeNone(invocation, endpoints, liveMetadata);
             case CENTER:
                 // Guiding to center unit
                 return routeCenter(invocation, endpoints, liveMetadata);
@@ -117,29 +114,30 @@ public class UnitRouteFilter implements OutboundFilter.LiveRouteFilter {
      * @param liveMetadata The live metadata associated with the request.
      * @return The route target indicating the action to be taken (forward, reject, etc.).
      */
-    private RouteTarget filterUnit(OutboundInvocation<?> invocation,
-                                   List<? extends Endpoint> endpoints,
-                                   LiveMetadata liveMetadata) {
-        LiveSpace liveSpace = liveMetadata.getLiveSpace();
-        List<Unit> units = (liveSpace != null) ? liveSpace.getUnits() : Collections.emptyList();
+    private RouteTarget routeNone(OutboundInvocation<?> invocation,
+                                  List<? extends Endpoint> endpoints,
+                                  LiveMetadata liveMetadata) {
         UnitRule rule = liveMetadata.getUnitRule();
         List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
-        RouteTarget routeTarget;
-        if (routes != null && routes.size() == 1) {
-            routeTarget = RouteTarget.forward(endpoints, routes.get(0));
-        } else {
-            routeTarget = RouteTarget.forward(endpoints);
-        }
-        Set<String> unavailableUnits = new HashSet<>();
-        for (Unit unit : units) {
-            if (!invocation.isAccessible(unit)) {
-                unavailableUnits.add(unit.getCode());
+        if (routes != null && !routes.isEmpty()) {
+            Set<String> availableUnits = new HashSet<>(routes.size());
+            for (UnitRoute route : routes) {
+                if (invocation.isAccessible(route.getUnit())) {
+                    availableUnits.add(route.getCode());
+                }
+            }
+            if (availableUnits.isEmpty()) {
+                return RouteTarget.reject(invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
+            } else if (routes.size() == 1) {
+                return RouteTarget.forward(endpoints, routes.get(0));
+            } else if (routes.size() != availableUnits.size()) {
+                RouteTarget.filter(endpoints, e -> availableUnits.contains(e.getUnit()));
+                if (availableUnits.size() == 1) {
+                    return RouteTarget.forward(endpoints, rule.getUnitRoute(availableUnits.iterator().next()));
+                }
             }
         }
-        if (!unavailableUnits.isEmpty()) {
-            routeTarget.filter(endpoint -> !unavailableUnits.contains(endpoint.getUnit()));
-        }
-        return routeTarget;
+        return RouteTarget.forward(endpoints);
     }
 
     /**

@@ -37,7 +37,10 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -76,31 +79,6 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
 
-        // The service does not participate in cell traffic scheduling but needs to exclude disabled cells.
-        if (cellPolicy == null && target.getInstanceGroup().getUnitGroups() != null) {
-            Set<String> unavailableCells = new HashSet<>();
-            for (Map.Entry<String, UnitGroup> unitGroupEntry : target.getInstanceGroup().getUnitGroups().entrySet()) {
-                UnitGroup unitGroup = unitGroupEntry.getValue();
-                LiveSpace liveSpace = liveMetadata.getLiveSpace();
-                Unit unit = liveSpace.getUnit(unitGroupEntry.getKey());
-                if (unitGroup.getCellGroups() == null) {
-                    continue;
-                }
-                if (!invocation.isAccessible(unit)) {
-                    unavailableCells.addAll(unitGroup.getCellGroups().keySet());
-                } else {
-                    for (Map.Entry<String, CellGroup> cellGroupEntry : unitGroup.getCellGroups().entrySet()) {
-                        Cell cell = unit.getCell(cellGroupEntry.getKey());
-                        if (!invocation.isAccessible(cell)) {
-                            unavailableCells.add(cellGroupEntry.getKey());
-                        }
-                    }
-                }
-            }
-            target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
-            return true;
-        }
-
         boolean localFirst = cellPolicy == CellPolicy.PREFER_LOCAL_CELL || cellPolicy == null && serviceConfig.isLocalFirst();
         Function<String, Integer> thresholdFunc = !localFirst ? null : (
                 cellPolicy == CellPolicy.PREFER_LOCAL_CELL
@@ -109,10 +87,10 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         Unit unit = target.getUnit();
         if (unit == null) {
             // unit policy is none.
-            if (localFirst && !target.isEmpty()) {
-                return filterLocal(invocation, target, liveMetadata, thresholdFunc);
-            }
-            return true;
+            return routeNoneUnitPolicy(invocation, target, liveMetadata,
+                    localFirst ? liveMetadata.getCurrentUnit() : null,
+                    localFirst ? liveMetadata.getCurrentCell() : null,
+                    thresholdFunc);
         }
 
         UnitGroup unitGroup = target.getUnitGroup();
@@ -143,42 +121,73 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
     /**
      * Filters the endpoints in the given {@code RouteTarget} based on their locality to the current unit and cell.
      *
-     * @param invocation    The outbound invocation containing metadata for the election.
-     * @param target        The {@code RouteTarget} containing the endpoints to be filtered. If empty or if localFirst is false, no filtering is applied.
-     * @param liveMetadata  The live metadata providing information about the current unit and cell.
+     * @param invocation The outbound invocation containing metadata for the election.
+     * @param target The {@code RouteTarget} containing the endpoints to be filtered.
+     * @param liveMetadata The live metadata providing information about the current unit and cell.
+     * @param preferUnit The preferred unit for routing.
+     * @param preferCell The preferred cell for routing.
      * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
-     *                      those endpoints are preferred.
+     * those endpoints are preferred.
      * @return true if the routing decision was successful and endpoints were set, false otherwise.
      */
-    private boolean filterLocal(OutboundInvocation<?> invocation,
-                                RouteTarget target,
-                                LiveMetadata liveMetadata,
-                                Function<String, Integer> thresholdFunc) {
-        String liveSpaceId = liveMetadata.getLiveSpaceId();
-        Unit currentUnit = liveMetadata.getCurrentUnit();
-        Cell currentCell = liveMetadata.getCurrentCell();
-        if (!invocation.isAccessible(currentUnit) || !invocation.isAccessible(currentCell)) {
-            return false;
-        }
-        if (liveSpaceId != null && currentUnit != null && currentCell != null) {
-            List<Endpoint> cellEndpoints = new ArrayList<>();
-            List<Endpoint> unitEndpoints = new ArrayList<>();
-            for (Endpoint endpoint : target.getEndpoints()) {
-                if (endpoint.isUnit(liveSpaceId, currentUnit.getCode())) {
-                    unitEndpoints.add(endpoint);
-                }
-                if (endpoint.isCell(liveSpaceId, currentCell.getCode())) {
-                    cellEndpoints.add(endpoint);
-                }
+    private boolean routeNoneUnitPolicy(OutboundInvocation<?> invocation,
+                                        RouteTarget target,
+                                        LiveMetadata liveMetadata,
+                                        Unit preferUnit,
+                                        Cell preferCell,
+                                        Function<String, Integer> thresholdFunc) {
+        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+        if (liveSpace != null) {
+            Set<String> unavailableCells = getUnavailableCells(invocation, liveSpace, liveMetadata);
+            if (!unavailableCells.isEmpty()) {
+                target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
             }
-            Integer threshold = thresholdFunc.apply(currentCell.getCode());
-            if (!cellEndpoints.isEmpty() && (threshold == null || threshold <= cellEndpoints.size())) {
-                target.setEndpoints(cellEndpoints);
-            } else if (!unitEndpoints.isEmpty() && (threshold == null || threshold <= unitEndpoints.size())) {
-                target.setEndpoints(unitEndpoints);
+            if (preferCell != null || preferUnit != null) {
+                List<Endpoint> preferCellEndpoints = new ArrayList<>();
+                List<Endpoint> preferUnitEndpoints = new ArrayList<>();
+                for (Endpoint endpoint : target.getEndpoints()) {
+                    if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
+                        preferUnitEndpoints.add(endpoint);
+                    }
+                    if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
+                        preferCellEndpoints.add(endpoint);
+                    }
+                }
+                Integer threshold = preferCell == null ? null : thresholdFunc.apply(preferCell.getCode());
+                if (!preferCellEndpoints.isEmpty() && (threshold == null || threshold <= preferCellEndpoints.size())) {
+                    target.setEndpoints(preferCellEndpoints);
+                } else if (!preferUnitEndpoints.isEmpty() && (threshold == null || threshold <= preferUnitEndpoints.size())) {
+                    target.setEndpoints(preferUnitEndpoints);
+                }
             }
         }
         return true;
+    }
+
+    /**
+     * Returns a set of cell codes that are not available for the given {@code OutboundInvocation} considering the provided {@code LiveMetadata}.
+     *
+     * @param invocation   The outbound invocation containing metadata for the election.
+     * @param liveSpace    The live space providing information about the current unit and cell.
+     * @param liveMetadata The live metadata containing additional information about the cells.
+     * @return A set of cell codes that are not accessible for the given invocation and live metadata.
+     */
+    private Set<String> getUnavailableCells(OutboundInvocation<?> invocation, LiveSpace liveSpace, LiveMetadata liveMetadata) {
+        List<Unit> units = liveSpace.getSpec().getUnits();
+        Set<String> unavailableCells = new HashSet<>();
+        if (units != null) {
+            for (Unit unit : units) {
+                boolean unitAccessible = invocation.isAccessible(unit);
+                if (unit.getCells() != null) {
+                    for (Cell cell : unit.getCells()) {
+                        if (!unitAccessible || !invocation.isAccessible(cell)) {
+                            unavailableCells.add(cell.getCode());
+                        }
+                    }
+                }
+            }
+        }
+        return unavailableCells;
     }
 
     /**
