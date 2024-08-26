@@ -149,7 +149,7 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         Cell preferCell = localFirst ? liveMetadata.getCurrentCell() : null;
         LiveSpace liveSpace = liveMetadata.getLiveSpace();
         if (liveSpace != null) {
-            Set<String> unavailableCells = getUnavailableCells(invocation, liveSpace);
+            Set<String> unavailableCells = getUnavailableCells(invocation);
             if (!unavailableCells.isEmpty()) {
                 target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
             }
