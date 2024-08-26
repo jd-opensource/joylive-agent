@@ -1,5 +1,5 @@
-# Build an image using JDK 8
-FROM openjdk:8u342-jdk AS builder
+# Build an image using JDK 17
+FROM openjdk:17-oracle AS builder
 
 # Set up a working directory
 WORKDIR /app
