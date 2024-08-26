@@ -4,7 +4,7 @@
 
 1. Add spring cloud 2003 support.
 2. Add auth inbound filter
-2. Fixed some general bugs and improved stability.
+3. Fixed some general bugs and improved stability.
 
 ## 1.1.0
 
