@@ -2,7 +2,7 @@
 
 ## 1.2.0
 
-1. Add spring cloud 2003 support.
+1. Add spring cloud 2023 support.
 2. Add auth inbound filter
 3. Fixed some general bugs and improved stability.
 
