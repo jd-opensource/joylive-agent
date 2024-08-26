@@ -1,5 +1,11 @@
 # Release History
 
+## 1.2.0
+
+1. Add spring cloud 2003 support.
+2. Add auth inbound filter
+2. Fixed some general bugs and improved stability.
+
 ## 1.1.0
 
 1. Add complete circuit-break policy support.
