@@ -74,6 +74,9 @@ agent:
       type: ${CONFIG_SERVICE_API_TYPE:file}
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
       headers: ${CONFIG_SERVICE_API_HEADERS}
+      interval: 5000
+      timeout: 3000
+      initialTimeout: 20000
   watchdog:
     enabled: true
     delay: 5000
