@@ -75,6 +75,10 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         if (arguments == null || arguments.length == 0 || cameras.length == 0) {
             return;
+        } else if (target instanceof ThreadPoolExecutor
+                && isExcluded(((ThreadPoolExecutor) target).getThreadFactory())) {
+            // filter sgm thread pool before unwrap
+            return;
         }
         Object argument = arguments[0];
         Object unwrapped = unwrap(argument);
@@ -83,9 +87,6 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         } else if (unwrapped instanceof AbstractThreadAdapter) {
             return;
         } else if (isExcluded(unwrapped)) {
-            return;
-        } else if (target instanceof ThreadPoolExecutor
-                && isExcluded(((ThreadPoolExecutor) target).getThreadFactory())) {
             return;
         }
 
