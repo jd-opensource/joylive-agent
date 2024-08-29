@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.counter.Counter;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
+import com.jd.live.agent.governance.invoke.counter.ServiceCounter;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -32,11 +33,12 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
-import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_METHOD;
-
+/**
+ * A load balancer that selects the endpoint with the shortest response time for an outbound request.
+ * It is from org.apache.dubbo.rpc.cluster.loadbalance.ShortestResponseLoadBalance
+ */
 @Injectable
-@Extension(value = ShortestResponseLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_RANDOM_WEIGHT)
+@Extension(value = ShortestResponseLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_SHORTEST_RESPONSE)
 public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
 
     /**
@@ -66,32 +68,34 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         // Every shortest response invoker has the same weight value?
         boolean sameWeight = true;
 
+        CounterManager counterManager = invocation.getContext().getCounterManager();
         ServiceRequest request = invocation.getRequest();
-        String uri = URI.builder().host(request.getService()).path(request.getPath()).build()
-                .parameters(KEY_SERVICE_GROUP, request.getGroup(), KEY_SERVICE_METHOD, request.getMethod()).getUri();
+        URI uri = invocation.getServiceMetadata().getUri();
+        ServiceCounter serviceCounter = counterManager.getOrCreate(uri);
         // Filter out all the shortest response invokers
         for (int i = 0; i < length; i++) {
             T endpoint = endpoints.get(i);
-            Counter counter = CounterManager.getInstance().getCounter(endpoint.getId(), uri);
+
+            Counter counter = serviceCounter.getOrCreate(endpoint.getId(), uri);
             endpoint.setAttribute(Endpoint.ATTRIBUTE_COUNTER, counter);
 
             // Calculate the estimated response time from the product of active connections and succeeded average
             // elapsed time.
             long estimateResponse = counter.getSnapshot().getEstimateResponse();
-            int afterWarmup = endpoint.getWeight(request);
-            weights[i] = afterWarmup;
+            int weight = endpoint.getWeight(request);
+            weights[i] = weight;
             // Same as LeastActiveLoadBalance
             if (estimateResponse < shortestResponse) {
                 shortestResponse = estimateResponse;
                 shortestCount = 1;
                 shortestIndexes[0] = i;
-                totalWeight = afterWarmup;
-                firstWeight = afterWarmup;
+                totalWeight = weight;
+                firstWeight = weight;
                 sameWeight = true;
             } else if (estimateResponse == shortestResponse) {
                 shortestIndexes[shortestCount++] = i;
-                totalWeight += afterWarmup;
-                if (sameWeight && i > 0 && afterWarmup != firstWeight) {
+                totalWeight += weight;
+                if (sameWeight && i > 0 && weight != firstWeight) {
                     sameWeight = false;
                 }
             }

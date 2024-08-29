@@ -15,24 +15,63 @@
  */
 package com.jd.live.agent.governance.invoke.counter;
 
+import lombok.Getter;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * A class used to track and monitor the number of active, total, failed, and successful requests, as well as the
+ * elapsed time for each request. It also provides methods to calculate average elapsed time, maximum elapsed time,
+ * and average transactions per second (TPS).
+ * <p>
+ * It's from org.apache.dubbo.rpc.RpcStatus
+ */
 public class Counter {
 
+    /**
+     * The number of active requests.
+     */
     private final AtomicInteger active = new AtomicInteger();
+    /**
+     * The total number of requests.
+     */
     private final AtomicLong total = new AtomicLong();
+    /**
+     * The number of failed requests.
+     */
     private final AtomicInteger failed = new AtomicInteger();
+    /**
+     * The total elapsed time for all requests.
+     */
     private final AtomicLong totalElapsed = new AtomicLong();
+    /**
+     * The total elapsed time for failed requests.
+     */
     private final AtomicLong failedElapsed = new AtomicLong();
+    /**
+     * The maximum elapsed time for any request.
+     */
     private final AtomicLong maxElapsed = new AtomicLong();
+    /**
+     * The maximum elapsed time for any failed request.
+     */
     private final AtomicLong failedMaxElapsed = new AtomicLong();
+    /**
+     * The maximum elapsed time for any successful request.
+     */
     private final AtomicLong succeededMaxElapsed = new AtomicLong();
-
+    /**
+     * The current snapshot of the counter's state.
+     */
     private final AtomicReference<CounterSnapshot> snapshot = new AtomicReference<>(new CounterSnapshot(this));
 
-    protected Counter() {
+    @Getter
+    private final ServiceCounter service;
+
+    protected Counter(ServiceCounter service) {
+        this.service = service;
     }
 
     public boolean begin(int max) {

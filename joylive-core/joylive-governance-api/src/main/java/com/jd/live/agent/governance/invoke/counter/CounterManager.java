@@ -16,51 +16,37 @@
 package com.jd.live.agent.governance.invoke.counter;
 
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.policy.PolicyId;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
-import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
-import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_METHOD;
-
+/**
+ * A class that manages a collection of Counter instances.
+ */
 public class CounterManager {
 
-    // TODO clean deleted endpoints
-    private static final ConcurrentMap<String, ConcurrentMap<String, Counter>> METHOD_COUNTER =
-            new ConcurrentHashMap<>();
+    private final Timer timer;
 
-    private static final CounterManager INSTANCE = new CounterManager();
+    // service&group/endpoint/path&method
+    private final Map<String, ServiceCounter> counter = new ConcurrentHashMap<>();
 
-    private CounterManager() {
+    public CounterManager(Timer timer) {
+        this.timer = timer;
     }
 
-    public static CounterManager getInstance() {
-        return INSTANCE;
+    public ServiceCounter getOrCreate(URI uri) {
+        return counter.computeIfAbsent(getServiceKey(uri), n -> new ServiceCounter(n, timer));
     }
 
-    public Counter getCounter(String endpoint, ServiceRequest request) {
-        URI uri = URI.builder().host(request.getService()).path(request.getPath()).build()
-                .parameters(KEY_SERVICE_GROUP, request.getGroup(), KEY_SERVICE_METHOD, request.getMethod());
-        return getCounter(endpoint, uri.getUri());
+    public ServiceCounter get(URI uri) {
+        return counter.get(getServiceKey(uri));
     }
 
-    public Counter getCounter(String endpoint, String uri) {
-        return endpoint == null || uri == null
-                ? null
-                : METHOD_COUNTER.computeIfAbsent(endpoint, s -> new ConcurrentHashMap<>()).computeIfAbsent(uri, s -> new Counter());
-    }
-
-    public void removeCounter(String endpoint) {
-        METHOD_COUNTER.remove(endpoint);
-    }
-
-    public void snapshot() {
-        for (ConcurrentMap<String, Counter> map : METHOD_COUNTER.values()) {
-            for (Counter counter : map.values()) {
-                counter.snapshot();
-            }
-        }
+    private String getServiceKey(URI uri) {
+        String group = uri.getParameter(PolicyId.KEY_SERVICE_GROUP);
+        return group == null || group.isEmpty() ? uri.getHost() : uri.getHost() + "?group=" + group;
     }
 
 }

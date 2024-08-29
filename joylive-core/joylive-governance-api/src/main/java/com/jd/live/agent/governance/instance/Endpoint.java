@@ -46,9 +46,14 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     String KEY_WARMUP = "warmup";
 
     /**
-     * Key for the counter property of the endpoint.
+     * Key for the counter attribute of the endpoint.
      */
     String ATTRIBUTE_COUNTER = "counter";
+
+    /**
+     * Key for the counter attribute of the endpoint.
+     */
+    String ATTRIBUTE_URI = "uri";
 
     /**
      * Default warmup period for the endpoint in milliseconds.

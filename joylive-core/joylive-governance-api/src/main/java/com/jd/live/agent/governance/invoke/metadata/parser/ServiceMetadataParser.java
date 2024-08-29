@@ -2,6 +2,7 @@ package com.jd.live.agent.governance.invoke.metadata.parser;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
@@ -18,6 +19,9 @@ import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
+
+import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
+import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_METHOD;
 
 /**
  * The {@code AbstractServiceMetadataParser} class is responsible for parsing and constructing the metadata
@@ -74,6 +78,8 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
         boolean isWrite = parseWrite(servicePolicy);
+        URI uri = URI.builder().host(serviceName).path(path).build()
+                .parameters(KEY_SERVICE_GROUP, request.getGroup(), KEY_SERVICE_METHOD, request.getMethod());
         return ServiceMetadata.builder().
                 consumer(consumer).
                 serviceConfig(serviceConfig).
@@ -82,6 +88,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                 path(path).
                 method(method).
                 service(service).
+                uri(uri).
                 servicePolicy(servicePolicy).
                 write(isWrite).
                 build();

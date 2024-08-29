@@ -139,8 +139,12 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)
     private ServiceSupervisor serviceSupervisor;
 
+    @Getter
     @Inject
     private Timer timer;
+
+    @Getter
+    private CounterManager counterManager;
 
     private List<String> policyServices;
 
@@ -246,6 +250,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Override
     public void initialize() {
+        counterManager = new CounterManager(timer);
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {
                 if (event.getData().getType() == EventType.AGENT_SERVICE_READY) {
@@ -254,14 +259,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                     warmup();
                 }
             }
-        });
-        addSnapshot();
-    }
-
-    private void addSnapshot() {
-        timer.delay("counter.snapshot", 30000, () -> {
-            CounterManager.getInstance().snapshot();
-            addSnapshot();
         });
     }
 

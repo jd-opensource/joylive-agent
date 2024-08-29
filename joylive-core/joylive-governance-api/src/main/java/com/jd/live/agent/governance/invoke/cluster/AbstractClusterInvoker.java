@@ -101,26 +101,51 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                     endpoint = context.route(invocation, v, null, false);
                     E instance = endpoint;
                     Counter statistic = endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
-                    onStart(cluster, request, instance, statistic);
+                    beginCounter(statistic, v);
+                    onStart(cluster, request, instance);
                     long startTime = System.currentTimeMillis();
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
                         long elapsed = System.currentTimeMillis() - startTime;
                         if (r != null) {
-                            onException(r, request, instance, cluster, invocation, result, statistic, elapsed);
+                            endCounter(statistic, elapsed, false);
+                            onException(r, request, instance, cluster, invocation, result);
                         } else if (o.getThrowable() != null) {
-                            onException(o.getThrowable(), request, instance, cluster, invocation, result, statistic, elapsed);
+                            endCounter(statistic, elapsed, false);
+                            onException(o.getThrowable(), request, instance, cluster, invocation, result);
                         } else {
-                            onSuccess(cluster, invocation, o, request, instance, result, statistic, elapsed);
+                            endCounter(statistic, elapsed, true);
+                            onSuccess(cluster, invocation, o, request, instance, result);
                         }
                     });
                 } catch (Throwable e) {
-                    onException(e, request, endpoint, cluster, invocation, result, null, 0);
+                    onException(e, request, endpoint, cluster, invocation, result);
                 }
             } else {
-                onException(t, request, null, cluster, invocation, result, null, 0);
+                onException(t, request, null, cluster, invocation, result);
             }
         });
         return result;
+    }
+
+    /**
+     * Begins the counter process for an outbound request. This method is called before sending the
+     * request to the endpoints. It checks if the request has timed out for the specified URI and if
+     * so, schedules a timer to clean up the endpoint counters after a 5-second delay. Then, it
+     * attempts to start the counter for the request. If the counter cannot be started because it has
+     * reached the maximum number of active requests, a fault is thrown with a type of LIMIT.
+     *
+     * @param <E>       The type of the endpoint that extends {@link Endpoint}.
+     * @param counter   The counter instance used to track the number of active requests.
+     * @param endpoints The list of endpoint instances to which the request will be sent.
+     */
+    protected <E extends Endpoint> void beginCounter(Counter counter,
+                                                     List<E> endpoints) {
+        if (counter != null) {
+            counter.getService().tryClean(endpoints);
+            if (!counter.begin(0)) {
+                throw FaultType.LIMIT.reject("Has reached the maximum number of active requests.");
+            }
+        }
     }
 
     /**
@@ -134,18 +159,33 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param cluster  The live cluster context in which the invocation is taking place.
      * @param request  The request that is about to be processed.
      * @param instance The endpoint instance to which the request will be sent.
-     * @param counter  A counter instance used to track the number of active requests.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint, T extends Throwable> void onStart(LiveCluster<R, O, E, T> cluster,
                                                                   R request,
-                                                                  E instance,
-                                                                  Counter counter) {
-        if (counter != null && !counter.begin(0)) {
-            request.reject(FaultType.LIMIT, "Has reached the maximum number of active requests.");
-        }
+                                                                  E instance) {
         cluster.onStartRequest(request, instance);
+    }
+
+    /**
+     * Ends the counter and records the result of the operation. This method is called after the
+     * operation has completed, either successfully or with a failure.
+     *
+     * @param counter A counter instance used to track the number of active requests.
+     * @param elapsed The time taken for the operation to complete, in milliseconds.
+     * @param success A flag indicating whether the operation was successful or not.
+     */
+    protected void endCounter(Counter counter,
+                              long elapsed,
+                              boolean success) {
+        if (counter != null) {
+            if (success) {
+                counter.success(elapsed);
+            } else {
+                counter.fail(elapsed);
+            }
+        }
     }
 
     /**
@@ -161,8 +201,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param request    the instance representing the outbound request
      * @param endpoint   the endpoint instance representing the endpoint
      * @param result     the CompletableFuture instance representing the result of an asynchronous computation
-     * @param counter    A counter instance used to track the number of failed invocations.
-     * @param elapsed    The time taken for the invocation in milliseconds.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
@@ -172,12 +210,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                 O response,
                                                 R request,
                                                 E endpoint,
-                                                CompletableFuture<O> result,
-                                                Counter counter,
-                                                long elapsed) {
-        if (counter != null) {
-            counter.success(elapsed);
-        }
+                                                CompletableFuture<O> result) {
         try {
             invocation.onSuccess(endpoint, response);
             cluster.onSuccess(response, request, endpoint);
@@ -206,8 +239,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param result     The {@link CompletableFuture} that should be completed to signal the outcome of the
      *                   invocation. Implementers can complete this future exceptionally or with a default
      *                   response.
-     * @param counter    A counter instance used to track the number of failed invocations.
-     * @param elapsed    The time taken for the invocation in milliseconds.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
@@ -217,12 +248,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   E endpoint,
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
-                                                  CompletableFuture<O> result,
-                                                  Counter counter,
-                                                  long elapsed) {
-        if (counter != null) {
-            counter.fail(elapsed);
-        }
+                                                  CompletableFuture<O> result) {
         O response = cluster.createResponse(throwable, request, endpoint);
         try {
             invocation.onFailure(endpoint, throwable);
