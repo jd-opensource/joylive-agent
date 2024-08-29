@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
@@ -101,8 +102,12 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
     @Override
     public CompletionStage<ReactiveClusterResponse> invoke(ReactiveClusterRequest request, SpringEndpoint endpoint) {
-        ClientRequest newRequest = buildRequest(request, endpoint.getInstance());
-        return request.getNext().exchange(newRequest).map(ReactiveClusterResponse::new).toFuture();
+        try {
+            ClientRequest newRequest = buildRequest(request, endpoint.getInstance());
+            return request.getNext().exchange(newRequest).map(ReactiveClusterResponse::new).toFuture();
+        } catch (Throwable e) {
+            return Futures.future(e);
+        }
     }
 
     @Override

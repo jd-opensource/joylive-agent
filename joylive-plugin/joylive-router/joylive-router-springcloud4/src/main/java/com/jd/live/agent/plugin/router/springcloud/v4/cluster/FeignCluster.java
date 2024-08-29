@@ -40,7 +40,6 @@ import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLo
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -90,14 +89,14 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     @Override
     public CompletionStage<FeignClusterResponse> invoke(FeignClusterRequest request, SpringEndpoint endpoint) {
-        Request req = request.getRequest();
-        String url = LoadBalancerUriTools.reconstructURI(endpoint.getInstance(), request.getURI()).toString();
-        // TODO sticky session
-        req = Request.create(req.httpMethod(), url, req.headers(), req.body(), req.charset(), req.requestTemplate());
         try {
+            Request req = request.getRequest();
+            String url = LoadBalancerUriTools.reconstructURI(endpoint.getInstance(), request.getURI()).toString();
+            // TODO sticky session
+            req = Request.create(req.httpMethod(), url, req.headers(), req.body(), req.charset(), req.requestTemplate());
             feign.Response response = delegate.execute(req, request.getOptions());
             return CompletableFuture.completedFuture(new FeignClusterResponse(response));
-        } catch (IOException e) {
+        } catch (Throwable e) {
             return Futures.future(e);
         }
     }

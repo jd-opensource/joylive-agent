@@ -31,12 +31,14 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -136,6 +138,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)
     private ServiceSupervisor serviceSupervisor;
+
+    @Inject
+    private Timer timer;
 
     private List<String> policyServices;
 
@@ -249,6 +254,14 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                     warmup();
                 }
             }
+        });
+        addSnapshot();
+    }
+
+    private void addSnapshot() {
+        timer.delay("counter.snapshot", 30000, () -> {
+            CounterManager.getInstance().snapshot();
+            addSnapshot();
         });
     }
 

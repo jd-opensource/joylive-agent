@@ -21,6 +21,9 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.counter.Counter;
+import com.jd.live.agent.governance.invoke.counter.CounterManager;
+import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -102,13 +105,21 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 try {
                     endpoint = context.route(invocation, v, null, false);
                     E instance = endpoint;
-                    cluster.onStartRequest(request, instance);
+                    long startTime = System.currentTimeMillis();
+                    Counter cnt = CounterManager.getInstance().getCounter(instance.getId(), invocation.getRequest());
+                    if (!cnt.begin(0)) {
+                        request.reject(FaultType.LIMIT, "Has reached the maximum number of active requests.");
+                    }
+                    onStart(cluster, request, instance);
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
                         if (r != null) {
+                            cnt.fail(System.currentTimeMillis() - startTime);
                             onException(r, request, instance, cluster, invocation, result);
                         } else if (o.getThrowable() != null) {
+                            cnt.fail(System.currentTimeMillis() - startTime);
                             onException(o.getThrowable(), request, instance, cluster, invocation, result);
                         } else {
+                            cnt.success(System.currentTimeMillis() - startTime);
                             onSuccess(cluster, invocation, o, request, instance, result);
                         }
                     });
@@ -120,6 +131,14 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             }
         });
         return result;
+    }
+
+    protected <R extends OutboundRequest,
+            O extends OutboundResponse,
+            E extends Endpoint, T extends Throwable> void onStart(LiveCluster<R, O, E, T> cluster,
+                                                                  R request,
+                                                                  E instance) {
+        cluster.onStartRequest(request, instance);
     }
 
     /**

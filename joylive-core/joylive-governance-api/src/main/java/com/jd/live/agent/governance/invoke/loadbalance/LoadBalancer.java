@@ -41,6 +41,11 @@ public interface LoadBalancer {
     int ORDER_ROUND_ROBIN = ORDER_RANDOM_WEIGHT + 1;
 
     /**
+     * Order value for shortest-response strategy.
+     */
+    int ORDER_SHORTEST_RESPONSE = ORDER_ROUND_ROBIN + 1;
+
+    /**
      * Chooses an endpoint from the list based on the invocation.
      *
      * @param <T>        the type of the endpoint

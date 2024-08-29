@@ -155,7 +155,10 @@ public class URI {
     public String getUri() {
         if (url == null) {
             StringBuilder sb = new StringBuilder(128);
-            sb.append(schema).append("://").append(host);
+            if (schema != null) {
+                sb.append(schema);
+            }
+            sb.append(host);
             if (port != null) {
                 sb.append(":").append(port);
             }

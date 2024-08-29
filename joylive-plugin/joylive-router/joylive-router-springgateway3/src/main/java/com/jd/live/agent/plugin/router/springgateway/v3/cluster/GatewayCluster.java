@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
@@ -94,8 +95,12 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
-        Mono<Void> mono = request.getChain().filter(request.getExchange());
-        return mono.toFuture().thenApply(v -> new GatewayClusterResponse(request.getExchange().getResponse()));
+        try {
+            Mono<Void> mono = request.getChain().filter(request.getExchange());
+            return mono.toFuture().thenApply(v -> new GatewayClusterResponse(request.getExchange().getResponse()));
+        } catch (Throwable e) {
+            return Futures.future(e);
+        }
     }
 
     @Override
