@@ -78,8 +78,13 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
         boolean isWrite = parseWrite(servicePolicy);
-        URI uri = URI.builder().host(serviceName).path(path).build()
-                .parameters(KEY_SERVICE_GROUP, request.getGroup(), KEY_SERVICE_METHOD, request.getMethod());
+        URI uri = URI.builder().host(serviceName).path(path).build();
+        if (serviceGroup != null && !serviceGroup.isEmpty()) {
+            uri = uri.parameters(KEY_SERVICE_GROUP, serviceGroup, KEY_SERVICE_METHOD, method);
+        } else {
+            uri = uri.parameters(KEY_SERVICE_METHOD, method);
+        }
+
         return ServiceMetadata.builder().
                 consumer(consumer).
                 serviceConfig(serviceConfig).
