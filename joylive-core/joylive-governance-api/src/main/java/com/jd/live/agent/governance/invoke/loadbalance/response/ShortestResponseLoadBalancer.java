@@ -73,6 +73,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         for (int i = 0; i < length; i++) {
             T endpoint = endpoints.get(i);
             Counter counter = CounterManager.getInstance().getCounter(endpoint.getId(), uri);
+            endpoint.setAttribute(Endpoint.ATTRIBUTE_COUNTER, counter);
 
             // Calculate the estimated response time from the product of active connections and succeeded average
             // elapsed time.

@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.counter.Counter;
-import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -36,10 +35,6 @@ import java.util.concurrent.CompletionStage;
  * Abstract implementation of {@link ClusterInvoker} that manages the invocation of services
  * across a cluster of endpoints. This class provides a common framework for routing requests,
  * handling failures, and integrating with different cluster strategies.
- * <p>
- * Implementations must define how exceptions are handled by overriding the
- * {@link #onException(Throwable, OutboundRequest, Endpoint, LiveCluster, OutboundInvocation, CompletableFuture)}
- * method.
  */
 public abstract class AbstractClusterInvoker implements ClusterInvoker {
 
@@ -105,39 +100,51 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 try {
                     endpoint = context.route(invocation, v, null, false);
                     E instance = endpoint;
+                    Counter statistic = endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
+                    onStart(cluster, request, instance, statistic);
                     long startTime = System.currentTimeMillis();
-                    Counter cnt = CounterManager.getInstance().getCounter(instance.getId(), invocation.getRequest());
-                    if (!cnt.begin(0)) {
-                        request.reject(FaultType.LIMIT, "Has reached the maximum number of active requests.");
-                    }
-                    onStart(cluster, request, instance);
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
+                        long elapsed = System.currentTimeMillis() - startTime;
                         if (r != null) {
-                            cnt.fail(System.currentTimeMillis() - startTime);
-                            onException(r, request, instance, cluster, invocation, result);
+                            onException(r, request, instance, cluster, invocation, result, statistic, elapsed);
                         } else if (o.getThrowable() != null) {
-                            cnt.fail(System.currentTimeMillis() - startTime);
-                            onException(o.getThrowable(), request, instance, cluster, invocation, result);
+                            onException(o.getThrowable(), request, instance, cluster, invocation, result, statistic, elapsed);
                         } else {
-                            cnt.success(System.currentTimeMillis() - startTime);
-                            onSuccess(cluster, invocation, o, request, instance, result);
+                            onSuccess(cluster, invocation, o, request, instance, result, statistic, elapsed);
                         }
                     });
                 } catch (Throwable e) {
-                    onException(e, request, endpoint, cluster, invocation, result);
+                    onException(e, request, endpoint, cluster, invocation, result, null, 0);
                 }
             } else {
-                onException(t, request, null, cluster, invocation, result);
+                onException(t, request, null, cluster, invocation, result, null, 0);
             }
         });
         return result;
     }
 
+    /**
+     * Handles the start of an invocation process. This method is called before the actual invocation
+     * takes place. Subclasses can override this method to perform additional setup or initialization.
+     *
+     * @param <R>      The type of the outbound request that extends {@link OutboundRequest}.
+     * @param <O>      The type of the outbound response that extends {@link OutboundResponse}.
+     * @param <E>      The type of the endpoint that extends {@link Endpoint}.
+     * @param <T>      The type of the throwable that extends {@link Throwable}.
+     * @param cluster  The live cluster context in which the invocation is taking place.
+     * @param request  The request that is about to be processed.
+     * @param instance The endpoint instance to which the request will be sent.
+     * @param counter  A counter instance used to track the number of active requests.
+     */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint, T extends Throwable> void onStart(LiveCluster<R, O, E, T> cluster,
                                                                   R request,
-                                                                  E instance) {
+                                                                  E instance,
+                                                                  Counter counter) {
+        if (counter != null && !counter.begin(0)) {
+            request.reject(FaultType.LIMIT, "Has reached the maximum number of active requests.");
+        }
         cluster.onStartRequest(request, instance);
     }
 
@@ -154,6 +161,8 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param request    the instance representing the outbound request
      * @param endpoint   the endpoint instance representing the endpoint
      * @param result     the CompletableFuture instance representing the result of an asynchronous computation
+     * @param counter    A counter instance used to track the number of failed invocations.
+     * @param elapsed    The time taken for the invocation in milliseconds.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
@@ -163,7 +172,12 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                 O response,
                                                 R request,
                                                 E endpoint,
-                                                CompletableFuture<O> result) {
+                                                CompletableFuture<O> result,
+                                                Counter counter,
+                                                long elapsed) {
+        if (counter != null) {
+            counter.success(elapsed);
+        }
         try {
             invocation.onSuccess(endpoint, response);
             cluster.onSuccess(response, request, endpoint);
@@ -192,6 +206,8 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param result     The {@link CompletableFuture} that should be completed to signal the outcome of the
      *                   invocation. Implementers can complete this future exceptionally or with a default
      *                   response.
+     * @param counter    A counter instance used to track the number of failed invocations.
+     * @param elapsed    The time taken for the invocation in milliseconds.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
@@ -201,7 +217,12 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   E endpoint,
                                                   LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
-                                                  CompletableFuture<O> result) {
+                                                  CompletableFuture<O> result,
+                                                  Counter counter,
+                                                  long elapsed) {
+        if (counter != null) {
+            counter.fail(elapsed);
+        }
         O response = cluster.createResponse(throwable, request, endpoint);
         try {
             invocation.onFailure(endpoint, throwable);

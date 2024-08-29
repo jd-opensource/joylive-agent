@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.instance;
 
+import com.jd.live.agent.bootstrap.util.Attributes;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.core.util.tag.Label;
@@ -27,7 +28,7 @@ import java.util.List;
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
  * Endpoints are fundamental entities that can represent services, nodes, or instances within a system.
  */
-public interface Endpoint extends Matcher<TagCondition> {
+public interface Endpoint extends Matcher<TagCondition>, Attributes {
 
     /**
      * Key for the timestamp property of the endpoint.
@@ -43,6 +44,11 @@ public interface Endpoint extends Matcher<TagCondition> {
      * Key for the warmup period property of the endpoint.
      */
     String KEY_WARMUP = "warmup";
+
+    /**
+     * Key for the counter property of the endpoint.
+     */
+    String ATTRIBUTE_COUNTER = "counter";
 
     /**
      * Default warmup period for the endpoint in milliseconds.

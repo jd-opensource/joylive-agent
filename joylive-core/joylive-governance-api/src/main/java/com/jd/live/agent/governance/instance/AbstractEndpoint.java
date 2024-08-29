@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.instance;
 
+import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
@@ -23,7 +24,7 @@ import com.jd.live.agent.governance.request.ServiceRequest;
  * various properties. This class uses {@link UnsafeLazyObject} to lazily cache the values
  * of the properties obtained from the {@link Endpoint} interface.
  */
-public abstract class AbstractEndpoint implements Endpoint {
+public abstract class AbstractEndpoint extends AbstractAttributes implements Endpoint {
 
     private String liveSpaceId;
 
