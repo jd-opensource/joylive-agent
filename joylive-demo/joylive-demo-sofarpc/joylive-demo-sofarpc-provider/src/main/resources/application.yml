@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: sofarpc-provider
+com:
+  alipay:
+    sofa:
+      rpc:
+        registry-address: nacos://${NACOS_ADDR}/${NACOS_NAMESPACE}
+        bind-network-interface: en0
+
+
+logging:
+  level:
+    com.alipay.sofa.rpc: DEBUG
