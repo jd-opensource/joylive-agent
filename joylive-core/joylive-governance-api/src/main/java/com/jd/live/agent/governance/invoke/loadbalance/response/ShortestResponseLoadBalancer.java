@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.counter.Counter;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
+import com.jd.live.agent.governance.invoke.counter.EndpointCounter;
 import com.jd.live.agent.governance.invoke.counter.ServiceCounter;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
@@ -72,11 +73,14 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         ServiceRequest request = invocation.getRequest();
         URI uri = invocation.getServiceMetadata().getUri();
         ServiceCounter serviceCounter = counterManager.getOrCreate(uri);
+        long accessTime = System.currentTimeMillis();
         // Filter out all the shortest response invokers
         for (int i = 0; i < length; i++) {
             T endpoint = endpoints.get(i);
 
-            Counter counter = serviceCounter.getOrCreate(endpoint.getId(), uri);
+            EndpointCounter endpointCounter = serviceCounter.getOrCreate(endpoint.getId());
+            endpointCounter.setAccessTime(accessTime);
+            Counter counter = endpointCounter.getOrCreate(uri);
             endpoint.setAttribute(Endpoint.ATTRIBUTE_COUNTER, counter);
 
             // Calculate the estimated response time from the product of active connections and succeeded average

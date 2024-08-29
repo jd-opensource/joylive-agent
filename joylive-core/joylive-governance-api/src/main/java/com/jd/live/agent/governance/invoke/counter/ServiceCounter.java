@@ -15,10 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.counter;
 
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 
 import java.util.HashSet;
@@ -37,6 +35,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ServiceCounter {
 
+    private static final int DELAY_CLEAN = 1000;
+
+    private static final long CLEAN_INTERVAL = 30000L;
+
+    private static final int KEEP_TIME = 10000;
+
+    private static final int SNAPSHOT_INTERVAL = 20000;
+
+    private static final int SNAPSHOT_SPAN = 5000;
+
     @Getter
     private final String name;
 
@@ -44,7 +52,7 @@ public class ServiceCounter {
 
     private long cleanTime;
 
-    private final Map<String, Map<String, Counter>> counters = new ConcurrentHashMap<>();
+    private final Map<String, EndpointCounter> counters = new ConcurrentHashMap<>();
 
     private final AtomicBoolean clean = new AtomicBoolean(false);
 
@@ -56,16 +64,14 @@ public class ServiceCounter {
     }
 
     /**
-     * Returns the Counter instance associated with the specified endpoint and URI, creating a new one if it doesn't
+     * Returns the Counter instance associated with the specified endpoint, creating a new one if it doesn't
      * already exist.
      *
      * @param endpoint The endpoint for which to retrieve the Counter.
-     * @param uri       The URI for which to retrieve the Counter.
      * @return The Counter instance.
      */
-    public Counter getOrCreate(String endpoint, URI uri) {
-        return counters.computeIfAbsent(endpoint, e -> new ConcurrentHashMap<>())
-                .computeIfAbsent(getMethodKey(uri), n -> new Counter(this));
+    public EndpointCounter getOrCreate(String endpoint) {
+        return counters.computeIfAbsent(endpoint, e -> new EndpointCounter(e, this));
     }
 
     /**
@@ -75,9 +81,9 @@ public class ServiceCounter {
      * @param endpoints The list of current endpoints for the service.
      */
     public void tryClean(List<? extends Endpoint> endpoints) {
-        if (System.currentTimeMillis() - cleanTime >= 30000L && clean.compareAndSet(false, true)) {
+        if (System.currentTimeMillis() - cleanTime >= CLEAN_INTERVAL && clean.compareAndSet(false, true)) {
             cleanTime = System.currentTimeMillis();
-            timer.delay("counter-clean-" + name, 1000, () -> {
+            timer.delay("counter-clean-" + name, DELAY_CLEAN, () -> {
                 clean(endpoints);
                 cleanTime = System.currentTimeMillis();
                 clean.set(false);
@@ -98,9 +104,11 @@ public class ServiceCounter {
                 exists.add(endpoint.getId());
             }
         }
-        for (String endpoint : counters.keySet()) {
-            if (!exists.contains(endpoint)) {
-                counters.remove(endpoint);
+        long time = System.currentTimeMillis();
+        for (Map.Entry<String, EndpointCounter> entry : counters.entrySet()) {
+            EndpointCounter counter = entry.getValue();
+            if (!exists.contains(entry.getKey()) && time - counter.getAccessTime() > KEEP_TIME) {
+                counters.remove(entry.getKey());
             }
         }
     }
@@ -110,8 +118,8 @@ public class ServiceCounter {
      * delay between 20 and 30 seconds.
      */
     private void scheduleSnapshot() {
-        int delay = 20000 + ThreadLocalRandom.current().nextInt(10000);
-        timer.delay("counter.snapshot." + name, delay, () -> {
+        int delay = SNAPSHOT_INTERVAL + ThreadLocalRandom.current().nextInt(SNAPSHOT_SPAN);
+        timer.delay("counter-snapshot-" + name, delay, () -> {
             snapshot();
             scheduleSnapshot();
         });
@@ -121,16 +129,8 @@ public class ServiceCounter {
      * Takes a snapshot of all counters for this service.
      */
     private void snapshot() {
-        for (Map<String, Counter> methodMap : counters.values()) {
-            for (Counter counter : methodMap.values()) {
-                counter.snapshot();
-            }
+        for (EndpointCounter counter : counters.values()) {
+            counter.snapshot();
         }
     }
-
-    private String getMethodKey(URI uri) {
-        String method = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
-        return method == null || method.isEmpty() ? uri.getPath() : uri.getPath() + "?method=" + method;
-    }
-
 }
