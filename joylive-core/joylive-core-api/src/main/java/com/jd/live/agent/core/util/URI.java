@@ -156,7 +156,7 @@ public class URI {
         if (url == null) {
             StringBuilder sb = new StringBuilder(128);
             if (schema != null) {
-                sb.append(schema);
+                sb.append(schema).append("://");
             }
             sb.append(host);
             if (port != null) {
