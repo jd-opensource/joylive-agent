@@ -77,6 +77,16 @@ public interface Constants {
     String LABEL_REGION = LABEL_LIVE_PREFIX + "region";
 
     /**
+     * Constant for the instance ip.
+     */
+    String LABEL_INSTANCE_IP = LABEL_LIVE_PREFIX + "instance-ip";
+
+    /**
+     * Constant for the live agent version.
+     */
+    String LABEL_AGENT_VERSION = LABEL_LIVE_PREFIX + "agent-version";
+
+    /**
      * Prefix for lane-related constants.
      */
     String LABEL_LANE_PREFIX = "x-lane-";
@@ -115,15 +125,6 @@ public interface Constants {
      * Constant for the service consumer.
      */
     String LABEL_SERVICE_CONSUMER = LABEL_SERVICE_PREFIX + "consumer";
-    /**
-     * Constant for the instance ip.
-     */
-    String LABEL_INSTANCE_IP = LABEL_SERVICE_PREFIX + "instance-ip";
-
-    /**
-     * Constant for the live agent version.
-     */
-    String LABEL_AGENT_VERSION = LABEL_SERVICE_PREFIX + "agent-version";
 
     /**
      * Default value for labels.
