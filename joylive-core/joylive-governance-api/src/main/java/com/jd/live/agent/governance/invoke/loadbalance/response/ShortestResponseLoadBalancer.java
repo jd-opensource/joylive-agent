@@ -16,10 +16,7 @@
 package com.jd.live.agent.governance.invoke.loadbalance.response;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.counter.Counter;
@@ -38,7 +35,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * A load balancer that selects the endpoint with the shortest response time for an outbound request.
  * It is from org.apache.dubbo.rpc.cluster.loadbalance.ShortestResponseLoadBalance
  */
-@Injectable
 @Extension(value = ShortestResponseLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_SHORTEST_RESPONSE)
 public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
 
@@ -46,9 +42,6 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
      * The name assigned to this load balancer.
      */
     public static final String LOAD_BALANCER_NAME = "SHORTEST_RESPONSE";
-
-    @Inject
-    private Timer timer;
 
     @Override
     protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
