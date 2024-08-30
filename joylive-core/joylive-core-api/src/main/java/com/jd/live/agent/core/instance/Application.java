@@ -180,6 +180,31 @@ public class Application {
     }
 
     /**
+     * Applies sync metadata to the application based on its properties.
+     *
+     * @param consumer label consumer
+     */
+    public void sync(BiConsumer<String, String> consumer) {
+        if (consumer != null) {
+            accept(consumer, Constants.LABEL_APPLICATION, name);
+            accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
+            if (location != null) {
+                accept(consumer, Constants.LABEL_REGION, location.getRegion());
+                accept(consumer, Constants.LABEL_ZONE, location.getZone());
+                accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
+                accept(consumer, Constants.LABEL_UNIT, location.getUnit());
+                accept(consumer, Constants.LABEL_CELL, location.getCell());
+                accept(consumer, Constants.LABEL_LANE, location.getLane());
+                accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
+                accept(consumer, Constants.LABEL_INSTANCE_IP, location.getIp());
+            }
+            if (meta != null) {
+                accept(consumer, Constants.LABEL_AGENT_VERSION, meta.get(Constants.LABEL_AGENT_VERSION));
+            }
+        }
+    }
+
+    /**
      * Helper method for applying labels.
      *
      * @param consumer label consumer

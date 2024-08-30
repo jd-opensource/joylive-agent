@@ -115,6 +115,15 @@ public interface Constants {
      * Constant for the service consumer.
      */
     String LABEL_SERVICE_CONSUMER = LABEL_SERVICE_PREFIX + "consumer";
+    /**
+     * Constant for the instance ip.
+     */
+    String LABEL_INSTANCE_IP = LABEL_SERVICE_PREFIX + "instance-ip";
+
+    /**
+     * Constant for the live agent version.
+     */
+    String LABEL_AGENT_VERSION = LABEL_SERVICE_PREFIX + "agent-version";
 
     /**
      * Default value for labels.
