@@ -142,7 +142,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
         try {
             SofaResponse response = cluster.filterChain(endpoint.getProvider(), request.getRequest());
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
-        } catch (SofaRpcException e) {
+        } catch (Throwable e) {
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(e, this::isRetryable));
         }
     }

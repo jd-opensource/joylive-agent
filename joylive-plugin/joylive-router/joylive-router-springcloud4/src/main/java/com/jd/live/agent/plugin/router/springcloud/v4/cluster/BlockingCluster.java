@@ -121,12 +121,12 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     @Override
     public CompletionStage<BlockingClusterResponse> invoke(BlockingClusterRequest request, SpringEndpoint endpoint) {
-        LoadBalancerRequest<ClientHttpResponse> lbRequest = requestFactory.createRequest(request.getRequest(), request.getBody(), request.getExecution());
         // TODO sticky session
         try {
+            LoadBalancerRequest<ClientHttpResponse> lbRequest = requestFactory.createRequest(request.getRequest(), request.getBody(), request.getExecution());
             ClientHttpResponse response = lbRequest.apply(endpoint.getInstance());
             return CompletableFuture.completedFuture(new BlockingClusterResponse(response));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return Futures.future(e);
         }
     }

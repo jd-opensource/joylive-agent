@@ -141,7 +141,7 @@ public class Dubbo3Cluster implements LiveCluster<DubboOutboundRequest, DubboOut
             DubboOutboundResponse response = result.hasException() ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
                     : new DubboOutboundResponse(result);
             return CompletableFuture.completedFuture(response);
-        } catch (RpcException e) {
+        } catch (Throwable e) {
             return CompletableFuture.completedFuture(new DubboOutboundResponse(e, this::isRetryable));
         }
     }
