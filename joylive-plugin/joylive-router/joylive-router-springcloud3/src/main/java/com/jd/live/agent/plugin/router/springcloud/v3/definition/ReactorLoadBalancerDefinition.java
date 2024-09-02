@@ -38,6 +38,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactorLoadBal
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ReactorLoadBalancerDefinition.TYPE_REACTOR_LOAD_BALANCER)
+@ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ReactorLoadBalancerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_REACTOR_LOAD_BALANCER = "org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer";

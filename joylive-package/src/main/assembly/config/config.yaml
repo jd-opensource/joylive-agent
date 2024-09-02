@@ -74,6 +74,9 @@ agent:
       type: ${CONFIG_SERVICE_API_TYPE:file}
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
       headers: ${CONFIG_SERVICE_API_HEADERS}
+      interval: 5000
+      timeout: 3000
+      initialTimeout: 20000
   watchdog:
     enabled: true
     delay: 5000
@@ -134,10 +137,10 @@ agent:
         expireTime: 60000
     live:
       topics: ${CONFIG_LIVE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:true}
+      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:false}
     lane:
       topics: ${CONFIG_LANE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:true}
+      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:false}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
       phevos:
@@ -207,6 +210,7 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
           - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
           - com.jd.live.agent.core.thread.NamedThreadFactory
+          - com.jd.jr.sgm.client.disruptor.LogEventFactory
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$

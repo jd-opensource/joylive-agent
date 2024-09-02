@@ -44,7 +44,8 @@ public class UnitGroup {
      * A map that associates cell strings with CellGroup objects. Each CellGroup contains a collection
      * of Endpoint objects that share the same cell value within this unit.
      */
-    private final Map<String, CellGroup> cells;
+    @Getter
+    private final Map<String, CellGroup> cellGroups;
 
     private CellGroup lastCellGroup;
 
@@ -55,7 +56,7 @@ public class UnitGroup {
      */
     public UnitGroup(String unit) {
         this.unit = Objects.requireNonNull(unit, "Unit cannot be null");
-        this.cells = new HashMap<>(5);
+        this.cellGroups = new HashMap<>(5);
     }
 
     /**
@@ -81,7 +82,7 @@ public class UnitGroup {
             endpoints.add(endpoint);
             String cell = endpoint.getCell();
             if (lastCellGroup == null || !lastCellGroup.getCell().equals(cell)) {
-                lastCellGroup = cells.computeIfAbsent(cell, c -> new CellGroup(unit, c));
+                lastCellGroup = cellGroups.computeIfAbsent(cell, c -> new CellGroup(unit, c));
             }
             lastCellGroup.add(endpoint);
         }
@@ -94,16 +95,16 @@ public class UnitGroup {
      * @return the CellGroup for the specified cell, or null if not found
      */
     public CellGroup getCell(String cell) {
-        return cell == null ? null : cells.get(cell);
+        return cell == null ? null : cellGroups.get(cell);
     }
 
     /**
      * Returns the total number of cell groups within this unit group.
      *
-     * @return the size of the cells map
+     * @return the size of the cellGroups map
      */
     public int getCells() {
-        return cells.size();
+        return cellGroups.size();
     }
 
     /**
@@ -134,7 +135,7 @@ public class UnitGroup {
         if (cell == null) {
             return null;
         } else {
-            CellGroup group = cells.get(cell);
+            CellGroup group = cellGroups.get(cell);
             return group == null ? null : group.size();
         }
     }

@@ -1,4 +1,0 @@
-com.jd.live.agent.plugin.transmission.springcloud.v3.definition.WebHandlerDecoratorDefinition
-com.jd.live.agent.plugin.transmission.springcloud.v3.definition.HandshakeWebSocketServiceDefinition
-com.jd.live.agent.plugin.transmission.springcloud.v3.definition.DefaultExchangeFunctionDefinition
-com.jd.live.agent.plugin.transmission.springcloud.v3.definition.ClientHttpRequestFactoryDefinition

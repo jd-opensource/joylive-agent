@@ -68,6 +68,7 @@ import com.jd.live.agent.core.util.shutdown.Shutdown;
 import com.jd.live.agent.core.util.shutdown.ShutdownHookAdapter;
 import com.jd.live.agent.core.util.time.TimeScheduler;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.core.util.type.Artifact;
 import com.jd.live.agent.core.util.version.JVM;
 import com.jd.live.agent.core.util.version.VersionExpression;
 
@@ -77,6 +78,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -474,6 +476,7 @@ public class Bootstrap implements AgentLifecycle {
         injector.inject(app);
         AppService appService = app.getService();
         Location location = app.getLocation();
+        Map<String, String> meta = app.getMeta();
         if (location == null) {
             location = new Location();
             app.setLocation(location);
@@ -482,6 +485,11 @@ public class Bootstrap implements AgentLifecycle {
             appService = new AppService();
             app.setService(appService);
         }
+        if (meta == null) {
+            meta = new HashMap<>();
+            app.setMeta(meta);
+        }
+        setAgentVersion();
         location.setIp(Ipv4.getLocalIp());
         location.setHost(Ipv4.getLocalHost());
         setProperty(Constants.LABEL_INSTANCE_ID, app.getInstance());
@@ -613,6 +621,17 @@ public class Bootstrap implements AgentLifecycle {
         logger.info(String.format("Starting application name=%s, instance=%s, location=[region=%s,zone=%s,unit=%s,cell=%s,lane=%s]",
                 application.getName(), application.getInstance(), location.getRegion(), location.getZone(),
                 location.getUnit(), location.getCell(), location.getLane()));
+    }
+
+    private void setAgentVersion() {
+        try {
+            CodeSource codeSource = this.getClass().getProtectionDomain().getCodeSource();
+            Artifact artifact = new Artifact(codeSource.getLocation().getPath());
+            String agentVersion = artifact.getVersion();
+            application.getMeta().put(Constants.LABEL_AGENT_VERSION, agentVersion);
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
     }
 
     private boolean supportEnhance() {

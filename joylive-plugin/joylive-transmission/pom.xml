@@ -26,7 +26,7 @@
         <module>joylive-transmission-dubbo2.7</module>
         <module>joylive-transmission-dubbo2.6</module>
         <module>joylive-transmission-sofarpc</module>
-        <module>joylive-transmission-springcloud3</module>
+        <module>joylive-transmission-springweb5</module>
         <module>joylive-transmission-thread</module>
         <module>joylive-transmission-nettyhttp1</module>
         <module>joylive-transmission-pulsar3</module>

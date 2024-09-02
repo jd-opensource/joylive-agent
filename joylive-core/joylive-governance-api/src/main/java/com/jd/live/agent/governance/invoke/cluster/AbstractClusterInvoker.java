@@ -21,6 +21,8 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.counter.Counter;
+import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -33,10 +35,6 @@ import java.util.concurrent.CompletionStage;
  * Abstract implementation of {@link ClusterInvoker} that manages the invocation of services
  * across a cluster of endpoints. This class provides a common framework for routing requests,
  * handling failures, and integrating with different cluster strategies.
- * <p>
- * Implementations must define how exceptions are handled by overriding the
- * {@link #onException(Throwable, OutboundRequest, Endpoint, LiveCluster, OutboundInvocation, CompletableFuture)}
- * method.
  */
 public abstract class AbstractClusterInvoker implements ClusterInvoker {
 
@@ -102,13 +100,20 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 try {
                     endpoint = context.route(invocation, v, null, false);
                     E instance = endpoint;
-                    cluster.onStartRequest(request, instance);
+                    Counter statistic = endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
+                    beginCounter(statistic, v);
+                    onStart(cluster, request, instance);
+                    long startTime = System.currentTimeMillis();
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
+                        long elapsed = System.currentTimeMillis() - startTime;
                         if (r != null) {
+                            endCounter(statistic, elapsed, false);
                             onException(r, request, instance, cluster, invocation, result);
                         } else if (o.getThrowable() != null) {
+                            endCounter(statistic, elapsed, false);
                             onException(o.getThrowable(), request, instance, cluster, invocation, result);
                         } else {
+                            endCounter(statistic, elapsed, true);
                             onSuccess(cluster, invocation, o, request, instance, result);
                         }
                     });
@@ -120,6 +125,67 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             }
         });
         return result;
+    }
+
+    /**
+     * Begins the counter process for an outbound request. This method is called before sending the
+     * request to the endpoints. It checks if the request has timed out for the specified URI and if
+     * so, schedules a timer to clean up the endpoint counters after a 5-second delay. Then, it
+     * attempts to start the counter for the request. If the counter cannot be started because it has
+     * reached the maximum number of active requests, a fault is thrown with a type of LIMIT.
+     *
+     * @param <E>       The type of the endpoint that extends {@link Endpoint}.
+     * @param counter   The counter instance used to track the number of active requests.
+     * @param endpoints The list of endpoint instances to which the request will be sent.
+     */
+    protected <E extends Endpoint> void beginCounter(Counter counter,
+                                                     List<E> endpoints) {
+        if (counter != null) {
+            counter.getService().tryClean(endpoints);
+            if (!counter.begin(0)) {
+                throw FaultType.LIMIT.reject("Has reached the maximum number of active requests.");
+            }
+        }
+    }
+
+    /**
+     * Handles the start of an invocation process. This method is called before the actual invocation
+     * takes place. Subclasses can override this method to perform additional setup or initialization.
+     *
+     * @param <R>      The type of the outbound request that extends {@link OutboundRequest}.
+     * @param <O>      The type of the outbound response that extends {@link OutboundResponse}.
+     * @param <E>      The type of the endpoint that extends {@link Endpoint}.
+     * @param <T>      The type of the throwable that extends {@link Throwable}.
+     * @param cluster  The live cluster context in which the invocation is taking place.
+     * @param request  The request that is about to be processed.
+     * @param instance The endpoint instance to which the request will be sent.
+     */
+    protected <R extends OutboundRequest,
+            O extends OutboundResponse,
+            E extends Endpoint, T extends Throwable> void onStart(LiveCluster<R, O, E, T> cluster,
+                                                                  R request,
+                                                                  E instance) {
+        cluster.onStartRequest(request, instance);
+    }
+
+    /**
+     * Ends the counter and records the result of the operation. This method is called after the
+     * operation has completed, either successfully or with a failure.
+     *
+     * @param counter A counter instance used to track the number of active requests.
+     * @param elapsed The time taken for the operation to complete, in milliseconds.
+     * @param success A flag indicating whether the operation was successful or not.
+     */
+    protected void endCounter(Counter counter,
+                              long elapsed,
+                              boolean success) {
+        if (counter != null) {
+            if (success) {
+                counter.success(elapsed);
+            } else {
+                counter.fail(elapsed);
+            }
+        }
     }
 
     /**

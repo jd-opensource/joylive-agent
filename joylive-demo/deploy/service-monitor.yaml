@@ -9,9 +9,10 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: monitor
     app.kubernetes.io/system: brolly
-    inputType: k8s
+    integration: tpaas-multilive
+    inputType: integrations
     release: brolly
-  name: multilive-service-monitor
+  name: tpaas-multilive
 spec:
   endpoints:
     - port: prometheus

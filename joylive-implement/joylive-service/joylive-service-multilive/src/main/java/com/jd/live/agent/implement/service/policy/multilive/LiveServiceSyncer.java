@@ -27,6 +27,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.service.AbstractService;
@@ -84,6 +85,9 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
 
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
+
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
@@ -320,6 +324,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
      */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
+        application.sync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
     }

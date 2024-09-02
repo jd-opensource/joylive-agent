@@ -1,5 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
@@ -62,6 +63,8 @@ public class ServiceMetadata {
      * The service policy applicable to this invocation.
      */
     private ServicePolicy servicePolicy;
+
+    private URI uri;
 
     public UnitPolicy getUnitPolicy() {
         ServiceLivePolicy livePolicy = getServiceLivePolicy();

@@ -14,17 +14,27 @@
     <modules>
         <module>joylive-demo-dubbo2.7-consumer</module>
         <module>joylive-demo-dubbo2.7-provider</module>
+
     </modules>
 
     <properties>
-        <apache-dubbo.version>2.7.23</apache-dubbo.version>
+        <spring.cloud.version>2021.0.9</spring.cloud.version>
         <!-- dubbo2.7 support low spring boot version -->
         <spring-boot.version>2.2.9.RELEASE</spring-boot.version>
+        <apache-dubbo.version>2.7.23</apache-dubbo.version>
         <fastjson.version>1.2.83</fastjson.version>
+
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>

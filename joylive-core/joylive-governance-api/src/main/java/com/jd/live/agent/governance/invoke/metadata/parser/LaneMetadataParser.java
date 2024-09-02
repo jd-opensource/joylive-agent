@@ -86,7 +86,7 @@ public class LaneMetadataParser implements LaneParser {
         Cargo cargo = RequestContext.getCargo(Constants.LABEL_LANE_SPACE_ID);
         String laneSpaceId = cargo == null ? null : Converts.getString(cargo.getFirstValue());
         laneSpaceId = laneSpaceId != null ? laneSpaceId : application.getLocation().getLaneSpaceId();
-        return governancePolicy.getLaneSpace(laneSpaceId);
+        return governancePolicy == null ? null : governancePolicy.getLaneSpace(laneSpaceId);
     }
 
     /**

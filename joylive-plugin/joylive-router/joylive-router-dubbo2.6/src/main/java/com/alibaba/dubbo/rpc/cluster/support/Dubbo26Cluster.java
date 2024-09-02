@@ -151,7 +151,7 @@ public class Dubbo26Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
                     ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
                     : new DubboOutboundResponse(result);
             return CompletableFuture.completedFuture(response);
-        } catch (RpcException e) {
+        } catch (Throwable e) {
             return CompletableFuture.completedFuture(new DubboOutboundResponse(e, this::isRetryable));
         }
     }

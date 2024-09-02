@@ -2,6 +2,7 @@ package com.jd.live.agent.governance.invoke.metadata.parser;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
@@ -18,6 +19,9 @@ import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
+
+import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
+import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_METHOD;
 
 /**
  * The {@code AbstractServiceMetadataParser} class is responsible for parsing and constructing the metadata
@@ -74,6 +78,13 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
         boolean isWrite = parseWrite(servicePolicy);
+        URI uri = URI.builder().host(serviceName).path(path).build();
+        if (serviceGroup != null && !serviceGroup.isEmpty()) {
+            uri = uri.parameters(KEY_SERVICE_GROUP, serviceGroup, KEY_SERVICE_METHOD, method);
+        } else {
+            uri = uri.parameters(KEY_SERVICE_METHOD, method);
+        }
+
         return ServiceMetadata.builder().
                 consumer(consumer).
                 serviceConfig(serviceConfig).
@@ -82,6 +93,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                 path(path).
                 method(method).
                 service(service).
+                uri(uri).
                 servicePolicy(servicePolicy).
                 write(isWrite).
                 build();
@@ -133,7 +145,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      * @return the retrieved service object
      */
     protected Service parseService(String serviceName) {
-        return governancePolicy.getService(serviceName);
+        return governancePolicy == null ? null : governancePolicy.getService(serviceName);
     }
 
     /**
@@ -275,7 +287,9 @@ public abstract class ServiceMetadataParser implements ServiceParser {
 
         @Override
         protected String parseServiceName() {
-            return null;
+            String result = application.getService().getName();
+            result = result != null ? result : request.getService();
+            return result;
         }
 
         @Override

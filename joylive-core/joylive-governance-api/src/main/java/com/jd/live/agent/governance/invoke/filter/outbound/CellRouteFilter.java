@@ -38,7 +38,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -67,28 +69,42 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
      * Forwards an OutboundInvocation to a specific RouteTarget based on various service policies and configurations.
      *
      * @param invocation The OutboundInvocation to be forwarded.
-     * @param target The RouteTarget where the invocation should be directed.
+     * @param target     The RouteTarget where the invocation should be directed.
      * @return true if the routing decision was successful and endpoints were set, false otherwise.
      */
     private boolean forward(OutboundInvocation<?> invocation, RouteTarget target) {
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
         ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         CellPolicy cellPolicy = livePolicy == null ? null : livePolicy.getCellPolicy();
+
         boolean localFirst = cellPolicy == CellPolicy.PREFER_LOCAL_CELL || cellPolicy == null && serviceConfig.isLocalFirst();
         Function<String, Integer> thresholdFunc = !localFirst ? null : (
                 cellPolicy == CellPolicy.PREFER_LOCAL_CELL
                         ? livePolicy::getCellThreshold
                         : serviceConfig::getCellFailoverThreshold);
-        Unit unit = target.getUnit();
-        if (unit == null) {
+        if (target.getUnit() == null) {
             // unit policy is none.
-            if (localFirst && !target.isEmpty()) {
-                filterLocal(target, liveMetadata, thresholdFunc);
-            }
-            return true;
+            return routeAny(invocation, target, localFirst, thresholdFunc);
         }
+        return routeUnit(invocation, target, localFirst, thresholdFunc);
+    }
+
+    /**
+     * Routes an outbound invocation to a suitable unit.
+     *
+     * @param invocation    The outbound invocation containing metadata for the election.
+     * @param target        The {@code RouteTarget} containing the endpoints to be filtered.
+     * @param localFirst    Indicates whether the local unit should be preferred for routing.
+     * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
+     *                      those endpoints are preferred.
+     * @return true if the routing decision was successful and endpoints were set, false otherwise.
+     */
+    private boolean routeUnit(OutboundInvocation<?> invocation,
+                              RouteTarget target,
+                              boolean localFirst,
+                              Function<String, Integer> thresholdFunc) {
+        Unit unit = target.getUnit();
         UnitGroup unitGroup = target.getUnitGroup();
         // previous filters may filtrate the endpoints
         unitGroup = unitGroup != null && unitGroup.getEndpoints() == target.getEndpoints() && unitGroup.size() == target.size()
@@ -115,37 +131,75 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
     }
 
     /**
-     * Filters the endpoints in the given {@code RouteTarget} based on their locality to the current unit and cell.
+     * Routes an outbound invocation to suitable endpoints
      *
-     * @param target        The {@code RouteTarget} containing the endpoints to be filtered. If empty or if localFirst is false, no filtering is applied.
-     * @param liveMetadata  The live metadata providing information about the current unit and cell.
+     * @param invocation The outbound invocation containing metadata for the election.
+     * @param target The {@code RouteTarget} containing the endpoints to be filtered.
+     * @param localFirst Indicates whether the local cell or unit should be preferred for routing.
      * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
-     *                      those endpoints are preferred.
+     * those endpoints are preferred.
+     * @return true if the routing decision was successful, false otherwise.
      */
-    private void filterLocal(RouteTarget target,
-                             LiveMetadata liveMetadata,
+    private boolean routeAny(OutboundInvocation<?> invocation,
+                             RouteTarget target,
+                             boolean localFirst,
                              Function<String, Integer> thresholdFunc) {
-        String liveSpaceId = liveMetadata.getLiveSpaceId();
-        Unit currentUnit = liveMetadata.getCurrentUnit();
-        Cell currentCell = liveMetadata.getCurrentCell();
-        if (liveSpaceId != null && currentUnit != null && currentCell != null) {
-            List<Endpoint> cellEndpoints = new ArrayList<>();
-            List<Endpoint> unitEndpoints = new ArrayList<>();
-            for (Endpoint endpoint : target.getEndpoints()) {
-                if (endpoint.isUnit(liveSpaceId, currentUnit.getCode())) {
-                    unitEndpoints.add(endpoint);
-                }
-                if (endpoint.isCell(liveSpaceId, currentUnit.getCode())) {
-                    cellEndpoints.add(endpoint);
-                }
+        LiveMetadata liveMetadata = invocation.getLiveMetadata();
+        Unit preferUnit = localFirst ? liveMetadata.getCurrentUnit() : null;
+        Cell preferCell = localFirst ? liveMetadata.getCurrentCell() : null;
+        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+        if (liveSpace != null) {
+            Set<String> unavailableCells = getUnavailableCells(invocation);
+            if (!unavailableCells.isEmpty()) {
+                target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
             }
-            Integer threshold = thresholdFunc.apply(currentCell.getCode());
-            if (!cellEndpoints.isEmpty() && (threshold == null || threshold <= cellEndpoints.size())) {
-                target.setEndpoints(cellEndpoints);
-            } else if (!unitEndpoints.isEmpty() && (threshold == null || threshold <= unitEndpoints.size())) {
-                target.setEndpoints(unitEndpoints);
+            if (preferCell != null || preferUnit != null) {
+                List<Endpoint> preferCellEndpoints = new ArrayList<>();
+                List<Endpoint> preferUnitEndpoints = new ArrayList<>();
+                for (Endpoint endpoint : target.getEndpoints()) {
+                    if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
+                        preferUnitEndpoints.add(endpoint);
+                    }
+                    if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
+                        preferCellEndpoints.add(endpoint);
+                    }
+                }
+                Integer threshold = preferCell == null ? null : thresholdFunc.apply(preferCell.getCode());
+                if (!preferCellEndpoints.isEmpty() && (threshold == null || threshold <= preferCellEndpoints.size())) {
+                    target.setEndpoints(preferCellEndpoints);
+                } else if (!preferUnitEndpoints.isEmpty() && (threshold == null || threshold <= preferUnitEndpoints.size())) {
+                    target.setEndpoints(preferUnitEndpoints);
+                }
             }
         }
+        return true;
+    }
+
+    /**
+     * Returns a set of cell codes that are not available.
+     *
+     * @param invocation   The outbound invocation containing metadata for the election.
+     * @return A set of cell codes that are not accessible for the given invocation and live metadata.
+     */
+    private Set<String> getUnavailableCells(OutboundInvocation<?> invocation) {
+        Set<String> unavailableCells = new HashSet<>();
+        LiveMetadata liveMetadata = invocation.getLiveMetadata();
+        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+        List<Unit> units = liveSpace == null ? null : liveSpace.getSpec().getUnits();
+        if (units != null) {
+            for (Unit unit : units) {
+                boolean unitAccessible = invocation.isAccessible(unit);
+                if (unit.getCells() != null) {
+                    for (Cell cell : unit.getCells()) {
+                        if (!unitAccessible || !invocation.isAccessible(cell)) {
+                            unavailableCells.add(cell.getCode());
+                        }
+                    }
+                }
+            }
+            // TODO add cell route access mode
+        }
+        return unavailableCells;
     }
 
     /**
@@ -154,10 +208,10 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
      * candidates for the election based on the cell's weight, priority, and instance count.
      * The method also considers local preference and failover thresholds.
      *
-     * @param invocation The outbound invocation containing metadata for the election.
-     * @param unitRoute The route containing cells to be considered as candidates.
-     * @param localFirst A boolean indicating whether local cells should be preferred.
-     * @param unitGroup The group from which to retrieve the size of instances for each cell.
+     * @param invocation            The outbound invocation containing metadata for the election.
+     * @param unitRoute             The route containing cells to be considered as candidates.
+     * @param localFirst            A boolean indicating whether local cells should be preferred.
+     * @param unitGroup             The group from which to retrieve the size of instances for each cell.
      * @param failoverThresholdFunc A function that provides the failover threshold for each cell.
      * @return An Election object representing the sponsored election.
      */
@@ -179,6 +233,7 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
 
         // Iterate through the cells in the unit route.
         for (CellRoute cellRoute : unitRoute.getCells()) {
+            // TODO add cell route access mode
             Cell cell = cellRoute.getCell();
             // Check if the cell is accessible and has a non-empty route.
             if (invocation.isAccessible(cell) && !cellRoute.isEmpty()) {
@@ -353,14 +408,14 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         /**
          * Constructs a new Election with the provided candidates and election parameters.
          *
-         * @param candidates           The list of candidates participating in the election.
-         * @param weights              The total weight of all candidates.
-         * @param instances            The total number of instances across all candidates.
-         * @param winner               The current winner of the election.
+         * @param candidates            The list of candidates participating in the election.
+         * @param weights               The total weight of all candidates.
+         * @param instances             The total number of instances across all candidates.
+         * @param winner                The current winner of the election.
          * @param failoverThresholdFunc A function for determining failover thresholds.
          */
         Election(List<Candidate> candidates, int weights, int instances, Candidate winner,
-                        Function<String, Integer> failoverThresholdFunc) {
+                 Function<String, Integer> failoverThresholdFunc) {
             this.candidates = candidates;
             this.weights = weights;
             this.instances = instances;

@@ -24,17 +24,18 @@ package com.jd.live.agent.bootstrap.exception;
 public class VariableException extends LiveException {
 
     public VariableException() {
+        super(null, null, false, false);
     }
 
     public VariableException(String message) {
-        super(message);
+        super(message, null, false, false);
     }
 
     public VariableException(String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, false);
     }
 
     public VariableException(Throwable cause) {
-        super(cause);
+        super(cause == null ? null : cause.getMessage(), cause, false, false);
     }
 }
