@@ -111,6 +111,7 @@ spec:
             - containerPort: 14268 # Default endpoint for Jaeger HTTP receiver.
             - containerPort: 9411 # Default endpoint for Zipkin receiver.
             - containerPort: 8888  # Default endpoint for querying metrics.
+            - containerPort: 8889  # Default endpoint for Prometheus.
           env:
             - name: MY_POD_IP
               valueFrom:

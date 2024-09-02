@@ -42,7 +42,8 @@ public class EndpointGroup {
      * A map that associates unit strings with UnitGroup objects. Each UnitGroup contains
      * a collection of Endpoint objects that share the same unit value.
      */
-    private final Map<String, UnitGroup> units;
+    @Getter
+    private final Map<String, UnitGroup> unitGroups;
 
     /**
      * Constructs a new EndpointGroup with the specified list of endpoints. The endpoints
@@ -54,14 +55,14 @@ public class EndpointGroup {
     @SuppressWarnings("unchecked")
     public EndpointGroup(List<? extends Endpoint> endpoints) {
         this.endpoints = endpoints == null || endpoints.isEmpty() ? new ArrayList<>() : (List<Endpoint>) endpoints;
-        this.units = new HashMap<>(3);
+        this.unitGroups = new HashMap<>(3);
         UnitGroup last = null;
         String unit;
         for (Endpoint endpoint : this.endpoints) {
             unit = endpoint.getUnit();
             unit = (unit == null) ? Constants.DEFAULT_VALUE : unit;
             if (last == null || !last.getUnit().equals(unit)) {
-                last = units.computeIfAbsent(unit, UnitGroup::new);
+                last = unitGroups.computeIfAbsent(unit, UnitGroup::new);
             }
             last.add(endpoint);
         }
@@ -75,7 +76,7 @@ public class EndpointGroup {
      * @return the UnitGroup for the specified unit, or null if not found
      */
     public UnitGroup getUnitGroup(String unit) {
-        return (unit == null) ? null : units.get(unit);
+        return (unit == null) ? null : unitGroups.get(unit);
     }
 
     /**

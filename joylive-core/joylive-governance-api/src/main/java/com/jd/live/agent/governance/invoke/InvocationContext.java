@@ -22,10 +22,12 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.template.Template;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
@@ -109,6 +111,17 @@ public interface InvocationContext {
      * @return An instance of {@code GovernanceConfig} representing the governance configurations.
      */
     GovernanceConfig getGovernanceConfig();
+
+    /**
+     * Returns a timer instance used for measuring and recording the duration of events within the
+     * system. This timer can be used to track metrics such as request latency, service response times,
+     * or other performance-related measurements.
+     *
+     * @return A timer instance that can be used to measure and record event durations.
+     */
+    Timer getTimer();
+
+    CounterManager getCounterManager();
 
     /**
      * Retrieves a {@link Publisher} that emits {@link TrafficEvent} instances.
@@ -415,6 +428,16 @@ public interface InvocationContext {
         @Override
         public GovernanceConfig getGovernanceConfig() {
             return delegate.getGovernanceConfig();
+        }
+
+        @Override
+        public Timer getTimer() {
+            return delegate.getTimer();
+        }
+
+        @Override
+        public CounterManager getCounterManager() {
+            return delegate.getCounterManager();
         }
 
         @Override

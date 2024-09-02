@@ -46,6 +46,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClust
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
+@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";

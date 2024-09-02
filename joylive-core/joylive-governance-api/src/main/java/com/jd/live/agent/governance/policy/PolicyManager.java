@@ -31,12 +31,14 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -136,6 +138,13 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)
     private ServiceSupervisor serviceSupervisor;
+
+    @Getter
+    @Inject
+    private Timer timer;
+
+    @Getter
+    private CounterManager counterManager;
 
     private List<String> policyServices;
 
@@ -241,6 +250,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Override
     public void initialize() {
+        counterManager = new CounterManager(timer);
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {
                 if (event.getData().getType() == EventType.AGENT_SERVICE_READY) {

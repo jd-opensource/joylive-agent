@@ -24,18 +24,19 @@ import lombok.Getter;
 public class RetryException extends LiveException {
 
     public RetryException() {
+        super(null, null, false, false);
     }
 
     public RetryException(String message) {
-        super(message);
+        super(message, null, false, false);
     }
 
     public RetryException(String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, false);
     }
 
     public RetryException(Throwable cause) {
-        super(cause);
+        super(cause == null ? null : cause.getMessage(), cause, false, false);
     }
 
     public RetryException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {

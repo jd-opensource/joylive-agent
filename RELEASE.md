@@ -1,5 +1,18 @@
 # Release History
 
+## 1.2.0
+
+1. Add spring cloud 2023 support.
+2. Add auth inbound filter
+3. Fixed some general bugs and improved stability.
+
+## 1.1.0
+
+1. Add complete circuit-break policy support.
+2. Add OutboundListener support to refine more governance enhancement pointcuts.
+3. Add rabbitmq, pulsar tag transmission support.
+4. Fixed some general bugs and improved stability.
+
 ## 1.0.0
 
 ## Features

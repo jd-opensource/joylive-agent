@@ -63,7 +63,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return true;
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace liveSpace = policy.getCurrentLiveSpace();
+        LiveSpace liveSpace = policy == null ? null : policy.getCurrentLiveSpace();
         Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
         return local == null || local.getAccessMode().isWriteable();
     }
@@ -123,7 +123,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return isLiveEnabled(topic);
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace space = policy.getCurrentLiveSpace();
+        LiveSpace space = policy == null ? null : policy.getCurrentLiveSpace();
         Unit unit = space == null ? null : space.getCurrentUnit();
         return unit != null;
     }
@@ -137,7 +137,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return isLaneEnabled(topic);
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LaneSpace space = policy.getCurrentLaneSpace();
+        LaneSpace space = policy == null ? null : policy.getCurrentLaneSpace();
         Lane lane = space == null ? null : space.getCurrentLane();
         return lane != null;
     }

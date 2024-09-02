@@ -179,15 +179,22 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @return true if the place is accessible, false otherwise.
      */
     public boolean isAccessible(Place place) {
-        if (place != null) {
-            AccessMode accessMode = place.getAccessMode();
-            accessMode = accessMode == null ? AccessMode.READ_WRITE : accessMode;
-            switch (accessMode) {
-                case READ_WRITE:
-                    return true;
-                case READ:
-                    return !serviceMetadata.isWrite();
-            }
+        return place != null && isAccessible(place.getAccessMode());
+    }
+
+    /**
+     * Checks if the current cell is accessible for the given {@code AccessMode}.
+     *
+     * @param accessMode The desired access mode. If null, it defaults to {@link AccessMode#READ_WRITE}.
+     * @return true if the cell is accessible for the given access mode, false otherwise.
+     */
+    public boolean isAccessible(AccessMode accessMode) {
+        accessMode = accessMode == null ? AccessMode.READ_WRITE : accessMode;
+        switch (accessMode) {
+            case READ_WRITE:
+                return true;
+            case READ:
+                return !serviceMetadata.isWrite();
         }
         return false;
     }

@@ -18,5 +18,6 @@
         <module>joylive-registry-dubbo2.6</module>
         <module>joylive-registry-sofarpc</module>
         <module>joylive-registry-springgateway3</module>
+        <module>joylive-registry-springgateway4</module>
     </modules>
 </project>

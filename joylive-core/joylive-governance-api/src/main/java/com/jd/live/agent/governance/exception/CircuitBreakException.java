@@ -23,18 +23,19 @@ import com.jd.live.agent.bootstrap.exception.LiveException;
 public class CircuitBreakException extends LiveException {
 
     public CircuitBreakException() {
+        super(null, null, false, false);
     }
 
     public CircuitBreakException(String message) {
-        super(message);
+        super(message, null, false, false);
     }
 
     public CircuitBreakException(String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, false);
     }
 
     public CircuitBreakException(Throwable cause) {
-        super(cause);
+        super(cause == null ? null : cause.getMessage(), cause, false, false);
     }
 
     public CircuitBreakException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
