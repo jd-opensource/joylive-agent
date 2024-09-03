@@ -35,6 +35,12 @@
             <artifactId>nacos-client</artifactId>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>sofa-rpc-all</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

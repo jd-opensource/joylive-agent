@@ -56,9 +56,6 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
             binding = @SofaReferenceBinding(bindingType = "bolt"))
     private HelloService helloService;
 
-//    @SofaReference(interfaceType = HelloService.class, jvmFirst = false,
-//            binding = @SofaReferenceBinding(bindingType = "bolt"))
-//    private GenericService genericService;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -76,15 +73,12 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         long status = 0;
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                int remain = (int) (counter++ % 3);
+                int remain = (int) (counter++ % 2);
                 switch (remain) {
                     case 0:
                         doEcho(context);
                         break;
                     case 1:
-//                        doGenericEcho(context);
-                        break;
-                    default:
                         doStatus(context, (status++ % 20) == 0 ? 200 : 500);
                         break;
                 }
@@ -112,15 +106,6 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         output("Invoke result: \n{}", result);
     }
 
-    @SuppressWarnings("unchecked")
-//    private void doGenericEcho(RpcInvokeContext attachment) {
-//        Map<String, Object> result = (Map<String, Object>) genericService.$invoke("echo",
-//                new String[]{"java.lang.String"},
-//                new Object[]{"hello"});
-//        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
-//        addTrace(attachment, response);
-//        output("Generic invoke result: \n{}", response);
-//    }
 
     private void addTrace(RpcInvokeContext context, LiveResponse result) {
         result.addFirst(new LiveTrace(applicationName, LiveLocation.build(),

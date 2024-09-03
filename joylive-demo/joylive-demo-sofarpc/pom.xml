@@ -14,6 +14,7 @@
     <properties>
         <sofaboot-dependencies.version>3.19.0</sofaboot-dependencies.version>
         <nacos-client.version>2.0.3</nacos-client.version>
+        <sofa-rpc.version>5.12.0</sofa-rpc.version>
     </properties>
 
 
