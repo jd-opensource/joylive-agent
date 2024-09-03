@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: sofarpc-consumer
+
+live:
+  live-space-id: v4bEh4kd6Jvu5QBX09qYq-qlbcs
+  rule-id: 1003
+  uid: unit1
+  lane-space-id:
+  lane-code:
+
+com:
+  alipay:
+    sofa:
+      rpc:
+        registry-address: nacos://${NACOS_ADDR}/${NACOS_NAMESPACE}
+
+logging:
+  level:
+    com.alipay.sofa.rpc: DEBUG
