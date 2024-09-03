@@ -187,26 +187,17 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         LiveSpace liveSpace = liveMetadata.getLiveSpace();
         List<Unit> units = liveSpace == null ? null : liveSpace.getSpec().getUnits();
 
-        HashSet<String> restrictedCell = new HashSet<>();
-        UnitRule rule = liveMetadata.getUnitRule();
-        if (rule != null && rule.getUnitRoutes() != null) {
-            for (UnitRoute unitRoute : rule.getUnitRoutes()) {
-                if (unitRoute != null && unitRoute.getCells() != null) {
-                    for (CellRoute cellRoute : unitRoute.getCells()) {
-                        if (cellRoute != null && !invocation.isAccessible(cellRoute.getAccessMode())) {
-                            restrictedCell.add(cellRoute.getCode());
-                        }
-                    }
-                }
-            }
-        }
-
         if (units != null) {
+            UnitRule rule = liveMetadata.getUnitRule();
             for (Unit unit : units) {
+                UnitRoute unitRoute = rule == null ? null : rule.getUnitRoute(unit.getCode());
                 boolean unitAccessible = invocation.isAccessible(unit);
                 if (unit.getCells() != null) {
                     for (Cell cell : unit.getCells()) {
-                        if (!unitAccessible || !invocation.isAccessible(cell) || restrictedCell.contains(cell.getCode())) {
+                        CellRoute cellRoute = unitRoute == null ? null : unitRoute.getCellRoute(cell.getCode());
+                        if (!unitAccessible
+                                || !invocation.isAccessible(cell)
+                                || cellRoute != null && (cellRoute.isEmpty() || !invocation.isAccessible(cellRoute.getAccessMode()))) {
                             unavailableCells.add(cell.getCode());
                         }
                     }
