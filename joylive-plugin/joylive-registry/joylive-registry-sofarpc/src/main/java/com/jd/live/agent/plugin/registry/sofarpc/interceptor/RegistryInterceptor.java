@@ -42,7 +42,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
     @Override
     protected ServiceInstance getInstance(MethodContext ctx) {
-        ProviderConfig<?> config = ((ProviderBootstrap<?>) ctx.getTarget()).getProviderConfig();
+        ProviderConfig<?> config  = ctx.getArgument(0);
         if (config.isRegister()) {
             List<ServiceProtocol> protocols = new ArrayList<>();
             List<ServerConfig> serverConfigs = config.getServer();
