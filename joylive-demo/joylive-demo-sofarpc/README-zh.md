@@ -22,5 +22,9 @@
 ➜  joylive-agent git:(main) ✗ jenv global  17      
 ```
 
+# 启动时需要的环境变量
+![img_1.png](img_1.png)
+![img.png](img.png)
+
 # 接下来
 查看 [快速开始](./docs/cn/quickstart.md)
