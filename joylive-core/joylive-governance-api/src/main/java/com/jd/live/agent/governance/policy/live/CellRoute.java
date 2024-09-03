@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy.live;
 
 import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -47,6 +48,10 @@ public class CellRoute {
 
     @JsonAlias("ratio")
     private int weight;
+
+    @Getter
+    @Setter
+    private AccessMode accessMode = AccessMode.READ_WRITE;
 
     private transient Cell cell;
 

@@ -186,18 +186,32 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         LiveSpace liveSpace = liveMetadata.getLiveSpace();
         List<Unit> units = liveSpace == null ? null : liveSpace.getSpec().getUnits();
+
+        HashSet<String> restrictedCell = new HashSet<>();
+        UnitRule rule = liveMetadata.getUnitRule();
+        if (rule != null && rule.getUnitRoutes() != null) {
+            for (UnitRoute unitRoute : rule.getUnitRoutes()) {
+                if (unitRoute != null && unitRoute.getCells() != null) {
+                    for (CellRoute cellRoute : unitRoute.getCells()) {
+                        if (cellRoute != null && !invocation.isAccessible(cellRoute.getAccessMode())) {
+                            restrictedCell.add(cellRoute.getCode());
+                        }
+                    }
+                }
+            }
+        }
+
         if (units != null) {
             for (Unit unit : units) {
                 boolean unitAccessible = invocation.isAccessible(unit);
                 if (unit.getCells() != null) {
                     for (Cell cell : unit.getCells()) {
-                        if (!unitAccessible || !invocation.isAccessible(cell)) {
+                        if (!unitAccessible || !invocation.isAccessible(cell) || restrictedCell.contains(cell.getCode())) {
                             unavailableCells.add(cell.getCode());
                         }
                     }
                 }
             }
-            // TODO add cell route access mode
         }
         return unavailableCells;
     }
@@ -233,10 +247,9 @@ public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
 
         // Iterate through the cells in the unit route.
         for (CellRoute cellRoute : unitRoute.getCells()) {
-            // TODO add cell route access mode
             Cell cell = cellRoute.getCell();
             // Check if the cell is accessible and has a non-empty route.
-            if (invocation.isAccessible(cell) && !cellRoute.isEmpty()) {
+            if (invocation.isAccessible(cell) && !cellRoute.isEmpty() && invocation.isAccessible(cellRoute.getAccessMode())) {
                 // Get the instance count for the cell from the unit group, if available.
                 Integer instance = unitGroup == null ? null : unitGroup.getSize(cellRoute.getCode());
                 instance = instance == null ? 0 : instance;
