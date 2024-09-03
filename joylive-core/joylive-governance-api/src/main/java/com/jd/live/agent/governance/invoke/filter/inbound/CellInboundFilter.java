@@ -27,6 +27,10 @@ import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
+import com.jd.live.agent.governance.policy.live.Cell;
+import com.jd.live.agent.governance.policy.live.Unit;
+import com.jd.live.agent.governance.policy.live.UnitRoute;
+import com.jd.live.agent.governance.policy.live.UnitRule;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_ACCESSIBLE;
@@ -62,13 +66,25 @@ public class CellInboundFilter implements InboundFilter {
     }
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
-        LiveMetadata metadata = invocation.getLiveMetadata();
-        if (metadata.getUnitRule() != null && !invocation.isAccessible(metadata.getCurrentCell())) {
-            // TODO add cell route access mode
-            return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));
-        } else {
+        LiveMetadata liveMetadata = invocation.getLiveMetadata();
+        Unit centerUnit = liveMetadata.getCenterUnit();
+        Cell currentCell = liveMetadata.getCurrentCell();
+        UnitRule unitRule = liveMetadata.getUnitRule();
+        if (unitRule == null) {
             return new CellAction(CellActionType.FORWARD, null);
         }
+        if (currentCell == null || centerUnit == null) {
+            return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));
+        }
+        UnitRoute unitRoute = unitRule.getUnitRoute(centerUnit.getCode());
+        if (
+                invocation.isAccessible(currentCell) &&
+                        unitRoute.getCellRoute(currentCell.getCode()) != null &&
+                        invocation.isAccessible(unitRoute.getCellRoute(currentCell.getCode()).getAccessMode())
+        ) {
+            return new CellAction(CellActionType.FORWARD, null);
+        }
+        return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));
     }
 
 }

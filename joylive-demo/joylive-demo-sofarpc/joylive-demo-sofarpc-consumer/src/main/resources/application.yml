@@ -1,6 +1,3 @@
-#server:
-#  port: 8081
-
 spring:
   application:
     name: sofarpc-consumer
