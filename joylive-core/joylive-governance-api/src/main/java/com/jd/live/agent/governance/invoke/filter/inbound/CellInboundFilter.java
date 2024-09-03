@@ -27,10 +27,7 @@ import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
-import com.jd.live.agent.governance.policy.live.Cell;
-import com.jd.live.agent.governance.policy.live.Unit;
-import com.jd.live.agent.governance.policy.live.UnitRoute;
-import com.jd.live.agent.governance.policy.live.UnitRule;
+import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_ACCESSIBLE;
@@ -67,21 +64,16 @@ public class CellInboundFilter implements InboundFilter {
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        Unit centerUnit = liveMetadata.getCenterUnit();
+        Unit currentUnit = liveMetadata.getCurrentUnit();
         Cell currentCell = liveMetadata.getCurrentCell();
         UnitRule unitRule = liveMetadata.getUnitRule();
         if (unitRule == null) {
             return new CellAction(CellActionType.FORWARD, null);
         }
-        if (currentCell == null || centerUnit == null) {
-            return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));
-        }
-        UnitRoute unitRoute = unitRule.getUnitRoute(centerUnit.getCode());
-        if (
-                invocation.isAccessible(currentCell) &&
-                        unitRoute.getCellRoute(currentCell.getCode()) != null &&
-                        invocation.isAccessible(unitRoute.getCellRoute(currentCell.getCode()).getAccessMode())
-        ) {
+        UnitRoute unitRoute = currentUnit == null ? null : unitRule.getUnitRoute(currentUnit.getCode());
+        CellRoute cellRoute = unitRoute == null || currentCell == null ? null : unitRoute.getCellRoute(currentCell.getCode());
+        if (invocation.isAccessible(currentCell) && (cellRoute == null
+                || !cellRoute.isEmpty() && invocation.isAccessible(cellRoute.getAccessMode()))) {
             return new CellAction(CellActionType.FORWARD, null);
         }
         return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));

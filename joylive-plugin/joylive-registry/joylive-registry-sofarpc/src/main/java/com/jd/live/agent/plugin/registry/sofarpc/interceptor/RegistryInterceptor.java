@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 
-import com.alipay.sofa.rpc.bootstrap.ProviderBootstrap;
 import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.alipay.sofa.rpc.config.ServerConfig;
 import com.alipay.sofa.rpc.registry.utils.RegistryUtils;
