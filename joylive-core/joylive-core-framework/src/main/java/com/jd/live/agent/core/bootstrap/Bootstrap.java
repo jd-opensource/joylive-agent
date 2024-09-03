@@ -489,7 +489,7 @@ public class Bootstrap implements AgentLifecycle {
             meta = new HashMap<>();
             app.setMeta(meta);
         }
-        setAgentVersion();
+        setAgentVersion(app);
         location.setIp(Ipv4.getLocalIp());
         location.setHost(Ipv4.getLocalHost());
         setProperty(Constants.LABEL_INSTANCE_ID, app.getInstance());
@@ -623,12 +623,12 @@ public class Bootstrap implements AgentLifecycle {
                 location.getUnit(), location.getCell(), location.getLane()));
     }
 
-    private void setAgentVersion() {
+    private void setAgentVersion(Application app) {
         try {
             CodeSource codeSource = this.getClass().getProtectionDomain().getCodeSource();
             Artifact artifact = new Artifact(codeSource.getLocation().getPath());
             String agentVersion = artifact.getVersion();
-            application.getMeta().put(Constants.LABEL_AGENT_VERSION, agentVersion);
+            app.getMeta().put(Constants.LABEL_AGENT_VERSION, agentVersion);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
