@@ -49,7 +49,7 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
     private PolicySupplier policySupplier;
 
     public DiscoveryClientDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_DISCOVERY_CLIENT);
+        this.matcher = () -> MatcherBuilder.named(TYPE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(policySupplier)),

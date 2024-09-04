@@ -61,7 +61,9 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_FAILBACK_REGISTRY);
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_FAILBACK_REGISTRY)
+                .and(MatcherBuilder.exists("com.alibaba.dubbo.registry.redis.RedisRegistry",
+                        "redis.clients.jedis.Jedis", "org.apache.commons.pool2.impl.GenericObjectPoolConfig"));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER)

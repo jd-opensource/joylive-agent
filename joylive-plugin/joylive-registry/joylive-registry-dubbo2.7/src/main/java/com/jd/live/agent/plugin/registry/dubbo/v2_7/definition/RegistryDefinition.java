@@ -29,6 +29,8 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.RegistryInterceptor;
 
+import java.util.*;
+
 /**
  * RegistryDefinition
  */
@@ -61,6 +63,17 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public RegistryDefinition() {
+        Map<String, Set<String>> conditions = new HashMap<>();
+        conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulServiceDiscovery", s -> new HashSet<>())
+                .add("com.ecwid.consul.v1.ConsulClient");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.eureka.EurekaServiceDiscovery", s -> new HashSet<>())
+                .add("com.netflix.discovery.EurekaClient");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.nacos.NacosServiceDiscovery", s -> new HashSet<>())
+                .add("com.alibaba.nacos.api.naming.pojo.Instance");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.sofa.SofaRegistryServiceDiscovery", s -> new HashSet<>())
+                .addAll(Arrays.asList("com.alipay.sofa.registry.client.api.Publisher", "com.google.gson.Gson"));
+        conditions.computeIfAbsent("org.apache.dubbo.registry.zookeeper.ZookeeperServiceDiscovery", s -> new HashSet<>())
+                .addAll(Arrays.asList("org.apache.curator.framework.CuratorFramework", "org.apache.zookeeper.KeeperException"));
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
