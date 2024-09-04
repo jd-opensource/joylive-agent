@@ -29,6 +29,8 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.sofarpc.interceptor.RegistryInterceptor;
 
+import java.util.*;
+
 /**
  * RegistryDefinition
  */
@@ -60,7 +62,18 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_REGISTRY);
+        Map<String, Set<String>> conditions = new HashMap<>();
+        conditions.computeIfAbsent("com.alipay.sofa.rpc.registry.zk.ZookeeperRegistry", s -> new HashSet<>())
+                .addAll(Arrays.asList("org.apache.curator.RetryPolicy", "org.apache.zookeeper.CreateMode"));
+        conditions.computeIfAbsent("com.alipay.sofa.rpc.registry.sofa.SofaRegistry", s -> new HashSet<>())
+                .add("com.alipay.sofa.registry.client.api.Subscriber");
+        conditions.computeIfAbsent("com.alipay.sofa.rpc.registry.polaris.PolarisRegistry", s -> new HashSet<>())
+                .add("com.tencent.polaris.api.core.ProviderAPI");
+        conditions.computeIfAbsent("com.alipay.sofa.rpc.registry.nacos.NacosRegistry", s -> new HashSet<>())
+                .add("com.alibaba.nacos.api.naming.NamingService");
+        conditions.computeIfAbsent("com.alipay.sofa.rpc.registry.kubernetes.KubernetesRegistry", s -> new HashSet<>())
+                .add("io.fabric8.kubernetes.api.model.Pod");
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_REGISTRY).and(MatcherBuilder.exists(conditions));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER)

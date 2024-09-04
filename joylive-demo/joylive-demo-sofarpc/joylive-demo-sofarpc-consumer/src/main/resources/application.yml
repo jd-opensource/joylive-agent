@@ -1,6 +1,11 @@
 spring:
   application:
     name: sofarpc-consumer
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    default-property-inclusion: non_null
+    serialization:
+      indent_output: true
 
 live:
   live-space-id: v4bEh4kd6Jvu5QBX09qYq-qlbcs
@@ -13,8 +18,7 @@ com:
   alipay:
     sofa:
       rpc:
-        registry-address: nacos://${NACOS_ADDR}/${NACOS_NAMESPACE}
-
+        registry-address: nacos://${NACOS_ADDR}?username=${NACOS_USERNAME}&password=${NACOS_PASSWORD}&namespace=${NACOS_NAMESPACE}
 logging:
   level:
-    com.alipay.sofa.rpc: DEBUG
+    com.alipay.sofa.rpc: INFO

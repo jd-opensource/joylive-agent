@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.rpc.client;
+package com.jd.live.agent.plugin.router.sofarpc.cluster;
 
+import com.alipay.sofa.rpc.client.*;
 import com.alipay.sofa.rpc.common.RpcConstants;
+import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.rpc.core.exception.RpcErrorType;
@@ -32,6 +34,9 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.core.util.type.ClassDesc;
+import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -81,6 +86,16 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
 
     private final ObjectParser parser;
 
+    private final ClassDesc classDesc;
+
+    private final FieldDesc consumerConfigField;
+
+    private final FieldDesc connectionHolderField;
+
+    private final FieldDesc destroyedField;
+
+    private final Method fieldChainMethod;
+
     /**
      * The identifier used for stickiness. This ID is used to route requests to
      * the same provider consistently.
@@ -90,6 +105,12 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     public SofaRpcCluster(AbstractCluster cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
+        this.classDesc = ClassUtils.describe(cluster.getClass());
+        this.consumerConfigField = classDesc.getFieldList().getField("consumerConfig");
+        this.connectionHolderField = classDesc.getFieldList().getField("connectionHolder");
+        this.destroyedField = classDesc.getFieldList().getField("destroyed");
+        this.fieldChainMethod = classDesc.getMethodList().getMethods("filterChain").get(0);
+        fieldChainMethod.setAccessible(true);
     }
 
     @Override
@@ -140,7 +161,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     @Override
     public CompletionStage<SofaRpcOutboundResponse> invoke(SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
         try {
-            SofaResponse response = cluster.filterChain(endpoint.getProvider(), request.getRequest());
+            SofaResponse response = (SofaResponse) fieldChainMethod.invoke(cluster, endpoint.getProvider(), request.getRequest());
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
         } catch (Throwable e) {
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(e, this::isRetryable));
@@ -186,7 +207,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
 
     @Override
     public boolean isDestroyed() {
-        return cluster.destroyed;
+        return (Boolean) destroyedField.get(cluster);
     }
 
     @Override
@@ -305,7 +326,8 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
      * @return {@code true} if there is an active connection to the provider; {@code false} otherwise
      */
     private boolean isConnected(ProviderInfo providerInfo) {
-        ClientTransport lastTransport = cluster.connectionHolder.getAvailableClientTransport(providerInfo);
+        ConnectionHolder connectionHolder = (ConnectionHolder) connectionHolderField.get(cluster);
+        ClientTransport lastTransport = connectionHolder.getAvailableClientTransport(providerInfo);
         return lastTransport != null && lastTransport.isAvailable();
     }
 
@@ -316,7 +338,8 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
      * @return The number of retries configured for the specified method
      */
     private int getRetries(String methodName) {
-        return cluster.consumerConfig.getMethodRetries(methodName);
+        ConsumerConfig<?> config = (ConsumerConfig<?>) consumerConfigField.get(cluster);
+        return config.getMethodRetries(methodName);
     }
 
     /**

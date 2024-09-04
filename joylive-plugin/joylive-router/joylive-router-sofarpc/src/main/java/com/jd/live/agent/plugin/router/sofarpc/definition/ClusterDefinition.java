@@ -61,4 +61,5 @@ public class ClusterDefinition extends PluginDefinitionAdapter {
                 )
         };
     }
+
 }

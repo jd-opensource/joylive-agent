@@ -22,6 +22,7 @@ import lombok.Getter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -89,7 +90,10 @@ public class ClassDesc {
         };
         this.fieldList = new LazyObject<>(() -> new FieldList(type, supplier));
         this.constructorList = new LazyObject<>(() -> new ConstructorList(type));
-        this.methodList = new LazyObject<>(() -> new MethodList(type, name -> fieldList.get().getField(name) != null));
+        this.methodList = new LazyObject<>(() -> new MethodList(type, name -> {
+            FieldDesc desc = fieldList.get().getField(name);
+            return desc != null && !Modifier.isFinal(desc.getField().getModifiers());
+        }));
         this.genericType = new LazyObject<>(() -> new GenericType(type));
         this.codebase = new LazyObject<>(this::loadCodeBase);
         this.artifact = new LazyObject<>(() -> new Artifact(codebase.get()));
