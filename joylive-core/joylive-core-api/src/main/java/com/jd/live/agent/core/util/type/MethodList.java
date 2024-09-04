@@ -19,10 +19,7 @@ import lombok.Getter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -59,42 +56,23 @@ public class MethodList {
     public MethodList(Class<?> type, Predicate<String> predicate) {
         this.type = type;
         if (!type.isPrimitive() && !type.isArray()) {
-            Method[] allMethods = type.getDeclaredMethods();
-            setter = new HashMap<>(allMethods.length / 2);
-            getter = new HashMap<>(allMethods.length / 2);
-            methods = new ArrayList<>(allMethods.length);
-            methodNames = new HashMap<>(allMethods.length);
+            methods = new ArrayList<>();
+            TypeScanner.build(type).scan(cls -> Collections.addAll(methods, cls.getDeclaredMethods()));
+            int size = methods.size();
+            setter = new HashMap<>(size / 2);
+            getter = new HashMap<>(size / 2);
+            methodNames = new HashMap<>(size);
             String name;
-            for (Method method : allMethods) {
-                if (!method.getDeclaringClass().equals(Object.class)) {
-                    methods.add(method);
-                    List<Method> methodList = methodNames.computeIfAbsent(method.getName(), s -> new ArrayList<>());
-                    methodList.add(method);
-                    if (!Modifier.isStatic(method.getModifiers())) {
-                        name = method.getName();
-                        if (name.startsWith(GETTER_PREFIX)) {
-                            if (name.length() > 3 && method.getParameterCount() == 0
-                                    && void.class != method.getReturnType()) {
-                                name = name.substring(3, 4).toLowerCase() + name.substring(4);
-                                if ((predicate == null || predicate.test(name))) {
-                                    getter.put(name, method);
-                                }
-                            }
-                        } else if (name.startsWith(IS_PREFIX)) {
-                            if (name.length() > 2 && method.getParameterCount() == 0
-                                    && boolean.class == method.getReturnType()) {
-                                name = name.substring(2, 3).toLowerCase() + name.substring(3);
-                                if ((predicate == null || predicate.test(name))) {
-                                    getter.put(name, method);
-                                }
-                            }
-                        } else if (name.startsWith(SETTER_PREFIX)) {
-                            if (name.length() > 3 && method.getParameterCount() == 1) {
-                                name = name.substring(3, 4).toLowerCase() + name.substring(4);
-                                if ((predicate == null || predicate.test(name))) {
-                                    setter.put(name, method);
-                                }
-                            }
+            for (Method method : methods) {
+                methodNames.computeIfAbsent(method.getName(), s -> new ArrayList<>()).add(method);
+                PropertyMethod propertyMethod = PropertyMethod.getPropertyMethod(method);
+                if (propertyMethod != null) {
+                    name = propertyMethod.getName(method);
+                    if ((predicate == null || predicate.test(name))) {
+                        if (propertyMethod.isGetter()) {
+                            getter.put(name, method);
+                        } else {
+                            setter.put(name, method);
                         }
                     }
                 }
@@ -117,4 +95,116 @@ public class MethodList {
     public List<Method> getMethods(final String name) {
         return methodNames.get(name);
     }
+
+    /**
+     * An enum representing the three types of property methods: getter, is, and setter.
+     *
+     * @author Your Name
+     */
+    protected enum PropertyMethod {
+
+        /**
+         * Represents a getter method.
+         */
+        GETTER {
+            @Override
+            public boolean match(Method method) {
+                return !Modifier.isStatic(method.getModifiers())
+                        && method.getName().startsWith(GETTER_PREFIX)
+                        && method.getName().length() > 3
+                        && method.getParameterCount() == 0
+                        && void.class != method.getReturnType();
+            }
+
+            @Override
+            public String getName(Method method) {
+                String name = method.getName();
+                return name.substring(3, 4).toLowerCase() + name.substring(4);
+            }
+        },
+        /**
+         * Represents an 'is' method.
+         */
+        IS_GETTER {
+            @Override
+            public boolean match(Method method) {
+                return !Modifier.isStatic(method.getModifiers())
+                        && method.getName().startsWith(IS_PREFIX)
+                        && method.getName().length() > 2
+                        && method.getParameterCount() == 0
+                        && boolean.class == method.getReturnType();
+            }
+
+            @Override
+            public String getName(Method method) {
+                String name = method.getName();
+                return name.substring(2, 3).toLowerCase() + name.substring(3);
+            }
+        },
+        /**
+         * Represents a setter method.
+         */
+        SETTER {
+            @Override
+            public boolean isGetter() {
+                return false;
+            }
+
+            @Override
+            public boolean match(Method method) {
+                return !Modifier.isStatic(method.getModifiers())
+                        && method.getName().startsWith(SETTER_PREFIX)
+                        && method.getName().length() > 3
+                        && method.getParameterCount() == 1;
+            }
+
+            @Override
+            public String getName(Method method) {
+                String name = method.getName();
+                return name.substring(3, 4).toLowerCase() + name.substring(4);
+            }
+        };
+
+        /**
+         * Checks if the given method is a getter method.
+         *
+         * @return true if the method is a getter, false otherwise
+         */
+        public boolean isGetter() {
+            return true;
+        }
+
+        /**
+         * Checks if the given method matches the criteria for this property method type.
+         *
+         * @param method the method to check
+         * @return true if the method matches, false otherwise
+         */
+        public abstract boolean match(Method method);
+
+        /**
+         * Extracts the property name from the given method.
+         *
+         * @param method the method to extract the property name from
+         * @return the property name
+         */
+        public abstract String getName(Method method);
+
+        /**
+         * Gets the PropertyMethod instance that corresponds to the given method.
+         *
+         * @param method the method to find the PropertyMethod for
+         * @return the PropertyMethod instance, or null if no match is found
+         */
+        public static PropertyMethod getPropertyMethod(Method method) {
+            for (PropertyMethod propertyMethod : PropertyMethod.values()) {
+                if (propertyMethod.match(method)) {
+                    return propertyMethod;
+                }
+            }
+            return null;
+        }
+
+    }
+
 }

@@ -22,6 +22,7 @@ import com.jd.live.agent.core.bytekit.type.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -97,6 +98,30 @@ public class MatcherBuilder {
                 new AnnotationTypeMatcher<>(new NameMatcher<>(
                         new StringMatcher(annotation, OperationMode.EQUALS_FULLY)))));
     }
+
+    /**
+     * Creates a matcher that matches elements which have at least one field or method with the specified name and types.
+     *
+     * @param type  The name of the type to check for existence.
+     * @param types The names of the fields or methods to check for existence.
+     * @param <T>   The type of the element to be matched.
+     * @return A matcher that matches elements which have at least one field or method with the specified name and types.
+     */
+    public static <T extends TypeDesc> Junction<T> exists(String type, String... types) {
+        return new ExistMatcher<>(type, types);
+    }
+
+    /**
+     * Creates a matcher that matches elements which have fields or methods with the specified names and types.
+     *
+     * @param types A map of names to sets of types to check for existence.
+     * @param <T>   The type of the element to be matched.
+     * @return A matcher that matches elements which have fields or methods with the specified names and types.
+     */
+    public static <T extends TypeDesc> Junction<T> exists(Map<String, Set<String>> types) {
+        return new ExistMatcher<>(types);
+    }
+
 
     /**
      * Creates a matcher that matches elements that are subtypes of the specified type.

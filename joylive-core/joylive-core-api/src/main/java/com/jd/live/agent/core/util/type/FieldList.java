@@ -62,7 +62,7 @@ public class FieldList {
             });
             fieldNames = new HashMap<>(fields.size());
             for (FieldDesc field : fields) {
-                fieldNames.put(field.getField().getName(), field);
+                fieldNames.putIfAbsent(field.getField().getName(), field);
             }
         } else {
             fieldNames = new HashMap<>();

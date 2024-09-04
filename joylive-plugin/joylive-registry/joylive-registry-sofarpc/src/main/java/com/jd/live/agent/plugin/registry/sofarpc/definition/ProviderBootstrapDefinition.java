@@ -20,13 +20,13 @@ import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
-import com.jd.live.agent.core.plugin.definition.PluginDefinition;
-import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.registry.sofarpc.interceptor.ProviderBootstrapInterceptor;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * ProviderBootstrapDefinition
@@ -39,7 +39,7 @@ import com.jd.live.agent.plugin.registry.sofarpc.interceptor.ProviderBootstrapIn
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnClass(ProviderBootstrapDefinition.TYPE_PROVIDER_BOOTSTRAP)
-public class ProviderBootstrapDefinition extends PluginDefinitionAdapter {
+public class ProviderBootstrapDefinition extends PluginDefinitionAdapter implements PluginImporter {
 
     protected static final String TYPE_PROVIDER_BOOTSTRAP = "com.alipay.sofa.rpc.bootstrap.ProviderBootstrap";
 
@@ -52,12 +52,20 @@ public class ProviderBootstrapDefinition extends PluginDefinitionAdapter {
     private PolicySupplier policySupplier;
 
     public ProviderBootstrapDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_PROVIDER_BOOTSTRAP);
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_PROVIDER_BOOTSTRAP).
+                and(MatcherBuilder.exists("com.alipay.sofa.rpc.bootstrap.dubbo.DubboProviderBootstrap", "org.apache.dubbo.config.ServiceConfig"));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXPORT).
                                 and(MatcherBuilder.arguments(0)),
                         () -> new ProviderBootstrapInterceptor(application, policySupplier))
         };
+    }
+
+    @Override
+    public Map<String, String> getExports() {
+        Map<String, String> exports = new HashMap<>();
+        exports.put("java.lang.StackTraceElement", "com.caucho.hessian.io.JavaDeserializer");
+        return exports;
     }
 }

@@ -43,10 +43,10 @@ public class SofaRpcClientInterceptor extends InterceptorAdaptor {
 
     private void attachTag(SofaRequest request) {
         Carrier carrier = RequestContext.getOrCreate();
-        carrier.cargos(tag -> request.addRequestProp(tag.getKey(), tag.getValue()));
         if (RpcInvokeContext.isBaggageEnable()) {
             carrier.addCargo(require, RpcInvokeContext.getContext().getAllRequestBaggage(), Label::parseValue);
         }
+        carrier.cargos(tag -> request.addRequestProp(tag.getKey(), tag.getValue()));
     }
 
 }

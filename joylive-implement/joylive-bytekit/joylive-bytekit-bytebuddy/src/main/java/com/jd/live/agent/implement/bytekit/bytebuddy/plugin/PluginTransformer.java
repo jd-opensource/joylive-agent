@@ -136,20 +136,40 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * @param definition The plugin definition that may require access to internal packages.
      */
     private void export(ClassLoader loader, JavaModule module, PluginDefinition definition) {
-        if (module != JavaModule.UNSUPPORTED && definition instanceof PluginImporter) {
-            JavaModule definitionModule = JavaModule.ofType(definition.getClass());
-            String[] imports = ((PluginImporter) definition).getImports();
-            if (definitionModule != null && imports != null) {
-                for (String type : imports) {
-                    JavaModule exportModule = getModule(loader, module, type);
-                    if (exportModule != null) {
-                        Set<String> exported = MODULE_EXPORTS.computeIfAbsent(exportModule, m -> new ConcurrentHashMap<>()).
-                                computeIfAbsent(definitionModule, m -> new CopyOnWriteArraySet<>());
-                        int index = type.lastIndexOf('.');
+        if (module == JavaModule.UNSUPPORTED || !(definition instanceof PluginImporter)) {
+            return;
+        }
+        Map<String, Set<String>> targets = new HashMap<>();
+        PluginImporter importer = (PluginImporter) definition;
+        String[] imports = importer.getImports();
+        if (imports != null && imports.length > 0) {
+            targets.computeIfAbsent("", s -> new HashSet<>(Arrays.asList(imports)));
+        }
+        Map<String, String> importsTo = importer.getExports();
+        if (importsTo != null) {
+            for (Map.Entry<String, String> entry : importsTo.entrySet()) {
+                targets.computeIfAbsent(entry.getValue(), s -> new HashSet<>()).add(entry.getKey());
+            }
+        }
+        if (targets.isEmpty()) {
+            return;
+        }
+        JavaModule definitionModule = JavaModule.ofType(definition.getClass());
+        for (Map.Entry<String, Set<String>> entry : targets.entrySet()) {
+            JavaModule targetModule = entry.getKey() == null || entry.getKey().isEmpty()
+                    ? definitionModule
+                    : getModule(loader, module, entry.getKey());
+            if (targetModule != null) {
+                for (String sourceType : entry.getValue()) {
+                    JavaModule sourceModule = getModule(loader, module, sourceType);
+                    if (sourceModule != null) {
+                        Set<String> exported = MODULE_EXPORTS.computeIfAbsent(sourceModule, m -> new ConcurrentHashMap<>()).
+                                computeIfAbsent(targetModule, m -> new CopyOnWriteArraySet<>());
+                        int index = sourceType.lastIndexOf('.');
                         if (index > 0) {
-                            String packageName = type.substring(0, index);
-                            if (!isExportedAndOpen(exportModule, packageName, definitionModule) && exported.add(packageName)) {
-                                addExportOrOpen(exportModule, packageName, definitionModule);
+                            String sourcePackage = sourceType.substring(0, index);
+                            if (!isExportedAndOpen(sourceModule, sourcePackage, targetModule) && exported.add(sourcePackage)) {
+                                addExportOrOpen(sourceModule, sourcePackage, targetModule);
                             }
                         }
                     }

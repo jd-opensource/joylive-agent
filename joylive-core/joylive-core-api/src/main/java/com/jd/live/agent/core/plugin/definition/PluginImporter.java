@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.plugin.definition;
 
+import java.util.Map;
+
 /**
  * This interface defines the contract for plugin importers that need to specify
  * a list of internal classes they require. Implementations of this interface
@@ -33,6 +35,20 @@ public interface PluginImporter {
      * @return An array of strings representing the fully qualified names of
      * internal classes required by the plugin.
      */
-    String[] getImports();
+    default String[] getImports() {
+        return null;
+    }
+
+    /**
+     * Retrieves a map of fully qualified names of internal classes to their corresponding import statements
+     * that the plugin needs to import for its operations. These classes are considered internal implementation
+     * details and are not part of the public API exposed by the module.
+     *
+     * @return A map where the keys are the fully qualified names of internal classes and the values are their
+     * corresponding import statements required by the plugin. If no imports are needed, returns null.
+     */
+    default Map<String, String> getExports() {
+        return null;
+    }
 }
 

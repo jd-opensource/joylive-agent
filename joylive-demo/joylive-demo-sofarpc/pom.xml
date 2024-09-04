@@ -12,9 +12,11 @@
     <packaging>pom</packaging>
 
     <properties>
-        <sofaboot-dependencies.version>3.19.0</sofaboot-dependencies.version>
+        <spring.cloud.version>2021.0.9</spring.cloud.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
+        <sofaboot-dependencies.version>3.23.0</sofaboot-dependencies.version>
         <nacos-client.version>2.0.3</nacos-client.version>
-        <sofa-rpc.version>5.12.0</sofa-rpc.version>
+        <sofa-rpc.version>5.13.1</sofa-rpc.version>
     </properties>
 
 
@@ -26,6 +28,20 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.alipay.sofa</groupId>
                 <artifactId>sofaboot-dependencies</artifactId>
@@ -42,7 +58,38 @@
         </dependencies>
     </dependencyManagement>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>rpc-sofa-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>sofa-rpc-all</artifactId>
+            <version>${sofa-rpc.version}</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>

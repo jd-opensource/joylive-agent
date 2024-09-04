@@ -37,10 +37,10 @@ import java.util.List;
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(SofaRpcClientDefinition.TYPE_CONSUMER_CUSTOM_HEADER_FILTER)
+@ConditionalOnClass(SofaRpcClientDefinition.TYPE_ABSTRACT_CLUSTER)
 public class SofaRpcClientDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_CUSTOM_HEADER_FILTER = "com.alipay.sofa.rpc.filter.ConsumerCustomHeaderFilter";
+    public static final String TYPE_ABSTRACT_CLUSTER = "com.alipay.sofa.rpc.client.AbstractCluster";
 
     private static final String METHOD_INVOKE = "invoke";
 
@@ -52,7 +52,7 @@ public class SofaRpcClientDefinition extends PluginDefinitionAdapter {
     private List<CargoRequire> requires;
 
     public SofaRpcClientDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CUSTOM_HEADER_FILTER);
+        this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_CLUSTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).

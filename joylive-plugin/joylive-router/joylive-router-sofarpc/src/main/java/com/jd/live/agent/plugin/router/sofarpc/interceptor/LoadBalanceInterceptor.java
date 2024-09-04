@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.sofarpc.interceptor;
 
 import com.alipay.sofa.rpc.client.AbstractCluster;
 import com.alipay.sofa.rpc.client.ProviderInfo;
-import com.alipay.sofa.rpc.client.SofaRpcCluster;
+import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
