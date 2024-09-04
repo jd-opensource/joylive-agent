@@ -55,7 +55,7 @@ public class RouteDefinition extends PluginDefinitionAdapter {
     private PolicySupplier policySupplier;
 
     public RouteDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR);
+        this.matcher = () -> MatcherBuilder.named(TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_CONVERT_TO_ROUTE).

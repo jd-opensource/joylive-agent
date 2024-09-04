@@ -29,6 +29,8 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.RegistryInterceptor;
 
+import java.util.*;
+
 /**
  * RegistryDefinition
  */
@@ -61,7 +63,12 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public RegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY);
+        Map<String, Set<String>> conditions = new HashMap<>();
+        conditions.computeIfAbsent("org.apache.dubbo.registry.nacos.NacosServiceDiscovery", s -> new HashSet<>())
+                .add("com.alibaba.nacos.api.naming.pojo.Instance");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.zookeeper.ZookeeperServiceDiscovery", s -> new HashSet<>())
+                .addAll(Arrays.asList("org.apache.curator.framework.CuratorFramework", "org.apache.zookeeper.KeeperException"));
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY).and(MatcherBuilder.exists(conditions));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER)
