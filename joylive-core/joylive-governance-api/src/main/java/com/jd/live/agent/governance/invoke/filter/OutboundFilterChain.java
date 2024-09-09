@@ -15,60 +15,60 @@
  */
 package com.jd.live.agent.governance.invoke.filter;
 
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.response.ServiceResponse;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Defines an interface for a routing filter chain that filters target instances.
+ * Defines an interface for the outbound filter chain that handles outbound requests.
  * <p>
- * This interface facilitates the sequential processing of outbound requests through a series of routing filters. Each filter
- * can perform its own processing and decide whether to pass the request to the next filter in the chain.
+ * This interface allows for the sequential processing of outbound requests through a chain of filters. Each filter can
+ * perform its processing and decide to pass the request to the next filter in the chain by invoking the {@code filter}
+ * method of the chain.
  * </p>
  * <p>
- * The {@link Chain} inner class provides a concrete implementation of the {@code OutboundFilterChain}, managing the sequence
+ * The {@link OutboundFilterChain.Chain} inner class provides a concrete implementation of the {@code OutboundFilterChain}, managing the sequence
  * of filters and invoking them in order.
  * </p>
  *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * @since 1.3.0
  */
 public interface OutboundFilterChain {
 
-    /**
-     * Processes the outbound request through the chain of filters.
-     *
-     * @param invocation Represents the invocation information of an outbound request.
-     * @param <T>        The type of the outbound request.
-     */
-    <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation);
+    <R extends ServiceRequest.OutboundRequest,
+            O extends ServiceResponse.OutboundResponse,
+            E extends Endpoint,
+            T extends Throwable> CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster);
 
     /**
-     * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of routing filters.
+     * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of outbound filters.
      */
     class Chain implements OutboundFilterChain {
 
-        private int index; // Tracks the current position in the filter chain.
-        private final OutboundFilter[] filters; // Array of filters in the chain.
+        private int index; // Tracks the current position in the filter chain
+        private final OutboundFilter[] filters; // Array of filters in the chain
 
         /**
-         * Constructs a chain with an array of routing filters.
+         * Constructs a chain with a list of outbound filters.
          *
-         * @param filters An array of routing filters. If null, the chain will be empty.
+         * @param filters A list of outbound filters. Can be null, in which case the chain will be empty.
          */
-        @SafeVarargs
-        public <K extends OutboundFilter> Chain(final K... filters) {
-            this.filters = filters == null ? new OutboundFilter[0] : filters;
+        public Chain(List<? extends OutboundFilter> filters) {
+            this.filters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
         }
 
         /**
-         * Constructs a chain with a collection of routing filters.
+         * Constructs a chain with an array of outbound filters.
          *
-         * @param filters A collection of routing filters. If null, the chain will be empty.
+         * @param filters An array of outbound filters. Can be null, in which case the chain will be empty.
          */
-        public Chain(final Collection<? extends OutboundFilter> filters) {
-            this.filters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
+        public Chain(OutboundFilter... filters) {
+            this.filters = filters == null ? new OutboundFilter[0] : filters;
         }
 
         /**
@@ -82,11 +82,16 @@ public interface OutboundFilterChain {
          * @param <T>        The type of the outbound request.
          */
         @Override
-        public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation) {
+        public <R extends ServiceRequest.OutboundRequest,
+                O extends ServiceResponse.OutboundResponse,
+                E extends Endpoint,
+                T extends Throwable> CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster) {
+            CompletableFuture<O> result = new CompletableFuture<>();
             if (index < filters.length) {
-                filters[index++].filter(invocation, this);
+                result = filters[index++].filter(invocation, endpoint, cluster, this);
             }
+            return result;
         }
+
     }
 }
-
