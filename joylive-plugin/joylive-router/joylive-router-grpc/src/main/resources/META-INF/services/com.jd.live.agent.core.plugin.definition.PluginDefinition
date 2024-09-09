@@ -1,0 +1,3 @@
+#com.jd.live.agent.plugin.router.grpc.definition.ClassLoaderFilterDefinition
+#com.jd.live.agent.plugin.router.grpc.definition.ClusterDefinition
+#com.jd.live.agent.plugin.router.grpc.definition.LoadBalanceDefinition
