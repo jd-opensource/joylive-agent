@@ -92,9 +92,9 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     private int slowCallDurationThreshold = 10000;
 
     /**
-     * Fuse time (milliseconds)
+     * Fuse time (seconds)
      */
-    private int waitDurationInOpenState = 60000;
+    private int waitDurationInOpenState = 60;
 
     /**
      * In the half-open state, callable numbers

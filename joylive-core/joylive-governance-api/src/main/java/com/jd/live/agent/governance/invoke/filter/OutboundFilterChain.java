@@ -79,17 +79,22 @@ public interface OutboundFilterChain {
          * </p>
          *
          * @param invocation Represents the invocation information of an outbound request.
-         * @param <T>        The type of the outbound request.
+         * @param <R>        The type of the outbound request.
+         * @param <O>        The type of the outbound response.
+         * @param <E>        The type of the endpoint to which requests are routed.
+         * @param <T>        The type of the exception that can be thrown during invocation.
+         * @return The completable future of response
          */
         @Override
         public <R extends ServiceRequest.OutboundRequest,
                 O extends ServiceResponse.OutboundResponse,
                 E extends Endpoint,
                 T extends Throwable> CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster) {
-            CompletableFuture<O> result = new CompletableFuture<>();
+            CompletableFuture<O> result = null;
             if (index < filters.length) {
                 result = filters[index++].filter(invocation, endpoint, cluster, this);
             }
+            result = result == null ? CompletableFuture.completedFuture(null) : result;
             return result;
         }
 

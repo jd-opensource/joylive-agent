@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -42,13 +43,16 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -373,6 +377,34 @@ public interface InvocationContext {
             if (notifyListener) {
                 invocation.onFailure(null, e);
             }
+            throw e;
+        }
+    }
+
+    /**
+     * Processes an outbound invocation through a chain of configured outbound filters.
+     * <p>
+     * Similar to the {@code outbound} method, this method facilitates the processing of outbound requests
+     * through a series of filters. These filters can perform various tasks such as authentication, logging,
+     * validation, and more, according to the needs of the application. The outbound filters are executed in
+     * the sequence they are arranged in the {@link OutboundFilterChain}.
+     * </p>
+     *
+     * @param <R> the type of the outbound request extending {@link OutboundRequest}.
+     * @param <O> The type of the outbound response.
+     * @param <E> The type of the endpoint to which requests are routed.
+     * @param <T> The type of the exception that can be thrown during invocation.
+     * @return The completable future of response
+     */
+    default <R extends ServiceRequest.OutboundRequest,
+            O extends ServiceResponse.OutboundResponse,
+            E extends Endpoint,
+            T extends Throwable> CompletableFuture<O> outbound(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster) {
+        try {
+            OutboundFilterChain.Chain chain = new OutboundFilterChain.Chain(getOutboundFilters());
+            return chain.filter(invocation, endpoint, cluster);
+        } catch (RejectException e) {
+            invocation.onFailure(endpoint, e);
             throw e;
         }
     }

@@ -44,6 +44,7 @@ public interface OutboundFilter {
     <R extends ServiceRequest.OutboundRequest,
             O extends ServiceResponse.OutboundResponse,
             E extends Endpoint,
-            T extends Throwable> CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster, OutboundFilterChain chain);
+            T extends Throwable>
+    CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster, OutboundFilterChain chain);
 
 }
