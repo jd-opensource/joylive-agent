@@ -61,6 +61,9 @@ public class RoutePolicy extends PolicyId implements PolicyInheritWithIdGen<Rout
         if (source == null) {
             return;
         }
+        if (name == null) {
+            name = source.getName();
+        }
         if ((tagRules == null || tagRules.isEmpty()) && source.getTagRules() != null) {
             tagRules = tagRules == null ? new ArrayList<>() : tagRules;
             tagRules.addAll(source.tagRules);

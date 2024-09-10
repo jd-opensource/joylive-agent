@@ -126,11 +126,29 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         if (source == null) {
             return;
         }
-        if (errorCodes == null && source.getErrorCodes() != null) {
-            errorCodes = new HashSet<>(source.getErrorCodes());
-        }
-        if (degradeConfig == null && source.getDegradeConfig() != null) {
-            degradeConfig = new DegradeConfig(source.getDegradeConfig());
+        if (version <= 0) {
+            name = source.getName();
+            realizeType = source.getRealizeType();
+            level = source.getLevel();
+            version = source.getVersion();
+            slidingWindowType = source.getSlidingWindowType();
+            slidingWindowSize = source.getSlidingWindowSize();
+            minCallsThreshold = source.getMinCallsThreshold();
+            if (errorCodes == null && source.getErrorCodes() != null) {
+                errorCodes = new HashSet<>(source.getErrorCodes());
+            }
+            if (exceptions == null && source.getExceptions() != null) {
+                exceptions = new HashSet<>(source.getExceptions());
+            }
+            failureRateThreshold = source.getFailureRateThreshold();
+            slowCallRateThreshold = source.getSlowCallRateThreshold();
+            slowCallDurationThreshold = source.getSlowCallDurationThreshold();
+            waitDurationInOpenState = source.getWaitDurationInOpenState();
+            allowedCallsInHalfOpenState = source.getAllowedCallsInHalfOpenState();
+            forceOpen = source.isForceOpen();
+            if (degradeConfig == null && source.getDegradeConfig() != null) {
+                degradeConfig = new DegradeConfig(source.getDegradeConfig());
+            }
         }
         if (source.getVersion() == version) {
             broken = source.broken;

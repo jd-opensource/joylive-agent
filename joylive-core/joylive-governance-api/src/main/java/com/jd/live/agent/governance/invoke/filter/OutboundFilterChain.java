@@ -65,8 +65,15 @@ public interface OutboundFilterChain {
      */
     class Chain implements OutboundFilterChain {
 
-        private int index; // Tracks the current position in the filter chain
-        private final OutboundFilter[] filters; // Array of filters in the chain
+        /**
+         * Tracks the current position in the filter chain
+         */
+        private int index;
+
+        /**
+         * Array of filters in the chain
+         */
+        private final OutboundFilter[] filters;
 
         /**
          * Constructs a chain with a list of outbound filters.

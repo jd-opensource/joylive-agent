@@ -83,6 +83,9 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
         if (source == null) {
             return;
         }
+        if (name == null) {
+            name = source.name;
+        }
         if (relationType == null && source.getRelationType() != null) {
             relationType = source.getRelationType();
         }
@@ -91,6 +94,9 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
         }
         if (type == null && source.getType() != null) {
             type = source.getType();
+        }
+        if (version <= 0) {
+            version = source.getVersion();
         }
     }
 }

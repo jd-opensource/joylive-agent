@@ -83,8 +83,14 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
         if (source == null) {
             return;
         }
+        if (id == null) {
+            id = source.getId();
+        }
         if (policyType == null) {
             policyType = source.policyType;
+        }
+        if (stickyType == null) {
+            stickyType = source.stickyType;
         }
     }
 
