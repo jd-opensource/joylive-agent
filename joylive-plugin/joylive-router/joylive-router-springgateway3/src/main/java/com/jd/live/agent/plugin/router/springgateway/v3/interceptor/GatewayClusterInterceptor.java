@@ -90,7 +90,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
         GatewayClusterRequest request = new GatewayClusterRequest(exchange, chain, factory, retryConfig, config);
         OutboundInvocation<GatewayClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, ic);
-        CompletionStage<GatewayClusterResponse> response = cluster.invoke(ic, invocation);
+        CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
         CompletableFuture<Void> result = new CompletableFuture<>();
         response.whenComplete((v, t) -> {
             if (t != null) {

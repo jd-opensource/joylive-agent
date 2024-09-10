@@ -18,11 +18,12 @@ package com.jd.live.agent.governance.invoke.filter;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
-import com.jd.live.agent.governance.request.ServiceRequest;
-import com.jd.live.agent.governance.response.ServiceResponse;
+import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Defines an interface for the outbound filter chain that handles outbound requests.
@@ -40,10 +41,24 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface OutboundFilterChain {
 
-    <R extends ServiceRequest.OutboundRequest,
-            O extends ServiceResponse.OutboundResponse,
+    /**
+     * Filters the outbound service request before it is sent to the remote service.
+     *
+     * @param cluster    The live cluster of the service.
+     * @param invocation The outbound service request invocation.
+     * @param endpoint   The endpoint through which the request will be sent.
+     * @param <R>        The type of the outbound service request.
+     * @param <O>        The type of the outbound service response.
+     * @param <E>        The type of the endpoint.
+     * @param <T>        The type of the exception that may be thrown during the filtering process.
+     * @return A CompletableFuture that will contain the filtered outbound service response when the request is completed.
+     */
+    <R extends OutboundRequest,
+            O extends OutboundResponse,
             E extends Endpoint,
-            T extends Throwable> CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster);
+            T extends Throwable> CompletionStage<O> filter(LiveCluster<R, O, E, T> cluster,
+                                                           OutboundInvocation<R> invocation,
+                                                           E endpoint);
 
     /**
      * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of outbound filters.
@@ -71,28 +86,14 @@ public interface OutboundFilterChain {
             this.filters = filters == null ? new OutboundFilter[0] : filters;
         }
 
-        /**
-         * Processes the outbound request through the chain of filters.
-         * <p>
-         * This method sequentially invokes the {@code filter} method of each filter in the chain until the chain is
-         * exhausted or a filter decides to terminate the processing.
-         * </p>
-         *
-         * @param invocation Represents the invocation information of an outbound request.
-         * @param <R>        The type of the outbound request.
-         * @param <O>        The type of the outbound response.
-         * @param <E>        The type of the endpoint to which requests are routed.
-         * @param <T>        The type of the exception that can be thrown during invocation.
-         * @return The completable future of response
-         */
         @Override
-        public <R extends ServiceRequest.OutboundRequest,
-                O extends ServiceResponse.OutboundResponse,
+        public <R extends OutboundRequest,
+                O extends OutboundResponse,
                 E extends Endpoint,
-                T extends Throwable> CompletableFuture<O> filter(OutboundInvocation<R> invocation, E endpoint, LiveCluster<R, O, E, T> cluster) {
-            CompletableFuture<O> result = null;
+                T extends Throwable> CompletionStage<O> filter(LiveCluster<R, O, E, T> cluster, OutboundInvocation<R> invocation, E endpoint) {
+            CompletionStage<O> result = null;
             if (index < filters.length) {
-                result = filters[index++].filter(invocation, endpoint, cluster, this);
+                result = filters[index++].filter(cluster, invocation, endpoint, this);
             }
             result = result == null ? CompletableFuture.completedFuture(null) : result;
             return result;

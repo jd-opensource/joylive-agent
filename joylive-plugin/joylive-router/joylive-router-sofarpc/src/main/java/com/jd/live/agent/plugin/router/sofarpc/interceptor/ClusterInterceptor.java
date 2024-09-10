@@ -16,13 +16,13 @@
 package com.jd.live.agent.plugin.router.sofarpc.interceptor;
 
 import com.alipay.sofa.rpc.client.AbstractCluster;
-import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
@@ -55,7 +55,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
         if (!request.isSystem() && !request.isDisabled()) {
             SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
-            SofaRpcOutboundResponse response = cluster.request(context, invocation, null);
+            SofaRpcOutboundResponse response = cluster.request(invocation, null);
             if (response.getThrowable() != null) {
                 mc.setThrowable(response.getThrowable());
             } else {

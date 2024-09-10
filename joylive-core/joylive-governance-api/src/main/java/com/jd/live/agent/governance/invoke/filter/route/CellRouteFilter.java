@@ -52,7 +52,7 @@ import java.util.function.Function;
  */
 @Extension(value = "CellRouteFilter", order = RouteFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
+public class CellRouteFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {

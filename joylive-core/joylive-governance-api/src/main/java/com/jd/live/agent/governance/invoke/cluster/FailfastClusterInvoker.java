@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -47,9 +46,8 @@ public class FailfastClusterInvoker extends AbstractClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
-                                                            InvocationContext context,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
-        return invoke(cluster, context, invocation, 0);
+        return invoke(cluster, invocation, 0);
     }
 }

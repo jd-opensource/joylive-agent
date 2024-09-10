@@ -21,7 +21,6 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
@@ -49,7 +48,6 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
-                                                            InvocationContext context,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
@@ -57,7 +55,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
         RetryContext<R, O, E, T> retryContext = new RetryContext<>(retryPolicy, cluster);
-        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, context, invocation, retryContext.getCount());
+        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
         return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e -> {
             Throwable throwable = e instanceof RetryExhaustedException

@@ -68,11 +68,4 @@ public interface RouteFilter {
      */
     <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain);
 
-    /**
-     * Represents a filter for live routes.
-     */
-    interface LiveRouteFilter extends RouteFilter {
-
-    }
-
 }

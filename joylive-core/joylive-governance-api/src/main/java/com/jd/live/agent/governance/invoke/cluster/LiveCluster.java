@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.invoke.cluster;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -76,10 +75,6 @@ public interface LiveCluster<R extends OutboundRequest,
     /**
      * Executes a service request against a live cluster of endpoints.
      *
-     * @param context    The {@link InvocationContext} providing additional information and state
-     *                   necessary for the current invocation process. This includes metadata,
-     *                   configuration settings, and potentially references to other relevant
-     *                   components within the system.
      * @param invocation The {@link OutboundInvocation} defining the outbound invocation logic.
      *                   This parameter specifies how the request should be executed, including
      *                   the selection of endpoints, serialization of the request, and handling
@@ -92,32 +87,28 @@ public interface LiveCluster<R extends OutboundRequest,
      * The response type is generic and can be adapted based on the specific needs of
      * the implementation.
      */
-    default CompletionStage<O> invoke(InvocationContext context, OutboundInvocation<R> invocation, List<E> instances) {
+    default CompletionStage<O> invoke(OutboundInvocation<R> invocation, List<E> instances) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
-        return invoke(context, invocation);
+        return invoke(invocation);
     }
 
     /**
      * Executes an outbound invocation synchronously and returns the result.
      *
-     * @param context    The invocation context, providing metadata or state relevant to the current
-     *                   invocation. This context is passed to the asynchronous operation.
      * @param invocation The outbound invocation details, including the request data. This is used
      *                   to initiate the asynchronous operation.
      * @return The result of the outbound invocation. If the operation completes exceptionally, a
      * response representing the error condition is returned.
      */
-    default O request(InvocationContext context, OutboundInvocation<R> invocation) {
-        return request(context, invocation, null);
+    default O request(OutboundInvocation<R> invocation) {
+        return request(invocation, null);
     }
 
     /**
      * Executes an outbound invocation synchronously and returns the result.
      *
-     * @param context    The invocation context, providing metadata or state relevant to the current
-     *                   invocation. This context is passed to the asynchronous operation.
      * @param invocation The outbound invocation details, including the request data. This is used
      *                   to initiate the asynchronous operation.
      * @param instances  A list of instances (e.g., service instances, client proxies) involved in
@@ -125,10 +116,10 @@ public interface LiveCluster<R extends OutboundRequest,
      * @return The result of the outbound invocation. If the operation completes exceptionally, a
      * response representing the error condition is returned.
      */
-    default O request(InvocationContext context, OutboundInvocation<R> invocation, List<E> instances) {
+    default O request(OutboundInvocation<R> invocation, List<E> instances) {
         try {
             // TODO timeout
-            return invoke(context, invocation, instances).toCompletableFuture().get();
+            return invoke(invocation, instances).toCompletableFuture().get();
         } catch (InterruptedException e) {
             return createResponse(e, invocation.getRequest(), null);
         } catch (ExecutionException e) {
@@ -142,15 +133,13 @@ public interface LiveCluster<R extends OutboundRequest,
      * routing function, invoking the request on the selected endpoints, and returning the
      * corresponding response.
      *
-     * @param context    The invocation context that provides additional information and state for
-     *                   the current invocation process.
      * @param invocation The outbound invocation logic that defines how the request should be executed.
      * @return An outbound response of type {@code O} that corresponds to the executed request.
      */
-    default CompletionStage<O> invoke(InvocationContext context, OutboundInvocation<R> invocation) {
+    default CompletionStage<O> invoke(OutboundInvocation<R> invocation) {
         ClusterPolicy defaultPolicy = getDefaultPolicy(invocation.getRequest());
-        ClusterInvoker invoker = context.getClusterInvoker(invocation, defaultPolicy);
-        return invoker.execute(this, context, invocation, defaultPolicy);
+        ClusterInvoker invoker = invocation.getContext().getClusterInvoker(invocation, defaultPolicy);
+        return invoker.execute(this, invocation, defaultPolicy);
     }
 
     /**

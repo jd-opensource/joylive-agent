@@ -59,7 +59,7 @@ public class BlockingClusterInterceptor extends InterceptorAdaptor {
         BlockingClusterRequest request = new BlockingClusterRequest((HttpRequest) arguments[0],
                 cluster.getLoadBalancerFactory(), (byte[]) arguments[1], (ClientHttpRequestExecution) arguments[2]);
         HttpOutboundInvocation<BlockingClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        BlockingClusterResponse response = cluster.request(context, invocation);
+        BlockingClusterResponse response = cluster.request(invocation);
         if (response.getThrowable() != null) {
             mc.setThrowable(response.getThrowable());
         } else {

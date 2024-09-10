@@ -52,7 +52,7 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
         FeignClusterRequest request = new FeignClusterRequest((Request) arguments[0],
                 cluster.getLoadBalancerClientFactory(), (Request.Options) arguments[1]);
         HttpOutboundInvocation<FeignClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        FeignClusterResponse response = cluster.request(context, invocation);
+        FeignClusterResponse response = cluster.request(invocation);
         if (response.getThrowable() != null) {
             mc.setThrowable(response.getThrowable());
         } else {
