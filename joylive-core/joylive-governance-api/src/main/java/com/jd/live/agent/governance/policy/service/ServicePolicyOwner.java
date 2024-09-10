@@ -53,11 +53,13 @@ public class ServicePolicyOwner extends PolicyOwner {
      */
     protected void onUpdate(ServicePolicy source, PolicyMerger merger, String owner) {
         owners.addOwner(owner);
-        if (servicePolicy == null) {
+        if (servicePolicy == null && source != null) {
             servicePolicy = source;
             merger.onAdd(servicePolicy);
-        } else {
+        } else if (servicePolicy != null && source != null) {
             merger.onUpdate(servicePolicy, source);
+        } else {
+            merger.onDelete(servicePolicy);
         }
     }
 

@@ -149,6 +149,8 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
             if (degradeConfig == null && source.getDegradeConfig() != null) {
                 degradeConfig = new DegradeConfig(source.getDegradeConfig());
             }
+            id = source.getId();
+            uri = source.getUri();
         }
         if (source.getVersion() == version) {
             broken = source.broken;
