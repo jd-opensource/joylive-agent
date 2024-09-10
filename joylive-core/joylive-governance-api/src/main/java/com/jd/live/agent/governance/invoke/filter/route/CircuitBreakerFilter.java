@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.outbound;
+package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
@@ -30,8 +30,8 @@ import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.FaultType;
@@ -52,10 +52,10 @@ import java.util.function.Consumer;
  * @since 1.1.0
  */
 @Injectable
-@Extension(value = "CircuitBreakerFilter", order = OutboundFilter.ORDER_CIRCUIT_BREAKER)
+@Extension(value = "CircuitBreakerFilter", order = RouteFilter.ORDER_CIRCUIT_BREAKER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAKER_ENABLED, matchIfMissing = true)
-public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitializer {
+public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
     @Inject
     private Map<String, CircuitBreakerFactory> factories;
@@ -74,7 +74,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
     }
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         ServicePolicy servicePolicy = metadata.getServicePolicy();
         List<CircuitBreakPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakPolicies();

@@ -199,8 +199,9 @@ public class RejectException extends LiveException {
 
         private final Object config;
 
-        public RejectCircuitBreakException(Object config) {
-            this.config = config;
+        public RejectCircuitBreakException(String message) {
+            super(message);
+            this.config = null;
         }
 
         public RejectCircuitBreakException(String message, Object config) {

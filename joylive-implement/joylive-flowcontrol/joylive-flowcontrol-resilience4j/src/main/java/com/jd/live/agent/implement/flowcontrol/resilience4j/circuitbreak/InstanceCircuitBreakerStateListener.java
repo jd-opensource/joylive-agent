@@ -46,7 +46,7 @@ public class InstanceCircuitBreakerStateListener implements CircuitBreakerStateL
             logger.debug("[CircuitBreak]Instance state is transitioned from " + event.getFrom() + " to " + event.getTo() + ", uri=" + event.getUri());
         }
         if (event.getTo() == CircuitBreakerState.OPEN) {
-            policy.addBroken(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState());
+            policy.addBroken(instanceId, System.currentTimeMillis() + policy.getWaitDurationInOpenState() * 1000L);
         } else if (event.getFrom() == CircuitBreakerState.OPEN) {
             policy.removeBroken(instanceId);
         }

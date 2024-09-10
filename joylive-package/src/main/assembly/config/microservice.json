@@ -297,9 +297,10 @@
               "failureRateThreshold": 20,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
-              "waitDurationInOpenState": 5000,
+              "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
               "forceOpen": false,
+              "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {
@@ -323,9 +324,10 @@
               "failureRateThreshold": 20,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
-              "waitDurationInOpenState": 5000,
+              "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
               "forceOpen": false,
+              "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {
@@ -349,9 +351,10 @@
               "failureRateThreshold": 20,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
-              "waitDurationInOpenState": 5000,
+              "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
               "forceOpen": false,
+              "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {
@@ -461,9 +464,10 @@
                       "failureRateThreshold": 20,
                       "slowCallRateThreshold": 20,
                       "slowCallDurationThreshold": 1000,
-                      "waitDurationInOpenState": 5000,
+                      "waitDurationInOpenState": 50,
                       "allowedCallsInHalfOpenState": 3,
                       "forceOpen": false,
+                      "realizeType": "Resilience4j",
                       "degradeConfig": {
                         "responseCode": 200,
                         "attributes": {
@@ -522,9 +526,10 @@
                       "failureRateThreshold": 20,
                       "slowCallRateThreshold": 20,
                       "slowCallDurationThreshold": 1000,
-                      "waitDurationInOpenState": 5000,
+                      "waitDurationInOpenState": 50,
                       "allowedCallsInHalfOpenState": 3,
                       "forceOpen": false,
+                      "realizeType": "Resilience4j",
                       "degradeConfig": {
                         "responseCode": 200,
                         "attributes": {

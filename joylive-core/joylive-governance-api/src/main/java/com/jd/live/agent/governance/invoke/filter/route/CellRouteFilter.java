@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.outbound;
+package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -26,8 +26,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.*;
@@ -50,12 +50,12 @@ import java.util.function.Function;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "CellRouteFilter", order = OutboundFilter.ORDER_LIVE_CELL)
+@Extension(value = "CellRouteFilter", order = RouteFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class CellRouteFilter implements OutboundFilter.LiveRouteFilter {
+public class CellRouteFilter implements RouteFilter.LiveRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         UnitAction action = target.getUnitAction();
         if (action.getType() == UnitActionType.FORWARD && forward(invocation, target)) {

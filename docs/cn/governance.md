@@ -305,7 +305,7 @@ stateDiagram-v2
       "failureRateThreshold": 20,
       "slowCallRateThreshold": 20,
       "slowCallDurationThreshold": 1000,
-      "waitDurationInOpenState": 5000,
+      "waitDurationInOpenState": 50,
       "allowedCallsInHalfOpenState": 3,
       "forceOpen": false,
       "degradeConfig": {

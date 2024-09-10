@@ -104,6 +104,20 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                     beginCounter(statistic, v);
                     onStart(cluster, request, instance);
                     long startTime = System.currentTimeMillis();
+                    // TODO Add outbound handler
+//                    context.outbound(invocation, endpoint, cluster).whenComplete((o, r) -> {
+//                        long elapsed = System.currentTimeMillis() - startTime;
+//                        if (r != null) {
+//                            endCounter(statistic, elapsed, false);
+//                            onException(r, request, instance, cluster, invocation, result);
+//                        } else if (o.getThrowable() != null) {
+//                            endCounter(statistic, elapsed, false);
+//                            onException(o.getThrowable(), request, instance, cluster, invocation, result);
+//                        } else {
+//                            endCounter(statistic, elapsed, true);
+//                            onSuccess(cluster, invocation, o, request, instance, result);
+//                        }
+//                    });
                     cluster.invoke(request, instance).whenComplete((o, r) -> {
                         long elapsed = System.currentTimeMillis() - startTime;
                         if (r != null) {
