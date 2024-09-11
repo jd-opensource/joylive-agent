@@ -71,7 +71,7 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
 
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_CELL = AttributeKey.stringKey(KEY_LOCAL_CELL);
 
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_CELL);
+    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
 
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_IP = AttributeKey.stringKey(KEY_LOCAL_IP);
 
