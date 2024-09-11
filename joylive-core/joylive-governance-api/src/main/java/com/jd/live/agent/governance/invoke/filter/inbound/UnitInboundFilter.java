@@ -58,7 +58,7 @@ public class UnitInboundFilter implements InboundFilter {
                 chain.filter(invocation);
                 break;
             case REJECT:
-            case REJECT_ESCAPED:
+            default:
                 invocation.reject(FaultType.UNIT, unitAction.getMessage());
         }
     }
@@ -106,7 +106,7 @@ public class UnitInboundFilter implements InboundFilter {
             UnitRoute unitRoute = rule.getUnitRoute(currentUnit.getCode());
             UnitFunction unitFunc = invocation.getContext().getUnitFunction(rule.getVariableFunction());
             if (!rule.contains(unitRoute, variable, unitFunc)) {
-                return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_ESCAPE));
+                return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_ESCAPE));
             }
             return invocation.isAccessible(currentUnit) ? new UnitAction(UnitActionType.FORWARD, null) :
                     new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));

@@ -15,15 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCellException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnitException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
-import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
-import com.jd.live.agent.governance.event.TrafficEvent.Direction;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.event.TrafficEvent.*;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.OutboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.RpcOutboundLiveMetadataParser;
@@ -178,13 +172,15 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     public void onFailure(Endpoint endpoint, Throwable throwable) {
         // TODO Whether to split the type of rejection
         if (throwable instanceof RejectUnitException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNIT_UNAVAILABLE).requests(1));
         } else if (throwable instanceof RejectCellException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_CELL_UNAVAILABLE).requests(1));
         } else if (throwable instanceof RejectNoProviderException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_NO_PROVIDER).requests(1));
         } else if (throwable instanceof RejectCircuitBreakException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).requests(1));
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_CIRCUIT_BREAK).requests(1));
+        } else if (throwable instanceof RejectLimitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_LIMIT).requests(1));
         }
         if (listeners != null) {
             listeners.forEach(listener -> listener.onFailure(endpoint, this, throwable));
