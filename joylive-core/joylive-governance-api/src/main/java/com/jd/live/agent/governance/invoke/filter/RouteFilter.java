@@ -55,7 +55,7 @@ public interface RouteFilter {
 
     int ORDER_RETRY = ORDER_LIVE_CELL + 100;
 
-    int ORDER_LOADBALANCE = ORDER_LIVE_CELL + 100;
+    int ORDER_LOAD_BALANCE = ORDER_LIVE_CELL + 100;
 
     /**
      * Applies the filter logic to the given outbound invocation. This method is called as part of a

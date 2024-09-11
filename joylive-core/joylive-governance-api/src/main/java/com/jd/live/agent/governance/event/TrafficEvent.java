@@ -66,6 +66,8 @@ public class TrafficEvent {
 
     public static final String KEY_SERVICE_POLICY_ID = "service_policyId";
 
+    public static final String KEY_REJECT_TYPE = "reject_type";
+
     public static final String COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL = "joylive_gateway_inbound_requests_total";
 
     public static final String COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL = "joylive_gateway_inbound_forward_requests_total";
@@ -197,10 +199,16 @@ public class TrafficEvent {
      */
     private final ActionType actionType;
 
+    private final RejectType rejectType;
+
     /**
      * The number of requests associated with the traffic event.
      */
     private final int requests;
+
+    public String getRejectTypeName() {
+        return rejectType == null ? null : rejectType.name();
+    }
 
     public static TrafficEventBuilder builder() {
         return new TrafficEventBuilder();
@@ -249,6 +257,57 @@ public class TrafficEvent {
          * Represents an action to reject the traffic.
          */
         REJECT
+    }
+
+    /**
+     * An enumeration representing the reject type for the traffic event.
+     */
+    public enum RejectType {
+
+        /**
+         * No action is taken for the traffic event.
+         */
+        NONE,
+
+        /**
+         * The traffic event is rejected because the unit is unavailable.
+         */
+        REJECT_UNIT_UNAVAILABLE,
+
+        /**
+         * The traffic event is rejected because the cell is unavailable.
+         */
+        REJECT_CELL_UNAVAILABLE,
+
+        /**
+         * The traffic event is rejected due to an escape condition.
+         */
+        REJECT_ESCAPE,
+
+        /**
+         * The traffic event is rejected because the application is unready.
+         */
+        REJECT_UNREADY,
+
+        /**
+         * The traffic event is rejected because there is no available provider to handle the request.
+         */
+        REJECT_NO_PROVIDER,
+
+        /**
+         * The traffic event is rejected because the request is unauthorized.
+         */
+        REJECT_UNAUTHORIZED,
+
+        /**
+         * The traffic event is rejected because it has reached the maximum number of active requests.
+         */
+        REJECT_LIMIT,
+
+        /**
+         * The traffic event is rejected because the circuit breaker has been triggered.
+         */
+        REJECT_CIRCUIT_BREAK
     }
 
     public static class TrafficEventBuilder {

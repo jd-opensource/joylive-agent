@@ -147,7 +147,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         acquire(circuitBreakers, breaker -> {
             DegradeConfig config = breaker.getPolicy().getDegradeConfig();
             if (config == null) {
-                invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejects the request.");
+                invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejected the request.");
             } else {
                 invocation.degrade(FaultType.CIRCUIT_BREAK, "The circuit break policy triggers a downgrade response.", config);
             }

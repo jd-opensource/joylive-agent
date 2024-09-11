@@ -68,7 +68,7 @@ public class RateLimitInboundFilter implements InboundFilter, ExtensionInitializ
                 if (policy.match(invocation)) {
                     RateLimiter rateLimiter = getRateLimiter(policy);
                     if (null != rateLimiter && !rateLimiter.acquire()) {
-                        invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");
+                        invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejected the request.");
                     }
                 }
             }

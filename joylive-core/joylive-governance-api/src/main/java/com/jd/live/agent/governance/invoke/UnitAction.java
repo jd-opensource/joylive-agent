@@ -74,6 +74,17 @@ public class UnitAction {
     }
 
     /**
+     * Factory method to create a UnitAction of type REJECT with a message.
+     *
+     * @param type    the reject action type
+     * @param message the message associated with the rejection
+     * @return a UnitAction with type REJECT and the provided message
+     */
+    public static UnitAction reject(UnitActionType type, String message) {
+        return new UnitAction(type == null ? UnitActionType.REJECT : type, message);
+    }
+
+    /**
      * Enumerates the possible types of actions that a unit can take.
      */
     public enum UnitActionType {
@@ -86,11 +97,6 @@ public class UnitAction {
          * Reject the action with an optional message.
          */
         REJECT,
-
-        /**
-         * Reject the action and indicate that it was escaped.
-         */
-        REJECT_ESCAPED,
 
         /**
          * Failover to an alternative action.

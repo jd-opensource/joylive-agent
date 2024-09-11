@@ -30,6 +30,7 @@ import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
+import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_ESCAPE;
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_ACCESSIBLE;
 
 /**
@@ -66,12 +67,21 @@ public class CellInboundFilter implements InboundFilter {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         Unit currentUnit = liveMetadata.getCurrentUnit();
         Cell currentCell = liveMetadata.getCurrentCell();
+        String variable = liveMetadata.getVariable();
         UnitRule unitRule = liveMetadata.getUnitRule();
         if (unitRule == null) {
             return new CellAction(CellActionType.FORWARD, null);
         }
         UnitRoute unitRoute = currentUnit == null ? null : unitRule.getUnitRoute(currentUnit.getCode());
-        CellRoute cellRoute = unitRoute == null || currentCell == null ? null : unitRoute.getCellRoute(currentCell.getCode());
+        CellRoute cellRoute = null;
+        if (unitRoute != null) {
+            cellRoute = unitRoute.getCellRouteByVariable(variable);
+            if (cellRoute == null) {
+                cellRoute = currentCell == null ? null : unitRoute.getCellRoute(currentCell.getCode());
+            } else if (cellRoute.getCell() != currentCell) {
+                return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_ESCAPE));
+            }
+        }
         if (invocation.isAccessible(currentCell) && (cellRoute == null
                 || !cellRoute.isEmpty() && invocation.isAccessible(cellRoute.getAccessMode()))) {
             return new CellAction(CellActionType.FORWARD, null);

@@ -43,7 +43,7 @@ import java.util.List;
  *
  * @since 1.0.0
  */
-@Extension(value = "LoadBalanceFilter", order = RouteFilter.ORDER_LOADBALANCE)
+@Extension(value = "LoadBalanceFilter", order = RouteFilter.ORDER_LOAD_BALANCE)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class LoadBalanceFilter implements RouteFilter {
 

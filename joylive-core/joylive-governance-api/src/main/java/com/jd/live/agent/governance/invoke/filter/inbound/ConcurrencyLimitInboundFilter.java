@@ -70,7 +70,7 @@ public class ConcurrencyLimitInboundFilter implements InboundFilter, ExtensionIn
                 if (policy.match(invocation)) {
                     ConcurrencyLimiter limiter = getConcurrencyLimiter(policy);
                     if (null != limiter && !limiter.acquire()) {
-                        invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejects the request.");
+                        invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejected the request.");
                     }
                 }
             }
