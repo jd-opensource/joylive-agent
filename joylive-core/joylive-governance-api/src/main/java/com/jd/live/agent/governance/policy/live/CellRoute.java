@@ -56,11 +56,11 @@ public class CellRoute {
     private transient Cell cell;
 
     public boolean isAllow(String name) {
-        return name != null && allows != null && allows.contains(name);
+        return name != null && allows != null && !allows.isEmpty() && allows.contains(name);
     }
 
     public boolean isPrefix(String name) {
-        if (name != null && !name.isEmpty() && prefixes != null) {
+        if (name != null && !name.isEmpty() && prefixes != null && !prefixes.isEmpty()) {
             // TODO Use prefix trie
             for (String p : prefixes) {
                 if (name.startsWith(p)) {

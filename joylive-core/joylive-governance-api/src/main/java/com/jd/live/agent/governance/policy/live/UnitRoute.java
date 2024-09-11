@@ -93,6 +93,21 @@ public class UnitRoute {
         return cellRouteCache.get(code);
     }
 
+    public CellRoute getCellRouteByVariable(String variable) {
+        CellRoute result = null;
+        if (variable != null && !variable.isEmpty()) {
+            for (CellRoute cellRoute : cells) {
+                if (cellRoute.isAllow(variable)) {
+                    result = cellRoute;
+                    break;
+                } else if (result == null && cellRoute.isPrefix(variable)) {
+                    result = cellRoute;
+                }
+            }
+        }
+        return result;
+    }
+
     public boolean isCenter() {
         return unit != null && unit.getType() == UnitType.CENTER;
     }

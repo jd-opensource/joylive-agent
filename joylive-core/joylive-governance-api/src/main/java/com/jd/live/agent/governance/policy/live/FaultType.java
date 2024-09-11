@@ -33,25 +33,17 @@ public enum FaultType {
             return new RejectUnreadyException();
         }
 
-        @Override
-        public RejectException failover(String reason) {
-            return new RejectUnreadyException();
-        }
     },
 
     /**
-     * Represents a state where an authentication has been reached.
+     * Represents a state where the authentication has failed or is not authorized.
      */
-    AUTHENTICATED {
+    UNAUTHORIZED {
         @Override
         public RejectException reject(String reason) {
             return new RejectAuthException(reason);
         }
 
-        @Override
-        public RejectException failover(String reason) {
-            return new RejectAuthException(reason);
-        }
     },
 
     /**
@@ -63,10 +55,6 @@ public enum FaultType {
             return new RejectLimitException(reason);
         }
 
-        @Override
-        public RejectException failover(String reason) {
-            return new RejectLimitException(reason);
-        }
     },
 
     /**
@@ -75,11 +63,6 @@ public enum FaultType {
     CIRCUIT_BREAK {
         @Override
         public RejectException reject(String reason) {
-            return new RejectCircuitBreakException(reason);
-        }
-
-        @Override
-        public RejectException failover(String reason) {
             return new RejectCircuitBreakException(reason);
         }
 
@@ -116,7 +99,7 @@ public enum FaultType {
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectCellException();
+            return new RejectEscapeException();
         }
     };
 
@@ -134,7 +117,9 @@ public enum FaultType {
      * @param reason the reason for failover
      * @return a {@link RejectException}
      */
-    public abstract RejectException failover(String reason);
+    public RejectException failover(String reason) {
+        return null;
+    }
 
     /**
      * Degrades the request with a specific exception.

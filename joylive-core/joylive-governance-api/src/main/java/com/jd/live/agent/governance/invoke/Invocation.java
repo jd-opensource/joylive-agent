@@ -63,7 +63,8 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     public static final String REJECT_NO_UNIT_ROUTE = "reject when unit route is not found.";
     public static final String REJECT_NO_INSTANCE = "reject when instance is not found.";
     public static final String FAILOVER_CENTER_NO_VARIABLE = "failover center unit when unit variable is not found.";
-    public static final String FAILOVER_ESCAPE = "failover unit when variable is not belong to this unit.";
+    public static final String FAILOVER_UNIT_ESCAPE = "failover unit when variable is not belong to this unit.";
+    public static final String FAILOVER_CELL_ESCAPE = "failover cell when variable is not belong to this cell.";
     public static final String FAILOVER_CELL_NOT_ACCESSIBLE = "failover other cell when local cell is not accessible.";
 
     /**

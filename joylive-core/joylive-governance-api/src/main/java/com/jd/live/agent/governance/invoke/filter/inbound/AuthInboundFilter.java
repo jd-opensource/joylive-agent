@@ -68,11 +68,11 @@ public class AuthInboundFilter implements InboundFilter, ExtensionInitializer {
             }
             // If blocked by the blacklist, return false directly.
             if (blockedByBlackList) {
-                invocation.reject(FaultType.AUTHENTICATED, "The traffic authentication policy rejects the request.");
+                invocation.reject(FaultType.UNAUTHORIZED, "The traffic authentication policy rejected the request.");
             }
             // If there is a whitelist, but it has not passed any whitelist, return false.
             if (hasWhiteList && !passedWhiteList) {
-                invocation.reject(FaultType.AUTHENTICATED, "The traffic authentication policy rejects the request.");
+                invocation.reject(FaultType.UNAUTHORIZED, "The traffic authentication policy rejected the request.");
             }
         }
         chain.filter(invocation);
