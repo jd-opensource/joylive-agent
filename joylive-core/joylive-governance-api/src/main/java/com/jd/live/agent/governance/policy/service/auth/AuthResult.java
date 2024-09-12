@@ -15,16 +15,12 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
-
 /**
  * AuthResult
  *
  * @since 1.2.0
  */
 public enum AuthResult {
-    @JsonAlias("BLACK")
     DENY,
-    @JsonAlias("WHITE")
     ALLOW;
 }

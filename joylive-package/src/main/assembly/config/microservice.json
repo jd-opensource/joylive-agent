@@ -122,7 +122,7 @@
                   ]
                 }
               ],
-              "type": "WHITE"
+              "type": "ALLOW"
             },
             {
               "name": "auth-rule-2",
@@ -138,7 +138,7 @@
                   ]
                 }
               ],
-              "type": "BLACK"
+              "type": "DENY"
             }
           ],
           "rateLimitPolicies": [
