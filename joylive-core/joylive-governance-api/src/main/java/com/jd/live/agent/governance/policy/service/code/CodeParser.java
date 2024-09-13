@@ -15,9 +15,12 @@
  */
 package com.jd.live.agent.governance.policy.service.code;
 
+import com.jd.live.agent.core.extension.annotation.Extensible;
+
 /**
  * An interface for parsing code from service responses.
  */
+@Extensible("CodeParser")
 public interface CodeParser {
 
     /**

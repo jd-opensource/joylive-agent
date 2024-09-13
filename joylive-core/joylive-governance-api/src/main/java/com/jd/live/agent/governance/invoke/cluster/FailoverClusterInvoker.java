@@ -53,7 +53,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
     private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
 
     @Inject
-    private Map<String, CodeParser> errorParsers;
+    private Map<String, CodeParser> codeParsers;
 
     @Override
     public <R extends OutboundRequest,
@@ -66,7 +66,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
-        RetryContext<R, O, E, T> retryContext = new RetryContext<>(errorParsers, retryPolicy, cluster);
+        RetryContext<R, O, E, T> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
         return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e -> {
