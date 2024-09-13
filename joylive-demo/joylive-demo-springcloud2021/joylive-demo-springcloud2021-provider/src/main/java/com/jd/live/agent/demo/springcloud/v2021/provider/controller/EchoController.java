@@ -20,9 +20,7 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,10 +47,18 @@ public class EchoController {
         return response;
     }
 
-    @GetMapping("/status/{code}")
+    @RequestMapping(value = "/status/{code}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
     public LiveResponse status(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) {
         response.setStatus(code);
         LiveResponse lr = new LiveResponse(code, null, code);
+        configure(request, lr);
+        return lr;
+    }
+
+    @RequestMapping(value = "/sleep/{millis}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
+    public LiveResponse sleep(@PathVariable int millis, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+        Thread.sleep(millis);
+        LiveResponse lr = new LiveResponse(200, null, millis);
         configure(request, lr);
         return lr;
     }

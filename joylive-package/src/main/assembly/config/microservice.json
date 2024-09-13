@@ -109,22 +109,6 @@
           },
           "authPolicies": [
             {
-              "name": "auth-rule-1",
-              "version": 1704038400000,
-              "relationType": "AND",
-              "conditions": [
-                {
-                  "type": "query",
-                  "opType": "EQUAL",
-                  "key": "auth",
-                  "values": [
-                    "true"
-                  ]
-                }
-              ],
-              "type": "ALLOW"
-            },
-            {
               "name": "auth-rule-2",
               "version": 1704038400001,
               "relationType": "AND",
