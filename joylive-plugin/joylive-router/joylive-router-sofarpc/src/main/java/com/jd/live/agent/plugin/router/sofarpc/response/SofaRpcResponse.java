@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.sofarpc.response;
 
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 
 import java.util.function.Predicate;
 
@@ -42,34 +42,37 @@ public interface SofaRpcResponse {
 
         /**
          * Constructs a new {@code SofaRpcOutboundResponse} for a successful SOFA RPC call.
-         * <p>
-         * This constructor is used when the SOFA RPC call completes successfully, and a {@link SofaResponse}
-         * is available. The response object contains the data returned by the RPC call.
-         * </p>
          *
          * @param response The {@link SofaResponse} object containing the data returned by the successful RPC call.
          */
         public SofaRpcOutboundResponse(SofaResponse response) {
-            super(response, null, null);
+            this(response, null);
+        }
+
+        /**
+         * Constructs a new {@code SofaRpcOutboundResponse} for a successful SOFA RPC call.
+         *
+         * @param response  The {@link SofaResponse} object containing the data returned by the successful RPC call.
+         * @param predicate An optional {@code Predicate<Response>} that can be used to evaluate
+         *                  whether the call should be retried based on the response. Can be {@code null}
+         *                  if retry logic is not applicable.
+         */
+        public SofaRpcOutboundResponse(SofaResponse response, Predicate<Throwable> predicate) {
+            super(response, response != null && response.isError() ? new ServiceError(response.getErrorMsg(), true) : null, predicate);
         }
 
         /**
          * Constructs a new {@code SofaRpcOutboundResponse} for a failed SOFA RPC call.
-         * <p>
-         * This constructor is used when the SOFA RPC call fails, and an exception is thrown.
-         * The throwable represents the error that occurred during the RPC call. An optional
-         * predicate can be provided to determine if the response should be retried based on
-         * the type of error.
-         * </p>
          *
          * @param throwable The {@code Throwable} that represents the error occurred during the RPC call.
          * @param predicate An optional {@code Predicate<Response>} that can be used to evaluate
          *                  whether the call should be retried based on the response. Can be {@code null}
          *                  if retry logic is not applicable.
          */
-        public SofaRpcOutboundResponse(Throwable throwable, Predicate<Response> predicate) {
+        public SofaRpcOutboundResponse(ServiceError throwable, Predicate<Throwable> predicate) {
             super(null, throwable, predicate);
         }
+
     }
 }
 

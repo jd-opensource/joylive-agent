@@ -36,33 +36,21 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
     /**
      * The main content of the service response.
      */
-    protected final T response;
+    protected T response;
 
     /**
      * An optional Throwable capturing any error that may have occurred during the
      * service operation. A {@code null} value indicates that the operation completed
      * without errors.
      */
-    protected final Throwable throwable;
+    protected final ServiceError throwable;
 
     /**
      * An optional predicate used to determine if the response should be retried.
      * A {@code null} value indicates that there is no custom retry logic, and
      * the default retryability logic will be applied.
      */
-    protected final Predicate<Response> predicate;
-
-    /**
-     * Constructs an instance of {@code AbstractServiceResponse} with the specified
-     * response content and throwable. This constructor assumes no custom retry
-     * predicate, meaning the retry decision will be based on the default logic.
-     *
-     * @param response  the response content
-     * @param throwable the throwable, if any, associated with the service operation
-     */
-    public AbstractServiceResponse(T response, Throwable throwable) {
-        this(response, throwable, null);
-    }
+    protected final Predicate<Throwable> predicate;
 
     /**
      * Constructs an instance of {@code AbstractServiceResponse} with the specified
@@ -72,14 +60,14 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * @param throwable the throwable, if any, associated with the service operation
      * @param predicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractServiceResponse(T response, Throwable throwable, Predicate<Response> predicate) {
+    public AbstractServiceResponse(T response, ServiceError throwable, Predicate<Throwable> predicate) {
         this.response = response;
         this.throwable = throwable;
         this.predicate = predicate;
     }
 
     @Override
-    public boolean isRetryable() {
-        return predicate != null && predicate.test(this);
+    public boolean isRetryable(Throwable throwable) {
+        return predicate != null && predicate.test(throwable);
     }
 }

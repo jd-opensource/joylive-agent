@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
@@ -113,11 +114,11 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                     return new GatewayClusterResponse(createResponse(request, config));
                 } catch (Throwable e) {
                     logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new GatewayClusterResponse(createException(throwable, request, endpoint));
+                    return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
                 }
             }
         }
-        return new GatewayClusterResponse(createException(throwable, request, endpoint));
+        return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override

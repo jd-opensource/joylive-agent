@@ -35,7 +35,7 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
      * @param response  the RPC response content
      * @param throwable the throwable, if any, that occurred during the RPC operation
      */
-    public AbstractRpcResponse(T response, Throwable throwable) {
+    public AbstractRpcResponse(T response, ServiceError throwable) {
         super(response, throwable, null);
     }
 
@@ -47,7 +47,7 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
      * @param throwable the throwable, if any, that occurred during the RPC operation
      * @param predicate a custom predicate to evaluate retryability of the RPC response
      */
-    public AbstractRpcResponse(T response, Throwable throwable, Predicate<Response> predicate) {
+    public AbstractRpcResponse(T response, ServiceError throwable, Predicate<Throwable> predicate) {
         super(response, throwable, predicate);
     }
 
@@ -68,7 +68,7 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
          * @param response  the outbound RPC response content
          * @param throwable the throwable, if any, that occurred during the outbound RPC operation
          */
-        public AbstractRpcOutboundResponse(T response, Throwable throwable) {
+        public AbstractRpcOutboundResponse(T response, ServiceError throwable) {
             super(response, throwable);
         }
 
@@ -80,7 +80,7 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
          * @param throwable the throwable, if any, that occurred during the outbound RPC operation
          * @param predicate a custom predicate to evaluate retryability of the outbound RPC response
          */
-        public AbstractRpcOutboundResponse(T response, Throwable throwable, Predicate<Response> predicate) {
+        public AbstractRpcOutboundResponse(T response, ServiceError throwable, Predicate<Throwable> predicate) {
             super(response, throwable, predicate);
         }
     }

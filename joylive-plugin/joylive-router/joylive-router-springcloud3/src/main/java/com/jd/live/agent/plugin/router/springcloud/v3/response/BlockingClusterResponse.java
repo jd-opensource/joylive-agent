@@ -15,12 +15,22 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.governance.response.ServiceError;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.function.Predicate;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -31,17 +41,17 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
  */
 public class BlockingClusterResponse extends AbstractHttpOutboundResponse<ClientHttpResponse> {
 
+    private static final Logger logger = LoggerFactory.getLogger(BlockingClusterResponse.class);
+
+    private byte[] body;
+
     public BlockingClusterResponse(ClientHttpResponse response) {
-        super(response, null);
+        super(response);
         this.headers = new LazyObject<>(response.getHeaders());
     }
 
-    public BlockingClusterResponse(Throwable throwable) {
-        super(null, throwable);
-    }
-
-    public BlockingClusterResponse(ClientHttpResponse response, Throwable throwable) {
-        super(response, throwable);
+    public BlockingClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
+        super(throwable, predicate);
     }
 
     @Override
@@ -54,4 +64,70 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
         }
     }
 
+    @Override
+    public Object getResult() {
+        if (body == null) {
+            if (response == null) {
+                body = new byte[0];
+            } else {
+                try {
+                    InputStream in = response.getBody();
+                    body = IOUtils.read(in);
+                    response = new ClientHttpResponseAdapter(response, body);
+                    Close.instance().close(in);
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                    body = new byte[0];
+                }
+            }
+        }
+        return body;
+    }
+
+    private static class ClientHttpResponseAdapter implements ClientHttpResponse {
+
+        private final ClientHttpResponse delegate;
+
+        private final byte[] body;
+
+        ClientHttpResponseAdapter(ClientHttpResponse delegate, byte[] body) {
+            this.delegate = delegate;
+            this.body = body;
+        }
+
+        @Override
+        public int getRawStatusCode() throws IOException {
+            return delegate.getRawStatusCode();
+        }
+
+        @NonNull
+        @Override
+        public HttpStatus getStatusCode() throws IOException {
+            return delegate.getStatusCode();
+        }
+
+        @NonNull
+        @Override
+        public String getStatusText() throws IOException {
+            return delegate.getStatusText();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @NonNull
+        @Override
+        public InputStream getBody() throws IOException {
+            return new ByteArrayInputStream(body);
+        }
+
+        @NonNull
+        @Override
+        public HttpHeaders getHeaders() {
+            return delegate.getHeaders();
+        }
+
+    }
 }

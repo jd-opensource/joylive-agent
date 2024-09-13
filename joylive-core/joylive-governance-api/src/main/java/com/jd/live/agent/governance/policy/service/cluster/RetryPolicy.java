@@ -62,6 +62,16 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private Long timeout;
 
     /**
+     * Code parser
+     */
+    private String codeParser;
+
+    /**
+     * Code expression
+     */
+    private String codeExpression;
+
+    /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
     private Set<String> retryStatuses;
@@ -84,6 +94,12 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         }
         if (timeout == null) {
             timeout = source.timeout;
+        }
+        if (codeParser == null) {
+            codeParser = source.codeParser;
+        }
+        if (codeExpression == null) {
+            codeExpression = source.codeExpression;
         }
         if ((retryStatuses == null || retryStatuses.isEmpty()) && source.retryStatuses != null) {
             retryStatuses = source.retryStatuses;

@@ -95,8 +95,8 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         response.whenComplete((v, t) -> {
             if (t != null) {
                 result.completeExceptionally(t);
-            } else if (v.getThrowable() != null) {
-                result.completeExceptionally(v.getThrowable());
+            } else if (v.getError() != null) {
+                result.completeExceptionally(v.getError().getThrowable());
             } else {
                 result.complete(null);
             }

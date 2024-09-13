@@ -25,7 +25,7 @@ import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
@@ -36,6 +36,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -141,17 +142,17 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
                     return new BlockingClusterResponse(createResponse(request, config));
                 } catch (Throwable e) {
                     logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new BlockingClusterResponse(createException(throwable, request, endpoint));
+                    return new BlockingClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
                 }
             }
         }
-        return new BlockingClusterResponse(createException(throwable, request, endpoint));
+        return new BlockingClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
-    public boolean isRetryable(Response response) {
+    public boolean isRetryable(Throwable throwable) {
         // TODO modify isRetryable
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, response.getThrowable());
+        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
     }
 
     @SuppressWarnings("unchecked")
@@ -197,6 +198,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             this.bodyStream = body == null ? null : new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
         }
 
+        @NonNull
         @Override
         public HttpStatus getStatusCode() throws IOException {
             return HttpStatus.valueOf(degradeConfig.getResponseCode());
@@ -207,9 +209,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             return degradeConfig.getResponseCode();
         }
 
+        @NonNull
         @Override
         public String getStatusText() throws IOException {
-            return null;
+            return "";
         }
 
         @Override
@@ -217,11 +220,13 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
         }
 
+        @NonNull
         @Override
         public InputStream getBody() throws IOException {
             return bodyStream;
         }
 
+        @NonNull
         @Override
         public HttpHeaders getHeaders() {
             HttpHeaders headers = new HttpHeaders();

@@ -16,6 +16,8 @@
 package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -38,7 +40,9 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.code.CodeParser;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
@@ -57,8 +61,13 @@ import java.util.function.Consumer;
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAKER_ENABLED, matchIfMissing = true)
 public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
+    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
+
     @Inject
     private Map<String, CircuitBreakerFactory> factories;
+
+    @Inject
+    private Map<String, CodeParser> errorParsers;
 
     @Inject(nullable = true)
     private CircuitBreakerFactory defaultFactory;
@@ -105,7 +114,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 }
             }
             // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, serviceBreakers, instancePolicies));
+            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, errorParsers, serviceBreakers, instancePolicies));
             // acquire service permit
             acquire(invocation, serviceBreakers);
             // filter broken instance
@@ -195,6 +204,8 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
         private final CircuitBreakerFactory factory;
 
+        private final Map<String, CodeParser> errorParsers;
+
         private List<CircuitBreaker> circuitBreakers;
 
         private final List<CircuitBreakPolicy> instancePolicies;
@@ -202,9 +213,11 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         private final int index;
 
         CircuitBreakerListener(CircuitBreakerFactory factory,
+                               Map<String, CodeParser> errorParsers,
                                List<CircuitBreaker> circuitBreakers,
                                List<CircuitBreakPolicy> instancePolicies) {
             this.factory = factory;
+            this.errorParsers = errorParsers;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
             this.index = circuitBreakers.size();
@@ -235,12 +248,51 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         public void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response) {
             long duration = invocation.getRequest().getDuration();
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                if (response != null && circuitBreaker.getPolicy().containsError(response.getCode())) {
+                if (response != null && isBreakError(response, circuitBreaker)) {
                     circuitBreaker.onError(duration, new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(duration);
                 }
             }
+        }
+
+        /**
+         * Checks if a service response represents an error, according to the circuit breaker policy.
+         *
+         * @param response       The service response to check.
+         * @param circuitBreaker The circuit breaker instance with the policy to use for error checking.
+         * @return true if the response represents an error, false otherwise.
+         */
+        private boolean isBreakError(ServiceResponse response, CircuitBreaker circuitBreaker) {
+            CircuitBreakPolicy policy = circuitBreaker.getPolicy();
+            if (policy.containsError(response.getCode())) {
+                return true;
+            }
+            ServiceError error = response.getError();
+            Throwable throwable = error == null ? null : error.getThrowable();
+            if (throwable != null) {
+                return policy.containsException(throwable);
+            } else if (response.isSuccess()) {
+                Object result = response.getResult();
+                if (result != null) {
+                    String errorParser = policy.getCodeParser();
+                    String errorExpression = policy.getCodeExpression();
+                    if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
+                        CodeParser parser = errorParsers.get(errorParser);
+                        if (parser != null) {
+                            try {
+                                String code = parser.getCode(errorExpression, result);
+                                return policy.containsError(code);
+                            } catch (Throwable e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            return false;
         }
 
         @Override

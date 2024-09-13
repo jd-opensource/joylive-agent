@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.request.Cookie;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * AbstractHttpResponse
@@ -78,10 +79,28 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
      *
      * @param response The original response object.
+     */
+    public AbstractHttpResponse(T response) {
+        this(response, null, null);
+    }
+
+    /**
+     * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
+     *
      * @param throwable The original exception.
      */
-    public AbstractHttpResponse(T response, Throwable throwable) {
-        super(response, throwable);
+    public AbstractHttpResponse(ServiceError throwable, Predicate<Throwable> predicate) {
+        this(null, throwable, predicate);
+    }
+
+    /**
+     * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
+     *
+     * @param response  The original response object.
+     * @param throwable The original exception.
+     */
+    public AbstractHttpResponse(T response, ServiceError throwable, Predicate<Throwable> predicate) {
+        super(response, throwable, predicate);
         port = new LazyObject<>(this::parsePort);
         host = new LazyObject<>(this::parseHost);
         schema = new LazyObject<>(this::parseScheme);
@@ -237,8 +256,16 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>
             implements HttpResponse.HttpOutboundResponse {
 
-        public AbstractHttpOutboundResponse(T response, Throwable throwable) {
-            super(response, throwable);
+        public AbstractHttpOutboundResponse(T response) {
+            super(response);
+        }
+
+        public AbstractHttpOutboundResponse(ServiceError throwable, Predicate<Throwable> predicate) {
+            super(throwable, predicate);
+        }
+
+        public AbstractHttpOutboundResponse(T response, ServiceError throwable, Predicate<Throwable> predicate) {
+            super(response, throwable, predicate);
         }
     }
 }

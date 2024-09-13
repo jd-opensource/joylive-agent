@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.dubbo.v2_7.response;
 
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 import org.apache.dubbo.rpc.Result;
 
 import java.util.function.Predicate;
@@ -37,15 +37,15 @@ public interface DubboResponse {
     class DubboOutboundResponse extends AbstractRpcOutboundResponse<Result> implements DubboResponse {
 
         public DubboOutboundResponse(Result response) {
-            super(response, null, null);
+            this(response, null);
         }
 
-        public DubboOutboundResponse(Throwable throwable, Predicate<Response> predicate) {
+        public DubboOutboundResponse(ServiceError throwable, Predicate<Throwable> predicate) {
             super(null, throwable, predicate);
         }
 
-        public DubboOutboundResponse(Result response, Throwable throwable, Predicate<Response> predicate) {
-            super(response, throwable, predicate);
+        public DubboOutboundResponse(Result response, Predicate<Throwable> predicate) {
+            super(response, response != null && response.hasException() ? new ServiceError(response.getException(), true) : null, predicate);
         }
     }
 }

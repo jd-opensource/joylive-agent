@@ -67,6 +67,16 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     private int minCallsThreshold = 10;
 
     /**
+     * Code parser
+     */
+    private String codeParser;
+
+    /**
+     * Code expression
+     */
+    private String codeExpression;
+
+    /**
      * Error code
      */
     private Set<String> errorCodes;
@@ -134,6 +144,8 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
             slidingWindowType = source.getSlidingWindowType();
             slidingWindowSize = source.getSlidingWindowSize();
             minCallsThreshold = source.getMinCallsThreshold();
+            codeParser = source.getCodeParser();
+            codeExpression = source.getCodeExpression();
             if (errorCodes == null && source.getErrorCodes() != null) {
                 errorCodes = new HashSet<>(source.getErrorCodes());
             }

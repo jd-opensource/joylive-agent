@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -99,18 +100,18 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                     onStart(cluster, request, endpoint);
                     context.outbound(cluster, invocation, endpoint).whenComplete((o, r) -> {
                         if (r != null) {
-                            onException(cluster, invocation, r, instance, result);
-                        } else if (o.getThrowable() != null) {
-                            onException(cluster, invocation, o.getThrowable(), instance, result);
+                            onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
+                        } else if (o.getError() != null) {
+                            onException(cluster, invocation, o, o.getError(), instance, result);
                         } else {
                             onSuccess(cluster, invocation, o, request, instance, result);
                         }
                     });
                 } catch (Throwable e) {
-                    onException(cluster, invocation, e, endpoint, result);
+                    onException(cluster, invocation, null, new ServiceError(e, false), endpoint, result);
                 }
             } else {
-                onException(cluster, invocation, t, null, result);
+                onException(cluster, invocation, null, new ServiceError(t, false), null, result);
             }
         });
         return result;
@@ -178,7 +179,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>        The type of the endpoint that extends {@link Endpoint}.
      * @param <T>        The type of the throwable that extends {@link Throwable}.
-     * @param throwable  The exception that occurred during the invocation.
+     * @param error      The exception that occurred during the invocation.
      * @param endpoint   The endpoint to which the request was being sent, may be null if the exception
      *                   occurred before an endpoint was selected.
      * @param cluster    The live cluster context in which the invocation was taking place.
@@ -192,15 +193,16 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             E extends Endpoint,
             T extends Throwable> void onException(LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
-                                                  Throwable throwable,
+                                                  O response,
+                                                  ServiceError error,
                                                   E endpoint,
                                                   CompletableFuture<O> result) {
         R request = invocation.getRequest();
-        O response = cluster.createResponse(throwable, request, endpoint);
+        response = response != null && error.isServerError() ? response : cluster.createResponse(error.getThrowable(), request, endpoint);
         try {
-            invocation.onFailure(endpoint, throwable);
+            invocation.onFailure(endpoint, error.getThrowable());
             // avoid the live exception class is not recognized in application classloader
-            cluster.onError(response.getThrowable(), request, endpoint);
+            cluster.onError(response.getError().getThrowable(), request, endpoint);
         } catch (Throwable e) {
             logger.warn("Exception occurred when onException, caused by " + e.getMessage(), e);
         } finally {

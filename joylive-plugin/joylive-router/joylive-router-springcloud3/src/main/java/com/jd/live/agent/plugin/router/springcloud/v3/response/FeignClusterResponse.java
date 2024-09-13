@@ -15,14 +15,21 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.governance.response.ServiceError;
 import feign.Response;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * FeignOutboundResponse
@@ -31,17 +38,17 @@ import java.util.Map;
  */
 public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response> {
 
+    private static final Logger logger = LoggerFactory.getLogger(FeignClusterResponse.class);
+
+    private byte[] body;
+
     public FeignClusterResponse(Response response) {
-        this(response, null);
-    }
-
-    public FeignClusterResponse(Throwable throwable) {
-        this(null, throwable);
-    }
-
-    public FeignClusterResponse(Response response, Throwable throwable) {
-        super(response, throwable);
+        super(response);
         headers = new LazyObject<>(() -> parserHeader(response));
+    }
+
+    public FeignClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
+        super(throwable, predicate);
     }
 
     private Map<String, List<String>> parserHeader(Response response) {
@@ -62,6 +69,34 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
     @Override
     public String getCode() {
         return response == null ? null : String.valueOf(response.status());
+    }
+
+    @Override
+    public Object getResult() {
+        if (body == null) {
+            Response.Body bodied = response == null ? null : response.body();
+            if (bodied == null) {
+                body = new byte[0];
+            } else {
+                try {
+                    InputStream in = bodied.asInputStream();
+                    body = IOUtils.read(in);
+                    response = Response.builder()
+                            .body(body)
+                            .headers(response.headers())
+                            .protocolVersion(response.protocolVersion())
+                            .reason(response.reason())
+                            .request(response.request())
+                            .status(response.status())
+                            .build();
+                    Close.instance().close(in);
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                    body = new byte[0];
+                }
+            }
+        }
+        return body;
     }
 
 }
