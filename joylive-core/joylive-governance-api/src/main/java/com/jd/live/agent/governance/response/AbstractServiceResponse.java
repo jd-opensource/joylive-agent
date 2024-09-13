@@ -43,7 +43,7 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * service operation. A {@code null} value indicates that the operation completed
      * without errors.
      */
-    protected final ServiceError throwable;
+    protected final ServiceError error;
 
     /**
      * An optional predicate used to determine if the response should be retried.
@@ -57,13 +57,18 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * response content, throwable, and a custom retry predicate.
      *
      * @param response  the response content
-     * @param throwable the throwable, if any, associated with the service operation
+     * @param error     the error, if any, associated with the service operation
      * @param predicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractServiceResponse(T response, ServiceError throwable, Predicate<Throwable> predicate) {
+    public AbstractServiceResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
         this.response = response;
-        this.throwable = throwable;
+        this.error = error;
         this.predicate = predicate;
+    }
+
+    @Override
+    public ServiceError getError() {
+        return error;
     }
 
     @Override

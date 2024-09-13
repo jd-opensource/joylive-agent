@@ -22,9 +22,6 @@ import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.governance.policy.service.code.CodeParser;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
 
 @Injectable
 @Extension("JsonPath")
@@ -38,19 +35,16 @@ public class JsonPathCodeParser implements CodeParser {
         if (expression == null || expression.isEmpty() || response == null) {
             return null;
         }
-        Reader reader;
+        Object result;
         if (response instanceof String) {
-            reader = new StringReader((String) response);
+            result = parser.read((String) response, expression);
         } else if (response instanceof byte[]) {
-            reader = new StringReader(new String((byte[]) response));
-        } else if (response instanceof Reader) {
-            reader = (Reader) response;
+            result = parser.read(new String((byte[]) response), expression);
         } else if (response instanceof InputStream) {
-            reader = new InputStreamReader((InputStream) response);
+            result = parser.read((InputStream) response, expression);
         } else {
-            reader = new StringReader(response.toString());
+            result = parser.read(response.toString(), expression);
         }
-
-        return parser.read(reader, expression);
+        return result == null ? null : result.toString();
     }
 }

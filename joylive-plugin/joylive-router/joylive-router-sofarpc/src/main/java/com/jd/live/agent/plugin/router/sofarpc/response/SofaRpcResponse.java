@@ -64,13 +64,13 @@ public interface SofaRpcResponse {
         /**
          * Constructs a new {@code SofaRpcOutboundResponse} for a failed SOFA RPC call.
          *
-         * @param throwable The {@code Throwable} that represents the error occurred during the RPC call.
+         * @param error The {@code Throwable} that represents the error occurred during the RPC call.
          * @param predicate An optional {@code Predicate<Response>} that can be used to evaluate
          *                  whether the call should be retried based on the response. Can be {@code null}
          *                  if retry logic is not applicable.
          */
-        public SofaRpcOutboundResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-            super(null, throwable, predicate);
+        public SofaRpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+            super(null, error, predicate);
         }
 
     }

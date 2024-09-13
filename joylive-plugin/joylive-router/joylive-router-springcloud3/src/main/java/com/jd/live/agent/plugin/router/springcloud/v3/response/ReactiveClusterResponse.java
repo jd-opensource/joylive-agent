@@ -35,8 +35,8 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
         super(response);
     }
 
-    public ReactiveClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-        super(throwable, predicate);
+    public ReactiveClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+        super(error, predicate);
     }
 
     @Override

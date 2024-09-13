@@ -33,8 +33,8 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
         super(response);
     }
 
-    public GatewayClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-        super(throwable, predicate);
+    public GatewayClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+        super(error, predicate);
     }
 
     @Override

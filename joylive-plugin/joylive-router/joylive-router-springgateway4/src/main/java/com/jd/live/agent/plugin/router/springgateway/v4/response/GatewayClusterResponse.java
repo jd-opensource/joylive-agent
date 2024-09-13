@@ -29,14 +29,12 @@ import java.util.function.Predicate;
  */
 public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerHttpResponse> {
 
-    private String body;
-
     public GatewayClusterResponse(ServerHttpResponse response) {
         super(response);
     }
 
-    public GatewayClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-        super(throwable, predicate);
+    public GatewayClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+        super(error, predicate);
     }
 
     @Override

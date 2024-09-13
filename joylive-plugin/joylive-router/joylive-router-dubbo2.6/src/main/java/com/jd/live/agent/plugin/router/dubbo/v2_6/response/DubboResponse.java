@@ -47,14 +47,14 @@ public interface DubboResponse {
         }
 
         /**
-         * Constructs a new {@link DubboOutboundResponse} with the given throwable.
+         * Constructs a new {@link DubboOutboundResponse} with the given error.
          * This constructor is used when the RPC call resulted in an error.
          *
-         * @param throwable The error that occurred during the RPC call.
+         * @param error The error that occurred during the RPC call.
          * @param predicate A predicate to test the response and determine if it is retryable.
          */
-        public DubboOutboundResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-            super(null, throwable, predicate);
+        public DubboOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+            super(null, error, predicate);
         }
 
         /**

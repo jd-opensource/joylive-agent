@@ -50,8 +50,8 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
         this.headers = new LazyObject<>(this.response.getHeaders());
     }
 
-    public BlockingClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-        super(throwable, predicate);
+    public BlockingClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+        super(error, predicate);
     }
 
     @Override

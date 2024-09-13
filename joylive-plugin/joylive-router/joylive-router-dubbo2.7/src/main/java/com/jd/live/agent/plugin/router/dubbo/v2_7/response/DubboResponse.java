@@ -40,8 +40,8 @@ public interface DubboResponse {
             this(response, null);
         }
 
-        public DubboOutboundResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-            super(null, throwable, predicate);
+        public DubboOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+            super(null, error, predicate);
         }
 
         public DubboOutboundResponse(Result response, Predicate<Throwable> predicate) {

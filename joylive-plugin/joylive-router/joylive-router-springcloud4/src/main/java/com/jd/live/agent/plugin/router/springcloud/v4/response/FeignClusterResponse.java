@@ -47,8 +47,8 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
         headers = new LazyObject<>(() -> parserHeader(response));
     }
 
-    public FeignClusterResponse(ServiceError throwable, Predicate<Throwable> predicate) {
-        super(throwable, predicate);
+    public FeignClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+        super(error, predicate);
     }
 
     private Map<String, List<String>> parserHeader(Response response) {
