@@ -157,6 +157,7 @@ public class Application {
     public void label(BiConsumer<String, String> consumer) {
         if (consumer != null) {
             if (location != null) {
+                accept(consumer, Constants.LABEL_CLOUD, location.getCloud());
                 accept(consumer, Constants.LABEL_REGION, location.getRegion());
                 accept(consumer, Constants.LABEL_ZONE, location.getZone());
                 accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());

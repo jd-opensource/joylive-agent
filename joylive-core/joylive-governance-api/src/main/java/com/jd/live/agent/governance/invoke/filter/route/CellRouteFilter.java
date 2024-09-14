@@ -116,7 +116,7 @@ public class CellRouteFilter implements RouteFilter {
         }
         if (election.isMutable()) {
             // Attempt to failover if not in the whitelist or prefix
-            failover(election);
+            failover(election, invocation);
         }
         Candidate winner = election.getWinner();
         CellRoute cellRoute = winner == null ? null : winner.getCellRoute();
@@ -323,7 +323,7 @@ public class CellRouteFilter implements RouteFilter {
      *
      * @param election The election object containing the current state of the election.
      */
-    private void failover(Election election) {
+    private void failover(Election election, OutboundInvocation<?> invocation) {
         // If there's only one candidate or fewer, there's no failover needed.
         if (election.size() <= 1) {
             return;
@@ -339,6 +339,11 @@ public class CellRouteFilter implements RouteFilter {
         if (shortage > 0) {
             int instances = 0;
             List<Candidate> targets = new ArrayList<>(election.size() - 1);
+            int localCloudInstances = 0;
+            List<Candidate> localCloudTargets = new ArrayList<>(election.size() - 1);
+
+            String cloud = invocation.getContext().getLocation().getCloud();
+            boolean cloudPreference = cloud != null && !cloud.isEmpty();
 
             // Iterate through the candidates to find potential failover targets.
             for (Candidate candidate : election.getCandidates()) {
@@ -348,12 +353,20 @@ public class CellRouteFilter implements RouteFilter {
                     if (instance >= candidate.getThreshold() && instance > winner.getInstance()) {
                         targets.add(candidate);
                         instances += instance;
+                        if (cloudPreference && cloud.equals(candidate.getCellRoute().getCell().getLabel("cloud"))) {
+                            localCloudTargets.add(candidate);
+                            localCloudInstances += instance;
+                        }
                     }
                 }
             }
 
             // If there are potential targets, calculate the failover ratio.
             if (instances > 0) {
+                if (localCloudInstances > 0) {
+                    instances = localCloudInstances;
+                    targets = localCloudTargets;
+                }
                 ThreadLocalRandom localRandom = ThreadLocalRandom.current();
                 // If the random number is within the shortage range, perform a failover.
                 if (localRandom.nextInt(threshold) < shortage) {
