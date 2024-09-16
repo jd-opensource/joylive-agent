@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -67,14 +68,9 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     private int minCallsThreshold = 10;
 
     /**
-     * Code parser
+     * Code policy
      */
-    private String codeParser;
-
-    /**
-     * Code expression
-     */
-    private String codeExpression;
+    private CodePolicy codePolicy;
 
     /**
      * Error code
@@ -144,8 +140,7 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
             slidingWindowType = source.getSlidingWindowType();
             slidingWindowSize = source.getSlidingWindowSize();
             minCallsThreshold = source.getMinCallsThreshold();
-            codeParser = source.getCodeParser();
-            codeExpression = source.getCodeExpression();
+            codePolicy = source.getCodePolicy() == null ? null : source.getCodePolicy().clone();
             if (errorCodes == null && source.getErrorCodes() != null) {
                 errorCodes = new HashSet<>(source.getErrorCodes());
             }
@@ -167,6 +162,15 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         if (source.getVersion() == version) {
             broken = source.broken;
         }
+    }
+
+    /**
+     * Checks if the body of the code should be parsed.
+     *
+     * @return true if the body of the code should be parsed, false otherwise.
+     */
+    public boolean isBodyRequest() {
+        return codePolicy != null && codePolicy.isBodyRequest();
     }
 
     /**

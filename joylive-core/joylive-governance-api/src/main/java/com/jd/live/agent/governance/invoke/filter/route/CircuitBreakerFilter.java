@@ -41,11 +41,14 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.code.CodeParser;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -92,6 +95,9 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             List<CircuitBreaker> serviceBreakers = new ArrayList<>(policies.size());
             CircuitBreaker breaker;
             for (CircuitBreakPolicy policy : policies) {
+                if (policy.isBodyRequest()) {
+                    invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(policy.getCodePolicy());
+                }
                 switch (policy.getLevel()) {
                     case SERVICE:
                         breaker = getCircuitBreaker(policy, policy.getUri());
@@ -272,11 +278,12 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             Throwable throwable = error == null ? null : error.getThrowable();
             if (throwable != null) {
                 return policy.containsException(throwable);
-            } else if (response.isSuccess()) {
+            } else if (response.isSuccess() && policy.isBodyRequest()) {
+                CodePolicy codePolicy = policy.getCodePolicy();
                 Object result = response.getResult();
                 if (result != null) {
-                    String errorParser = policy.getCodeParser();
-                    String errorExpression = policy.getCodeExpression();
+                    String errorParser = codePolicy.getParser();
+                    String errorExpression = codePolicy.getExpression();
                     if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
                         CodeParser parser = errorParsers.get(errorParser);
                         if (parser != null) {

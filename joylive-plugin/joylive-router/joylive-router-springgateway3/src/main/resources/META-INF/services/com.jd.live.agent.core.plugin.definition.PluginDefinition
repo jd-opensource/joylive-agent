@@ -1,3 +1,2 @@
-com.jd.live.agent.plugin.router.springgateway.v3.definition.FilteringWebHandlerDefinition
 com.jd.live.agent.plugin.router.springgateway.v3.definition.GatewayClusterDefinition
 com.jd.live.agent.plugin.router.springgateway.v3.definition.RetryGatewayFilterDefinition

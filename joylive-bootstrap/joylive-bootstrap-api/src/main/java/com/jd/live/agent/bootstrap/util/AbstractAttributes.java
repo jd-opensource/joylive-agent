@@ -18,6 +18,7 @@ package com.jd.live.agent.bootstrap.util;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Provides a skeletal implementation of the {@link Attributes} interface to minimize the effort required to implement this interface.
@@ -49,6 +50,18 @@ public abstract class AbstractAttributes implements Attributes {
     @SuppressWarnings("unchecked")
     public <T> T getAttribute(String key) {
         return key == null || attributes == null ? null : (T) attributes.get(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getAttributeIfAbsent(String key, Function<String, T> function) {
+        if (key == null) {
+            return null;
+        }
+        if (attributes == null) {
+            attributes = new LinkedHashMap<>();
+        }
+        return (T) attributes.computeIfAbsent(key, function);
     }
 
     @Override

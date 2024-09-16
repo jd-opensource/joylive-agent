@@ -30,10 +30,13 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.code.CodeParser;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -66,6 +69,9 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
+        if (retryPolicy != null && retryPolicy.isBodyRequest()) {
+            invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(retryPolicy.getCodePolicy());
+        }
         RetryContext<R, O, E, T> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
@@ -247,11 +253,12 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             Throwable throwable = error == null ? null : error.getThrowable();
             if (throwable != null) {
                 return response.isRetryable(throwable) || retryPolicy.isRetry(throwable);
-            } else if (response.isSuccess()) {
+            } else if (response.isSuccess() && retryPolicy.isBodyRequest()) {
+                CodePolicy codePolicy = retryPolicy.getCodePolicy();
                 Object result = response.getResult();
                 if (result != null) {
-                    String codeParser = retryPolicy.getCodeParser();
-                    String codeExpression = retryPolicy.getCodeExpression();
+                    String codeParser = codePolicy.getParser();
+                    String codeExpression = codePolicy.getExpression();
                     if (codeParser != null && !codeParser.isEmpty() && codeExpression != null && !codeExpression.isEmpty()) {
                         CodeParser parser = errorParsers.get(codeParser);
                         if (parser != null) {

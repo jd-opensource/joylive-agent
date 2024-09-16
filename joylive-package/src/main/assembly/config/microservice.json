@@ -290,8 +290,10 @@
               "slidingWindowType": "time",
               "slidingWindowSize": 5,
               "minCallsThreshold": 1,
-              "codeParser": "JsonPath",
-              "codeExpression": "$.code",
+              "codePolicy": {
+                "parser": "JsonPath",
+                "expression": "$.code"
+              },
               "errorCodes": [
                 "500",
                 "502"

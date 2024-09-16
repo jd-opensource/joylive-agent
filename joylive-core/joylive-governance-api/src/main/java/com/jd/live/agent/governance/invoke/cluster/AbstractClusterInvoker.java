@@ -202,7 +202,13 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         try {
             invocation.onFailure(endpoint, error.getThrowable());
             // avoid the live exception class is not recognized in application classloader
-            cluster.onError(response.getError().getThrowable(), request, endpoint);
+            error = response.getError();
+            if (error == null) {
+                // maybe degrade
+                cluster.onSuccess(response, request, endpoint);
+            } else {
+                cluster.onError(error.getThrowable(), request, endpoint);
+            }
         } catch (Throwable e) {
             logger.warn("Exception occurred when onException, caused by " + e.getMessage(), e);
         } finally {
