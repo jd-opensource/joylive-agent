@@ -170,8 +170,9 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      * @param throwable the exception that caused the failure.
      */
     public void onFailure(Endpoint endpoint, Throwable throwable) {
-        // TODO Whether to split the type of rejection
-        if (throwable instanceof RejectUnitException) {
+        if (throwable == null) {
+            return;
+        } else if (throwable instanceof RejectUnitException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNIT_UNAVAILABLE).requests(1));
         } else if (throwable instanceof RejectCellException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_CELL_UNAVAILABLE).requests(1));

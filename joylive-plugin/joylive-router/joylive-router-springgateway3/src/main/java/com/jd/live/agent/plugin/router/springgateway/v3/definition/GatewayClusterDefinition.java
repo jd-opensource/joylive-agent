@@ -29,33 +29,36 @@ import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClusterInterceptor;
 
 /**
- * ReactiveLoadBalancerClientFilter
+ * FilteringWebHandlerPluginDefinition
  *
  * @since 1.0.0
  */
-@Injectable
-@Extension(value = "GatewayClusterDefinition_v3")
+@Extension(value = "FilteringWebHandlerPluginDefinition_Gateway_v3")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
                 GovernanceConfig.CONFIG_LANE_ENABLED,
                 GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
-        }, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+        }, matchIfMissing = true, relation = ConditionalRelation.OR),
+        @ConditionalOnProperty(name = {
+                GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED,
+                GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED
+        }, matchIfMissing = true, relation = ConditionalRelation.AND),
 }, relation = ConditionalRelation.AND)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER)
+@ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
+@Injectable
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";
+    protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
 
-    private static final String METHOD_FILTER = "filter";
+    protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
 
-    private static final String[] ARGUMENT_FILTER = new String[]{
-            "org.springframework.web.server.ServerWebExchange",
-            "org.springframework.cloud.gateway.filter.GatewayFilterChain"
+    private static final String METHOD_HANDLE = "handle";
+
+    private static final String[] ARGUMENT_HANDLE = new String[]{
+            "org.springframework.web.server.ServerWebExchange"
     };
 
     protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
@@ -67,11 +70,11 @@ public class GatewayClusterDefinition extends PluginDefinitionAdapter {
     private GatewayConfig config;
 
     public GatewayClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_REACTIVE_LOADBALANCER_CLIENT_FILTER);
+        this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FILTER).
-                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
+                        MatcherBuilder.named(METHOD_HANDLE).
+                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
                         () -> new GatewayClusterInterceptor(context, config)
                 )
         };

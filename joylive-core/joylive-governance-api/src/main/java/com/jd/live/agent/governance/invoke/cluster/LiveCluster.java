@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
-import com.jd.live.agent.governance.response.Response;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -162,12 +161,12 @@ public interface LiveCluster<R extends OutboundRequest,
     O createResponse(Throwable throwable, R request, E endpoint);
 
     /**
-     * Determines whether a given response indicates that the request is retryable.
+     * Determines whether a given throwable indicates that the request is retryable.
      *
-     * @param response The response to evaluate.
-     * @return {@code true} if the request that generated the response should be retried; {@code false} otherwise.
+     * @param throwable The throwable to evaluate.
+     * @return {@code true} if the request that generated the throwable should be retried; {@code false} otherwise.
      */
-    default boolean isRetryable(Response response) {
+    default boolean isRetryable(Throwable throwable) {
         return false;
     }
 

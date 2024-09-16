@@ -33,10 +33,10 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
      * predicate, applying the default retry logic.
      *
      * @param response  the RPC response content
-     * @param throwable the throwable, if any, that occurred during the RPC operation
+     * @param error the error, if any, that occurred during the RPC operation
      */
-    public AbstractRpcResponse(T response, Throwable throwable) {
-        super(response, throwable, null);
+    public AbstractRpcResponse(T response, ServiceError error) {
+        super(response, error, null);
     }
 
     /**
@@ -44,11 +44,11 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
      * RPC response content, throwable, and a custom retry predicate.
      *
      * @param response  the RPC response content
-     * @param throwable the throwable, if any, that occurred during the RPC operation
+     * @param error the error, if any, that occurred during the RPC operation
      * @param predicate a custom predicate to evaluate retryability of the RPC response
      */
-    public AbstractRpcResponse(T response, Throwable throwable, Predicate<Response> predicate) {
-        super(response, throwable, predicate);
+    public AbstractRpcResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+        super(response, error, predicate);
     }
 
     /**
@@ -62,26 +62,26 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
 
         /**
          * Constructs an instance of {@code AbstractRpcOutboundResponse} with the specified
-         * outbound RPC response content and throwable. This constructor defaults to no custom
+         * outbound RPC response content and error. This constructor defaults to no custom
          * retry predicate, using the inherited retry logic.
          *
          * @param response  the outbound RPC response content
-         * @param throwable the throwable, if any, that occurred during the outbound RPC operation
+         * @param error the error, if any, that occurred during the outbound RPC operation
          */
-        public AbstractRpcOutboundResponse(T response, Throwable throwable) {
-            super(response, throwable);
+        public AbstractRpcOutboundResponse(T response, ServiceError error) {
+            super(response, error);
         }
 
         /**
          * Constructs an instance of {@code AbstractRpcOutboundResponse} with the specified
-         * outbound RPC response content, throwable, and a custom retry predicate.
+         * outbound RPC response content, error, and a custom retry predicate.
          *
          * @param response  the outbound RPC response content
-         * @param throwable the throwable, if any, that occurred during the outbound RPC operation
+         * @param error the error, if any, that occurred during the outbound RPC operation
          * @param predicate a custom predicate to evaluate retryability of the outbound RPC response
          */
-        public AbstractRpcOutboundResponse(T response, Throwable throwable, Predicate<Response> predicate) {
-            super(response, throwable, predicate);
+        public AbstractRpcOutboundResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+            super(response, error, predicate);
         }
     }
 }

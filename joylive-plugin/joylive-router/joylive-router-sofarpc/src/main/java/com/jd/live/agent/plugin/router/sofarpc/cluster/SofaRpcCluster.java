@@ -44,7 +44,7 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
@@ -86,8 +86,6 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
 
     private final ObjectParser parser;
 
-    private final ClassDesc classDesc;
-
     private final FieldDesc consumerConfigField;
 
     private final FieldDesc connectionHolderField;
@@ -105,7 +103,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     public SofaRpcCluster(AbstractCluster cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
-        this.classDesc = ClassUtils.describe(cluster.getClass());
+        ClassDesc classDesc = ClassUtils.describe(cluster.getClass());
         this.consumerConfigField = classDesc.getFieldList().getField("consumerConfig");
         this.connectionHolderField = classDesc.getFieldList().getField("connectionHolder");
         this.destroyedField = classDesc.getFieldList().getField("destroyed");
@@ -164,7 +162,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
             SofaResponse response = (SofaResponse) fieldChainMethod.invoke(cluster, endpoint.getProvider(), request.getRequest());
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
         } catch (Throwable e) {
-            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(e, this::isRetryable));
+            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(new ServiceError(e, false), this::isRetryable));
         }
     }
 
@@ -181,21 +179,19 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
                     return new SofaRpcOutboundResponse(createResponse(request, config));
                 } catch (Throwable e) {
                     logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new SofaRpcOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+                    return new SofaRpcOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
                 }
             }
         }
-        return new SofaRpcOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+        return new SofaRpcOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
-    public boolean isRetryable(Response response) {
-        if (response.getResponse() == null) {
-            return true;
-        } else if (!(response.getThrowable() instanceof SofaRpcException)) {
+    public boolean isRetryable(Throwable throwable) {
+        if (!(throwable instanceof SofaRpcException)) {
             return false;
         }
-        SofaRpcException exception = (SofaRpcException) response.getThrowable();
+        SofaRpcException exception = (SofaRpcException) throwable;
         switch (exception.getErrorType()) {
             case RpcErrorType.SERVER_BUSY:
             case RpcErrorType.CLIENT_TIMEOUT:

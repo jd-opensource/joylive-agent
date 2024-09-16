@@ -274,6 +274,10 @@
               "slidingWindowType": "time",
               "slidingWindowSize": 5,
               "minCallsThreshold": 1,
+              "codePolicy": {
+                "parser": "JsonPath",
+                "expression": "$.code"
+              },
               "errorCodes": [
                 "500",
                 "502"

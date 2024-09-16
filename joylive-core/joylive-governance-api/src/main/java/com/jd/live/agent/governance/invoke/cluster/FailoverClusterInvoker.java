@@ -16,18 +16,28 @@
 package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.filter.route.CircuitBreakerFilter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.code.CodeParser;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,6 +53,11 @@ import java.util.function.Supplier;
 @Extension(value = ClusterInvoker.TYPE_FAILOVER, order = ClusterInvoker.ORDER_FAILOVER)
 public class FailoverClusterInvoker extends AbstractClusterInvoker {
 
+    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
+
+    @Inject
+    private Map<String, CodeParser> codeParsers;
+
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
@@ -54,7 +69,10 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
-        RetryContext<R, O, E, T> retryContext = new RetryContext<>(retryPolicy, cluster);
+        if (retryPolicy != null && retryPolicy.isBodyRequest()) {
+            invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(retryPolicy.getCodePolicy());
+        }
+        RetryContext<R, O, E, T> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
         return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e -> {
@@ -83,6 +101,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             E extends Endpoint,
             T extends Throwable> {
 
+        private final Map<String, CodeParser> errorParsers;
+
         /**
          * The retry policy defining the rules for retrying the operation.
          */
@@ -109,7 +129,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * @param retryPolicy The {@link RetryPolicy} to govern retry behavior.
          * @param cluster     The {@link LiveCluster} managing the distribution and processing of the request
          */
-        RetryContext(RetryPolicy retryPolicy, LiveCluster<R, O, E, T> cluster) {
+        RetryContext(Map<String, CodeParser> errorParsers, RetryPolicy retryPolicy, LiveCluster<R, O, E, T> cluster) {
+            this.errorParsers = errorParsers;
             this.retryPolicy = retryPolicy;
             this.cluster = cluster;
             this.counter = new AtomicInteger(0);
@@ -154,6 +175,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             cluster.onRetry(count);
             CompletionStage<O> stage = supplier.get();
             stage.whenComplete((v, e) -> {
+                ServiceError se = v.getError();
+                Throwable throwable = se == null ? null : se.getThrowable();
                 switch (isRetryable(request, v, e, count)) {
                     case RETRY:
                         T destroyedException = cluster.isDestroyed() ? cluster.createUnReadyException(request) : null;
@@ -164,10 +187,10 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                         }
                         break;
                     case EXHAUSTED:
-                        future.completeExceptionally(new RetryExhaustedException("max retries is reached out.", v.getThrowable(), retryPolicy.getRetry()));
+                        future.completeExceptionally(new RetryExhaustedException("max retries is reached out.", throwable, retryPolicy.getRetry()));
                         break;
                     case TIMEOUT:
-                        future.completeExceptionally(new RetryTimeoutException("retry is timeout.", v.getThrowable(), retryPolicy.getTimeout()));
+                        future.completeExceptionally(new RetryTimeoutException("retry is timeout.", throwable, retryPolicy.getTimeout()));
                         break;
                     default:
                         if (e != null) {
@@ -205,14 +228,52 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                 return RetryType.RETRY;
             } else if (e instanceof RejectException) {
                 return RetryType.NONE;
+            } else if (response == null) {
+                return RetryType.NONE;
+            } else if (response.isRetryable(e)) {
+                return RetryType.RETRY;
+            } else if (isRetryError(response)) {
+                return RetryType.RETRY;
             } else {
-                return response != null && (
-                        retryPolicy.isRetry(response.getThrowable())
-                                || retryPolicy.isRetry(response.getCode())
-                                || response.isRetryable())
-                        ? RetryType.RETRY
-                        : RetryType.NONE;
+                return RetryType.NONE;
             }
+        }
+
+        /**
+         * Checks if a service response represents an error, according to the circuit breaker policy.
+         *
+         * @param response The service response to check.
+         * @return true if the response represents an error, false otherwise.
+         */
+        private boolean isRetryError(O response) {
+            if (retryPolicy.isRetry(response.getCode())) {
+                return true;
+            }
+            ServiceError error = response.getError();
+            Throwable throwable = error == null ? null : error.getThrowable();
+            if (throwable != null) {
+                return response.isRetryable(throwable) || retryPolicy.isRetry(throwable);
+            } else if (response.isSuccess() && retryPolicy.isBodyRequest()) {
+                CodePolicy codePolicy = retryPolicy.getCodePolicy();
+                Object result = response.getResult();
+                if (result != null) {
+                    String codeParser = codePolicy.getParser();
+                    String codeExpression = codePolicy.getExpression();
+                    if (codeParser != null && !codeParser.isEmpty() && codeExpression != null && !codeExpression.isEmpty()) {
+                        CodeParser parser = errorParsers.get(codeParser);
+                        if (parser != null) {
+                            try {
+                                String code = parser.getCode(codeExpression, result);
+                                return retryPolicy.isRetry(code);
+                            } catch (Throwable e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 

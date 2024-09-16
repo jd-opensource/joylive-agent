@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -65,6 +66,11 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
      * Minimum request threshold
      */
     private int minCallsThreshold = 10;
+
+    /**
+     * Code policy
+     */
+    private CodePolicy codePolicy;
 
     /**
      * Error code
@@ -134,6 +140,7 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
             slidingWindowType = source.getSlidingWindowType();
             slidingWindowSize = source.getSlidingWindowSize();
             minCallsThreshold = source.getMinCallsThreshold();
+            codePolicy = source.getCodePolicy() == null ? null : source.getCodePolicy().clone();
             if (errorCodes == null && source.getErrorCodes() != null) {
                 errorCodes = new HashSet<>(source.getErrorCodes());
             }
@@ -155,6 +162,15 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         if (source.getVersion() == version) {
             broken = source.broken;
         }
+    }
+
+    /**
+     * Checks if the body of the code should be parsed.
+     *
+     * @return true if the body of the code should be parsed, false otherwise.
+     */
+    public boolean isBodyRequest() {
+        return codePolicy != null && codePolicy.isBodyRequest();
     }
 
     /**

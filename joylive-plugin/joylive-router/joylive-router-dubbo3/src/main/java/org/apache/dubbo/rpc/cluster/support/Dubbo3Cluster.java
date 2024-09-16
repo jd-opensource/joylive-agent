@@ -34,7 +34,7 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v3.response.DubboResponse.DubboOutboundResponse;
@@ -138,11 +138,10 @@ public class Dubbo3Cluster implements LiveCluster<DubboOutboundRequest, DubboOut
     public CompletionStage<DubboOutboundResponse> invoke(DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         try {
             Result result = endpoint.getInvoker().invoke(request.getRequest());
-            DubboOutboundResponse response = result.hasException() ? new DubboOutboundResponse(result, result.getException(), this::isRetryable)
-                    : new DubboOutboundResponse(result);
+            DubboOutboundResponse response = new DubboOutboundResponse(result, this::isRetryable);
             return CompletableFuture.completedFuture(response);
         } catch (Throwable e) {
-            return CompletableFuture.completedFuture(new DubboOutboundResponse(e, this::isRetryable));
+            return CompletableFuture.completedFuture(new DubboOutboundResponse(new ServiceError(e, false), this::isRetryable));
         }
     }
 
@@ -159,21 +158,19 @@ public class Dubbo3Cluster implements LiveCluster<DubboOutboundRequest, DubboOut
                     return new DubboOutboundResponse(createResponse(request, config));
                 } catch (Throwable e) {
                     logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+                    return new DubboOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
                 }
             }
         }
-        return new DubboOutboundResponse(createException(throwable, request, endpoint), this::isRetryable);
+        return new DubboOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
-    public boolean isRetryable(Response response) {
-        if (response.getResponse() == null) {
-            return true;
-        } else if (!(response.getThrowable() instanceof RpcException)) {
+    public boolean isRetryable(Throwable throwable) {
+        if (!(throwable instanceof RpcException)) {
             return false;
         } else {
-            RpcException exception = (RpcException) response.getThrowable();
+            RpcException exception = (RpcException) throwable;
             return exception.isNetwork() || exception.isTimeout();
         }
     }

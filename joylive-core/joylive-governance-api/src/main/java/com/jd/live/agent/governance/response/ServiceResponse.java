@@ -23,6 +23,56 @@ package com.jd.live.agent.governance.response;
 public interface ServiceResponse extends Response {
 
     /**
+     * Retrieves the status code associated with this response. The status code
+     * typically represents the outcome of the operation, such as success, failure,
+     * or various error conditions.
+     *
+     * @return A {@code String} representing the status code of the response.
+     */
+    default String getCode() {
+        return null;
+    }
+
+    /**
+     * Retrieves any exception associated with an abnormal response. If the operation
+     * resulted in an exception, this method provides access to the underlying issue.
+     *
+     * @return A {@code Throwable} representing the exception associated with the response,
+     * or {@code null} if the operation completed without exceptions.
+     */
+    default ServiceError getError() {
+        return null;
+    }
+
+    /**
+     * Checks if the given throwable indicates a retryable error.
+     *
+     * @param throwable The throwable to check for retryability.
+     * @return true if the error is retryable, false otherwise.
+     */
+    default boolean isRetryable(Throwable throwable) {
+        return false;
+    }
+
+    /**
+     * Checks if the service call was successful.
+     *
+     * @return true if the service call was successful, false otherwise.
+     */
+    default boolean isSuccess() {
+        return getError() == null;
+    }
+
+    /**
+     * Returns the real result of the service call.
+     *
+     * @return The real result of the service call, or null if no result is available.
+     */
+    default Object getResult() {
+        return null;
+    }
+
+    /**
      * Defines an interface for outbound service response.
      * <p>
      * This interface represents the response received from another service or component from the current service。
@@ -31,6 +81,7 @@ public interface ServiceResponse extends Response {
      * @since 1.0.0
      */
     interface OutboundResponse extends ServiceResponse {
+
 
     }
 }

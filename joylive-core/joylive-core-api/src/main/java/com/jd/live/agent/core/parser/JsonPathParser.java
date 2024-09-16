@@ -17,7 +17,7 @@ package com.jd.live.agent.core.parser;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
-import java.io.Reader;
+import java.io.InputStream;
 
 /**
  * Defines the contract for parsers that can extract data from JSON documents based on JSONPath expressions.
@@ -38,6 +38,17 @@ public interface JsonPathParser {
      * @param path   The JSONPath expression used to extract data from the JSON document.
      * @return The extracted data of type {@code T}.
      */
-    <T> T read(Reader reader, String path);
+    <T> T read(String reader, String path);
+
+    /**
+     * Reads and extracts data from a JSON document based on the specified JSONPath expression.
+     * The method is generic, enabling it to return data of any type as specified by the caller.
+     *
+     * @param <T>  The type of the data to be returned.
+     * @param in   The InputStream from which the JSON document is read.
+     * @param path The JSONPath expression used to extract data from the JSON document.
+     * @return The extracted data of type {@code T}.
+     */
+    <T> T read(InputStream in, String path);
 
 }

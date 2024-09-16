@@ -36,7 +36,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.RetryGateway
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(RetryGatewayFilterDefinition.TYPE_RETRY_GATEWAY_FILTER_FACTORY)
-@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class RetryGatewayFilterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_RETRY_GATEWAY_FILTER_FACTORY = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory";

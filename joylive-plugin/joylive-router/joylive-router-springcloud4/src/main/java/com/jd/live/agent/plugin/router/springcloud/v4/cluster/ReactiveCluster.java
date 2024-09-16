@@ -21,7 +21,7 @@ import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.ReactiveClusterResponse;
@@ -112,12 +112,13 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
     @Override
     public ReactiveClusterResponse createResponse(Throwable throwable, ReactiveClusterRequest request, SpringEndpoint endpoint) {
-        return new ReactiveClusterResponse(createException(throwable, request, endpoint));
+        // TODO CircuitBreakerException
+        return new ReactiveClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
-    public boolean isRetryable(Response response) {
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, response.getThrowable());
+    public boolean isRetryable(Throwable throwable) {
+        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
     }
 
     @SuppressWarnings("unchecked")

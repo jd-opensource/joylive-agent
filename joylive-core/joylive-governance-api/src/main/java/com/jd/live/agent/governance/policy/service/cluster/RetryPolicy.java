@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.policy.service.cluster;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Consumer;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -62,6 +63,11 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private Long timeout;
 
     /**
+     * Code policy
+     */
+    private CodePolicy codePolicy;
+
+    /**
      * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
      */
     private Set<String> retryStatuses;
@@ -85,6 +91,9 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (timeout == null) {
             timeout = source.timeout;
         }
+        if (codePolicy == null) {
+            codePolicy = source.codePolicy == null ? null : source.codePolicy.clone();
+        }
         if ((retryStatuses == null || retryStatuses.isEmpty()) && source.retryStatuses != null) {
             retryStatuses = source.retryStatuses;
         }
@@ -107,6 +116,15 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
 
     public boolean isRetry(Throwable throwable) {
         return isEnabled() && isRetry(retryExceptions, throwable);
+    }
+
+    /**
+     * Checks if the body of the code should be parsed.
+     *
+     * @return true if the body of the code should be parsed, false otherwise.
+     */
+    public boolean isBodyRequest() {
+        return codePolicy != null && codePolicy.isBodyRequest();
     }
 
     /**

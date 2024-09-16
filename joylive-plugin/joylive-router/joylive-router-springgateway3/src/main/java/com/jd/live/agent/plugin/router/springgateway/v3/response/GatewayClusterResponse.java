@@ -16,8 +16,11 @@
 package com.jd.live.agent.plugin.router.springgateway.v3.response;
 
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.governance.response.ServiceError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+
+import java.util.function.Predicate;
 
 /**
  * GatewayClusterResponse
@@ -27,15 +30,11 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerHttpResponse> {
 
     public GatewayClusterResponse(ServerHttpResponse response) {
-        super(response, null);
+        super(response);
     }
 
-    public GatewayClusterResponse(Throwable throwable) {
-        super(null, throwable);
-    }
-
-    public GatewayClusterResponse(ServerHttpResponse response, Throwable throwable) {
-        super(response, throwable);
+    public GatewayClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+        super(error, predicate);
     }
 
     @Override
