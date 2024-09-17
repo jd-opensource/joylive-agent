@@ -77,6 +77,11 @@ public interface Constants {
     String LABEL_REGION = LABEL_LIVE_PREFIX + "region";
 
     /**
+     * Constant for the label cloud.
+     */
+    String LABEL_CLOUD = LABEL_LIVE_PREFIX + "cloud";
+
+    /**
      * Constant for the instance ip.
      */
     String LABEL_INSTANCE_IP = LABEL_LIVE_PREFIX + "instance-ip";
