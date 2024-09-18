@@ -41,12 +41,9 @@ import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 /**
  * Provides an abstract base for implementing client clusters that can send requests and receive responses from
@@ -68,10 +65,12 @@ public abstract class AbstractClientCluster<
             LoadBalancerProperties properties = request.getProperties();
             LoadBalancerProperties.Retry retry = properties == null ? null : properties.getRetry();
             if (retry != null && retry.isEnabled() && (request.getHttpMethod() == HttpMethod.GET || retry.isRetryOnAllOperations())) {
+                Set<String> statuses = new HashSet<>(retry.getRetryableStatusCodes().size());
+                retry.getRetryableStatusCodes().forEach(status -> statuses.add(String.valueOf(status)));
                 retryPolicy = new RetryPolicy();
                 retryPolicy.setRetry(retry.getMaxRetriesOnNextServiceInstance());
                 retryPolicy.setRetryInterval(retry.getBackoff().getMinBackoff().toMillis());
-                retryPolicy.setRetryStatuses(retry.getRetryableStatusCodes().stream().map(Object::toString).collect(Collectors.toSet()));
+                retryPolicy.setRetryStatuses(statuses);
             }
             return new ClusterPolicy(retryPolicy == null ? ClusterInvoker.TYPE_FAILFAST : ClusterInvoker.TYPE_FAILOVER, retryPolicy);
         }
