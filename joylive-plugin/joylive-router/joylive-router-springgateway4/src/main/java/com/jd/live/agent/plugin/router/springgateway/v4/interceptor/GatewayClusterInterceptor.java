@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -29,7 +30,6 @@ import com.jd.live.agent.plugin.router.springgateway.v4.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v4.response.GatewayClusterResponse;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
@@ -44,10 +44,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,7 +62,9 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     private static final String SCHEMA_LB = "lb";
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
     private static final String TYPE_REWRITE_PATH_FILTER = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$1";
+    private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";
+    private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
@@ -93,7 +92,6 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_GATEWAY, Boolean.TRUE);
-        RetryConfig retryConfig = RequestContext.removeAttribute(GatewayConfig.ATTRIBUTE_RETRY_CONFIG);
 
         ServerWebExchange exchange = ctx.getArgument(0);
         FilterConfig filterConfig = clusters.computeIfAbsent(ctx.getTarget(), this::createFilterConfig);
@@ -101,6 +99,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         GatewayCluster cluster = filterConfig.getCluster();
         InvocationContext ic = chain.isLoadBalance() ? context : new HttpForwardContext(context);
         ReactiveLoadBalancer.Factory<ServiceInstance> factory = chain.isLoadBalance() ? cluster.getClientFactory() : null;
+        RetryConfig retryConfig = RequestContext.removeAttribute(GatewayConfig.ATTRIBUTE_RETRY_CONFIG);
         GatewayClusterRequest request = new GatewayClusterRequest(exchange, chain, factory, retryConfig, config);
         OutboundInvocation<GatewayClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, ic);
 
@@ -236,7 +235,6 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
      * A utility class that holds the configuration for gateway filters.
      */
     @Getter
-    @AllArgsConstructor
     private static class FilterConfig {
 
         private final Object target;
@@ -244,6 +242,14 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         private final List<GatewayFilter> globalFilters;
 
         private final GatewayCluster cluster;
+
+        private Optional<FieldDesc> retryOption;
+
+        public FilterConfig(Object target, List<GatewayFilter> globalFilters, GatewayCluster cluster) {
+            this.target = target;
+            this.globalFilters = globalFilters;
+            this.cluster = cluster;
+        }
 
         /**
          * Creates a new LiveGatewayFilterChain instance based on the given ServerWebExchange object and Route.
@@ -255,11 +261,13 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
             Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
             List<GatewayFilter> filters = globalFilters;
             GatewayFilter rewritePathFilter = null;
-            GatewayFilter delegateFilter;
+            GatewayFilter delegate;
             for (GatewayFilter filter : route.getFilters()) {
-                delegateFilter = filter instanceof OrderedGatewayFilter ? ((OrderedGatewayFilter) filter).getDelegate() : null;
-                if (delegateFilter != null && delegateFilter.getClass().getName().equals(TYPE_REWRITE_PATH_FILTER)) {
-                    rewritePathFilter = delegateFilter;
+                delegate = filter instanceof OrderedGatewayFilter ? ((OrderedGatewayFilter) filter).getDelegate() : null;
+                if (delegate != null && delegate.getClass().getName().equals(TYPE_REWRITE_PATH_FILTER)) {
+                    rewritePathFilter = delegate;
+                } else if (delegate != null && delegate.getClass().getName().equals(TYPE_RETRY_FILTER)) {
+                    onRetryFilter(delegate);
                 } else {
                     if (filters == globalFilters) {
                         filters = new ArrayList<>(getGlobalFilters());
@@ -269,6 +277,21 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
             }
             AnnotationAwareOrderComparator.sort(filters);
             return new LiveGatewayFilterChain(filters, pareURI(exchange, route, rewritePathFilter));
+        }
+
+        /**
+         * Handles the retry filter by setting the retry configuration in the request context.
+         *
+         * @param filter The GatewayFilter instance to process.
+         */
+        private void onRetryFilter(GatewayFilter filter) {
+            if (retryOption == null) {
+                retryOption = Optional.ofNullable(ClassUtils.describe(filter.getClass()).getFieldList().getField(FIELD_RETRY_CONFIG));
+            }
+            retryOption.ifPresent(f -> {
+                RetryConfig retryConfig = (RetryConfig) f.get(filter);
+                RequestContext.setAttribute(GatewayConfig.ATTRIBUTE_RETRY_CONFIG, retryConfig);
+            });
         }
 
         /**
