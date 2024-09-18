@@ -42,6 +42,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -53,10 +54,11 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
@@ -77,13 +79,29 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     public ClusterPolicy getDefaultPolicy(GatewayClusterRequest request) {
         RetryConfig retryConfig = request.getRetryConfig();
         if (retryConfig != null && retryConfig.getRetries() > 0) {
-            RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
-            RetryPolicy retryPolicy = new RetryPolicy();
-            retryPolicy.setRetry(retryConfig.getRetries());
-            retryPolicy.setRetryInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
-            retryPolicy.setRetryStatuses(retryConfig.getStatuses().stream().map(v -> String.valueOf(v.value())).collect(Collectors.toSet()));
-            retryPolicy.setRetryExceptions(retryConfig.getExceptions().stream().map(v -> v.getClass().getName()).collect(Collectors.toSet()));
-            return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
+            List<HttpMethod> methods = retryConfig.getMethods();
+            if (methods != null && !methods.isEmpty() && methods.contains(request.getRequest().getMethod())) {
+                RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
+                Set<String> statuses = new HashSet<>(16);
+                retryConfig.getStatuses().forEach(status -> statuses.add(String.valueOf(status.value())));
+                Set<HttpStatus.Series> series = new HashSet<>(retryConfig.getSeries());
+                if (!series.isEmpty()) {
+                    for (HttpStatus status : HttpStatus.values()) {
+                        if (series.contains(status.series())) {
+                            statuses.add(String.valueOf(status.value()));
+                        }
+                    }
+                }
+                Set<String> exceptions = new HashSet<>();
+                retryConfig.getExceptions().forEach(e -> exceptions.add(e.getName()));
+
+                RetryPolicy retryPolicy = new RetryPolicy();
+                retryPolicy.setRetry(retryConfig.getRetries());
+                retryPolicy.setRetryInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
+                retryPolicy.setRetryStatuses(statuses);
+                retryPolicy.setRetryExceptions(exceptions);
+                return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
+            }
         }
         return new ClusterPolicy(ClusterInvoker.TYPE_FAILFAST);
     }
