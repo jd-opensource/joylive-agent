@@ -80,7 +80,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         RetryConfig retryConfig = request.getRetryConfig();
         if (retryConfig != null && retryConfig.getRetries() > 0) {
             List<HttpMethod> methods = retryConfig.getMethods();
-            if (methods != null && !methods.isEmpty() && methods.contains(request.getRequest().getMethod())) {
+            if (methods.isEmpty() || methods.contains(request.getRequest().getMethod())) {
                 RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
                 Set<String> statuses = new HashSet<>(16);
                 retryConfig.getStatuses().forEach(status -> statuses.add(String.valueOf(status.value())));
