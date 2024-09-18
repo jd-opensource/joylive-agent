@@ -245,7 +245,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
         private Optional<FieldDesc> retryOption;
 
-        public FilterConfig(Object target, List<GatewayFilter> globalFilters, GatewayCluster cluster) {
+        FilterConfig(Object target, List<GatewayFilter> globalFilters, GatewayCluster cluster) {
             this.target = target;
             this.globalFilters = globalFilters;
             this.cluster = cluster;
