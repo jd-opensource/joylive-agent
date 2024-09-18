@@ -269,6 +269,16 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Determines if the cloud matches the specified cloud.
+     *
+     * @param cloud The cloud to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isCloud(String cloud) {
+        return cloud != null && !cloud.isEmpty() && cloud.equals(getLabel(Constants.LABEL_CLOUD));
+    }
+
+    /**
      * Gets a label's value based on the specified key.
      *
      * @param key The key of the label to retrieve.

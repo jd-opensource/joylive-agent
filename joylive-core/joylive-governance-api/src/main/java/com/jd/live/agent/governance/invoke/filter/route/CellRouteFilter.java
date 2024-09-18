@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.instance.CellGroup;
@@ -115,8 +116,8 @@ public class CellRouteFilter implements RouteFilter {
             randomWeight(election);
         }
         if (election.isMutable()) {
-            // Attempt to failover if not in the whitelist or prefix
-            failover(election, invocation);
+            // Attempt to failover if not in the allow list
+            failover(election, invocation.getContext().getLocation());
         }
         Candidate winner = election.getWinner();
         CellRoute cellRoute = winner == null ? null : winner.getCellRoute();
@@ -145,33 +146,80 @@ public class CellRouteFilter implements RouteFilter {
                              boolean localFirst,
                              Function<String, Integer> thresholdFunc) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        Unit preferUnit = localFirst ? liveMetadata.getCurrentUnit() : null;
-        Cell preferCell = localFirst ? liveMetadata.getCurrentCell() : null;
         LiveSpace liveSpace = liveMetadata.getLiveSpace();
-        if (liveSpace != null) {
-            Set<String> unavailableCells = getUnavailableCells(invocation);
-            if (!unavailableCells.isEmpty()) {
-                target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
-            }
-            if (preferCell != null || preferUnit != null) {
-                List<Endpoint> preferCellEndpoints = new ArrayList<>();
-                List<Endpoint> preferUnitEndpoints = new ArrayList<>();
-                for (Endpoint endpoint : target.getEndpoints()) {
-                    if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
-                        preferUnitEndpoints.add(endpoint);
-                    }
-                    if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
-                        preferCellEndpoints.add(endpoint);
-                    }
+        if (liveSpace == null) {
+            return true;
+        }
+        Unit preferUnit = localFirst ? liveMetadata.getCurrentUnit() : null;
+        Unit centerUnit = liveMetadata.getCenterUnit();
+        Cell preferCell = localFirst ? liveMetadata.getCurrentCell() : null;
+        String preferCloud = localFirst ? invocation.getContext().getLocation().getCloud() : null;
+        Set<String> unavailableCells = getUnavailableCells(invocation);
+        if (!unavailableCells.isEmpty()) {
+            target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
+        }
+        // prefer allow list>local cell>local cloud>local unit>center unit>other unit
+        List<Endpoint> preferCellEndpoints = new ArrayList<>();
+        List<Endpoint> preferUnitEndpoints = new ArrayList<>();
+        List<Endpoint> preferCloudEndpoints = new ArrayList<>();
+        List<Endpoint> centerUnitEndpoints = new ArrayList<>();
+        List<Endpoint> otherUnitEndpoints = new ArrayList<>();
+        for (Endpoint endpoint : target.getEndpoints()) {
+            if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
+                if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
+                    preferCellEndpoints.add(endpoint);
+                } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
+                    preferCloudEndpoints.add(endpoint);
+                } else {
+                    preferUnitEndpoints.add(endpoint);
                 }
-                Integer threshold = preferCell == null ? null : thresholdFunc.apply(preferCell.getCode());
-                if (!preferCellEndpoints.isEmpty() && (threshold == null || threshold <= preferCellEndpoints.size())) {
-                    target.setEndpoints(preferCellEndpoints);
-                } else if (!preferUnitEndpoints.isEmpty() && (threshold == null || threshold <= preferUnitEndpoints.size())) {
-                    target.setEndpoints(preferUnitEndpoints);
+            } else if (centerUnit != null && endpoint.isUnit(centerUnit.getCode())) {
+                centerUnitEndpoints.add(endpoint);
+            } else {
+                otherUnitEndpoints.add(endpoint);
+            }
+        }
+        Integer threshold = preferCell == null ? null : thresholdFunc.apply(preferCell.getCode());
+        if (threshold == null || threshold <= 0) {
+            if (!preferCellEndpoints.isEmpty()) {
+                target.setEndpoints(preferCellEndpoints);
+            } else if (!preferCloudEndpoints.isEmpty()) {
+                target.setEndpoints(preferCloudEndpoints);
+            } else if (!preferUnitEndpoints.isEmpty()) {
+                target.setEndpoints(preferUnitEndpoints);
+            } else if (!centerUnitEndpoints.isEmpty()) {
+                target.setEndpoints(centerUnitEndpoints);
+            } else {
+                target.setEndpoints(otherUnitEndpoints);
+            }
+        } else {
+            int shortage = threshold - preferCellEndpoints.size();
+            int random = ThreadLocalRandom.current().nextInt(threshold);
+            if (random >= shortage) {
+                target.setEndpoints(preferCellEndpoints);
+            } else {
+                shortage = shortage - preferCloudEndpoints.size();
+                if (random >= shortage) {
+                    target.setEndpoints(preferCloudEndpoints);
+                } else {
+                    shortage = shortage - preferUnitEndpoints.size();
+                    if (random >= shortage) {
+                        target.setEndpoints(preferUnitEndpoints);
+                    } else {
+                        shortage = shortage - centerUnitEndpoints.size();
+                        if (random >= shortage) {
+                            target.setEndpoints(centerUnitEndpoints);
+                        } else {
+                            shortage = shortage - otherUnitEndpoints.size();
+                            if (random >= shortage) {
+                                target.setEndpoints(otherUnitEndpoints);
+                            }
+                        }
+                    }
                 }
             }
         }
+
         return true;
     }
 
@@ -184,8 +232,7 @@ public class CellRouteFilter implements RouteFilter {
     private Set<String> getUnavailableCells(OutboundInvocation<?> invocation) {
         Set<String> unavailableCells = new HashSet<>();
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        LiveSpace liveSpace = liveMetadata.getLiveSpace();
-        List<Unit> units = liveSpace == null ? null : liveSpace.getSpec().getUnits();
+        List<Unit> units = liveMetadata.getLiveSpace().getSpec().getUnits();
 
         if (units != null) {
             UnitRule rule = liveMetadata.getUnitRule();
@@ -322,8 +369,9 @@ public class CellRouteFilter implements RouteFilter {
      * If suitable candidates are found, a random failover may occur based on a calculated failover ratio.
      *
      * @param election The election object containing the current state of the election.
+     * @param location The current location.
      */
-    private void failover(Election election, OutboundInvocation<?> invocation) {
+    private void failover(Election election, Location location) {
         // If there's only one candidate or fewer, there's no failover needed.
         if (election.size() <= 1) {
             return;
@@ -331,59 +379,73 @@ public class CellRouteFilter implements RouteFilter {
 
         // Retrieve the current winner's information.
         Candidate winner = election.getWinner();
-        int instance = winner.getInstance();
         int threshold = winner.getThreshold();
-        int shortage = threshold - instance;
+        int shortage = threshold - winner.getInstance();
+        if (shortage <= 0) {
+            return;
+        }
 
         // If the current winner does not meet the threshold, proceed with failover logic.
-        if (shortage > 0) {
-            int instances = 0;
-            List<Candidate> targets = new ArrayList<>(election.size() - 1);
-            int localCloudInstances = 0;
-            List<Candidate> localCloudTargets = new ArrayList<>(election.size() - 1);
+        int redundants = 0;
+        List<Candidate> targets = new ArrayList<>(election.size() - 1);
 
-            String cloud = invocation.getContext().getLocation().getCloud();
-            boolean cloudPreference = cloud != null && !cloud.isEmpty();
-
-            // Iterate through the candidates to find potential failover targets.
-            for (Candidate candidate : election.getCandidates()) {
-                if (candidate != winner) {
-                    instance = candidate.getInstance();
-                    // Check if the candidate has instances above their threshold and more than the current winner.
-                    if (instance >= candidate.getThreshold() && instance > winner.getInstance()) {
-                        targets.add(candidate);
-                        instances += instance;
-                        if (cloudPreference && cloud.equals(candidate.getCellRoute().getCell().getLabel("cloud"))) {
-                            localCloudTargets.add(candidate);
-                            localCloudInstances += instance;
-                        }
-                    }
+        // Iterate through the candidates to find potential failover targets.
+        for (Candidate candidate : election.getCandidates()) {
+            if (candidate != winner) {
+                // Check if the candidate has instances above their threshold.
+                if (candidate.getRedundant() > 0) {
+                    targets.add(candidate);
+                    redundants += candidate.getRedundant();
                 }
             }
+        }
 
-            // If there are potential targets, calculate the failover ratio.
-            if (instances > 0) {
-                if (localCloudInstances > 0) {
-                    instances = localCloudInstances;
-                    targets = localCloudTargets;
-                }
-                ThreadLocalRandom localRandom = ThreadLocalRandom.current();
-                // If the random number is within the shortage range, perform a failover.
-                if (localRandom.nextInt(threshold) < shortage) {
-                    int random = localRandom.nextInt(instances);
-                    int weight = 0;
-
-                    // Find the candidate to failover to based on the random number.
-                    for (Candidate candidate : targets) {
-                        weight += candidate.getInstance();
-                        if (weight > random) {
-                            election.setWinner(candidate);
-                            break;
-                        }
+        // If there are potential targets, calculate the failover ratio.
+        if (redundants > 0) {
+            // sort by cloud
+            sortByCloud(targets, location);
+            if (shortage + redundants < threshold) {
+                threshold = winner.getInstance() + redundants;
+                shortage = redundants;
+            }
+            int random = ThreadLocalRandom.current().nextInt(threshold);
+            if (random < shortage) {
+                // Find the candidate to failover to based on the random number.
+                for (Candidate candidate : targets) {
+                    shortage -= candidate.getRedundant();
+                    if (random >= shortage) {
+                        election.setWinner(candidate);
+                        break;
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Sorts the given list of candidates based on their cloud label, giving priority to candidates with a matching cloud label.
+     *
+     * @param candidates The list of candidates to sort.
+     * @param location   The location object containing the cloud label to match against.
+     */
+    private void sortByCloud(List<Candidate> candidates, Location location) {
+        String cloud = location.getCloud();
+        if (cloud != null && !cloud.isEmpty()) {
+            // prefer local cloud
+            candidates.sort((o1, o2) -> {
+                String cloud1 = o1.getCellRoute().getCell().getLabel(Cell.LABEL_CLOUD);
+                String cloud2 = o2.getCellRoute().getCell().getLabel(Cell.LABEL_CLOUD);
+                if (cloud.equals(cloud1)) {
+                    return cloud.equals(cloud2) ? randomOrder() : -1;
+                } else {
+                    return cloud.equals(cloud2) ? 1 : randomOrder();
+                }
+            });
+        }
+    }
+
+    private int randomOrder() {
+        return ThreadLocalRandom.current().nextInt(2) < 1 ? -1 : 1;
     }
 
 
@@ -525,6 +587,10 @@ public class CellRouteFilter implements RouteFilter {
          */
         public boolean isMutable() {
             return priority < CellRoute.PRIORITY_PREFIX;
+        }
+
+        public int getRedundant() {
+            return instance > threshold ? instance - threshold : 0;
         }
 
     }

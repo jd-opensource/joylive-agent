@@ -28,7 +28,7 @@ import java.util.Set;
 @ToString
 public class CellRoute {
 
-    public static final int PRIORITY_WHITELIST = 3;
+    public static final int PRIORITY_ALLOW_LIST = 3;
 
     public static final int PRIORITY_PREFIX = 2;
 
@@ -81,7 +81,7 @@ public class CellRoute {
 
     public int getPriority(String variable, Cell cell) {
         if (isAllow(variable)) {
-            return PRIORITY_WHITELIST;
+            return PRIORITY_ALLOW_LIST;
         } else if (isPrefix(variable)) {
             return PRIORITY_PREFIX;
         } else if (isLocal(cell)) {

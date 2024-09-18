@@ -29,6 +29,8 @@ import java.util.Objects;
 @Setter
 public class Cell implements Place {
 
+    public static final String LABEL_CLOUD = "cloud";
+
     private String code;
 
     private String name;
