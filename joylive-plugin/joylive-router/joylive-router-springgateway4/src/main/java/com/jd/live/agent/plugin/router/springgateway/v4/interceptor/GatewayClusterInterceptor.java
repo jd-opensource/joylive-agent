@@ -63,6 +63,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
     private static final String TYPE_REWRITE_PATH_FILTER = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$1";
     private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
+    private static final String TYPE_STRIP_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
@@ -75,11 +76,16 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
     private final GatewayConfig config;
 
+    private final Set<String> pathFilters;
+
     private final Map<Object, FilterConfig> clusters = new ConcurrentHashMap<>();
 
     public GatewayClusterInterceptor(InvocationContext context, GatewayConfig config) {
         this.context = context;
         this.config = config;
+        this.pathFilters = config == null || config.getPathFilters() == null ? new HashSet<>(2) : new HashSet<>(config.getPathFilters());
+        pathFilters.add(TYPE_REWRITE_PATH_FILTER);
+        pathFilters.add(TYPE_STRIP_PREFIX);
     }
 
     /**
@@ -147,7 +153,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
             }
         }
 
-        return new FilterConfig(target, filters, new GatewayCluster(factory));
+        return new FilterConfig(target, filters, pathFilters, new GatewayCluster(factory));
     }
 
     /**
@@ -241,13 +247,16 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
         private final List<GatewayFilter> globalFilters;
 
+        private final Set<String> pathFilters;
+
         private final GatewayCluster cluster;
 
         private Optional<FieldDesc> retryOption;
 
-        FilterConfig(Object target, List<GatewayFilter> globalFilters, GatewayCluster cluster) {
+        FilterConfig(Object target, List<GatewayFilter> globalFilters, Set<String> pathFilters, GatewayCluster cluster) {
             this.target = target;
             this.globalFilters = globalFilters;
+            this.pathFilters = pathFilters;
             this.cluster = cluster;
         }
 
@@ -260,14 +269,14 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         public LiveGatewayFilterChain chain(ServerWebExchange exchange) {
             Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
             List<GatewayFilter> filters = globalFilters;
-            GatewayFilter rewritePathFilter = null;
+            List<GatewayFilter> pathFilters = new ArrayList<>(4);
             GatewayFilter delegate;
             for (GatewayFilter filter : route.getFilters()) {
                 delegate = filter instanceof OrderedGatewayFilter ? ((OrderedGatewayFilter) filter).getDelegate() : null;
-                if (delegate != null && delegate.getClass().getName().equals(TYPE_REWRITE_PATH_FILTER)) {
-                    rewritePathFilter = delegate;
-                } else if (delegate != null && delegate.getClass().getName().equals(TYPE_RETRY_FILTER)) {
+                if (delegate != null && delegate.getClass().getName().equals(TYPE_RETRY_FILTER)) {
                     onRetryFilter(delegate);
+                } else if (delegate != null && isPathFilter(delegate)) {
+                    pathFilters.add(delegate);
                 } else {
                     if (filters == globalFilters) {
                         filters = new ArrayList<>(getGlobalFilters());
@@ -276,7 +285,18 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
                 }
             }
             AnnotationAwareOrderComparator.sort(filters);
-            return new LiveGatewayFilterChain(filters, pareURI(exchange, route, rewritePathFilter));
+            AnnotationAwareOrderComparator.sort(pathFilters);
+            return new LiveGatewayFilterChain(filters, pareURI(exchange, route, pathFilters));
+        }
+
+        /**
+         * Checks if the given GatewayFilter is a path filter.
+         *
+         * @param filter The GatewayFilter to check.
+         * @return true if the filter is a path filter, false otherwise.
+         */
+        private boolean isPathFilter(GatewayFilter filter) {
+            return pathFilters.contains(filter.getClass().getName());
         }
 
         /**
@@ -295,14 +315,14 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         }
 
         /**
-         * Parses the URI and returns a boolean indicating whether load balancing is used based on the given route information, the current ServerWebExchange object, and an optional GatewayFilter for rewriting the path.
+         * Parses the URI and determines whether load balancing is used based on the given route information, the current ServerWebExchange object, and an optional list of GatewayFilters for rewriting the path.
          *
-         * @param exchange          Represents the current ServerWebExchange object, which contains information about the request and response.
-         * @param route             Represents the current route information, including the path, host, port, etc.
-         * @param rewritePathFilter An optional GatewayFilter used to rewrite the path.
+         * @param exchange          The current ServerWebExchange object, which contains information about the request and response.
+         * @param route             The current route information, including the path, host, port, etc.
+         * @param pathFilters       An optional list of GatewayFilters used to rewrite the path.
          * @return A boolean indicating whether load balancing is used.
          */
-        private boolean pareURI(ServerWebExchange exchange, Route route, GatewayFilter rewritePathFilter) {
+        private boolean pareURI(ServerWebExchange exchange, Route route, List<GatewayFilter> pathFilters) {
             URI routeUri = route.getUri();
 
             String scheme = routeUri.getScheme();
@@ -317,8 +337,10 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
                 scheme = routeUri.getScheme();
             }
 
-            if (rewritePathFilter != null) {
-                rewritePathFilter.filter(exchange, LiveGatewayFilterChain.EMPTY_CHAIN);
+            if (pathFilters != null) {
+                for (GatewayFilter filter : pathFilters) {
+                    filter.filter(exchange, LiveGatewayFilterChain.EMPTY_CHAIN);
+                }
             }
             URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
             boolean encoded = containsEncodedParts(uri);

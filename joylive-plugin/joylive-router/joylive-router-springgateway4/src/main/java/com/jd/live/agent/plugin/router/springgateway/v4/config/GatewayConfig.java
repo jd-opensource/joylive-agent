@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.springgateway.v4.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 public class GatewayConfig {
@@ -26,8 +28,18 @@ public class GatewayConfig {
 
     public static final String CONFIG_SPRING_GATEWAY_PREFIX = "agent.governance.router.springgateway";
 
+    public static final String KEY_UNIT = "unit";
+
+    public static final String KEY_CELL = "cell";
+
+    public static final String KEY_HOST = "host";
+
     public static final String KEY_HOST_EXPRESSION = "hostExpression";
 
+    protected static final String DEFAULT_HOST_EXPRESSION = "${unit}-${host}";
+
     private String hostExpression;
+
+    private Set<String> pathFilters;
 
 }

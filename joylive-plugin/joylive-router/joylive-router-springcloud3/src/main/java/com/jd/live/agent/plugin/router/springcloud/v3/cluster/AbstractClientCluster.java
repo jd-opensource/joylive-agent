@@ -175,7 +175,8 @@ public abstract class AbstractClientCluster<
     @SuppressWarnings("unchecked")
     @Override
     public void onStartRequest(R request, SpringEndpoint endpoint) {
-        request.lifecycles(l -> l.onStartRequest(request.getLbRequest(), endpoint.getResponse()));
+        request.lifecycles(l -> l.onStartRequest(request.getLbRequest(),
+                endpoint == null ? new DefaultResponse(null) : endpoint.getResponse()));
     }
 
     @SuppressWarnings("unchecked")

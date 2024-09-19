@@ -46,7 +46,7 @@ public class CounterFilter implements OutboundFilter {
                                                            OutboundInvocation<R> invocation,
                                                            E endpoint,
                                                            OutboundFilterChain chain) {
-        Counter counter = endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
+        Counter counter = endpoint == null ? null : endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
         if (counter != null) {
             counter.getService().tryClean(invocation.getInstances());
             if (!counter.begin(0)) {
