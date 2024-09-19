@@ -8,29 +8,29 @@ clean:
 build:
 	mvn package -f ../pom.xml -DskipTests=true package
 
-image-joylive-demo-springcloud3-consumer:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud3-consumer:${version}-AMD64 ./joylive-demo-springcloud3/joylive-demo-springcloud3-consumer
+image-joylive-demo-springcloud2021-consumer:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-consumer:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-consumer
 
-push-joylive-demo-springcloud3-consumer:
-	docker push ${repo}/joylive-demo-springcloud3-consumer:${version}-AMD64
+push-joylive-demo-springcloud2021-consumer:
+	docker push ${repo}/joylive-demo-springcloud2021-consumer:${version}-AMD64
 
-image-joylive-demo-springcloud3-provider:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud3-provider:${version}-AMD64 ./joylive-demo-springcloud3/joylive-demo-springcloud3-provider
+image-joylive-demo-springcloud2021-provider:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-provider:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider
 
-push-joylive-demo-springcloud3-provider:
-	docker push ${repo}/joylive-demo-springcloud3-provider:${version}-AMD64
+push-joylive-demo-springcloud2021-provider:
+	docker push ${repo}/joylive-demo-springcloud2021-provider:${version}-AMD64
 
-image-joylive-demo-springcloud3-order:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud3-order:${version}-AMD64 ./joylive-demo-springcloud3/joylive-demo-springcloud3-order
+image-joylive-demo-springcloud2021-order:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-order:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-order
 
-push-joylive-demo-springcloud3-order:
-	docker push ${repo}/joylive-demo-springcloud3-order:${version}-AMD64
+push-joylive-demo-springcloud2021-order:
+	docker push ${repo}/joylive-demo-springcloud2021-order:${version}-AMD64
 
-image-joylive-demo-springcloud3-gateway:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud3-gateway:${version}-AMD64 ./joylive-demo-springcloud3/joylive-demo-springcloud3-gateway
+image-joylive-demo-springcloud2021-gateway:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-gateway:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-gateway
 
-push-joylive-demo-springcloud3-gateway:
-	docker push ${repo}/joylive-demo-springcloud3-gateway:${version}-AMD64
+push-joylive-demo-springcloud2021-gateway:
+	docker push ${repo}/joylive-demo-springcloud2021-gateway:${version}-AMD64
 
 image-joylive-demo-rocketmq:
 	docker build --platform linux/amd64 -t ${repo}/joylive-demo-rocketmq:${version}-AMD64 ./joylive-demo-rocketmq
