@@ -16,7 +16,10 @@
 package com.jd.live.agent.plugin.router.springgateway.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -29,22 +32,14 @@ import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClusterInterceptor;
 
 /**
- * FilteringWebHandlerPluginDefinition
+ * GatewayClusterDefinition
  *
  * @since 1.0.0
  */
-@Extension(value = "FilteringWebHandlerPluginDefinition_Gateway_v3")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED,
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED,
-                GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.AND),
-}, relation = ConditionalRelation.AND)
+@Extension(value = "GatewayClusterDefinition_v3")
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
 @ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)

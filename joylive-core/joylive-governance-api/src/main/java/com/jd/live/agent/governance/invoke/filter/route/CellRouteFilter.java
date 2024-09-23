@@ -289,7 +289,8 @@ public class CellRouteFilter implements RouteFilter {
             // Check if the cell is accessible and has a non-empty route.
             if (invocation.isAccessible(cell) && !cellRoute.isEmpty() && invocation.isAccessible(cellRoute.getAccessMode())) {
                 // Get the instance count for the cell from the unit group, if available.
-                Integer instance = unitGroup == null ? null : unitGroup.getSize(cellRoute.getCode());
+                CellGroup cellGroup = unitGroup == null ? null : unitGroup.getCell(cellRoute.getCode());
+                Integer instance = cellGroup == null ? null : cellGroup.size();
                 instance = instance == null ? 0 : instance;
 
                 // Degrade the weight to 0 if the cell has instances.
@@ -304,8 +305,13 @@ public class CellRouteFilter implements RouteFilter {
                 Integer threshold = !localFirst ? null : failoverThresholdFunc.apply(cell.getCode());
                 threshold = threshold == null ? 0 : threshold;
 
+                String cloud = cellRoute.getCell().getLabel(Cell.LABEL_CLOUD);
+                if (cloud == null) {
+                    cloud = cellGroup == null || cellGroup.isEmpty() ? "" : cellGroup.getEndpoints().get(0).getCloud();
+                }
+
                 // Create a Candidate object and add it to the list of candidates.
-                Candidate candidate = new Candidate(cellRoute, instance, weight, priority, threshold);
+                Candidate candidate = new Candidate(cellRoute, instance, weight, priority, threshold, cloud);
                 candidates.add(candidate);
 
                 // Update the preferred candidate if the current cell has a higher priority.
@@ -433,8 +439,8 @@ public class CellRouteFilter implements RouteFilter {
         if (cloud != null && !cloud.isEmpty()) {
             // prefer local cloud
             candidates.sort((o1, o2) -> {
-                String cloud1 = o1.getCellRoute().getCell().getLabel(Cell.LABEL_CLOUD);
-                String cloud2 = o2.getCellRoute().getCell().getLabel(Cell.LABEL_CLOUD);
+                String cloud1 = o1.getCloud();
+                String cloud2 = o2.getCloud();
                 if (cloud.equals(cloud1)) {
                     return cloud.equals(cloud2) ? randomOrder() : -1;
                 } else {
@@ -564,6 +570,11 @@ public class CellRouteFilter implements RouteFilter {
         private final int threshold;
 
         /**
+         * The cloud value for this candidate, which may be used to filter candidates during routing.
+         */
+        private final String cloud;
+
+        /**
          * Constructs a new Candidate with the provided cell route and routing attributes.
          *
          * @param cellRoute The cell route for this candidate.
@@ -571,13 +582,15 @@ public class CellRouteFilter implements RouteFilter {
          * @param weight    The weight of this candidate.
          * @param priority  The priority of this candidate.
          * @param threshold The threshold value for this candidate.
+         * @param cloud The cloud value for this candidate.
          */
-        Candidate(CellRoute cellRoute, int instance, int weight, int priority, int threshold) {
+        Candidate(CellRoute cellRoute, int instance, int weight, int priority, int threshold, String cloud) {
             this.cellRoute = cellRoute;
             this.instance = instance;
             this.weight = weight;
             this.priority = priority;
             this.threshold = threshold;
+            this.cloud = cloud;
         }
 
         /**

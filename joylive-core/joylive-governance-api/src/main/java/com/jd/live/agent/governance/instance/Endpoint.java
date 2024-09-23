@@ -150,6 +150,15 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Gets the cloud associated with this endpoint.
+     *
+     * @return The cloud, or the default value if not specified.
+     */
+    default String getCloud() {
+        return getLabel(Constants.LABEL_CLOUD, Constants.DEFAULT_VALUE);
+    }
+
+    /**
      * Gets the region associated with this endpoint.
      *
      * @return The region, or the default value if not specified.

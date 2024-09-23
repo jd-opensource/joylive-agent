@@ -17,29 +17,26 @@ package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
-import com.jd.live.agent.core.inject.annotation.Config;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayClusterInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayInterceptor;
 
 /**
- * GatewayClusterDefinition
+ * GatewayDefinition
  *
  * @since 1.0.0
  */
-@Extension(value = "GatewayClusterDefinition_v4")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@Extension(value = "GatewayDefinition_v4")
+@ConditionalOnProperty(name = {GovernanceConfig.CONFIG_LIVE_ENABLED, GovernanceConfig.CONFIG_LANE_ENABLED}, matchIfMissing = true, relation = ConditionalRelation.OR)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
-@ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
-public class GatewayClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
+@ConditionalOnClass(GatewayDefinition.REACTOR_MONO)
+@ConditionalOnMissingClass(GatewayDefinition.TYPE_HTTP_STATUS_CODE)
+public class GatewayDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
 
@@ -53,19 +50,13 @@ public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
-    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
-    private InvocationContext context;
-
-    @Config(GatewayConfig.CONFIG_SPRING_GATEWAY_PREFIX)
-    private GatewayConfig config;
-
-    public GatewayClusterDefinition() {
+    public GatewayDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new GatewayClusterInterceptor(context, config)
+                        GatewayInterceptor::new
                 )
         };
     }
