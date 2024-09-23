@@ -2,7 +2,7 @@
 
 ## 1.3.0
 1. Support for local cloud priority during cell fault tolerance, reducing dedicated line bandwidth usage.
-2. Circuit breaker and rate limiter, supporting the use of JsonPath to extract exception codes from response bodies.
+2. Circuit breaker and retry, supporting the use of JsonPath to extract exception codes from response bodies.
 3. Support for adaptive load balancing algorithms.
 4. Add accessMode in CellRoute, ensuring that business cell failures do not affect other businesses.
 5. RouteFilter and OutboundFilter have been split.
