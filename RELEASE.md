@@ -1,5 +1,18 @@
 # Release History
 
+## 1.3.0
+1. Support for local cloud priority during cell fault tolerance, reducing dedicated line bandwidth usage.
+2. Circuit breaker and rate limiter, supporting the use of JsonPath to extract exception codes from response bodies.
+3. Support for adaptive load balancing algorithms.
+4. Add accessMode in CellRoute, ensuring that business cell failures do not affect other businesses.
+5. RouteFilter and OutboundFilter have been split.
+6. Rejection types have been refined, making it easier to collect circuit breaker and rate limiter data.
+7. Added a demo application for SofaRpc.
+8. Fixed issues in SofaRpc.
+9. Fixed issues with tag routing.
+10. Fixed policy synchronization problems.
+11. Fixed other issues and improved stability.
+
 ## 1.2.0
 
 1. Add spring cloud 2023 support.
