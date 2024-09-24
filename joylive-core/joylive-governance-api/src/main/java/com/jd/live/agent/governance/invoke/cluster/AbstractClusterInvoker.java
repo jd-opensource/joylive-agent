@@ -21,10 +21,9 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.counter.Counter;
-import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -45,11 +44,10 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
-                                                            InvocationContext context,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
         cluster.onStart(invocation.getRequest());
-        return invoke(cluster, context, invocation, 0);
+        return invoke(cluster, invocation, 0);
     }
 
     /**
@@ -62,7 +60,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <E>        The type of the endpoint that extends {@link Endpoint}.
      * @param <T>        The type of the throwable that extends {@link Throwable}.
      * @param cluster    The {@link LiveCluster} managing the distribution and processing of the request.
-     * @param context    The {@link InvocationContext} providing additional information and context for the invocation.
      * @param invocation The {@link OutboundInvocation} representing the specific request and its routing information.
      * @param counter    The counter that records the current number of retry attempts..
      * @return A {@link CompletionStage} that completes with the result of the service invocation.
@@ -74,10 +71,10 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> CompletionStage<O> invoke(LiveCluster<R, O, E, T> cluster,
-                                                           InvocationContext context,
                                                            OutboundInvocation<R> invocation,
                                                            int counter) {
         CompletableFuture<O> result = new CompletableFuture<>();
+        InvocationContext context = invocation.getContext();
         AppStatus appStatus = context.getAppStatus();
         if (!appStatus.outbound()) {
             T exception = cluster.createUnReadyException(appStatus.getMessage(), invocation.getRequest());
@@ -100,52 +97,24 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 try {
                     endpoint = context.route(invocation, v, null, false);
                     E instance = endpoint;
-                    Counter statistic = endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
-                    beginCounter(statistic, v);
-                    onStart(cluster, request, instance);
-                    long startTime = System.currentTimeMillis();
-                    cluster.invoke(request, instance).whenComplete((o, r) -> {
-                        long elapsed = System.currentTimeMillis() - startTime;
+                    onStart(cluster, request, endpoint);
+                    context.outbound(cluster, invocation, endpoint).whenComplete((o, r) -> {
                         if (r != null) {
-                            endCounter(statistic, elapsed, false);
-                            onException(r, request, instance, cluster, invocation, result);
-                        } else if (o.getThrowable() != null) {
-                            endCounter(statistic, elapsed, false);
-                            onException(o.getThrowable(), request, instance, cluster, invocation, result);
+                            onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
+                        } else if (o.getError() != null) {
+                            onException(cluster, invocation, o, o.getError(), instance, result);
                         } else {
-                            endCounter(statistic, elapsed, true);
                             onSuccess(cluster, invocation, o, request, instance, result);
                         }
                     });
                 } catch (Throwable e) {
-                    onException(e, request, endpoint, cluster, invocation, result);
+                    onException(cluster, invocation, null, new ServiceError(e, false), endpoint, result);
                 }
             } else {
-                onException(t, request, null, cluster, invocation, result);
+                onException(cluster, invocation, null, new ServiceError(t, false), null, result);
             }
         });
         return result;
-    }
-
-    /**
-     * Begins the counter process for an outbound request. This method is called before sending the
-     * request to the endpoints. It checks if the request has timed out for the specified URI and if
-     * so, schedules a timer to clean up the endpoint counters after a 5-second delay. Then, it
-     * attempts to start the counter for the request. If the counter cannot be started because it has
-     * reached the maximum number of active requests, a fault is thrown with a type of LIMIT.
-     *
-     * @param <E>       The type of the endpoint that extends {@link Endpoint}.
-     * @param counter   The counter instance used to track the number of active requests.
-     * @param endpoints The list of endpoint instances to which the request will be sent.
-     */
-    protected <E extends Endpoint> void beginCounter(Counter counter,
-                                                     List<E> endpoints) {
-        if (counter != null) {
-            counter.getService().tryClean(endpoints);
-            if (!counter.begin(0)) {
-                throw FaultType.LIMIT.reject("Has reached the maximum number of active requests.");
-            }
-        }
     }
 
     /**
@@ -166,26 +135,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                                   R request,
                                                                   E instance) {
         cluster.onStartRequest(request, instance);
-    }
-
-    /**
-     * Ends the counter and records the result of the operation. This method is called after the
-     * operation has completed, either successfully or with a failure.
-     *
-     * @param counter A counter instance used to track the number of active requests.
-     * @param elapsed The time taken for the operation to complete, in milliseconds.
-     * @param success A flag indicating whether the operation was successful or not.
-     */
-    protected void endCounter(Counter counter,
-                              long elapsed,
-                              boolean success) {
-        if (counter != null) {
-            if (success) {
-                counter.success(elapsed);
-            } else {
-                counter.fail(elapsed);
-            }
-        }
     }
 
     /**
@@ -230,8 +179,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>        The type of the endpoint that extends {@link Endpoint}.
      * @param <T>        The type of the throwable that extends {@link Throwable}.
-     * @param throwable  The exception that occurred during the invocation.
-     * @param request    The request that was being processed when the exception occurred.
+     * @param error      The exception that occurred during the invocation.
      * @param endpoint   The endpoint to which the request was being sent, may be null if the exception
      *                   occurred before an endpoint was selected.
      * @param cluster    The live cluster context in which the invocation was taking place.
@@ -243,17 +191,24 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint,
-            T extends Throwable> void onException(Throwable throwable,
-                                                  R request,
-                                                  E endpoint,
-                                                  LiveCluster<R, O, E, T> cluster,
+            T extends Throwable> void onException(LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
+                                                  O response,
+                                                  ServiceError error,
+                                                  E endpoint,
                                                   CompletableFuture<O> result) {
-        O response = cluster.createResponse(throwable, request, endpoint);
+        R request = invocation.getRequest();
+        response = response != null && error.isServerError() ? response : cluster.createResponse(error.getThrowable(), request, endpoint);
         try {
-            invocation.onFailure(endpoint, throwable);
+            invocation.onFailure(endpoint, error.getThrowable());
             // avoid the live exception class is not recognized in application classloader
-            cluster.onError(response.getThrowable(), request, endpoint);
+            error = response.getError();
+            if (error == null) {
+                // maybe degrade
+                cluster.onSuccess(response, request, endpoint);
+            } else {
+                cluster.onError(error.getThrowable(), request, endpoint);
+            }
         } catch (Throwable e) {
             logger.warn("Exception occurred when onException, caused by " + e.getMessage(), e);
         } finally {

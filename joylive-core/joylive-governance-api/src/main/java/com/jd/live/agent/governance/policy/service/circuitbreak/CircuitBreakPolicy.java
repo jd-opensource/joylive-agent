@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -67,6 +68,11 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     private int minCallsThreshold = 10;
 
     /**
+     * Code policy
+     */
+    private CodePolicy codePolicy;
+
+    /**
      * Error code
      */
     private Set<String> errorCodes;
@@ -92,9 +98,9 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     private int slowCallDurationThreshold = 10000;
 
     /**
-     * Fuse time (milliseconds)
+     * Fuse time (seconds)
      */
-    private int waitDurationInOpenState = 60000;
+    private int waitDurationInOpenState = 60;
 
     /**
      * In the half-open state, callable numbers
@@ -126,15 +132,45 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         if (source == null) {
             return;
         }
-        if (errorCodes == null && source.getErrorCodes() != null) {
-            errorCodes = new HashSet<>(source.getErrorCodes());
-        }
-        if (degradeConfig == null && source.getDegradeConfig() != null) {
-            degradeConfig = new DegradeConfig(source.getDegradeConfig());
+        if (version <= 0) {
+            name = source.getName();
+            realizeType = source.getRealizeType();
+            level = source.getLevel();
+            version = source.getVersion();
+            slidingWindowType = source.getSlidingWindowType();
+            slidingWindowSize = source.getSlidingWindowSize();
+            minCallsThreshold = source.getMinCallsThreshold();
+            codePolicy = source.getCodePolicy() == null ? null : source.getCodePolicy().clone();
+            if (errorCodes == null && source.getErrorCodes() != null) {
+                errorCodes = new HashSet<>(source.getErrorCodes());
+            }
+            if (exceptions == null && source.getExceptions() != null) {
+                exceptions = new HashSet<>(source.getExceptions());
+            }
+            failureRateThreshold = source.getFailureRateThreshold();
+            slowCallRateThreshold = source.getSlowCallRateThreshold();
+            slowCallDurationThreshold = source.getSlowCallDurationThreshold();
+            waitDurationInOpenState = source.getWaitDurationInOpenState();
+            allowedCallsInHalfOpenState = source.getAllowedCallsInHalfOpenState();
+            forceOpen = source.isForceOpen();
+            if (degradeConfig == null && source.getDegradeConfig() != null) {
+                degradeConfig = new DegradeConfig(source.getDegradeConfig());
+            }
+            id = source.getId();
+            uri = source.getUri();
         }
         if (source.getVersion() == version) {
             broken = source.broken;
         }
+    }
+
+    /**
+     * Checks if the body of the code should be parsed.
+     *
+     * @return true if the body of the code should be parsed, false otherwise.
+     */
+    public boolean isBodyRequest() {
+        return codePolicy != null && codePolicy.isBodyRequest();
     }
 
     /**

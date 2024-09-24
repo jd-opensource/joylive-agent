@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.governance.request.Cookie;
 
 import java.net.URI;
@@ -132,6 +133,10 @@ public interface HttpResponse extends ServiceResponse {
      */
     interface HttpOutboundResponse extends HttpResponse, ServiceResponse.OutboundResponse {
 
+        @Override
+        default boolean isSuccess() {
+            return String.valueOf(HttpStatus.OK.value()).equals(getCode());
+        }
     }
 
 }

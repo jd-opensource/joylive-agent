@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.definition;
+package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
@@ -21,28 +21,22 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.FilteringWebHandlerInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayInterceptor;
 
 /**
- * FilteringWebHandlerPluginDefinition
+ * GatewayDefinition
  *
  * @since 1.0.0
  */
-@Extension(value = "FilteringWebHandlerPluginDefinition_Gateway_v3")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED,
-                GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.AND),
-}, relation = ConditionalRelation.AND)
-@ConditionalOnClass(FilteringWebHandlerDefinition.TYPE_FILTERING_WEB_HANDLER)
-@ConditionalOnClass(FilteringWebHandlerDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(FilteringWebHandlerDefinition.TYPE_HTTP_STATUS_CODE)
-public class FilteringWebHandlerDefinition extends PluginDefinitionAdapter {
+@Extension(value = "GatewayDefinition_v4")
+@ConditionalOnProperty(name = {GovernanceConfig.CONFIG_LIVE_ENABLED, GovernanceConfig.CONFIG_LANE_ENABLED}, matchIfMissing = true, relation = ConditionalRelation.OR)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false")
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
+@ConditionalOnClass(GatewayDefinition.REACTOR_MONO)
+@ConditionalOnMissingClass(GatewayDefinition.TYPE_HTTP_STATUS_CODE)
+public class GatewayDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
 
@@ -56,13 +50,13 @@ public class FilteringWebHandlerDefinition extends PluginDefinitionAdapter {
 
     protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
-    public FilteringWebHandlerDefinition() {
+    public GatewayDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        FilteringWebHandlerInterceptor::new
+                        GatewayInterceptor::new
                 )
         };
     }

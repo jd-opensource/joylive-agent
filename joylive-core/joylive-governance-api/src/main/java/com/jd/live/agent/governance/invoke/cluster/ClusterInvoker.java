@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -53,8 +52,6 @@ public interface ClusterInvoker {
      * corresponding response.
      *
      * @param cluster       The live cluster on which the request will be executed.
-     * @param context       The invocation context that provides additional information and state for
-     *                      the current invocation process.
      * @param invocation    The outbound invocation logic that defines how the request should be executed.
      * @param defaultPolicy The default cluster policy
      * @param <R>           The type of the outbound request that extends {@link OutboundRequest}.
@@ -67,7 +64,6 @@ public interface ClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
-                                                            InvocationContext context,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy);
 }

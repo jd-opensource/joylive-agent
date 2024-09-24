@@ -99,6 +99,13 @@ The default strategy for a service is set on the default group `default`.
       "retry": 10,
       "retryInterval": 1000,
       "timeout": 5000,
+      "codePolicy": {
+        "parser": "JsonPath",
+        "expression": "$.code",
+        "contentTypes": [
+          "application/json"
+        ]
+      },
       "retryStatuses": [
         500,
         502
@@ -274,21 +281,22 @@ stateDiagram-v2
     Open --> Open : call / raise circuit open
 ```
 
-| Element  | Description                           |
-|----------|---------------------------------------|
-| name     | Policy name                           |
-| level       | SERVICE: service level; API: API level; INSTANCE: instance level  |
-| slidingWindowType   | Specify the type of sliding window, count: number of times; time: duration           |
-| slidingWindowSize   | Specify the size of the sliding window, if it is count, it represents the number of calls; if it is time, it represents seconds |
-| minCallsThreshold   | Protect the threshold to prevent applications with too few calls from experiencing a fuse due to occasional failures     |
-| errorCodes      | If one of the response codes in the list is returned, it will be recorded as a failure by the circuit breaker      |
-| failureRateThreshold   | Failure rate threshold to trigger circuit breaker                        |
-| slowCallRateThreshold  | Threshold for the slow call count ratio that triggers circuit breaking                       |
-| slowCallDurationThreshold  | How long does a call take to be considered slow                         |
-| waitDurationInOpenState     | When the circuit breaker is triggered (status is open), how long should access tokens not be granted           |
-| allowedCallsInHalfOpenState | When the circuit breaker enters the half-open state, how many attempts can be allowed for trial access             |
-| forceOpen     | Forced to open the fuse                                |
-| degradeConfig     | When a fuse occurs, if the degradation configuration is performed, the configuration data will be returned as a response       |
+| Element                     | Description                                                                                                                     |
+|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| name                        | Policy name                                                                                                                     |
+| level                       | SERVICE: service level; API: API level; INSTANCE: instance level                                                                |
+| slidingWindowType           | Specify the type of sliding window, count: number of times; time: duration                                                      |
+| slidingWindowSize           | Specify the size of the sliding window, if it is count, it represents the number of calls; if it is time, it represents seconds |
+| minCallsThreshold           | Protect the threshold to prevent applications with too few calls from experiencing a fuse due to occasional failures            |
+| codePolicy                  | Used to extract error codes from response body                                                                                  |
+| errorCodes                  | If one of the response codes in the list is returned, it will be recorded as a failure by the circuit breaker                   |
+| failureRateThreshold        | Failure rate threshold to trigger circuit breaker                                                                               |
+| slowCallRateThreshold       | Threshold for the slow call count ratio that triggers circuit breaking                                                          |
+| slowCallDurationThreshold   | How long does a call take to be considered slow                                                                                 |
+| waitDurationInOpenState     | When the circuit breaker is triggered (status is open), how long should access tokens not be granted                            |
+| allowedCallsInHalfOpenState | When the circuit breaker enters the half-open state, how many attempts can be allowed for trial access                          |
+| forceOpen                   | Forced to open the fuse                                                                                                         |
+| degradeConfig               | When a fuse occurs, if the degradation configuration is performed, the configuration data will be returned as a response        |
 
 ```json
 {
@@ -299,6 +307,13 @@ stateDiagram-v2
       "slidingWindowType": "count",
       "slidingWindowSize": 5,
       "minCallsThreshold": 1,
+      "codePolicy": {
+        "parser": "JsonPath",
+        "expression": "$.code",
+        "contentTypes": [
+          "application/json"
+        ]
+      },
       "errorCodes": [
         "500",
         "502"
@@ -306,7 +321,7 @@ stateDiagram-v2
       "failureRateThreshold": 20,
       "slowCallRateThreshold": 20,
       "slowCallDurationThreshold": 1000,
-      "waitDurationInOpenState": 5000,
+      "waitDurationInOpenState": 50,
       "allowedCallsInHalfOpenState": 3,
       "forceOpen": false,
       "degradeConfig": {

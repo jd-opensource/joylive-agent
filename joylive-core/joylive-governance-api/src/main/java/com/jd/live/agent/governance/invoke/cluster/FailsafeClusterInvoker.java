@@ -19,10 +19,10 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.concurrent.CompletableFuture;
@@ -49,26 +49,26 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint,
             T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
-                                                            InvocationContext context,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
-        return invoke(cluster, context, invocation, 0);
+        return invoke(cluster, invocation, 0);
     }
 
     @Override
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint,
-            T extends Throwable> void onException(Throwable throwable,
-                                                  R request,
-                                                  E endpoint,
-                                                  LiveCluster<R, O, E, T> cluster,
+            T extends Throwable> void onException(LiveCluster<R, O, E, T> cluster,
                                                   OutboundInvocation<R> invocation,
+                                                  O response,
+                                                  ServiceError error,
+                                                  E endpoint,
                                                   CompletableFuture<O> result) {
-        logger.error("Failsafe ignore exception: " + throwable.getMessage(), throwable);
+        logger.error("Failsafe ignore exception: " + error.getError(), error);
+        R request = invocation.getRequest();
         // TODO Whether to fuse
-        invocation.onFailure(endpoint, throwable);
-        O response = cluster.createResponse(null, request, null);
+        invocation.onFailure(endpoint, error.getThrowable());
+        response = error.isServerError() ? response : cluster.createResponse(null, request, null);
         cluster.onSuccess(response, request, endpoint);
         result.complete(response);
     }

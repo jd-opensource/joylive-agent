@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.request;
 
-/*/**
+/**
  * Defines an interface for RPC (Remote Procedure Call) requests, extending the {@link ServiceRequest} interface.
  * <p>
  * This interface adds specific functionalities for handling RPC requests, such as determining if the request is a

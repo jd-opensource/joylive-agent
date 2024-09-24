@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.auth;
+package com.jd.live.agent.governance.policy.service.code;
+
+import com.jd.live.agent.core.extension.annotation.Extensible;
 
 /**
- * AuthType
- *
- * @since 1.2.0
+ * An interface for parsing code from service responses.
  */
-public enum AuthType {
-    BLACK,
-    WHITE;
+@Extensible("CodeParser")
+public interface CodeParser {
+
+    /**
+     * Parses the error from a service response using the provided expression.
+     *
+     * @param expression The expression used to extract the error information from the response.
+     * @param response   The service response to parse.
+     * @return The extracted error information as a string.
+     */
+    String getCode(String expression, Object response);
+
 }

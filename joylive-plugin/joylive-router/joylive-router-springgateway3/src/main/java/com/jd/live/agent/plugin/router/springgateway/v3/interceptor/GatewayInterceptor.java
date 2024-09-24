@@ -23,11 +23,11 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.handler.FilteringWebHandler;
 
 /**
- * FilteringWebHandlerInterceptor
+ * GatewayInterceptor
  *
  * @since 1.0.0
  */
-public class FilteringWebHandlerInterceptor extends InterceptorAdaptor {
+public class GatewayInterceptor extends InterceptorAdaptor {
 
     /**
      * Enhanced logic before method execution

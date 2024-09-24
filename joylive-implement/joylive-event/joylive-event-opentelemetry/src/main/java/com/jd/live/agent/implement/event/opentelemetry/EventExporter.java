@@ -71,7 +71,7 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
 
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_CELL = AttributeKey.stringKey(KEY_LOCAL_CELL);
 
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_CELL);
+    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
 
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_IP = AttributeKey.stringKey(KEY_LOCAL_IP);
 
@@ -92,6 +92,8 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
     private static final AttributeKey<String> ATTRIBUTE_SERVICE_METHOD = AttributeKey.stringKey(KEY_SERVICE_METHOD);
 
     private static final AttributeKey<String> ATTRIBUTE_SERVICE_VARIABLE = AttributeKey.stringKey(KEY_SERVICE_VARIABLE);
+
+    private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
 
     private LongCounter gatewayInbounds;
 
@@ -177,6 +179,7 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
                 put(ATTRIBUTE_SERVICE_PATH, trafficEvent.getPath()).
                 put(ATTRIBUTE_SERVICE_METHOD, trafficEvent.getMethod()).
                 put(ATTRIBUTE_SERVICE_VARIABLE, trafficEvent.getVariable()).
+                put(ATTRIBUTE_REJECT_TYPE, trafficEvent.getRejectTypeName()).
                 put(ATTRIBUTE_LOCAL_IP, event.getIp());
         if (trafficEvent.getPolicyTags() != null) {
             trafficEvent.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));

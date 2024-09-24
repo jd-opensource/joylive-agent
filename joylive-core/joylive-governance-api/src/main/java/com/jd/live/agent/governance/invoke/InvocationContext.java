@@ -27,11 +27,9 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -47,11 +45,13 @@ import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -234,8 +234,16 @@ public interface InvocationContext {
      * in the array can influence the priority of routing decisions.
      * </p>
      *
-     * @return An array of {@link OutboundFilter} instances that are used for routing decisions. The list may be empty
+     * @return An array of {@link RouteFilter} instances that are used for routing decisions. The list may be empty
      * if no route filters are configured.
+     */
+    RouteFilter[] getRouteFilters();
+
+    /**
+     * Retrieves an array of outbound filters.
+     *
+     * @return An array of {@link OutboundFilter} instances that are used for outbound request modification. The list may be empty
+     * if no outbound filters are configured.
      */
     OutboundFilter[] getOutboundFilters();
 
@@ -277,7 +285,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
-        return route(invocation, instances, (OutboundFilter[]) null, true);
+        return route(invocation, instances, (RouteFilter[]) null, true);
     }
 
     /**
@@ -324,7 +332,7 @@ public interface InvocationContext {
     }
 
     /**
-     * Routes an outbound request through a series of {@link OutboundFilter}s to determine the appropriate
+     * Routes an outbound request through a series of {@link RouteFilter}s to determine the appropriate
      * {@link Endpoint}s for the request. This method applies the provided filters (or the default
      * filters if none are provided) to the given list of instances (endpoints), modifying the
      * invocation's endpoints based on the filtering logic.
@@ -334,7 +342,7 @@ public interface InvocationContext {
      * @param invocation     The {@link OutboundInvocation} representing the outbound request and
      *                       containing information necessary for routing.
      * @param instances      A list of initial {@link Endpoint} instances to be considered for the request.
-     * @param filters        A collection of {@link OutboundFilter} instances to apply to the endpoints. If
+     * @param filters        A collection of {@link RouteFilter} instances to apply to the endpoints. If
      *                       {@code null} or empty, the default set of route filters is used.
      * @param notifyListener Whether to notify the listeners upon success or failure.
      * @return An {@link Endpoint} instance that has been filtered according to the
@@ -346,12 +354,12 @@ public interface InvocationContext {
     default <R extends OutboundRequest,
             E extends Endpoint> E route(OutboundInvocation<R> invocation,
                                         List<E> instances,
-                                        OutboundFilter[] filters,
+                                        RouteFilter[] filters,
                                         boolean notifyListener) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
-        OutboundFilterChain.Chain chain = new OutboundFilterChain.Chain(filters == null || filters.length == 0 ? getOutboundFilters() : filters);
+        RouteFilterChain.Chain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
         chain.filter(invocation);
         try {
             List<? extends Endpoint> endpoints = invocation.getEndpoints();
@@ -368,6 +376,41 @@ public interface InvocationContext {
             if (notifyListener) {
                 invocation.onFailure(null, e);
             }
+            throw e;
+        }
+    }
+
+    /**
+     * Processes an outbound invocation through a chain of configured outbound filters.
+     * <p>
+     * This method is similar to the {@code outbound} method, but it allows you to pass an existing
+     * {@link OutboundInvocation} object instead of creating a new one. It facilitates the processing of
+     * outbound requests through a series of filters. These filters can perform various tasks such as
+     * authentication, logging, validation, and more, according to the needs of the application. The outbound
+     * filters are executed in the sequence they are arranged in the {@link OutboundFilterChain}.
+     * </p>
+     *
+     * @param <R> The type of the outbound request, which must extend {@link OutboundRequest}.
+     * @param <O> The type of the outbound response.
+     * @param <E> The type of the endpoint to which requests are routed.
+     * @param <T> The type of the exception that can be thrown during invocation.
+     * @param cluster The live cluster of the service.
+     * @param invocation The outbound service request invocation to be processed.
+     * @param endpoint The endpoint through which the request will be sent.
+     * @return A CompletionStage that will contain the outbound service response when the request is completed.
+     * @throws RejectException If any of the filters in the chain reject the request.
+     */
+    default <R extends OutboundRequest,
+            O extends OutboundResponse,
+            E extends Endpoint,
+            T extends Throwable> CompletionStage<O> outbound(LiveCluster<R, O, E, T> cluster,
+                                                             OutboundInvocation<R> invocation,
+                                                             E endpoint) {
+        try {
+            OutboundFilterChain.Chain chain = new OutboundFilterChain.Chain(getOutboundFilters());
+            return chain.filter(cluster, invocation, endpoint);
+        } catch (RejectException e) {
+            invocation.onFailure(endpoint, e);
             throw e;
         }
     }
@@ -486,6 +529,11 @@ public interface InvocationContext {
         }
 
         @Override
+        public RouteFilter[] getRouteFilters() {
+            return delegate.getRouteFilters();
+        }
+
+        @Override
         public OutboundFilter[] getOutboundFilters() {
             return delegate.getOutboundFilters();
         }
@@ -503,7 +551,7 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
-            return delegate.route(invocation, instances, (OutboundFilter[]) null, true);
+            return delegate.route(invocation, instances, (RouteFilter[]) null, true);
         }
 
         @Override
@@ -516,14 +564,14 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-            return delegate.route(invocation, null, (OutboundFilter[]) null, true);
+            return delegate.route(invocation, null, (RouteFilter[]) null, true);
         }
 
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation,
                                             List<E> instances,
-                                            OutboundFilter[] filters,
+                                            RouteFilter[] filters,
                                             boolean notifyListener) {
             return delegate.route(invocation, instances, filters, true);
         }
@@ -557,7 +605,7 @@ public interface InvocationContext {
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation,
                                             List<E> instances,
-                                            OutboundFilter[] filters,
+                                            RouteFilter[] filters,
                                             boolean notifyListener) {
             E result = super.route(invocation, instances, filters, notifyListener);
             if (invocation.getRequest() instanceof HttpOutboundRequest) {

@@ -28,7 +28,7 @@ import java.util.Set;
 @ToString
 public class CellRoute {
 
-    public static final int PRIORITY_WHITELIST = 3;
+    public static final int PRIORITY_ALLOW_LIST = 3;
 
     public static final int PRIORITY_PREFIX = 2;
 
@@ -56,11 +56,11 @@ public class CellRoute {
     private transient Cell cell;
 
     public boolean isAllow(String name) {
-        return name != null && allows != null && allows.contains(name);
+        return name != null && allows != null && !allows.isEmpty() && allows.contains(name);
     }
 
     public boolean isPrefix(String name) {
-        if (name != null && !name.isEmpty() && prefixes != null) {
+        if (name != null && !name.isEmpty() && prefixes != null && !prefixes.isEmpty()) {
             // TODO Use prefix trie
             for (String p : prefixes) {
                 if (name.startsWith(p)) {
@@ -81,7 +81,7 @@ public class CellRoute {
 
     public int getPriority(String variable, Cell cell) {
         if (isAllow(variable)) {
-            return PRIORITY_WHITELIST;
+            return PRIORITY_ALLOW_LIST;
         } else if (isPrefix(variable)) {
             return PRIORITY_PREFIX;
         } else if (isLocal(cell)) {

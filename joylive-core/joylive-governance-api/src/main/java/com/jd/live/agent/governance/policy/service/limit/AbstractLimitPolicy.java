@@ -152,6 +152,8 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
         }
         if (version <= 0) {
             version = source.version;
+            id = source.id;
+            uri = source.uri;
         }
     }
 }

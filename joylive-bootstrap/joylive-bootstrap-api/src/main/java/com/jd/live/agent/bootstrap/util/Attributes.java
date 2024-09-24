@@ -16,6 +16,7 @@
 package com.jd.live.agent.bootstrap.util;
 
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Provides a contract for setting and getting attributes generically.
@@ -27,9 +28,20 @@ public interface Attributes {
      * Retrieves an attribute by key.
      *
      * @param key The key of the attribute to retrieve.
+     * @param <T> The type of the attribute value.
      * @return The value of the attribute, or null if not found.
      */
     <T> T getAttribute(String key);
+
+    /**
+     * Retrieves an attribute by key, or computes and stores a new attribute value if not found.
+     *
+     * @param key      The key of the attribute to retrieve.
+     * @param function A function that computes a new attribute value if the attribute is not found.
+     * @param <T>      The type of the attribute value.
+     * @return The value of the attribute, or the computed value if not found.
+     */
+    <T> T getAttributeIfAbsent(String key, Function<String, T> function);
 
     /**
      * Sets or replaces an attribute with the specified key and value.

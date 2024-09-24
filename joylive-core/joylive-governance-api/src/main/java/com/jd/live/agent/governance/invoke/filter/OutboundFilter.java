@@ -16,63 +16,55 @@
 package com.jd.live.agent.governance.invoke.filter;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
+
+import java.util.concurrent.CompletionStage;
 
 /**
- * Defines the contract for route filters which are responsible for filtering target instances
- * during the outbound request routing process. Implementations of this interface can be used to
- * apply various criteria to select or modify the target instances based on attributes like
- * liveliness, locality, retries, stickiness, health, tags, lanes, cell information, and load
- * balancing strategies.
+ * Defines an interface for outbound filters that handle outbound requests.
  * <p>
- * Implementations can be ordered using predefined constants to determine the sequence in which
- * filters are applied.
+ * This interface specifies how outbound requests should be handled by defining a {@code filter} method. Implementations
+ * of this interface can perform operations on the outbound requests and decide whether to pass the request to the next
+ * filter in the chain or to terminate the processing.
+ * </p>
+ * <p>
+ * Filters can be executed in a specified order, which is indicated by the constants {@code ORDER_OUTBOUND_*}. This allows
+ * for a structured and predictable processing of outbound requests.
+ * </p>
  *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * @since 1.3.0
  */
 @Extensible(value = "OutboundFilter")
 public interface OutboundFilter {
 
-    int ORDER_CIRCUIT_BREAKER = 100;
+    int ORDER_COUNTER = 100;
 
-    int ORDER_STICKY = ORDER_CIRCUIT_BREAKER + 100;
-
-    int ORDER_LOCALHOST = ORDER_STICKY + 100;
-
-    int ORDER_HEALTH = ORDER_LOCALHOST + 100;
-
-    int ORDER_VIRTUAL = ORDER_HEALTH + 100;
-
-    int ORDER_LIVE_UNIT = ORDER_VIRTUAL + 100;
-
-    int ORDER_TAG_ROUTE = ORDER_LIVE_UNIT + 100;
-
-    int ORDER_LANE = ORDER_TAG_ROUTE + 100;
-
-    int ORDER_LIVE_CELL = ORDER_LANE + 100;
-
-    int ORDER_RETRY = ORDER_LIVE_CELL + 100;
-
-    int ORDER_LOADBALANCE = ORDER_LIVE_CELL + 100;
+    int ORDER_INVOKE = Integer.MAX_VALUE;
 
     /**
-     * Applies the filter logic to the given outbound invocation. This method is called as part of a
-     * chain of filters, and it is responsible for invoking the next filter in the chain or terminating
-     * the chain if the criteria for routing are not met.
+     * Filters the outbound service request before it is sent to the remote service.
      *
-     * @param <T>        The type of the outbound request.
-     * @param invocation The outbound invocation containing the request and additional routing information.
-     * @param chain      The chain of route filters that should be applied to the invocation.
+     * @param cluster    The live cluster of the service.
+     * @param invocation The outbound service request invocation.
+     * @param endpoint   The endpoint through which the request will be sent.
+     * @param chain      The filter chain that this filter is part of.
+     * @param <R>        The type of the outbound service request.
+     * @param <O>        The type of the outbound service response.
+     * @param <E>        The type of the endpoint.
+     * @param <T>        The type of the exception that may be thrown during the filtering process.
+     * @return A CompletionStage that will contain the filtered outbound service response when the request is completed.
      */
-    <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain);
-
-    /**
-     * Represents a filter for live routes.
-     */
-    interface LiveRouteFilter extends OutboundFilter {
-
-    }
+    <R extends OutboundRequest,
+            O extends OutboundResponse,
+            E extends Endpoint,
+            T extends Throwable>
+    CompletionStage<O> filter(LiveCluster<R, O, E, T> cluster,
+                              OutboundInvocation<R> invocation,
+                              E endpoint,
+                              OutboundFilterChain chain);
 
 }

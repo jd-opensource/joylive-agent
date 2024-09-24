@@ -57,7 +57,7 @@ public class ReactiveClusterInterceptor extends InterceptorAdaptor {
         ReactiveClusterRequest request = new ReactiveClusterRequest((ClientRequest) arguments[0],
                 cluster.getLoadBalancerFactory(), (ExchangeFunction) arguments[1]);
         HttpOutboundInvocation<ReactiveClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        CompletionStage<ReactiveClusterResponse> response = cluster.invoke(context, invocation);
+        CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);
         Mono<ClientResponse> mono = Mono.fromFuture(Futures.future(response).thenApply(ReactiveClusterResponse::getResponse));
         mc.setResult(mono);
         mc.setSkip(true);

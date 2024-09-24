@@ -19,39 +19,46 @@ import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakE
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
 import lombok.Getter;
+import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.lang.NonNull;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
@@ -62,28 +69,39 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     private static final Logger logger = LoggerFactory.getLogger(GatewayCluster.class);
 
-    private static final String FIELD_CLIENT_FACTORY = "clientFactory";
-
     private final LoadBalancerClientFactory clientFactory;
 
-    public GatewayCluster(GlobalFilter filter) {
-        ClassDesc describe = ClassUtils.describe(filter.getClass());
-        FieldList fieldList = describe.getFieldList();
-        FieldDesc field = fieldList.getField(FIELD_CLIENT_FACTORY);
-        this.clientFactory = (LoadBalancerClientFactory) (field == null ? null : field.get(filter));
+    public GatewayCluster(LoadBalancerClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
     }
 
     @Override
     public ClusterPolicy getDefaultPolicy(GatewayClusterRequest request) {
         RetryConfig retryConfig = request.getRetryConfig();
         if (retryConfig != null && retryConfig.getRetries() > 0) {
-            RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
-            RetryPolicy retryPolicy = new RetryPolicy();
-            retryPolicy.setRetry(retryConfig.getRetries());
-            retryPolicy.setRetryInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
-            retryPolicy.setRetryStatuses(retryConfig.getStatuses().stream().map(v -> String.valueOf(v.value())).collect(Collectors.toSet()));
-            retryPolicy.setRetryExceptions(retryConfig.getExceptions().stream().map(v -> v.getClass().getName()).collect(Collectors.toSet()));
-            return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
+            List<HttpMethod> methods = retryConfig.getMethods();
+            if (methods.isEmpty() || methods.contains(request.getRequest().getMethod())) {
+                RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
+                Set<String> statuses = new HashSet<>(16);
+                retryConfig.getStatuses().forEach(status -> statuses.add(String.valueOf(status.value())));
+                Set<HttpStatus.Series> series = new HashSet<>(retryConfig.getSeries());
+                if (!series.isEmpty()) {
+                    for (HttpStatus status : HttpStatus.values()) {
+                        if (series.contains(status.series())) {
+                            statuses.add(String.valueOf(status.value()));
+                        }
+                    }
+                }
+                Set<String> exceptions = new HashSet<>();
+                retryConfig.getExceptions().forEach(e -> exceptions.add(e.getName()));
+
+                RetryPolicy retryPolicy = new RetryPolicy();
+                retryPolicy.setRetry(retryConfig.getRetries());
+                retryPolicy.setRetryInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
+                retryPolicy.setRetryStatuses(statuses);
+                retryPolicy.setRetryExceptions(exceptions);
+                return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
+            }
         }
         return new ClusterPolicy(ClusterInvoker.TYPE_FAILFAST);
     }
@@ -96,8 +114,13 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Mono<Void> mono = request.getChain().filter(request.getExchange());
-            return mono.toFuture().thenApply(v -> new GatewayClusterResponse(request.getExchange().getResponse()));
+            Set<CodePolicy> codePolicies = request.getAttribute(Request.KEY_CODE_POLICY);
+            ServerWebExchange exchange = request.getExchange();
+            if (codePolicies != null && !codePolicies.isEmpty()) {
+                exchange = exchange.mutate().response(new BodyResponseDecorator(exchange, codePolicies)).build();
+            }
+            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse());
+            return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
         } catch (Throwable e) {
             return Futures.future(e);
         }
@@ -113,22 +136,23 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                     return new GatewayClusterResponse(createResponse(request, config));
                 } catch (Throwable e) {
                     logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new GatewayClusterResponse(createException(throwable, request, endpoint));
+                    return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
                 }
             }
         }
-        return new GatewayClusterResponse(createException(throwable, request, endpoint));
+        return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
     public void onStartRequest(GatewayClusterRequest request, SpringEndpoint endpoint) {
         if (endpoint != null) {
             ServiceInstance instance = endpoint.getInstance();
-            URI uri = request.getRequest().getURI();
+            ServerWebExchange exchange = request.getExchange();
+            URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, request.getRequest().getURI());
             // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
             // if the loadbalancer doesn't provide one.
             String overrideScheme = instance.isSecure() ? "https" : "http";
-            Map<String, Object> attributes = request.getExchange().getAttributes();
+            Map<String, Object> attributes = exchange.getAttributes();
             String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
             if (schemePrefix != null) {
                 overrideScheme = request.getURI().getScheme();
@@ -184,6 +208,59 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
         response.writeWith(Flux.just(buffer)).block();
         return response;
+    }
+
+    /**
+     * A decorator for {@link ServerHttpResponse} that modifies the response body according to the specified code policies.
+     */
+    private static class BodyResponseDecorator extends ServerHttpResponseDecorator {
+
+        private final ServerWebExchange exchange;
+
+        private final Set<CodePolicy> codePolicies;
+
+        BodyResponseDecorator(ServerWebExchange exchange, Set<CodePolicy> codePolicies) {
+            super(exchange.getResponse());
+            this.exchange = exchange;
+            this.codePolicies = codePolicies;
+        }
+
+        @NonNull
+        @Override
+        public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
+            if (HttpStatus.OK.equals(getStatusCode()) && body instanceof Flux) {
+                String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+                if (policyMatch(contentType)) {
+                    Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                    return super.writeWith(fluxBody.buffer().map(
+                            dataBuffers -> {
+                                DataBufferFactory bufferFactory = bufferFactory();
+                                DataBuffer join = bufferFactory.join(dataBuffers);
+                                byte[] content = new byte[join.readableByteCount()];
+                                join.read(content);
+                                DataBufferUtils.release(join);
+                                exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
+                                return bufferFactory.wrap(content);
+                            }));
+                }
+            }
+            return super.writeWith(body);
+        }
+
+        /**
+         * Checks if any of the code policies match the given content type.
+         *
+         * @param contentType The content type to check.
+         * @return true if any of the code policies match the content type, false otherwise.
+         */
+        private boolean policyMatch(String contentType) {
+            for (CodePolicy policy : codePolicies) {
+                if (policy.match(contentType)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
 }

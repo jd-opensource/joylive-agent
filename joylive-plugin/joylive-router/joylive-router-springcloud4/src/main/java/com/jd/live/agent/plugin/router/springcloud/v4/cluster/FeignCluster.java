@@ -25,7 +25,7 @@ import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
@@ -47,7 +47,9 @@ import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
-
+/**
+ * A client cluster implementation for Feign-based service calls.
+ */
 public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, FeignClusterResponse> {
 
     private static final Logger logger = LoggerFactory.getLogger(FeignCluster.class);
@@ -111,17 +113,17 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
                     return new FeignClusterResponse(createResponse(request, config));
                 } catch (Throwable e) {
                     logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new FeignClusterResponse(createException(throwable, request, endpoint));
+                    return new FeignClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
                 }
             }
         }
-        return new FeignClusterResponse(createException(throwable, request, endpoint));
+        return new FeignClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
-    public boolean isRetryable(Response response) {
+    public boolean isRetryable(Throwable throwable) {
         // TODO modify isRetryable
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, response.getThrowable());
+        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
     }
 
     @SuppressWarnings("unchecked")

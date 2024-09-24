@@ -54,7 +54,7 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
     /**
      * Type of authentication policy.
      */
-    private AuthType type;
+    private AuthResult type;
 
     /**
      * The version of the authentication policy.
@@ -64,7 +64,7 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
     public AuthPolicy() {
     }
 
-    public AuthPolicy(String name, RelationType relationType, List<TagCondition> conditions, AuthType type, long version) {
+    public AuthPolicy(String name, RelationType relationType, List<TagCondition> conditions, AuthResult type, long version) {
         this.name = name;
         this.relationType = relationType;
         this.conditions = conditions;
@@ -83,6 +83,9 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
         if (source == null) {
             return;
         }
+        if (name == null) {
+            name = source.name;
+        }
         if (relationType == null && source.getRelationType() != null) {
             relationType = source.getRelationType();
         }
@@ -91,6 +94,9 @@ public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondit
         }
         if (type == null && source.getType() != null) {
             type = source.getType();
+        }
+        if (version <= 0) {
+            version = source.getVersion();
         }
     }
 }

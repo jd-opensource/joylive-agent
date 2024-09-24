@@ -150,6 +150,15 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Gets the cloud associated with this endpoint.
+     *
+     * @return The cloud, or the default value if not specified.
+     */
+    default String getCloud() {
+        return getLabel(Constants.LABEL_CLOUD, Constants.DEFAULT_VALUE);
+    }
+
+    /**
      * Gets the region associated with this endpoint.
      *
      * @return The region, or the default value if not specified.
@@ -266,6 +275,16 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      */
     default boolean isLane(String laneSpaceId, String lane) {
         return isLaneSpace(laneSpaceId) && isLane(lane);
+    }
+
+    /**
+     * Determines if the cloud matches the specified cloud.
+     *
+     * @param cloud The cloud to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isCloud(String cloud) {
+        return cloud != null && !cloud.isEmpty() && cloud.equals(getLabel(Constants.LABEL_CLOUD));
     }
 
     /**

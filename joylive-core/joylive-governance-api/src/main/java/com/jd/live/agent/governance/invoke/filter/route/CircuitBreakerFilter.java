@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.outbound;
+package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -30,18 +32,23 @@ import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
-import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.code.CodeParser;
+import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -52,13 +59,18 @@ import java.util.function.Consumer;
  * @since 1.1.0
  */
 @Injectable
-@Extension(value = "CircuitBreakerFilter", order = OutboundFilter.ORDER_CIRCUIT_BREAKER)
+@Extension(value = "CircuitBreakerFilter", order = RouteFilter.ORDER_CIRCUIT_BREAKER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAKER_ENABLED, matchIfMissing = true)
-public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitializer {
+public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
+
+    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
 
     @Inject
     private Map<String, CircuitBreakerFactory> factories;
+
+    @Inject
+    private Map<String, CodeParser> errorParsers;
 
     @Inject(nullable = true)
     private CircuitBreakerFactory defaultFactory;
@@ -74,7 +86,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
     }
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, OutboundFilterChain chain) {
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         ServicePolicy servicePolicy = metadata.getServicePolicy();
         List<CircuitBreakPolicy> policies = servicePolicy == null ? null : servicePolicy.getCircuitBreakPolicies();
@@ -83,6 +95,9 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
             List<CircuitBreaker> serviceBreakers = new ArrayList<>(policies.size());
             CircuitBreaker breaker;
             for (CircuitBreakPolicy policy : policies) {
+                if (policy.isBodyRequest()) {
+                    invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(policy.getCodePolicy());
+                }
                 switch (policy.getLevel()) {
                     case SERVICE:
                         breaker = getCircuitBreaker(policy, policy.getUri());
@@ -105,7 +120,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
                 }
             }
             // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, serviceBreakers, instancePolicies));
+            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, errorParsers, serviceBreakers, instancePolicies));
             // acquire service permit
             acquire(invocation, serviceBreakers);
             // filter broken instance
@@ -147,7 +162,7 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
         acquire(circuitBreakers, breaker -> {
             DegradeConfig config = breaker.getPolicy().getDegradeConfig();
             if (config == null) {
-                invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejects the request.");
+                invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejected the request.");
             } else {
                 invocation.degrade(FaultType.CIRCUIT_BREAK, "The circuit break policy triggers a downgrade response.", config);
             }
@@ -195,6 +210,8 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
 
         private final CircuitBreakerFactory factory;
 
+        private final Map<String, CodeParser> errorParsers;
+
         private List<CircuitBreaker> circuitBreakers;
 
         private final List<CircuitBreakPolicy> instancePolicies;
@@ -202,9 +219,11 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
         private final int index;
 
         CircuitBreakerListener(CircuitBreakerFactory factory,
+                               Map<String, CodeParser> errorParsers,
                                List<CircuitBreaker> circuitBreakers,
                                List<CircuitBreakPolicy> instancePolicies) {
             this.factory = factory;
+            this.errorParsers = errorParsers;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
             this.index = circuitBreakers.size();
@@ -235,12 +254,52 @@ public class CircuitBreakerFilter implements OutboundFilter, ExtensionInitialize
         public void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response) {
             long duration = invocation.getRequest().getDuration();
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                if (response != null && circuitBreaker.getPolicy().containsError(response.getCode())) {
+                if (response != null && isBreakError(response, circuitBreaker)) {
                     circuitBreaker.onError(duration, new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(duration);
                 }
             }
+        }
+
+        /**
+         * Checks if a service response represents an error, according to the circuit breaker policy.
+         *
+         * @param response       The service response to check.
+         * @param circuitBreaker The circuit breaker instance with the policy to use for error checking.
+         * @return true if the response represents an error, false otherwise.
+         */
+        private boolean isBreakError(ServiceResponse response, CircuitBreaker circuitBreaker) {
+            CircuitBreakPolicy policy = circuitBreaker.getPolicy();
+            if (policy.containsError(response.getCode())) {
+                return true;
+            }
+            ServiceError error = response.getError();
+            Throwable throwable = error == null ? null : error.getThrowable();
+            if (throwable != null) {
+                return policy.containsException(throwable);
+            } else if (response.isSuccess() && policy.isBodyRequest()) {
+                CodePolicy codePolicy = policy.getCodePolicy();
+                Object result = response.getResult();
+                if (result != null) {
+                    String errorParser = codePolicy.getParser();
+                    String errorExpression = codePolicy.getExpression();
+                    if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
+                        CodeParser parser = errorParsers.get(errorParser);
+                        if (parser != null) {
+                            try {
+                                String code = parser.getCode(errorExpression, result);
+                                return policy.containsError(code);
+                            } catch (Throwable e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            return false;
         }
 
         @Override

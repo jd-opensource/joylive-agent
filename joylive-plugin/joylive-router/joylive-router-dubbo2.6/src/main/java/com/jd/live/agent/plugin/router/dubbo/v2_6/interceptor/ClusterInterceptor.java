@@ -24,6 +24,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -70,9 +71,10 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0]);
         if (!request.isSystem() && !request.isDisabled()) {
             DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
-            DubboOutboundResponse response = cluster.request(context, invocation, instances);
-            if (response.getThrowable() != null) {
-                mc.setThrowable(response.getThrowable());
+            DubboOutboundResponse response = cluster.request(invocation, instances);
+            ServiceError error = response.getError();
+            if (error != null && !error.isServerError()) {
+                mc.setThrowable(error.getThrowable());
             } else {
                 mc.setResult(response.getResponse());
             }

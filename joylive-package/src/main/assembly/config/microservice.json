@@ -109,22 +109,6 @@
           },
           "authPolicies": [
             {
-              "name": "auth-rule-1",
-              "version": 1704038400000,
-              "relationType": "AND",
-              "conditions": [
-                {
-                  "type": "query",
-                  "opType": "EQUAL",
-                  "key": "auth",
-                  "values": [
-                    "true"
-                  ]
-                }
-              ],
-              "type": "WHITE"
-            },
-            {
               "name": "auth-rule-2",
               "version": 1704038400001,
               "relationType": "AND",
@@ -138,7 +122,7 @@
                   ]
                 }
               ],
-              "type": "BLACK"
+              "type": "DENY"
             }
           ],
           "rateLimitPolicies": [
@@ -290,6 +274,10 @@
               "slidingWindowType": "time",
               "slidingWindowSize": 5,
               "minCallsThreshold": 1,
+              "codePolicy": {
+                "parser": "JsonPath",
+                "expression": "$.code"
+              },
               "errorCodes": [
                 "500",
                 "502"
@@ -297,9 +285,10 @@
               "failureRateThreshold": 20,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
-              "waitDurationInOpenState": 5000,
+              "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
               "forceOpen": false,
+              "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {
@@ -323,9 +312,10 @@
               "failureRateThreshold": 20,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
-              "waitDurationInOpenState": 5000,
+              "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
               "forceOpen": false,
+              "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {
@@ -349,9 +339,10 @@
               "failureRateThreshold": 20,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
-              "waitDurationInOpenState": 5000,
+              "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
               "forceOpen": false,
+              "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
                 "attributes": {
@@ -461,9 +452,10 @@
                       "failureRateThreshold": 20,
                       "slowCallRateThreshold": 20,
                       "slowCallDurationThreshold": 1000,
-                      "waitDurationInOpenState": 5000,
+                      "waitDurationInOpenState": 50,
                       "allowedCallsInHalfOpenState": 3,
                       "forceOpen": false,
+                      "realizeType": "Resilience4j",
                       "degradeConfig": {
                         "responseCode": 200,
                         "attributes": {
@@ -522,9 +514,10 @@
                       "failureRateThreshold": 20,
                       "slowCallRateThreshold": 20,
                       "slowCallDurationThreshold": 1000,
-                      "waitDurationInOpenState": 5000,
+                      "waitDurationInOpenState": 50,
                       "allowedCallsInHalfOpenState": 3,
                       "forceOpen": false,
+                      "realizeType": "Resilience4j",
                       "degradeConfig": {
                         "responseCode": 200,
                         "attributes": {

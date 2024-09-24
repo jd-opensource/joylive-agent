@@ -37,5 +37,10 @@ public interface Request extends Attributes {
      */
     String KEY_STICKY_ID = Constants.LABEL_SERVICE_PREFIX + "sticky-id";
 
+    String KEY_RESPONSE_BODY = "x-response-body";
+
+    String KEY_CODE_POLICY = "x-code-policy";
+
+
 }
 

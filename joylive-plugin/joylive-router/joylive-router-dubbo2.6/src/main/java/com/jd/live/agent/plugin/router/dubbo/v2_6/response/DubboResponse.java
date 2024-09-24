@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.response;
 
 import com.alibaba.dubbo.rpc.Result;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.Response;
+import com.jd.live.agent.governance.response.ServiceError;
 
 import java.util.function.Predicate;
 
@@ -43,18 +43,18 @@ public interface DubboResponse {
          * @param response The result of the RPC call.
          */
         public DubboOutboundResponse(Result response) {
-            super(response, null, null);
+            this(response, null);
         }
 
         /**
-         * Constructs a new {@link DubboOutboundResponse} with the given throwable.
+         * Constructs a new {@link DubboOutboundResponse} with the given error.
          * This constructor is used when the RPC call resulted in an error.
          *
-         * @param throwable The error that occurred during the RPC call.
+         * @param error The error that occurred during the RPC call.
          * @param predicate A predicate to test the response and determine if it is retryable.
          */
-        public DubboOutboundResponse(Throwable throwable, Predicate<Response> predicate) {
-            super(null, throwable, predicate);
+        public DubboOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+            super(null, error, predicate);
         }
 
         /**
@@ -63,12 +63,12 @@ public interface DubboResponse {
          * an exception that might be recoverable or informative.
          *
          * @param response  The result of the RPC call.
-         * @param throwable The exception that occurred during the RPC call.
          * @param predicate A predicate to test the response and determine if it is retryable.
          */
-        public DubboOutboundResponse(Result response, Throwable throwable, Predicate<Response> predicate) {
-            super(response, throwable, predicate);
+        public DubboOutboundResponse(Result response, Predicate<Throwable> predicate) {
+            super(response, response != null && response.hasException() ? new ServiceError(response.getException(), true) : null, predicate);
         }
+
     }
 }
 

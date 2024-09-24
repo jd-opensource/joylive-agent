@@ -29,6 +29,9 @@ import lombok.Setter;
 @Setter
 public class Location {
 
+    // The cloud where the application or service is deployed.
+    private String cloud;
+
     // The geographical region where the application or service is deployed.
     private String region;
 
