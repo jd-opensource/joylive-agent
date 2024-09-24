@@ -4,20 +4,20 @@
     <parent>
         <groupId>com.jd.live</groupId>
         <artifactId>joylive-router</artifactId>
-        <version>1.3.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>joylive-router-grpc</artifactId>
 
     <properties>
-        <sofa-rpc.version>5.12.0</sofa-rpc.version>
+        <grpc-all.version>1.6.0</grpc-all.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.alipay.sofa</groupId>
-            <artifactId>sofa-rpc-all</artifactId>
-            <version>${sofa-rpc.version}</version>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+            <version>${grpc-all.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
