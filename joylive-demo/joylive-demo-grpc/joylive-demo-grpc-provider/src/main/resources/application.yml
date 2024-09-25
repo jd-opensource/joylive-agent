@@ -10,7 +10,7 @@ spring:
 grpc:
   # gRPC 服务器配置，对应 GrpcServerProperties 配置类
   server:
-    port: 0 # gRPC Server 随机端口
+    port: 9898 # gRPC Server 随机端口
 
 server:
-  port: 0 # Web Server 随机端口
+  port: 9899 # Web Server 随机端口
