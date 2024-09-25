@@ -10,7 +10,7 @@
     <artifactId>joylive-router-grpc</artifactId>
 
     <properties>
-        <grpc-all.version>1.6.0</grpc-all.version>
+        <grpc-all.version>1.60.0</grpc-all.version>
     </properties>
 
     <dependencies>
