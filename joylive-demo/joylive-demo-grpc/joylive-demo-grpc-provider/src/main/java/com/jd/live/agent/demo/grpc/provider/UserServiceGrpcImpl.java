@@ -1,6 +1,5 @@
 package com.jd.live.agent.demo.grpc.provider;
 
-import com.alibaba.fastjson.JSON;
 import com.jd.live.agent.demo.grpc.service.api.*;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
