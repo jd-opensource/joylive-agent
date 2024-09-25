@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/demo")
 public class UserServiceController {
 
-    @GrpcClient("user-service")
+    @GrpcClient("user-provider")
     private UserServiceGrpc.UserServiceBlockingStub userServiceGrpc;
 
     @GetMapping("/get")
