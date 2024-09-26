@@ -12,6 +12,7 @@
     <properties>
         <spring.boot.version>2.2.4.RELEASE</spring.boot.version>
         <spring.cloud.version>Hoxton.SR1</spring.cloud.version>
+        <grpc-all.version>1.60.0</grpc-all.version>
         <spring.cloud.alibaba.version>2.2.0.RELEASE</spring.cloud.alibaba.version>
         <grpc.spring.cloud.version>2.8.0.RELEASE</grpc.spring.cloud.version>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -52,6 +53,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 引入 gRPC -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+            <version>${grpc-all.version}</version>
+        </dependency>
+
         <!-- 实现对 SpringMVC 的自动化配置 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -71,5 +79,19 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <directory>${basedir}/target</directory>
+        <finalName>joylive-demo-grpc-provider</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.jd.live.agent.demo.grpc.provider.GRpcProviderApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

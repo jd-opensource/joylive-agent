@@ -15,7 +15,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
         UserGetResponse.Builder builder = UserGetResponse.newBuilder();
         builder.setId(request.getId())
-                .setName("hello world ：" + request.getId())
+                .setName("index ：" + request.getId() + " time : " + System.currentTimeMillis())
                 .setGender(request.getId() % 2 + 1);
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
