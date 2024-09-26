@@ -24,19 +24,19 @@ import java.util.function.Predicate;
  * for responses that are specific to Dubbo's communication model, allowing for a common handling
  * mechanism for all types of Dubbo responses.
  */
-public interface GRpcResponse {
+public interface GrpcResponse {
 
-    class GRpcOutboundResponse<T> extends AbstractRpcOutboundResponse<T> implements GRpcResponse {
+    class GrpcOutboundResponse<T> extends AbstractRpcOutboundResponse<T> implements GrpcResponse {
 
-        public GRpcOutboundResponse(T response) {
+        public GrpcOutboundResponse(T response) {
             this(response, null);
         }
 
-        public GRpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+        public GrpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
             super(null, error, predicate);
         }
 
-        public GRpcOutboundResponse(T response, Predicate<Throwable> predicate) {
+        public GrpcOutboundResponse(T response, Predicate<Throwable> predicate) {
             super(response, null, predicate);
         }
     }

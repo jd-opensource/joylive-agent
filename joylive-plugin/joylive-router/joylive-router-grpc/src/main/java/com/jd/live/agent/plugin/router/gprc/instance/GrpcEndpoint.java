@@ -5,11 +5,11 @@ import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import net.devh.boot.grpc.client.config.GrpcChannelProperties;
 
-public class GRpcEndpoint extends AbstractEndpoint {
+public class GrpcEndpoint extends AbstractEndpoint {
 
     private final GrpcChannelProperties properties;
 
-    public GRpcEndpoint(GrpcChannelProperties properties) {
+    public GrpcEndpoint(GrpcChannelProperties properties) {
         this.properties = properties;
     }
 

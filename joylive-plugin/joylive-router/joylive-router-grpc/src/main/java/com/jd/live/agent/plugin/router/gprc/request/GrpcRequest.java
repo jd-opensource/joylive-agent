@@ -18,11 +18,11 @@ package com.jd.live.agent.plugin.router.gprc.request;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 
-public interface GRpcRequest {
+public interface GrpcRequest {
 
-    class GRpcInboundRequest<T> extends AbstractRpcInboundRequest<T> implements GRpcRequest {
+    class GrpcInboundRequest<T> extends AbstractRpcInboundRequest<T> implements GrpcRequest {
 
-        public GRpcInboundRequest(T request) {
+        public GrpcInboundRequest(T request) {
             super(request);
         }
 
@@ -37,9 +37,9 @@ public interface GRpcRequest {
         }
     }
 
-    class GRpcOutboundRequest<T> extends AbstractRpcOutboundRequest<T> implements GRpcRequest {
+    class GrpcOutboundRequest<T> extends AbstractRpcOutboundRequest<T> implements GrpcRequest {
 
-        public GRpcOutboundRequest(T request) {
+        public GrpcOutboundRequest(T request) {
             super(request);
 
         }
