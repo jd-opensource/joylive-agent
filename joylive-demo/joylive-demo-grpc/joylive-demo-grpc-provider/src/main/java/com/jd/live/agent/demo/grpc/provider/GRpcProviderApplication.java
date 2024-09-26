@@ -7,7 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class GRpcProviderApplication {
 
     public static void main(String[] args) {
-        System.out.println("----> start provider ");
         SpringApplication.run(GRpcProviderApplication.class, args);
     }
 

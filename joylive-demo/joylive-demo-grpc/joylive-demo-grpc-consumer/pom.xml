@@ -9,6 +9,7 @@
     <artifactId>joylive-demo-grpc-consumer</artifactId>
 
     <properties>
+        <grpc-all.version>1.60.0</grpc-all.version>
         <spring.boot.version>2.2.4.RELEASE</spring.boot.version>
         <spring.cloud.version>Hoxton.SR1</spring.cloud.version>
         <spring.cloud.alibaba.version>2.2.0.RELEASE</spring.cloud.alibaba.version>
@@ -40,6 +41,12 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-all</artifactId>
+                <version>${grpc-all.version}</version>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -49,6 +56,18 @@
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-demo-grpc-service-api</artifactId>
             <version>${revision}</version>
+        </dependency>
+
+        <!-- gRpc -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.60.0</version>
         </dependency>
 
         <!-- 实现对 SpringMVC 的自动化配置 -->
@@ -70,5 +89,19 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <directory>${basedir}/target</directory>
+        <finalName>joylive-demo-grpc-consumer</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.jd.live.agent.demo.grpc.consumer.GRpcConsumerApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
