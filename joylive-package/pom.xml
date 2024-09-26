@@ -189,6 +189,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-router-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-transmission-thread</artifactId>
         </dependency>
         <dependency>

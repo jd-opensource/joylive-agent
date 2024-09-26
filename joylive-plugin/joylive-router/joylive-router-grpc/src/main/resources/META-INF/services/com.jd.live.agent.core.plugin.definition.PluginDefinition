@@ -1,1 +1,3 @@
 com.jd.live.agent.plugin.router.gprc.definition.ClusterDefinition
+com.jd.live.agent.plugin.router.gprc.definition.GrpcClientCallDefinition
+com.jd.live.agent.plugin.router.gprc.definition.GrpcServerCallDefinition
