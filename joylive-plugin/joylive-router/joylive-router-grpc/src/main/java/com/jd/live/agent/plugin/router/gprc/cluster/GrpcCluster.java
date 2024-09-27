@@ -5,6 +5,7 @@ import com.jd.live.agent.governance.exception.RetryException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
@@ -12,6 +13,9 @@ import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequ
 
 
 public class GrpcCluster implements LiveCluster<GrpcOutboundRequest, GrpcOutboundResponse, GrpcEndpoint, RuntimeException> {
+
+    public GrpcCluster(SocketAddress socketAddress) {
+    }
 
     @Override
     public CompletionStage<List<GrpcEndpoint>> route(GrpcOutboundRequest request) {
