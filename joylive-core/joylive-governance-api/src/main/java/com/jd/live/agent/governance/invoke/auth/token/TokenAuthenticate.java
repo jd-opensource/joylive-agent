@@ -26,14 +26,14 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 @Extension("token")
 public class TokenAuthenticate implements Authenticate {
 
-    private static final String TOKEN = "token";
-    private static final String X_SERVICE_TOKEN = "x-service-token";
-    private static final String TOKEN_KEY = "token.key";
+    private static final String KEY_TOKEN = "token";
+    private static final String KEY_TOKEN_KEY = "token.key";
+    private static final String DEFAULT_TOKEN_KEY = "x-token";
 
     @Override
     public AuthResult authenticate(ServiceRequest request, AuthPolicy policy) {
-        String token = policy.getParameter(TOKEN);
-        String tokenKey = policy.getParameter(TOKEN_KEY, X_SERVICE_TOKEN);
+        String token = policy.getParameter(KEY_TOKEN);
+        String tokenKey = policy.getParameter(KEY_TOKEN_KEY, DEFAULT_TOKEN_KEY);
 
         if (token != null && !token.isEmpty()) {
             String requestToken = null;
