@@ -13,14 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.auth;
+package com.jd.live.agent.governance.invoke.auth;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * AuthResult
- *
- * @since 1.2.0
+ * A class representing the result of an authentication attempt.
  */
-public enum AuthResult {
-    DENY,
-    ALLOW;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthResult {
+
+    /**
+     * Indicates whether the authentication was successful.
+     */
+    private boolean success;
+
+    /**
+     * Contains an error message if the authentication failed.
+     */
+    private String error;
 }

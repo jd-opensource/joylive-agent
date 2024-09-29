@@ -125,7 +125,6 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
      * @param throwable the exception that caused the failure.
      */
     public void onFailure(Throwable throwable) {
-        // TODO Whether to split the type of rejection
         if (throwable instanceof RejectUnreadyException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNREADY).requests(1));
         } else if (throwable instanceof RejectUnitException) {
@@ -136,6 +135,8 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_ESCAPE).requests(1));
         } else if (throwable instanceof RejectLimitException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_LIMIT).requests(1));
+        } else if (throwable instanceof RejectPermissionException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_PERMISSION_DENIED).requests(1));
         } else if (throwable instanceof RejectAuthException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNAUTHORIZED).requests(1));
         }

@@ -17,14 +17,14 @@ package com.jd.live.agent.governance.policy.service.auth;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
-import com.jd.live.agent.governance.rule.ConditionalMatcher;
-import com.jd.live.agent.governance.rule.RelationType;
-import com.jd.live.agent.governance.rule.tag.TagCondition;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Auth policy
@@ -33,70 +33,35 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class AuthPolicy extends PolicyId implements ConditionalMatcher<TagCondition>,
-        PolicyInherit.PolicyInheritWithIdGen<AuthPolicy>, Serializable {
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithId<AuthPolicy>, Serializable {
 
     /**
-     * The name of the limiting policy.
+     * The type of the auth policy.
      */
-    private String name;
+    private String type;
 
-    /**
-     * Defines how conditions are related (e.g., AND, OR) when evaluating whether the policy applies.
-     */
-    protected RelationType relationType;
+    private Map<String, String> params;
 
-    /**
-     * A list of conditions (tags) that determine when the policy is applicable.
-     */
-    protected List<TagCondition> conditions;
-
-    /**
-     * Type of authentication policy.
-     */
-    private AuthResult type;
-
-    /**
-     * The version of the authentication policy.
-     */
-    private long version;
-
-    public AuthPolicy() {
-    }
-
-    public AuthPolicy(String name, RelationType relationType, List<TagCondition> conditions, AuthResult type, long version) {
-        this.name = name;
-        this.relationType = relationType;
-        this.conditions = conditions;
-        this.type = type;
-        this.version = version;
-    }
-
-    /**
-     * Supplements the policy instance with properties or settings from the specified source object.
-     * This method allows the policy to inherit or update its behavior based on the state of the source.
-     *
-     * @param source the source object from which to supplement properties or settings
-     */
     @Override
     public void supplement(AuthPolicy source) {
         if (source == null) {
             return;
         }
-        if (name == null) {
-            name = source.name;
+        if (type == null) {
+            type = source.type;
         }
-        if (relationType == null && source.getRelationType() != null) {
-            relationType = source.getRelationType();
+        if (params == null && source.params != null) {
+            params = new HashMap<>(source.params);
         }
-        if (conditions == null && source.getConditions() != null) {
-            conditions = source.getConditions();
-        }
-        if (type == null && source.getType() != null) {
-            type = source.getType();
-        }
-        if (version <= 0) {
-            version = source.getVersion();
-        }
+    }
+
+    public String getParameter(String key) {
+        return params == null || key == null ? null : params.get(key);
+    }
+
+    public String getParameter(String key, String defaultValue) {
+        return params == null || key == null ? defaultValue : params.getOrDefault(key, defaultValue);
     }
 }
