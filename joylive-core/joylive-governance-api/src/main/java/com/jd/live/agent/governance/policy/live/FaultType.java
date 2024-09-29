@@ -36,7 +36,18 @@ public enum FaultType {
     },
 
     /**
-     * Represents a state where the authentication has failed or is not authorized.
+     * Represents a state where the permission has failed.
+     */
+    PERMISSION_DENIED {
+        @Override
+        public RejectException reject(String reason) {
+            return new RejectPermissionException(reason);
+        }
+
+    },
+
+    /**
+     * Represents a state where the authentication has failed.
      */
     UNAUTHORIZED {
         @Override

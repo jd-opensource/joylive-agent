@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
+import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
@@ -81,7 +82,11 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Setter
     @Getter
-    private List<AuthPolicy> authPolicies;
+    private List<PermissionPolicy> permissionPolicies;
+
+    @Getter
+    @Setter
+    private AuthPolicy authPolicy;
 
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
 
@@ -114,13 +119,17 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (circuitBreakPolicies != null && !circuitBreakPolicies.isEmpty()) {
             circuitBreakPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, r.getName())));
         }
-        if (authPolicies != null && !authPolicies.isEmpty()) {
-            authPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
+        if (permissionPolicies != null && !permissionPolicies.isEmpty()) {
+            permissionPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
+        }
+        if (authPolicy != null && authPolicy.getId() != null) {
+            authPolicy.setId(id);
         }
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
             clusterPolicy = copy(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
             loadBalancePolicy = copy(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
+            authPolicy = copy(source.authPolicy, authPolicy, s -> new AuthPolicy());
 
             if ((rateLimitPolicies == null || rateLimitPolicies.isEmpty()) &&
                     (source.rateLimitPolicies != null && !source.rateLimitPolicies.isEmpty())) {
@@ -152,10 +161,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                         s -> new CircuitBreakPolicy(),
                         s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, s.getName()));
             }
-            if ((authPolicies == null || authPolicies.isEmpty()) &&
-                    (source.authPolicies != null && !source.authPolicies.isEmpty())) {
-                authPolicies = copy(source.authPolicies,
-                        s -> new AuthPolicy(),
+            if ((permissionPolicies == null || permissionPolicies.isEmpty()) &&
+                    (source.permissionPolicies != null && !source.permissionPolicies.isEmpty())) {
+                permissionPolicies = copy(source.permissionPolicies,
+                        s -> new PermissionPolicy(),
                         s -> uri.parameter(KEY_SERVICE_AUTH, s.getName()));
             }
         }

@@ -15,51 +15,64 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
-import com.jd.live.agent.governance.invoke.auth.AuthResult;
-import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
+import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
+import com.jd.live.agent.governance.policy.service.auth.AllowResult;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
-import java.util.Map;
+import java.util.List;
 
 /**
- * AuthInboundFilter
+ * PermissionInboundFilter
  *
  * @since 1.2.0
  */
 @Injectable
-@Extension(value = "AuthInboundFilter", order = InboundFilter.ORDER_INBOUND_AUTH)
+@Extension(value = "PermissionInboundFilter", order = InboundFilter.ORDER_INBOUND_PERMISSION)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class AuthInboundFilter implements InboundFilter {
+public class PermissionInboundFilter implements InboundFilter, ExtensionInitializer {
 
-    @Inject
-    private Map<String, Authenticate> authenticates;
+    @Override
+    public void initialize() {
+    }
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        AuthPolicy authPolicy = servicePolicy.getAuthPolicy();
-        if (authPolicy != null && authPolicy.getType() != null) {
-            Authenticate authenticate = authenticates.get(authPolicy.getType());
-            if (authenticate != null) {
-                AuthResult result = authenticate.authenticate(invocation.getRequest(), authPolicy);
-                if (result != null && !result.isSuccess()) {
-                    if (result.getError() != null && !result.getError().isEmpty()) {
-                        invocation.reject(FaultType.UNAUTHORIZED, "The traffic auth policy rejected the request. caused by " + result.getError());
-                    } else {
-                        invocation.reject(FaultType.UNAUTHORIZED, "The traffic auth policy rejected the request.");
+        List<PermissionPolicy> policies = servicePolicy == null ? null : servicePolicy.getPermissionPolicies();
+        if (null != policies && !policies.isEmpty()) {
+            boolean hasAllow = false;
+            boolean allowed = false;
+            boolean denied = false;
+            for (PermissionPolicy policy : policies) {
+                // match logic
+                boolean passed = policy.match(invocation);
+                if (policy.getType() == AllowResult.ALLOW) {
+                    hasAllow = true;
+                    if (passed) {
+                        allowed = true;
                     }
+                } else if (policy.getType() == AllowResult.DENY && passed) {
+                    denied = true;
+                    break;
                 }
+            }
+            // If denied, return false directly.
+            if (denied) {
+                invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
+            }
+            // If there is a allow rule list, but it has not passed any allow rule, return false.
+            if (hasAllow && !allowed) {
+                invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
             }
         }
         chain.filter(invocation);

@@ -38,7 +38,8 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setRateLimitPolicies(null);
                 oldPolicy.setCircuitBreakPolicies(null);
-                oldPolicy.setAuthPolicies(null);
+                oldPolicy.setPermissionPolicies(null);
+                oldPolicy.setAuthPolicy(null);
                 oldPolicy.setLivePolicy(null);
             }
         }
@@ -53,7 +54,8 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
                 oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
-                oldPolicy.setAuthPolicies(newPolicy.getAuthPolicies());
+                oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
+                oldPolicy.setAuthPolicy(newPolicy.getAuthPolicy());
                 oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
             }
         }
@@ -81,7 +83,8 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setRateLimitPolicies(null);
                 oldPolicy.setCircuitBreakPolicies(null);
-                oldPolicy.setAuthPolicies(null);
+                oldPolicy.setPermissionPolicies(null);
+                oldPolicy.setAuthPolicy(null);
             }
         }
 
@@ -95,7 +98,8 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
                 oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
-                oldPolicy.setAuthPolicies(newPolicy.getAuthPolicies());
+                oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
+                oldPolicy.setAuthPolicy(newPolicy.getAuthPolicy());
             }
         }
     },
@@ -113,7 +117,8 @@ public enum MergePolicy implements PolicyMerger {
             newPolicy.setConcurrencyLimitPolicies(null);
             newPolicy.setRateLimitPolicies(null);
             newPolicy.setCircuitBreakPolicies(null);
-            newPolicy.setAuthPolicies(null);
+            newPolicy.setPermissionPolicies(null);
+            newPolicy.setAuthPolicy(null);
         }
 
         @Override
