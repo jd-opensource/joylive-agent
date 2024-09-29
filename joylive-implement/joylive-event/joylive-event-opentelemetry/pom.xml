@@ -15,7 +15,7 @@
         <grpc.version>1.63.0</grpc.version>
         <opentelemetry-sdk.version>1.38.0</opentelemetry-sdk.version>
         <opentelemetry-exporter-prometheus.version>1.38.0-alpha</opentelemetry-exporter-prometheus.version>
-        <protobuf-java.version>4.26.1</protobuf-java.version>
+        <protobuf-java.version>4.27.5</protobuf-java.version>
         <gson.version>2.10.1</gson.version>
         <annotations.version>4.1.1.4</annotations.version>
         <animal-sniffer-annotations.version>1.23</animal-sniffer-annotations.version>
