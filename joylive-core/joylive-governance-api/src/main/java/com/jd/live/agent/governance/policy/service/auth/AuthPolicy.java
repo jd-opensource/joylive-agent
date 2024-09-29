@@ -62,6 +62,10 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
     }
 
     public String getParameter(String key, String defaultValue) {
-        return params == null || key == null ? defaultValue : params.getOrDefault(key, defaultValue);
+        if (params == null || key == null) {
+            return defaultValue;
+        }
+        String value = params.get(key);
+        return value == null || value.isEmpty() ? defaultValue : value;
     }
 }

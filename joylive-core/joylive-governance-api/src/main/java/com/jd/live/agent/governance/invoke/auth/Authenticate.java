@@ -25,6 +25,10 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 @Extensible("Authenticate")
 public interface Authenticate {
 
+    String KEY_AUTH = "Authorization";
+
+    String BASIC_PREFIX = "Basic ";
+
     /**
      * Authenticates a user based on the given policy and service request.
      *
