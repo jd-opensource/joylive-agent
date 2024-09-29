@@ -131,6 +131,10 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     @Override
     public GatewayClusterResponse createResponse(Throwable throwable, GatewayClusterRequest request, SpringEndpoint endpoint) {
+        if (throwable == null) {
+            return new GatewayClusterResponse(createResponse(request,
+                    DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build()));
+        }
         RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
