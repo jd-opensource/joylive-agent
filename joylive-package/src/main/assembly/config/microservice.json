@@ -107,7 +107,7 @@
             ],
             "version": 1704038400000
           },
-          "authPolicies": [
+          "permissionPolicies": [
             {
               "name": "auth-rule-2",
               "version": 1704038400001,
@@ -125,6 +125,13 @@
               "type": "DENY"
             }
           ],
+          "authPolicy": {
+            "type": "token",
+            "params": {
+              "token": "1234567890",
+              "token.key": "Authorization"
+            }
+          },
           "rateLimitPolicies": [
             {
               "name": "limit-rule-1",
