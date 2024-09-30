@@ -29,7 +29,7 @@ import com.alipay.sofa.rpc.log.LogCodes;
 import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -171,7 +171,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
         if (throwable == null) {
             return new SofaRpcOutboundResponse(new SofaResponse());
         }
-        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
             if (config != null) {
@@ -237,30 +237,49 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
-    public SofaRpcException createNoProviderException(SofaRpcOutboundRequest request) {
+    public SofaRpcException createPermissionException(RejectPermissionException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
+    }
+
+    @Override
+    public SofaRpcException createAuthException(RejectAuthException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
+    }
+
+    @Override
+    public SofaRpcException createLimitException(RejectLimitException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.SERVER_BUSY, exception.getMessage());
+    }
+
+    @Override
+    public SofaRpcException createCircuitBreakException(RejectCircuitBreakException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
+    }
+
+    @Override
+    public SofaRpcException createNoProviderException(RejectNoProviderException exception, SofaRpcOutboundRequest request) {
         return new SofaRouteException(
                 LogCodes.getLog(LogCodes.ERROR_NO_AVAILABLE_PROVIDER,
                         request.getRequest().getTargetServiceUniqueName(), "[]"));
     }
 
     @Override
-    public SofaRpcException createLimitException(RejectException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createCircuitBreakException(RejectException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
+    public SofaRpcException createEscapeException(RejectEscapeException exception, SofaRpcOutboundRequest request) {
+        return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
     }
 
     @Override
     public SofaRpcException createRejectException(RejectException exception, SofaRpcOutboundRequest request) {
         if (exception instanceof RejectNoProviderException) {
-            return createNoProviderException(request);
-        } else if (exception instanceof RejectException.RejectLimitException) {
-            return createLimitException(exception, request);
-        } else if (exception instanceof RejectException.RejectCircuitBreakException) {
-            return createCircuitBreakException(exception, request);
+            return createNoProviderException((RejectNoProviderException) exception, request);
+        } else if (exception instanceof RejectAuthException) {
+            return createAuthException((RejectAuthException) exception, request);
+        } else if (exception instanceof RejectPermissionException) {
+            return createPermissionException((RejectPermissionException) exception, request);
+        } else if (exception instanceof RejectLimitException) {
+            return createLimitException((RejectLimitException) exception, request);
+        } else if (exception instanceof RejectCircuitBreakException) {
+            return createCircuitBreakException((RejectCircuitBreakException) exception, request);
         }
         return new SofaRpcException(CLIENT_ROUTER, exception.getMessage());
     }
