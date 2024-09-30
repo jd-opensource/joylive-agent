@@ -15,11 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
@@ -32,7 +36,12 @@ import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.core.NestedRuntimeException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
+import org.springframework.lang.NonNull;
 import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -40,6 +49,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
 /**
  * Represents a client cluster that handles outbound requests and responses for services
@@ -56,6 +67,8 @@ import java.util.concurrent.CompletionStage;
  * service instance selection with load balancing and retry policies.
  */
 public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterRequest, ReactiveClusterResponse> {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReactiveCluster.class);
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -112,7 +125,22 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
     @Override
     public ReactiveClusterResponse createResponse(Throwable throwable, ReactiveClusterRequest request, SpringEndpoint endpoint) {
-        // TODO CircuitBreakerException
+        if (throwable == null) {
+            // for fail fast cluster invoker
+            return new ReactiveClusterResponse(createResponse(request, new DegradeConfig()));
+        }
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        if (circuitBreakException != null) {
+            DegradeConfig config = circuitBreakException.getConfig();
+            if (config != null) {
+                try {
+                    return new ReactiveClusterResponse(createResponse(request, config));
+                } catch (Throwable e) {
+                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
+                    return new ReactiveClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
+                }
+            }
+        }
         return new ReactiveClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
@@ -171,5 +199,61 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
             }
         }
         return result;
+    }
+
+    /**
+     * Creates a ClientResponse based on the given ReactiveClusterRequest and DegradeConfig.
+     *
+     * @param request       the ReactiveClusterRequest to use for creating the response
+     * @param degradeConfig the DegradeConfig to use for configuring the response
+     * @return the created ClientResponse
+     */
+    private ClientResponse createResponse(ReactiveClusterRequest request, DegradeConfig degradeConfig) {
+        ExchangeStrategies strategies;
+        try {
+            FieldDesc field = ClassUtils.describe(request.getNext().getClass()).getFieldList().getField("strategies");
+            strategies = field == null ? ExchangeStrategies.withDefaults() : (ExchangeStrategies) field.get(request.getNext());
+        } catch (Throwable ignored) {
+            strategies = ExchangeStrategies.withDefaults();
+        }
+        return ClientResponse.create(degradeConfig.getResponseCode(), strategies)
+                .body(degradeConfig.getResponseBody() == null ? "" : degradeConfig.getResponseBody())
+                .request(new DegradeHttpRequest(request))
+                .headers(headers -> {
+                    headers.addAll(request.getRequest().headers());
+                    degradeConfig.foreach(headers::add);
+                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+                    headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(degradeConfig.bodyLength()));
+                }).build();
+    }
+
+    /**
+     * A class that implements the HttpRequest interface and wrap a ReactiveClusterRequest.
+     */
+    private static class DegradeHttpRequest implements HttpRequest {
+
+        private final ReactiveClusterRequest request;
+
+        public DegradeHttpRequest(ReactiveClusterRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        @NonNull
+        public String getMethodValue() {
+            return request.getRequest().method().name();
+        }
+
+        @Override
+        @NonNull
+        public URI getURI() {
+            return request.getRequest().url();
+        }
+
+        @Override
+        @NonNull
+        public HttpHeaders getHeaders() {
+            return request.getRequest().headers();
+        }
     }
 }

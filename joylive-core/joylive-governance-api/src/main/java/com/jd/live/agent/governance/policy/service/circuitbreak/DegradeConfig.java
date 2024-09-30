@@ -20,6 +20,7 @@ import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * DegradeConfig
@@ -30,7 +31,7 @@ import java.util.Map;
 @Getter
 public class DegradeConfig {
 
-    private int responseCode;
+    private int responseCode = 200;
 
     private String contentType = "application/json";
 
@@ -47,4 +48,15 @@ public class DegradeConfig {
         this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
         this.responseBody = config.responseBody;
     }
+
+    public void foreach(BiConsumer<String, String> consumer) {
+        if (attributes != null) {
+            attributes.forEach(consumer);
+        }
+    }
+
+    public int bodyLength() {
+        return responseBody == null ? 0 : responseBody.length();
+    }
+
 }
