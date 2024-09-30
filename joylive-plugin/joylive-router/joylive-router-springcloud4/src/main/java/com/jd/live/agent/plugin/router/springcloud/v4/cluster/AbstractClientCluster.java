@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectLimitException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -114,7 +112,7 @@ public abstract class AbstractClientCluster<
 
     @Override
     public NestedRuntimeException createUnReadyException(String message, R request) {
-        return createException(HttpStatus.FORBIDDEN, message);
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, message);
     }
 
     @Override
@@ -133,31 +131,50 @@ public abstract class AbstractClientCluster<
     }
 
     @Override
-    public NestedRuntimeException createNoProviderException(R request) {
+    public NestedRuntimeException createAuthException(RejectAuthException exception, R request) {
+        return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @Override
+    public NestedRuntimeException createPermissionException(RejectPermissionException exception, R request) {
+        return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @Override
+    public NestedRuntimeException createLimitException(RejectLimitException exception, R request) {
+        return createException(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
+    }
+
+    @Override
+    public NestedRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, R request) {
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
+    }
+
+    @Override
+    public NestedRuntimeException createNoProviderException(RejectNoProviderException exception, R request) {
         return createException(HttpStatus.SERVICE_UNAVAILABLE,
                 "LoadBalancer does not contain an instance for the service " + request.getService());
     }
 
     @Override
-    public NestedRuntimeException createLimitException(RejectException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
-    }
-
-    @Override
-    public NestedRuntimeException createCircuitBreakException(RejectException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
+    public NestedRuntimeException createEscapeException(RejectEscapeException exception, R request) {
+        return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage(), exception);
     }
 
     @Override
     public NestedRuntimeException createRejectException(RejectException exception, R request) {
         if (exception instanceof RejectNoProviderException) {
-            return createNoProviderException(request);
+            return createNoProviderException((RejectNoProviderException) exception, request);
+        } else if (exception instanceof RejectAuthException) {
+            return createAuthException((RejectAuthException) exception, request);
+        } else if (exception instanceof RejectPermissionException) {
+            return createPermissionException((RejectPermissionException) exception, request);
         } else if (exception instanceof RejectLimitException) {
-            return createLimitException(exception, request);
+            return createLimitException((RejectLimitException) exception, request);
         } else if (exception instanceof RejectCircuitBreakException) {
-            return createCircuitBreakException(exception, request);
+            return createCircuitBreakException((RejectCircuitBreakException) exception, request);
         }
-        return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage());
+        return createException(HttpStatus.FORBIDDEN, exception.getMessage());
     }
 
     @Override

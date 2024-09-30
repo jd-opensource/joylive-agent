@@ -23,7 +23,7 @@ import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -159,7 +159,7 @@ public class Dubbo26Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
         if (throwable == null) {
             return new DubboOutboundResponse(new RpcResult());
         }
-        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
             if (config != null) {
@@ -221,7 +221,27 @@ public class Dubbo26Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
     }
 
     @Override
-    public RpcException createNoProviderException(DubboOutboundRequest request) {
+    public RpcException createPermissionException(RejectPermissionException exception, DubboOutboundRequest request) {
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+    }
+
+    @Override
+    public RpcException createAuthException(RejectAuthException exception, DubboOutboundRequest request) {
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+    }
+
+    @Override
+    public RpcException createLimitException(RejectLimitException exception, DubboOutboundRequest request) {
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+    }
+
+    @Override
+    public RpcException createCircuitBreakException(RejectCircuitBreakException exception, DubboOutboundRequest request) {
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+    }
+
+    @Override
+    public RpcException createNoProviderException(RejectNoProviderException exception, DubboOutboundRequest request) {
         Invocation invocation = request.getRequest();
         return new RpcException("Failed to invoke the method "
                 + invocation.getMethodName() + " in the service " + cluster.getInterface().getName()
@@ -233,23 +253,22 @@ public class Dubbo26Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
     }
 
     @Override
-    public RpcException createLimitException(RejectException exception, DubboOutboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createCircuitBreakException(RejectException exception, DubboOutboundRequest request) {
+    public RpcException createEscapeException(RejectEscapeException exception, DubboOutboundRequest request) {
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }
 
     @Override
     public RpcException createRejectException(RejectException exception, DubboOutboundRequest request) {
         if (exception instanceof RejectNoProviderException) {
-            return createNoProviderException(request);
-        } else if (exception instanceof RejectException.RejectLimitException) {
-            return createLimitException(exception, request);
-        } else if (exception instanceof RejectException.RejectCircuitBreakException) {
-            return createCircuitBreakException(exception, request);
+            return createNoProviderException((RejectNoProviderException) exception, request);
+        } else if (exception instanceof RejectAuthException) {
+            return createAuthException((RejectAuthException) exception, request);
+        } else if (exception instanceof RejectPermissionException) {
+            return createPermissionException((RejectPermissionException) exception, request);
+        } else if (exception instanceof RejectLimitException) {
+            return createLimitException((RejectLimitException) exception, request);
+        } else if (exception instanceof RejectCircuitBreakException) {
+            return createCircuitBreakException((RejectCircuitBreakException) exception, request);
         }
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }

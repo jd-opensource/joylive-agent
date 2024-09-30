@@ -16,29 +16,21 @@
 package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectEscapeException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ServletInboundRequest;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
-
-import java.io.IOException;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * HandlerAdapterInterceptor
  */
 public class HandlerAdapterInterceptor extends InterceptorAdaptor {
-
-    private static final Logger logger = LoggerFactory.getLogger(HandlerAdapterInterceptor.class);
 
     private final InvocationContext context;
 
@@ -49,44 +41,23 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         ServiceConfig config =  context.getGovernanceConfig().getServiceConfig();
-        MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        HttpServletResponse response = (HttpServletResponse) arguments[1];
         ServletInboundRequest request = new ServletInboundRequest((HttpServletRequest) arguments[0], arguments[2], config::isSystem);
         if (!request.isSystem()) {
             try {
                 context.inbound(new HttpInboundInvocation<>(request, context));
             } catch (RejectEscapeException e) {
-                error(e, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, response);
-                mc.setSkip(true);
-            } catch (RejectNoProviderException e) {
-                error(e, HttpStatus.SERVICE_UNAVAILABLE, response);
-                mc.setSkip(true);
-            } catch (RejectException.RejectAuthException e) {
-                error(e, HttpStatus.UNAUTHORIZED, response);
-                mc.setSkip(true);
+                throw new ResponseStatusException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage());
+            } catch (RejectNoProviderException | RejectCircuitBreakException | RejectUnreadyException e) {
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+            } catch (RejectAuthException | RejectException.RejectPermissionException e) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
+            } catch (RejectException.RejectLimitException e) {
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
             } catch (RejectException e) {
-                error(e, HttpStatus.FORBIDDEN, response);
-                mc.setSkip(true);
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
             }
         }
     }
 
-    /**
-     * Handles an error by setting the HTTP response status and writing the error message.
-     *
-     * @param e the RejectException containing the error details
-     * @param status the HTTP status to set in the response
-     * @param response the HttpServletResponse to write the error message to
-     */
-    private static void error(RejectException e, HttpStatus status, HttpServletResponse response) {
-        if (response != null) {
-            response.setStatus(status.value());
-            try {
-                response.getWriter().print(e.getMessage());
-            } catch (IOException err) {
-                logger.error("Write unit reject response error!", err);
-            }
-        }
-    }
 }

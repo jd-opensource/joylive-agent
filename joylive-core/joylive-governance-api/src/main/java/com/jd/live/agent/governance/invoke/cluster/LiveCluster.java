@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -211,30 +212,58 @@ public interface LiveCluster<R extends OutboundRequest,
     T createException(Throwable throwable, R request, E endpoint);
 
     /**
-     * Creates an exception to be thrown when no provider is available for the requested service.
+     * Creates an exception to be thrown when failed authenticate the requested service.
      *
-     * @param request The request for which no provider could be found.
+     * @param exception The {@link RejectAuthException} that caused the limit to be reached.
+     * @param request   The request for which no provider could be found.
      * @return An exception of type T indicating that no provider is available.
      */
-    T createNoProviderException(R request);
+    T createAuthException(RejectAuthException exception, R request);
+
+    /**
+     * Creates an exception to be thrown when no permission for the requested service.
+     *
+     * @param exception The {@link RejectPermissionException} that caused the limit to be reached.
+     * @param request   The request for which no provider could be found.
+     * @return An exception of type T indicating that no provider is available.
+     */
+    T createPermissionException(RejectPermissionException exception, R request);
 
     /**
      * Creates an exception to be thrown when a limit is reached for the requested service.
      *
-     * @param exception The {@link RejectException} that caused the limit to be reached.
+     * @param exception The {@link RejectLimitException} that caused the limit to be reached.
      * @param request   The request for which the limit has been reached.
      * @return An exception of type T indicating that a limit has been reached.
      */
-    T createLimitException(RejectException exception, R request);
+    T createLimitException(RejectLimitException exception, R request);
 
     /**
      * Creates an exception to be thrown when a circuit breaker is triggered for the requested service.
      *
-     * @param exception The {@link RejectException} that caused the circuit breaker to be triggered.
+     * @param exception The {@link RejectCircuitBreakException} that caused the circuit breaker to be triggered.
      * @param request   The request for which the circuit breaker has been triggered.
      * @return An exception of type T indicating that a circuit breaker has been triggered.
      */
-    T createCircuitBreakException(RejectException exception, R request);
+    T createCircuitBreakException(RejectCircuitBreakException exception, R request);
+
+    /**
+     * Creates an exception to be thrown when no provider is available for the requested service.
+     *
+     * @param exception The {@link RejectNoProviderException} that caused the limit to be reached.
+     * @param request The request for which no provider could be found.
+     * @return An exception of type T indicating that no provider is available.
+     */
+    T createNoProviderException(RejectNoProviderException exception, R request);
+
+    /**
+     * Creates an exception to be thrown for the escaped requested.
+     *
+     * @param exception The {@link RejectPermissionException} that caused the limit to be reached.
+     * @param request   The request for which no provider could be found.
+     * @return An exception of type T indicating that no provider is available.
+     */
+    T createEscapeException(RejectEscapeException exception, R request);
 
     /**
      * Creates an exception to be thrown when a request is explicitly rejected.
