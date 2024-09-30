@@ -46,5 +46,6 @@ public class ReadyInboundFilter implements InboundFilter {
                     + " service=" + application.getService().getName()
                     + " address=" + Ipv4.getLocalIp());
         }
+        chain.filter(invocation);
     }
 }
