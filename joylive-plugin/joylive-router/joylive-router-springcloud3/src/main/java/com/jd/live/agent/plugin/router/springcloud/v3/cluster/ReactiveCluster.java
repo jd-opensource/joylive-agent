@@ -234,7 +234,7 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
         private final ReactiveClusterRequest request;
 
-        public DegradeHttpRequest(ReactiveClusterRequest request) {
+        DegradeHttpRequest(ReactiveClusterRequest request) {
             this.request = request;
         }
 

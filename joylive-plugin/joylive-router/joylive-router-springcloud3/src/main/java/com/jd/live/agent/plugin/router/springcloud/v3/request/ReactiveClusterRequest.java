@@ -25,9 +25,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
  * extending the capabilities of an abstract HTTP outbound request model to include
