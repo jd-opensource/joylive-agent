@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -25,8 +24,8 @@ import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.policy.service.auth.AllowResult;
+import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.List;
@@ -39,11 +38,7 @@ import java.util.List;
 @Injectable
 @Extension(value = "PermissionInboundFilter", order = InboundFilter.ORDER_INBOUND_PERMISSION)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class PermissionInboundFilter implements InboundFilter, ExtensionInitializer {
-
-    @Override
-    public void initialize() {
-    }
+public class PermissionInboundFilter implements InboundFilter {
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
