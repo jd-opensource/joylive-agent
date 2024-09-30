@@ -62,6 +62,9 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
             } catch (RejectNoProviderException e) {
                 mc.setResult(Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e)));
                 mc.setSkip(true);
+            } catch (RejectException.RejectAuthException e) {
+                mc.setResult(Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage(), e)));
+                mc.setSkip(true);
             } catch (RejectException e) {
                 mc.setResult(Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e)));
                 mc.setSkip(true);

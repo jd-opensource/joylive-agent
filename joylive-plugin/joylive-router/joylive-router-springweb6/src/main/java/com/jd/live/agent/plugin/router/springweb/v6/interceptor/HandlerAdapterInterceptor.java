@@ -62,6 +62,9 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
             } catch (RejectNoProviderException e) {
                 error(e, HttpStatus.SERVICE_UNAVAILABLE, response);
                 mc.setSkip(true);
+            } catch (RejectException.RejectAuthException e) {
+                error(e, HttpStatus.UNAUTHORIZED, response);
+                mc.setSkip(true);
             } catch (RejectException e) {
                 error(e, HttpStatus.FORBIDDEN, response);
                 mc.setSkip(true);
