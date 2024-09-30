@@ -134,6 +134,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     @Override
     public BlockingClusterResponse createResponse(Throwable throwable, BlockingClusterRequest request, SpringEndpoint endpoint) {
+        if (throwable == null) {
+            return new BlockingClusterResponse(createResponse(request,
+                    DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build()));
+        }
         RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();

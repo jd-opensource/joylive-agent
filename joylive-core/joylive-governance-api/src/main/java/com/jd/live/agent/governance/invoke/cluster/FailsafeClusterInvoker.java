@@ -64,11 +64,10 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
                                                   ServiceError error,
                                                   E endpoint,
                                                   CompletableFuture<O> result) {
-        logger.error("Failsafe ignore exception: " + error.getError(), error);
+        logger.error("Failsafe ignore exception: " + error.getError());
         R request = invocation.getRequest();
-        // TODO Whether to fuse
         invocation.onFailure(endpoint, error.getThrowable());
-        response = error.isServerError() ? response : cluster.createResponse(null, request, null);
+        response = cluster.createResponse(null, request, null);
         cluster.onSuccess(response, request, endpoint);
         result.complete(response);
     }

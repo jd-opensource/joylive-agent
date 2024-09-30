@@ -15,8 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.circuitbreak;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +27,9 @@ import java.util.Map;
  */
 @Setter
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class DegradeConfig {
 
     private int responseCode;
@@ -37,9 +39,6 @@ public class DegradeConfig {
     private Map<String, String> attributes;
 
     private String responseBody;
-
-    public DegradeConfig() {
-    }
 
     public DegradeConfig(DegradeConfig config) {
         this.responseCode = config.responseCode;

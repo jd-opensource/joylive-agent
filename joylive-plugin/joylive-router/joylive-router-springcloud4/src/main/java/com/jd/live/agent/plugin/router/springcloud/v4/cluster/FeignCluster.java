@@ -105,6 +105,10 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     @Override
     public FeignClusterResponse createResponse(Throwable throwable, FeignClusterRequest request, SpringEndpoint endpoint) {
+        if (throwable == null) {
+            return new FeignClusterResponse(createResponse(request,
+                    DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build()));
+        }
         RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
