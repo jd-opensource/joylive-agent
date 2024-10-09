@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.util.http.HttpMethod;
@@ -126,6 +127,11 @@ public abstract class AbstractClientCluster<
             return (NestedRuntimeException) throwable;
         } else if (throwable instanceof RejectException) {
             return createRejectException((RejectException) throwable, request);
+        } else if (throwable instanceof FaultException) {
+            FaultException exception = (FaultException) throwable;
+            HttpStatus status = HttpStatus.resolve(exception.getCode());
+            status = status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
+            return createException(status, exception.getMessage(), throwable);
         }
         return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
     }

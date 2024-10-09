@@ -21,6 +21,7 @@ import com.alibaba.dubbo.common.Version;
 import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
@@ -210,6 +211,11 @@ public class Dubbo26Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
             return (RpcException) throwable;
         } else if (throwable instanceof RejectException) {
             return createRejectException((RejectException) throwable, request);
+        } else if (throwable instanceof FaultException) {
+            String message = getError(throwable, request, endpoint);
+            Integer code = ((FaultException) throwable).getCode();
+            code = code == null ? RpcException.UNKNOWN_EXCEPTION : code;
+            return new RpcException(code, message);
         } else {
             String message = getError(throwable, request, endpoint);
             Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;

@@ -27,6 +27,7 @@ import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.log.LogCodes;
 import com.alipay.sofa.rpc.transport.ClientTransport;
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
@@ -226,6 +227,10 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
             return (SofaRpcException) throwable;
         } else if (throwable instanceof RejectException) {
             return createRejectException((RejectException) throwable, request);
+        } else if (throwable instanceof FaultException) {
+            Integer code = ((FaultException) throwable).getCode();
+            code = code == null ? RpcErrorType.CLIENT_UNDECLARED_ERROR : code;
+            return new SofaRpcException(code, getError(throwable, request, endpoint));
         } else {
             String message = getError(throwable, request, endpoint);
             if (throwable instanceof LiveException) {

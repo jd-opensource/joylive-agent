@@ -56,6 +56,8 @@ public class PolicyId implements PolicyIdGen {
 
     public static final String KEY_SERVICE_CIRCUIT_BREAK = "circuitBreak";
 
+    public static final String KEY_FAULT_INJECTION = "faultInjection";
+
     public static final String KEY_SERVICE_AUTH = "auth";
 
     public static final String KEY_SERVICE_ENDPOINT = "endpoint";
