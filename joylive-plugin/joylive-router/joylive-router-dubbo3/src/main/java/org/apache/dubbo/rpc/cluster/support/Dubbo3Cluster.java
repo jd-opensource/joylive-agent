@@ -17,6 +17,7 @@ package org.apache.dubbo.rpc.cluster.support;
 
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
@@ -253,6 +254,11 @@ public class Dubbo3Cluster implements LiveCluster<DubboOutboundRequest, DubboOut
             return (RpcException) throwable;
         } else if (throwable instanceof RejectException) {
             return createRejectException((RejectException) throwable, request);
+        } else if (throwable instanceof FaultException) {
+            String message = getError(throwable, request, endpoint);
+            Integer code = ((FaultException) throwable).getCode();
+            code = code == null ? RpcException.UNKNOWN_EXCEPTION : code;
+            return new RpcException(code, message);
         } else {
             String message = getError(throwable, request, endpoint);
             if (throwable instanceof LiveException) {

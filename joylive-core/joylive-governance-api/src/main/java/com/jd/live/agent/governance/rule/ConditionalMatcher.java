@@ -46,13 +46,15 @@ public interface ConditionalMatcher<T> extends Conditional<T>, Matcher<Matcher<T
         }
 
         boolean matched = false;
+        RelationType relationType = getRelationType();
+        relationType = relationType == null ? RelationType.AND : relationType;
         for (T condition : conditions) {
             if (matcher.match(condition)) {
-                if (getRelationType() == RelationType.OR) {
+                if (relationType == RelationType.OR) {
                     return true;
                 }
                 matched = true;
-            } else if (getRelationType() == RelationType.AND) {
+            } else if (relationType == RelationType.AND) {
                 return false;
             }
         }
