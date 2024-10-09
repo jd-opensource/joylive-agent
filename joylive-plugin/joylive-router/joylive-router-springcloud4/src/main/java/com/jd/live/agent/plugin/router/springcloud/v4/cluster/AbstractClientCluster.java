@@ -175,6 +175,8 @@ public abstract class AbstractClientCluster<
             return createAuthException((RejectAuthException) exception, request);
         } else if (exception instanceof RejectPermissionException) {
             return createPermissionException((RejectPermissionException) exception, request);
+        } else if (exception instanceof RejectEscapeException) {
+            return createEscapeException((RejectEscapeException) exception, request);
         } else if (exception instanceof RejectLimitException) {
             return createLimitException((RejectLimitException) exception, request);
         } else if (exception instanceof RejectCircuitBreakException) {
