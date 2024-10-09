@@ -122,7 +122,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (permissionPolicies != null && !permissionPolicies.isEmpty()) {
             permissionPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
         }
-        if (authPolicy != null && authPolicy.getId() != null) {
+        if (authPolicy != null && authPolicy.getId() == null) {
             authPolicy.setId(id);
         }
         if (source != null) {
