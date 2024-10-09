@@ -20,6 +20,7 @@ import com.jd.live.agent.core.bytekit.type.TypeDef;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.description.type.TypeList;
 import net.bytebuddy.pool.TypePool;
 
 import java.util.ArrayList;
@@ -91,10 +92,14 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     @Override
     public List<TypeDesc.Generic> getInterfaces() {
+        List<TypeDesc.Generic> result = new ArrayList<>();
         try {
-            return desc.getInterfaces().stream().map(BuddyTypeDesc.BuddyGeneric::new).collect(Collectors.toList());
-        } catch (TypePool.Resolution.NoSuchTypeException e) {
-            return new ArrayList<>();
+            TypeList.Generic types = desc.getInterfaces();
+            for (TypeDescription.Generic type : types) {
+                result.add(new BuddyTypeDesc.BuddyGeneric(type));
+            }
+        } catch (TypePool.Resolution.NoSuchTypeException ignored) {
         }
+        return result;
     }
 }
