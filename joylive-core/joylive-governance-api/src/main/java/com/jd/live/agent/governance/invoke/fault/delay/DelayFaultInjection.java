@@ -25,6 +25,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A fault injection implementation that introduces delays in the request processing.
+ *
+ * @since 1.4.0
  */
 @Extension("delay")
 public class DelayFaultInjection implements FaultInjection {

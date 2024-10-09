@@ -24,6 +24,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A fault injection implementation that introduces errors in the request processing.
+ *
+ * @since 1.4.0
  */
 @Extension("error")
 public class ErrorFaultInjection implements FaultInjection {

@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * Fault injection policy
  *
- * @since 1.2.0
+ * @since 1.4.0
  */
 @Getter
 @Setter

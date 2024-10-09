@@ -37,6 +37,7 @@ import java.util.concurrent.CompletionStage;
  * A filter that injects faults into the request processing based on the specified fault injection policy.
  *
  * @see OutboundFilter
+ * @since 1.4.0
  */
 @Injectable
 @Extension(value = "FaultInjectionFilter", order = OutboundFilter.ORDER_FAULT_INJECTION)
