@@ -26,6 +26,7 @@ import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
+import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
@@ -88,6 +89,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Setter
     private AuthPolicy authPolicy;
 
+    @Getter
+    @Setter
+    private List<FaultInjectionPolicy> faultInjectionPolicies;
+
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
 
     public ServicePolicy() {
@@ -122,9 +127,13 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (permissionPolicies != null && !permissionPolicies.isEmpty()) {
             permissionPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
         }
+        if (faultInjectionPolicies != null && !faultInjectionPolicies.isEmpty()) {
+            faultInjectionPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_FAULT_INJECTION, r.getName())));
+        }
         if (authPolicy != null && authPolicy.getId() != null) {
             authPolicy.setId(id);
         }
+
         if (source != null) {
             livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
             clusterPolicy = copy(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
@@ -166,6 +175,12 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                 permissionPolicies = copy(source.permissionPolicies,
                         s -> new PermissionPolicy(),
                         s -> uri.parameter(KEY_SERVICE_AUTH, s.getName()));
+            }
+            if ((faultInjectionPolicies == null || faultInjectionPolicies.isEmpty()) &&
+                    (source.faultInjectionPolicies != null && !source.faultInjectionPolicies.isEmpty())) {
+                faultInjectionPolicies = copy(source.faultInjectionPolicies,
+                        s -> new FaultInjectionPolicy(),
+                        s -> uri.parameter(KEY_FAULT_INJECTION, s.getName()));
             }
         }
     }

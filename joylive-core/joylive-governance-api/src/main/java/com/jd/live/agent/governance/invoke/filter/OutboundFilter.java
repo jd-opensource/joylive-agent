@@ -43,6 +43,8 @@ public interface OutboundFilter {
 
     int ORDER_COUNTER = 100;
 
+    int ORDER_FAULT_INJECTION = ORDER_COUNTER + 100;
+
     int ORDER_INVOKE = Integer.MAX_VALUE;
 
     /**
