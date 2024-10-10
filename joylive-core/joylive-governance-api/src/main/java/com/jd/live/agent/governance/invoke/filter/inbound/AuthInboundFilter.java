@@ -48,7 +48,7 @@ public class AuthInboundFilter implements InboundFilter {
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        AuthPolicy authPolicy = servicePolicy.getAuthPolicy();
+        AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
         if (authPolicy != null && authPolicy.getType() != null) {
             Authenticate authenticate = authenticates.get(authPolicy.getType());
             if (authenticate != null) {
