@@ -253,7 +253,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             if (attributes != null) {
                 attributes.forEach(headers::add);
             }
-            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
             headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
             return headers;
         }

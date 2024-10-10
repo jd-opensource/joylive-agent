@@ -122,6 +122,24 @@ public abstract class AbstractRpcRequest<T> extends AbstractServiceRequest<T> im
     }
 
     /**
+     * Loads a class with the given name, using the class loader of the request class.
+     * If the class cannot be found, returns the default class instead.
+     *
+     * @param className The name of the class to load.
+     * @param def       The default class to return if the requested class cannot be found.
+     * @return The loaded class, or the default class if the requested class cannot be found.
+     */
+    public Class<?> loadClass(String className, Class<?> def) {
+        if (className != null && !className.isEmpty()) {
+            try {
+                return request.getClass().getClassLoader().loadClass(className);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return def;
+    }
+
+    /**
      * Provides an abstract base class for inbound RPC requests.
      * <p>
      * This class represents RPC requests that are received by a service from a client or another service.

@@ -83,5 +83,14 @@ public interface RpcRequest extends ServiceRequest {
         default boolean isDisabled() {
             return false;
         }
+
+        /**
+         * Checks if this object is a generic type.
+         *
+         * @return true if this object is a generic type, false otherwise.
+         */
+        default boolean isGeneric() {
+            return false;
+        }
     }
 }

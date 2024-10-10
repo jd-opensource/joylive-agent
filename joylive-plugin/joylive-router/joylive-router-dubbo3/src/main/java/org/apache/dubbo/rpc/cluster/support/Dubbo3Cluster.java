@@ -342,17 +342,22 @@ public class Dubbo3Cluster implements LiveCluster<DubboOutboundRequest, DubboOut
         AppResponse response = new AppResponse();
         response.setAttachments(degradeConfig.getAttributes());
         if (body != null) {
-            // TODO generic & callback & async
-            Type[] types = RpcUtils.getReturnTypes(invocation);
             Object value;
-            if (types == null || types.length == 0) {
-                // happens when generic invoke or void return
-                value = null;
-            } else if (types.length == 1) {
-                Class<?> type = (Class<?>) types[0];
-                value = String.class == type ? body : parser.read(new StringReader(body), type);
+            if (request.isGeneric()) {
+                value = degradeConfig.text()
+                        ? body
+                        : parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
             } else {
-                value = parser.read(new StringReader(body), types[1]);
+                Type[] types = RpcUtils.getReturnTypes(invocation);
+                if (types == null || types.length == 0) {
+                    // void return
+                    value = null;
+                } else if (types.length == 1) {
+                    Class<?> type = (Class<?>) types[0];
+                    value = String.class == type ? body : parser.read(new StringReader(body), type);
+                } else {
+                    value = parser.read(new StringReader(body), types[1]);
+                }
             }
             response.setValue(value);
         }

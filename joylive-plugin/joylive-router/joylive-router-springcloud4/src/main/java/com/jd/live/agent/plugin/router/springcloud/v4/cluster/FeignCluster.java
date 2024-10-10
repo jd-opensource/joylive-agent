@@ -164,7 +164,7 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
             degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
         }
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
-        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
+        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.contentType()));
 
         return feign.Response.builder()
                 .status(degradeConfig.getResponseCode())

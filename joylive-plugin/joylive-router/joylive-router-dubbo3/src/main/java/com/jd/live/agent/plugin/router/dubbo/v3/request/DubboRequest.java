@@ -21,8 +21,10 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutbou
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invocation;
+import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
+import org.apache.dubbo.rpc.service.GenericService;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -34,6 +36,13 @@ import static org.apache.dubbo.common.constants.RegistryConstants.*;
 public interface DubboRequest {
 
     String METADATA_SERVICE = "org.apache.dubbo.metadata.MetadataService";
+
+    /**
+     * generic call
+     */
+    String METHOD_$INVOKE = "$invoke";
+
+    String METHOD_$INVOKE_ASYNC = "$invokeAsync";
 
     /**
      * Represents an inbound request in a Dubbo RPC communication.
@@ -130,6 +139,16 @@ public interface DubboRequest {
                 return cause != null ? cause : throwable;
             }
             return super.getCause(throwable);
+        }
+
+        @Override
+        public boolean isGeneric() {
+            Invoker<?> invoker = request.getInvoker();
+            String methodName = request.getMethodName();
+            return ((
+                    METHOD_$INVOKE.equals(methodName)
+                            || METHOD_$INVOKE_ASYNC.equals(methodName))
+                    && invoker.getInterface().isAssignableFrom(GenericService.class));
         }
     }
 }

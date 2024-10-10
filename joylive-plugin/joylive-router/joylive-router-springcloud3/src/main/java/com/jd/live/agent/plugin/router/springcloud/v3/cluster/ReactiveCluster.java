@@ -222,7 +222,7 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
                 .headers(headers -> {
                     headers.addAll(request.getRequest().headers());
                     degradeConfig.foreach(headers::add);
-                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
                     headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(degradeConfig.bodyLength()));
                 }).build();
     }

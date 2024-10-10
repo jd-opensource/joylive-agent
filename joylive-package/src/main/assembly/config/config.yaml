@@ -101,9 +101,6 @@ agent:
       enabled: ${CONFIG_REGISTRY_ENABLED:true}
     flowcontrol:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
-      loadbalance: ${CONFIG_LOADBALANCE_ENABLED:true}
-      sticky: ${CONFIG_STICKY_ENABLED:false}
-      limit: ${CONFIG_LIMIT_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
     protect:

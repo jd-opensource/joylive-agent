@@ -59,6 +59,7 @@ public enum ServiceType {
 
         @Override
         public String normalize(String path) {
+            // The path will not be empty, and the default policy can be set at the group level.
             return path == null || path.isEmpty() ? "" : path;
         }
     },
