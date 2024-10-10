@@ -100,9 +100,12 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     }
 
     private void doStatus(RpcContextAttachment attachment, int code) {
-        LiveResponse result = helloService.status(code);
-        addTrace(attachment, result);
-        output("Invoke status: \n{}", result);
+        Object result = genericService.$invoke("status",
+                new String[]{"int"},
+                new Object[]{code});
+        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
+        addTrace(attachment, response);
+        output("Generic invoke status: \n{}", response);
     }
 
     private void doEcho(RpcContextAttachment attachment) {
