@@ -122,14 +122,14 @@ public interface SofaRpcRequest {
         public SofaRpcOutboundRequest(SofaRequest request, StickyRequest stickyRequest) {
             super(request);
             this.stickyRequest = stickyRequest;
-            this.service = request.getInterfaceName();
-            String uniqueName = request.getTargetServiceUniqueName();
-            int pos = uniqueName.lastIndexOf(':');
-            this.group = pos < 0 ? null : uniqueName.substring(pos + 1);
-            this.method = request.getMethodName();
-            this.arguments = request.getMethodArgs();
-            this.attachments = request.getRequestProps();
             this.genericType = computeGenericType();
+            String uniqueName = request.getTargetServiceUniqueName();
+            int pos = uniqueName.indexOf(':');
+            this.group = pos < 0 ? null : uniqueName.substring(pos + 1);
+            this.service = pos < 0 ? uniqueName : uniqueName.substring(0, pos);
+            this.method = genericType == null ? request.getMethodName() : (String) request.getMethodArgs()[0];
+            this.arguments = genericType == null ? request.getMethodArgs() : (Object[]) request.getMethodArgs()[2];
+            this.attachments = request.getRequestProps();
         }
 
         @Override

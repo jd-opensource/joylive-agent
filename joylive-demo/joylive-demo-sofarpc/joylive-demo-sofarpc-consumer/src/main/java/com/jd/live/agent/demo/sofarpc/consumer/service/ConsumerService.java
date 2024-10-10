@@ -86,7 +86,7 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
                         doGenericEcho(context);
                         break;
                     case 2:
-                        doGenericEcho1(context);
+                        doGenericStatus(context);
                         break;
                     default:
                         doStatus(context, (status++ % 20) == 0 ? 200 : 500);
@@ -96,7 +96,7 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
                 logger.error(e.getMessage(), e);
             }
             try {
-                countDownLatch.await(1000L, TimeUnit.MILLISECONDS);
+                countDownLatch.await(300L, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -105,9 +105,12 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     }
 
     private void doStatus(RpcInvokeContext attachment, int code) {
-        LiveResponse result = helloService.status(code);
-        addTrace(attachment, result);
-        output("Invoke status: \n{}", result);
+        Object result = genericService.$genericInvoke("status",
+                new String[]{"int"},
+                new Object[]{code});
+        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
+        addTrace(attachment, response);
+        output("Generic invoke status: \n{}", response);
     }
 
     private void doEcho(RpcInvokeContext attachment) {
@@ -125,7 +128,7 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         output("Generic invoke result: \n{}", response);
     }
 
-    private void doGenericEcho1(RpcInvokeContext attachment) {
+    private void doGenericStatus(RpcInvokeContext attachment) {
         Object result = genericService.$invoke("echo",
                 new String[]{"java.lang.String"},
                 new Object[]{"hello"});

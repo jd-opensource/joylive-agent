@@ -58,7 +58,7 @@ public interface SofaRpcResponse {
          *                  if retry logic is not applicable.
          */
         public SofaRpcOutboundResponse(SofaResponse response, Predicate<Throwable> predicate) {
-            super(response, response != null && response.isError() ? new ServiceError(response.getErrorMsg(), true) : null, predicate);
+            super(response, getError(response), predicate);
         }
 
         /**
@@ -71,6 +71,23 @@ public interface SofaRpcResponse {
          */
         public SofaRpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
             super(null, error, predicate);
+        }
+
+        /**
+         * Extracts the error information from a SofaResponse object.
+         *
+         * @param response The SofaResponse object to extract the error information from.
+         * @return A ServiceError object containing the error information, or null if no error is found.
+         */
+        private static ServiceError getError(SofaResponse response) {
+            if (response == null) {
+                return null;
+            } else if (response.isError()) {
+                return new ServiceError(response.getErrorMsg(), true);
+            } else if (response.getAppResponse() instanceof Throwable) {
+                return new ServiceError((Throwable) response.getAppResponse(), true);
+            }
+            return null;
         }
 
     }

@@ -61,7 +61,6 @@ import java.util.function.Consumer;
 @Injectable
 @Extension(value = "CircuitBreakerFilter", order = RouteFilter.ORDER_CIRCUIT_BREAKER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAKER_ENABLED, matchIfMissing = true)
 public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);

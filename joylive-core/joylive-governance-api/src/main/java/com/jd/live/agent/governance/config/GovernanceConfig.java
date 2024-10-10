@@ -76,11 +76,6 @@ public class GovernanceConfig {
     public static final String CONFIG_REGISTRY_ENABLED = CONFIG_SWITCH_REGISTRY + ENABLED;
 
     public static final String CONFIG_FLOW_CONTROL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ENABLED;
-    public static final String CONFIG_CIRCUIT_BREAKER_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".circuitbreaker";
-    public static final String CONFIG_LOADBALANCE_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".loadbalance";
-    public static final String CONFIG_RETRY_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".retry";
-    public static final String CONFIG_STICKY_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".sticky";
-    public static final String CONFIG_LIMIT_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".limit";
     public static final String CONFIG_LOCALHOST_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".localhost";
     public static final String CONFIG_VIRTUAL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtual";
 

@@ -59,6 +59,7 @@ public enum ServiceType {
 
         @Override
         public String normalize(String path) {
+            // TODO why ""?
             return path == null || path.isEmpty() ? "" : path;
         }
     },
