@@ -33,9 +33,14 @@ import java.util.function.BiConsumer;
 @Builder
 public class DegradeConfig {
 
+    public static final String TYPE_STRING = "string";
+    public static final String TYPE_APPLICATION_TEXT = "application/text";
+    public static final String TYPE_APPLICATION_JSON = "application/json";
+    public static final String TYPE_JSON = "json";
+
     private int responseCode = 200;
 
-    private String contentType = "application/json";
+    private String contentType;
 
     private Map<String, String> attributes;
 
@@ -48,6 +53,10 @@ public class DegradeConfig {
         this.responseBody = config.responseBody;
     }
 
+    public String contentType() {
+        return contentType == null ? TYPE_APPLICATION_JSON : contentType;
+    }
+
     public void foreach(BiConsumer<String, String> consumer) {
         if (attributes != null) {
             attributes.forEach(consumer);
@@ -56,6 +65,13 @@ public class DegradeConfig {
 
     public int bodyLength() {
         return responseBody == null ? 0 : responseBody.length();
+    }
+
+    public boolean text() {
+        return TYPE_STRING.equalsIgnoreCase(contentType)
+                || TYPE_JSON.equalsIgnoreCase(contentType)
+                || TYPE_APPLICATION_TEXT.equalsIgnoreCase(contentType)
+                || TYPE_APPLICATION_JSON.equalsIgnoreCase(contentType);
     }
 
 }

@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.cluster;
 
+import com.alipay.hessian.generic.model.GenericObject;
 import com.alipay.sofa.rpc.client.*;
+import com.alipay.sofa.rpc.common.RemotingConstants;
 import com.alipay.sofa.rpc.common.RpcConstants;
 import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
@@ -47,6 +49,7 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
+import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.GenericType;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
 
@@ -56,6 +59,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -398,20 +402,44 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
             result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
         }
         if (body != null) {
-            // TODO generic & callback & async
-            Method method = sofaRequest.getMethod();
-            Type type = method.getGenericReturnType();
             Object value;
-            if (void.class == type) {
-                // happens when generic invoke or void return
-                value = null;
+            if (request.isGeneric()) {
+                GenericType genericType = request.getGenericType();
+                if (degradeConfig.text()) {
+                    value = body;
+                } else if (RemotingConstants.SERIALIZE_FACTORY_GENERIC.equals(genericType.getType())) {
+                    value = convertGenericObject(parser.read(new StringReader(body), Object.class));
+                } else if (RemotingConstants.SERIALIZE_FACTORY_MIX.equals(genericType.getType())) {
+                    value = parser.read(new StringReader(body), genericType.getReturnType());
+                } else {
+                    value = parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
+                }
             } else {
-                value = parser.read(new StringReader(body), type);
+                Method method = sofaRequest.getMethod();
+                Type type = method.getGenericReturnType();
+                if (void.class == type) {
+                    // void return
+                    value = null;
+                } else {
+                    value = parser.read(new StringReader(body), type);
+                }
             }
             result.setAppResponse(value);
         }
 
         return result;
+    }
+
+    private Object convertGenericObject(Object value) {
+        if (value instanceof Map) {
+            GenericObject object = new GenericObject(value.getClass().getName());
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+                object.putField(entry.getKey().toString(), convertGenericObject(entry.getValue()));
+            }
+            return object;
+        } else {
+            return value;
+        }
     }
 }
 

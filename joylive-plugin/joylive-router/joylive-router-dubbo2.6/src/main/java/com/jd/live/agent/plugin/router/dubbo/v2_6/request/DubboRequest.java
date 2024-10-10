@@ -18,7 +18,9 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.request;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invocation;
+import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcContext;
+import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
@@ -29,6 +31,11 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutbou
  * the identification and processing of Dubbo-specific request data in RPC operations.
  */
 public interface DubboRequest {
+
+    /**
+     * generic call
+     */
+    String METHOD_$INVOKE = "$invoke";
 
     /**
      * Represents an inbound request in a Dubbo RPC communication.
@@ -80,6 +87,14 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public boolean isGeneric() {
+            Invoker<?> invoker = request.getInvoker();
+            String methodName = request.getMethodName();
+            return METHOD_$INVOKE.equals(methodName)
+                    && invoker.getInterface().isAssignableFrom(GenericService.class);
         }
     }
 }
