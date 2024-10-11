@@ -32,6 +32,7 @@ import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
+import com.jd.live.agent.governance.invoke.exception.ErrorCause;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
@@ -52,6 +53,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.governance.invoke.exception.ErrorCause.cause;
 
 /**
  * CircuitBreakerFilter
@@ -251,9 +254,10 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
         @Override
         public void onSuccess(Endpoint endpoint, OutboundInvocation<?> invocation, ServiceResponse response) {
-            long duration = invocation.getRequest().getDuration();
+            OutboundRequest request = invocation.getRequest();
+            long duration = request.getDuration();
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                if (response != null && isBreakError(response, circuitBreaker)) {
+                if (response != null && isBreakError(circuitBreaker, request, response)) {
                     circuitBreaker.onError(duration, new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(duration);
@@ -262,13 +266,14 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         }
 
         /**
-         * Checks if a service response represents an error, according to the circuit breaker policy.
+         * Checks if the given service response indicates a break error according to the circuit breaker's policy.
          *
-         * @param response       The service response to check.
-         * @param circuitBreaker The circuit breaker instance with the policy to use for error checking.
-         * @return true if the response represents an error, false otherwise.
+         * @param circuitBreaker the circuit breaker instance
+         * @param request        the outbound request
+         * @param response       the service response
+         * @return true if the response indicates a break error, false otherwise
          */
-        private boolean isBreakError(ServiceResponse response, CircuitBreaker circuitBreaker) {
+        private boolean isBreakError(CircuitBreaker circuitBreaker, OutboundRequest request, ServiceResponse response) {
             CircuitBreakPolicy policy = circuitBreaker.getPolicy();
             if (policy.containsError(response.getCode())) {
                 return true;
@@ -276,7 +281,8 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             ServiceError error = response.getError();
             Throwable throwable = error == null ? null : error.getThrowable();
             if (throwable != null) {
-                return policy.containsException(throwable);
+                ErrorCause cause = cause(throwable, request.getErrorFunction());
+                return cause.match(policy);
             } else if (response.isSuccess() && policy.isBodyRequest()) {
                 CodePolicy codePolicy = policy.getCodePolicy();
                 Object result = response.getResult();
@@ -297,7 +303,6 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                     }
                 }
             }
-
             return false;
         }
 
@@ -306,12 +311,10 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             if (!(throwable instanceof RejectCircuitBreakException)) {
                 OutboundRequest request = invocation.getRequest();
                 long duration = request.getDuration();
-                String code = request.getErrorCode(throwable);
-                Throwable cause = request.getCause(throwable);
+                ErrorCause cause = cause(throwable, request.getErrorFunction());
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                    CircuitBreakPolicy policy = circuitBreaker.getPolicy();
-                    if (policy.containsError(code) || policy.containsException(cause)) {
-                        circuitBreaker.onError(duration, cause);
+                    if (cause.match(circuitBreaker.getPolicy())) {
+                        circuitBreaker.onError(duration, cause.getCause());
                     } else {
                         circuitBreaker.onSuccess(duration);
                     }

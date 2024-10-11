@@ -19,7 +19,6 @@ import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -54,9 +53,6 @@ public class LoadBalanceDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(ObjectParser.JSON)
-    private ObjectParser parser;
-
     public LoadBalanceDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER)
                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract()));
@@ -64,7 +60,7 @@ public class LoadBalanceDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SELECT)
                                 .and(MatcherBuilder.arguments(ARGUMENT_SELECT)),
-                        () -> new LoadBalanceInterceptor(context, parser)
+                        () -> new LoadBalanceInterceptor(context)
                 )
         };
     }

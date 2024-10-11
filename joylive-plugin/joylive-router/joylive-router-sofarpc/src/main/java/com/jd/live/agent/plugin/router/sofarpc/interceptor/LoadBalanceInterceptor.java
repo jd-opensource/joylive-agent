@@ -17,14 +17,13 @@ package com.jd.live.agent.plugin.router.sofarpc.interceptor;
 
 import com.alipay.sofa.rpc.client.AbstractCluster;
 import com.alipay.sofa.rpc.client.ProviderInfo;
-import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
@@ -65,13 +64,13 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
                 c -> new SofaRpcCluster(c, parser));
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
         if (!request.isSystem() && !request.isDisabled()) {
-            SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
             try {
+                SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
                 invoked.forEach(p -> request.addAttempt(p.getHost() + ":" + p.getPort()));
                 SofaRpcEndpoint endpoint = context.route(invocation);
                 mc.setResult(endpoint.getProvider());
-            } catch (RejectException e) {
-                mc.setThrowable(cluster.createRejectException(e, request));
+            } catch (Throwable e) {
+                mc.setThrowable(cluster.createException(e, request));
             }
             mc.setSkip(true);
         }

@@ -184,13 +184,31 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     }
 
     /**
-     * Checks if the specified exception is present in the list of exceptions.
+     * Checks if the given class name is present in the list of exceptions.
      *
-     * @param throwable the exception to check.
-     * @return {@code true} if the error code is present, {@code false} otherwise.
+     * @param className The class name to check.
+     * @return true if the class name is found in the list of exceptions, false otherwise.
      */
-    public boolean containsException(Throwable throwable) {
-        return throwable != null && exceptions != null && exceptions.contains(throwable.getClass().getName());
+    public boolean containsException(String className) {
+        return className != null && exceptions != null && exceptions.contains(className);
+    }
+
+    /**
+     * Checks if any of the given class names are present in the list of exceptions.
+     *
+     * @param classNames The set of class names to check.
+     * @return true if any of the class names are found in the list of exceptions, false otherwise.
+     */
+    public boolean containsException(Set<String> classNames) {
+        if (exceptions == null || exceptions.isEmpty() || classNames == null || classNames.isEmpty()) {
+            return false;
+        }
+        for (String className : classNames) {
+            if (exceptions.contains(className)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

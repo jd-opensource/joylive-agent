@@ -23,25 +23,19 @@ import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.rpc.core.exception.RpcErrorType;
-import com.alipay.sofa.rpc.core.exception.SofaRouteException;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
-import com.alipay.sofa.rpc.log.LogCodes;
 import com.alipay.sofa.rpc.transport.ClientTransport;
-import com.jd.live.agent.bootstrap.exception.FaultException;
-import com.jd.live.agent.bootstrap.exception.LiveException;
-import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.*;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
@@ -64,7 +58,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
-import static com.alipay.sofa.rpc.core.exception.RpcErrorType.CLIENT_ROUTER;
 import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
 /**
@@ -80,7 +73,7 @@ import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircui
  *
  * @see LiveCluster
  */
-public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaRpcOutboundResponse, SofaRpcEndpoint, SofaRpcException> {
+public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, SofaRpcOutboundResponse, SofaRpcEndpoint, SofaRpcException> {
 
     private static final Logger logger = LoggerFactory.getLogger(SofaRpcCluster.class);
 
@@ -99,6 +92,8 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
 
     private final Method fieldChainMethod;
 
+    private final SofaRpcOutboundThrower thrower;
+
     /**
      * The identifier used for stickiness. This ID is used to route requests to
      * the same provider consistently.
@@ -108,6 +103,7 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     public SofaRpcCluster(AbstractCluster cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
+        this.thrower = new SofaRpcOutboundThrower(cluster);
         ClassDesc classDesc = ClassUtils.describe(cluster.getClass());
         this.consumerConfigField = classDesc.getFieldList().getField("consumerConfig");
         this.connectionHolderField = classDesc.getFieldList().getField("connectionHolder");
@@ -212,99 +208,18 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     }
 
     @Override
-    public SofaRpcException createUnReadyException(SofaRpcOutboundRequest request) {
-        return createUnReadyException("Rpc cluster invoker for " + cluster.getConsumerConfig().getInterfaceId()
-                + " on consumer " + Ipv4.getLocalHost()
-                + " is now destroyed! Can not invoke any more.", request);
-    }
-
-    @Override
-    public SofaRpcException createUnReadyException(String message, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.UNKNOWN, message);
+    public SofaRpcException createException(Throwable throwable, SofaRpcOutboundRequest request) {
+        return thrower.createException(throwable, request);
     }
 
     @Override
     public SofaRpcException createException(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
-        if (throwable == null) {
-            return null;
-        } else if (throwable instanceof SofaRpcException) {
-            return (SofaRpcException) throwable;
-        } else if (throwable instanceof RejectException) {
-            return createRejectException((RejectException) throwable, request);
-        } else if (throwable instanceof FaultException) {
-            Integer code = ((FaultException) throwable).getCode();
-            code = code == null ? RpcErrorType.CLIENT_UNDECLARED_ERROR : code;
-            return new SofaRpcException(code, getError(throwable, request, endpoint));
-        } else {
-            String message = getError(throwable, request, endpoint);
-            if (throwable instanceof LiveException) {
-                return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, message);
-            }
-            Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-            return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, message, cause);
-        }
+        return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public SofaRpcException createPermissionException(RejectPermissionException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createAuthException(RejectAuthException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createLimitException(RejectLimitException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.SERVER_BUSY, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createCircuitBreakException(RejectCircuitBreakException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createNoProviderException(RejectNoProviderException exception, SofaRpcOutboundRequest request) {
-        return new SofaRouteException(
-                LogCodes.getLog(LogCodes.ERROR_NO_AVAILABLE_PROVIDER,
-                        request.getRequest().getTargetServiceUniqueName(), "[]"));
-    }
-
-    @Override
-    public SofaRpcException createEscapeException(RejectEscapeException exception, SofaRpcOutboundRequest request) {
-        return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createRejectException(RejectException exception, SofaRpcOutboundRequest request) {
-        if (exception instanceof RejectNoProviderException) {
-            return createNoProviderException((RejectNoProviderException) exception, request);
-        } else if (exception instanceof RejectAuthException) {
-            return createAuthException((RejectAuthException) exception, request);
-        } else if (exception instanceof RejectPermissionException) {
-            return createPermissionException((RejectPermissionException) exception, request);
-        } else if (exception instanceof RejectEscapeException) {
-            return createEscapeException((RejectEscapeException) exception, request);
-        } else if (exception instanceof RejectLimitException) {
-            return createLimitException((RejectLimitException) exception, request);
-        } else if (exception instanceof RejectCircuitBreakException) {
-            return createCircuitBreakException((RejectCircuitBreakException) exception, request);
-        }
-        return new SofaRpcException(CLIENT_ROUTER, exception.getMessage());
-    }
-
-    @Override
-    public SofaRpcException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<SofaRpcOutboundRequest> invocation) {
-        SofaRpcOutboundRequest request = invocation.getRequest();
-        Throwable cause = exception.getCause() == null ? exception : exception.getCause();
-        return cause instanceof SofaRpcException ? (SofaRpcException) cause :
-                new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR,
-                        "Failed to call " + request.getRequest().getInterfaceName()
-                                + "." + request.getRequest().getMethodName()
-                                + " , cause by unknown exception: " + cause.getClass().getName()
-                                + ", message is: " + cause.getMessage());
+    public SofaRpcException createException(Throwable throwable, OutboundInvocation<SofaRpcOutboundRequest> invocation) {
+        return thrower.createException(throwable, invocation);
     }
 
     @Override
@@ -366,24 +281,6 @@ public class SofaRpcCluster implements LiveCluster<SofaRpcOutboundRequest, SofaR
     private int getRetries(String methodName) {
         ConsumerConfig<?> config = (ConsumerConfig<?>) consumerConfigField.get(cluster);
         return config.getMethodRetries(methodName);
-    }
-
-    /**
-     * Constructs a detailed error message for a given throwable and RPC call context.
-     *
-     * @param throwable The {@code Throwable} that represents the error encountered.
-     * @param request   The {@code SofaRpcOutboundRequest} that contains details about the RPC request.
-     * @param endpoint  The {@code SofaRpcEndpoint} that contains details about the endpoint being called.
-     * @return A {@code String} representing the detailed error message.
-     */
-    private String getError(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
-        if (endpoint == null) {
-            return throwable.getMessage();
-        }
-        SofaRequest sofaRequest = request.getRequest();
-        return "Failed to call " + sofaRequest.getInterfaceName() + "." + sofaRequest.getMethodName()
-                + " on remote server: " + endpoint.getProvider() + ", cause by: "
-                + throwable.getClass().getName() + ", message is: " + throwable.getMessage();
     }
 
     /**

@@ -18,10 +18,15 @@ package com.jd.live.agent.plugin.router.sofarpc.request;
 import com.alipay.sofa.rpc.api.GenericContext;
 import com.alipay.sofa.rpc.common.RemotingConstants;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
+import com.alipay.sofa.rpc.core.exception.SofaRpcException;
+import com.alipay.sofa.rpc.core.exception.SofaRpcRuntimeException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
+import com.jd.live.agent.governance.invoke.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
+
+import java.util.function.Function;
 
 /**
  * SofaRpcRequest
@@ -93,6 +98,15 @@ public interface SofaRpcRequest {
      */
     class SofaRpcOutboundRequest extends AbstractRpcOutboundRequest<SofaRequest> implements SofaRpcRequest {
 
+        private static final Function<Throwable, ErrorName> SOFARPC_ERROR_FUNCTION = throwable -> {
+            if (throwable instanceof SofaRpcException) {
+                return new ErrorName(null, String.valueOf(((SofaRpcException) throwable).getErrorType()));
+            } else if (throwable instanceof SofaRpcRuntimeException) {
+                return null;
+            }
+            return DEFAULT_ERROR_FUNCTION.apply(throwable);
+        };
+
         private final StickyRequest stickyRequest;
 
         private final GenericType genericType;
@@ -142,6 +156,11 @@ public interface SofaRpcRequest {
             if (stickyRequest != null) {
                 stickyRequest.setStickyId(stickyId);
             }
+        }
+
+        @Override
+        public Function<Throwable, ErrorName> getErrorFunction() {
+            return SOFARPC_ERROR_FUNCTION;
         }
 
         @Override

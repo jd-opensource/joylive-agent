@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.dubbo.v2_7.request;
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.governance.invoke.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import org.apache.dubbo.common.URL;
@@ -23,7 +24,11 @@ import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.RpcContext;
+import org.apache.dubbo.rpc.RpcException;
+import org.apache.dubbo.rpc.service.GenericException;
 import org.apache.dubbo.rpc.service.GenericService;
+
+import java.util.function.Function;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -103,6 +108,15 @@ public interface DubboRequest {
      */
     class DubboOutboundRequest extends AbstractRpcOutboundRequest<Invocation> implements DubboRequest {
 
+        private static final Function<Throwable, ErrorName> DUBBO_ERROR_FUNCTION = throwable -> {
+            if (throwable instanceof RpcException) {
+                return new ErrorName(null, String.valueOf(((RpcException) throwable).getCode()));
+            } else if (throwable instanceof GenericException) {
+                return new ErrorName(((GenericException) throwable).getExceptionClass(), null);
+            }
+            return DEFAULT_ERROR_FUNCTION.apply(throwable);
+        };
+
         private final String interfaceName;
 
         public DubboOutboundRequest(Invocation request) {
@@ -115,6 +129,11 @@ public interface DubboRequest {
             this.path = providedBy == null ? null : interfaceName;
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
+        }
+
+        @Override
+        public Function<Throwable, ErrorName> getErrorFunction() {
+            return DUBBO_ERROR_FUNCTION;
         }
 
         @Override
