@@ -95,8 +95,8 @@ public class Dubbo3OutboundThrower extends AbstractOutboundThrower<DubboOutbound
         Invocation invocation = request.getRequest();
         String message = "Failed to invoke the method "
                 + invocation.getMethodName() + " in the service " + cluster.getInterface().getName()
-                + ". No provider available for the service " + cluster.directory.getUrl().getServiceKey()
-                + " from registry " + cluster.directory.getUrl().getAddress()
+                + ". No provider available for the service " + cluster.getUrl().getServiceKey()
+                + " from registry " + cluster.getRegistryUrl().getAddress()
                 + " on the consumer " + NetUtils.getLocalHost()
                 + " using the dubbo version " + Version.getVersion()
                 + ". Please check if the providers have been started and registered.";
@@ -121,7 +121,7 @@ public class Dubbo3OutboundThrower extends AbstractOutboundThrower<DubboOutbound
                 + methodName + " in the service " + cluster.getInterface().getName()
                 + ". Tried " + exception.getAttempts() + " times of the providers " + providers
                 + " (" + providers.size() + "/" + (instances == null ? 0 : instances.size())
-                + ") from the registry " + cluster.directory.getUrl().getAddress()
+                + ") from the registry " + cluster.getRegistryUrl().getAddress()
                 + " on the consumer " + NetUtils.getLocalHost() + " using the dubbo version "
                 + Version.getVersion() + ". Last error is: "
                 + (le != null ? le.getMessage() : "");
