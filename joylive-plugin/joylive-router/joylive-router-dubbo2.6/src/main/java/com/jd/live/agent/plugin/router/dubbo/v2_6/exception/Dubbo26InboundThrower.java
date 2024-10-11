@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.dubbo.rpc.cluster.support;
+package com.jd.live.agent.plugin.router.dubbo.v2_6.exception;
 
 import com.alibaba.dubbo.rpc.RpcException;
 import com.jd.live.agent.bootstrap.exception.LiveException;

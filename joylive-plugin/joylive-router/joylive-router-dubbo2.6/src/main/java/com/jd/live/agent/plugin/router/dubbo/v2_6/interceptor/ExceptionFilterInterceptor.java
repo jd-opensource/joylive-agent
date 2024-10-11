@@ -27,7 +27,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboInboundInvocation;
 
-import static com.alibaba.dubbo.rpc.cluster.support.Dubbo26InboundThrower.THROWER;
+import static com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26InboundThrower.THROWER;
 
 /**
  * ClassLoaderFilterInterceptor

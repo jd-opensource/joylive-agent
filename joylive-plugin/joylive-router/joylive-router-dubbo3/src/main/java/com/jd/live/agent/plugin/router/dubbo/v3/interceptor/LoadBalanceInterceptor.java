@@ -26,7 +26,7 @@ import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.D
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import org.apache.dubbo.rpc.cluster.support.Dubbo3OutboundThrower;
+import com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3OutboundThrower;
 
 import java.util.List;
 

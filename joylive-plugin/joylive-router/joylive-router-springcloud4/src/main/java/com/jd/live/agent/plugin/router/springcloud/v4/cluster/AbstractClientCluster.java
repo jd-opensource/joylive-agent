@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.SpringClusterRequest;
 import org.springframework.cloud.client.ServiceInstance;
@@ -31,9 +32,7 @@ import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMapAdapter;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -158,27 +157,5 @@ public abstract class AbstractClientCluster<
         return headers == null ? new HttpHeaders() : new HttpHeaders(new MultiValueMapAdapter<>(headers));
     }
 
-    /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and headers map.
-     *
-     * @param status  the HTTP status code of the error
-     * @param message the error message
-     * @return an {@link NestedRuntimeException} instance with the specified details
-     */
-    public static NestedRuntimeException createException(HttpStatus status, String message) {
-        return createException(status, message, null);
-    }
-
-    /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
-     *
-     * @param status    the HTTP status code of the error
-     * @param message   the error message
-     * @param throwable the exception
-     * @return an {@link NestedRuntimeException} instance with the specified details
-     */
-    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
-        return new ResponseStatusException(status.value(), message, throwable);
-    }
 }
 

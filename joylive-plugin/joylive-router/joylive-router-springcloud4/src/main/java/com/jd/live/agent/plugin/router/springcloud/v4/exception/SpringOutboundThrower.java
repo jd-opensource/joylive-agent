@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
+package com.jd.live.agent.plugin.router.springcloud.v4.exception;
 
 import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
@@ -24,14 +24,14 @@ import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedExcep
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.AbstractOutboundThrower;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * A concrete implementation of the OutboundThrower interface for Spring Cloud 3.x
+ * A concrete implementation of the OutboundThrower interface for Spring Cloud 4.x
  *
  * @see AbstractOutboundThrower
  */
@@ -88,7 +88,7 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
      * @param message the error message
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    public static NestedRuntimeException createException(HttpStatus status, String message) {
+    private NestedRuntimeException createException(HttpStatus status, String message) {
         return createException(status, message, null);
     }
 
@@ -100,7 +100,7 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
      * @param throwable the exception
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+    private NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
         return new ResponseStatusException(status.value(), message, throwable);
     }
 }

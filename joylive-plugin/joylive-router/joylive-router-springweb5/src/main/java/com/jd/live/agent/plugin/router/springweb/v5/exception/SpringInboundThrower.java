@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
+package com.jd.live.agent.plugin.router.springweb.v5.exception;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.invoke.exception.AbstractInboundThrower;
 import com.jd.live.agent.governance.request.HttpRequest.HttpInboundRequest;
 import org.springframework.core.NestedRuntimeException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * A concrete implementation of the InboundThrower interface for Spring Cloud 3.x
@@ -29,7 +31,7 @@ import org.springframework.http.HttpStatus;
  */
 public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequest, NestedRuntimeException> {
 
-    public static final SpringInboundThrower INSTANCE = new SpringInboundThrower();
+    public static final SpringInboundThrower THROWER = new SpringInboundThrower();
 
     @Override
     protected boolean isNativeException(Throwable throwable) {
@@ -39,42 +41,65 @@ public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequ
     @Override
     protected NestedRuntimeException createUnReadyException(RejectUnreadyException exception, HttpInboundRequest request) {
         String message = exception.getMessage() == null ? "The cluster is not ready. " : exception.getMessage();
-        return SpringOutboundThrower.createException(HttpStatus.SERVICE_UNAVAILABLE, message);
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, message);
     }
 
     @Override
     protected NestedRuntimeException createUnknownException(Throwable throwable, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
+        return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
 
     }
 
     @Override
     protected NestedRuntimeException createPermissionException(RejectPermissionException exception, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
     @Override
     protected NestedRuntimeException createAuthException(RejectAuthException exception, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
     @Override
     protected NestedRuntimeException createLimitException(RejectLimitException exception, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
+        return createException(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
     }
 
     @Override
     protected NestedRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
     }
 
     @Override
     protected NestedRuntimeException createEscapeException(RejectEscapeException exception, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage(), exception);
+        return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage(), exception);
     }
 
     @Override
     protected NestedRuntimeException createRejectException(RejectException exception, HttpInboundRequest request) {
-        return SpringOutboundThrower.createException(HttpStatus.FORBIDDEN, exception.getMessage());
+        return createException(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
+    /**
+     * Creates an {@link NestedRuntimeException} using the provided status, message, and headers map.
+     *
+     * @param status  the HTTP status code of the error
+     * @param message the error message
+     * @return an {@link NestedRuntimeException} instance with the specified details
+     */
+    private NestedRuntimeException createException(HttpStatus status, String message) {
+        return createException(status, message, null);
+    }
+
+    /**
+     * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
+     *
+     * @param status    the HTTP status code of the error
+     * @param message   the error message
+     * @param throwable the exception
+     * @return an {@link NestedRuntimeException} instance with the specified details
+     */
+    private NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+        return new ResponseStatusException(status.value(), message, throwable);
     }
 }

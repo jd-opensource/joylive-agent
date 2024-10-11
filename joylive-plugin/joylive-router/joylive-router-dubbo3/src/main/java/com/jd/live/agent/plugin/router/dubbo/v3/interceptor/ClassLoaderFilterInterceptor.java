@@ -25,7 +25,7 @@ import org.apache.dubbo.rpc.AppResponse;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.cluster.support.Dubbo3InboundThrower;
+import com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3InboundThrower;
 import org.apache.dubbo.rpc.filter.ClassLoaderFilter;
 
 /**

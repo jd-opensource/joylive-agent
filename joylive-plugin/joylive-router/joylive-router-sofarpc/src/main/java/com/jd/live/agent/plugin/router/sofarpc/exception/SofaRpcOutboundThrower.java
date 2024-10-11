@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.sofarpc.cluster;
+package com.jd.live.agent.plugin.router.sofarpc.exception;
 
 import com.alipay.sofa.rpc.client.AbstractCluster;
 import com.alipay.sofa.rpc.core.exception.RpcErrorType;

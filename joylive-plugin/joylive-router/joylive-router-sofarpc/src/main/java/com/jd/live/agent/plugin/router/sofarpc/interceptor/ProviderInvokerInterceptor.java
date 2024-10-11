@@ -25,7 +25,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcInboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcInboundInvocation;
 
-import static com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcInboundThrower.THROWER;
+import static com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcInboundThrower.THROWER;
 
 /**
  * ProviderInvokerInterceptor

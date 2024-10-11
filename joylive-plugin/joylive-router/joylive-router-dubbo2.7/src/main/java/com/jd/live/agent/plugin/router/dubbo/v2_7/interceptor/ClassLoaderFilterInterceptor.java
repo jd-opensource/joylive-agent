@@ -27,7 +27,7 @@ import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
 import org.apache.dubbo.rpc.filter.ClassLoaderFilter;
 
-import static org.apache.dubbo.rpc.cluster.support.Dubbo27InboundThrower.THROWER;
+import static com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27InboundThrower.THROWER;
 
 /**
  * ClassLoaderFilterInterceptor
