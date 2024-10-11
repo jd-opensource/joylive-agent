@@ -56,16 +56,10 @@ public interface LiveCluster<R extends OutboundRequest,
 
     /**
      * Retrieves the default {@link ClusterPolicy} for the given request.
-     * <p>
-     * This method serves as a hook for providing a default policy when no specific policy is set
-     * for an invocation. Implementing classes can override this method to supply custom logic
-     * for determining the default policy based on the request or other contextual information.
-     * </p>
      *
      * @param request The request for which the default {@link ClusterPolicy} is to be obtained.
      * @return The default {@link ClusterPolicy} for the specified request, or {@code null} if there is none.
      */
-    // TODO change to ServicePolicy
     default ClusterPolicy getDefaultPolicy(R request) {
         return null;
     }
