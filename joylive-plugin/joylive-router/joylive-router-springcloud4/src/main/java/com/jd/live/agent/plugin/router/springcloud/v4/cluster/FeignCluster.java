@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
@@ -44,8 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
+import java.util.function.Predicate;
 
 /**
  * A client cluster implementation for Feign-based service calls.
@@ -104,27 +102,6 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     }
 
     @Override
-    public FeignClusterResponse createResponse(Throwable throwable, FeignClusterRequest request, SpringEndpoint endpoint) {
-        if (throwable == null) {
-            return new FeignClusterResponse(createResponse(request,
-                    DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build()));
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new FeignClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new FeignClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new FeignClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
     public boolean isRetryable(Throwable throwable) {
         // TODO modify isRetryable
         return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
@@ -146,15 +123,8 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
         }
     }
 
-    /**
-     * Creates a {@link feign.Response} based on the provided {@link FeignClusterRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param request       the original HTTP request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link feign.Response} configured according to the degrade configuration.
-     */
-    private feign.Response createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
+    @Override
+    protected FeignClusterResponse createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
         Request feignRequest = request.getRequest();
         String body = degradeConfig.getResponseBody();
         body = body == null ? "" : body;
@@ -166,12 +136,17 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
         headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.contentType()));
 
-        return feign.Response.builder()
+        return new FeignClusterResponse(feign.Response.builder()
                 .status(degradeConfig.getResponseCode())
                 .body(data)
                 .headers(headers)
                 .request(feignRequest)
                 .requestTemplate(feignRequest.requestTemplate())
-                .build();
+                .build());
+    }
+
+    @Override
+    protected FeignClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new FeignClusterResponse(error, predicate);
     }
 }

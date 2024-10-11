@@ -27,7 +27,6 @@ import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.transport.ClientTransport;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -57,9 +56,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
 /**
  * Represents a live cluster specifically designed for managing Sofa RPC communications.
@@ -169,26 +168,6 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     }
 
     @Override
-    public SofaRpcOutboundResponse createResponse(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
-        if (throwable == null) {
-            return new SofaRpcOutboundResponse(new SofaResponse());
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new SofaRpcOutboundResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new SofaRpcOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new SofaRpcOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
     public boolean isRetryable(Throwable throwable) {
         if (!(throwable instanceof SofaRpcException)) {
             return false;
@@ -228,6 +207,53 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
         if (RpcInternalContext.isAttachmentEnable()) {
             RpcInternalContext.getContext().setAttachment(RpcConstants.INTERNAL_KEY_INVOKE_TIMES, retries + 1);
         }
+    }
+
+    @Override
+    protected SofaRpcOutboundResponse createResponse(SofaRpcOutboundRequest request) {
+        return new SofaRpcOutboundResponse(new SofaResponse());
+    }
+
+    @Override
+    protected SofaRpcOutboundResponse createResponse(SofaRpcOutboundRequest request, DegradeConfig degradeConfig) {
+        SofaRequest sofaRequest = request.getRequest();
+        String body = degradeConfig.getResponseBody();
+        SofaResponse result = new SofaResponse();
+        if (degradeConfig.getAttributes() != null) {
+            result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
+        }
+        if (body != null) {
+            Object value;
+            if (request.isGeneric()) {
+                GenericType genericType = request.getGenericType();
+                if (degradeConfig.text()) {
+                    value = body;
+                } else if (RemotingConstants.SERIALIZE_FACTORY_GENERIC.equals(genericType.getType())) {
+                    value = convertGenericObject(parser.read(new StringReader(body), Object.class));
+                } else if (RemotingConstants.SERIALIZE_FACTORY_MIX.equals(genericType.getType())) {
+                    value = parser.read(new StringReader(body), genericType.getReturnType());
+                } else {
+                    value = parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
+                }
+            } else {
+                Method method = sofaRequest.getMethod();
+                Type type = method.getGenericReturnType();
+                if (void.class == type) {
+                    // void return
+                    value = null;
+                } else {
+                    value = parser.read(new StringReader(body), type);
+                }
+            }
+            result.setAppResponse(value);
+        }
+
+        return new SofaRpcOutboundResponse(result);
+    }
+
+    @Override
+    protected SofaRpcOutboundResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new SofaRpcOutboundResponse(error, predicate);
     }
 
     /**
@@ -282,50 +308,6 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     private int getRetries(String methodName) {
         ConsumerConfig<?> config = (ConsumerConfig<?>) consumerConfigField.get(cluster);
         return config.getMethodRetries(methodName);
-    }
-
-    /**
-     * Creates a {@link SofaResponse} based on the provided {@link SofaRpcOutboundRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param request       the original request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link SofaResponse} configured according to the degrade configuration.
-     */
-    private SofaResponse createResponse(SofaRpcOutboundRequest request, DegradeConfig degradeConfig) {
-        SofaRequest sofaRequest = request.getRequest();
-        String body = degradeConfig.getResponseBody();
-        SofaResponse result = new SofaResponse();
-        if (degradeConfig.getAttributes() != null) {
-            result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
-        }
-        if (body != null) {
-            Object value;
-            if (request.isGeneric()) {
-                GenericType genericType = request.getGenericType();
-                if (degradeConfig.text()) {
-                    value = body;
-                } else if (RemotingConstants.SERIALIZE_FACTORY_GENERIC.equals(genericType.getType())) {
-                    value = convertGenericObject(parser.read(new StringReader(body), Object.class));
-                } else if (RemotingConstants.SERIALIZE_FACTORY_MIX.equals(genericType.getType())) {
-                    value = parser.read(new StringReader(body), genericType.getReturnType());
-                } else {
-                    value = parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
-                }
-            } else {
-                Method method = sofaRequest.getMethod();
-                Type type = method.getGenericReturnType();
-                if (void.class == type) {
-                    // void return
-                    value = null;
-                } else {
-                    value = parser.read(new StringReader(body), type);
-                }
-            }
-            result.setAppResponse(value);
-        }
-
-        return result;
     }
 
     private Object convertGenericObject(Object value) {

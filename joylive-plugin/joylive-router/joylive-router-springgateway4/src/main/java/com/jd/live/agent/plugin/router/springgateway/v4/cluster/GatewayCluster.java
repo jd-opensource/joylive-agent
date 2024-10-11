@@ -15,9 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v4.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
@@ -62,15 +59,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
 
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 @Getter
 public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest, GatewayClusterResponse> {
-
-    private static final Logger logger = LoggerFactory.getLogger(GatewayCluster.class);
 
     private final LoadBalancerClientFactory clientFactory;
 
@@ -130,27 +125,6 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     }
 
     @Override
-    public GatewayClusterResponse createResponse(Throwable throwable, GatewayClusterRequest request, SpringEndpoint endpoint) {
-        if (throwable == null) {
-            return new GatewayClusterResponse(createResponse(request,
-                    DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build()));
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new GatewayClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
     public void onStartRequest(GatewayClusterRequest request, SpringEndpoint endpoint) {
         if (endpoint != null) {
             ServiceInstance instance = endpoint.getInstance();
@@ -184,15 +158,8 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                         new RequestData(exchange.getRequest(), exchange.getAttributes())))));
     }
 
-    /**
-     * Creates a {@link ServerHttpResponse} based on the provided {@link GatewayClusterRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param httpRequest   the original HTTP request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link ServerHttpResponse} configured according to the degrade configuration.
-     */
-    private ServerHttpResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
+    @Override
+    protected GatewayClusterResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
         ServerHttpResponse response = httpRequest.getExchange().getResponse();
         ServerHttpRequest request = httpRequest.getExchange().getRequest();
 
@@ -212,7 +179,12 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
 
         response.writeWith(Flux.just(buffer)).block();
-        return response;
+        return new GatewayClusterResponse(response);
+    }
+
+    @Override
+    protected GatewayClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new GatewayClusterResponse(error, predicate);
     }
 
     /**

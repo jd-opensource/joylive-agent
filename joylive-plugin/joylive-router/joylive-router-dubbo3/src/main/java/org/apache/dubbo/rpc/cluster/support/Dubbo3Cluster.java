@@ -17,9 +17,6 @@ package org.apache.dubbo.rpc.cluster.support;
 
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -42,9 +39,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
 import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
 
@@ -60,8 +57,6 @@ import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
  * </p>
  */
 public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
-
-    private static final Logger logger = LoggerFactory.getLogger(Dubbo3Cluster.class);
 
     private final AbstractClusterInvoker cluster;
 
@@ -141,26 +136,6 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
     }
 
     @Override
-    public DubboOutboundResponse createResponse(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
-        if (throwable == null) {
-            return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new DubboOutboundResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new DubboOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new DubboOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
     public boolean isRetryable(Throwable throwable) {
         if (!(throwable instanceof RpcException)) {
             return false;
@@ -211,15 +186,13 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
         return len;
     }
 
-    /**
-     * Creates a {@link Result} based on the provided {@link DubboOutboundRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param request       the original request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link Result} configured according to the degrade configuration.
-     */
-    private Result createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
+    }
+
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
         RpcInvocation invocation = (RpcInvocation) request.getRequest();
         String body = degradeConfig.getResponseBody();
         AppResponse response = new AppResponse();
@@ -245,8 +218,12 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
             response.setValue(value);
         }
 
-        return AsyncRpcResult.newDefaultAsyncResult(response, invocation);
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(response, invocation));
     }
 
+    @Override
+    protected DubboOutboundResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new DubboOutboundResponse(error, predicate);
+    }
 }
 
