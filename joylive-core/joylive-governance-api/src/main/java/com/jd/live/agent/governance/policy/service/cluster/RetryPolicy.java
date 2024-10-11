@@ -23,9 +23,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.jd.live.agent.core.util.ExceptionUtils.iterate;
 
 /**
  * Defines a failover policy that specifies the behavior of a system or component in the event of a failure.
@@ -144,25 +145,21 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (throwable == null || exceptions == null || exceptions.isEmpty()) {
             return false;
         }
+        // TODO exception converter like circuit breaker
         Set<Class<?>> handled = new HashSet<>(16);
-        Queue<Throwable> queue = new LinkedList<>();
-        queue.add(throwable);
-        while (!queue.isEmpty()) {
-            Throwable e = queue.poll();
+        AtomicBoolean result = new AtomicBoolean(false);
+        iterate(throwable, e -> {
             Class<?> type = e.getClass();
             while (type != null && type != Object.class && handled.add(type)) {
                 if (exceptions.contains(type.getName())) {
-                    return true;
+                    result.set(true);
+                    return false;
                 }
                 type = type.getSuperclass();
             }
-
-            Throwable cause = e.getCause();
-            if (cause != null && !handled.contains(cause.getClass())) {
-                queue.add(cause);
-            }
-        }
-        return false;
+            return true;
+        });
+        return result.get();
     }
 
 }
