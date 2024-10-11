@@ -370,7 +370,7 @@ public interface InvocationContext {
                 }
                 return (E) endpoint;
             } else {
-                throw new RejectNoProviderException("There is no provider for invocation");
+                throw new RejectNoProviderException("There is no provider for invocation " + invocation.getRequest().getService());
             }
         } catch (RejectException e) {
             if (notifyListener) {

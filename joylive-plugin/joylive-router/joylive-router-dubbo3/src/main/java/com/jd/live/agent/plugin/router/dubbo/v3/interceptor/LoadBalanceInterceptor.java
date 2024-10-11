@@ -17,8 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
@@ -27,11 +26,9 @@ import com.jd.live.agent.plugin.router.dubbo.v3.request.invoke.DubboInvocation.D
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import org.apache.dubbo.rpc.cluster.support.Dubbo3Cluster;
+import com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3OutboundThrower;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * LoadBalanceInterceptor
@@ -40,13 +37,8 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final ObjectParser parser;
-
-    private final Map<AbstractClusterInvoker<?>, Dubbo3Cluster> clusters = new ConcurrentHashMap<>();
-
-    public LoadBalanceInterceptor(InvocationContext context, ObjectParser parser) {
+    public LoadBalanceInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     /**
@@ -64,16 +56,15 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
         DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
         if (!request.isSystem() && !request.isDisabled()) {
-            Dubbo3Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
-                    invoker -> new Dubbo3Cluster(invoker, parser));
             try {
                 if (invoked != null) {
                     invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));
                 }
                 DubboEndpoint<?> endpoint = context.route(new DubboOutboundInvocation(request, context), invokers, DubboEndpoint::of);
                 mc.setResult(endpoint.getInvoker());
-            } catch (RejectException e) {
-                mc.setThrowable(cluster.createRejectException(e, request));
+            } catch (LiveException e) {
+                Dubbo3OutboundThrower thrower = new Dubbo3OutboundThrower((AbstractClusterInvoker<?>) ctx.getTarget());
+                mc.setThrowable(thrower.createException(e, request));
             }
             mc.setSkip(true);
         }

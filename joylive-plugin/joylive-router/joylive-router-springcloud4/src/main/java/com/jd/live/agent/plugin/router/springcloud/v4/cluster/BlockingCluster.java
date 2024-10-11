@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
@@ -45,8 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
+import java.util.function.Predicate;
 
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
@@ -133,27 +131,6 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     }
 
     @Override
-    public BlockingClusterResponse createResponse(Throwable throwable, BlockingClusterRequest request, SpringEndpoint endpoint) {
-        if (throwable == null) {
-            return new BlockingClusterResponse(createResponse(request,
-                    DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build()));
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new BlockingClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new BlockingClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new BlockingClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
     public boolean isRetryable(Throwable throwable) {
         // TODO modify isRetryable
         return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
@@ -173,16 +150,14 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         }
     }
 
-    /**
-     * Creates a {@link ClientHttpResponse} based on the provided {@link BlockingClusterRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param httpRequest   the original HTTP request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link ClientHttpResponse} configured according to the degrade configuration.
-     */
-    private ClientHttpResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
-        return new DegradeResponse(degradeConfig, httpRequest);
+    @Override
+    protected BlockingClusterResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
+        return new BlockingClusterResponse(new DegradeResponse(degradeConfig, httpRequest));
+    }
+
+    @Override
+    protected BlockingClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new BlockingClusterResponse(error, predicate);
     }
 
     /**

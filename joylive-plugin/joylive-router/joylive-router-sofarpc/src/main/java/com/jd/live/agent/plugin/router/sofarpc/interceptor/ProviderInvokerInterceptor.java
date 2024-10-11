@@ -20,11 +20,12 @@ import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.filter.ProviderInvoker;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcInboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcInboundInvocation;
+
+import static com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcInboundThrower.THROWER;
 
 /**
  * ProviderInvokerInterceptor
@@ -47,12 +48,12 @@ public class ProviderInvokerInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        SofaRequest request = (SofaRequest) mc.getArguments()[0];
+        SofaRpcInboundRequest request = new SofaRpcInboundRequest((SofaRequest) mc.getArguments()[0]);
         try {
-            context.inbound(new SofaRpcInboundInvocation(new SofaRpcInboundRequest(request), context));
-        } catch (RejectException e) {
+            context.inbound(new SofaRpcInboundInvocation(request, context));
+        } catch (Throwable e) {
             SofaResponse response = new SofaResponse();
-            response.setErrorMsg(e.getMessage());
+            response.setAppResponse(THROWER.createException(e, request));
             mc.setResult(response);
             mc.setSkip(true);
         }

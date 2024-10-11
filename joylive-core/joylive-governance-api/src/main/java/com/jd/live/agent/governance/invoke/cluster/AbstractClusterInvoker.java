@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.AppStatus;
@@ -77,7 +78,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         InvocationContext context = invocation.getContext();
         AppStatus appStatus = context.getAppStatus();
         if (!appStatus.outbound()) {
-            T exception = cluster.createUnReadyException(appStatus.getMessage(), invocation.getRequest());
+            T exception = cluster.createException(new RejectUnreadyException(appStatus.getMessage()), invocation.getRequest());
             if (exception != null) {
                 result.completeExceptionally(exception);
                 return result;

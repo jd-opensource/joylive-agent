@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -76,9 +77,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
         return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e -> {
-            Throwable throwable = e instanceof RetryExhaustedException
-                    ? cluster.createRetryExhaustedException((RetryExhaustedException) e, invocation)
-                    : e;
+            Throwable throwable = e instanceof RetryExhaustedException ? cluster.createException(e, invocation) : e;
             return cluster.createResponse(throwable, invocation.getRequest(), null);
         });
     }
@@ -179,7 +178,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                 Throwable throwable = se == null ? null : se.getThrowable();
                 switch (isRetryable(request, v, e, count)) {
                     case RETRY:
-                        T destroyedException = cluster.isDestroyed() ? cluster.createUnReadyException(request) : null;
+                        T destroyedException = cluster.isDestroyed() ? cluster.createException(new RejectUnreadyException(), request) : null;
                         if (destroyedException != null) {
                             future.completeExceptionally(destroyedException);
                         } else {

@@ -15,17 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
-import com.jd.live.agent.bootstrap.exception.FaultException;
-import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.SpringClusterRequest;
 import org.springframework.cloud.client.ServiceInstance;
@@ -37,7 +35,6 @@ import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMapAdapter;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -55,7 +52,9 @@ import java.util.concurrent.CompletionStage;
 public abstract class AbstractClientCluster<
         R extends SpringClusterRequest,
         O extends OutboundResponse>
-        implements LiveCluster<R, O, SpringEndpoint, NestedRuntimeException> {
+        extends AbstractLiveCluster<R, O, SpringEndpoint, NestedRuntimeException> {
+
+    protected final SpringOutboundThrower<R> thrower = new SpringOutboundThrower<>();
 
     @Override
     public ClusterPolicy getDefaultPolicy(R request) {
@@ -112,83 +111,18 @@ public abstract class AbstractClientCluster<
     }
 
     @Override
-    public NestedRuntimeException createUnReadyException(String message, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, message);
-    }
-
-    @Override
-    public NestedRuntimeException createUnReadyException(R request) {
-        return createUnReadyException("The cluster is not ready. ", request);
+    public NestedRuntimeException createException(Throwable throwable, R request) {
+        return thrower.createException(throwable, request);
     }
 
     @Override
     public NestedRuntimeException createException(Throwable throwable, R request, SpringEndpoint endpoint) {
-        if (throwable instanceof NestedRuntimeException) {
-            return (NestedRuntimeException) throwable;
-        } else if (throwable instanceof RejectException) {
-            return createRejectException((RejectException) throwable, request);
-        } else if (throwable instanceof FaultException) {
-            FaultException exception = (FaultException) throwable;
-            HttpStatus status = HttpStatus.resolve(exception.getCode());
-            status = status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
-            return createException(status, exception.getMessage(), throwable);
-        }
-        return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
+        return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public NestedRuntimeException createAuthException(RejectAuthException exception, R request) {
-        return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
-    }
-
-    @Override
-    public NestedRuntimeException createPermissionException(RejectPermissionException exception, R request) {
-        return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
-    }
-
-    @Override
-    public NestedRuntimeException createLimitException(RejectLimitException exception, R request) {
-        return createException(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
-    }
-
-    @Override
-    public NestedRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
-    }
-
-    @Override
-    public NestedRuntimeException createNoProviderException(RejectNoProviderException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE,
-                "LoadBalancer does not contain an instance for the service " + request.getService());
-    }
-
-    @Override
-    public NestedRuntimeException createEscapeException(RejectEscapeException exception, R request) {
-        return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage(), exception);
-    }
-
-    @Override
-    public NestedRuntimeException createRejectException(RejectException exception, R request) {
-        if (exception instanceof RejectNoProviderException) {
-            return createNoProviderException((RejectNoProviderException) exception, request);
-        } else if (exception instanceof RejectAuthException) {
-            return createAuthException((RejectAuthException) exception, request);
-        } else if (exception instanceof RejectPermissionException) {
-            return createPermissionException((RejectPermissionException) exception, request);
-        } else if (exception instanceof RejectEscapeException) {
-            return createEscapeException((RejectEscapeException) exception, request);
-        } else if (exception instanceof RejectLimitException) {
-            return createLimitException((RejectLimitException) exception, request);
-        } else if (exception instanceof RejectCircuitBreakException) {
-            return createCircuitBreakException((RejectCircuitBreakException) exception, request);
-        }
-        return createException(HttpStatus.FORBIDDEN, exception.getMessage());
-    }
-
-    @Override
-    public NestedRuntimeException createRetryExhaustedException(RetryExhaustedException exception,
-                                                                OutboundInvocation<R> invocation) {
-        return createException(exception, invocation.getRequest(), null);
+    public NestedRuntimeException createException(Throwable throwable, OutboundInvocation<R> invocation) {
+        return thrower.createException(throwable, invocation);
     }
 
     @SuppressWarnings("unchecked")
@@ -214,6 +148,11 @@ public abstract class AbstractClientCluster<
                 endpoint == null ? new DefaultResponse(null) : endpoint.getResponse())));
     }
 
+    @Override
+    protected O createResponse(R request) {
+        return createResponse(request, DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build());
+    }
+
     /**
      * Creates an {@link HttpHeaders} instance from a map of header names to lists of header values.
      * If the input map is {@code null}, this method returns an empty {@link HttpHeaders} instance.
@@ -223,29 +162,6 @@ public abstract class AbstractClientCluster<
      */
     protected HttpHeaders getHttpHeaders(Map<String, List<String>> headers) {
         return headers == null ? new HttpHeaders() : new HttpHeaders(new MultiValueMapAdapter<>(headers));
-    }
-
-    /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and headers map.
-     *
-     * @param status  the HTTP status code of the error
-     * @param message the error message
-     * @return an {@link NestedRuntimeException} instance with the specified details
-     */
-    public static NestedRuntimeException createException(HttpStatus status, String message) {
-        return createException(status, message, null);
-    }
-
-    /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
-     *
-     * @param status    the HTTP status code of the error
-     * @param message   the error message
-     * @param throwable the exception
-     * @return an {@link NestedRuntimeException} instance with the specified details
-     */
-    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
-        return new ResponseStatusException(status.value(), message, throwable);
     }
 }
 

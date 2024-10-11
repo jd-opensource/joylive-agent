@@ -17,42 +17,31 @@ package org.apache.dubbo.rpc.cluster.support;
 
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
-import com.jd.live.agent.bootstrap.exception.FaultException;
-import com.jd.live.agent.bootstrap.exception.LiveException;
-import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.*;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.network.Ipv4;
-import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27OutboundThrower;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOutboundResponse;
-import org.apache.dubbo.common.Version;
-import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.rpc.*;
 
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
 import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
 
@@ -67,13 +56,13 @@ import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
-public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
-
-    private static final Logger logger = LoggerFactory.getLogger(Dubbo27Cluster.class);
+public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
 
     private final AbstractClusterInvoker cluster;
 
     private final ObjectParser parser;
+
+    private final Dubbo27OutboundThrower thrower;
 
     /**
      * The identifier used for stickiness. This ID is used to route requests to
@@ -84,6 +73,7 @@ public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
     public Dubbo27Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
+        this.thrower = new Dubbo27OutboundThrower(cluster);
     }
 
     @Override
@@ -146,26 +136,6 @@ public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
     }
 
     @Override
-    public DubboOutboundResponse createResponse(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
-        if (throwable == null) {
-            return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new DubboOutboundResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new DubboOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new DubboOutboundResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
     public boolean isRetryable(Throwable throwable) {
         if (!(throwable instanceof RpcException)) {
             return false;
@@ -181,112 +151,18 @@ public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
     }
 
     @Override
-    public RpcException createUnReadyException(DubboOutboundRequest request) {
-        return createUnReadyException("Rpc cluster invoker for " + cluster.getInterface()
-                + " on consumer " + Ipv4.getLocalHost()
-                + " use dubbo version " + Version.getVersion()
-                + " is now destroyed! Can not invoke any more.", request);
-    }
-
-    @Override
-    public RpcException createUnReadyException(String message, DubboOutboundRequest request) {
-        return new RpcException(message);
+    public RpcException createException(Throwable throwable, DubboOutboundRequest request) {
+        return thrower.createException(throwable, request);
     }
 
     @Override
     public RpcException createException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
-        if (throwable == null) {
-            return null;
-        } else if (throwable instanceof RpcException) {
-            return (RpcException) throwable;
-        } else if (throwable instanceof RejectException) {
-            return createRejectException((RejectException) throwable, request);
-        } else if (throwable instanceof FaultException) {
-            String message = getError(throwable, request, endpoint);
-            Integer code = ((FaultException) throwable).getCode();
-            code = code == null ? RpcException.UNKNOWN_EXCEPTION : code;
-            return new RpcException(code, message);
-        } else {
-            String message = getError(throwable, request, endpoint);
-            if (throwable instanceof LiveException) {
-                return new RpcException(RpcException.UNKNOWN_EXCEPTION, message);
-            }
-            Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-            return new RpcException(RpcException.UNKNOWN_EXCEPTION, message, cause);
-        }
+        return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public RpcException createPermissionException(RejectPermissionException exception, DubboOutboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createAuthException(RejectAuthException exception, DubboOutboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createLimitException(RejectLimitException exception, DubboOutboundRequest request) {
-        return new RpcException(RpcException.LIMIT_EXCEEDED_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createCircuitBreakException(RejectCircuitBreakException exception, DubboOutboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createNoProviderException(RejectNoProviderException exception, DubboOutboundRequest request) {
-        Invocation invocation = request.getRequest();
-        return new RpcException(RpcException.NO_INVOKER_AVAILABLE_AFTER_FILTER, "Failed to invoke the method "
-                + invocation.getMethodName() + " in the service " + cluster.getInterface().getName()
-                + ". No provider available for the service " + cluster.getDirectory().getConsumerUrl().getServiceKey()
-                + " from registry " + cluster.getDirectory().getUrl().getAddress()
-                + " on the consumer " + NetUtils.getLocalHost()
-                + " using the dubbo version " + Version.getVersion()
-                + ". Please check if the providers have been started and registered.");
-    }
-
-    @Override
-    public RpcException createEscapeException(RejectEscapeException exception, DubboOutboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createRejectException(RejectException exception, DubboOutboundRequest request) {
-        if (exception instanceof RejectNoProviderException) {
-            return createNoProviderException((RejectNoProviderException) exception, request);
-        } else if (exception instanceof RejectAuthException) {
-            return createAuthException((RejectAuthException) exception, request);
-        } else if (exception instanceof RejectPermissionException) {
-            return createPermissionException((RejectPermissionException) exception, request);
-        } else if (exception instanceof RejectEscapeException) {
-            return createEscapeException((RejectEscapeException) exception, request);
-        } else if (exception instanceof RejectLimitException) {
-            return createLimitException((RejectLimitException) exception, request);
-        } else if (exception instanceof RejectCircuitBreakException) {
-            return createCircuitBreakException((RejectCircuitBreakException) exception, request);
-        }
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
-    }
-
-    @Override
-    public RpcException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<DubboOutboundRequest> invocation) {
-        String methodName = RpcUtils.getMethodName(invocation.getRequest().getRequest());
-        Throwable cause = exception.getCause();
-        RpcException le = cause instanceof RpcException ? (RpcException) cause : null;
-        DubboOutboundRequest request = invocation.getRequest();
-        Set<String> providers = request.getAttempts() == null ? new HashSet<>() : request.getAttempts();
-        List<? extends Endpoint> instances = invocation.getInstances();
-        return new RpcException(le != null ? le.getCode() : 0, "Failed to invoke the method "
-                + methodName + " in the service " + cluster.getInterface().getName()
-                + ". Tried " + exception.getAttempts() + " times of the providers " + providers
-                + " (" + providers.size() + "/" + (instances == null ? 0 : instances.size())
-                + ") from the registry " + cluster.getDirectory().getUrl().getAddress()
-                + " on the consumer " + NetUtils.getLocalHost() + " using the dubbo version "
-                + Version.getVersion() + ". Last error is: "
-                + (le != null ? le.getMessage() : ""), le != null && le.getCause() != null ? le.getCause() : le);
+    public RpcException createException(Throwable throwable, OutboundInvocation<DubboOutboundRequest> invocation) {
+        return thrower.createException(throwable, invocation);
     }
 
     /**
@@ -311,33 +187,13 @@ public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
         return len;
     }
 
-    /**
-     * Constructs a detailed error message for a given throwable and RPC call context.
-     *
-     * @param throwable The {@code Throwable} that represents the error encountered.
-     * @param request   The {@code DubboOutboundRequest} that contains details about the RPC request.
-     * @param endpoint  The {@code DubboEndpoint} that contains details about the endpoint being called.
-     * @return A {@code String} representing the detailed error message.
-     */
-    private String getError(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
-        if (endpoint == null) {
-            return throwable.getMessage();
-        }
-        Invocation invocation = request.getRequest();
-        return "Failed to call " + invocation.getServiceName() + "." + invocation.getMethodName()
-                + " on remote server: " + endpoint.getInvoker().getUrl().getAddress() + ", cause by: "
-                + throwable.getClass().getName() + ", message is: " + throwable.getMessage();
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
     }
 
-    /**
-     * Creates a {@link Result} based on the provided {@link DubboOutboundRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param request       the original request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link Result} configured according to the degrade configuration.
-     */
-    private Result createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
         RpcInvocation invocation = (RpcInvocation) request.getRequest();
         String body = degradeConfig.getResponseBody();
         AppResponse response = new AppResponse();
@@ -363,8 +219,12 @@ public class Dubbo27Cluster implements LiveCluster<DubboOutboundRequest, DubboOu
             response.setValue(value);
         }
 
-        return AsyncRpcResult.newDefaultAsyncResult(response, invocation);
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(response, invocation));
     }
 
+    @Override
+    protected DubboOutboundResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new DubboOutboundResponse(error, predicate);
+    }
 }
 

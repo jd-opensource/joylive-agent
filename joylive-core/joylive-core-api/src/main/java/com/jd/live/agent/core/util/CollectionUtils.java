@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.core.util;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -51,5 +53,25 @@ public class CollectionUtils {
         if (writeIndex < size) {
             objects.subList(writeIndex, size).clear();
         }
+    }
+
+    /**
+     * Converts a list of source objects into a list of target objects using the provided converter function.
+     *
+     * @param <S>       The type of source objects.
+     * @param <T>       The type of target objects.
+     * @param sources   The list of source objects to convert.
+     * @param converter The function to convert each source object into a target object.
+     * @return A list of target objects.
+     */
+    public static <S, T> List<T> convert(List<S> sources, Function<S, T> converter) {
+        if (sources == null || converter == null) {
+            return new ArrayList<>();
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (S instance : sources) {
+            result.add(converter.apply(instance));
+        }
+        return result;
     }
 }

@@ -15,9 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
@@ -49,8 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
-
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
+import java.util.function.Predicate;
 
 /**
  * Represents a client cluster that handles outbound requests and responses for services
@@ -67,8 +63,6 @@ import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircui
  * service instance selection with load balancing and retry policies.
  */
 public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterRequest, ReactiveClusterResponse> {
-
-    private static final Logger logger = LoggerFactory.getLogger(ReactiveCluster.class);
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -121,27 +115,6 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
         } catch (Throwable e) {
             return Futures.future(e);
         }
-    }
-
-    @Override
-    public ReactiveClusterResponse createResponse(Throwable throwable, ReactiveClusterRequest request, SpringEndpoint endpoint) {
-        if (throwable == null) {
-            // for fail fast cluster invoker
-            return new ReactiveClusterResponse(createResponse(request, new DegradeConfig()));
-        }
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new ReactiveClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new ReactiveClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new ReactiveClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
@@ -201,14 +174,8 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
         return result;
     }
 
-    /**
-     * Creates a ClientResponse based on the given ReactiveClusterRequest and DegradeConfig.
-     *
-     * @param request       the ReactiveClusterRequest to use for creating the response
-     * @param degradeConfig the DegradeConfig to use for configuring the response
-     * @return the created ClientResponse
-     */
-    private ClientResponse createResponse(ReactiveClusterRequest request, DegradeConfig degradeConfig) {
+    @Override
+    protected ReactiveClusterResponse createResponse(ReactiveClusterRequest request, DegradeConfig degradeConfig) {
         ExchangeStrategies strategies;
         try {
             FieldDesc field = ClassUtils.describe(request.getNext().getClass()).getFieldList().getField("strategies");
@@ -216,7 +183,7 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
         } catch (Throwable ignored) {
             strategies = ExchangeStrategies.withDefaults();
         }
-        return ClientResponse.create(degradeConfig.getResponseCode(), strategies)
+        return new ReactiveClusterResponse(ClientResponse.create(degradeConfig.getResponseCode(), strategies)
                 .body(degradeConfig.getResponseBody() == null ? "" : degradeConfig.getResponseBody())
                 .request(new DegradeHttpRequest(request))
                 .headers(headers -> {
@@ -224,7 +191,12 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
                     degradeConfig.foreach(headers::add);
                     headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
                     headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(degradeConfig.bodyLength()));
-                }).build();
+                }).build());
+    }
+
+    @Override
+    protected ReactiveClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+        return new ReactiveClusterResponse(error, predicate);
     }
 
     /**

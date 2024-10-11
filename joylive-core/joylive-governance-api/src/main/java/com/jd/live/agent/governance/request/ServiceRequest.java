@@ -16,11 +16,13 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.governance.invoke.exception.ErrorName;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 /**
  * Defines an interface for service requests, extending the basic {@link Request} interface.
@@ -168,6 +170,11 @@ public interface ServiceRequest extends Request {
      */
     interface OutboundRequest extends ServiceRequest, StickyRequest {
 
+        Function<Throwable, ErrorName> DEFAULT_ERROR_FUNCTION =
+                throwable -> throwable instanceof LiveException || throwable instanceof ExecutionException
+                        ? null
+                        : new ErrorName(throwable.getClass().getName(), null);
+
         /**
          * Retrieves a set of identifiers that represent the attempts made for this request.
          *
@@ -229,34 +236,13 @@ public interface ServiceRequest extends Request {
         }
 
         /**
-         * Returns the error code associated with the given {@link Throwable}.
-         * This default implementation returns {@code null}.
+         * Returns the default error name function.
          *
-         * @param throwable the {@link Throwable} for which to get the error code
-         * @return the error code as a {@link String}, or {@code null} if not available
+         * @return The default error name function.
          */
-        default String getErrorCode(Throwable throwable) {
-            return null;
+        default Function<Throwable, ErrorName> getErrorFunction() {
+            return DEFAULT_ERROR_FUNCTION;
         }
-
-        /**
-         * Returns the cause of the given {@link Throwable}.
-         * This default implementation returns the provided {@link Throwable} itself.
-         *
-         * @param throwable the {@link Throwable} for which to get the cause
-         * @return the cause of the given {@link Throwable}, or the {@link Throwable} itself if no cause is available
-         */
-        default Throwable getCause(Throwable throwable) {
-            if (throwable instanceof LiveException
-                    || throwable instanceof ExecutionException) {
-                Throwable cause = throwable.getCause();
-                if (cause != null) {
-                    return cause;
-                }
-            }
-            return throwable;
-        }
-
 
     }
 }

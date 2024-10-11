@@ -23,6 +23,7 @@ dubbo:
     name: ${spring.application.name}
     register-mode: instance
     qos-port: 22222
+    enable-file-cache: false
   protocol:
     name: dubbo
     port: -1
