@@ -96,7 +96,6 @@
           "clusterPolicy": {
             "type": "failover",
             "retryPolicy": {
-              "type": "Resilience4j",
               "retry": 10,
               "retryInterval": 1000,
               "timeout": 5000,
@@ -449,7 +448,6 @@
                   "clusterPolicy": {
                     "type": "failover",
                     "retryPolicy": {
-                      "type": "Resilience4j",
                       "retry": 2,
                       "retryInterval": 1000,
                       "timeout": 5000,
