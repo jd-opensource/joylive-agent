@@ -393,7 +393,6 @@ public interface InvocationContext {
      * @param <R> The type of the outbound request, which must extend {@link OutboundRequest}.
      * @param <O> The type of the outbound response.
      * @param <E> The type of the endpoint to which requests are routed.
-     * @param <T> The type of the exception that can be thrown during invocation.
      * @param cluster The live cluster of the service.
      * @param invocation The outbound service request invocation to be processed.
      * @param endpoint The endpoint through which the request will be sent.
@@ -402,8 +401,7 @@ public interface InvocationContext {
      */
     default <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> outbound(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> outbound(LiveCluster<R, O, E> cluster,
                                                              OutboundInvocation<R> invocation,
                                                              E endpoint) {
         try {

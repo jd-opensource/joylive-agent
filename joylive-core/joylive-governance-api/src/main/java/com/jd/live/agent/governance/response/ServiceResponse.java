@@ -15,6 +15,9 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
+
 /**
  * ServiceResponse
  *
@@ -45,13 +48,12 @@ public interface ServiceResponse extends Response {
     }
 
     /**
-     * Checks if the given throwable indicates a retryable error.
+     * Returns the retry predicate used to determine if a failed operation should be retried.
      *
-     * @param throwable The throwable to check for retryability.
-     * @return true if the error is retryable, false otherwise.
+     * @return the retry predicate, or null if no retry predicate is set.
      */
-    default boolean isRetryable(Throwable throwable) {
-        return false;
+    default ErrorPredicate getRetryPredicate() {
+        return null;
     }
 
     /**

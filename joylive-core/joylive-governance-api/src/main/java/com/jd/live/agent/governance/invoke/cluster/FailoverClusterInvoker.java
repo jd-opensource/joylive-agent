@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.bootstrap.logger.Logger;
@@ -22,19 +23,20 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.route.CircuitBreakerFilter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.policy.service.code.CodeParser;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodeParser;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.HashSet;
@@ -62,8 +64,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
@@ -73,13 +74,14 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         if (retryPolicy != null && retryPolicy.isBodyRequest()) {
             invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(retryPolicy.getCodePolicy());
         }
-        RetryContext<R, O, E, T> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
+        RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(invocation.getRequest());
-        return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e -> {
-            Throwable throwable = e instanceof RetryExhaustedException ? cluster.createException(e, invocation) : e;
-            return cluster.createResponse(throwable, invocation.getRequest(), null);
-        });
+        return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e ->
+                cluster.createResponse(
+                        cluster.createException(e, invocation),
+                        invocation.getRequest(),
+                        null));
     }
 
     /**
@@ -94,11 +96,11 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
      *
      * @param <R> The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O> The type of the outbound response that extends {@link OutboundResponse}.
+     * @param <E> The type of the endpoint to which requests are routed.
      */
     private static class RetryContext<R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> {
+            E extends Endpoint> {
 
         private final Map<String, CodeParser> errorParsers;
 
@@ -110,7 +112,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         /**
          * The cluster managing the distribution and processing of the request
          */
-        private final LiveCluster<R, O, E, T> cluster;
+        private final LiveCluster<R, O, E> cluster;
 
         /**
          * A counter tracking the number of retry attempts made.
@@ -128,7 +130,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * @param retryPolicy The {@link RetryPolicy} to govern retry behavior.
          * @param cluster     The {@link LiveCluster} managing the distribution and processing of the request
          */
-        RetryContext(Map<String, CodeParser> errorParsers, RetryPolicy retryPolicy, LiveCluster<R, O, E, T> cluster) {
+        RetryContext(Map<String, CodeParser> errorParsers, RetryPolicy retryPolicy, LiveCluster<R, O, E> cluster) {
             this.errorParsers = errorParsers;
             this.retryPolicy = retryPolicy;
             this.cluster = cluster;
@@ -175,12 +177,12 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             CompletionStage<O> stage = supplier.get();
             stage.whenComplete((v, e) -> {
                 ServiceError se = v.getError();
-                Throwable throwable = se == null ? null : se.getThrowable();
+                Throwable throwable = se == null ? e : se.getThrowable();
                 switch (isRetryable(request, v, e, count)) {
                     case RETRY:
-                        T destroyedException = cluster.isDestroyed() ? cluster.createException(new RejectUnreadyException(), request) : null;
-                        if (destroyedException != null) {
-                            future.completeExceptionally(destroyedException);
+                        Throwable unreadyException = cluster.isDestroyed() ? cluster.createException(new RejectUnreadyException(), request) : null;
+                        if (unreadyException != null) {
+                            future.completeExceptionally(unreadyException);
                         } else {
                             doExecute(request, supplier, future);
                         }
@@ -223,35 +225,39 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                 return RetryType.TIMEOUT;
             } else if (count >= retryPolicy.getRetry()) {
                 return RetryType.EXHAUSTED;
-            } else if (retryPolicy.isRetry(e)) {
-                return RetryType.RETRY;
             } else if (e instanceof RejectException) {
                 return RetryType.NONE;
-            } else if (response == null) {
+            } else if (e instanceof FaultException) {
                 return RetryType.NONE;
-            } else if (response.isRetryable(e)) {
-                return RetryType.RETRY;
-            } else if (isRetryError(response)) {
-                return RetryType.RETRY;
             } else {
-                return RetryType.NONE;
+                ErrorCause cause = ErrorCause.cause(e, request.getErrorFunction(), response == null ? null : response.getRetryPredicate());
+                if (cause.match(retryPolicy)) {
+                    return RetryType.RETRY;
+                } else if (response == null) {
+                    return RetryType.NONE;
+                } else if (isRetryError(request, response)) {
+                    return RetryType.RETRY;
+                } else {
+                    return RetryType.NONE;
+                }
             }
         }
 
         /**
          * Checks if a service response represents an error, according to the circuit breaker policy.
          *
+         * @param request  The request that was being processed.
          * @param response The service response to check.
          * @return true if the response represents an error, false otherwise.
          */
-        private boolean isRetryError(O response) {
-            if (retryPolicy.isRetry(response.getCode())) {
+        private boolean isRetryError(R request, O response) {
+            if (retryPolicy.containsError(response.getCode())) {
                 return true;
             }
             ServiceError error = response.getError();
             Throwable throwable = error == null ? null : error.getThrowable();
             if (throwable != null) {
-                return response.isRetryable(throwable) || retryPolicy.isRetry(throwable);
+                return ErrorCause.cause(throwable, request.getErrorFunction(), response.getRetryPredicate()).match(retryPolicy);
             } else if (response.isSuccess() && retryPolicy.isBodyRequest()) {
                 CodePolicy codePolicy = retryPolicy.getCodePolicy();
                 Object result = response.getResult();
@@ -263,9 +269,9 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                         if (parser != null) {
                             try {
                                 String code = parser.getCode(codeExpression, result);
-                                return retryPolicy.isRetry(code);
+                                return retryPolicy.containsError(code);
                             } catch (Throwable e) {
-                                logger.error(e.getMessage(), e);
+                                logger.error("Failed to extract error code from body, caused by " + e.getMessage(), e);
                             }
                         }
                     }

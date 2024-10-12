@@ -15,16 +15,14 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
@@ -44,7 +42,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
@@ -59,13 +56,13 @@ import java.util.function.Predicate;
  */
 public class BlockingCluster extends AbstractClientCluster<BlockingClusterRequest, BlockingClusterResponse> {
 
-    private static final Logger logger = LoggerFactory.getLogger(BlockingCluster.class);
-
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
             "java.util.concurrent.TimeoutException",
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
+
+    private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     private static final String FIELD_LOAD_BALANCER = "loadBalancer";
 
@@ -131,9 +128,8 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     }
 
     @Override
-    public boolean isRetryable(Throwable throwable) {
-        // TODO modify isRetryable
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -156,7 +152,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     }
 
     @Override
-    protected BlockingClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+    protected BlockingClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new BlockingClusterResponse(error, predicate);
     }
 

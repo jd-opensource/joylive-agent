@@ -15,7 +15,8 @@
  */
 package com.jd.live.agent.governance.response;
 
-import java.util.function.Predicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 
 /**
  * Represents the abstract base for all RPC (Remote Procedure Call) responses.
@@ -43,12 +44,12 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
      * Constructs an instance of {@code AbstractRpcResponse} with the specified
      * RPC response content, throwable, and a custom retry predicate.
      *
-     * @param response  the RPC response content
-     * @param error the error, if any, that occurred during the RPC operation
-     * @param predicate a custom predicate to evaluate retryability of the RPC response
+     * @param response       the RPC response content
+     * @param error          the error, if any, that occurred during the RPC operation
+     * @param retryPredicate a custom predicate to evaluate retryability of the RPC response
      */
-    public AbstractRpcResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
-        super(response, error, predicate);
+    public AbstractRpcResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+        super(response, error, retryPredicate);
     }
 
     /**
@@ -76,12 +77,12 @@ public abstract class AbstractRpcResponse<T> extends AbstractServiceResponse<T> 
          * Constructs an instance of {@code AbstractRpcOutboundResponse} with the specified
          * outbound RPC response content, error, and a custom retry predicate.
          *
-         * @param response  the outbound RPC response content
-         * @param error the error, if any, that occurred during the outbound RPC operation
-         * @param predicate a custom predicate to evaluate retryability of the outbound RPC response
+         * @param response       the outbound RPC response content
+         * @param error          the error, if any, that occurred during the outbound RPC operation
+         * @param retryPredicate a custom predicate to evaluate retryability of the outbound RPC response
          */
-        public AbstractRpcOutboundResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
-            super(response, error, predicate);
+        public AbstractRpcOutboundResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+            super(response, error, retryPredicate);
         }
     }
 }

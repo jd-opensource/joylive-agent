@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.demo.dubbo.v3.provider.service;
 
+import com.jd.live.agent.demo.exception.BreakableException;
+import com.jd.live.agent.demo.exception.RetryableException;
 import com.jd.live.agent.demo.response.LiveLocation;
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
@@ -24,6 +26,8 @@ import org.apache.dubbo.config.annotation.DubboService;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcContextAttachment;
 import org.springframework.beans.factory.annotation.Value;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 @DubboService(group = "live-demo", interfaceClass = HelloService.class)
 public class Dubbo3ProviderService implements HelloService {
@@ -38,8 +42,12 @@ public class Dubbo3ProviderService implements HelloService {
 
     @Override
     public LiveResponse status(int code) {
-        if (code >= 500) {
-            throw new RuntimeException("Code:" + code);
+        if (code == 600) {
+            if (ThreadLocalRandom.current().nextInt(2) == 0) {
+                throw new RetryableException("Code:" + code);
+            }
+        } else if (code >= 500) {
+            throw new BreakableException("Code:" + code);
         }
         return createResponse(code);
     }

@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.invoke.exception.OutboundThrower;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -39,12 +40,10 @@ import java.util.concurrent.ExecutionException;
  * @param <R> The type of the outbound request.
  * @param <O> The type of the outbound response.
  * @param <E> The type of the endpoint to which requests are routed.
- * @param <T> The type of the exception that can be thrown during invocation.
  */
 public interface LiveCluster<R extends OutboundRequest,
         O extends OutboundResponse,
-        E extends Endpoint,
-        T extends Throwable> extends StickyRequest, OutboundThrower<R, E, T> {
+        E extends Endpoint> extends StickyRequest, OutboundThrower<R, E> {
 
     /**
      * Routes the given request to a list of suitable endpoints.
@@ -154,13 +153,12 @@ public interface LiveCluster<R extends OutboundRequest,
     O createResponse(Throwable throwable, R request, E endpoint);
 
     /**
-     * Determines whether a given throwable indicates that the request is retryable.
+     * Returns the retry predicate used to determine if a failed operation should be retried.
      *
-     * @param throwable The throwable to evaluate.
-     * @return {@code true} if the request that generated the throwable should be retried; {@code false} otherwise.
+     * @return the retry predicate, or null if no retry predicate is set.
      */
-    default boolean isRetryable(Throwable throwable) {
-        return false;
+    default ErrorPredicate getRetryPredicate() {
+        return null;
     }
 
     /**

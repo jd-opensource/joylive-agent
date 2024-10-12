@@ -15,16 +15,15 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
-
-import java.util.function.Predicate;
 
 import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 
@@ -34,12 +33,10 @@ import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircui
  * @param <R> The type of outbound request.
  * @param <O> The type of outbound response.
  * @param <E> The type of endpoint.
- * @param <T> The type of throwable.
  */
 public abstract class AbstractLiveCluster<R extends OutboundRequest,
         O extends OutboundResponse,
-        E extends Endpoint,
-        T extends Throwable> implements LiveCluster<R, O, E, T> {
+        E extends Endpoint> implements LiveCluster<R, O, E> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLiveCluster.class);
 
@@ -48,7 +45,7 @@ public abstract class AbstractLiveCluster<R extends OutboundRequest,
         if (throwable == null) {
             return createResponse(request);
         }
-        RejectException.RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
+        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
             if (config != null) {
@@ -60,7 +57,7 @@ public abstract class AbstractLiveCluster<R extends OutboundRequest,
                 }
             }
         }
-        return createResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
+        return createResponse(new ServiceError(createException(throwable, request, endpoint), false), getRetryPredicate());
     }
 
     /**
@@ -90,6 +87,6 @@ public abstract class AbstractLiveCluster<R extends OutboundRequest,
      * @param predicate a predicate to determine if the error should be used for creating the response.
      * @return a response configured according to the service error and predicate.
      */
-    protected abstract O createResponse(ServiceError error, Predicate<Throwable> predicate);
+    protected abstract O createResponse(ServiceError error, ErrorPredicate predicate);
 
 }

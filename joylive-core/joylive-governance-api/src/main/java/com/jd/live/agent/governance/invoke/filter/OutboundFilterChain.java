@@ -50,13 +50,11 @@ public interface OutboundFilterChain {
      * @param <R>        The type of the outbound service request.
      * @param <O>        The type of the outbound service response.
      * @param <E>        The type of the endpoint.
-     * @param <T>        The type of the exception that may be thrown during the filtering process.
      * @return A CompletableFuture that will contain the filtered outbound service response when the request is completed.
      */
     <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> filter(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster,
                                                            OutboundInvocation<R> invocation,
                                                            E endpoint);
 
@@ -96,8 +94,7 @@ public interface OutboundFilterChain {
         @Override
         public <R extends OutboundRequest,
                 O extends OutboundResponse,
-                E extends Endpoint,
-                T extends Throwable> CompletionStage<O> filter(LiveCluster<R, O, E, T> cluster, OutboundInvocation<R> invocation, E endpoint) {
+                E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster, OutboundInvocation<R> invocation, E endpoint) {
             CompletionStage<O> result = null;
             if (index < filters.length) {
                 result = filters[index++].filter(cluster, invocation, endpoint, this);

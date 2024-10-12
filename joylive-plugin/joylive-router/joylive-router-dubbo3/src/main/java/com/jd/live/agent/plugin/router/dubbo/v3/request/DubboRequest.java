@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.dubbo.v3.request;
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
-import com.jd.live.agent.governance.invoke.exception.ErrorName;
+import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import org.apache.dubbo.common.URL;

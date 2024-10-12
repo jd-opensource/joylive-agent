@@ -21,7 +21,8 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import feign.Response;
 
 import java.io.InputStream;
@@ -29,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * FeignOutboundResponse
@@ -47,7 +47,7 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
         headers = new LazyObject<>(() -> parserHeader(response));
     }
 
-    public FeignClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public FeignClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
     }
 

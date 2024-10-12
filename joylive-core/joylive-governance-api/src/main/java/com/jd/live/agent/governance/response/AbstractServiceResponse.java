@@ -16,9 +16,9 @@
 package com.jd.live.agent.governance.response;
 
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import lombok.Getter;
-
-import java.util.function.Predicate;
 
 /**
  * Provides a base implementation for service response objects, encapsulating common
@@ -50,20 +50,20 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * A {@code null} value indicates that there is no custom retry logic, and
      * the default retryability logic will be applied.
      */
-    protected final Predicate<Throwable> predicate;
+    protected final ErrorPredicate retryPredicate;
 
     /**
      * Constructs an instance of {@code AbstractServiceResponse} with the specified
      * response content, throwable, and a custom retry predicate.
      *
-     * @param response  the response content
-     * @param error     the error, if any, associated with the service operation
-     * @param predicate a custom predicate to evaluate retryability of the response
+     * @param response       the response content
+     * @param error          the error, if any, associated with the service operation
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractServiceResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+    public AbstractServiceResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
         this.response = response;
         this.error = error;
-        this.predicate = predicate;
+        this.retryPredicate = retryPredicate;
     }
 
     @Override
@@ -71,8 +71,4 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
         return error;
     }
 
-    @Override
-    public boolean isRetryable(Throwable throwable) {
-        return predicate != null && predicate.test(throwable);
-    }
 }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v6.exception;
 
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.invoke.exception.AbstractInboundThrower;
@@ -29,25 +30,19 @@ import org.springframework.web.server.ResponseStatusException;
  *
  * @see AbstractInboundThrower
  */
-public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequest, NestedRuntimeException> {
+public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequest> {
 
     public static final SpringInboundThrower THROWER = new SpringInboundThrower();
 
     @Override
-    protected boolean isNativeException(Throwable throwable) {
-        return throwable instanceof NestedRuntimeException;
-    }
-
-    @Override
-    protected NestedRuntimeException createUnReadyException(RejectUnreadyException exception, HttpInboundRequest request) {
+    protected Throwable createUnReadyException(RejectUnreadyException exception, HttpInboundRequest request) {
         String message = exception.getMessage() == null ? "The cluster is not ready. " : exception.getMessage();
         return createException(HttpStatus.SERVICE_UNAVAILABLE, message);
     }
 
     @Override
-    protected NestedRuntimeException createUnknownException(Throwable throwable, HttpInboundRequest request) {
-        return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
-
+    protected NestedRuntimeException createLiveException(LiveException exception, HttpInboundRequest request) {
+        return createException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
 
     @Override
@@ -87,7 +82,7 @@ public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequ
      * @param message the error message
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    private NestedRuntimeException createException(HttpStatus status, String message) {
+    public static NestedRuntimeException createException(HttpStatus status, String message) {
         return createException(status, message, null);
     }
 
@@ -99,7 +94,7 @@ public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequ
      * @param throwable the exception
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    private NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
         return new ResponseStatusException(status.value(), message, throwable);
     }
 }

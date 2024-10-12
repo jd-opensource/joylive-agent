@@ -16,11 +16,10 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.response;
 
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.ClientResponse;
-
-import java.util.function.Predicate;
 
 /**
  * ReactiveRouteResponse
@@ -35,7 +34,7 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
         super(response);
     }
 
-    public ReactiveClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public ReactiveClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
     }
 

@@ -21,8 +21,9 @@ import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
@@ -38,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 /**
  * A cluster implementation for Feign clients that manages a group of servers and provides load balancing and failover capabilities.
@@ -52,6 +52,8 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
             "java.util.concurrent.TimeoutException",
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
+
+    private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     private static final String FIELD_DELEGATE = "delegate";
 
@@ -97,9 +99,8 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     }
 
     @Override
-    public boolean isRetryable(Throwable throwable) {
-        // TODO modify isRetryable
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -143,7 +144,7 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     }
 
     @Override
-    protected FeignClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+    protected FeignClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new FeignClusterResponse(error, predicate);
     }
 }

@@ -21,8 +21,8 @@ import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
@@ -46,7 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 /**
  * Represents a client cluster that handles outbound requests and responses for services
@@ -69,6 +68,8 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
             "java.util.concurrent.TimeoutException",
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
+
+    private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
 
@@ -118,8 +119,8 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
     }
 
     @Override
-    public boolean isRetryable(Throwable throwable) {
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -195,7 +196,7 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
     }
 
     @Override
-    protected ReactiveClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+    protected ReactiveClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new ReactiveClusterResponse(error, predicate);
     }
 

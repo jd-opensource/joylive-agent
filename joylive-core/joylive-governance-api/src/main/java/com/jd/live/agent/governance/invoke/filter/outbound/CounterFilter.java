@@ -41,8 +41,7 @@ public class CounterFilter implements OutboundFilter {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> filter(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster,
                                                            OutboundInvocation<R> invocation,
                                                            E endpoint,
                                                            OutboundFilterChain chain) {

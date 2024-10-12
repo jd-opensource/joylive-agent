@@ -35,6 +35,7 @@ import org.springframework.cloud.client.loadbalancer.Request;
 import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
 import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;
@@ -106,7 +107,12 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {
             SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
-            throw thrower.createException(e, invocation.getRequest());
+            Throwable throwable =  thrower.createException(e, invocation.getRequest());
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException) throwable;
+            } else {
+                throw SpringOutboundThrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+            }
         }
     }
 

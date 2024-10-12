@@ -18,15 +18,12 @@ package com.jd.live.agent.governance.policy.service.cluster;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Consumer;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.jd.live.agent.core.util.ExceptionUtils.iterate;
 
 /**
  * Defines a failover policy that specifies the behavior of a system or component in the event of a failure.
@@ -46,7 +43,7 @@ import static com.jd.live.agent.core.util.ExceptionUtils.iterate;
 @Setter
 @Getter
 @Consumer
-public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy> {
+public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy>, ErrorPolicy {
     /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
      * to attempt to recover from transient failures by retrying the failed operation.
@@ -107,16 +104,26 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         return timeout != null && timeout > 0 ? startTime + timeout : 0;
     }
 
+    @Override
     public boolean isEnabled() {
-        return retry != null && retry > 0;
+        return retry != null && retry > 0 &&
+                (retryStatuses != null && !retryStatuses.isEmpty()
+                        || retryExceptions != null && !retryExceptions.isEmpty());
     }
 
-    public boolean isRetry(String status) {
-        return isEnabled() && status != null && retryStatuses != null && retryStatuses.contains(status);
+    @Override
+    public boolean containsError(String errorCode) {
+        return errorCode != null && retryStatuses != null && retryStatuses.contains(errorCode);
     }
 
-    public boolean isRetry(Throwable throwable) {
-        return isEnabled() && isRetry(retryExceptions, throwable);
+    @Override
+    public boolean containsException(String className) {
+        return className != null && retryExceptions != null && retryExceptions.contains(className);
+    }
+
+    @Override
+    public boolean containsException(Set<String> classNames) {
+        return ErrorPolicy.containsException(classNames, retryExceptions);
     }
 
     /**
@@ -126,40 +133,6 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
      */
     public boolean isBodyRequest() {
         return codePolicy != null && codePolicy.isBodyRequest();
-    }
-
-    /**
-     * Determines whether an operation that threw an exception should be retried, based on a set of
-     * exception class names deemed retryable. This method checks not only the top-level exception but
-     * also recursively examines any underlying causes to see if any of them match the retryable exceptions.
-     *
-     * @param exceptions A {@link Set} of fully qualified class names of exceptions that should trigger a retry.
-     *                   This set must not be null or empty for the method to check for retryable exceptions.
-     * @param throwable  The {@link Throwable} instance thrown during the operation. This includes both the
-     *                   immediate exception and any nested causes.
-     * @return {@code true} if the thrown exception or any of its causes is found in the {@code exceptions} set,
-     * indicating that the operation should be retried. Returns {@code false} otherwise, indicating
-     * that the operation should not be retried based on the exception thrown.
-     */
-    public static boolean isRetry(Set<String> exceptions, Throwable throwable) {
-        if (throwable == null || exceptions == null || exceptions.isEmpty()) {
-            return false;
-        }
-        // TODO exception converter like circuit breaker
-        Set<Class<?>> handled = new HashSet<>(16);
-        AtomicBoolean result = new AtomicBoolean(false);
-        iterate(throwable, e -> {
-            Class<?> type = e.getClass();
-            while (type != null && type != Object.class && handled.add(type)) {
-                if (exceptions.contains(type.getName())) {
-                    result.set(true);
-                    return false;
-                }
-                type = type.getSuperclass();
-            }
-            return true;
-        });
-        return result.get();
     }
 
 }

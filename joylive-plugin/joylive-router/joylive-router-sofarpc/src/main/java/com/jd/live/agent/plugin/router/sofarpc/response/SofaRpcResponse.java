@@ -17,9 +17,8 @@ package com.jd.live.agent.plugin.router.sofarpc.response;
 
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
-
-import java.util.function.Predicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 
 /**
  * Represents a response in the SOFA RPC framework.
@@ -57,7 +56,7 @@ public interface SofaRpcResponse {
          *                  whether the call should be retried based on the response. Can be {@code null}
          *                  if retry logic is not applicable.
          */
-        public SofaRpcOutboundResponse(SofaResponse response, Predicate<Throwable> predicate) {
+        public SofaRpcOutboundResponse(SofaResponse response, ErrorPredicate predicate) {
             super(response, getError(response), predicate);
         }
 
@@ -69,7 +68,7 @@ public interface SofaRpcResponse {
          *                  whether the call should be retried based on the response. Can be {@code null}
          *                  if retry logic is not applicable.
          */
-        public SofaRpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+        public SofaRpcOutboundResponse(ServiceError error, ErrorPredicate predicate) {
             super(null, error, predicate);
         }
 

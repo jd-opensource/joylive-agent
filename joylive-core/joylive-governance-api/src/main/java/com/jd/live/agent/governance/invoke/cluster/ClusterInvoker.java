@@ -57,13 +57,11 @@ public interface ClusterInvoker {
      * @param <R>           The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>           The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>           The type of the endpoint that extends {@link Endpoint}.
-     * @param <T>           The type of the throwable that can be thrown during the invocation process.
      * @return An outbound response of type {@code O} that corresponds to the executed request.
      */
     <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy);
 }

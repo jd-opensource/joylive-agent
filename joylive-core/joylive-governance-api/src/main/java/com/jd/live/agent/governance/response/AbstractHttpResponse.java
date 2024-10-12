@@ -16,12 +16,13 @@
 package com.jd.live.agent.governance.response;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.request.Cookie;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * AbstractHttpResponse
@@ -90,7 +91,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param error The original exception.
      * @param predicate A predicate used to determine if the response should be considered an error.
      */
-    public AbstractHttpResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public AbstractHttpResponse(ServiceError error, ErrorPredicate predicate) {
         this(null, error, predicate);
     }
 
@@ -101,7 +102,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param error     The original exception.
      * @param predicate A predicate used to determine if the response should be considered an error.
      */
-    public AbstractHttpResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+    public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate predicate) {
         super(response, error, predicate);
         port = new LazyObject<>(this::parsePort);
         host = new LazyObject<>(this::parseHost);
@@ -262,11 +263,11 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
             super(response);
         }
 
-        public AbstractHttpOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+        public AbstractHttpOutboundResponse(ServiceError error, ErrorPredicate predicate) {
             super(error, predicate);
         }
 
-        public AbstractHttpOutboundResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+        public AbstractHttpOutboundResponse(T response, ServiceError error, ErrorPredicate predicate) {
             super(response, error, predicate);
         }
     }

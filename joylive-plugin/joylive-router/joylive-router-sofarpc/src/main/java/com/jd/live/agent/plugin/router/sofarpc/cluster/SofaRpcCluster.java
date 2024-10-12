@@ -27,8 +27,6 @@ import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.transport.ClientTransport;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
@@ -40,7 +38,8 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcOutboundThrower;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.GenericType;
@@ -56,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
 
@@ -73,10 +71,12 @@ import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER
  *
  * @see LiveCluster
  */
-public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, SofaRpcOutboundResponse, SofaRpcEndpoint, SofaRpcException> {
+public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, SofaRpcOutboundResponse, SofaRpcEndpoint> {
 
-    private static final Logger logger = LoggerFactory.getLogger(SofaRpcCluster.class);
-
+    private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(
+            throwable -> throwable instanceof SofaRpcException && (
+                    (((SofaRpcException) throwable)).getErrorType() == RpcErrorType.SERVER_BUSY
+                            || (((SofaRpcException) throwable)).getErrorType() == RpcErrorType.CLIENT_TIMEOUT), null);
     /**
      * The underlying abstract cluster that this live cluster is part of.
      */
@@ -163,23 +163,13 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
             SofaResponse response = (SofaResponse) fieldChainMethod.invoke(cluster, endpoint.getProvider(), request.getRequest());
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
         } catch (Throwable e) {
-            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(new ServiceError(e, false), this::isRetryable));
+            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(new ServiceError(e, false), getRetryPredicate()));
         }
     }
 
     @Override
-    public boolean isRetryable(Throwable throwable) {
-        if (!(throwable instanceof SofaRpcException)) {
-            return false;
-        }
-        SofaRpcException exception = (SofaRpcException) throwable;
-        switch (exception.getErrorType()) {
-            case RpcErrorType.SERVER_BUSY:
-            case RpcErrorType.CLIENT_TIMEOUT:
-                return true;
-            default:
-                return false;
-        }
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @Override
@@ -188,17 +178,17 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     }
 
     @Override
-    public SofaRpcException createException(Throwable throwable, SofaRpcOutboundRequest request) {
+    public Throwable createException(Throwable throwable, SofaRpcOutboundRequest request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public SofaRpcException createException(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public SofaRpcException createException(Throwable throwable, OutboundInvocation<SofaRpcOutboundRequest> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<SofaRpcOutboundRequest> invocation) {
         return thrower.createException(throwable, invocation);
     }
 
@@ -252,7 +242,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     }
 
     @Override
-    protected SofaRpcOutboundResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+    protected SofaRpcOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new SofaRpcOutboundResponse(error, predicate);
     }
 
@@ -260,17 +250,6 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
      * Attempts to retrieve a direct {@link ProviderInfo} instance based on a target IP address specified
      * in the {@link RpcInternalContext}. This method is particularly useful for scenarios requiring direct
      * routing to a specific service provider, bypassing the usual load balancing mechanisms.
-     *
-     * <p>The target IP address is expected to be provided as an attachment in the {@link RpcInternalContext}
-     * under the key defined by {@link RpcConstants#HIDDEN_KEY_PINPOINT}. If the target IP is specified and
-     * is not an empty string, the method attempts to convert it into a {@link ProviderInfo} object using
-     * {@link ProviderHelper#toProviderInfo(String)}. If the conversion is successful, the resulting
-     * {@link ProviderInfo} object is returned. Otherwise, or if no target IP is specified, the method
-     * returns {@code null}.</p>
-     *
-     * <p>This method is particularly useful in testing or debugging scenarios where direct communication
-     * with a specific service provider instance is necessary. It also serves use cases where a particular
-     * service instance needs to be targeted due to its unique characteristics or state.</p>
      *
      * @return The {@link ProviderInfo} corresponding to the direct target IP address specified in the
      * {@link RpcInternalContext}, or {@code null} if the IP address is not specified, is empty,
