@@ -31,7 +31,6 @@ import org.springframework.cloud.client.loadbalancer.CompletionContext;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
-import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMapAdapter;
@@ -52,7 +51,7 @@ import java.util.concurrent.CompletionStage;
 public abstract class AbstractClientCluster<
         R extends SpringClusterRequest,
         O extends OutboundResponse>
-        extends AbstractLiveCluster<R, O, SpringEndpoint, NestedRuntimeException> {
+        extends AbstractLiveCluster<R, O, SpringEndpoint> {
 
     protected final SpringOutboundThrower<R> thrower = new SpringOutboundThrower<>();
 
@@ -111,17 +110,17 @@ public abstract class AbstractClientCluster<
     }
 
     @Override
-    public NestedRuntimeException createException(Throwable throwable, R request) {
+    public Throwable createException(Throwable throwable, R request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public NestedRuntimeException createException(Throwable throwable, R request, SpringEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, R request, SpringEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public NestedRuntimeException createException(Throwable throwable, OutboundInvocation<R> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<R> invocation) {
         return thrower.createException(throwable, invocation);
     }
 

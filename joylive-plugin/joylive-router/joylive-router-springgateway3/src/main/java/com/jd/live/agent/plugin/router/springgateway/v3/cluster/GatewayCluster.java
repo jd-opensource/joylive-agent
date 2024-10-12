@@ -20,9 +20,10 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
@@ -56,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
@@ -182,7 +182,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     }
 
     @Override
-    protected GatewayClusterResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+    protected GatewayClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new GatewayClusterResponse(error, predicate);
     }
 

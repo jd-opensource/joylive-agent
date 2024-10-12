@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
-import com.jd.live.agent.governance.invoke.exception.ErrorName;
+import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 

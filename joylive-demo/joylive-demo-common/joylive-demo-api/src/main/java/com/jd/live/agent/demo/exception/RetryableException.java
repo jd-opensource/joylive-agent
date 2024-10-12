@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.exception;
+package com.jd.live.agent.demo.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public class RetryableException extends RuntimeException {
 
-/**
- * A class representing an error name with its corresponding code.
- */
-@Getter
-@AllArgsConstructor
-public class ErrorName {
+    public RetryableException() {
+    }
 
-    /**
-     * The name of the error.
-     */
-    private String name;
+    public RetryableException(String message) {
+        super(message);
+    }
 
-    /**
-     * The code associated with the error.
-     */
-    private String code;
+    public RetryableException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
+    public RetryableException(Throwable cause) {
+        super(cause);
+    }
+
+    public RetryableException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

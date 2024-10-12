@@ -19,6 +19,7 @@ import com.alipay.sofa.rpc.client.AbstractCluster;
 import com.alipay.sofa.rpc.core.exception.RpcErrorType;
 import com.alipay.sofa.rpc.core.exception.SofaRouteException;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
+import com.alipay.sofa.rpc.core.exception.SofaTimeOutException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.log.LogCodes;
 import com.jd.live.agent.bootstrap.exception.FaultException;
@@ -29,6 +30,7 @@ import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderExc
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.AbstractOutboundThrower;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
@@ -39,17 +41,12 @@ import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOut
  *
  * @see AbstractOutboundThrower
  */
-public class SofaRpcOutboundThrower extends AbstractOutboundThrower<SofaRpcOutboundRequest, SofaRpcEndpoint, SofaRpcException> {
+public class SofaRpcOutboundThrower extends AbstractOutboundThrower<SofaRpcOutboundRequest, SofaRpcEndpoint> {
 
     private final AbstractCluster cluster;
 
     public SofaRpcOutboundThrower(AbstractCluster cluster) {
         this.cluster = cluster;
-    }
-
-    @Override
-    protected boolean isNativeException(Throwable throwable) {
-        return throwable instanceof SofaRpcException;
     }
 
     @Override
@@ -63,13 +60,8 @@ public class SofaRpcOutboundThrower extends AbstractOutboundThrower<SofaRpcOutbo
     }
 
     @Override
-    protected SofaRpcException createUnknownException(Throwable throwable, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
-        String message = getError(throwable, request, endpoint);
-        if (throwable instanceof LiveException) {
-            return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, message);
-        }
-        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, message, cause);
+    protected SofaRpcException createLiveException(LiveException exception, SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
+        return new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR, getError(exception, request, endpoint));
     }
 
     @Override
@@ -98,14 +90,21 @@ public class SofaRpcOutboundThrower extends AbstractOutboundThrower<SofaRpcOutbo
 
     @Override
     protected SofaRpcException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<SofaRpcOutboundRequest> invocation) {
-        SofaRpcOutboundRequest request = invocation.getRequest();
+        SofaRequest request = invocation.getRequest().getRequest();
         Throwable cause = exception.getCause() == null ? exception : exception.getCause();
         return cause instanceof SofaRpcException ? (SofaRpcException) cause :
                 new SofaRpcException(RpcErrorType.CLIENT_UNDECLARED_ERROR,
-                        "Failed to call " + request.getRequest().getInterfaceName()
-                                + "." + request.getRequest().getMethodName()
-                                + " , cause by unknown exception: " + cause.getClass().getName()
-                                + ", message is: " + cause.getMessage());
+                        "Failed to call " + request.getInterfaceName() + "." + request.getMethodName()
+                                + ", tried " + exception.getAttempts() + " times");
+    }
+
+    @Override
+    protected SofaRpcException createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<SofaRpcOutboundRequest> invocation) {
+        SofaRequest request = invocation.getRequest().getRequest();
+        Throwable cause = exception.getCause() == null ? exception : exception.getCause();
+        return cause instanceof SofaRpcException ? (SofaRpcException) cause :
+                new SofaTimeOutException("Failed to call " + request.getInterfaceName() + "." + request.getMethodName()
+                        + ", tried for " + exception.getTimeout() + "(ms)");
     }
 
     @Override

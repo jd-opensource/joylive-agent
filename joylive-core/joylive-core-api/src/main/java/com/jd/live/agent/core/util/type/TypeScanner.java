@@ -26,9 +26,14 @@ import java.util.function.Predicate;
 public class TypeScanner {
 
     public static final Predicate<Class<?>> UNTIL_OBJECT = t ->
-            !t.isPrimitive() && !t.isAnnotation() && !t.isEnum() && !t.isInterface() && !t.isArray() &&
-                    !t.equals(Object.class) &&
-                    !t.getName().startsWith("java.") && !t.getName().startsWith("javax.");
+            !t.isPrimitive()
+                    && !t.isAnnotation()
+                    && !t.isEnum()
+                    && !t.isInterface()
+                    && !t.isArray()
+                    && !t.equals(Object.class)
+                    && !t.getName().startsWith("java.")
+                    && !t.getName().startsWith("javax.");
 
     private final Class<?> type;
 

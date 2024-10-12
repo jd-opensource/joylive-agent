@@ -17,7 +17,8 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Setter
 @Getter
-public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy> {
+public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy {
 
     public static final String DEFAULT_CIRCUIT_BREAKER_TYPE = "Resilience4j";
 
@@ -173,42 +174,24 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         return codePolicy != null && codePolicy.isBodyRequest();
     }
 
-    /**
-     * Checks if the specified error code is present in the list of error codes.
-     *
-     * @param errorCode the error code to check.
-     * @return {@code true} if the error code is present, {@code false} otherwise.
-     */
+    @Override
+    public boolean isEnabled() {
+        return (errorCodes != null && !errorCodes.isEmpty() || exceptions != null && !exceptions.isEmpty());
+    }
+
+    @Override
     public boolean containsError(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
     }
 
-    /**
-     * Checks if the given class name is present in the list of exceptions.
-     *
-     * @param className The class name to check.
-     * @return true if the class name is found in the list of exceptions, false otherwise.
-     */
+    @Override
     public boolean containsException(String className) {
         return className != null && exceptions != null && exceptions.contains(className);
     }
 
-    /**
-     * Checks if any of the given class names are present in the list of exceptions.
-     *
-     * @param classNames The set of class names to check.
-     * @return true if any of the class names are found in the list of exceptions, false otherwise.
-     */
+    @Override
     public boolean containsException(Set<String> classNames) {
-        if (exceptions == null || exceptions.isEmpty() || classNames == null || classNames.isEmpty()) {
-            return false;
-        }
-        for (String className : classNames) {
-            if (exceptions.contains(className)) {
-                return true;
-            }
-        }
-        return false;
+        return ErrorPolicy.containsException(classNames, exceptions);
     }
 
     /**

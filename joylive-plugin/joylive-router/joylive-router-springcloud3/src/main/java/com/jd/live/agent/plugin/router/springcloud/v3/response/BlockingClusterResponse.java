@@ -21,7 +21,8 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
@@ -30,7 +31,6 @@ import org.springframework.lang.NonNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Predicate;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -50,7 +50,7 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
         this.headers = new LazyObject<>(response.getHeaders());
     }
 
-    public BlockingClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public BlockingClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
     }
 

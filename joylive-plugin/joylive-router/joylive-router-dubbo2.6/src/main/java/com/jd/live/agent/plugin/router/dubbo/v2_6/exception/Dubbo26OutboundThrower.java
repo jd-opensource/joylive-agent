@@ -29,6 +29,7 @@ import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderExc
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.AbstractOutboundThrower;
@@ -44,17 +45,12 @@ import java.util.Set;
  *
  * @see AbstractOutboundThrower
  */
-public class Dubbo26OutboundThrower extends AbstractOutboundThrower<DubboOutboundRequest, DubboEndpoint<?>, RpcException> {
+public class Dubbo26OutboundThrower extends AbstractOutboundThrower<DubboOutboundRequest, DubboEndpoint<?>> {
 
     private final AbstractClusterInvoker cluster;
 
     public Dubbo26OutboundThrower(AbstractClusterInvoker cluster) {
         this.cluster = cluster;
-    }
-
-    @Override
-    protected boolean isNativeException(Throwable throwable) {
-        return throwable instanceof RpcException;
     }
 
     @Override
@@ -69,13 +65,8 @@ public class Dubbo26OutboundThrower extends AbstractOutboundThrower<DubboOutboun
     }
 
     @Override
-    protected RpcException createUnknownException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
-        String message = getError(throwable, request, endpoint);
-        if (throwable instanceof LiveException) {
-            return new RpcException(RpcException.UNKNOWN_EXCEPTION, message);
-        }
-        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-        return new RpcException(RpcException.UNKNOWN_EXCEPTION, message, cause);
+    protected RpcException createLiveException(LiveException exception, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
+        return new RpcException(RpcException.UNKNOWN_EXCEPTION, getError(exception, request, endpoint));
     }
 
     @Override
@@ -123,8 +114,31 @@ public class Dubbo26OutboundThrower extends AbstractOutboundThrower<DubboOutboun
                 + " (" + providers.size() + "/" + (instances == null ? 0 : instances.size())
                 + ") from the registry " + cluster.getUrl().getAddress()
                 + " on the consumer " + NetUtils.getLocalHost() + " using the dubbo version "
-                + Version.getVersion() + ". Last error is: "
-                + (le != null ? le.getMessage() : "");
+                + Version.getVersion()
+                + (le != null ? (". Last error is: " + le.getMessage()) : ".");
+        return new RpcException(
+                le != null ? le.getCode() : RpcException.UNKNOWN_EXCEPTION,
+                message,
+                le != null && le.getCause() != null ? le.getCause() : le);
+    }
+
+    @Override
+    protected RpcException createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<DubboOutboundRequest> invocation) {
+        Throwable cause = exception.getCause();
+        RpcException le = cause instanceof RpcException ? (RpcException) cause : null;
+        String methodName = RpcUtils.getMethodName(invocation.getRequest().getRequest());
+        DubboOutboundRequest request = invocation.getRequest();
+        Set<String> providers = request.getAttempts() == null ? new HashSet<>() : request.getAttempts();
+        List<? extends Endpoint> instances = invocation.getInstances();
+
+        String message = "Failed to invoke the method "
+                + methodName + " in the service " + cluster.getInterface().getName()
+                + ". Tried for " + exception.getTimeout() + "(ms) calling the providers " + providers
+                + " (" + providers.size() + "/" + (instances == null ? 0 : instances.size())
+                + ") from the registry " + cluster.getUrl().getAddress()
+                + " on the consumer " + NetUtils.getLocalHost() + " using the dubbo version "
+                + Version.getVersion()
+                + (le != null ? (". Last error is: " + le.getMessage()) : ".");
         return new RpcException(
                 le != null ? le.getCode() : RpcException.UNKNOWN_EXCEPTION,
                 message,

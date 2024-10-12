@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.exception;
 
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
@@ -23,18 +24,13 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
  * An abstract implementation of the InboundThrower interface.
  *
  * @param <R> The type of outbound request.
- * @param <T> The type of throwable.
  */
-public abstract class AbstractInboundThrower<R extends InboundRequest,
-        T extends Throwable> implements InboundThrower<R, T> {
+public abstract class AbstractInboundThrower<R extends InboundRequest> implements InboundThrower<R> {
 
-    @SuppressWarnings("unchecked")
     @Override
-    public T createException(Throwable throwable, R request) {
+    public Throwable createException(Throwable throwable, R request) {
         if (throwable == null) {
             return null;
-        } else if (isNativeException(throwable)) {
-            return (T) throwable;
         } else if (throwable instanceof RejectUnreadyException) {
             return createUnReadyException((RejectUnreadyException) throwable, request);
         } else if (throwable instanceof RejectAuthException) {
@@ -49,18 +45,12 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
             return createCircuitBreakException((RejectCircuitBreakException) throwable, request);
         } else if (throwable instanceof RejectException) {
             return createRejectException((RejectException) throwable, request);
+        } else if (throwable instanceof LiveException) {
+            return createLiveException((LiveException) throwable, request);
         } else {
-            return createUnknownException(throwable, request);
+            return throwable;
         }
     }
-
-    /**
-     * Checks if the given Throwable object represents a native exception.
-     *
-     * @param throwable The Throwable object to check.
-     * @return true if the Throwable object represents a native exception, false otherwise.
-     */
-    protected abstract boolean isNativeException(Throwable throwable);
 
     /**
      * Creates and returns an exception indicating that the cluster is not ready.
@@ -69,16 +59,16 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which no provider could be found due to the cluster being unavailable.
      * @return An exception instance indicating that the cluster is not ready.
      */
-    protected abstract T createUnReadyException(RejectUnreadyException exception, R request);
+    protected abstract Throwable createUnReadyException(RejectUnreadyException exception, R request);
 
     /**
      * Creates an unknown exception response for the given Throwable object, request, and endpoint.
      *
-     * @param throwable The Throwable object that caused the exception.
+     * @param exception The Throwable object that caused the exception.
      * @param request   The request that triggered the exception.
      * @return The created unknown exception response.
      */
-    protected abstract T createUnknownException(Throwable throwable, R request);
+    protected abstract Throwable createLiveException(LiveException exception, R request);
 
     /**
      * Creates an exception to be thrown when failed authenticate the requested service.
@@ -87,7 +77,7 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which no provider could be found.
      * @return An exception of type T indicating that no provider is available.
      */
-    protected abstract T createAuthException(RejectAuthException exception, R request);
+    protected abstract Throwable createAuthException(RejectAuthException exception, R request);
 
     /**
      * Creates an exception to be thrown when no permission for the requested service.
@@ -96,7 +86,7 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which no provider could be found.
      * @return An exception of type T indicating that no provider is available.
      */
-    protected abstract T createPermissionException(RejectPermissionException exception, R request);
+    protected abstract Throwable createPermissionException(RejectPermissionException exception, R request);
 
     /**
      * Creates an exception to be thrown when a limit is reached for the requested service.
@@ -105,7 +95,7 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which the limit has been reached.
      * @return An exception of type T indicating that a limit has been reached.
      */
-    protected abstract T createLimitException(RejectLimitException exception, R request);
+    protected abstract Throwable createLimitException(RejectLimitException exception, R request);
 
     /**
      * Creates an exception to be thrown when a circuit breaker is triggered for the requested service.
@@ -114,7 +104,7 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which the circuit breaker has been triggered.
      * @return An exception of type T indicating that a circuit breaker has been triggered.
      */
-    protected abstract T createCircuitBreakException(RejectCircuitBreakException exception, R request);
+    protected abstract Throwable createCircuitBreakException(RejectCircuitBreakException exception, R request);
 
     /**
      * Creates an exception to be thrown for the escaped requested.
@@ -123,7 +113,7 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which no provider could be found.
      * @return An exception of type T indicating that no provider is available.
      */
-    protected abstract T createEscapeException(RejectEscapeException exception, R request);
+    protected abstract Throwable createEscapeException(RejectEscapeException exception, R request);
 
     /**
      * Creates an exception to be thrown when a request is explicitly rejected.
@@ -132,6 +122,6 @@ public abstract class AbstractInboundThrower<R extends InboundRequest,
      * @param request   The request for which no provider could be found.
      * @return An exception of type T representing the rejection.
      */
-    protected abstract T createRejectException(RejectException exception, R request);
+    protected abstract Throwable createRejectException(RejectException exception, R request);
 
 }

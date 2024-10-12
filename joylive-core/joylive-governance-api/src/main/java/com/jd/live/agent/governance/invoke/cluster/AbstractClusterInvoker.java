@@ -24,7 +24,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -43,8 +43,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> execute(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
                                                             OutboundInvocation<R> invocation,
                                                             ClusterPolicy defaultPolicy) {
         cluster.onStart(invocation.getRequest());
@@ -59,7 +58,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <R>        The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>        The type of the endpoint that extends {@link Endpoint}.
-     * @param <T>        The type of the throwable that extends {@link Throwable}.
      * @param cluster    The {@link LiveCluster} managing the distribution and processing of the request.
      * @param invocation The {@link OutboundInvocation} representing the specific request and its routing information.
      * @param counter    The counter that records the current number of retry attempts..
@@ -70,15 +68,12 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     @SuppressWarnings("unchecked")
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> invoke(LiveCluster<R, O, E, T> cluster,
-                                                           OutboundInvocation<R> invocation,
-                                                           int counter) {
+            E extends Endpoint> CompletionStage<O> invoke(LiveCluster<R, O, E> cluster, OutboundInvocation<R> invocation, int counter) {
         CompletableFuture<O> result = new CompletableFuture<>();
         InvocationContext context = invocation.getContext();
         AppStatus appStatus = context.getAppStatus();
         if (!appStatus.outbound()) {
-            T exception = cluster.createException(new RejectUnreadyException(appStatus.getMessage()), invocation.getRequest());
+            Throwable exception = cluster.createException(new RejectUnreadyException(appStatus.getMessage()), invocation.getRequest());
             if (exception != null) {
                 result.completeExceptionally(exception);
                 return result;
@@ -125,16 +120,13 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <R>      The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>      The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>      The type of the endpoint that extends {@link Endpoint}.
-     * @param <T>      The type of the throwable that extends {@link Throwable}.
      * @param cluster  The live cluster context in which the invocation is taking place.
      * @param request  The request that is about to be processed.
      * @param instance The endpoint instance to which the request will be sent.
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint, T extends Throwable> void onStart(LiveCluster<R, O, E, T> cluster,
-                                                                  R request,
-                                                                  E instance) {
+            E extends Endpoint> void onStart(LiveCluster<R, O, E> cluster, R request, E instance) {
         cluster.onStartRequest(request, instance);
     }
 
@@ -144,7 +136,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <R>        the type of the outbound request
      * @param <O>        the type of the outbound response
      * @param <E>        the type of the endpoint
-     * @param <T>        the type of the throwable
      * @param cluster    the live cluster instance representing the current active cluster
      * @param invocation the outbound invocation instance representing the outbound call
      * @param response   the instance representing the outbound response
@@ -154,8 +145,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> void onSuccess(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> void onSuccess(LiveCluster<R, O, E> cluster,
                                                 OutboundInvocation<R> invocation,
                                                 O response,
                                                 R request,
@@ -179,7 +169,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      * @param <R>        The type of the outbound request that extends {@link OutboundRequest}.
      * @param <O>        The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E>        The type of the endpoint that extends {@link Endpoint}.
-     * @param <T>        The type of the throwable that extends {@link Throwable}.
      * @param error      The exception that occurred during the invocation.
      * @param endpoint   The endpoint to which the request was being sent, may be null if the exception
      *                   occurred before an endpoint was selected.
@@ -191,8 +180,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> void onException(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> void onException(LiveCluster<R, O, E> cluster,
                                                   OutboundInvocation<R> invocation,
                                                   O response,
                                                   ServiceError error,

@@ -17,9 +17,8 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.response;
 
 import com.alibaba.dubbo.rpc.Result;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
-
-import java.util.function.Predicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 
 /**
  * Represents a response in the Dubbo RPC system. This interface serves as a marker
@@ -50,11 +49,11 @@ public interface DubboResponse {
          * Constructs a new {@link DubboOutboundResponse} with the given error.
          * This constructor is used when the RPC call resulted in an error.
          *
-         * @param error The error that occurred during the RPC call.
-         * @param predicate A predicate to test the response and determine if it is retryable.
+         * @param error          The error that occurred during the RPC call.
+         * @param retryPredicate A predicate to test the response and determine if it is retryable.
          */
-        public DubboOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
-            super(null, error, predicate);
+        public DubboOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
+            super(null, error, retryPredicate);
         }
 
         /**
@@ -62,11 +61,15 @@ public interface DubboResponse {
          * This constructor can be used when the RPC call has a result but also encountered
          * an exception that might be recoverable or informative.
          *
-         * @param response  The result of the RPC call.
-         * @param predicate A predicate to test the response and determine if it is retryable.
+         * @param response       The result of the RPC call.
+         * @param retryPredicate A predicate to test the response and determine if it is retryable.
          */
-        public DubboOutboundResponse(Result response, Predicate<Throwable> predicate) {
-            super(response, response != null && response.hasException() ? new ServiceError(response.getException(), true) : null, predicate);
+        public DubboOutboundResponse(Result response, ErrorPredicate retryPredicate) {
+            super(response,
+                    response != null && response.hasException()
+                            ? new ServiceError(response.getException(), true)
+                            : null,
+                    retryPredicate);
         }
 
     }

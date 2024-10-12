@@ -28,58 +28,58 @@ import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcInb
  *
  * @see AbstractInboundThrower
  */
-public class SofaRpcInboundThrower extends AbstractInboundThrower<SofaRpcInboundRequest, SofaRpcException> {
+public class SofaRpcInboundThrower extends AbstractInboundThrower<SofaRpcInboundRequest> {
 
     public static final SofaRpcInboundThrower THROWER = new SofaRpcInboundThrower();
 
     @Override
-    protected boolean isNativeException(Throwable throwable) {
-        return throwable instanceof SofaRpcException;
+    protected SofaRpcException createUnReadyException(RejectUnreadyException exception, SofaRpcInboundRequest request) {
+        // Retry to another instance by consumer.
+        return new SofaRpcException(RpcErrorType.SERVER_BUSY, exception.getMessage());
     }
 
     @Override
-    protected SofaRpcException createUnReadyException(RejectUnreadyException exception, SofaRpcInboundRequest request) {
+    protected SofaRpcException createLiveException(LiveException exception, SofaRpcInboundRequest request) {
+        // Retry to another instance by consumer.
         return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
     }
 
     @Override
-    protected SofaRpcException createUnknownException(Throwable throwable, SofaRpcInboundRequest request) {
-        String message = throwable.getMessage();
-        if (throwable instanceof LiveException) {
-            return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, message);
-        }
-        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-        return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, message, cause);
-
-    }
-
-    @Override
     protected SofaRpcException createPermissionException(RejectPermissionException exception, SofaRpcInboundRequest request) {
+        // Only SERVER_BUSY and CLIENT_TIMEOUT will be retried by consumer.
+        // see {@link com.alipay.sofa.rpc.client.FailoverCluster}
         return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
     }
 
     @Override
     protected SofaRpcException createAuthException(RejectAuthException exception, SofaRpcInboundRequest request) {
+        // Only SERVER_BUSY and CLIENT_TIMEOUT will be retried by consumer.
+        // see {@link com.alipay.sofa.rpc.client.FailoverCluster}
         return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
     }
 
     @Override
     protected SofaRpcException createLimitException(RejectLimitException exception, SofaRpcInboundRequest request) {
+        // Retry to another instance by consumer.
         return new SofaRpcException(RpcErrorType.SERVER_BUSY, exception.getMessage());
     }
 
     @Override
     protected SofaRpcException createCircuitBreakException(RejectCircuitBreakException exception, SofaRpcInboundRequest request) {
-        return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
+        // Retry to another instance by consumer.
+        return new SofaRpcException(RpcErrorType.SERVER_BUSY, exception.getMessage());
     }
 
     @Override
     protected SofaRpcException createEscapeException(RejectEscapeException exception, SofaRpcInboundRequest request) {
-        return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
+        // Retry to another instance by consumer.
+        return new SofaRpcException(RpcErrorType.SERVER_BUSY, exception.getMessage());
     }
 
     @Override
     protected SofaRpcException createRejectException(RejectException exception, SofaRpcInboundRequest request) {
+        // Only SERVER_BUSY and CLIENT_TIMEOUT will be retried by consumer.
+        // see {@link com.alipay.sofa.rpc.client.FailoverCluster}
         return new SofaRpcException(RpcErrorType.SERVER_UNDECLARED_ERROR, exception.getMessage());
     }
 }

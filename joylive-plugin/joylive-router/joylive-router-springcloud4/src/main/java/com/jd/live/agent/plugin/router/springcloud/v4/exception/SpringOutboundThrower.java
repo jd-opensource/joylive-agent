@@ -16,11 +16,13 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.exception;
 
 import com.jd.live.agent.bootstrap.exception.FaultException;
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.AbstractOutboundThrower;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
@@ -35,12 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
  *
  * @see AbstractOutboundThrower
  */
-public class SpringOutboundThrower<R extends HttpOutboundRequest> extends AbstractOutboundThrower<R, SpringEndpoint, NestedRuntimeException> {
-
-    @Override
-    protected boolean isNativeException(Throwable throwable) {
-        return throwable instanceof NestedRuntimeException;
-    }
+public class SpringOutboundThrower<R extends HttpOutboundRequest> extends AbstractOutboundThrower<R, SpringEndpoint> {
 
     @Override
     protected NestedRuntimeException createUnReadyException(RejectUnreadyException exception, R request) {
@@ -49,14 +46,14 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
     }
 
     @Override
-    protected NestedRuntimeException createUnknownException(Throwable throwable, R request, SpringEndpoint endpoint) {
-        return createException(HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
+    protected NestedRuntimeException createLiveException(LiveException exception, R request, SpringEndpoint endpoint) {
+        return createException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
 
     @Override
     protected NestedRuntimeException createFaultException(FaultException exception, R request) {
         HttpStatus status = HttpStatus.resolve(exception.getCode());
-        status = status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
+        status = status == null ? HttpStatus.SERVICE_UNAVAILABLE : status;
         return createException(status, exception.getMessage(), exception);
     }
 
@@ -78,7 +75,12 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
 
     @Override
     protected NestedRuntimeException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation) {
-        return createException(exception, invocation.getRequest(), null);
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    }
+
+    @Override
+    protected NestedRuntimeException createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<R> invocation) {
+        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
     }
 
     /**
@@ -88,7 +90,7 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
      * @param message the error message
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    private NestedRuntimeException createException(HttpStatus status, String message) {
+    public static NestedRuntimeException createException(HttpStatus status, String message) {
         return createException(status, message, null);
     }
 
@@ -100,7 +102,7 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
      * @param throwable the exception
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    private NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
         return new ResponseStatusException(status.value(), message, throwable);
     }
 }

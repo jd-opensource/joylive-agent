@@ -24,9 +24,8 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  *
  * @param <R> The type of outbound request.
  * @param <E> The type of endpoint.
- * @param <T> The type of throwable.
  */
-public interface OutboundThrower<R extends OutboundRequest, E extends Endpoint, T extends Throwable> {
+public interface OutboundThrower<R extends OutboundRequest, E extends Endpoint> {
 
     /**
      * Creates and returns an exception based on the given Throwable object and request.
@@ -35,7 +34,7 @@ public interface OutboundThrower<R extends OutboundRequest, E extends Endpoint, 
      * @param request   The request that triggered the exception.
      * @return An exception instance.
      */
-    T createException(Throwable throwable, R request);
+    Throwable createException(Throwable throwable, R request);
 
     /**
      * Creates an exception based on the provided throwable.
@@ -45,7 +44,7 @@ public interface OutboundThrower<R extends OutboundRequest, E extends Endpoint, 
      * @param endpoint  The endpoint.
      * @return A response object representing the error.
      */
-    T createException(Throwable throwable, R request, E endpoint);
+    Throwable createException(Throwable throwable, R request, E endpoint);
 
     /**
      * Creates and returns an exception based on the given Throwable object and invocation.
@@ -54,5 +53,5 @@ public interface OutboundThrower<R extends OutboundRequest, E extends Endpoint, 
      * @param invocation The OutboundInvocation that triggered the exception.
      * @return An exception instance.
      */
-    T createException(Throwable throwable, OutboundInvocation<R> invocation);
+    Throwable createException(Throwable throwable, OutboundInvocation<R> invocation);
 }

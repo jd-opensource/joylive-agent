@@ -21,9 +21,8 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
  * An interface for creating exceptions based on the given Throwable object and request or invocation.
  *
  * @param <R> The type of inbound request.
- * @param <T> The type of throwable.
  */
-public interface InboundThrower<R extends InboundRequest, T extends Throwable> {
+public interface InboundThrower<R extends InboundRequest> {
 
     /**
      * Creates and returns an exception based on the given Throwable object and request.
@@ -32,5 +31,5 @@ public interface InboundThrower<R extends InboundRequest, T extends Throwable> {
      * @param request   The request that triggered the exception.
      * @return An exception instance.
      */
-    T createException(Throwable throwable, R request);
+    Throwable createException(Throwable throwable, R request);
 }

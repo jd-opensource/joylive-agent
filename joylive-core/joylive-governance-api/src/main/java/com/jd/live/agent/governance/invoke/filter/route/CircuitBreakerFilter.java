@@ -32,7 +32,7 @@ import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
-import com.jd.live.agent.governance.invoke.exception.ErrorCause;
+import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
@@ -41,11 +41,11 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.code.CodeParser;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodeParser;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static com.jd.live.agent.governance.invoke.exception.ErrorCause.cause;
+import static com.jd.live.agent.governance.exception.ErrorCause.cause;
 
 /**
  * CircuitBreakerFilter
@@ -281,7 +281,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             ServiceError error = response.getError();
             Throwable throwable = error == null ? null : error.getThrowable();
             if (throwable != null) {
-                ErrorCause cause = cause(throwable, request.getErrorFunction());
+                ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 return cause.match(policy);
             } else if (response.isSuccess() && policy.isBodyRequest()) {
                 CodePolicy codePolicy = policy.getCodePolicy();
@@ -311,7 +311,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             if (!(throwable instanceof RejectCircuitBreakException)) {
                 OutboundRequest request = invocation.getRequest();
                 long duration = request.getDuration();
-                ErrorCause cause = cause(throwable, request.getErrorFunction());
+                ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
                     if (cause.match(circuitBreaker.getPolicy())) {
                         circuitBreaker.onError(duration, cause.getCause());

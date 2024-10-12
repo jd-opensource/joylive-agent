@@ -21,7 +21,7 @@ import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.exception.SofaRpcRuntimeException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
-import com.jd.live.agent.governance.invoke.exception.ErrorName;
+import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;

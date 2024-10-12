@@ -26,7 +26,9 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27OutboundThrower;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
@@ -39,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
@@ -56,7 +57,12 @@ import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
-public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>, RpcException> {
+public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>> {
+
+    private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(
+            throwable -> throwable instanceof RpcException && (
+                    (((RpcException) throwable)).isNetwork()
+                            || (((RpcException) throwable)).isTimeout()), null);
 
     private final AbstractClusterInvoker cluster;
 
@@ -128,21 +134,16 @@ public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
     public CompletionStage<DubboOutboundResponse> invoke(DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         try {
             Result result = endpoint.getInvoker().invoke(request.getRequest());
-            DubboOutboundResponse response = new DubboOutboundResponse(result, this::isRetryable);
+            DubboOutboundResponse response = new DubboOutboundResponse(result, getRetryPredicate());
             return CompletableFuture.completedFuture(response);
         } catch (Throwable e) {
-            return CompletableFuture.completedFuture(new DubboOutboundResponse(new ServiceError(e, false), this::isRetryable));
+            return CompletableFuture.completedFuture(new DubboOutboundResponse(new ServiceError(e, false), getRetryPredicate()));
         }
     }
 
     @Override
-    public boolean isRetryable(Throwable throwable) {
-        if (!(throwable instanceof RpcException)) {
-            return false;
-        } else {
-            RpcException exception = (RpcException) throwable;
-            return exception.isNetwork() || exception.isTimeout();
-        }
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @Override
@@ -151,17 +152,17 @@ public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
     }
 
     @Override
-    public RpcException createException(Throwable throwable, DubboOutboundRequest request) {
+    public Throwable createException(Throwable throwable, DubboOutboundRequest request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public RpcException createException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
+    public Throwable createException(Throwable throwable, DubboOutboundRequest request, DubboEndpoint<?> endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public RpcException createException(Throwable throwable, OutboundInvocation<DubboOutboundRequest> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<DubboOutboundRequest> invocation) {
         return thrower.createException(throwable, invocation);
     }
 
@@ -223,7 +224,7 @@ public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
     }
 
     @Override
-    protected DubboOutboundResponse createResponse(ServiceError error, Predicate<Throwable> predicate) {
+    protected DubboOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new DubboOutboundResponse(error, predicate);
     }
 }

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.code.json;
+package com.jd.live.agent.governance.policy.service.exception.json;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.JsonPathParser;
-import com.jd.live.agent.governance.policy.service.code.CodeParser;
+import com.jd.live.agent.governance.policy.service.exception.CodeParser;
 
 import java.io.InputStream;
 

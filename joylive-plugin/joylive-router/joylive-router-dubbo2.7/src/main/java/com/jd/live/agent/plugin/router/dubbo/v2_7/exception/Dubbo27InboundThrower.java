@@ -27,57 +27,58 @@ import org.apache.dubbo.rpc.RpcException;
  *
  * @see AbstractInboundThrower
  */
-public class Dubbo27InboundThrower extends AbstractInboundThrower<DubboInboundRequest, RpcException> {
+public class Dubbo27InboundThrower extends AbstractInboundThrower<DubboInboundRequest> {
 
     public static final Dubbo27InboundThrower THROWER = new Dubbo27InboundThrower();
 
     @Override
-    protected boolean isNativeException(Throwable throwable) {
-        return throwable instanceof RpcException;
-    }
-
-    @Override
     protected RpcException createUnReadyException(RejectUnreadyException exception, DubboInboundRequest request) {
-        return new RpcException(exception.getMessage());
+        // Retry to another instance by consumer.
+        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }
 
     @Override
-    protected RpcException createUnknownException(Throwable throwable, DubboInboundRequest request) {
-        String message = throwable.getMessage();
-        if (throwable instanceof LiveException) {
-            return new RpcException(RpcException.UNKNOWN_EXCEPTION, message);
-        }
-        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-        return new RpcException(RpcException.UNKNOWN_EXCEPTION, message, cause);
+    protected RpcException createLiveException(LiveException exception, DubboInboundRequest request) {
+        // Retry to another instance by consumer.
+        return new RpcException(RpcException.UNKNOWN_EXCEPTION, exception.getMessage());
     }
 
     @Override
     protected RpcException createPermissionException(RejectPermissionException exception, DubboInboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+        // Only BIZ_EXCEPTION will not be retried by consumer.
+        // see {@link org.apache.dubbo.rpc.cluster.support.FailoverClusterInvoker}
+        return new RpcException(RpcException.BIZ_EXCEPTION, exception.getMessage());
     }
 
     @Override
     protected RpcException createAuthException(RejectAuthException exception, DubboInboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+        // Only BIZ_EXCEPTION will not be retried by consumer.
+        // see {@link org.apache.dubbo.rpc.cluster.support.FailoverClusterInvoker}
+        return new RpcException(RpcException.BIZ_EXCEPTION, exception.getMessage());
     }
 
     @Override
     protected RpcException createLimitException(RejectLimitException exception, DubboInboundRequest request) {
+        // Retry to another instance by consumer.
         return new RpcException(RpcException.LIMIT_EXCEEDED_EXCEPTION, exception.getMessage());
     }
 
     @Override
     protected RpcException createCircuitBreakException(RejectCircuitBreakException exception, DubboInboundRequest request) {
+        // Retry to another instance by consumer.
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }
 
     @Override
     protected RpcException createEscapeException(RejectEscapeException exception, DubboInboundRequest request) {
+        // Retry to another instance by consumer.
         return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
     }
 
     @Override
     protected RpcException createRejectException(RejectException exception, DubboInboundRequest request) {
-        return new RpcException(RpcException.FORBIDDEN_EXCEPTION, exception.getMessage());
+        // Only BIZ_EXCEPTION will not be retried by consumer.
+        // see {@link org.apache.dubbo.rpc.cluster.support.FailoverClusterInvoker}
+        return new RpcException(RpcException.BIZ_EXCEPTION, exception.getMessage());
     }
 }

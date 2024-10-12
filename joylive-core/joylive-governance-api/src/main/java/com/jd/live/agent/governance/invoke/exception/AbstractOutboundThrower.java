@@ -16,11 +16,13 @@
 package com.jd.live.agent.governance.invoke.exception;
 
 import com.jd.live.agent.bootstrap.exception.FaultException;
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -30,25 +32,20 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  *
  * @param <R> The type of outbound request.
  * @param <E> The type of endpoint.
- * @param <T> The type of throwable.
  */
 public abstract class AbstractOutboundThrower<
         R extends OutboundRequest,
-        E extends Endpoint,
-        T extends Throwable> implements OutboundThrower<R, E, T> {
+        E extends Endpoint> implements OutboundThrower<R, E> {
 
     @Override
-    public T createException(Throwable throwable, R request) {
+    public Throwable createException(Throwable throwable, R request) {
         return createException(throwable, request, null);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public T createException(Throwable throwable, R request, E endpoint) {
+    public Throwable createException(Throwable throwable, R request, E endpoint) {
         if (throwable == null) {
             return null;
-        } else if (isNativeException(throwable)) {
-            return (T) throwable;
         } else if (throwable instanceof RejectUnreadyException) {
             return createUnReadyException((RejectUnreadyException) throwable, request);
         } else if (throwable instanceof RejectNoProviderException) {
@@ -59,26 +56,23 @@ public abstract class AbstractOutboundThrower<
             return createRejectException((RejectException) throwable, request);
         } else if (throwable instanceof FaultException) {
             return createFaultException((FaultException) throwable, request);
+        } else if (throwable instanceof LiveException) {
+            return createLiveException((LiveException) throwable, request, endpoint);
         } else {
-            return createUnknownException(throwable, request, endpoint);
+            return throwable;
         }
     }
 
     @Override
-    public T createException(Throwable throwable, OutboundInvocation<R> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<R> invocation) {
         if (throwable instanceof RetryExhaustedException) {
             return createRetryExhaustedException((RetryExhaustedException) throwable, invocation);
+        } else if (throwable instanceof RetryTimeoutException) {
+            return createRetryTimeoutException((RetryTimeoutException) throwable, invocation);
+        } else {
+            return createException(throwable, invocation.getRequest());
         }
-        return createException(throwable, invocation.getRequest());
     }
-
-    /**
-     * Checks if the given Throwable object represents a native exception.
-     *
-     * @param throwable The Throwable object to check.
-     * @return true if the Throwable object represents a native exception, false otherwise.
-     */
-    protected abstract boolean isNativeException(Throwable throwable);
 
     /**
      * Creates and returns an exception indicating that the cluster is not ready.
@@ -87,7 +81,7 @@ public abstract class AbstractOutboundThrower<
      * @param request   The request for which no provider could be found due to the cluster being unavailable.
      * @return An exception instance indicating that the cluster is not ready.
      */
-    protected abstract T createUnReadyException(RejectUnreadyException exception, R request);
+    protected abstract Throwable createUnReadyException(RejectUnreadyException exception, R request);
 
     /**
      * Creates a fault exception response for the given Throwable object, request, and endpoint.
@@ -96,52 +90,60 @@ public abstract class AbstractOutboundThrower<
      * @param request   The request that triggered the fault.
      * @return The created fault exception response.
      */
-    protected abstract T createFaultException(FaultException throwable, R request);
+    protected abstract Throwable createFaultException(FaultException throwable, R request);
 
     /**
      * Creates an exception to be thrown when a circuit breaker is triggered for the requested service.
      *
      * @param exception The {@link RejectCircuitBreakException} that caused the circuit breaker to be triggered.
      * @param request   The request for which the circuit breaker has been triggered.
-     * @return An exception of type T indicating that a circuit breaker has been triggered.
+     * @return An exception of type Throwable indicating that a circuit breaker has been triggered.
      */
-    protected abstract T createCircuitBreakException(RejectCircuitBreakException exception, R request);
+    protected abstract Throwable createCircuitBreakException(RejectCircuitBreakException exception, R request);
 
     /**
      * Creates an exception to be thrown when no provider is available for the requested service.
      *
      * @param exception The {@link RejectNoProviderException} that caused the limit to be reached.
      * @param request   The request for which no provider could be found.
-     * @return An exception of type T indicating that no provider is available.
+     * @return An exception of type Throwable indicating that no provider is available.
      */
-    protected abstract T createNoProviderException(RejectNoProviderException exception, R request);
+    protected abstract Throwable createNoProviderException(RejectNoProviderException exception, R request);
 
     /**
      * Creates an exception to be thrown when a request is explicitly rejected.
      *
      * @param exception The original rejection exception.
      * @param request   The request for which no provider could be found.
-     * @return An exception of type T representing the rejection.
+     * @return An exception of type Throwable representing the rejection.
      */
-    protected abstract T createRejectException(RejectException exception, R request);
+    protected abstract Throwable createRejectException(RejectException exception, R request);
 
     /**
      * Creates a new instance of a retry exhaustion exception.
      *
      * @param exception The original {@code RetryExhaustedException} that contains information about the exhausted retry attempts.
-     * @return An instance of type {@code T} which extends {@code RetryExhaustedException}, with additional context or details if necessary.
+     * @return An exception of type Throwable representing retry exhaustion.
      */
-    protected abstract T createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation);
+    protected abstract Throwable createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation);
+
+    /**
+     * Creates a new instance of a retry timeout exception.
+     *
+     * @param exception The original {@code RetryTimeoutException} that contains information about the retry timeout.
+     * @return An exception of type Throwable representing retry timeout.
+     */
+    protected abstract Throwable createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<R> invocation);
 
     /**
      * Creates an unknown exception response for the given Throwable object, request, and endpoint.
      *
-     * @param throwable The Throwable object that caused the exception.
+     * @param exception The Throwable object that caused the exception.
      * @param request   The request that triggered the exception.
      * @param endpoint  The endpoint where the exception occurred.
      * @return The created unknown exception response.
      */
-    protected abstract T createUnknownException(Throwable throwable, R request, E endpoint);
+    protected abstract Throwable createLiveException(LiveException exception, R request, E endpoint);
 
     /**
      * Constructs a detailed error message for a given throwable and RPC call context.

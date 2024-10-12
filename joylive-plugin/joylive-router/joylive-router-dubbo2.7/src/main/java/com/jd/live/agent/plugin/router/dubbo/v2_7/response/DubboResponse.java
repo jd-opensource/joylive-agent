@@ -16,10 +16,9 @@
 package com.jd.live.agent.plugin.router.dubbo.v2_7.response;
 
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import org.apache.dubbo.rpc.Result;
-
-import java.util.function.Predicate;
 
 /**
  * Represents a generic response in the Dubbo RPC framework. This interface serves as a marker
@@ -40,11 +39,11 @@ public interface DubboResponse {
             this(response, null);
         }
 
-        public DubboOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+        public DubboOutboundResponse(ServiceError error, ErrorPredicate predicate) {
             super(null, error, predicate);
         }
 
-        public DubboOutboundResponse(Result response, Predicate<Throwable> predicate) {
+        public DubboOutboundResponse(Result response, ErrorPredicate predicate) {
             super(response, response != null && response.hasException() ? new ServiceError(response.getException(), true) : null, predicate);
         }
     }
