@@ -66,8 +66,8 @@ public abstract class AbstractClientCluster<
                 retry.getRetryableStatusCodes().forEach(status -> statuses.add(String.valueOf(status)));
                 retryPolicy = new RetryPolicy();
                 retryPolicy.setRetry(retry.getMaxRetriesOnNextServiceInstance());
-                retryPolicy.setRetryInterval(retry.getBackoff().getMinBackoff().toMillis());
-                retryPolicy.setRetryStatuses(statuses);
+                retryPolicy.setInterval(retry.getBackoff().getMinBackoff().toMillis());
+                retryPolicy.setErrorCodes(statuses);
             }
             return new ClusterPolicy(retryPolicy == null ? ClusterInvoker.TYPE_FAILFAST : ClusterInvoker.TYPE_FAILOVER, retryPolicy);
         }
