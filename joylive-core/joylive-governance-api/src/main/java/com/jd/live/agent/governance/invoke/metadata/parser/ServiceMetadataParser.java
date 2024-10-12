@@ -286,13 +286,6 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseServiceName() {
-            String result = application.getService().getName();
-            result = result != null ? result : request.getService();
-            return result;
-        }
-
-        @Override
         protected ServicePolicy parseServicePolicy(Service service, String serviceGroup, String path, String method) {
             ServicePolicy result = super.parseServicePolicy(service, serviceGroup, path, method);
             result = result != null ? result.clone() : new ServicePolicy();
