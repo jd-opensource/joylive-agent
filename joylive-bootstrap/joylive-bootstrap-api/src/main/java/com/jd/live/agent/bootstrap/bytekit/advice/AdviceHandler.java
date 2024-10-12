@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
-import static com.jd.live.agent.bootstrap.bytekit.advice.ExceptionHandler.EMPTY_EXCEPTION_HANDLER;
-
 /**
  * A handler class for managing advices and their associated interceptors. Provides static methods
  * for handling entry and exit points of method execution contexts, as well as managing advice lifecycle.
@@ -60,29 +58,27 @@ public class AdviceHandler {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
         if (interceptors != null) {
-            onEnter(context, interceptors, EMPTY_EXCEPTION_HANDLER);
+            onEnter(context, interceptors);
         }
     }
 
     /**
      * Handles the entry point for a given execution context and a list of interceptors.
      *
-     * @param <T>              the type of the execution context
-     * @param context          the execution context
-     * @param interceptors     the list of interceptors to be executed
-     * @param exceptionHandler the handler for exceptions
+     * @param <T>          the type of the execution context
+     * @param context      the execution context
+     * @param interceptors the list of interceptors to be executed
      * @throws Throwable if any exception occurs during interception
      */
     public static <T extends ExecutableContext> void onEnter(T context,
-                                                             List<Interceptor> interceptors,
-                                                             ExceptionHandler exceptionHandler) throws Throwable {
+                                                             List<Interceptor> interceptors) throws Throwable {
         if (context == null || interceptors == null)
             return;
         for (Interceptor interceptor : interceptors) {
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("enter [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
             }
-            handle(context, interceptor, Interceptor::onEnter, exceptionHandler, "enter");
+            handle(context, interceptor, Interceptor::onEnter, "enter");
             if (!context.isSuccess()) {
                 throw context.getThrowable();
             } else if (context.isSkip()) {
@@ -104,22 +100,20 @@ public class AdviceHandler {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
         if (interceptors != null) {
-            onExit(context, interceptors, EMPTY_EXCEPTION_HANDLER);
+            onExit(context, interceptors);
         }
     }
 
     /**
      * Handles the exit point for a given execution context and a list of interceptors.
      *
-     * @param <T>              the type of the execution context
-     * @param context          the execution context
-     * @param interceptors     the list of interceptors to be executed
-     * @param exceptionHandler the handler for exceptions
+     * @param <T>          the type of the execution context
+     * @param context      the execution context
+     * @param interceptors the list of interceptors to be executed
      * @throws Throwable if any exception occurs during interception
      */
     public static <T extends ExecutableContext> void onExit(T context,
-                                                            List<Interceptor> interceptors,
-                                                            ExceptionHandler exceptionHandler) throws Throwable {
+                                                            List<Interceptor> interceptors) throws Throwable {
         if (context == null || interceptors == null)
             return;
         for (Interceptor interceptor : interceptors) {
@@ -127,37 +121,36 @@ public class AdviceHandler {
                 logger.debug(String.format("exit [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
             }
             if (context.isSuccess()) {
-                handle(context, interceptor, Interceptor::onSuccess, exceptionHandler, "success");
+                handle(context, interceptor, Interceptor::onSuccess, "success");
             } else {
-                handle(context, interceptor, Interceptor::onError, exceptionHandler, "recover");
+                handle(context, interceptor, Interceptor::onError, "recover");
             }
-            handle(context, interceptor, Interceptor::onExit, exceptionHandler, "exit");
+            handle(context, interceptor, Interceptor::onExit, "exit");
         }
     }
 
     /**
      * Generic method for handling interception actions.
      *
-     * @param <T>          the type of the execution context
-     * @param context      the execution context
-     * @param interceptor  the interceptor to be executed
-     * @param consumer     the action to be performed by the interceptor
-     * @param errorHandler the handler for exceptions
-     * @param action       the name of the action being performed
+     * @param <T>         the type of the execution context
+     * @param context     the execution context
+     * @param interceptor the interceptor to be executed
+     * @param consumer    the action to be performed by the interceptor
+     * @param action      the name of the action being performed
      * @throws Throwable if any exception occurs during interception
      */
     private static <T extends ExecutableContext> void handle(T context,
                                                              Interceptor interceptor,
                                                              BiConsumer<Interceptor, T> consumer,
-                                                             ExceptionHandler errorHandler,
                                                              String action) throws Throwable {
         try {
             consumer.accept(interceptor, context);
         } catch (Throwable t) {
             logger.error(String.format("failed to %s %s, caused by %s", action, context.getDescription(), t.getMessage()), t);
-            if (errorHandler != null) {
+            ExceptionHandler exceptionHandler = interceptor.getExceptionHandler();
+            if (exceptionHandler != null) {
                 try {
-                    errorHandler.handle(context, interceptor, t);
+                    exceptionHandler.handle(context, interceptor, t);
                 } catch (Throwable e) {
                     logger.error(String.format("failed to handle %s %s error, caused by %s", action, context.getDescription(), t.getMessage()), t);
                 }
