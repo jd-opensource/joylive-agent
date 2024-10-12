@@ -16,12 +16,13 @@
 package com.jd.live.agent.governance.exception;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.bootstrap.exception.Unretryable;
 import lombok.Getter;
 
 /**
  * RetryException
  */
-public class RetryException extends LiveException {
+public class RetryException extends LiveException implements Unretryable {
 
     public RetryException() {
         super(null, null, false, false);
