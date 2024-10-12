@@ -92,9 +92,9 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
                 RetryPolicy retryPolicy = new RetryPolicy();
                 retryPolicy.setRetry(retryConfig.getRetries());
-                retryPolicy.setRetryInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
-                retryPolicy.setRetryStatuses(statuses);
-                retryPolicy.setRetryExceptions(exceptions);
+                retryPolicy.setInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
+                retryPolicy.setErrorCodes(statuses);
+                retryPolicy.setExceptions(exceptions);
                 return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
             }
         }

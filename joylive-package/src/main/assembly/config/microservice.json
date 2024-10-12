@@ -97,13 +97,16 @@
             "type": "failover",
             "retryPolicy": {
               "retry": 10,
-              "retryInterval": 1000,
+              "interval": 1000,
               "timeout": 5000,
-              "retryStatuses": [
+              "errorCodes": [
                 500,
                 502
               ],
-              "retryExceptions": [
+              "methods": [
+                "GET"
+              ],
+              "exceptions": [
                 "java.lang.NullPointException"
               ],
               "version": 1704038400000
@@ -449,9 +452,9 @@
                     "type": "failover",
                     "retryPolicy": {
                       "retry": 2,
-                      "retryInterval": 1000,
+                      "interval": 1000,
                       "timeout": 5000,
-                      "retryExceptions": [
+                      "exceptions": [
                         "com.jd.live.agent.demo.exception.RetryableException"
                       ],
                       "version": 1704038400000

@@ -84,7 +84,7 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
                         doGenericEcho(attachment);
                         break;
                     default:
-                        doStatus(attachment, (status++ % 20) == 0 ? 200 : 500);
+                        doStatus(attachment, 600);
                         break;
                 }
             } catch (Throwable e) {
