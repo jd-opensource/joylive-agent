@@ -20,7 +20,7 @@ package com.jd.live.agent.bootstrap.exception;
  *
  * @since 1.0.0
  */
-public class RejectException extends LiveException {
+public class RejectException extends LiveException implements Unretryable {
 
     public RejectException() {
         super(null, null, false, false);

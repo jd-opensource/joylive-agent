@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
-import com.jd.live.agent.bootstrap.exception.FaultException;
-import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
+import com.jd.live.agent.bootstrap.exception.Unretryable;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -218,16 +217,15 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * @return {@code true} if the operation should be retried, {@code false} otherwise.
          */
         private RetryType isRetryable(R request, O response, Throwable e, int count) {
-            // TODO limit retryable methods. such as HttpMethod.GET
             if (retryPolicy == null || !retryPolicy.isEnabled()) {
                 return RetryType.NONE;
             } else if (deadline > 0 && System.currentTimeMillis() > deadline) {
                 return RetryType.TIMEOUT;
             } else if (count >= retryPolicy.getRetry()) {
                 return RetryType.EXHAUSTED;
-            } else if (e instanceof RejectException) {
+            } else if (e instanceof Unretryable) {
                 return RetryType.NONE;
-            } else if (e instanceof FaultException) {
+            } else if (!retryPolicy.containsMethod(request.getMethod())) {
                 return RetryType.NONE;
             } else {
                 ErrorCause cause = ErrorCause.cause(e, request.getErrorFunction(), response == null ? null : response.getRetryPredicate());

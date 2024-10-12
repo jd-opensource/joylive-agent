@@ -15,21 +15,8 @@
  */
 package com.jd.live.agent.bootstrap.exception;
 
-import lombok.Getter;
-
 /**
- * FaultException
- *
- * @since 1.4.0
+ * An interface that marks a method or an exception as unretryable.
  */
-@Getter
-public class FaultException extends LiveException implements Unretryable {
-
-    private final Integer code;
-
-    public FaultException(int code, String message) {
-        super(message, null, false, false);
-        this.code = code;
-    }
-
+public interface Unretryable {
 }
