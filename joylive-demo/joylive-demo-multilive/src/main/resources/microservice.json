@@ -35,11 +35,11 @@
               "relationType": "AND",
               "conditions": [
                 {
-                  "type": "header",
+                  "type": "query",
                   "opType": "EQUAL",
-                  "key": "x-live-ext-demo",
-                  "value": [
-                    "abc"
+                  "key": "limiter",
+                  "values": [
+                    "true"
                   ]
                 }
               ]
@@ -159,11 +159,11 @@
               "relationType": "AND",
               "conditions": [
                 {
-                  "type": "header",
+                  "type": "query",
                   "opType": "EQUAL",
-                  "key": "x-live-ext-demo",
-                  "value": [
-                    "abc"
+                  "key": "limiter",
+                  "values": [
+                    "true"
                   ]
                 }
               ]
@@ -181,11 +181,11 @@
               "relationType": "AND",
               "conditions": [
                 {
-                  "type": "header",
+                  "type": "query",
                   "opType": "EQUAL",
-                  "key": "x-live-ext-demo",
-                  "value": [
-                    "abc"
+                  "key": "limiter",
+                  "values": [
+                    "true"
                   ]
                 }
               ]
@@ -194,6 +194,7 @@
           "routePolicies": [
             {
               "name": "route1",
+              "order": 10,
               "tagRules": [
                 {
                   "order": 10,
@@ -224,45 +225,7 @@
                       "conditions": [
                         {
                           "opType": "EQUAL",
-                          "key": "unit",
-                          "values": [
-                            "unit1"
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "order": 5,
-                  "relationType": "OR",
-                  "conditions": [
-                    {
-                      "opType": "EQUAL",
-                      "type": "header",
-                      "key": "x-live-unit",
-                      "values": [
-                        "unit1"
-                      ]
-                    },
-                    {
-                      "opType": "IN",
-                      "type": "header",
-                      "key": "x-live-cell",
-                      "values": [
-                        "cell1",
-                        "cell2"
-                      ]
-                    }
-                  ],
-                  "destinations": [
-                    {
-                      "weight": 100,
-                      "relationType": "AND",
-                      "conditions": [
-                        {
-                          "opType": "EQUAL",
-                          "key": "unit",
+                          "key": "x-live-unit",
                           "values": [
                             "unit1"
                           ]
@@ -275,6 +238,7 @@
             },
             {
               "name": "route2",
+              "order": 5,
               "tagRules": [
                 {
                   "order": 1,
@@ -304,7 +268,7 @@
                       "conditions": [
                         {
                           "opType": "EQUAL",
-                          "key": "unit",
+                          "key": "x-live-unit",
                           "values": [
                             "unit1"
                           ]
