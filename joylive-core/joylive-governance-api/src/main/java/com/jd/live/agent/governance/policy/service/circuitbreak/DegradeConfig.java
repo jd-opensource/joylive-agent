@@ -38,7 +38,7 @@ public class DegradeConfig {
     public static final String TYPE_APPLICATION_JSON = "application/json";
     public static final String TYPE_JSON = "json";
 
-    private int responseCode = 200;
+    private int responseCode;
 
     private String contentType;
 
