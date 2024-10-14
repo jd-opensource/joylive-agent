@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.governance.invoke;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.*;
+import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
+import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
+import com.jd.live.agent.governance.event.TrafficEvent.Direction;
+import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.HttpInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser;
@@ -125,21 +127,6 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
      * @param throwable the exception that caused the failure.
      */
     public void onFailure(Throwable throwable) {
-        if (throwable instanceof RejectUnreadyException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNREADY).requests(1));
-        } else if (throwable instanceof RejectUnitException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNIT_UNAVAILABLE).requests(1));
-        } else if (throwable instanceof RejectCellException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_CELL_UNAVAILABLE).requests(1));
-        } else if (throwable instanceof RejectEscapeException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_ESCAPE).requests(1));
-        } else if (throwable instanceof RejectLimitException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_LIMIT).requests(1));
-        } else if (throwable instanceof RejectPermissionException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_PERMISSION_DENIED).requests(1));
-        } else if (throwable instanceof RejectAuthException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(RejectType.REJECT_UNAUTHORIZED).requests(1));
-        }
         if (listeners != null) {
             listeners.forEach(listener -> listener.onFailure(this, throwable));
         }
