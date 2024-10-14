@@ -64,7 +64,6 @@ public class LoadBalanceFilter implements RouteFilter {
                         if (backend == null) {
                             return null;
                         } else if (invocation.onElect(backend)) {
-                            invocation.onForward(backend);
                             return Collections.singletonList(backend);
                         }
                         backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;
@@ -95,7 +94,6 @@ public class LoadBalanceFilter implements RouteFilter {
                 endpoint = iterator.next();
                 if (id.equals(endpoint.getId())) {
                     if (invocation.onElect(endpoint)) {
-                        invocation.onForward(endpoint);
                         return Collections.singletonList(endpoint);
                     }
                     iterator.remove();

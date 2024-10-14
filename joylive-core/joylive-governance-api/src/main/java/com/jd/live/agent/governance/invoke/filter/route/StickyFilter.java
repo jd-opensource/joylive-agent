@@ -72,7 +72,9 @@ public class StickyFilter implements RouteFilter {
 
         @Override
         public void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
-            invocation.getRequest().setStickyId(endpoint.getId());
+            if (endpoint != null) {
+                invocation.getRequest().setStickyId(endpoint.getId());
+            }
         }
 
     }
