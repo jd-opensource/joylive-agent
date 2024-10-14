@@ -1,5 +1,13 @@
 # Release History
 
+## 1.3.3
+
+1. Fixed the problem that bytecode interceptors did not throw exceptions 
+
+## 1.3.2
+
+1. Fix a Null Pointer Exception (NPE).
+
 ## 1.3.1
 1. Fix the default retry policy from spring gateway request.
 2. Support spring cloud gateway only enable multi-live and lane feature.
