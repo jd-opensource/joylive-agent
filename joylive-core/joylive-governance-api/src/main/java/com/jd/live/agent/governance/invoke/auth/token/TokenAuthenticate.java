@@ -43,7 +43,7 @@ public class TokenAuthenticate implements Authenticate {
                 if (request instanceof HttpRequest) {
                     requestToken = ((HttpRequest) request).getHeader(tokenKey);
                     if (tokenKey.equals(KEY_AUTH)) {
-                        if (requestToken.startsWith(BASIC_PREFIX)) {
+                        if (requestToken != null && requestToken.startsWith(BASIC_PREFIX)) {
                             requestToken = getBasicPassword(requestToken);
                         }
                     }
