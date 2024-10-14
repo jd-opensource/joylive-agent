@@ -227,6 +227,6 @@ agent:
     service: true
     readerInterval: 1000
     exporter:
-      type: logging
-      endpoint: null
+      type: ${CONFIG_COUNTER_EXPORTER_TYPE:logging}
+      endpoint: ${CONFIG_COUNTER_EXPORTER_ENDPOINT:}
       timeout: 5000
