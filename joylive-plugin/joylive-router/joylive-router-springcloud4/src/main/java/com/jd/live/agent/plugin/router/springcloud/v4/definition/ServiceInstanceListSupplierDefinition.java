@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -25,6 +26,8 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ServiceInstanceListSupplierInterceptor;
+
+import java.util.Set;
 
 /**
  * ServiceInstanceListSupplierPluginDefinition
@@ -36,10 +39,10 @@ import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ServiceInstanc
 @Extension(value = "ServiceInstanceListSupplierPluginDefinition_v3")
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
+                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED,
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
                 GovernanceConfig.CONFIG_LANE_ENABLED
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false"),
         @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
@@ -57,6 +60,12 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
+    @Config(GovernanceConfig.CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES)
+    private Set<String> disableDiscovery;
+
+    @Config(GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED)
+    private boolean flowControlEnabled;
+
     public ServiceInstanceListSupplierDefinition() {
         // enhance default method. so isImplementOf is not used.
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_INSTANCE_LIST_SUPPLIER);
@@ -64,7 +73,7 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET).
                                 and(MatcherBuilder.arguments(ARGUMENTS_GET)),
-                        () -> new ServiceInstanceListSupplierInterceptor(context)
+                        () -> new ServiceInstanceListSupplierInterceptor(context, disableDiscovery, flowControlEnabled)
                 )
         };
     }

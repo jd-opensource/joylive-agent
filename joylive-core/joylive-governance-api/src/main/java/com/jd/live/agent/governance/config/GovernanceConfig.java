@@ -88,6 +88,10 @@ public class GovernanceConfig {
 
     public static final String CONFIG_COUNTER_ENABLED = CONFIG_SWITCH_COUNTER + ENABLED;
 
+    public static final String CONFIG_ROUTER = CONFIG_AGENT_GOVERNANCE + ".router";
+    public static final String CONFIG_ROUTER_SPRING = CONFIG_ROUTER + ".spring";
+    public static final String CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES = CONFIG_ROUTER_SPRING + ".discovery.disables";
+
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();
 

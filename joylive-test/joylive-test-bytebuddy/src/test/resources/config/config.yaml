@@ -137,6 +137,9 @@ agent:
       modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:true}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
+      spring:
+        discovery:
+          disables: ${CONFIG_SPRING_DISCOVERY_DISABLES}
       phevos:
         groupExpression: ${unit}-${cell}-${group}
     transmission:

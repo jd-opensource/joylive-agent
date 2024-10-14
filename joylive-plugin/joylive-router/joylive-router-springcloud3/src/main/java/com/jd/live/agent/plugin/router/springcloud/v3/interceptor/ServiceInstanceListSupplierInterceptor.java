@@ -34,12 +34,15 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.Request;
 import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
+import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
+import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -53,13 +56,32 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public ServiceInstanceListSupplierInterceptor(InvocationContext context) {
+    private final Set<String> disableDiscovery;
+
+    private final boolean flowControlEnabled;
+
+    public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery, boolean flowControlEnabled) {
         this.context = context;
+        this.disableDiscovery = disableDiscovery;
+        this.flowControlEnabled = flowControlEnabled;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (LOCK.get() == null) {
+        MethodContext mc = (MethodContext) ctx;
+        ServiceInstanceListSupplier target = (ServiceInstanceListSupplier) ctx.getTarget();
+        if (target instanceof DelegatingServiceInstanceListSupplier
+                && disableDiscovery != null
+                && !disableDiscovery.isEmpty()
+                && disableDiscovery.contains(target.getClass().getName())) {
+            // disable
+            DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
+            Request<?> request = ctx.getArgument(0);
+            Object result = delegating.getDelegate().get(request);
+            mc.setResult(result);
+            mc.setSkip(true);
+        }
+        if (!flowControlEnabled && LOCK.get() == null) {
             // Prevent duplicate calls
             LOCK.set(ctx.getId());
         }
@@ -67,7 +89,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        if (LOCK.get() == ctx.getId()) {
+        if (!flowControlEnabled && LOCK.get() == ctx.getId()) {
             LOCK.remove();
         }
     }
@@ -81,7 +103,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        if (LOCK.get() == ctx.getId()) {
+        if (!flowControlEnabled && LOCK.get() == ctx.getId()) {
             MethodContext mc = (MethodContext) ctx;
             Object[] arguments = ctx.getArguments();
             Object result = mc.getResult();
