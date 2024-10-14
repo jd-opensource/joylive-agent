@@ -129,7 +129,7 @@ public class RejectException extends LiveException implements Unretryable {
     /**
      * RejectEscapeException
      */
-    public static class RejectEscapeException extends RejectUnitException {
+    public static class RejectEscapeException extends RejectException {
 
         public RejectEscapeException() {
         }

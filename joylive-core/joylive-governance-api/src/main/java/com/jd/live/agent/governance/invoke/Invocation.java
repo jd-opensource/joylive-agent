@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.URI;
@@ -246,6 +248,29 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      */
     public void degrade(FaultType type, String reason, DegradeConfig config) {
         request.degrade(type, reason, config);
+    }
+
+    /**
+     * Handles a reject event by publishing a traffic event with the appropriate reject type.
+     *
+     * @param exception the reject exception that occurred.
+     */
+    public void onReject(RejectException exception) {
+        if (exception instanceof RejectUnreadyException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNREADY).requests(1));
+        } else if (exception instanceof RejectUnitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNIT_UNAVAILABLE).requests(1));
+        } else if (exception instanceof RejectCellException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_CELL_UNAVAILABLE).requests(1));
+        } else if (exception instanceof RejectEscapeException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_ESCAPE).requests(1));
+        } else if (exception instanceof RejectLimitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_LIMIT).requests(1));
+        } else if (exception instanceof RejectPermissionException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_PERMISSION_DENIED).requests(1));
+        } else if (exception instanceof RejectAuthException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNAUTHORIZED).requests(1));
+        }
     }
 
     /**

@@ -19,12 +19,12 @@ import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyExcept
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.AppStatus;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -91,7 +91,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             if (t == null) {
                 E endpoint = null;
                 try {
-                    endpoint = context.route(invocation, v, null, false);
+                    endpoint = context.route(invocation, v);
                     E instance = endpoint;
                     onStart(cluster, request, endpoint);
                     context.outbound(cluster, invocation, endpoint).whenComplete((o, r) -> {
