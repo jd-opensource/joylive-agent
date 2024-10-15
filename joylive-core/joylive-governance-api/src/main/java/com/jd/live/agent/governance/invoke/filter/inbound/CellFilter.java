@@ -34,14 +34,14 @@ import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_ESCAP
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_ACCESSIBLE;
 
 /**
- * CellInboundFilter
+ * CellFilter
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "CellInboundFilter", order = InboundFilter.ORDER_LIVE_CELL)
+@Extension(value = "CellFilter", order = InboundFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class CellInboundFilter implements InboundFilter {
+public class CellFilter implements InboundFilter {
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {

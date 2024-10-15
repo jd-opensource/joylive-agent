@@ -35,12 +35,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * RateLimitInboundFilter
+ * RateLimitFilter
  */
 @Injectable
-@Extension(value = "LimitInboundFilter", order = InboundFilter.ORDER_LIMITER)
+@Extension(value = "RateLimitFilter", order = InboundFilter.ORDER_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class RateLimitInboundFilter implements InboundFilter, ExtensionInitializer {
+public class RateLimitFilter implements InboundFilter, ExtensionInitializer {
 
     @Inject
     private Map<String, RateLimiterFactory> factories;

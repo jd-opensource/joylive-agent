@@ -48,15 +48,15 @@ import java.util.function.Predicate;
 import static com.jd.live.agent.governance.invoke.Invocation.*;
 
 /**
- * UnitRouteFilter is a filter that routes requests to specific instances based on unit rules and policies.
+ * UnitFilter is a filter that routes requests to specific instances based on unit rules and policies.
  * It takes into account the live space, service policy, and unit rules to determine the best route for each request.
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "UnitRouteFilter", order = RouteFilter.ORDER_LIVE_UNIT)
+@Extension(value = "UnitFilter", order = RouteFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class UnitRouteFilter implements RouteFilter {
+public class UnitFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {

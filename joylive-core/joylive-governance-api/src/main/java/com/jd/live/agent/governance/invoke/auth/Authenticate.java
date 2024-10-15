@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.invoke.auth;
 import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
  * An interface for authenticating users based on a given policy.
@@ -37,6 +38,16 @@ public interface Authenticate {
      * @return the result of the authentication attempt
      */
     AuthResult authenticate(ServiceRequest request, AuthPolicy policy);
+
+    /**
+     * Injects the given authentication policy into the outbound request.
+     *
+     * @param request the service request to inject the policy into
+     * @param policy  the authentication policy to inject
+     */
+    default void inject(OutboundRequest request, AuthPolicy policy) {
+
+    }
 }
 
 

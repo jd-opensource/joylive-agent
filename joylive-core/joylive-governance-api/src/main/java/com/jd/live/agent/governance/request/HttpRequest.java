@@ -87,8 +87,20 @@ public interface HttpRequest extends ServiceRequest {
      * @return A list of values for the specified header, or null if the header does not exist.
      */
     default List<String> getHeaders(String key) {
-        Map<String, List<String>> result = getHeaders();
-        return result == null || key == null ? null : result.get(key);
+        if (key == null || key.isEmpty()) {
+            return null;
+        }
+        Map<String, List<String>> headers = getHeaders();
+        if (headers == null || headers.isEmpty()) {
+            return null;
+        }
+        String lowerCase = key.toLowerCase();
+        if (lowerCase.equals(key)) {
+            return headers.get(lowerCase);
+        } else {
+            List<String> result = headers.get(lowerCase);
+            return result != null ? result : headers.get(key);
+        }
     }
 
     /**

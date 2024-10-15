@@ -46,14 +46,14 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 /**
- * CellRouteFilter filter cell instances
+ * CellFilter filter cell instances
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "CellRouteFilter", order = RouteFilter.ORDER_LIVE_CELL)
+@Extension(value = "CellFilter", order = RouteFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class CellRouteFilter implements RouteFilter {
+public class CellFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {

@@ -1,3 +1,4 @@
 com.jd.live.agent.governance.invoke.filter.outbound.CounterFilter
 com.jd.live.agent.governance.invoke.filter.outbound.FaultInjectionFilter
+com.jd.live.agent.governance.invoke.filter.outbound.AuthFilter
 com.jd.live.agent.governance.invoke.filter.outbound.InvokeFilter

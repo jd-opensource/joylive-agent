@@ -35,14 +35,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ConcurrencyLimitInboundFilter
+ * ConcurrencyLimitFilter
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ConcurrencyLimitInboundFilter", order = InboundFilter.ORDER_LIMITER)
+@Extension(value = "ConcurrencyLimitFilter", order = InboundFilter.ORDER_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class ConcurrencyLimitInboundFilter implements InboundFilter, ExtensionInitializer {
+public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializer {
 
     @Inject
     private Map<String, ConcurrencyLimiterFactory> factories;
