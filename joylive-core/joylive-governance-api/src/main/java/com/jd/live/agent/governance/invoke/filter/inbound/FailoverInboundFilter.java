@@ -32,7 +32,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "FailoverInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_FAILOVER)
+@Extension(value = "FailoverInboundFilter", order = InboundFilter.ORDER_LIVE_FAILOVER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class FailoverInboundFilter implements InboundFilter {
 

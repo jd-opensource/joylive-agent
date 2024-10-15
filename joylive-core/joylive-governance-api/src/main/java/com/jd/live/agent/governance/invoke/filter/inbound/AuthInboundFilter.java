@@ -38,7 +38,7 @@ import java.util.Map;
  * @since 1.2.0
  */
 @Injectable
-@Extension(value = "AuthInboundFilter", order = InboundFilter.ORDER_INBOUND_AUTH)
+@Extension(value = "AuthInboundFilter", order = InboundFilter.ORDER_AUTH)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class AuthInboundFilter implements InboundFilter {
 

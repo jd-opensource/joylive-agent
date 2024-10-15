@@ -13,43 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.filter.inbound;
+package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.invoke.InboundInvocation;
-import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
+import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.filter.RouteFilter;
+import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
-import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
+import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
- * ReadyInboundFilter
+ * A route filter that checks if the service instance is ready before allowing outbound requests.
+ *
+ * @see GovernanceConfig
+ * @see Application
  */
-@Injectable
-@Extension(value = "ReadyInboundFilter", order = InboundFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED,
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true, relation = ConditionalRelation.OR)
-public class ReadyInboundFilter implements InboundFilter {
+@Injectable
+@Extension(value = "ReadyFilter", order = RouteFilter.ORDER_READY)
+public class ReadyFilter implements RouteFilter {
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
-        if (!application.getStatus().inbound()) {
-            invocation.reject(FaultType.UNREADY, "Service instance is not ready,"
-                    + " service=" + application.getService().getName()
-                    + " address=" + Ipv4.getLocalIp());
+    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+        AppStatus status = application.getStatus();
+        if (!status.outbound()) {
+            invocation.reject(FaultType.UNREADY, status.getMessage());
         }
         chain.filter(invocation);
     }

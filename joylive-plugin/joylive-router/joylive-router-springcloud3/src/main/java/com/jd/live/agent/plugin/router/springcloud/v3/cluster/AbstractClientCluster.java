@@ -29,6 +29,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.SpringClusterReque
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.CompletionContext;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
+import org.springframework.cloud.client.loadbalancer.EmptyResponse;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpHeaders;
@@ -128,6 +129,13 @@ public abstract class AbstractClientCluster<
     @Override
     public void onStart(R request) {
         request.lifecycles(l -> l.onStart(request.getLbRequest()));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onDiscard(R request) {
+        request.lifecycles(l -> l.onComplete(new CompletionContext<>(
+                CompletionContext.Status.DISCARD, request.getLbRequest(), new EmptyResponse())));
     }
 
     @SuppressWarnings("unchecked")
