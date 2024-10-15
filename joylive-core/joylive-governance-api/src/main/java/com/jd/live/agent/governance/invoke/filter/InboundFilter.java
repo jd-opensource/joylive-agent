@@ -40,37 +40,37 @@ public interface InboundFilter {
     /**
      * Execution order for the ready filter
      */
-    int ORDER_INBOUND_READY = 0;
+    int ORDER_READY = 0;
 
     /**
      * Execution order for the request auth filter
      */
-    int ORDER_INBOUND_AUTH = ORDER_INBOUND_READY + 1;
+    int ORDER_AUTH = ORDER_READY + 100;
 
     /**
      * Execution order for the request permission filter
      */
-    int ORDER_INBOUND_PERMISSION = ORDER_INBOUND_AUTH + 1;
+    int ORDER_PERMISSION = ORDER_AUTH + 100;
 
     /**
      * Execution order for the request limiter filter
      */
-    int ORDER_INBOUND_LIMITER = ORDER_INBOUND_PERMISSION + 1;
+    int ORDER_LIMITER = ORDER_PERMISSION + 100;
 
     /**
      * Execution order for the live unit filter
      */
-    int ORDER_INBOUND_LIVE_UNIT = ORDER_INBOUND_READY + 1;
+    int ORDER_LIVE_UNIT = ORDER_READY + 100;
 
     /**
      * Execution order for the live cell filter
      */
-    int ORDER_INBOUND_LIVE_CELL = ORDER_INBOUND_LIVE_UNIT + 1;
+    int ORDER_LIVE_CELL = ORDER_LIVE_UNIT + 100;
 
     /**
      * Execution order for the live failover filter
      */
-    int ORDER_INBOUND_LIVE_FAILOVER = ORDER_INBOUND_LIVE_CELL + 1;
+    int ORDER_LIVE_FAILOVER = ORDER_LIVE_CELL + 100;
 
     /**
      * Filters an inbound request.

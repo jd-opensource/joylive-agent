@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
+import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.OutboundThrower;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -178,6 +178,15 @@ public interface LiveCluster<R extends OutboundRequest,
      * @param request the request object that is about to be processed
      */
     default void onStart(R request) {
+
+    }
+
+    /**
+     * A default method that is called when a request is discarded.
+     *
+     * @param request the request that was discarded
+     */
+    default void onDiscard(R request) {
 
     }
 

@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
+import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -71,14 +70,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             E extends Endpoint> CompletionStage<O> invoke(LiveCluster<R, O, E> cluster, OutboundInvocation<R> invocation, int counter) {
         CompletableFuture<O> result = new CompletableFuture<>();
         InvocationContext context = invocation.getContext();
-        AppStatus appStatus = context.getAppStatus();
-        if (!appStatus.outbound()) {
-            Throwable exception = cluster.createException(new RejectUnreadyException(appStatus.getMessage()), invocation.getRequest());
-            if (exception != null) {
-                result.completeExceptionally(exception);
-                return result;
-            }
-        }
         R request = invocation.getRequest();
         List<? extends Endpoint> instances = invocation.getInstances();
         if (counter > 0) {
@@ -93,7 +84,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                 try {
                     endpoint = context.route(invocation, v);
                     E instance = endpoint;
-                    onStart(cluster, request, endpoint);
+                    onStartRequest(cluster, request, endpoint);
                     context.outbound(cluster, invocation, endpoint).whenComplete((o, r) -> {
                         if (r != null) {
                             onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
@@ -126,7 +117,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
      */
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> void onStart(LiveCluster<R, O, E> cluster, R request, E instance) {
+            E extends Endpoint> void onStartRequest(LiveCluster<R, O, E> cluster, R request, E instance) {
         cluster.onStartRequest(request, instance);
     }
 
@@ -186,16 +177,22 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                                                   ServiceError error,
                                                   E endpoint,
                                                   CompletableFuture<O> result) {
+
         R request = invocation.getRequest();
-        response = response != null && error.isServerError() ? response : cluster.createResponse(error.getThrowable(), request, endpoint);
+        Throwable cause = error.getThrowable();
+        boolean serverError = error.isServerError();
+        response = response != null && serverError ? response : cluster.createResponse(cause, request, endpoint);
         try {
-            invocation.onFailure(endpoint, error.getThrowable());
-            // avoid the live exception class is not recognized in application classloader
+            invocation.onFailure(endpoint, cause);
             error = response.getError();
             if (error == null) {
-                // maybe degrade
+                // Request was handled successfully by degrade
                 cluster.onSuccess(response, request, endpoint);
+            } else if (cause instanceof LiveException) {
+                // Request did not go off box
+                cluster.onDiscard(request);
             } else {
+                // Request reached the server but failed
                 cluster.onError(error.getThrowable(), request, endpoint);
             }
         } catch (Throwable e) {

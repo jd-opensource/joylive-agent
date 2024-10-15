@@ -40,7 +40,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ConcurrencyLimitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIMITER)
+@Extension(value = "ConcurrencyLimitInboundFilter", order = InboundFilter.ORDER_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class ConcurrencyLimitInboundFilter implements InboundFilter, ExtensionInitializer {
 

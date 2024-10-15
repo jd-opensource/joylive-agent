@@ -39,7 +39,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "UnitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_UNIT)
+@Extension(value = "UnitInboundFilter", order = InboundFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class UnitInboundFilter implements InboundFilter {
 

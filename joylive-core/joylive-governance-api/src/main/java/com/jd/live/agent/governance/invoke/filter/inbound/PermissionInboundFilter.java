@@ -36,7 +36,7 @@ import java.util.List;
  * @since 1.2.0
  */
 @Injectable
-@Extension(value = "PermissionInboundFilter", order = InboundFilter.ORDER_INBOUND_PERMISSION)
+@Extension(value = "PermissionInboundFilter", order = InboundFilter.ORDER_PERMISSION)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class PermissionInboundFilter implements InboundFilter {
 

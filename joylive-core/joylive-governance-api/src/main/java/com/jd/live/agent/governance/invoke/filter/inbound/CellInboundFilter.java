@@ -39,7 +39,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_A
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "CellInboundFilter", order = InboundFilter.ORDER_INBOUND_LIVE_CELL)
+@Extension(value = "CellInboundFilter", order = InboundFilter.ORDER_LIVE_CELL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class CellInboundFilter implements InboundFilter {
 

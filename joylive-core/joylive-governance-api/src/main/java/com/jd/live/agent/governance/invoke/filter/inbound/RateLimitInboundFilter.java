@@ -38,7 +38,7 @@ import java.util.Map;
  * RateLimitInboundFilter
  */
 @Injectable
-@Extension(value = "LimitInboundFilter", order = InboundFilter.ORDER_INBOUND_LIMITER)
+@Extension(value = "LimitInboundFilter", order = InboundFilter.ORDER_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class RateLimitInboundFilter implements InboundFilter, ExtensionInitializer {
 
