@@ -34,14 +34,14 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import static com.jd.live.agent.governance.invoke.Invocation.*;
 
 /**
- * UnitInboundFilter
+ * UnitInFilter
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "UnitInboundFilter", order = InboundFilter.ORDER_LIVE_UNIT)
+@Extension(value = "UnitInFilter", order = InboundFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class UnitInboundFilter implements InboundFilter {
+public class UnitInFilter implements InboundFilter {
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {

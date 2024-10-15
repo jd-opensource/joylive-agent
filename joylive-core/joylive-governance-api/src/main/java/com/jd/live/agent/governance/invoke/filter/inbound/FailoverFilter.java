@@ -27,14 +27,14 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 /**
- * FailoverInboundFilter
+ * FailoverFilter
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-@Extension(value = "FailoverInboundFilter", order = InboundFilter.ORDER_LIVE_FAILOVER)
+@Extension(value = "FailoverFilter", order = InboundFilter.ORDER_LIVE_FAILOVER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class FailoverInboundFilter implements InboundFilter {
+public class FailoverFilter implements InboundFilter {
 
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {

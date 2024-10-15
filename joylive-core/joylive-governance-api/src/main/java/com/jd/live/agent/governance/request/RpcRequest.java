@@ -44,6 +44,11 @@ public interface RpcRequest extends ServiceRequest {
         return arguments == null || index < 0 || index >= arguments.length ? null : arguments[index];
     }
 
+    @Override
+    default String getHeader(String key) {
+        return (String) getAttachment(key);
+    }
+
     /**
      * Retrieves an attachment by its key.
      *

@@ -30,16 +30,16 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 /**
- * ReadyInboundFilter
+ * ReadyFilter
  */
 @Injectable
-@Extension(value = "ReadyInboundFilter", order = InboundFilter.ORDER_LIVE_UNIT)
+@Extension(value = "ReadyFilter", order = InboundFilter.ORDER_LIVE_UNIT)
 @ConditionalOnProperty(name = {
         GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED,
         GovernanceConfig.CONFIG_LIVE_ENABLED,
         GovernanceConfig.CONFIG_LANE_ENABLED
 }, matchIfMissing = true, relation = ConditionalRelation.OR)
-public class ReadyInboundFilter implements InboundFilter {
+public class ReadyFilter implements InboundFilter {
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;

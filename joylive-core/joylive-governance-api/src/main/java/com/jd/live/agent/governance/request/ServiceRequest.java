@@ -64,6 +64,14 @@ public interface ServiceRequest extends Request {
     String getPath();
 
     /**
+     * Returns the values of a specific header.
+     *
+     * @param key The name of the header.
+     * @return A list of values for the specified header, or null if the header does not exist.
+     */
+    String getHeader(String key);
+
+    /**
      * Returns the start time.
      *
      * @return the start time in milliseconds since the epoch (January 1, 1970, 00:00:00 GMT).
