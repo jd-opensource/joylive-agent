@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.springcloud.v4.request;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
+import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import feign.Request;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
@@ -25,7 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMapAdapter;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
 
 /**
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractClusterRequest}
@@ -56,7 +58,7 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         this.options = options;
         this.uri = URI.create(request.url());
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.requestTemplate().queryLine()));
-        this.headers = new UnsafeLazyObject<>(() -> parseHeaders(request));
+        this.headers = new UnsafeLazyObject<>(() -> new MultiLinkedMap<>(request.headers(), CaseInsensitiveLinkedMap::new));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.headers().get(HttpHeaders.COOKIE)));
     }
 
@@ -83,19 +85,4 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         return options;
     }
 
-    /**
-     * Parses the headers from the Feign request into a map.
-     *
-     * @param request the Feign request
-     * @return a map of header names to lists of header values
-     */
-    private Map<String, List<String>> parseHeaders(Request request) {
-        Map<String, List<String>> headers = new HashMap<>();
-        Collection<String> value;
-        for (Map.Entry<String, Collection<String>> entry : request.headers().entrySet()) {
-            value = entry.getValue();
-            headers.put(entry.getKey(), value instanceof List ? (List<String>) value : new ArrayList<>(value));
-        }
-        return headers;
-    }
 }

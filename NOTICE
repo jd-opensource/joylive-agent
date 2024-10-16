@@ -10,10 +10,11 @@ Please visit this web site for more information of this project:
 The Apache Software License, Version 2.0.
 ================================================================
 
-This software includes code from Spring boot:
+This software includes code from Spring projects:
 
 Please visit this web site for more information of this project:
   * https://github.com/spring-projects/spring-boot
+  * https://github.com/spring-projects/spring-framework
 ================================================================
 
 This software includes code from AhoCorasickDoubleArrayTrie:
