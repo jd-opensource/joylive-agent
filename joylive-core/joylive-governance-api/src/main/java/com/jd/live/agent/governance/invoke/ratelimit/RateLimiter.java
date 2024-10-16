@@ -26,8 +26,6 @@ import java.util.concurrent.TimeUnit;
  */
 public interface RateLimiter {
 
-    String MAX_BURST_SECONDS = "maxBurstSeconds";
-
     /**
      * Try to get a permit return the result
      *

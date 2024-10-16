@@ -74,7 +74,7 @@ public interface LimitPolicy extends ConditionalMatcher<TagCondition>, Serializa
      *
      * @return a map of action parameters, where each key is the parameter name and each value is the parameter value.
      */
-    Map<String, String> getActionParameters();
+    Map<String, String> getParameters();
 
 }
 

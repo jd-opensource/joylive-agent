@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.limit;
 
+import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.rule.RelationType;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
@@ -72,7 +73,8 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
     /**
      * A map of parameters that further customize the action of the limiting strategy.
      */
-    private Map<String, String> actionParameters;
+    @JsonAlias("actionParameters")
+    private Map<String, String> parameters;
 
     /**
      * The version of the limiting policy.
@@ -147,8 +149,8 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
         if (realizeType == null) {
             realizeType = source.realizeType;
         }
-        if (actionParameters == null) {
-            actionParameters = source.actionParameters;
+        if (parameters == null) {
+            parameters = source.parameters;
         }
         if (version <= 0) {
             version = source.version;
