@@ -7,7 +7,9 @@ Quick Start
 
 ##### 1.1.1 Download the Binary Package
 
-Download the latest binary package from the [Release](https://github.com/jd-opensource/joylive-agent/releases) page.
+- Download the latest binary package from the [Release](https://github.com/jd-opensource/joylive-agent/releases) page (zip or tar.gz)
+- Download the latest binary package from the [Maven-1](https://mvnrepository.com/artifact/com.jd.live/joylive-package) or [Maven-2](https://search.maven.org/search?q=g:com.jd.live%20AND%20a:joylive-package) (zip or tar.gz)
+
 
 ##### 1.1.2 Manual Compilation
 
@@ -20,15 +22,15 @@ Download the latest binary package from the [Release](https://github.com/jd-open
 
 ### 1.2 Obtain the Demo Program
 
-Compile `joylive-agent` and obtain the binary packages of various projects under `joylive-demo/joylive-demo-springcloud3`.
+Compile `joylive-agent` and obtain the binary packages of various projects under `joylive-demo/joylive-demo-springcloud2021`.
 
 - Gateway
 
-  `joylive-demo-springcloud3-gateway` Spring Cloud Gateway demo
+  `joylive-demo-springcloud2021-gateway` Spring Cloud Gateway demo
 
 - Application
 
-  `joylive-demo-springcloud3-provider` Spring Cloud application demo
+  `joylive-demo-springcloud2021-provider` Spring Cloud application demo
 
 ### 1.3 Modify the Configuration
 
