@@ -11,6 +11,10 @@
 
     <artifactId>joylive-service-nacos</artifactId>
 
+    <properties>
+        <nacos.version>2.4.2</nacos.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -19,6 +23,24 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <version>${nacos.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-common</artifactId>
+            <version>${nacos.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-api</artifactId>
+            <version>${nacos.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

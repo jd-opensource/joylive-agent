@@ -20,7 +20,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * LiveSyncConfig
+ * NacosSyncConfig
  *
  * @since 1.0.0
  */
@@ -28,5 +28,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NacosSyncConfig extends SyncConfig {
+
+
 
 }
