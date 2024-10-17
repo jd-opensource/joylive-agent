@@ -13,10 +13,11 @@
  */
 package com.jd.live.agent.governance.invoke.ratelimit.leakybucket;
 
-import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothTokenBucketLimiter;
+import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.TokenBucketLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @since 1.4.0
  */
-public class LeakyBucketLimiter extends SmoothTokenBucketLimiter {
+public class LeakyBucketLimiter extends TokenBucketLimiter {
 
     private static final String KEY_CAPACITY = "capacity";
 
@@ -38,8 +39,13 @@ public class LeakyBucketLimiter extends SmoothTokenBucketLimiter {
     }
 
     @Override
-    protected boolean isAvailable(long nowMicros, long timeoutMicros) {
-        return super.isAvailable(nowMicros, timeoutMicros) && (capacity <= 0 || requests.get() < capacity);
+    protected double getMaxPermits() {
+        return TimeUnit.SECONDS.toMicros(1L) / stableIntervalMicros;
+    }
+
+    @Override
+    protected boolean isTimeout(long nowMicros, long timeoutMicros) {
+        return super.isTimeout(nowMicros, timeoutMicros) || (capacity > 0 && requests.get() >= capacity);
     }
 
     @Override

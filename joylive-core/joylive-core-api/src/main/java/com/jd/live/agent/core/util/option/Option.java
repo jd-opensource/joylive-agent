@@ -261,4 +261,13 @@ public interface Option extends ValueSupplier {
      */
     Byte getPositive(String key, Byte def);
 
+    /**
+     * Retrieves the byte positive integer value for a specified parameter with a default value.
+     *
+     * @param key The name of the parameter.
+     * @param def The default value to return if the parameter value is not found.
+     * @return The byte positive integer value of the parameter or the default value if the parameter is not found.
+     */
+    Double getPositive(String key, Double def);
+
 }

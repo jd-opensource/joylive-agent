@@ -163,4 +163,8 @@ public abstract class AbstractOption implements Option {
         return Converts.getPositive(getString(key), def);
     }
 
+    @Override
+    public Double getPositive(final String key, Double def) {
+        return Converts.getPositive(getString(key), def);
+    }
 }

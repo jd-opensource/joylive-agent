@@ -23,48 +23,45 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
- * SmoothTokenBucketLimiter
+ * TokenBucketLimiter
  * <p>
- * Source code implementation borrows from Guava's com.google.common.util.concurrent.RateLimiter
+ * Source code implementation borrows from Guava's com.google.common.util.concurrent.SmoothRateLimiter.SmoothBursty
  * </p>
  *
  * @since 1.0.0
  */
-public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
+public abstract class TokenBucketLimiter extends AbstractRateLimiter {
 
-    private final static String KEY_MAX_BURST_SECONDS = "maxBurstSeconds";
+    private static final int DEFAULT_SECOND_PERMITS = 1000;
 
     protected final SleepingStopwatch stopwatch;
 
     /**
      * The maximum number of stored permits.
      */
-    protected final double maxPermits;
-
+    protected double maxPermits;
     /**
      * The interval between two unit requests, at our stable rate. E.g., a stable rate of 5 permits
      * per second has a stable interval of 200ms.
      */
-    protected final double stableIntervalMicros;
+    protected double stableIntervalMicros;
 
     protected long nextFreeTicketMicros;
 
-    protected volatile Object mutexDoNotUseDirectly;
+    protected volatile Object mutex;
 
     /**
      * The currently stored permits.
      */
     private double storedPermits;
 
-    public SmoothTokenBucketLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
+    public TokenBucketLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
         super(limitPolicy);
-        int maxBurstSeconds = option.getInteger(KEY_MAX_BURST_SECONDS, 5);
-        double secondPermits = slidingWindow.getSecondPermits();
         this.stopwatch = SleepingStopwatch.createFromSystemTimer();
-        this.stableIntervalMicros = secondPermits <= 0 ? 100 : TimeUnit.SECONDS.toMicros(1L) / secondPermits;
-        this.maxPermits = maxBurstSeconds * secondPermits;
-        this.nextFreeTicketMicros = stopwatch.readMicros();
-        this.storedPermits = 0.0;
+        double secondPermits = slidingWindow.getSecondPermits();
+        this.stableIntervalMicros = secondPermits <= 0 ? DEFAULT_SECOND_PERMITS : TimeUnit.SECONDS.toMicros(1L) / secondPermits;
+        initialize();
+        update(stopwatch.readMicros());
     }
 
     @Override
@@ -80,17 +77,46 @@ public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
     @Override
     public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
         if (permits <= 0) {
-            return false;
+            throw new IllegalArgumentException("Permits must be greater than 0");
         }
         long timeoutMicros = timeUnit.toMicros(timeout < 0 ? 0 : timeout);
         long nowMicros = stopwatch.readMicros();
+        if (isTimeout(nowMicros, timeoutMicros)) {
+            return false;
+        }
         synchronized (mutex()) {
-            if (!isAvailable(nowMicros, timeoutMicros)) {
+            // double check in lock
+            if (isTimeout(nowMicros, timeoutMicros)) {
                 return false;
             }
             doAcquire(permits, nowMicros);
         }
         return true;
+    }
+
+    /**
+     * Initializes the rate limiter by setting the maximum number of permits.
+     */
+    protected void initialize() {
+        this.maxPermits = getMaxPermits();
+    }
+
+    /**
+     * Calculates and returns the maximum number of permits that can be accumulated.
+     *
+     * @return the maximum number of permits
+     */
+    protected abstract double getMaxPermits();
+
+    /**
+     * Checks if the current time is before the timeout time for acquiring a free ticket.
+     *
+     * @param nowMicros     the current time in microseconds
+     * @param timeoutMicros the timeout time in microseconds
+     * @return true if the current time is before the timeout time, false otherwise
+     */
+    protected boolean isTimeout(long nowMicros, long timeoutMicros) {
+        return nextFreeTicketMicros > nowMicros + timeoutMicros;
     }
 
     /**
@@ -102,17 +128,6 @@ public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
     protected void doAcquire(int permits, long nowMicros) {
         // always pay in advance
         stopwatch.sleepMicrosUninterruptibly(waitFor(permits, nowMicros));
-    }
-
-    /**
-     * Checks if the current time is before the timeout time for acquiring a free ticket.
-     *
-     * @param nowMicros     the current time in microseconds
-     * @param timeoutMicros the timeout time in microseconds
-     * @return true if the current time is before the timeout time, false otherwise
-     */
-    protected boolean isAvailable(long nowMicros, long timeoutMicros) {
-        return nextFreeTicketMicros - timeoutMicros <= nowMicros;
     }
 
     /**
@@ -137,14 +152,32 @@ public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
     protected long waitForEarliestAvailable(long permits, long nowMicros) {
         update(nowMicros);
         long returnValue = nextFreeTicketMicros;
-        double available = min(permits, storedPermits);
 
+        double available = min(permits, storedPermits);
         double lack = permits - available;
-        long waitMicros = (long) (lack * stableIntervalMicros);
+        long waitMicros = waitForStoredPermits(storedPermits, available) + (long) (lack * stableIntervalMicros);
 
         nextFreeTicketMicros = saturatedAdd(nextFreeTicketMicros, waitMicros);
         storedPermits -= available;
         return returnValue;
+    }
+
+    /**
+     * Waits for the specified number of stored permits to become available.
+     *
+     * @param storedPermits the current number of stored permits
+     * @param permitsToTake the number of permits to wait for
+     * @return the time waited in microseconds
+     */
+    protected long waitForStoredPermits(double storedPermits, double permitsToTake) {
+        return 0L;
+    }
+
+    /**
+     * Returns the number of microseconds during cool down that we have to wait to get a new permit.
+     */
+    protected double coolDownIntervalMicros() {
+        return stableIntervalMicros;
     }
 
     /**
@@ -153,9 +186,9 @@ public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
      * @param nowMicros the current time in microseconds
      */
     protected void update(long nowMicros) {
-        // if nextFreeTicket is in the past, reSync to now
         if (nowMicros > nextFreeTicketMicros) {
-            double newPermits = (nowMicros - nextFreeTicketMicros) / stableIntervalMicros;
+            // if nextFreeTicket is in the past.
+            double newPermits = (nowMicros - nextFreeTicketMicros) / coolDownIntervalMicros();
             storedPermits = min(maxPermits, storedPermits + newPermits);
             nextFreeTicketMicros = nowMicros;
         }
@@ -167,12 +200,12 @@ public class SmoothTokenBucketLimiter extends AbstractRateLimiter {
      * @return the mutex object
      */
     private Object mutex() {
-        Object mutex = mutexDoNotUseDirectly;
+        Object mutex = this.mutex;
         if (mutex == null) {
             synchronized (this) {
-                mutex = mutexDoNotUseDirectly;
+                mutex = this.mutex;
                 if (mutex == null) {
-                    mutexDoNotUseDirectly = mutex = new Object();
+                    this.mutex = mutex = new Object();
                 }
             }
         }

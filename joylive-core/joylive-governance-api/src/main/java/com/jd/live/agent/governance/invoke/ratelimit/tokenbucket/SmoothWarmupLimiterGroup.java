@@ -15,30 +15,24 @@
  */
 package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 
-import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterFactory;
+import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterGroup;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
-import java.util.List;
-
 /**
- * SmoothTokenBucketLimiterFactory
+ * SmoothWarmupLimiterGroup
  *
- * @since 1.0.0
+ * @since 1.4.0
  */
-@Injectable
-@Extension(value = "TokenBucket")
-public class SmoothTokenBucketLimiterFactory extends AbstractRateLimiterFactory {
+public class SmoothWarmupLimiterGroup extends AbstractRateLimiterGroup {
+
+    public SmoothWarmupLimiterGroup(RateLimitPolicy policy) {
+        super(policy);
+    }
 
     @Override
-    protected RateLimiter create(RateLimitPolicy policy) {
-        List<SlidingWindow> windows = policy.getSlidingWindows();
-        if (windows.size() == 1) {
-            return new SmoothTokenBucketLimiter(policy, windows.get(0));
-        }
-        return new SmoothTokenBucketLimiterGroup(policy);
+    protected RateLimiter create(SlidingWindow window, String name) {
+        return new SmoothWarmupLimiter(policy, window);
     }
 }

@@ -1,2 +1,3 @@
-com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothTokenBucketLimiterFactory
+com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothBurstyLimiterFactory
+com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothWarmupLimiterFactory
 com.jd.live.agent.governance.invoke.ratelimit.leakybucket.LeakyBucketLimiterFactory

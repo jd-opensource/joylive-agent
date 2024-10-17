@@ -503,4 +503,16 @@ public abstract class Converts {
         return result == null || result <= 0 ? def : result;
     }
 
+    /**
+     * Retrieves the byte value representing a positive number from the given object, with a default value.
+     *
+     * @param value The object from which to retrieve the byte value.
+     * @param def   The default value to return if the object does not represent a positive number.
+     * @return The positive byte value of the object, or the default value if the object is not a positive number.
+     */
+    public static Double getPositive(final Object value, final Double def) {
+        Double result = getDouble(value, null);
+        return result == null || result <= 0 ? def : result;
+    }
+
 }
