@@ -16,12 +16,9 @@
 package com.jd.live.agent.governance.invoke.matcher.header;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
-import com.jd.live.agent.governance.request.HttpRequest;
-import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.request.RpcRequest;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
@@ -36,16 +33,7 @@ import java.util.List;
 public class HeaderTagMatcher extends AbstractTagMatcher {
 
     @Override
-    protected List<String> getValues(TagCondition condition, Request request) {
-        List<String> values = null;
-        if (request instanceof HttpRequest) {
-            values = ((HttpRequest) request).getHeaders(condition.getKey());
-        } else if (request instanceof RpcRequest) {
-            Object value = ((RpcRequest) request).getAttachment(condition.getKey());
-            if (value instanceof String) {
-                values = Label.parseValue((String) value);
-            }
-        }
-        return values;
+    protected List<String> getValues(TagCondition condition, ServiceRequest request) {
+        return request.getHeaders(condition.getKey());
     }
 }

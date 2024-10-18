@@ -80,23 +80,13 @@ public interface HttpRequest extends ServiceRequest {
      */
     Map<String, List<String>> getHeaders();
 
-    /**
-     * Returns the values of a specific header.
-     *
-     * @param key The name of the header.
-     * @return A list of values for the specified header, or null if the header does not exist.
-     */
+    @Override
     default List<String> getHeaders(String key) {
         Map<String, List<String>> result = getHeaders();
         return result == null || key == null ? null : result.get(key);
     }
 
-    /**
-     * Returns the first value of a specific header.
-     *
-     * @param key The name of the header.
-     * @return The first value of the specified header, or null if the header does not exist or has no values.
-     */
+    @Override
     default String getHeader(String key) {
         List<String> headers = getHeaders(key);
         return headers == null || headers.isEmpty() ? null : headers.get(0);
@@ -109,23 +99,13 @@ public interface HttpRequest extends ServiceRequest {
      */
     Map<String, List<String>> getQueries();
 
-    /**
-     * Returns the values of a specific query.
-     *
-     * @param key The name of the query.
-     * @return A list of values for the specified query, or null if the query does not exist.
-     */
+    @Override
     default List<String> getQueries(String key) {
         Map<String, List<String>> result = getQueries();
         return result == null || key == null ? null : result.get(key);
     }
 
-    /**
-     * Returns the value of a specific query parameter.
-     *
-     * @param key The name of the query parameter.
-     * @return The value of the specified query parameter, or null if it does not exist.
-     */
+    @Override
     default String getQuery(String key) {
         List<String> queries = getQueries(key);
         return queries == null || queries.isEmpty() ? null : queries.get(0);
@@ -138,28 +118,17 @@ public interface HttpRequest extends ServiceRequest {
      */
     Map<String, List<String>> getCookies();
 
-    /**
-     * Returns the values of a specific cookie.
-     *
-     * @param key The name of the header.
-     * @return A list of values for the specified cookie, or null if the cookie does not exist.
-     */
+    @Override
     default List<String> getCookies(String key) {
         Map<String, List<String>> result = getCookies();
         return result == null || key == null ? null : result.get(key);
     }
 
-    /**
-     * Returns the value of a specific cookie.
-     *
-     * @param key The name of the cookie.
-     * @return The value of the specified cookie, or null if it does not exist.
-     */
+    @Override
     default String getCookie(String key) {
         List<String> cookies = getCookies(key);
         return cookies == null || cookies.isEmpty() ? null : cookies.get(0);
     }
-
 
     /**
      * Defines an interface for inbound HTTP requests.

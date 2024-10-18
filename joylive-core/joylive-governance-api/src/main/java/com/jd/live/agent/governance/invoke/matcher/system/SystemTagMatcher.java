@@ -19,12 +19,15 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A system tag matcher that matches tags based on system-defined criteria.
+ */
 @Injectable
 @Extension(value = "system")
 public class SystemTagMatcher extends AbstractTagMatcher {
@@ -33,8 +36,8 @@ public class SystemTagMatcher extends AbstractTagMatcher {
     private Map<String, SystemTagProvider> providers;
 
     @Override
-    protected List<String> getValues(TagCondition condition, Request request) {
+    protected List<String> getValues(TagCondition condition, ServiceRequest request) {
         SystemTagProvider provider = providers.get(condition.getKey());
-        return provider == null ? null : provider.getValues(request, condition.getKey());
+        return provider == null ? null : provider.getValues(request);
     }
 }
