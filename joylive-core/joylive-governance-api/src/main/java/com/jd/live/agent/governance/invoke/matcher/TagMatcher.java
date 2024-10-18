@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.matcher;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 /**
@@ -37,6 +37,6 @@ public interface TagMatcher {
      * @param request   The {@code Request} object containing the data to be evaluated against the condition.
      * @return {@code true} if the request meets the tag condition; {@code false} otherwise.
      */
-    boolean match(TagCondition condition, Request request);
+    boolean match(TagCondition condition, ServiceRequest request);
 }
 

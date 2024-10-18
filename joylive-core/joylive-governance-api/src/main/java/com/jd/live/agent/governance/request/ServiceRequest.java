@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -69,7 +70,47 @@ public interface ServiceRequest extends Request {
      * @param key The name of the header.
      * @return A list of values for the specified header, or null if the header does not exist.
      */
+    List<String> getHeaders(String key);
+
+    /**
+     * Returns the values of a specific header.
+     *
+     * @param key The name of the header.
+     * @return A list of values for the specified header, or null if the header does not exist.
+     */
     String getHeader(String key);
+
+    /**
+     * Returns the value of a specific query parameter.
+     *
+     * @param key The name of the query parameter.
+     * @return The value of the specified query parameter, or null if it does not exist.
+     */
+    String getQuery(String key);
+
+    /**
+     * Returns the values of a specific query.
+     *
+     * @param key The name of the query.
+     * @return A list of values for the specified query, or null if the query does not exist.
+     */
+    List<String> getQueries(String key);
+
+    /**
+     * Returns the values of a specific cookie.
+     *
+     * @param key The name of the header.
+     * @return A list of values for the specified cookie, or null if the cookie does not exist.
+     */
+    List<String> getCookies(String key);
+
+    /**
+     * Returns the value of a specific cookie.
+     *
+     * @param key The name of the cookie.
+     * @return The value of the specified cookie, or null if it does not exist.
+     */
+    String getCookie(String key);
 
     /**
      * Returns the start time.

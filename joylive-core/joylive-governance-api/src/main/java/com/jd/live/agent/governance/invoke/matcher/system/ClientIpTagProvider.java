@@ -16,17 +16,20 @@
 package com.jd.live.agent.governance.invoke.matcher.system;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * A system tag provider that provides the client IP address as a tag value.
+ */
 @Extension(value = "clientIp")
 public class ClientIpTagProvider implements SystemTagProvider {
 
     @Override
-    public List<String> getValues(Request request, String key) {
+    public List<String> getValues(ServiceRequest request) {
         return request instanceof InboundRequest ? Collections.singletonList(((InboundRequest) request).getClientIp()) : null;
     }
 }
