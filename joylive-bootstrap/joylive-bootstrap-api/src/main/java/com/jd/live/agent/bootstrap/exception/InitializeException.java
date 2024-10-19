@@ -31,4 +31,8 @@ public class InitializeException extends LiveException {
     public InitializeException(String message) {
         super(message, null, false, false);
     }
+
+    public InitializeException(String message, Throwable cause) {
+        super(message, cause, false, false);
+    }
 }

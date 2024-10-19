@@ -16,19 +16,28 @@
 package com.jd.live.agent.implement.service.policy.nacos.config;
 
 import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * NacosSyncConfig
- *
- * @since 1.0.0
+ *  NacosSyncConfig is responsible for Nacos settings.
  */
 
 @Getter
 @Setter
 public class NacosSyncConfig extends SyncConfig {
 
+    private String serverAddr;
 
+    private String serviceNacosGroup;
+
+    private String laneSpaceNacosGroup;
+
+    private String liveSpaceNacosGroup;
+
+
+
+    private MergePolicy policy = MergePolicy.ALL;
 
 }
