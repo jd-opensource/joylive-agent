@@ -22,9 +22,7 @@ import com.jd.live.agent.demo.response.LiveTransmission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -55,6 +53,11 @@ public class EchoController {
         LiveResponse lr = new LiveResponse(code, null, code);
         configure(request, lr);
         return lr;
+    }
+
+    @RequestMapping(value = "/exception", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
+    public LiveResponse exception(HttpServletRequest request, HttpServletResponse response) {
+        throw new RuntimeException("RuntimeException happened!");
     }
 
     private void configure(HttpServletRequest request, LiveResponse response) {
