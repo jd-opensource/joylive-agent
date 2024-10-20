@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
+import com.alibaba.nacos.api.config.listener.Listener;
 import com.jd.live.agent.bootstrap.exception.InitializeException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -30,6 +31,8 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.service.SyncResult;
+import com.jd.live.agent.core.thread.NamedThreadFactory;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
@@ -47,7 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -62,9 +65,9 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
 
     private static final Logger logger = LoggerFactory.getLogger(LiveSpaceNacosSyncer.class);
 
-    private static final String WORKSPACES = "workspaces.json";
+    private static final String WORKSPACES_DATA_ID = "workspaces.json";
 
-    private static final String SPACE_VERSION = "space_version";
+    private static final int CONCURRENCY = 3;
 
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
@@ -84,8 +87,16 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      */
     protected Map<String, Long> last;
 
+    private ExecutorService executorService;
+    /**
+     * catch nacos listeners
+     */
+    private final Map<String, Listener> listeners = new ConcurrentHashMap<>();
+
     @Override
     protected CompletableFuture<Void> doStart() {
+        int concurrency = syncConfig.getConcurrency() <= 0 ? CONCURRENCY : syncConfig.getConcurrency();
+        executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory(getName(), true));
         super.doStart();
         try {
             syncAndUpdate();
@@ -94,6 +105,12 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
             throw new InitializeException("start LiveSpaceNacosSyncer failed " + e.getMessage(), e);
         }
         return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    protected CompletableFuture<Void> doStop() {
+        Close.instance().closeIfExists(executorService, ExecutorService::shutdownNow);
+        return super.doStop();
     }
 
     /**
@@ -175,7 +192,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      * @throws SyncFailedException
      */
     private LiveSpace syncSpace(String liveSpaceId, long version, Map<String, Long> versions) throws SyncFailedException {
-        LiveSpace space = getSpace(liveSpaceId, version, syncConfig);
+        LiveSpace space = getSpace(liveSpaceId, version);
         versions.put(liveSpaceId, space.getSpec().getVersion());
         return space;
     }
@@ -238,9 +255,31 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      */
     private Map<String, Long> getSpaces(NacosSyncConfig config) throws SyncFailedException {
         try {
-            String configInfo = getConfigService().getConfig(WORKSPACES,
+            //first: get config
+            String configInfo = getConfigService().getConfig(WORKSPACES_DATA_ID,
                     syncConfig.getLiveSpaceNacosGroup(),
                     syncConfig.getTimeout());
+            // then: add listener
+            if (listeners.get(WORKSPACES_DATA_ID)== null) {
+                Listener listener = new Listener() {
+                    @Override
+                    public Executor getExecutor() {
+                        return executorService;
+                    }
+
+                    @Override
+                    public void receiveConfigInfo(String configInfo) {
+                        try {
+                            syncAndUpdate();
+                        } catch (Exception e) {
+                            logger.error(getErrorMessage(e));
+                        }
+                    }
+                };
+                getConfigService().addListener(WORKSPACES_DATA_ID, syncConfig.getLiveSpaceNacosGroup(), listener);
+                listeners.put(WORKSPACES_DATA_ID, listener);
+            }
+
             List<Workspace> workspaces = parseWrokspaces(configInfo);
             Map<String, Long> map = new HashMap<>();
             if (workspaces != null && !workspaces.isEmpty()) {
@@ -275,15 +314,38 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      *
      * @param workspaceId the ID of the workspace to retrieve.
      * @param version     the version of the workspace to retrieve.
-     * @param config      the synchronization configuration.
      * @return the response containing the live space information.
      * @throws SyncFailedException if an I/O error occurs during the HTTP request.
      */
-    private LiveSpace getSpace(String workspaceId, Long version, NacosSyncConfig config) throws SyncFailedException {
+    private LiveSpace getSpace(String workspaceId, Long version) throws SyncFailedException {
         try {
-            String configInfo = getConfigService().getConfig(WORKSPACES,
+            //first: get config
+            String configInfo = getConfigService().getConfig(workspaceId,
                     syncConfig.getLiveSpaceNacosGroup(),
                     syncConfig.getTimeout());
+            // then: add listener
+            if (listeners.get(workspaceId)== null) {
+                Listener listener = new Listener() {
+                    @Override
+                    public Executor getExecutor() {
+                        return executorService;
+                    }
+
+                    @Override
+                    public void receiveConfigInfo(String configInfo) {
+                        try {
+                            syncAndUpdate();
+                        } catch (Exception e) {
+                            logger.error(getErrorMessage(e));
+                        }
+                    }
+                };
+                getConfigService().addListener(workspaceId, syncConfig.getLiveSpaceNacosGroup(), listener);
+                listeners.put(workspaceId, listener);
+            }
+
+
+
             LiveSpace liveSpace = parseLivespace(configInfo);
             return liveSpace;
         } catch (Throwable t) {

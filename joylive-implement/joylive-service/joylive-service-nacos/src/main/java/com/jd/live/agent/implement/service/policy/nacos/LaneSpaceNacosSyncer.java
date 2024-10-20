@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.config.listener.Listener;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.SyncConfig;
@@ -28,6 +28,8 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.thread.NamedThreadFactory;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -58,6 +60,8 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
 
+    private static final int CONCURRENCY = 3;
+
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
@@ -74,12 +78,24 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
     private ExecutorService executorService;
+    /**
+     * catch nacos listeners
+     */
+    private Listener listener;
 
     @Override
     protected CompletableFuture<Void> doStart() {
+        int concurrency = syncConfig.getConcurrency() <= 0 ? CONCURRENCY : syncConfig.getConcurrency();
+        executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory(getName(), true));
         super.doStart();
         syncAndUpdate();
         return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    protected CompletableFuture<Void> doStop() {
+        Close.instance().closeIfExists(executorService, ExecutorService::shutdownNow);
+        return super.doStop();
     }
 
     /**
@@ -88,15 +104,33 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      */
     private void syncAndUpdate() {
         try {
+            //first: get config
             String config = getConfigService().getConfig(LANE_SPACE_DATA_ID, syncConfig.getLaneSpaceNacosGroup(), syncConfig.getTimeout());
             List<LaneSpace> laneSpaces = parseLaneSpaces(config);
+            // then: add listener
+            if(listener==null){
+                Listener listener = new Listener() {
+                    @Override
+                    public Executor getExecutor() {
+                        return executorService;
+                    }
+                    @Override
+                    public void receiveConfigInfo(String configInfo) {
+                        syncAndUpdate();
+                    }
+                };
+                getConfigService().addListener(LANE_SPACE_DATA_ID,syncConfig.getServiceNacosGroup(),listener);
+                this.listener = listener;
+            }
+
             for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
                 if (updateOnce(laneSpaces)) {
                     return;
                 }
             }
-        } catch (NacosException e) {
-            throw new RuntimeException(e);
+        } catch (Throwable t) {
+            logger.error("syn lane space failed", t);
+            throw new RuntimeException(t);
         }
 
     }

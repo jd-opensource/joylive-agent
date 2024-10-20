@@ -68,7 +68,6 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
 
     private static final int CONCURRENCY = 5;
 
-    private static final int INTERVALS = 10;
 
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
@@ -97,6 +96,11 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
     private final EventHandler<PolicySubscriber> handler = this::onEvent;
 
     private final Map<String, ServiceSyncMeta> versions = new ConcurrentHashMap<>();
+
+    /**
+     * catch nacos listeners
+     */
+    private final Map<String, Listener> listeners = new ConcurrentHashMap<>();
 
     @Override
     public PolicyType getPolicyType() {
@@ -151,28 +155,29 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
         }
         meta.counter.incrementAndGet();
         try {
-
             //first: get config
             String configInfo = getConfigService().getConfig(subscriber.getName(),
                     syncConfig.getServiceNacosGroup(),
                     syncConfig.getTimeout());
             if (StringUtils.isNotBlank(configInfo)) {
-                onOk(subscriber,parseService(configInfo),meta);
+                onOk(subscriber, parseService(configInfo), meta);
             }
-
             // then: add listener
-            Listener listener = new Listener() {
-                @Override
-                public Executor getExecutor() {
-                    return executorService;
-                }
-                @Override
-                public void receiveConfigInfo(String configInfo) {
-                    onOk(subscriber, parseService(configInfo), meta);
-                }
-            };
-            getConfigService().addListener(subscriber.getName(),syncConfig.getServiceNacosGroup(),listener);
+            if (listeners.get(subscriber.getName()) == null) {
+                Listener listener = new Listener() {
+                    @Override
+                    public Executor getExecutor() {
+                        return executorService;
+                    }
 
+                    @Override
+                    public void receiveConfigInfo(String configInfo) {
+                        onOk(subscriber, parseService(configInfo), meta);
+                    }
+                };
+                getConfigService().addListener(subscriber.getName(), syncConfig.getServiceNacosGroup(), listener);
+                listeners.put(subscriber.getName(), listener);
+            }
         } catch (Throwable e) {
             logger.error(e.getMessage(), e);
         }
@@ -181,9 +186,10 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
         timer.delay(getName() + "-" + subscriber.getName(), delay, () -> addTask(subscriber));
     }
 
-    private Service parseService(String configInfo){
+    private Service parseService(String configInfo) {
         StringReader reader = new StringReader(configInfo);
-        Service service = jsonParser.read(reader, new TypeReference<Service>() {});
+        Service service = jsonParser.read(reader, new TypeReference<Service>() {
+        });
         reader.close();
         return service;
     }
