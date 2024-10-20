@@ -33,6 +33,7 @@ public class PathMatcherTest {
 
         Assertions.assertEquals(matcher.match("/").getValue(), "RootHandler");
         Assertions.assertEquals(matcher.match("/user").getValue(), "UserHandler");
+        Assertions.assertEquals(matcher.match("/user/500").getValue(), "UserHandler");
         Assertions.assertEquals(matcher.match("/order/1/create").getValue(), "OrderCreateHandler");
         Assertions.assertEquals(matcher.match("/order/2").getValue(), "OrderHandler");
         Assertions.assertEquals(matcher.match("/order/2/update").getValue(), "OrderHandler");
