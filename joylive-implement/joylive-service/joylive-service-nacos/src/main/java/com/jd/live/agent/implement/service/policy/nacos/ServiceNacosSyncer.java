@@ -34,8 +34,6 @@ import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.Waiter;
-import com.jd.live.agent.core.util.http.HttpState;
-import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -201,7 +199,7 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
         if (update(subscriber.getName(), service)) {
             meta.version = service.getVersion();
             subscriber.complete(getName());
-            logger.info(meta.getSuccessMessage(HttpStatus.OK));
+            logger.info(meta.getSuccessMessage());
         }
     }
 
@@ -325,36 +323,12 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
         }
 
         /**
-         * Determines whether a log message should be printed based on the counter.
-         *
-         * @return true if a log message should be printed, false otherwise.
-         */
-        public boolean shouldPrint() {
-            return counter.get() % INTERVALS == 1;
-        }
-
-        /**
          * Generates a success message for the synchronization.
          *
-         * @param status the HTTP status of the synchronization.
          * @return the success message.
          */
-        public String getSuccessMessage(HttpStatus status) {
-            return "Success synchronizing service policy from multilive. service=" + name
-                    + ", code=" + status.value()
-                    + ", counter=" + counter.get();
-        }
-
-        /**
-         * Generates an error message for the synchronization.
-         *
-         * @param reply the HTTP state of the synchronization.
-         * @return the error message.
-         */
-        public String getErrorMessage(HttpState reply) {
-            return "Failed to synchronize service policy from multilive. service=" + name
-                    + ", code=" + reply.getCode()
-                    + ", message=" + reply.getMessage()
+        public String getSuccessMessage() {
+            return "Success synchronizing service policy from Nacos. service=" + name
                     + ", counter=" + counter.get();
         }
     }
