@@ -344,8 +344,6 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
                 listeners.put(workspaceId, listener);
             }
 
-
-
             LiveSpace liveSpace = parseLivespace(configInfo);
             return liveSpace;
         } catch (Throwable t) {

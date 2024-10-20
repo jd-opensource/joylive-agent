@@ -28,13 +28,44 @@ import lombok.Setter;
 @Setter
 public class NacosSyncConfig extends SyncConfig {
 
+    /**
+     * nacos server address
+     */
     private String serverAddr;
+
+    /**
+     * nacos namespace
+     */
     private String namespace;
 
+    /**
+     * nacos username
+     */
+    private String username;
+
+    /**
+     * nacos password
+     */
+    private String password;
+
+
+    /**
+     * service nacos group
+     * note: nacos data id  is service name
+     */
     private String serviceNacosGroup;
 
+    /**
+     * lane space nacos group
+     * note: nacos data id  is  "lanes.json"
+     */
     private String laneSpaceNacosGroup;
 
+    /**
+     * live space nacos group
+     * note 1: workspaces nacos data_id is "workspaces.json"
+     * note 2: liveSpace nacos data_id is workspaceId which is from workspaces
+     */
     private String liveSpaceNacosGroup;
 
 
