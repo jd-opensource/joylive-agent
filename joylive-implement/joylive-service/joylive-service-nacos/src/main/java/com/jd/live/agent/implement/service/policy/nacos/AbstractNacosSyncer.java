@@ -34,9 +34,9 @@ public abstract class AbstractNacosSyncer extends AbstractService implements Ext
                         logger.debug("initialize nacos config service");
                         Properties properties = new Properties();
                         properties.put(PropertyKeyConst.SERVER_ADDR, getSyncConfig().getServerAddr());
-                        properties.put(PropertyKeyConst.NAMESPACE,getSyncConfig().getNamespace());
-                        properties.put(PropertyKeyConst.USERNAME,getSyncConfig().getUsername());
-                        properties.put(PropertyKeyConst.PASSWORD,getSyncConfig().getPassword());
+                        properties.put(PropertyKeyConst.NAMESPACE, getSyncConfig().getNamespace());
+                        properties.put(PropertyKeyConst.USERNAME, getSyncConfig().getUsername());
+                        properties.put(PropertyKeyConst.PASSWORD, getSyncConfig().getPassword());
                         configService = NacosFactory.createConfigService(properties);
                     } catch (Throwable t) {
                         throw new InitializeException("initialize nacos ConfigService failed", t);

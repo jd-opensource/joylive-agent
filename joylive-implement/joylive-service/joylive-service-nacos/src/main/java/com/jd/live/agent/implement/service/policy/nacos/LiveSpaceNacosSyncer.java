@@ -189,7 +189,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      * @param version     the version of the live space.
      * @param versions    the map of versions.
      * @return the synchronized live space.
-     * @throws SyncFailedException
+     * @throws SyncFailedException exeption
      */
     private LiveSpace syncSpace(String liveSpaceId, long version, Map<String, Long> versions) throws SyncFailedException {
         LiveSpace space = getSpace(liveSpaceId, version);
@@ -251,7 +251,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      *
      * @param config the synchronization configuration.
      * @return the map of live spaces and their versions.
-     * @throws Exception
+     * @throws Exception exception
      */
     private Map<String, Long> getSpaces(NacosSyncConfig config) throws SyncFailedException {
         try {
@@ -260,7 +260,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
                     syncConfig.getLiveSpaceNacosGroup(),
                     syncConfig.getTimeout());
             // then: add listener
-            if (listeners.get(WORKSPACES_DATA_ID)== null) {
+            if (listeners.get(WORKSPACES_DATA_ID) == null) {
                 Listener listener = new Listener() {
                     @Override
                     public Executor getExecutor() {
@@ -296,7 +296,8 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
 
     private List<Workspace> parseWrokspaces(String configInfo) {
         StringReader reader = new StringReader(configInfo);
-        List<Workspace> workspaces = jsonParser.read(reader, new TypeReference<List<Workspace>>() {});
+        List<Workspace> workspaces = jsonParser.read(reader, new TypeReference<List<Workspace>>() {
+        });
         reader.close();
         return workspaces;
     }
@@ -324,7 +325,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
                     syncConfig.getLiveSpaceNacosGroup(),
                     syncConfig.getTimeout());
             // then: add listener
-            if (listeners.get(workspaceId)== null) {
+            if (listeners.get(workspaceId) == null) {
                 Listener listener = new Listener() {
                     @Override
                     public Executor getExecutor() {

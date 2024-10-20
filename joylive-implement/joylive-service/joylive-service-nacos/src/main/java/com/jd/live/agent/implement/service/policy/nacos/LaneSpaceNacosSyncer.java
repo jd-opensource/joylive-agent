@@ -100,7 +100,6 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
 
     /**
      * Synchronizes and updates the LanSpaces
-     *
      */
     private void syncAndUpdate() {
         try {
@@ -108,18 +107,19 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
             String config = getConfigService().getConfig(LANE_SPACE_DATA_ID, syncConfig.getLaneSpaceNacosGroup(), syncConfig.getTimeout());
             List<LaneSpace> laneSpaces = parseLaneSpaces(config);
             // then: add listener
-            if(listener==null){
+            if (listener == null) {
                 Listener listener = new Listener() {
                     @Override
                     public Executor getExecutor() {
                         return executorService;
                     }
+
                     @Override
                     public void receiveConfigInfo(String configInfo) {
                         syncAndUpdate();
                     }
                 };
-                getConfigService().addListener(LANE_SPACE_DATA_ID,syncConfig.getServiceNacosGroup(),listener);
+                getConfigService().addListener(LANE_SPACE_DATA_ID, syncConfig.getServiceNacosGroup(), listener);
                 this.listener = listener;
             }
 
@@ -158,8 +158,8 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
     /**
      * Creates a new policy based on the given service.
      *
-     * @param policy
-     * @param laneSpaces
+     * @param policy policy
+     * @param laneSpaces lane spaces
      * @return the new policy.
      */
     private GovernancePolicy newPolicy(GovernancePolicy policy, List<LaneSpace> laneSpaces) {
