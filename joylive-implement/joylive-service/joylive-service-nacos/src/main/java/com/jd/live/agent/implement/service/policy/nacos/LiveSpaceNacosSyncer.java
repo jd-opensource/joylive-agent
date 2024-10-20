@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
+import com.jd.live.agent.bootstrap.exception.InitializeException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.SyncConfig;
@@ -46,20 +47,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive control plane.
+ * LiveSpaceSyncer is responsible for synchronizing live spaces from nacos.
  */
 @Injectable
-@Extension("LiveSpaceSyncer")
+@Extension("LiveSpaceNacosSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
+@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyService {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveSpaceNacosSyncer.class);
 
-    private static final String WORKSPACES = "workspaces";
+    private static final String WORKSPACES = "workspaces.json";
 
     private static final String SPACE_VERSION = "space_version";
 
@@ -81,6 +84,17 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      */
     protected Map<String, Long> last;
 
+    @Override
+    protected CompletableFuture<Void> doStart() {
+        super.doStart();
+        try {
+            syncAndUpdate();
+        } catch (Exception e) {
+            logger.error("start LiveSpaceNacosSyncer failed " + e.getMessage(), e);
+            throw new InitializeException("start LiveSpaceNacosSyncer failed " + e.getMessage(), e);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
 
     /**
      * Performs synchronization and updates the state once.
@@ -143,7 +157,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
      * Updates the state with the new data and metadata.
      *
      * @param value The new data to update.
-     * @param meta The new metadata to update.
+     * @param meta  The new metadata to update.
      * @return True if the update was successful, false otherwise.
      */
     private boolean updateOnce(List<LiveSpace> value, Map<String, Long> meta) {
@@ -243,8 +257,7 @@ public class LiveSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
 
     private List<Workspace> parseWrokspaces(String configInfo) {
         StringReader reader = new StringReader(configInfo);
-        List<Workspace> workspaces = jsonParser.read(reader, new TypeReference<List<Workspace>>() {
-        });
+        List<Workspace> workspaces = jsonParser.read(reader, new TypeReference<List<Workspace>>() {});
         reader.close();
         return workspaces;
     }

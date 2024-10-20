@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 /**
- * ServiceNacosSyncer is responsible for synchronizing live service policies from  Nacos.
+ * ServiceNacosSyncer is responsible for synchronizing live service policies from nacos.
  */
 @Injectable
 @Extension("ServiceNacosSyncer")
