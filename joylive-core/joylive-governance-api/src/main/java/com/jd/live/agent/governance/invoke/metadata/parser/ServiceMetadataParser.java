@@ -20,6 +20,8 @@ import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
+import java.util.Map;
+
 import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
 import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_METHOD;
 
@@ -198,7 +200,12 @@ public abstract class ServiceMetadataParser implements ServiceParser {
 
         @Override
         protected String parseServiceGroup() {
-            return request.getGroup();
+            String group = request.getGroup();
+            if (group == null || group.isEmpty()) {
+                Map<String, String> invokeMapping = serviceConfig.getInvokeGroups();
+                group = invokeMapping == null ? null : invokeMapping.get(parseServiceName());
+            }
+            return group;
         }
     }
 

@@ -21,10 +21,7 @@ import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * ServiceConfig is a configuration class that defines various settings for service behavior,
@@ -92,6 +89,14 @@ public class ServiceConfig {
     @Getter
     @Setter
     private Set<String> systemPaths;
+
+    /**
+     * Define the grouping matching relationship for calls between services.
+     * <p>k:v = service:group</p>
+     */
+    @Getter
+    @Setter
+    private Map<String, String> invokeGroups;
 
     private final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
         List<PrefixPath> result = new ArrayList<>();
