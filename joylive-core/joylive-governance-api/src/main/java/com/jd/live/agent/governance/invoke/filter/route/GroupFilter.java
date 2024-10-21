@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
@@ -38,11 +39,12 @@ public class GroupFilter implements RouteFilter {
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
+        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
         String targetGroup = serviceMetadata.getServiceGroup();
         if (targetGroup != null && !targetGroup.isEmpty()) {
             RouteTarget target = invocation.getRouteTarget();
             target.filter(endpoint -> endpoint.getLabel(Constants.LABEL_SERVICE_GROUP).equals(targetGroup));
-        } else {
+        } else if (serviceConfig != null && !serviceConfig.isOpenAllGroups()) {
             RouteTarget target = invocation.getRouteTarget();
             target.filter(endpoint -> endpoint.getLabel(Constants.LABEL_SERVICE_GROUP).equals(PolicyId.DEFAULT_GROUP)
                     || endpoint.getLabel(Constants.LABEL_SERVICE_GROUP) == null
