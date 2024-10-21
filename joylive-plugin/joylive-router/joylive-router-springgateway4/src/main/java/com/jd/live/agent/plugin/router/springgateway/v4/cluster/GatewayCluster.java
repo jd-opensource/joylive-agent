@@ -113,11 +113,10 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
             Set<CodePolicy> codePolicies = request.getAttribute(Request.KEY_CODE_POLICY);
-            ServerWebExchange exchange = request.getExchange();
-            if (codePolicies != null && !codePolicies.isEmpty()) {
-                exchange = exchange.mutate().response(new BodyResponseDecorator(exchange, codePolicies)).build();
-            }
-            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse());
+            ServerWebExchange exchange = codePolicies != null && !codePolicies.isEmpty()
+                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), codePolicies)).build()
+                    : request.getExchange();
+            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(), () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
             return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
         } catch (Throwable e) {
             return Futures.future(e);

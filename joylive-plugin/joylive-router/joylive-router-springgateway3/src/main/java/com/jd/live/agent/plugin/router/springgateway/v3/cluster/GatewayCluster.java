@@ -16,14 +16,14 @@
 package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
@@ -110,11 +110,10 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
             Set<CodePolicy> codePolicies = request.getAttribute(Request.KEY_CODE_POLICY);
-            ServerWebExchange exchange = request.getExchange();
-            if (codePolicies != null && !codePolicies.isEmpty()) {
-                exchange = exchange.mutate().response(new BodyResponseDecorator(exchange, codePolicies)).build();
-            }
-            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse());
+            ServerWebExchange exchange = codePolicies != null && !codePolicies.isEmpty()
+                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), codePolicies)).build()
+                    : request.getExchange();
+            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(), () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
             return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
         } catch (Throwable e) {
             return Futures.future(e);
