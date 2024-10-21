@@ -16,14 +16,14 @@
 package com.jd.live.agent.plugin.router.springgateway.v4.cluster;
 
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
@@ -230,6 +230,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
          * @return true if any of the code policies match the content type, false otherwise.
          */
         private boolean policyMatch(String contentType) {
+            contentType = contentType == null ? null : contentType.toLowerCase();
             for (CodePolicy policy : codePolicies) {
                 if (policy.match(contentType)) {
                     return true;

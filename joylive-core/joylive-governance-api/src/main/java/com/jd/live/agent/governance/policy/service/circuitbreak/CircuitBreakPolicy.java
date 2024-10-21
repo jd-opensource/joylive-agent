@@ -245,4 +245,10 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         }
     }
 
+    public void cache() {
+        if (codePolicy != null) {
+            codePolicy.cache();
+        }
+    }
+
 }

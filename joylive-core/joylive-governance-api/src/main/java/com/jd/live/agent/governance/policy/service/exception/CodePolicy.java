@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -71,6 +72,14 @@ public class CodePolicy implements Cloneable {
             return (CodePolicy) super.clone();
         } catch (CloneNotSupportedException e) {
             return new CodePolicy(parser, expression, contentTypes);
+        }
+    }
+
+    public void cache() {
+        if (contentTypes != null) {
+            Set<String> lowerCases = new HashSet<>(contentTypes);
+            contentTypes.forEach(o -> lowerCases.add(o.toLowerCase()));
+            contentTypes = lowerCases;
         }
     }
 }

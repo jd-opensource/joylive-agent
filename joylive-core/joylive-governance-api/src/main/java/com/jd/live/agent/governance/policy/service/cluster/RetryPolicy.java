@@ -171,4 +171,10 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         return codePolicy != null && codePolicy.isBodyRequest();
     }
 
+    public void cache() {
+        if (codePolicy != null) {
+            codePolicy.cache();
+        }
+    }
+
 }

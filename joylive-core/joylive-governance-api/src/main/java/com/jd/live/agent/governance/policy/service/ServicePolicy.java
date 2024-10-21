@@ -221,9 +221,13 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             livePolicy.cache();
         }
         if (routePolicies != null) {
-            for (RoutePolicy policy : routePolicies) {
-                policy.cache();
-            }
+            routePolicies.forEach(RoutePolicy::cache);
+        }
+        if (clusterPolicy != null) {
+            clusterPolicy.cache();
+        }
+        if (circuitBreakPolicies != null) {
+            circuitBreakPolicies.forEach(CircuitBreakPolicy::cache);
         }
     }
 

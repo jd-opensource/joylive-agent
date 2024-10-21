@@ -229,6 +229,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
          * @return true if any of the code policies match the content type, false otherwise.
          */
         private boolean policyMatch(String contentType) {
+            contentType = contentType == null ? null : contentType.toLowerCase();
             for (CodePolicy policy : codePolicies) {
                 if (policy.match(contentType)) {
                     return true;
