@@ -118,6 +118,8 @@ agent:
   governance:
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
     service:
+      serviceGroups: ${CONFIG_SERVICE_GROUPS:}
+      serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}
       warmups: ${CONFIG_WARMUP_SERVICES:}
       systemPaths: ${CONFIG_SYSTEM_HTTP_PATHS}
       concurrencyLimiter:

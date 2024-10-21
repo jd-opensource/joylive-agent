@@ -74,7 +74,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     public ServiceMetadata parse() {
         String consumer = parseConsumer();
         String serviceName = parseServiceName();
-        String serviceGroup = parseServiceGroup();
+        String serviceGroup = parseServiceGroup(serviceName);
         Service service = parseService(serviceName);
         String path = service == null ? parsePath() : service.getServiceType().normalize(parsePath());
         String method = parseMethod();
@@ -118,9 +118,10 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     /**
      * Parses and returns the service group from either the application context or the service request.
      *
+     * @param serviceName the service name
      * @return the parsed service group
      */
-    protected abstract String parseServiceGroup();
+    protected abstract String parseServiceGroup(String serviceName);
 
     /**
      * Parses and returns the method from the service request.
@@ -199,11 +200,11 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseServiceGroup() {
+        protected String parseServiceGroup(String serviceName) {
             String group = request.getGroup();
             if (group == null || group.isEmpty()) {
-                Map<String, String> invokeMapping = serviceConfig.getInvokeGroups();
-                group = invokeMapping == null ? null : invokeMapping.get(parseServiceName());
+                Map<String, String> groups = serviceConfig.getServiceGroups();
+                group = groups == null ? null : groups.get(serviceName);
             }
             return group;
         }
@@ -235,7 +236,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseServiceGroup() {
+        protected String parseServiceGroup(String serviceName) {
             String group = application.getService().getGroup();
             return group == null || group.isEmpty() ? request.getGroup() : group;
         }
