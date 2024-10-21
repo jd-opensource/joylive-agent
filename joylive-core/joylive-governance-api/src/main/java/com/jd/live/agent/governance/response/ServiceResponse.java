@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 
@@ -72,6 +73,16 @@ public interface ServiceResponse extends Response {
      */
     default Object getResult() {
         return null;
+    }
+
+    /**
+     * Checks if the given error policy matches the criteria for this error handler.
+     *
+     * @param errorPolicy the error policy to check
+     * @return true if the error policy matches, false otherwise (default implementation always returns false)
+     */
+    default boolean match(ErrorPolicy errorPolicy) {
+        return false;
     }
 
     /**

@@ -15,12 +15,35 @@
  */
 package com.jd.live.agent.governance.exception;
 
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+
 import java.util.Set;
 
 /**
  * An interface representing an error policy.
  */
 public interface ErrorPolicy {
+
+    /**
+     * Returns the code policy associated with this component.
+     *
+     * @return the code policy
+     */
+    CodePolicy getCodePolicy();
+
+    /**
+     * Returns a set of error codes that are considered critical by this component.
+     *
+     * @return a set of critical error codes
+     */
+    Set<String> getErrorCodes();
+
+    /**
+     * Returns a set of exceptions that are considered critical by this component.
+     *
+     * @return a set of critical exceptions
+     */
+    Set<String> getExceptions();
 
     /**
      * Checks if the feature or functionality is enabled.

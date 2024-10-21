@@ -39,7 +39,7 @@ public interface Request extends Attributes {
 
     String KEY_RESPONSE_BODY = "x-response-body";
 
-    String KEY_CODE_POLICY = "x-code-policy";
+    String KEY_ERROR_POLICY = "x-error-policy";
 
 
 }
