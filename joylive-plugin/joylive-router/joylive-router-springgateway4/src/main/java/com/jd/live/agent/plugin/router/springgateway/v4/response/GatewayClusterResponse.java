@@ -15,11 +15,14 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v4.response;
 
-import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+
+import java.util.function.Supplier;
 
 /**
  * GatewayClusterResponse
@@ -28,18 +31,31 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
  */
 public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerHttpResponse> {
 
+    private final LazyObject<String> body;
+
     public GatewayClusterResponse(ServerHttpResponse response) {
+        this(response, null);
+    }
+
+    public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> supplier) {
         super(response);
+        this.body = new LazyObject<>(supplier);
     }
 
     public GatewayClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
+        this.body = null;
     }
 
     @Override
     public String getCode() {
         HttpStatusCode status = response == null ? null : response.getStatusCode();
         return status == null ? null : String.valueOf(status.value());
+    }
+
+    @Override
+    public Object getResult() {
+        return body == null ? null : body.get();
     }
 
 }
