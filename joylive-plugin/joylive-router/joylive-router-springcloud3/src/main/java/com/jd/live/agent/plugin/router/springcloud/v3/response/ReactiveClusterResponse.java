@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
-import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
-import org.springframework.http.HttpStatus;
+import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
 /**
@@ -40,8 +39,8 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
 
     @Override
     public String getCode() {
-        HttpStatus status = response == null ? null : response.statusCode();
-        return status == null ? null : String.valueOf(status.value());
+        Integer code = response != null ? response.rawStatusCode() : null;
+        return code == null ? null : code.toString();
     }
 
     @Override
