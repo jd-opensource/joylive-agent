@@ -1,7 +1,7 @@
 com.jd.live.agent.governance.invoke.filter.inbound.ReadyFilter
 com.jd.live.agent.governance.invoke.filter.inbound.AuthFilter
 com.jd.live.agent.governance.invoke.filter.inbound.PermissionFilter
-com.jd.live.agent.governance.invoke.filter.inbound.UnitInFilter
+com.jd.live.agent.governance.invoke.filter.inbound.UnitFilter
 com.jd.live.agent.governance.invoke.filter.inbound.CellFilter
 com.jd.live.agent.governance.invoke.filter.inbound.FailoverFilter
 com.jd.live.agent.governance.invoke.filter.inbound.RateLimitFilter

@@ -90,6 +90,10 @@ public class UnitFilter implements RouteFilter {
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         UnitPolicy unitPolicy = serviceMetadata.getUnitPolicy();
+        if (liveMetadata.getUnitRuleId() == null) {
+            // Not live domain
+            return routeNone(invocation, endpoints, liveMetadata);
+        }
         switch (unitPolicy) {
             case NONE:
                 return routeNone(invocation, endpoints, liveMetadata);
