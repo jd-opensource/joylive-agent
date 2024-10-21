@@ -101,6 +101,8 @@ public class ListBuilder<K, T> implements MapBuilder<K, T> {
         if (items != null && keyFunc != null) {
             K key;
             for (T item : items) {
+                if (item == null)
+                    continue;
                 if (consumer != null)
                     consumer.accept(item);
                 key = keyFunc.apply(item);
