@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.response;
 
-import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
-import org.springframework.http.HttpStatus;
+import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 
 /**
@@ -38,8 +37,8 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     @Override
     public String getCode() {
-        HttpStatus status = response == null ? null : response.getStatusCode();
-        return status == null ? null : String.valueOf(status.value());
+        Integer code = response == null ? null : response.getRawStatusCode();
+        return code == null ? null : code.toString();
     }
 
 }

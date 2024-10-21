@@ -20,9 +20,9 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
@@ -57,8 +57,8 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     @Override
     public String getCode() {
         try {
-            HttpStatus status = response == null ? null : response.getStatusCode();
-            return status == null ? null : String.valueOf(status.value());
+            Integer code = response != null ? response.getRawStatusCode() : null;
+            return code == null ? null : code.toString();
         } catch (IOException e) {
             return String.valueOf(INTERNAL_SERVER_ERROR.value());
         }
