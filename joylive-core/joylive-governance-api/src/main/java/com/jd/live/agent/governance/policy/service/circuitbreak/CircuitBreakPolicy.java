@@ -174,15 +174,6 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         }
     }
 
-    /**
-     * Checks if the body of the code should be parsed.
-     *
-     * @return true if the body of the code should be parsed, false otherwise.
-     */
-    public boolean isBodyRequest() {
-        return codePolicy != null && codePolicy.isBodyRequest();
-    }
-
     @Override
     public boolean isEnabled() {
         return (errorCodes != null && !errorCodes.isEmpty() || exceptions != null && !exceptions.isEmpty());
@@ -242,6 +233,12 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     public void removeBroken(String id) {
         if (id != null) {
             broken.remove(id);
+        }
+    }
+
+    public void cache() {
+        if (codePolicy != null) {
+            codePolicy.cache();
         }
     }
 

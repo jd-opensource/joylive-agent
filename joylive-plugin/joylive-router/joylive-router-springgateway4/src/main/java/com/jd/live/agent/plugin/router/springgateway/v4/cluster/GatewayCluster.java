@@ -16,14 +16,15 @@
 package com.jd.live.agent.plugin.router.springgateway.v4.cluster;
 
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
@@ -45,6 +46,7 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
@@ -112,9 +114,9 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Set<CodePolicy> codePolicies = request.getAttribute(Request.KEY_CODE_POLICY);
-            ServerWebExchange exchange = codePolicies != null && !codePolicies.isEmpty()
-                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), codePolicies)).build()
+            Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
+            ServerWebExchange exchange = policies != null && !policies.isEmpty()
+                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), policies)).build()
                     : request.getExchange();
             GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(), () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
             return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
@@ -193,32 +195,30 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
         private final ServerWebExchange exchange;
 
-        private final Set<CodePolicy> codePolicies;
+        private final Set<ErrorPolicy> policies;
 
-        BodyResponseDecorator(ServerWebExchange exchange, Set<CodePolicy> codePolicies) {
+        BodyResponseDecorator(ServerWebExchange exchange, Set<ErrorPolicy> policies) {
             super(exchange.getResponse());
             this.exchange = exchange;
-            this.codePolicies = codePolicies;
+            this.policies = policies;
         }
 
         @NonNull
         @Override
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-            if (HttpStatus.OK.equals(getStatusCode()) && body instanceof Flux) {
-                String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-                if (policyMatch(contentType)) {
-                    Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                    return super.writeWith(fluxBody.buffer().map(
-                            dataBuffers -> {
-                                DataBufferFactory bufferFactory = bufferFactory();
-                                DataBuffer join = bufferFactory.join(dataBuffers);
-                                byte[] content = new byte[join.readableByteCount()];
-                                join.read(content);
-                                DataBufferUtils.release(join);
-                                exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
-                                return bufferFactory.wrap(content);
-                            }));
-                }
+            String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+            if (body instanceof Flux && policyMatch(contentType)) {
+                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                return super.writeWith(fluxBody.buffer().map(
+                        dataBuffers -> {
+                            DataBufferFactory bufferFactory = bufferFactory();
+                            DataBuffer join = bufferFactory.join(dataBuffers);
+                            byte[] content = new byte[join.readableByteCount()];
+                            join.read(content);
+                            DataBufferUtils.release(join);
+                            exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
+                            return bufferFactory.wrap(content);
+                        }));
             }
             return super.writeWith(body);
         }
@@ -230,8 +230,13 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
          * @return true if any of the code policies match the content type, false otherwise.
          */
         private boolean policyMatch(String contentType) {
-            for (CodePolicy policy : codePolicies) {
-                if (policy.match(contentType)) {
+            contentType = contentType == null ? null : contentType.toLowerCase();
+            CodePolicy codePolicy;
+            HttpStatusCode statusCode = getStatusCode();
+            Integer status = statusCode == null ? null : statusCode.value();
+            for (ErrorPolicy policy : policies) {
+                codePolicy = policy.getCodePolicy();
+                if (codePolicy != null && codePolicy.match(status, contentType, HttpStatus.OK.value())) {
                     return true;
                 }
             }

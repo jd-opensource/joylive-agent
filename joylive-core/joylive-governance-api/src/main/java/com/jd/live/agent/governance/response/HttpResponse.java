@@ -15,12 +15,16 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.core.util.http.HttpStatus;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Cookie;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.http.HttpHeader.CONTENT_TYPE;
+import static com.jd.live.agent.core.util.http.HttpStatus.OK;
 
 /**
  * HttpResponse
@@ -123,6 +127,12 @@ public interface HttpResponse extends ServiceResponse {
      */
     String getCookie(String key);
 
+    @Override
+    default boolean match(ErrorPolicy errorPolicy) {
+        CodePolicy codePolicy = errorPolicy == null ? null : errorPolicy.getCodePolicy();
+        return codePolicy != null && codePolicy.match(getCode(), getHeader(CONTENT_TYPE), String.valueOf(OK.value()));
+    }
+
     /**
      * Defines an interface for outbound HTTP response.
      * <p>
@@ -131,11 +141,11 @@ public interface HttpResponse extends ServiceResponse {
      *
      * @since 1.0.0
      */
-    interface HttpOutboundResponse extends HttpResponse, ServiceResponse.OutboundResponse {
+    interface HttpOutboundResponse extends HttpResponse, OutboundResponse {
 
         @Override
         default boolean isSuccess() {
-            return String.valueOf(HttpStatus.OK.value()).equals(getCode());
+            return String.valueOf(OK.value()).equals(getCode());
         }
     }
 

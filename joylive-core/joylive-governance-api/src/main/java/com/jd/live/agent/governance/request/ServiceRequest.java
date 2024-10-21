@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.governance.exception.ErrorName;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
@@ -149,6 +150,16 @@ public interface ServiceRequest extends Request {
      * @return {@code true} if the request is a system message; {@code false} otherwise.
      */
     default boolean isSystem() {
+        return false;
+    }
+
+    /**
+     * Checks if the response body is required for the given error policy.
+     *
+     * @param policy the error policy to check
+     * @return true if the response body is required, false otherwise (default implementation always returns false)
+     */
+    default boolean requireResponseBody(ErrorPolicy policy) {
         return false;
     }
 

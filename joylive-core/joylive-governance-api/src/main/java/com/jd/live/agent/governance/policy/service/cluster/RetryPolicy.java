@@ -162,13 +162,10 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         return !allowList;
     }
 
-    /**
-     * Checks if the body of the code should be parsed.
-     *
-     * @return true if the body of the code should be parsed, false otherwise.
-     */
-    public boolean isBodyRequest() {
-        return codePolicy != null && codePolicy.isBodyRequest();
+    public void cache() {
+        if (codePolicy != null) {
+            codePolicy.cache();
+        }
     }
 
 }

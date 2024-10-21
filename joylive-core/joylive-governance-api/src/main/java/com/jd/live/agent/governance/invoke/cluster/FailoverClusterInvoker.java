@@ -23,6 +23,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.exception.ErrorCause;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -70,16 +71,17 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
-        if (retryPolicy != null && retryPolicy.isBodyRequest()) {
-            invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(retryPolicy.getCodePolicy());
+        R request = invocation.getRequest();
+        if (retryPolicy != null && request.requireResponseBody(retryPolicy)) {
+            request.getAttributeIfAbsent(Request.KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(retryPolicy);
         }
         RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
-        cluster.onStart(invocation.getRequest());
-        return retryContext.execute(invocation.getRequest(), supplier).exceptionally(e ->
+        cluster.onStart(request);
+        return retryContext.execute(request, supplier).exceptionally(e ->
                 cluster.createResponse(
                         cluster.createException(e, invocation),
-                        invocation.getRequest(),
+                        request,
                         null));
     }
 
@@ -256,27 +258,37 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             Throwable throwable = error == null ? null : error.getThrowable();
             if (throwable != null) {
                 return ErrorCause.cause(throwable, request.getErrorFunction(), response.getRetryPredicate()).match(retryPolicy);
-            } else if (response.isSuccess() && retryPolicy.isBodyRequest()) {
-                CodePolicy codePolicy = retryPolicy.getCodePolicy();
-                Object result = response.getResult();
-                if (result != null) {
-                    String codeParser = codePolicy.getParser();
-                    String codeExpression = codePolicy.getExpression();
-                    if (codeParser != null && !codeParser.isEmpty() && codeExpression != null && !codeExpression.isEmpty()) {
-                        CodeParser parser = errorParsers.get(codeParser);
-                        if (parser != null) {
-                            try {
-                                String code = parser.getCode(codeExpression, result);
-                                return retryPolicy.containsError(code);
-                            } catch (Throwable e) {
-                                logger.error("Failed to extract error code from body, caused by " + e.getMessage(), e);
-                            }
+            } else if (response.match(retryPolicy)) {
+                String code = parseCode(retryPolicy.getCodePolicy(), response.getResult());
+                return retryPolicy.containsError(code);
+            }
+
+            return false;
+        }
+
+        /**
+         * Parses the error code from the given result object using the specified code policy.
+         *
+         * @param policy the code policy to use for parsing
+         * @param result the result object to parse
+         * @return the parsed error code, or null if no code could be parsed
+         */
+        private String parseCode(CodePolicy policy, Object result) {
+            if (policy != null && result != null) {
+                String codeParser = policy.getParser();
+                String codeExpression = policy.getExpression();
+                if (codeParser != null && !codeParser.isEmpty() && codeExpression != null && !codeExpression.isEmpty()) {
+                    CodeParser parser = errorParsers.get(codeParser);
+                    if (parser != null) {
+                        try {
+                            return parser.getCode(codeExpression, result);
+                        } catch (Throwable e) {
+                            logger.error("Failed to extract error code from body, caused by " + e.getMessage(), e);
                         }
                     }
                 }
             }
-
-            return false;
+            return null;
         }
     }
 

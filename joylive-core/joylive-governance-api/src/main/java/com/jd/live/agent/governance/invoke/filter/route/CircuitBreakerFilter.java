@@ -26,13 +26,15 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
+import com.jd.live.agent.governance.exception.ErrorCause;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
-import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
@@ -45,7 +47,6 @@ import com.jd.live.agent.governance.policy.service.exception.CodeParser;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
@@ -96,9 +97,10 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             List<CircuitBreakPolicy> instancePolicies = null;
             List<CircuitBreaker> serviceBreakers = new ArrayList<>(policies.size());
             CircuitBreaker breaker;
+            T request = invocation.getRequest();
             for (CircuitBreakPolicy policy : policies) {
-                if (policy.isBodyRequest()) {
-                    invocation.getRequest().getAttributeIfAbsent(Request.KEY_CODE_POLICY, k -> new HashSet<CodePolicy>()).add(policy.getCodePolicy());
+                if (request.requireResponseBody(policy)) {
+                    request.getAttributeIfAbsent(Request.KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(policy);
                 }
                 switch (policy.getLevel()) {
                     case SERVICE:
@@ -283,27 +285,37 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             if (throwable != null) {
                 ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 return cause.match(policy);
-            } else if (response.isSuccess() && policy.isBodyRequest()) {
-                CodePolicy codePolicy = policy.getCodePolicy();
-                Object result = response.getResult();
-                if (result != null) {
-                    String errorParser = codePolicy.getParser();
-                    String errorExpression = codePolicy.getExpression();
-                    if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
-                        CodeParser parser = errorParsers.get(errorParser);
-                        if (parser != null) {
-                            try {
-                                String code = parser.getCode(errorExpression, result);
-                                return policy.containsError(code);
-                            } catch (Throwable e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        }
+            } else if (response.match(policy)) {
+                String code = parseCode(policy.getCodePolicy(), response.getResult());
+                return policy.containsError(code);
+            }
+            return false;
+        }
 
+        /**
+         * Parses the error code from the given result object using the specified code policy.
+         *
+         * @param policy the code policy to use for parsing
+         * @param result the result object to parse
+         * @return the parsed error code, or null if no code could be parsed
+         */
+        private String parseCode(CodePolicy policy, Object result) {
+            String code = null;
+            if (policy != null && result != null) {
+                String errorParser = policy.getParser();
+                String errorExpression = policy.getExpression();
+                if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
+                    CodeParser parser = errorParsers.get(errorParser);
+                    if (parser != null) {
+                        try {
+                            code = parser.getCode(errorExpression, result);
+                        } catch (Throwable e) {
+                            logger.error(e.getMessage(), e);
+                        }
                     }
                 }
             }
-            return false;
+            return code;
         }
 
         @Override
