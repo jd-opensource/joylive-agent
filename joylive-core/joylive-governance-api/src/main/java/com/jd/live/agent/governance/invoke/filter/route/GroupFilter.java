@@ -43,8 +43,11 @@ public class GroupFilter implements RouteFilter {
         ServiceConfig serviceConfig = serviceMetadata == null ? null : serviceMetadata.getServiceConfig();
         Map<String, String> invokeMapping = serviceConfig == null ? null : serviceConfig.getInvokeGroups();
         if (invokeMapping != null && !invokeMapping.isEmpty()) {
-            RouteTarget target = invocation.getRouteTarget();
-            target.filter(endpoint -> endpoint.getLabel(Constants.LABEL_SERVICE_GROUP).equals(invokeMapping.get(serviceMetadata.getServiceName())));
+            String targetGroup = invokeMapping.get(serviceMetadata.getServiceName());
+            if (targetGroup != null) {
+                RouteTarget target = invocation.getRouteTarget();
+                target.filter(endpoint -> endpoint.getLabel(Constants.LABEL_SERVICE_GROUP).equals(targetGroup));
+            }
         }
         chain.filter(invocation);
     }
