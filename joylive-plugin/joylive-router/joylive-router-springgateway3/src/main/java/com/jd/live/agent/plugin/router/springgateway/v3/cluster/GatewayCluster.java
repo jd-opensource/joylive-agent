@@ -167,7 +167,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         byte[] bytes = length == 0 ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
         DataBuffer buffer = response.bufferFactory().wrap(bytes);
 
-        HttpHeaders headers = response.getHeaders();
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
         headers.putAll(request.getHeaders());
         Map<String, String> attributes = degradeConfig.getAttributes();
         if (attributes != null) {
