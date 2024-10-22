@@ -60,12 +60,7 @@ public class UnitFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        RouteTarget target = invocation.getRouteTarget();
-        LiveSpace liveSpace = invocation.getLiveMetadata().getLiveSpace();
-        if (liveSpace != null) {
-            target.filter(e -> e.isLiveSpace(liveSpace.getId()), 0, true);
-        }
-        target = route(invocation, target.getEndpoints());
+        RouteTarget target = route(invocation);
         invocation.setRouteTarget(target);
         UnitAction action = target.getUnitAction();
         if (action.getType() == UnitActionType.FORWARD) {
@@ -81,19 +76,31 @@ public class UnitFilter implements RouteFilter {
      *
      * @param <T>        The type parameter of the outbound request.
      * @param invocation The outbound invocation containing the request and related metadata.
-     * @param endpoints  A list of potential endpoints to which the request can be forwarded if routing conditions are satisfied.
      * @return The route target that specifies the instances to route the request to.
      */
-    private <T extends OutboundRequest> RouteTarget route(OutboundInvocation<T> invocation,
-                                                          List<? extends Endpoint> endpoints) {
+    private <T extends OutboundRequest> RouteTarget route(OutboundInvocation<T> invocation) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         UnitPolicy unitPolicy = serviceMetadata.getUnitPolicy();
-        if (liveMetadata.getUnitRuleId() == null) {
-            // Not live domain
-            return routeNone(invocation, endpoints, liveMetadata);
+
+        RouteTarget target = invocation.getRouteTarget();
+        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+        String liveSpaceId = liveMetadata.getLiveSpaceId();
+        String unitRuleId = liveMetadata.getUnitRuleId();
+        if (liveSpace != null) {
+            // filter live space
+            target.filter(e -> e.isLiveSpace(liveSpace.getId()), 0, true);
+            // no unit rule id
+            unitPolicy = unitRuleId == null || unitRuleId.isEmpty() ? UnitPolicy.NONE : unitPolicy;
+        } else if (liveSpaceId != null && !liveSpaceId.isEmpty()) {
+            // live space is not found.
+            return RouteTarget.reject(invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
+        } else {
+            // no live space.
+            unitPolicy = UnitPolicy.NONE;
         }
+        List<? extends Endpoint> endpoints = target.getEndpoints();
         switch (unitPolicy) {
             case NONE:
                 return routeNone(invocation, endpoints, liveMetadata);

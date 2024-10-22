@@ -85,7 +85,8 @@ public class LiveMetadataParser implements LiveParser {
      * @return The configured live metadata builder.
      */
     protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
-        LiveSpace liveSpace = governancePolicy == null ? null : governancePolicy.getCurrentLiveSpace();
+        String spaceId = parseLiveSpaceId();
+        LiveSpace liveSpace = parseLiveSpace(spaceId);
         Unit centerUnit = liveSpace == null ? null : liveSpace.getCenter();
         Unit currentUnit = liveSpace == null ? null : liveSpace.getCurrentUnit();
         Cell currentCell = liveSpace == null ? null : liveSpace.getCurrentCell();
@@ -98,15 +99,38 @@ public class LiveMetadataParser implements LiveParser {
                 currentCell(currentCell).
                 centerUnit(centerUnit).
                 unitRuleId(unitRuleId).
+                liveSpaceId(spaceId).
                 unitRule(unitRule).
                 variable(variable);
         return builder;
     }
 
     /**
+     * Parses the live space with the given space ID.
+     *
+     * @param spaceId the ID of the live space to parse
+     * @return the parsed live space, or null if the governance policy is null or the live space with the given ID does not exist
+     */
+    protected LiveSpace parseLiveSpace(String spaceId) {
+        return governancePolicy == null ? null : governancePolicy.getLiveSpace(spaceId);
+    }
+
+    /**
+     * Parses the live space ID from the request context using a specified key.
+     *
+     * @return The parsed live space ID as a Long, or null if the live space ID is not found.
+     */
+    protected String parseLiveSpaceId() {
+        Cargo cargo = RequestContext.getCargo(Constants.LABEL_LIVE_SPACE_ID);
+        String spaceId = cargo == null ? null : cargo.getFirstValue();
+        spaceId = spaceId == null || spaceId.isEmpty() ? application.getLocation().getLiveSpaceId() : spaceId;
+        return spaceId;
+    }
+
+    /**
      * Parses the rule ID from the request context using a specified key.
      *
-     * @return The parsed rule ID as a Long, or null if the rule ID is not found or is not a valid number.
+     * @return The parsed rule ID as a Long, or null if the rule ID is not found.
      */
     protected String parseRuleId() {
         Cargo cargo = RequestContext.getCargo(Constants.LABEL_RULE_ID);
@@ -194,7 +218,7 @@ public class LiveMetadataParser implements LiveParser {
         @SuppressWarnings("unchecked")
         protected LiveDomainMetadataBuilder<?, ?> configure(LiveDomainMetadataBuilder<?, ?> builder) {
             if (domainPolicy == null) {
-                return (LiveDomainMetadataBuilder<?, ?>) super.configure(builder);
+                return configureLivelessDomain(builder);
             }
             LiveSpace liveSpace = domainPolicy.getLiveSpace();
             if (liveSpace == null) {
@@ -241,6 +265,7 @@ public class LiveMetadataParser implements LiveParser {
                 variable = parser == null ? null : parser.parse((HttpRequest) request, variableSource, variableFunction);
             }
             return builder.liveConfig(liveConfig).
+                    liveSpaceId(liveSpace.getId()).
                     liveSpace(liveSpace).
                     currentUnit(currentUnit).
                     currentCell(currentCell).
@@ -254,6 +279,10 @@ public class LiveMetadataParser implements LiveParser {
                     bizVariable(bizVariable).
                     variable(variable).
                     policyId(policyId);
+        }
+
+        protected LiveDomainMetadataBuilder<?, ?> configureLivelessDomain(LiveDomainMetadataBuilder<?, ?> builder) {
+            return (LiveDomainMetadataBuilder<?, ?>) super.configure(builder);
         }
 
         /**
@@ -281,6 +310,45 @@ public class LiveMetadataParser implements LiveParser {
                 carrier.removeCargo(Constants.LABEL_LIVE_SPACE_ID);
                 carrier.removeCargo(Constants.LABEL_RULE_ID);
                 carrier.removeCargo(Constants.LABEL_VARIABLE);
+            }
+        }
+    }
+
+    /**
+     * A parser for gateway inbound live metadata.
+     * <p>
+     * This class extends the {@link HttpInboundLiveMetadataParser} and provides specific parsing logic for gateway inbound live metadata.
+     */
+    public static class GatewayInboundLiveMetadataParser extends HttpInboundLiveMetadataParser {
+
+        /**
+         * Constructs a new GatewayInboundLiveMetadataParser with the provided request, live configuration,
+         * application context, governance policy, variable parsers, variable functions, and domain policy.
+         *
+         * @param request           The service request for which to parse live metadata.
+         * @param liveConfig        The live configuration containing relevant settings.
+         * @param application       The application context that provides additional information.
+         * @param governancePolicy  The governance policy that must be adhered to.
+         * @param variableParsers   A map of variable parsers used to parse specific variables.
+         * @param variableFunctions A map of variable functions used to process variables.
+         * @param domainPolicy      The domain policy that governs the parsing and handling of live metadata.
+         */
+        public GatewayInboundLiveMetadataParser(ServiceRequest request,
+                                                LiveConfig liveConfig,
+                                                Application application,
+                                                GovernancePolicy governancePolicy,
+                                                Function<String, VariableParser<?, ?>> variableParsers,
+                                                Function<String, VariableFunction> variableFunctions,
+                                                DomainPolicy domainPolicy) {
+            super(request, liveConfig, application, governancePolicy, variableParsers, variableFunctions, domainPolicy);
+        }
+
+        @Override
+        protected LiveDomainMetadataBuilder<?, ?> configureLivelessDomain(LiveDomainMetadataBuilder<?, ?> builder) {
+            if (application.getService().isFrontGateway()) {
+                return builder;
+            } else {
+                return super.configureLivelessDomain(builder);
             }
         }
     }
@@ -342,6 +410,7 @@ public class LiveMetadataParser implements LiveParser {
                         new ExpressionVariable(variableExpression));
                 return LiveMetadata.builder().
                         liveConfig(metadata.getLiveConfig()).
+                        liveSpaceId(metadata.getLiveSpaceId()).
                         liveSpace(metadata.getLiveSpace()).
                         currentUnit(metadata.getCurrentUnit()).
                         currentCell(metadata.getCurrentCell()).

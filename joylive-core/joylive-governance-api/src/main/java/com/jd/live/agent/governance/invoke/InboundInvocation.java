@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -27,8 +26,9 @@ import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.HttpInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.GatewayInboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.HttpInboundLiveMetadataParser;
-import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LaneParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LiveParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayInboundServiceMetadataParser;
@@ -176,7 +176,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         }
 
         @Override
-        protected MetadataParser.LaneParser createLaneParser() {
+        protected LaneParser createLaneParser() {
             return new HttpInboundLaneMetadataParser(request, context.getGovernanceConfig().getLaneConfig(),
                     context.getApplication(), governancePolicy, domainPolicy, this);
         }
@@ -210,7 +210,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         protected void parsePolicy() {
-            if (context.getApplication().getService().getGateway() == GatewayRole.FRONTEND) {
+            if (context.getApplication().getService().isFrontGateway()) {
                 // remove rule id at frontend gateway
                 Carrier carrier = RequestContext.get();
                 if (carrier != null) {
@@ -222,6 +222,13 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
                 }
             }
             super.parsePolicy();
+        }
+
+        @Override
+        protected LiveParser createLiveParser() {
+            return new GatewayInboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
+                    context.getApplication(), governancePolicy,
+                    context::getVariableParser, context::getVariableFunction, domainPolicy);
         }
 
         @Override

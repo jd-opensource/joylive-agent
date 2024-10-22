@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -63,14 +64,25 @@ public class UnitFilter implements InboundFilter {
         }
     }
 
+    /**
+     * Creates a unit action for the given inbound invocation.
+     *
+     * @param invocation the inbound invocation to create a unit action for
+     * @return the created unit action
+     */
     protected <T extends InboundRequest> UnitAction unitAction(InboundInvocation<T> invocation) {
+        InvocationContext context = invocation.getContext();
         UnitPolicy unitPolicy = invocation.getServiceMetadata().getUnitPolicy();
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        UnitRule rule = liveMetadata.getUnitRule();
-        String variable = liveMetadata.getVariable();
-        Unit currentUnit = liveMetadata.getCurrentUnit();
-        Unit center = liveMetadata.getCenterUnit();
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        UnitRule rule = metadata.getUnitRule();
+        String variable = metadata.getVariable();
+        Unit currentUnit = metadata.getCurrentUnit();
+        Unit center = metadata.getCenterUnit();
         if (rule == null) {
+            if (!metadata.match(context.getLocation())) {
+                // live space is not match
+                return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
+            }
             return new UnitAction(UnitActionType.FORWARD, null);
         } else if (unitPolicy == UnitPolicy.NONE) {
             return invocation.isAccessible(currentUnit) ? new UnitAction(UnitActionType.FORWARD, null) :
@@ -104,7 +116,7 @@ public class UnitFilter implements InboundFilter {
             return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NO_VARIABLE));
         } else {
             UnitRoute unitRoute = rule.getUnitRoute(currentUnit.getCode());
-            UnitFunction unitFunc = invocation.getContext().getUnitFunction(rule.getVariableFunction());
+            UnitFunction unitFunc = context.getUnitFunction(rule.getVariableFunction());
             if (!rule.contains(unitRoute, variable, unitFunc)) {
                 return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_ESCAPE));
             }

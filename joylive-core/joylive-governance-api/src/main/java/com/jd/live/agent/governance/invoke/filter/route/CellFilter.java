@@ -85,7 +85,7 @@ public class CellFilter implements RouteFilter {
                         ? livePolicy::getCellThreshold
                         : serviceConfig::getCellFailoverThreshold);
         if (target.getUnit() == null) {
-            // unit policy is none.
+            // unit policy is none. maybe not live request or route any.
             return routeAny(invocation, target, localFirst, thresholdFunc);
         }
         return routeUnit(invocation, target, localFirst, thresholdFunc);

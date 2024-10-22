@@ -1,5 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.policy.live.Cell;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
@@ -26,27 +27,32 @@ public class LiveMetadata {
     private LiveSpace liveSpace;
 
     /**
-     * The current unit context for this invocation.
+     * The current unit for this invocation.
      */
     private Unit currentUnit;
 
     /**
-     * The current cell context for this invocation.
+     * The current cell for this invocation.
      */
     private Cell currentCell;
 
     /**
-     * The center unit context for this invocation.
+     * The center unit for this invocation.
      */
     private Unit centerUnit;
 
     /**
-     * The unit rule ID applicable to this invocation.
+     * The live space ID for this invocation.
+     */
+    private String liveSpaceId;
+
+    /**
+     * The unit rule ID for this invocation.
      */
     private String unitRuleId;
 
     /**
-     * The unit rule applicable to this invocation.
+     * The unit rule for this invocation.
      */
     private UnitRule unitRule;
 
@@ -57,6 +63,19 @@ public class LiveMetadata {
 
     public String getLiveSpaceId() {
         return liveSpace == null ? null : liveSpace.getId();
+    }
+
+    /**
+     * Checks if the given location matches the current live space ID.
+     *
+     * @param location the location to check
+     * @return true if the location matches the current live space ID, false otherwise
+     */
+    public boolean match(Location location) {
+        String current = location.getLiveSpaceId();
+        return current == null || current.isEmpty()
+                || liveSpaceId == null || liveSpaceId.isEmpty()
+                || current.equals(liveSpaceId);
     }
 
     private static final class LiveMetadataBuilderImpl extends LiveMetadataBuilder<LiveMetadata, LiveMetadataBuilderImpl> {
