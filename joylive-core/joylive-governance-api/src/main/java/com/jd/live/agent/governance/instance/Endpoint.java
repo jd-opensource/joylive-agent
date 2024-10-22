@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.util.Attributes;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
@@ -195,6 +196,15 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Get the service group associated with this endpoint
+     *
+     * @return The lane, or the default value if not specified.
+     */
+    default String getGroup() {
+        return getLabel(Constants.LABEL_SERVICE_GROUP, PolicyId.DEFAULT_GROUP);
+    }
+
+    /**
      * Determines if the live space ID matches the specified live space ID.
      *
      * @param liveSpaceId The live space ID to match.
@@ -278,13 +288,28 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
-     * Determines if the cloud matches the specified cloud.
+     * Determines if the cloud label matches the specified cloud.
      *
      * @param cloud The cloud to match.
      * @return true if the unit matches, false otherwise.
      */
     default boolean isCloud(String cloud) {
         return cloud != null && !cloud.isEmpty() && cloud.equals(getLabel(Constants.LABEL_CLOUD));
+    }
+
+    /**
+     * Determines if the group label matches the specified group.
+     *
+     * @param group The group to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isGroup(String group) {
+        String label = getGroup();
+        if (group == null) {
+            return PolicyId.DEFAULT_GROUP.equals(label);
+        } else {
+            return group.equals(label);
+        }
     }
 
     /**
