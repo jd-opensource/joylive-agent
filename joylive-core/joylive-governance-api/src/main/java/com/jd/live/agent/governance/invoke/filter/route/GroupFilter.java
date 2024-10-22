@@ -41,9 +41,9 @@ public class GroupFilter implements RouteFilter {
         String group = serviceMetadata.getServiceGroup();
         RouteTarget target = invocation.getRouteTarget();
         if (group != null && !group.isEmpty()) {
-            target.filter(endpoint -> endpoint.isGroup(group));
+            target.filter(endpoint -> endpoint.isGroup(group), -1, true);
         } else if (serviceConfig != null && !serviceConfig.isServiceGroupOpen()) {
-            target.filter(endpoint -> endpoint.isGroup(null));
+            target.filter(endpoint -> endpoint.isGroup(null), -1, true);
         }
         chain.filter(invocation);
     }
