@@ -134,7 +134,6 @@ agent:
         type: Resilience4j
         cleanInterval: 30000
         expireTime: 60000
-      invokeGroups: ${CONFIG_INVOKE_GROUPS:}
     live:
       topics: ${CONFIG_LIVE_TOPICS}
       modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:false}
