@@ -47,6 +47,7 @@ public class String2MapSupplier implements ConverterSupplier {
             if (result != null) {
                 String value = conversion.getSource().toString();
                 if (value != null && !value.isEmpty()) {
+                    //TODO Support standard JSON format
                     String[] keyValues = StringUtils.split(value, ';');
                     for (String keyValue : keyValues) {
                         int pos = keyValue.indexOf('=');
