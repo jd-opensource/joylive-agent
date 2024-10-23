@@ -19,6 +19,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.CellAction;
+import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -46,7 +47,7 @@ public class FailoverFilter implements InboundFilter {
                 return;
         }
         CellAction cellAction = invocation.getCellAction();
-        if (cellAction.getType() == CellAction.CellActionType.FAILOVER) {
+        if (cellAction.getType() == CellActionType.FAILOVER) {
             failoverCell(invocation, cellAction);
             return;
         }

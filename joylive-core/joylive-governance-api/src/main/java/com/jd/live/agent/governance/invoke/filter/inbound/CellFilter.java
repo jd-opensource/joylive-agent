@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.invoke.CellAction;
 import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.UnitAction;
+import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
@@ -46,7 +47,7 @@ public class CellFilter implements InboundFilter {
     @Override
     public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         UnitAction unitAction = invocation.getUnitAction();
-        if (unitAction.getType() == UnitAction.UnitActionType.FORWARD) {
+        if (unitAction.getType() == UnitActionType.FORWARD) {
             CellAction cellAction = cellAction(invocation);
             invocation.setCellAction(cellAction);
             switch (cellAction.getType()) {
@@ -65,24 +66,24 @@ public class CellFilter implements InboundFilter {
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        Unit currentUnit = liveMetadata.getCurrentUnit();
-        Cell currentCell = liveMetadata.getCurrentCell();
+        Unit localUnit = liveMetadata.getLocalUnit();
+        Cell localCell = liveMetadata.getLocalCell();
         String variable = liveMetadata.getVariable();
-        UnitRule unitRule = liveMetadata.getUnitRule();
+        UnitRule unitRule = liveMetadata.getRule();
         if (unitRule == null) {
             return new CellAction(CellActionType.FORWARD, null);
         }
-        UnitRoute unitRoute = currentUnit == null ? null : unitRule.getUnitRoute(currentUnit.getCode());
+        UnitRoute unitRoute = localUnit == null ? null : unitRule.getUnitRoute(localUnit.getCode());
         CellRoute cellRoute = null;
         if (unitRoute != null) {
             cellRoute = unitRoute.getCellRouteByVariable(variable);
             if (cellRoute == null) {
-                cellRoute = currentCell == null ? null : unitRoute.getCellRoute(currentCell.getCode());
-            } else if (cellRoute.getCell() != currentCell) {
+                cellRoute = localCell == null ? null : unitRoute.getCellRoute(localCell.getCode());
+            } else if (cellRoute.getCell() != localCell) {
                 return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_ESCAPE));
             }
         }
-        if (invocation.isAccessible(currentCell) && (cellRoute == null
+        if (invocation.isAccessible(localCell) && (cellRoute == null
                 || !cellRoute.isEmpty() && invocation.isAccessible(cellRoute.getAccessMode()))) {
             return new CellAction(CellActionType.FORWARD, null);
         }

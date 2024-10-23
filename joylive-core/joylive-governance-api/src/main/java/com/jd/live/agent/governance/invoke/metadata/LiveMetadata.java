@@ -1,6 +1,5 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
-import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.policy.live.Cell;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
@@ -22,60 +21,62 @@ public class LiveMetadata {
     private LiveConfig liveConfig;
 
     /**
-     * The live space context for this invocation.
+     * The local live space id for this invocation.
      */
-    private LiveSpace liveSpace;
+    private String localSpaceId;
 
     /**
-     * The current unit for this invocation.
+     * The local live space for this invocation.
      */
-    private Unit currentUnit;
+    private LiveSpace localSpace;
 
     /**
-     * The current cell for this invocation.
+     * The target live space ID for this invocation.
      */
-    private Cell currentCell;
+    private String targetSpaceId;
 
     /**
-     * The center unit for this invocation.
+     * The target live space for this invocation.
      */
-    private Unit centerUnit;
-
-    /**
-     * The live space ID for this invocation.
-     */
-    private String liveSpaceId;
+    private LiveSpace targetSpace;
 
     /**
      * The unit rule ID for this invocation.
      */
-    private String unitRuleId;
+    private String ruleId;
 
     /**
      * The unit rule for this invocation.
      */
-    private UnitRule unitRule;
+    private UnitRule rule;
 
     /**
      * The variable for this invocation.
      */
     private String variable;
 
-    public String getLiveSpaceId() {
-        return liveSpace == null ? null : liveSpace.getId();
+    public Unit getLocalUnit() {
+        return localSpace == null ? null : localSpace.getLocalUnit();
     }
 
-    /**
-     * Checks if the given location matches the current live space ID.
-     *
-     * @param location the location to check
-     * @return true if the location matches the current live space ID, false otherwise
-     */
-    public boolean match(Location location) {
-        String current = location.getLiveSpaceId();
-        return current == null || current.isEmpty()
-                || liveSpaceId == null || liveSpaceId.isEmpty()
-                || current.equals(liveSpaceId);
+    public Unit getLocalCenter() {
+        return localSpace == null ? null : localSpace.getCenter();
+    }
+
+    public Cell getLocalCell() {
+        return localSpace == null ? null : localSpace.getLocalCell();
+    }
+
+    public Unit getTargetLocalUnit() {
+        return targetSpace == null ? null : targetSpace.getLocalUnit();
+    }
+
+    public Unit getTargetCenter() {
+        return targetSpace == null ? null : targetSpace.getCenter();
+    }
+
+    public Cell getTargetLocalCell() {
+        return targetSpace == null ? null : targetSpace.getLocalCell();
     }
 
     private static final class LiveMetadataBuilderImpl extends LiveMetadataBuilder<LiveMetadata, LiveMetadataBuilderImpl> {

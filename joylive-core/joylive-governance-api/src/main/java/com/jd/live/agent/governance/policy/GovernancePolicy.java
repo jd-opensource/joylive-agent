@@ -61,10 +61,10 @@ public class GovernancePolicy {
     private List<DatabaseCluster> dbClusters;
 
     @Getter
-    private LiveSpace currentLiveSpace;
+    private LiveSpace localLiveSpace;
 
     @Getter
-    private LaneSpace currentLaneSpace;
+    private LaneSpace localLaneSpace;
 
     private final transient Cache<String, DatabaseCluster> dbAddressCache = new MapCache<>(new ListBuilder<>(() -> dbClusters, DatabaseCluster::getAddress));
 
@@ -224,17 +224,22 @@ public class GovernancePolicy {
         return dbAddressCache.get(port <= 0 ? host : host + ":" + port);
     }
 
+    /**
+     * Locates the given location in the live space and lane space.
+     *
+     * @param location the location to locate
+     */
     public void locate(Location location) {
         if (location == null) {
             return;
         }
-        currentLiveSpace = getLiveSpace(location.getLiveSpaceId());
-        if (currentLiveSpace != null) {
-            currentLiveSpace.locate(location.getUnit(), location.getCell());
+        localLiveSpace = getLiveSpace(location.getLiveSpaceId());
+        if (localLiveSpace != null) {
+            localLiveSpace.locate(location.getUnit(), location.getCell());
         }
-        currentLaneSpace = getLaneSpace(location.getLaneSpaceId());
-        if (currentLaneSpace != null) {
-            currentLaneSpace.locate(location.getLane());
+        localLaneSpace = getLaneSpace(location.getLaneSpaceId());
+        if (localLaneSpace != null) {
+            localLaneSpace.locate(location.getLane());
         }
     }
 

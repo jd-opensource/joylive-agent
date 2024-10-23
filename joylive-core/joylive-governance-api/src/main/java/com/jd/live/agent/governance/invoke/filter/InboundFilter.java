@@ -60,7 +60,7 @@ public interface InboundFilter {
     /**
      * Execution order for the live unit filter
      */
-    int ORDER_LIVE_UNIT = ORDER_READY + 100;
+    int ORDER_LIVE_UNIT = ORDER_LIMITER + 100;
 
     /**
      * Execution order for the live cell filter
