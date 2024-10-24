@@ -73,11 +73,12 @@ public class TagRouteFilter implements RouteFilter {
      * @return true if a match is found and the filter is applied, false otherwise.
      */
     private <T extends OutboundRequest> boolean match(OutboundInvocation<T> invocation, RoutePolicy policy) {
+        RouteTarget target = invocation.getRouteTarget();
         for (TagRule rule : policy.getTagRules()) {
             if (rule.match(invocation)) {
                 TagDestination destination = RandomWeight.choose(rule.getDestinations(), TagDestination::getWeight);
                 if (destination != null) {
-                    invocation.getRouteTarget().filter(destination::match);
+                    target.filter(destination::match);
                 }
                 return true;
             }

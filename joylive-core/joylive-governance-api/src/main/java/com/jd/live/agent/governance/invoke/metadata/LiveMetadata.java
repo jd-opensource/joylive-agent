@@ -55,6 +55,10 @@ public class LiveMetadata {
      */
     private String variable;
 
+    public boolean isLocalLiveless() {
+        return localSpace == null;
+    }
+
     public Unit getLocalUnit() {
         return localSpace == null ? null : localSpace.getLocalUnit();
     }
@@ -65,6 +69,10 @@ public class LiveMetadata {
 
     public Cell getLocalCell() {
         return localSpace == null ? null : localSpace.getLocalCell();
+    }
+
+    public boolean isTargetLiveless() {
+        return targetSpace == null;
     }
 
     public Unit getTargetLocalUnit() {

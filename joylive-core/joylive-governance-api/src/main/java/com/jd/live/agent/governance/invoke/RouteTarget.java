@@ -151,10 +151,46 @@ public class RouteTarget {
      * Filters the list of endpoints based on the provided predicate.
      *
      * @param predicate The predicate to use for filtering.
+     * @return The filtered list of endpoints.
+     */
+    public List<? extends Endpoint> filtrate(Predicate<Endpoint> predicate) {
+        filter(endpoints, predicate, -1, true);
+        return endpoints;
+    }
+
+    /**
+     * Filters the list of endpoints based on the provided predicate and maximum size.
+     *
+     * @param predicate The predicate to use for filtering.
+     * @param maxSize   The maximum size of the list to return.
+     * @return The filtered list of endpoints.
+     */
+    public List<? extends Endpoint> filtrate(Predicate<Endpoint> predicate, int maxSize) {
+        filter(endpoints, predicate, maxSize, true);
+        return endpoints;
+    }
+
+    /**
+     * Filters the list of endpoints based on the provided predicate and maximum size.
+     *
+     * @param predicate The predicate to use for filtering.
+     * @param maxSize   The maximum size of the list to return.
+     * @param nullable  Whether a null list is acceptable.
+     * @return The filtered list of endpoints.
+     */
+    public List<? extends Endpoint> filtrate(Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
+        filter(endpoints, predicate, maxSize, nullable);
+        return endpoints;
+    }
+
+    /**
+     * Filters the list of endpoints based on the provided predicate.
+     *
+     * @param predicate The predicate to use for filtering.
      * @return The count of endpoints that matched the predicate.
      */
     public int filter(Predicate<Endpoint> predicate) {
-        return filter(predicate, -1, false);
+        return filter(endpoints, predicate, -1, true);
     }
 
     /**
@@ -165,7 +201,7 @@ public class RouteTarget {
      * @return The count of endpoints that matched the predicate.
      */
     public int filter(Predicate<Endpoint> predicate, int maxSize) {
-        return filter(predicate, maxSize, false);
+        return filter(endpoints, predicate, maxSize, true);
     }
 
     /**
@@ -178,6 +214,16 @@ public class RouteTarget {
      */
     public int filter(Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
         return filter(endpoints, predicate, maxSize, nullable);
+    }
+
+    /**
+     * Creates a new list containing elements from the original list that match the given predicate.
+     *
+     * @param predicate The predicate to use for filtering. If null, the method returns the original list.
+     * @return A new list containing the filtered endpoints. If the input list or predicate is null, returns the original list.
+     */
+    public List<? extends Endpoint> tryCopy(Predicate<Endpoint> predicate) {
+        return tryCopy(endpoints, predicate, 0);
     }
 
     /**
@@ -243,7 +289,11 @@ public class RouteTarget {
 
         // Remove the remaining elements if any
         if ((writeIndex > 0 || nullable) && writeIndex < size) {
-            endpoints.subList(writeIndex, size).clear();
+            if (writeIndex == 0) {
+                endpoints.clear();
+            } else {
+                endpoints.subList(writeIndex, size).clear();
+            }
         }
         return writeIndex;
     }

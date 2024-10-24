@@ -19,11 +19,13 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import feign.Response;
+import org.springframework.http.HttpHeaders;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -44,26 +46,12 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
 
     public FeignClusterResponse(Response response) {
         super(response);
-        headers = new LazyObject<>(() -> parserHeader(response));
+        this.headers = new UnsafeLazyObject<>(() -> parserHeader(response));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.headers().get(HttpHeaders.COOKIE)));
     }
 
     public FeignClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
-    }
-
-    private Map<String, List<String>> parserHeader(Response response) {
-        if (response == null || response.headers() == null) {
-            return null;
-        }
-        Map<String, List<String>> headers = new HashMap<>();
-        response.headers().forEach((k, v) -> {
-            if (v instanceof List) {
-                headers.put(k, (List<String>) v);
-            } else {
-                headers.put(k, new ArrayList<>(v));
-            }
-        });
-        return headers;
     }
 
     @Override
@@ -97,6 +85,21 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
             }
         }
         return body;
+    }
+
+    private Map<String, List<String>> parserHeader(Response response) {
+        if (response == null || response.headers() == null) {
+            return null;
+        }
+        Map<String, List<String>> headers = new HashMap<>();
+        response.headers().forEach((k, v) -> {
+            if (v instanceof List) {
+                headers.put(k, (List<String>) v);
+            } else {
+                headers.put(k, new ArrayList<>(v));
+            }
+        });
+        return headers;
     }
 
 }

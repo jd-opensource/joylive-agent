@@ -19,11 +19,13 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import feign.Response;
+import org.springframework.http.HttpHeaders;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -44,7 +46,8 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
 
     public FeignClusterResponse(Response response) {
         super(response);
-        headers = new LazyObject<>(() -> parserHeader(response));
+        this.headers = new UnsafeLazyObject<>(() -> parserHeader(response));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.headers().get(HttpHeaders.COOKIE)));
     }
 
     public FeignClusterResponse(ServiceError error, ErrorPredicate predicate) {

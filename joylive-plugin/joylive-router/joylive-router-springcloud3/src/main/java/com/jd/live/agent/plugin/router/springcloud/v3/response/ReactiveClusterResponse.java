@@ -15,9 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
 /**
@@ -31,6 +34,8 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
 
     public ReactiveClusterResponse(ClientResponse response) {
         super(response);
+        this.headers = new UnsafeLazyObject<>(() -> response.headers().asHttpHeaders());
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.cookies(), ResponseCookie::getValue));
     }
 
     public ReactiveClusterResponse(ServiceError error, ErrorPredicate predicate) {

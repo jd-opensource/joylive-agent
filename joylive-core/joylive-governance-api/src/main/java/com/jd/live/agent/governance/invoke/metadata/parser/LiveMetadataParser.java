@@ -380,7 +380,13 @@ public abstract class LiveMetadataParser implements LiveParser {
         @Override
         protected String parseLiveSpaceId() {
             String result = super.parseLiveSpaceId();
-            return result != null && !result.isEmpty() ? result : application.getLocation().getLiveSpaceId();
+            if (result == null || result.isEmpty()) {
+                result = application.getLocation().getLiveSpaceId();
+                if (result != null && !result.isEmpty()) {
+                    RequestContext.getOrCreate().setCargo(Constants.LABEL_LIVE_SPACE_ID, result);
+                }
+            }
+            return result;
         }
 
         @Override
@@ -392,7 +398,10 @@ public abstract class LiveMetadataParser implements LiveParser {
             } else if (spaceId != null) {
                 Location location = application.getLocation();
                 if (spaceId.equals(location.getLiveSpaceId())) {
-                    return location.getUnitRuleId();
+                    result = location.getUnitRuleId();
+                    if (result != null && !result.isEmpty()) {
+                        RequestContext.getOrCreate().setCargo(Constants.LABEL_RULE_ID, result);
+                    }
                 }
             }
             return null;
