@@ -54,7 +54,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Registration registration = (Registration) ctx.getArguments()[0];
         Map<String, String> metadata = registration.getMetadata();
         if (metadata != null) {
-            application.label(metadata::putIfAbsent);
+            application.labelRegistry(metadata::putIfAbsent);
         }
         policySupplier.subscribe(registration.getServiceId());
         super.onEnter(ctx);

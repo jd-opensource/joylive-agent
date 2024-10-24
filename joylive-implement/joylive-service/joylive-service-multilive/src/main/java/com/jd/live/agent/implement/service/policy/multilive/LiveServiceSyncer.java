@@ -324,7 +324,7 @@ public class LiveServiceSyncer extends AbstractService implements PolicyService,
      */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
-        application.sync(conn::setRequestProperty);
+        application.labelSync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
     }

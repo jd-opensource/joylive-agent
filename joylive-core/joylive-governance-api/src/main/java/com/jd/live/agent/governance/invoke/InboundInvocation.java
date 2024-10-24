@@ -26,9 +26,10 @@ import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.HttpInboundLaneMetadataParser;
-import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.GatewayInboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.HttpInboundLiveMetadataParser;
-import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.InboundLiveMetadataParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LaneParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LiveParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayInboundServiceMetadataParser;
@@ -53,18 +54,20 @@ import java.util.List;
  *
  * @param <T> the type parameter of the inbound request
  */
-@Setter
-@Getter
 public abstract class InboundInvocation<T extends InboundRequest> extends Invocation<T> {
 
     /**
      * The action to be performed at the unit level.
      */
+    @Setter
+    @Getter
     protected UnitAction unitAction;
 
     /**
      * The action to be performed at the cell level.
      */
+    @Setter
+    @Getter
     protected CellAction cellAction;
 
     protected List<InboundListener> listeners;
@@ -87,7 +90,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
     @Override
     protected LiveParser createLiveParser() {
-        return new LiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
+        return new InboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
                 context.getApplication(), governancePolicy);
     }
 
@@ -176,7 +179,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         }
 
         @Override
-        protected MetadataParser.LaneParser createLaneParser() {
+        protected LaneParser createLaneParser() {
             return new HttpInboundLaneMetadataParser(request, context.getGovernanceConfig().getLaneConfig(),
                     context.getApplication(), governancePolicy, domainPolicy, this);
         }
@@ -207,10 +210,17 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
             super(request, context);
         }
 
+        @Override
+        public GatewayRole getGateway() {
+            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
+                return GatewayRole.FRONTEND;
+            }
+            return GatewayRole.BACKEND;
+        }
 
         @Override
         protected void parsePolicy() {
-            if (context.getApplication().getService().getGateway() == GatewayRole.FRONTEND) {
+            if (context.getApplication().getService().isFrontGateway()) {
                 // remove rule id at frontend gateway
                 Carrier carrier = RequestContext.get();
                 if (carrier != null) {
@@ -225,6 +235,13 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         }
 
         @Override
+        protected LiveParser createLiveParser() {
+            return new GatewayInboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
+                    context.getApplication(), governancePolicy,
+                    context::getVariableParser, context::getVariableFunction, domainPolicy);
+        }
+
+        @Override
         protected ServiceParser createServiceParser() {
             return new GatewayInboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
                     context.getApplication(), governancePolicy);
@@ -233,7 +250,8 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         @Override
         public boolean isAccessible(Place place) {
             // Accept incoming requests and then forward them to the correct unit.
-            return place == liveMetadata.getCurrentUnit() || place == liveMetadata.getCurrentCell() || super.isAccessible(place);
+            // TODO why ?
+            return place != null && (place == liveMetadata.getLocalUnit() || place == liveMetadata.getLocalCell() || super.isAccessible(place));
         }
 
         @Override

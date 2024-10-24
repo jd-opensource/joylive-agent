@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
@@ -63,54 +64,164 @@ public class UnitFilter implements InboundFilter {
         }
     }
 
-    protected <T extends InboundRequest> UnitAction unitAction(InboundInvocation<T> invocation) {
+    /**
+     * Creates a unit action for the given inbound invocation.
+     *
+     * @param invocation the inbound invocation to create a unit action for
+     * @return the created unit action
+     */
+    private <T extends InboundRequest> UnitAction unitAction(InboundInvocation<T> invocation) {
         UnitPolicy unitPolicy = invocation.getServiceMetadata().getUnitPolicy();
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        UnitRule rule = liveMetadata.getUnitRule();
-        String variable = liveMetadata.getVariable();
-        Unit currentUnit = liveMetadata.getCurrentUnit();
-        Unit center = liveMetadata.getCenterUnit();
-        if (rule == null) {
-            return new UnitAction(UnitActionType.FORWARD, null);
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        UnitRule rule = metadata.getRule();
+        String variable = metadata.getVariable();
+        UnitAction action = validateSpace(invocation);
+        if (action != null) {
+            return action;
+        } else if (rule == null) {
+            return onMissingRule(invocation);
         } else if (unitPolicy == UnitPolicy.NONE) {
-            return invocation.isAccessible(currentUnit) ? new UnitAction(UnitActionType.FORWARD, null) :
-                    new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
-        } else if (currentUnit == null) {
-            return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NO_UNIT));
+            return onNone(invocation);
+        } else if (metadata.getLocalUnit() == null) {
+            return onMissingLocalUnit(invocation);
         } else if (unitPolicy == UnitPolicy.CENTER) {
-            if (currentUnit.getType() == UnitType.CENTER) {
-                return invocation.isAccessible(currentUnit) ? new UnitAction(UnitActionType.FORWARD, null) :
-                        new UnitAction(UnitActionType.REJECT, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
-            } else {
-                return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(REJECT_UNIT_NOT_CENTER));
-            }
+            return onCenter(invocation);
         } else if (unitPolicy == UnitPolicy.PREFER_LOCAL_UNIT) {
-            if (!invocation.isAccessible(currentUnit)) {
-                if (center != null && center != currentUnit && invocation.isAccessible(center)) {
-                    return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
-                }
-                return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
-            } else {
-                return new UnitAction(UnitActionType.FORWARD, null);
-            }
+            return onPreferLocal(invocation);
         } else if (variable == null || variable.isEmpty()) {
-            if (rule.getVariableMissingAction() == VariableMissingAction.CENTER) {
-                if (currentUnit.getType() != UnitType.CENTER) {
-                    return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(FAILOVER_CENTER_NO_VARIABLE));
-                }
-                return invocation.isAccessible(currentUnit) ? new UnitAction(UnitActionType.FORWARD, null) :
-                        new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
-            }
-            return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NO_VARIABLE));
+            return onMissingVariable(invocation, rule);
         } else {
-            UnitRoute unitRoute = rule.getUnitRoute(currentUnit.getCode());
-            UnitFunction unitFunc = invocation.getContext().getUnitFunction(rule.getVariableFunction());
-            if (!rule.contains(unitRoute, variable, unitFunc)) {
-                return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_ESCAPE));
+            return onRule(invocation, rule, variable);
+        }
+    }
+
+    /**
+     * Validates the live space for the given inbound invocation.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take, or null if the space is valid
+     */
+    private <T extends InboundRequest> UnitAction validateSpace(InboundInvocation<T> invocation) {
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        String targetId = metadata.getTargetSpaceId();
+        LiveSpace localSpace = metadata.getLocalSpace();
+
+        if (invocation.getGateway() == GatewayRole.NONE && localSpace != null && !localSpace.getId().equals(targetId)) {
+            // live space is not match
+            return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NAMESPACE_NOT_MATCH));
+        }
+        return null;
+    }
+
+    /**
+     * Handles the case when the local unit is missing.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onMissingLocalUnit(InboundInvocation<T> invocation) {
+        return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NO_UNIT));
+    }
+
+    /**
+     * Handles the case when a rule is applied.
+     *
+     * @param invocation the inbound invocation
+     * @param rule       the unit rule to apply
+     * @param variable   the variable to check
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onRule(InboundInvocation<T> invocation, UnitRule rule, String variable) {
+        Unit local = invocation.getLiveMetadata().getLocalUnit();
+        UnitRoute unitRoute = rule.getUnitRoute(local.getCode());
+        UnitFunction unitFunc = invocation.getContext().getUnitFunction(rule.getVariableFunction());
+        if (!rule.contains(unitRoute, variable, unitFunc)) {
+            return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_ESCAPE));
+        }
+        return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
+                new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
+    }
+
+    /**
+     * Handles the case when a variable is missing.
+     *
+     * @param invocation the inbound invocation
+     * @param rule       the unit rule to apply
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onMissingVariable(InboundInvocation<T> invocation, UnitRule rule) {
+        Unit local = invocation.getLiveMetadata().getLocalUnit();
+        if (rule.getVariableMissingAction() == VariableMissingAction.CENTER) {
+            if (local.getType() != UnitType.CENTER) {
+                return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(FAILOVER_CENTER_NO_VARIABLE));
             }
-            return invocation.isAccessible(currentUnit) ? new UnitAction(UnitActionType.FORWARD, null) :
+            return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
                     new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
         }
+        return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NO_VARIABLE));
+    }
+
+    /**
+     * Handles the case when the prefer local option is enabled.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onPreferLocal(InboundInvocation<T> invocation) {
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        Unit local = metadata.getLocalUnit();
+        if (!invocation.isAccessible(local)) {
+            Unit center = metadata.getLocalCenter();
+            if (center != null && center != local && invocation.isAccessible(center)) {
+                return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
+            }
+            return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
+        } else {
+            return new UnitAction(UnitActionType.FORWARD, null);
+        }
+    }
+
+    /**
+     * Handles the case when the center option is enabled.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onCenter(InboundInvocation<T> invocation) {
+        Unit local = invocation.getLiveMetadata().getLocalUnit();
+        if (local.getType() == UnitType.CENTER) {
+            return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
+                    new UnitAction(UnitActionType.REJECT, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
+        } else {
+            return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(REJECT_UNIT_NOT_CENTER));
+        }
+    }
+
+    /**
+     * Handles the case when no other options are enabled.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onNone(InboundInvocation<T> invocation) {
+        Unit local = invocation.getLiveMetadata().getLocalUnit();
+        return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
+                new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
+    }
+
+    /**
+     * Handles the case when a unit rule is missing.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onMissingRule(InboundInvocation<T> invocation) {
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        LiveSpace localSpace = metadata.getLocalSpace();
+        if (localSpace == null || invocation.getGateway() != GatewayRole.NONE) {
+            return new UnitAction(UnitActionType.FORWARD);
+        }
+        return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NO_UNIT_ROUTE));
     }
 
 }

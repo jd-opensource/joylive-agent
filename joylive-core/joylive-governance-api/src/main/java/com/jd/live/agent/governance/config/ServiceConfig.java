@@ -42,7 +42,7 @@ public class ServiceConfig {
      */
     @Getter
     @Setter
-    private boolean localFirst = false;
+    private boolean localFirst;
 
     /**
      * A map of unit failover thresholds, where the key is the unit identifier and the value is the threshold integer.

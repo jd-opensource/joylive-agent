@@ -85,7 +85,7 @@ public class CellFilter implements RouteFilter {
                         ? livePolicy::getCellThreshold
                         : serviceConfig::getCellFailoverThreshold);
         if (target.getUnit() == null) {
-            // unit policy is none.
+            // unit policy is none. maybe not live request or route any.
             return routeAny(invocation, target, localFirst, thresholdFunc);
         }
         return routeUnit(invocation, target, localFirst, thresholdFunc);
@@ -146,13 +146,13 @@ public class CellFilter implements RouteFilter {
                              boolean localFirst,
                              Function<String, Integer> thresholdFunc) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        LiveSpace liveSpace = liveMetadata.getLiveSpace();
-        if (liveSpace == null) {
+        LiveSpace targetSpace = liveMetadata.getTargetSpace();
+        if (targetSpace == null) {
             return true;
         }
-        Unit preferUnit = localFirst ? liveMetadata.getCurrentUnit() : null;
-        Unit centerUnit = liveMetadata.getCenterUnit();
-        Cell preferCell = localFirst ? liveMetadata.getCurrentCell() : null;
+        Unit preferUnit = localFirst ? targetSpace.getLocalUnit() : null;
+        Unit centerUnit = targetSpace.getCenter();
+        Cell preferCell = localFirst ? targetSpace.getLocalCell() : null;
         String preferCloud = localFirst ? invocation.getContext().getLocation().getCloud() : null;
         Set<String> unavailableCells = getUnavailableCells(invocation);
         if (!unavailableCells.isEmpty()) {
@@ -231,11 +231,11 @@ public class CellFilter implements RouteFilter {
      */
     private Set<String> getUnavailableCells(OutboundInvocation<?> invocation) {
         Set<String> unavailableCells = new HashSet<>();
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        List<Unit> units = liveMetadata.getLiveSpace().getSpec().getUnits();
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        List<Unit> units = metadata.getTargetSpace().getSpec().getUnits();
 
         if (units != null) {
-            UnitRule rule = liveMetadata.getUnitRule();
+            UnitRule rule = metadata.getRule();
             for (Unit unit : units) {
                 UnitRoute unitRoute = rule == null ? null : rule.getUnitRoute(unit.getCode());
                 boolean unitAccessible = invocation.isAccessible(unit);
@@ -272,9 +272,9 @@ public class CellFilter implements RouteFilter {
                              boolean localFirst, UnitGroup unitGroup,
                              Function<String, Integer> failoverThresholdFunc) {
         // Extract necessary information from the invocation metadata.
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        String variable = liveMetadata.getVariable();
-        Cell localCell = liveMetadata.getCurrentCell();
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        String variable = metadata.getVariable();
+        Cell localCell = metadata.getTargetLocalCell();
 
         // Initialize variables to keep track of the total weight, instance count, max priority, and preferred candidate.
         int weights = 0;

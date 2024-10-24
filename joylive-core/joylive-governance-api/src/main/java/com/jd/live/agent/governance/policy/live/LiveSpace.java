@@ -41,9 +41,9 @@ public class LiveSpace {
     @Setter
     private LiveSpec spec;
 
-    private transient Unit currentUnit;
+    private transient Unit localUnit;
 
-    private transient Cell currentCell;
+    private transient Cell localCell;
 
     public LiveSpace() {
     }
@@ -94,8 +94,8 @@ public class LiveSpace {
     }
 
     public void locate(String unit, String cell) {
-        currentUnit = getUnit(unit);
-        currentCell = currentUnit == null ? null : currentUnit.getCell(cell);
+        localUnit = getUnit(unit);
+        localCell = localUnit == null ? null : localUnit.getCell(cell);
     }
 
     public void cache() {

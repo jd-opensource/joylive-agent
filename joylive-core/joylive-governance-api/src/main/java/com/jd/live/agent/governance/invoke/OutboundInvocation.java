@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
@@ -84,7 +85,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         this.liveMetadata = invocation.getLiveMetadata();
         this.laneMetadata = invocation.getLaneMetadata();
         ServiceParser serviceParser = createServiceParser();
-        this.serviceMetadata = serviceParser.configure(serviceParser.parse(), liveMetadata.getUnitRule());
+        this.serviceMetadata = serviceParser.configure(serviceParser.parse(), liveMetadata.getRule());
     }
 
     @Override
@@ -275,6 +276,14 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
 
         @Override
+        public GatewayRole getGateway() {
+            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
+                return GatewayRole.FRONTEND;
+            }
+            return GatewayRole.BACKEND;
+        }
+
+        @Override
         protected ServiceParser createServiceParser() {
             return new GatewayOutboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
                     context.getApplication(), governancePolicy);
@@ -301,6 +310,14 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         public GatewayRpcOutboundInvocation(T request, Invocation<?> invocation) {
             super(request, invocation);
+        }
+
+        @Override
+        public GatewayRole getGateway() {
+            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
+                return GatewayRole.FRONTEND;
+            }
+            return GatewayRole.BACKEND;
         }
 
         @Override

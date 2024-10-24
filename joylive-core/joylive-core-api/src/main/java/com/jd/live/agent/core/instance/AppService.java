@@ -117,5 +117,9 @@ public class AppService {
         return gateway != GatewayRole.NONE;
     }
 
+    public boolean isFrontGateway() {
+        return gateway == GatewayRole.FRONTEND;
+    }
+
 }
 

@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.governance.invoke.Invocation.*;
 
 /**
@@ -60,12 +61,7 @@ public class UnitFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        RouteTarget target = invocation.getRouteTarget();
-        LiveSpace liveSpace = invocation.getLiveMetadata().getLiveSpace();
-        if (liveSpace != null) {
-            target.filter(e -> e.isLiveSpace(liveSpace.getId()), 0, true);
-        }
-        target = route(invocation, target.getEndpoints());
+        RouteTarget target = route(invocation);
         invocation.setRouteTarget(target);
         UnitAction action = target.getUnitAction();
         if (action.getType() == UnitActionType.FORWARD) {
@@ -81,32 +77,25 @@ public class UnitFilter implements RouteFilter {
      *
      * @param <T>        The type parameter of the outbound request.
      * @param invocation The outbound invocation containing the request and related metadata.
-     * @param endpoints  A list of potential endpoints to which the request can be forwarded if routing conditions are satisfied.
      * @return The route target that specifies the instances to route the request to.
      */
-    private <T extends OutboundRequest> RouteTarget route(OutboundInvocation<T> invocation,
-                                                          List<? extends Endpoint> endpoints) {
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
-        ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
-        UnitPolicy unitPolicy = serviceMetadata.getUnitPolicy();
-        if (liveMetadata.getUnitRuleId() == null) {
-            // Not live domain
-            return routeNone(invocation, endpoints, liveMetadata);
-        }
-        switch (unitPolicy) {
+    private <T extends OutboundRequest> RouteTarget route(OutboundInvocation<T> invocation) {
+        UnitRule rule = invocation.getLiveMetadata().getRule();
+        UnitPolicy policy = rule == null ? UnitPolicy.NONE : invocation.getServiceMetadata().getUnitPolicy();
+        switch (policy) {
             case NONE:
-                return routeNone(invocation, endpoints, liveMetadata);
+                // None live
+                return routeNone(invocation);
             case CENTER:
                 // Guiding to center unit
-                return routeCenter(invocation, endpoints, liveMetadata);
+                return routeCenter(invocation);
             case UNIT:
                 // Guiding to standard unit
-                return routeUnit(invocation, endpoints, liveMetadata, getUnitRoute(invocation));
+                return routeUnit(invocation);
             case PREFER_LOCAL_UNIT:
             default:
                 // Priority principle for current unit
-                return routeLocal(invocation, endpoints, liveMetadata, livePolicy, getUnitRoute(invocation));
+                return routeLocal(invocation);
         }
     }
 
@@ -114,14 +103,13 @@ public class UnitFilter implements RouteFilter {
      * Filter available unit instances based on the provided live metadata.
      *
      * @param invocation   The outbound invocation to be routed.
-     * @param endpoints    A list of potential endpoints to which the request can be forwarded if routing conditions are satisfied.
-     * @param liveMetadata The live metadata associated with the request.
      * @return The route target indicating the action to be taken (forward, reject, etc.).
      */
-    private RouteTarget routeNone(OutboundInvocation<?> invocation,
-                                  List<? extends Endpoint> endpoints,
-                                  LiveMetadata liveMetadata) {
-        UnitRule rule = liveMetadata.getUnitRule();
+    private RouteTarget routeNone(OutboundInvocation<?> invocation) {
+        RouteTarget target = invocation.getRouteTarget();
+        target.filter(e -> isEmpty(e.getLiveSpaceId()), 0, true);
+        List<? extends Endpoint> endpoints = target.getEndpoints();
+        UnitRule rule = invocation.getLiveMetadata().getRule();
         List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
         if (routes != null && !routes.isEmpty()) {
             Set<String> availableUnits = new HashSet<>(routes.size());
@@ -145,22 +133,63 @@ public class UnitFilter implements RouteFilter {
     }
 
     /**
+     * Routes the outbound request to the center unit if it is accessible and a valid unit route is found.
+     *
+     * @param invocation The outbound invocation containing the request and related metadata.
+     * @return The route target indicating the instances to forward the request to, or a rejection if the center unit is not accessible or no unit route is found.
+     */
+    private RouteTarget routeCenter(OutboundInvocation<?> invocation) {
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        Unit unit = metadata.getTargetCenter();
+        UnitRule rule = metadata.getRule();
+        UnitRoute route = unit == null || rule == null ? null : rule.getUnitRoute(unit.getCode());
+        if (unit == null) {
+            return RouteTarget.reject(invocation.getError(REJECT_NO_CENTER));
+        } else if (!invocation.isAccessible(unit)) {
+            return RouteTarget.reject(unit, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE, unit.getCode()));
+        } else if (route == null) {
+            return RouteTarget.reject(unit, invocation.getError(REJECT_NO_UNIT_ROUTE, unit.getCode()));
+        }
+        String targetSpaceId = metadata.getTargetSpaceId();
+        RouteTarget target = invocation.getRouteTarget();
+        target.filter(e -> e.isLiveSpace(targetSpaceId), 0, true);
+        return RouteTarget.forward(target.getEndpoints(), route);
+    }
+
+    /**
+     * Routes the outbound request to the specified unit if it is accessible.
+     *
+     * @param invocation The outbound invocation containing the request and related metadata.
+     * @return The route target indicating the instances to forward the request to, or a rejection if the unit is not accessible.
+     */
+    private RouteTarget routeUnit(OutboundInvocation<?> invocation) {
+        UnitRoute route = getUnitRoute(invocation);
+        if (route == null) {
+            String variable = invocation.getLiveMetadata().getVariable();
+            return RouteTarget.reject(invocation.getError(variable == null || variable.isEmpty() ? REJECT_NO_VARIABLE : REJECT_NO_UNIT_ROUTE));
+        }
+        Unit unit = route.getUnit();
+        if (!invocation.isAccessible(unit)) {
+            return RouteTarget.reject(unit, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE, unit.getCode()));
+        }
+        String targetSpaceId = invocation.getLiveMetadata().getTargetSpaceId();
+        RouteTarget target = invocation.getRouteTarget();
+        target.filter(e -> e.isLiveSpace(targetSpaceId), 0, true);
+        return RouteTarget.forward(target.getEndpoints(), route);
+    }
+
+    /**
      * Routes an outbound invocation to a local unit based on the provided live metadata, live policy, and target route.
      *
      * @param invocation   The outbound invocation to be routed.
-     * @param endpoints    A list of potential endpoints to which the request can be forwarded if routing conditions are satisfied.
-     * @param liveMetadata The live metadata associated with the request.
-     * @param livePolicy   The service live policy used to determine routing behavior.
-     * @param targetRoute  The target unit route determined by the routing logic.
      * @return The route target indicating the action to be taken (forward, reject, etc.).
      */
-    private RouteTarget routeLocal(OutboundInvocation<?> invocation,
-                                   List<? extends Endpoint> endpoints,
-                                   LiveMetadata liveMetadata,
-                                   ServiceLivePolicy livePolicy,
-                                   UnitRoute targetRoute) {
-        EndpointGroup instanceGroup = new EndpointGroup(endpoints);
-        Election election = getPreferUnits(liveMetadata, targetRoute, new CandidateBuilder(invocation, instanceGroup));
+    private RouteTarget routeLocal(OutboundInvocation<?> invocation) {
+        String targetSpaceId = invocation.getLiveMetadata().getTargetSpaceId();
+        RouteTarget routeTarget = invocation.getRouteTarget();
+        routeTarget.filter(e -> e.isLiveSpace(targetSpaceId), 0, true);
+        EndpointGroup group = new EndpointGroup(routeTarget.getEndpoints());
+        Election election = getPreferUnits(invocation, group);
         List<Candidate> candidates = election.getCandidates();
         if (election.isEmpty()) {
             return RouteTarget.reject(invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
@@ -173,14 +202,16 @@ public class UnitFilter implements RouteFilter {
             } else if (target.getRoute() == null) {
                 return RouteTarget.reject(unit, invocation.getError(REJECT_NO_UNIT_ROUTE, unit.getCode()));
             }
-            return RouteTarget.forward(instanceGroup, target.getUnit(), target.getRoute());
+            return RouteTarget.forward(group, target.getUnit(), target.getRoute());
         }
         // All targets are accessible and have instances
         int remaining = election.getInstances();
         Candidate target = candidates.get(0);
         Unit unit = target.getUnit();
         remaining -= target.getInstances();
-        ServiceConfig serviceConfig = invocation.getServiceMetadata().getServiceConfig();
+        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
+        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
+        ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
         Integer threshold = livePolicy.getUnitThreshold(unit.getCode());
         threshold = threshold == null ? serviceConfig.getUnitFailoverThreshold(unit.getCode()) : threshold;
         threshold = threshold == null ? 0 : threshold;
@@ -195,12 +226,12 @@ public class UnitFilter implements RouteFilter {
                     Candidate failoverTarget = candidates.get(j);
                     weight += failoverTarget.getInstances();
                     if (weight > random) {
-                        return RouteTarget.forward(instanceGroup, failoverTarget.getUnit(), failoverTarget.getRoute());
+                        return RouteTarget.forward(group, failoverTarget.getUnit(), failoverTarget.getRoute());
                     }
                 }
             }
         }
-        return RouteTarget.forward(instanceGroup, unit, target.getRoute());
+        return RouteTarget.forward(group, unit, target.getRoute());
     }
 
     /**
@@ -211,7 +242,7 @@ public class UnitFilter implements RouteFilter {
      */
     private UnitRoute getUnitRoute(OutboundInvocation<?> invocation) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        UnitRule rule = liveMetadata.getUnitRule();
+        UnitRule rule = liveMetadata.getRule();
         if (rule == null) {
             return null;
         }
@@ -221,113 +252,49 @@ public class UnitFilter implements RouteFilter {
     }
 
     /**
-     * Routes the outbound request to the specified unit if it is accessible.
-     *
-     * @param invocation   The outbound invocation containing the request and related metadata.
-     * @param endpoints    A list of potential endpoints to which the request can be forwarded if routing conditions are satisfied.
-     * @param liveMetadata The live metadata associated with the request.
-     * @param targetRoute  The target unit route determined by the routing logic.
-     * @return The route target indicating the instances to forward the request to, or a rejection if the unit is not accessible.
-     */
-    private RouteTarget routeUnit(OutboundInvocation<?> invocation,
-                                  List<? extends Endpoint> endpoints,
-                                  LiveMetadata liveMetadata,
-                                  UnitRoute targetRoute) {
-        if (targetRoute == null) {
-            String variable = liveMetadata.getVariable();
-            return RouteTarget.reject(invocation.getError(variable == null || variable.isEmpty() ? REJECT_NO_VARIABLE : REJECT_NO_UNIT_ROUTE));
-        }
-        Unit unit = targetRoute.getUnit();
-        if (!invocation.isAccessible(unit)) {
-            return RouteTarget.reject(unit, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE, unit.getCode()));
-        }
-        return RouteTarget.forward(endpoints, targetRoute);
-    }
-
-    /**
-     * Routes the outbound request to the center unit if it is accessible and a valid unit route is found.
-     *
-     * @param invocation   The outbound invocation containing the request and related metadata.
-     * @param endpoints    A list of potential endpoints to which the request can be forwarded if routing conditions are satisfied.
-     * @param liveMetadata The live metadata associated with the request.
-     * @return The route target indicating the instances to forward the request to, or a rejection if the center unit is not accessible or no unit route is found.
-     */
-    private RouteTarget routeCenter(OutboundInvocation<?> invocation,
-                                    List<? extends Endpoint> endpoints,
-                                    LiveMetadata liveMetadata) {
-        Unit unit = liveMetadata.getCenterUnit();
-        UnitRule rule = liveMetadata.getUnitRule();
-        UnitRoute unitRoute = unit == null || rule == null ? null : rule.getUnitRoute(unit.getCode());
-        if (unit == null) {
-            return RouteTarget.reject(invocation.getError(REJECT_NO_CENTER));
-        } else if (!invocation.isAccessible(unit)) {
-            return RouteTarget.reject(unit, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE, unit.getCode()));
-        } else if (unitRoute == null) {
-            return RouteTarget.reject(unit, invocation.getError(REJECT_NO_UNIT_ROUTE, unit.getCode()));
-        }
-        return RouteTarget.forward(endpoints, unitRoute);
-    }
-
-    /**
-     * Determines the preferred units for the election process when no center unit is specified.
-     *
-     * @param liveMetadata The live metadata associated with the request.
-     * @param targetRoute  The target unit route determined by the routing logic.
-     * @param builder      The candidate builder used to build election candidates.
-     * @param units        The list of available units to consider for the election.
-     * @return An election object containing the preferred units for the election.
-     */
-    private Election getAvailableUnits(LiveMetadata liveMetadata,
-                                       UnitRoute targetRoute,
-                                       CandidateBuilder builder,
-                                       List<Unit> units) {
-        Election result = new Election();
-        for (Unit unit : units) {
-            result.add(builder.build(unit), Candidate::isAvailable);
-        }
-        return result;
-    }
-
-    /**
      * Determines the preferred units for the election process based on the live metadata and target route.
      *
-     * @param liveMetadata The live metadata associated with the request.
-     * @param targetRoute  The target unit route determined by the routing logic.
-     * @param builder      The candidate builder used to build election candidates.
+     * @param invocation   The outbound invocation to be routed.
+     * @param group      The endpoint group used to build election candidates.
      * @return An election object containing the preferred units for the election.
      */
-    private Election getPreferUnits(LiveMetadata liveMetadata,
-                                    UnitRoute targetRoute,
-                                    CandidateBuilder builder) {
-        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+    private Election getPreferUnits(OutboundInvocation<?> invocation, EndpointGroup group) {
+        UnitRoute route = getUnitRoute(invocation);
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        LiveSpace liveSpace = metadata.getTargetSpace();
         List<Unit> units = liveSpace == null ? null : liveSpace.getUnits();
+        CandidateBuilder builder = new CandidateBuilder(invocation, group);
         if (units == null || units.isEmpty()) {
             return new Election();
         } else if (units.size() == 1) {
             return new Election(builder.build(units.get(0)));
-        } else if (liveMetadata.getCenterUnit() != null) {
-            return getPreferUnitsWithCenter(liveMetadata, targetRoute, builder);
+        } else if (metadata.getTargetCenter() != null) {
+            return getPreferUnitsWithCenter(metadata, route, builder);
         } else {
-            return getPreferUnitsWithoutCenter(liveMetadata, targetRoute, builder, units);
+            return getPreferUnitsWithoutCenter(metadata, route, builder, units);
         }
     }
 
     /**
      * Determines the preferred units for the election process when a center unit is specified.
      *
-     * @param liveMetadata The live metadata associated with the request.
-     * @param targetRoute  The target unit route determined by the routing logic.
+     * @param metadata The live metadata associated with the request.
+     * @param route  The target unit route determined by the routing logic.
      * @param builder      The candidate builder used to build election candidates.
      * @return An election object containing the preferred units for the election, including the center unit.
      */
-    private Election getPreferUnitsWithCenter(LiveMetadata liveMetadata, UnitRoute targetRoute, CandidateBuilder builder) {
+    private Election getPreferUnitsWithCenter(LiveMetadata metadata, UnitRoute route, CandidateBuilder builder) {
         Election result = new Election();
-        Unit unit = liveMetadata.getCurrentUnit() != null ? liveMetadata.getCurrentUnit() : null;
-        unit = unit == null && targetRoute != null ? targetRoute.getUnit() : unit;
-        Candidate local = builder.build(unit);
-        Candidate center = builder.build(liveMetadata.getCenterUnit());
+        Unit localUnit = metadata.getTargetLocalUnit();
+        localUnit = localUnit == null && route != null ? route.getUnit() : localUnit;
+        Candidate local = builder.build(localUnit);
         result.add(local, Candidate::isAvailable);
-        result.add(center, Candidate::isAvailable);
+        Candidate center = null;
+        Unit centerUnit = metadata.getTargetCenter();
+        if (centerUnit != localUnit) {
+            center = builder.build(centerUnit);
+            result.add(center, Candidate::isAvailable);
+        }
         if (result.isEmpty()) {
             result.add(local != null ? local : center, null);
         }
@@ -337,19 +304,16 @@ public class UnitFilter implements RouteFilter {
     /**
      * Determines the preferred units for the election process when no center unit is specified.
      *
-     * @param liveMetadata The live metadata associated with the request.
-     * @param targetRoute  The target unit route determined by the routing logic.
+     * @param metadata The live metadata associated with the request.
+     * @param route  The target unit route determined by the routing logic.
      * @param builder      The candidate builder used to build election candidates.
      * @param units        The list of available units to consider for the election.
      * @return An election object containing the preferred units for the election.
      */
-    private Election getPreferUnitsWithoutCenter(LiveMetadata liveMetadata,
-                                                 UnitRoute targetRoute,
-                                                 CandidateBuilder builder,
-                                                 List<Unit> units) {
+    private Election getPreferUnitsWithoutCenter(LiveMetadata metadata, UnitRoute route, CandidateBuilder builder, List<Unit> units) {
         Election result = new Election();
-        Unit localUnit = liveMetadata.getCurrentUnit() != null ? liveMetadata.getCurrentUnit() : null;
-        localUnit = localUnit == null && targetRoute != null ? targetRoute.getUnit() : localUnit;
+        Unit localUnit = metadata.getTargetLocalUnit();
+        localUnit = localUnit == null && route != null ? route.getUnit() : localUnit;
         Candidate localCandidate = builder.build(localUnit);
         result.add(localCandidate, Candidate::isAvailable);
         int random = ThreadLocalRandom.current().nextInt(units.size());
@@ -454,7 +418,7 @@ public class UnitFilter implements RouteFilter {
                 return null;
             }
             boolean accessible = invocation.isAccessible(unit);
-            UnitRule unitRule = invocation.getLiveMetadata().getUnitRule();
+            UnitRule unitRule = invocation.getLiveMetadata().getRule();
             UnitRoute unitRoute = unitRule == null ? null : unitRule.getUnitRoute(unit.getCode());
             UnitGroup group = instanceGroup.getUnitGroup(unit.getCode());
             int instances = group == null ? 0 : group.size();
