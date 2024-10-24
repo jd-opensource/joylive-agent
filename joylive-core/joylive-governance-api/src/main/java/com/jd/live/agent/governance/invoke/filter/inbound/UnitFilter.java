@@ -78,12 +78,15 @@ public class UnitFilter implements InboundFilter {
         UnitAction action = validateSpace(invocation);
         if (action != null) {
             return action;
+        } else if (metadata.getLocalSpace() == null) {
+            // liveless
+            return onLiveless(invocation);
         } else if (rule == null) {
             return onMissingRule(invocation);
-        } else if (unitPolicy == UnitPolicy.NONE) {
-            return onNone(invocation);
         } else if (metadata.getLocalUnit() == null) {
             return onMissingLocalUnit(invocation);
+        } else if (unitPolicy == UnitPolicy.NONE) {
+            return onNone(invocation);
         } else if (unitPolicy == UnitPolicy.CENTER) {
             return onCenter(invocation);
         } else if (unitPolicy == UnitPolicy.PREFER_LOCAL_UNIT) {
@@ -111,6 +114,16 @@ public class UnitFilter implements InboundFilter {
             return new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_NAMESPACE_NOT_MATCH));
         }
         return null;
+    }
+
+    /**
+     * Handles the case when no other options are enabled.
+     *
+     * @param invocation the inbound invocation
+     * @return a UnitAction indicating the action to take
+     */
+    private <T extends InboundRequest> UnitAction onLiveless(InboundInvocation<T> invocation) {
+        return new UnitAction(UnitActionType.FORWARD);
     }
 
     /**
@@ -190,7 +203,7 @@ public class UnitFilter implements InboundFilter {
     private <T extends InboundRequest> UnitAction onCenter(InboundInvocation<T> invocation) {
         Unit local = invocation.getLiveMetadata().getLocalUnit();
         if (local.getType() == UnitType.CENTER) {
-            return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
+            return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD) :
                     new UnitAction(UnitActionType.REJECT, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
         } else {
             return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(REJECT_UNIT_NOT_CENTER));
@@ -205,7 +218,7 @@ public class UnitFilter implements InboundFilter {
      */
     private <T extends InboundRequest> UnitAction onNone(InboundInvocation<T> invocation) {
         Unit local = invocation.getLiveMetadata().getLocalUnit();
-        return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
+        return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD) :
                 new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
     }
 

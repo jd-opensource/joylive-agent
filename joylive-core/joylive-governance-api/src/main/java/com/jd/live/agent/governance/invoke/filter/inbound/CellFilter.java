@@ -65,15 +65,19 @@ public class CellFilter implements InboundFilter {
     }
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        Unit localUnit = liveMetadata.getLocalUnit();
-        Cell localCell = liveMetadata.getLocalCell();
-        String variable = liveMetadata.getVariable();
-        UnitRule unitRule = liveMetadata.getRule();
-        if (unitRule == null) {
-            return new CellAction(CellActionType.FORWARD, null);
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        if (metadata.getLocalSpace() == null) {
+            // liveless
+            return new CellAction(CellActionType.FORWARD);
         }
-        UnitRoute unitRoute = localUnit == null ? null : unitRule.getUnitRoute(localUnit.getCode());
+        UnitRule rule = metadata.getRule();
+        if (rule == null) {
+            return new CellAction(CellActionType.FORWARD);
+        }
+        Unit localUnit = metadata.getLocalUnit();
+        Cell localCell = metadata.getLocalCell();
+        String variable = metadata.getVariable();
+        UnitRoute unitRoute = localUnit == null ? null : rule.getUnitRoute(localUnit.getCode());
         CellRoute cellRoute = null;
         if (unitRoute != null) {
             cellRoute = unitRoute.getCellRouteByVariable(variable);
@@ -85,7 +89,7 @@ public class CellFilter implements InboundFilter {
         }
         if (invocation.isAccessible(localCell) && (cellRoute == null
                 || !cellRoute.isEmpty() && invocation.isAccessible(cellRoute.getAccessMode()))) {
-            return new CellAction(CellActionType.FORWARD, null);
+            return new CellAction(CellActionType.FORWARD);
         }
         return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_NOT_ACCESSIBLE));
     }

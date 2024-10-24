@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
@@ -205,6 +206,16 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Checks if the live space ID is null or empty.
+     *
+     * @return true if the live space ID is null or empty, false otherwise
+     */
+    default boolean isLiveless() {
+        String spaceId = getLiveSpaceId();
+        return spaceId == null || spaceId.isEmpty();
+    }
+
+    /**
      * Determines if the live space ID matches the specified live space ID.
      *
      * @param liveSpaceId The live space ID to match.
@@ -225,6 +236,20 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Determines if the unit matches the specified units.
+     *
+     * @param units The units to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isUnit(Set<String> units) {
+        if (units == null || units.isEmpty()) {
+            return false;
+        }
+        String unit = getUnit();
+        return unit != null && units.contains(unit);
+    }
+
+    /**
      * Determines if the live space and unit match the specified live space ID and unit.
      *
      * @param liveSpaceId The live space ID to match.
@@ -233,6 +258,17 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      */
     default boolean isUnit(String liveSpaceId, String unit) {
         return isLiveSpace(liveSpaceId) && isUnit(unit);
+    }
+
+    /**
+     * Determines if the live space and unit match the specified live space ID and units.
+     *
+     * @param liveSpaceId The live space ID to match.
+     * @param units       The units to match.
+     * @return true if both the live space ID and unit match, false otherwise.
+     */
+    default boolean isUnit(String liveSpaceId, Set<String> units) {
+        return isLiveSpace(liveSpaceId) && isUnit(units);
     }
 
     /**
@@ -305,8 +341,9 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      */
     default boolean isGroup(String group) {
         String label = getGroup();
-        if (group == null) {
-            return PolicyId.DEFAULT_GROUP.equals(label);
+        // default group
+        if (group == null || group.isEmpty() || PolicyId.DEFAULT_GROUP.equals(group)) {
+            return label == null || label.isEmpty() || PolicyId.DEFAULT_GROUP.equals(label);
         } else {
             return group.equals(label);
         }

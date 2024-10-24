@@ -20,7 +20,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.EndpointGroup;
 import com.jd.live.agent.governance.instance.UnitGroup;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -45,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.governance.invoke.Invocation.*;
 
 /**
@@ -106,11 +104,23 @@ public class UnitFilter implements RouteFilter {
      * @return The route target indicating the action to be taken (forward, reject, etc.).
      */
     private RouteTarget routeNone(OutboundInvocation<?> invocation) {
-        RouteTarget target = invocation.getRouteTarget();
-        target.filter(e -> isEmpty(e.getLiveSpaceId()), 0, true);
-        List<? extends Endpoint> endpoints = target.getEndpoints();
-        UnitRule rule = invocation.getLiveMetadata().getRule();
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        String targetSpaceId = metadata.getTargetSpaceId();
+        UnitRule rule = metadata.getRule();
         List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
+        Set<String> units = getAvailableUnits(invocation, routes);
+        return RouteTarget.forward(invocation.getRouteTarget().filtrate(e -> e.isUnit(targetSpaceId, units) || e.isLiveless()));
+
+    }
+
+    /**
+     * Gets the available units for the given outbound invocation based on the provided routes.
+     *
+     * @param invocation the outbound invocation
+     * @param routes     the list of unit routes
+     * @return a set of available unit codes, or null if no routes are provided or all units are inaccessible
+     */
+    private Set<String> getAvailableUnits(OutboundInvocation<?> invocation, List<UnitRoute> routes) {
         if (routes != null && !routes.isEmpty()) {
             Set<String> availableUnits = new HashSet<>(routes.size());
             for (UnitRoute route : routes) {
@@ -118,18 +128,9 @@ public class UnitFilter implements RouteFilter {
                     availableUnits.add(route.getCode());
                 }
             }
-            if (availableUnits.isEmpty()) {
-                return RouteTarget.reject(invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
-            } else if (routes.size() == 1) {
-                return RouteTarget.forward(endpoints, routes.get(0));
-            } else if (routes.size() != availableUnits.size()) {
-                RouteTarget.filter(endpoints, e -> availableUnits.contains(e.getUnit()));
-                if (availableUnits.size() == 1) {
-                    return RouteTarget.forward(endpoints, rule.getUnitRoute(availableUnits.iterator().next()));
-                }
-            }
+            return availableUnits;
         }
-        return RouteTarget.forward(endpoints);
+        return null;
     }
 
     /**
@@ -152,8 +153,7 @@ public class UnitFilter implements RouteFilter {
         }
         String targetSpaceId = metadata.getTargetSpaceId();
         RouteTarget target = invocation.getRouteTarget();
-        target.filter(e -> e.isLiveSpace(targetSpaceId), 0, true);
-        return RouteTarget.forward(target.getEndpoints(), route);
+        return RouteTarget.forward(target.filtrate(e -> e.isLiveSpace(targetSpaceId)), route);
     }
 
     /**
@@ -174,8 +174,7 @@ public class UnitFilter implements RouteFilter {
         }
         String targetSpaceId = invocation.getLiveMetadata().getTargetSpaceId();
         RouteTarget target = invocation.getRouteTarget();
-        target.filter(e -> e.isLiveSpace(targetSpaceId), 0, true);
-        return RouteTarget.forward(target.getEndpoints(), route);
+        return RouteTarget.forward(target.filtrate(e -> e.isLiveSpace(targetSpaceId)), route);
     }
 
     /**
@@ -186,9 +185,7 @@ public class UnitFilter implements RouteFilter {
      */
     private RouteTarget routeLocal(OutboundInvocation<?> invocation) {
         String targetSpaceId = invocation.getLiveMetadata().getTargetSpaceId();
-        RouteTarget routeTarget = invocation.getRouteTarget();
-        routeTarget.filter(e -> e.isLiveSpace(targetSpaceId), 0, true);
-        EndpointGroup group = new EndpointGroup(routeTarget.getEndpoints());
+        EndpointGroup group = new EndpointGroup(invocation.getRouteTarget().filtrate(e -> e.isLiveSpace(targetSpaceId)));
         Election election = getPreferUnits(invocation, group);
         List<Candidate> candidates = election.getCandidates();
         if (election.isEmpty()) {
