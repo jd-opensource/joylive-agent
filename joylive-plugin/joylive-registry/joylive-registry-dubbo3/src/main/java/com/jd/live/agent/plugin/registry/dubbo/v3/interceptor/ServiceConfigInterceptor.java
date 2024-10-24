@@ -48,7 +48,7 @@ public class ServiceConfigInterceptor extends InterceptorAdaptor {
         MethodContext methodContext = (MethodContext) ctx;
 
         Map<String, String> map = (Map<String, String>) methodContext.getResult();
-        application.label(map::putIfAbsent);
+        application.labelRegistry(map::putIfAbsent);
 
         AbstractInterfaceConfig config = (AbstractInterfaceConfig) ctx.getTarget();
         ApplicationConfig application = config.getApplication();
