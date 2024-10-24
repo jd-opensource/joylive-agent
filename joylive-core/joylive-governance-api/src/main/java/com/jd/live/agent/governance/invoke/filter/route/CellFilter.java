@@ -272,9 +272,9 @@ public class CellFilter implements RouteFilter {
                              boolean localFirst, UnitGroup unitGroup,
                              Function<String, Integer> failoverThresholdFunc) {
         // Extract necessary information from the invocation metadata.
-        LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        String variable = liveMetadata.getVariable();
-        Cell localCell = liveMetadata.getTargetSpace().getLocalCell();
+        LiveMetadata metadata = invocation.getLiveMetadata();
+        String variable = metadata.getVariable();
+        Cell localCell = metadata.getTargetLocalCell();
 
         // Initialize variables to keep track of the total weight, instance count, max priority, and preferred candidate.
         int weights = 0;
