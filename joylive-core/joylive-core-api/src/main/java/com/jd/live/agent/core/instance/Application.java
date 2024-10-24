@@ -159,7 +159,7 @@ public class Application {
             labelInstance(consumer);
             if (location != null) {
                 labelZone(consumer);
-                LabelLiveSpace(consumer);
+                labelLiveSpace(consumer);
                 labelLane(consumer);
             }
             labelService(consumer);
@@ -176,7 +176,7 @@ public class Application {
             labelInstance(consumer);
             if (location != null) {
                 labelZone(consumer);
-                LabelLiveSpace(consumer);
+                labelLiveSpace(consumer);
                 labelLane(consumer);
                 accept(consumer, Constants.LABEL_INSTANCE_IP, location.getIp());
             }
@@ -228,8 +228,8 @@ public class Application {
      *
      * @param consumer the consumer to use for labeling
      */
-    private void LabelLiveSpace(BiConsumer<String, String> consumer) {
-        if (location.getLiveSpaceId() != null && !location.getLiveSpaceId().isEmpty()) {
+    private void labelLiveSpace(BiConsumer<String, String> consumer) {
+        if (!location.isLiveless()) {
             accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
             accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
             accept(consumer, Constants.LABEL_UNIT, location.getUnit());
@@ -243,7 +243,7 @@ public class Application {
      * @param consumer the consumer to use for labeling
      */
     private void labelLane(BiConsumer<String, String> consumer) {
-        if (location.getLaneSpaceId() != null && !location.getLaneSpaceId().isEmpty()) {
+        if (!location.isLaneless()) {
             accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
             accept(consumer, Constants.LABEL_LANE, location.getLane());
         }

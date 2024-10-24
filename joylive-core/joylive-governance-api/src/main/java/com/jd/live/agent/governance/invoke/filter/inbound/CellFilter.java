@@ -66,7 +66,7 @@ public class CellFilter implements InboundFilter {
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
         LiveMetadata metadata = invocation.getLiveMetadata();
-        if (metadata.getLocalSpace() == null) {
+        if (metadata.isLocalLiveless()) {
             // liveless
             return new CellAction(CellActionType.FORWARD);
         }

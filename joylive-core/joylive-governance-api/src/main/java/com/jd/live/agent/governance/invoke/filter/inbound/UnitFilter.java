@@ -78,7 +78,7 @@ public class UnitFilter implements InboundFilter {
         UnitAction action = validateSpace(invocation);
         if (action != null) {
             return action;
-        } else if (metadata.getLocalSpace() == null) {
+        } else if (metadata.isLocalLiveless()) {
             // liveless
             return onLiveless(invocation);
         } else if (rule == null) {
