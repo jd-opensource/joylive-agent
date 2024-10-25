@@ -283,6 +283,7 @@ public class CellFilter implements RouteFilter {
         Candidate prefer = null;
         List<Candidate> candidates = new ArrayList<>(unitRoute.size());
 
+        // TODO Deployed partitions and ingress traffic rules may not always match.
         // Iterate through the cells in the unit route.
         for (CellRoute cellRoute : unitRoute.getCells()) {
             Cell cell = cellRoute.getCell();
