@@ -1,5 +1,22 @@
 # Release History
 
+## 1.3.3
+
+1. Fixed the problem that bytecode interceptors did not throw exceptions 
+
+## 1.3.2
+
+1. Fix a Null Pointer Exception (NPE).
+
+## 1.3.1
+1. Fix the default retry policy from spring gateway request.
+2. Support spring cloud gateway only enable multi-live and lane feature.
+3. Add auth and permission policy.
+4. Fix FailsafeClusterInvoker response.
+5. Fix circuit breaker for reactive.
+6. Fix Unready inbound filter error.
+7. Fixing the lack of unified handling for live exceptions.
+
 ## 1.3.0
 1. Support for local cloud priority during cell fault tolerance, reducing dedicated line bandwidth usage.
 2. Circuit breaker and retry, supporting the use of JsonPath to extract exception codes from response bodies.
@@ -35,9 +52,8 @@
 4. Supported lane-based traffic routing.
 5. Supported microservices governance, including cluster retry strategies, rate limiting strategies, load balancing algorithms, tag-based routing strategies, active-active strategies, lane strategies, graceful startup, and shutdown.
 6. Supported common frameworks, including:
-
-   1. Microservices governance: Spring Cloud 3, Spring Gateway 3, Dubbo 2.6/2.7/3, SofaRpc.
-   2. Trace propagation: Spring Cloud 3, Spring Gateway 3, Dubbo 2.6/2.7/3, SofaRpc, Grpc, RocketMQ 4/5, Kafka 3, HttpClient 3/4, HttpServlet, OkHttp 1/3, JDK HttpConnection, ThreadPool.
+   - Microservices governance: Spring Cloud 3, Spring Gateway 3, Dubbo 2.6/2.7/3, SofaRpc.
+   - Trace propagation: Spring Cloud 3, Spring Gateway 3, Dubbo 2.6/2.7/3, SofaRpc, Grpc, RocketMQ 4/5, Kafka 3, HttpClient 3/4, HttpServlet, OkHttp 1/3, JDK HttpConnection, ThreadPool.
 7. Released the accompanying cloud-native active-active controller.
 
 ## Limitations

@@ -16,6 +16,9 @@
 package com.jd.live.agent.core.util.http;
 
 import com.jd.live.agent.core.parser.ObjectReader;
+import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
+import com.jd.live.agent.core.util.map.MultiLinkedMap;
+import com.jd.live.agent.core.util.map.MultiMap;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -203,9 +206,9 @@ public abstract class HttpUtils {
      * @param query the query string to parse
      * @return a map where each key is associated with a list of values
      */
-    public static Map<String, List<String>> parseQuery(String query) {
-        Map<String, List<String>> result = new HashMap<>();
-        parseQuery(query, true, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(value == null ? "" : value));
+    public static MultiMap<String, String> parseQuery(String query) {
+        MultiMap<String, String> result = new MultiLinkedMap<>();
+        parseQuery(query, true, (key, value) -> result.add(key, value == null ? "" : value));
         return result;
     }
 
@@ -216,9 +219,9 @@ public abstract class HttpUtils {
      * @param decode whether the query string is URL decoded
      * @return a map where each key is associated with a list of values
      */
-    public static Map<String, List<String>> parseQuery(String query, boolean decode) {
-        Map<String, List<String>> result = new HashMap<>();
-        parseQuery(query, decode, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(value == null ? "" : value));
+    public static MultiMap<String, String> parseQuery(String query, boolean decode) {
+        MultiMap<String, String> result = new MultiLinkedMap<>();
+        parseQuery(query, decode, (key, value) -> result.add(key, value == null ? "" : value));
         return result;
     }
 
@@ -228,11 +231,11 @@ public abstract class HttpUtils {
      * @param headers the collection of "Cookie" headers
      * @return a map of cookie names to lists of cookie values
      */
-    public static Map<String, List<String>> parseCookie(Collection<String> headers) {
-        Map<String, List<String>> result = new HashMap<>();
+    public static MultiMap<String, String> parseCookie(Collection<String> headers) {
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
         if (headers != null && !headers.isEmpty()) {
             for (String header : headers) {
-                parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(header));
+                parseCookie(header, (key, value) -> result.add(key, value == null ? "" : value));
             }
         }
         return result;
@@ -244,9 +247,9 @@ public abstract class HttpUtils {
      * @param header cooke header string
      * @return a map of cookie names to lists of cookie values
      */
-    public static Map<String, List<String>> parseCookie(String header) {
-        Map<String, List<String>> result = new HashMap<>();
-        parseCookie(header, (key, value) -> result.computeIfAbsent(key, k -> new ArrayList<>(1)).add(header));
+    public static MultiMap<String, String> parseCookie(String header) {
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
+        parseCookie(header, (key, value) -> result.add(key, value == null ? "" : value));
         return result;
     }
 
@@ -260,7 +263,6 @@ public abstract class HttpUtils {
         Cookies.parse(value, consumer);
     }
 
-
     /**
      * Converts a map of cookies with generic type values to a map of cookies with string values.
      *
@@ -269,17 +271,17 @@ public abstract class HttpUtils {
      * @param valueFunc a function that converts a value of type T to a string
      * @return a map where the key is the cookie name and the value is a list of cookie values as strings
      */
-    public static <T> Map<String, List<String>> parseCookie(Map<String, List<T>> cookies, Function<T, String> valueFunc) {
-        Map<String, List<String>> result = new HashMap<>();
+    public static <T> MultiMap<String, String> parseCookie(Map<String, List<T>> cookies, Function<T, String> valueFunc) {
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
         if (cookies != null && !cookies.isEmpty()) {
             cookies.forEach((name, cooke) -> {
                 if (!cooke.isEmpty()) {
                     if (cooke.size() == 1) {
-                        result.put(name, Collections.singletonList(valueFunc.apply(cooke.get(0))));
+                        result.set(name, valueFunc.apply(cooke.get(0)));
                     } else {
                         List<String> values = new ArrayList<>(cooke.size());
                         cooke.forEach(value -> values.add(valueFunc.apply(value)));
-                        result.put(name, values);
+                        result.setAll(name, values);
                     }
                 }
             });
@@ -294,19 +296,17 @@ public abstract class HttpUtils {
      * @param headerFunc a function that takes a header name and returns an enumeration of its values
      * @return a map where each key is a header name and the value is a list of header values
      */
-    public static Map<String, List<String>> parseHeader(Enumeration<String> names,
-                                                        Function<String, Enumeration<String>> headerFunc) {
-        Map<String, List<String>> result = new HashMap<>();
+    public static MultiMap<String, String> parseHeader(Enumeration<String> names,
+                                                       Function<String, Enumeration<String>> headerFunc) {
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
         String name;
-        List<String> values;
         Enumeration<String> valueEnumeration;
         while (names.hasMoreElements()) {
             name = names.nextElement();
-            values = result.computeIfAbsent(name, k -> new ArrayList<>());
             valueEnumeration = headerFunc.apply(name);
             if (valueEnumeration != null) {
                 while (valueEnumeration.hasMoreElements()) {
-                    values.add(valueEnumeration.nextElement());
+                    result.add(name, valueEnumeration.nextElement());
                 }
             }
         }

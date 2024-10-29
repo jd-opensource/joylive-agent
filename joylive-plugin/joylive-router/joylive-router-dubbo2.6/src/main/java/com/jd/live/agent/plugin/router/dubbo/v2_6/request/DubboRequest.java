@@ -18,10 +18,17 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.request;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invocation;
+import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcContext;
+import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.service.GenericException;
+import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
+
+import java.util.function.Function;
 
 /**
  * Defines a common interface for Dubbo RPC requests.
@@ -29,6 +36,11 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutbou
  * the identification and processing of Dubbo-specific request data in RPC operations.
  */
 public interface DubboRequest {
+
+    /**
+     * generic call
+     */
+    String METHOD_$INVOKE = "$invoke";
 
     /**
      * Represents an inbound request in a Dubbo RPC communication.
@@ -72,6 +84,15 @@ public interface DubboRequest {
      */
     class DubboOutboundRequest extends AbstractRpcOutboundRequest<Invocation> implements DubboRequest {
 
+        private static final Function<Throwable, ErrorName> DUBBO_ERROR_FUNCTION = throwable -> {
+            if (throwable instanceof RpcException) {
+                return new ErrorName(null, String.valueOf(((RpcException) throwable).getCode()));
+            } else if (throwable instanceof GenericException) {
+                return new ErrorName(((GenericException) throwable).getExceptionClass(), null);
+            }
+            return DEFAULT_ERROR_FUNCTION.apply(throwable);
+        };
+
         public DubboOutboundRequest(Invocation request) {
             super(request);
             URL url = request.getInvoker().getUrl();
@@ -80,6 +101,19 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public Function<Throwable, ErrorName> getErrorFunction() {
+            return DUBBO_ERROR_FUNCTION;
+        }
+
+        @Override
+        public boolean isGeneric() {
+            Invoker<?> invoker = request.getInvoker();
+            String methodName = request.getMethodName();
+            return METHOD_$INVOKE.equals(methodName)
+                    && invoker.getInterface().isAssignableFrom(GenericService.class);
         }
     }
 }

@@ -24,9 +24,12 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitLevel;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.SlidingWindowType;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
 import java.time.Duration;
+
+import static com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy.*;
 
 /**
  * Resilience4jCircuitBreakerFactory
@@ -43,15 +46,14 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
     @Override
     public CircuitBreaker create(CircuitBreakPolicy policy, URI uri) {
         CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
-                .slidingWindowType(policy.getSlidingWindowType().equalsIgnoreCase("time") ?
-                        CircuitBreakerConfig.SlidingWindowType.TIME_BASED : CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
-                .slidingWindowSize(policy.getSlidingWindowSize())
-                .minimumNumberOfCalls(policy.getMinCallsThreshold())
-                .failureRateThreshold(policy.getFailureRateThreshold() == 0 ? 100 : policy.getFailureRateThreshold())
-                .slowCallRateThreshold(policy.getSlowCallRateThreshold() == 0 ? 100 : policy.getSlowCallRateThreshold())
-                .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold() == 0 ? 60000 : policy.getSlowCallDurationThreshold()))
-                .waitDurationInOpenState(Duration.ofSeconds(policy.getWaitDurationInOpenState()))
-                .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
+                .slidingWindowType(SLIDING_WINDOW_COUNT.equals(policy.getSlidingWindowType()) ? SlidingWindowType.COUNT_BASED : SlidingWindowType.TIME_BASED)
+                .slidingWindowSize(policy.getSlidingWindowSize() <= 0 ? DEFAULT_SLIDING_WINDOW_SIZE : policy.getSlidingWindowSize())
+                .minimumNumberOfCalls(policy.getMinCallsThreshold() <= 0 ? DEFAULT_MIN_CALLS_THRESHOLD : policy.getMinCallsThreshold())
+                .failureRateThreshold(policy.getFailureRateThreshold() <= 0 || policy.getFailureRateThreshold() > 100 ? DEFAULT_FAILURE_RATE_THRESHOLD : policy.getFailureRateThreshold())
+                .slowCallRateThreshold(policy.getSlowCallRateThreshold() <= 0 || policy.getSlowCallRateThreshold() > 100 ? DEFAULT_SLOW_CALL_RATE_THRESHOLD : policy.getSlowCallRateThreshold())
+                .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold() <= 0 ? DEFAULT_SLOW_CALL_DURATION_THRESHOLD : policy.getSlowCallDurationThreshold()))
+                .waitDurationInOpenState(Duration.ofSeconds(policy.getWaitDurationInOpenState() <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : policy.getWaitDurationInOpenState()))
+                .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState() <= 0 ? DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE : policy.getAllowedCallsInHalfOpenState())
                 .recordException(e -> true)
                 .build();
         io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(uri.toString());

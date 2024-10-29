@@ -21,6 +21,7 @@ import java.lang.reflect.Array;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.type.TypeScanner.UNTIL_OBJECT;
@@ -30,6 +31,8 @@ import static com.jd.live.agent.core.util.type.TypeScanner.UNTIL_OBJECT;
  * It supports accessing nested properties and indexing into collections and arrays.
  */
 public class ValuePath implements ObjectGetter {
+
+    private static final Map<String, ValuePath> VALUE_PATHS = new ConcurrentHashMap<>();
 
     @Getter
     protected final String path;
@@ -57,6 +60,16 @@ public class ValuePath implements ObjectGetter {
         this.path = path;
         this.predicate = predicate;
         this.paths = parse(path);
+    }
+
+    /**
+     * Creates a new ValuePath instance with the specified path.
+     *
+     * @param path the path to the value
+     * @return a new ValuePath instance
+     */
+    public static ValuePath of(String path) {
+        return VALUE_PATHS.computeIfAbsent(path, ValuePath::new);
     }
 
     @SuppressWarnings("unchecked")

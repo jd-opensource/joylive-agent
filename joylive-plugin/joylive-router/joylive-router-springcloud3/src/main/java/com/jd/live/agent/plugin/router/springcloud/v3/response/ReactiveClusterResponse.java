@@ -15,12 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.reactive.function.client.ClientResponse;
-
-import java.util.function.Predicate;
 
 /**
  * ReactiveRouteResponse
@@ -33,16 +34,18 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
 
     public ReactiveClusterResponse(ClientResponse response) {
         super(response);
+        this.headers = new UnsafeLazyObject<>(() -> response.headers().asHttpHeaders());
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.cookies(), ResponseCookie::getValue));
     }
 
-    public ReactiveClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public ReactiveClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
     }
 
     @Override
     public String getCode() {
-        HttpStatus status = response == null ? null : response.statusCode();
-        return status == null ? null : String.valueOf(status.value());
+        Integer code = response != null ? response.rawStatusCode() : null;
+        return code == null ? null : code.toString();
     }
 
     @Override

@@ -46,7 +46,7 @@ public class ReferenceConfigInterceptor extends InterceptorAdaptor {
         AbstractInterfaceConfig config = (AbstractInterfaceConfig) ctx.getTarget();
         Map<String, String> map = (Map<String, String>) mc.getResult();
 
-        application.label(map::putIfAbsent);
+        application.labelRegistry(map::putIfAbsent);
         String service = ((ReferenceConfig<?>) config).getProvidedBy();
         service = service != null && !service.isEmpty() ? service : config.getInterface();
         policySupplier.subscribe(service);

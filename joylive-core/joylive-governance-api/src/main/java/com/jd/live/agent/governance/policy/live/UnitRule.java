@@ -79,10 +79,23 @@ public class UnitRule {
 
     private final transient Cache<String, UnitRoute> unitRouteCache = new MapCache<>(new ListBuilder<>(() -> unitRoutes, UnitRoute::getCode));
 
+    /**
+     * Gets the unit route for the given code.
+     *
+     * @param code the code of the unit route
+     * @return the unit route with the given code, or null if not found
+     */
     public UnitRoute getUnitRoute(String code) {
         return unitRouteCache.get(code);
     }
 
+    /**
+     * Gets the unit route for the given variable and function.
+     *
+     * @param variable the variable to match
+     * @param function the function to compute the value
+     * @return the unit route that matches the variable and function, or null if not found
+     */
     public UnitRoute getUnitRoute(String variable, UnitFunction function) {
         int size = unitRoutes == null ? 0 : unitRoutes.size();
         if (size == 0) {
@@ -115,6 +128,14 @@ public class UnitRule {
         }
     }
 
+    /**
+     * Checks if the given unit route contains the given variable and function.
+     *
+     * @param route the unit route to check
+     * @param variable the variable to match
+     * @param function the function to compute the value
+     * @return true if the unit route contains the variable and function, false otherwise
+     */
     public boolean contains(UnitRoute route, String variable, UnitFunction function) {
         return route != null && (route.isAllow(variable)
                 || route.isPrefix(variable)

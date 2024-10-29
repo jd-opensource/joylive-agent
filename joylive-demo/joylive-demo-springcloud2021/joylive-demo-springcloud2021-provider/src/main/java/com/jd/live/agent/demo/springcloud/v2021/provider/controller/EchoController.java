@@ -63,6 +63,11 @@ public class EchoController {
         return lr;
     }
 
+    @RequestMapping(value = "/exception", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
+    public LiveResponse exception(HttpServletRequest request, HttpServletResponse response) {
+        throw new RuntimeException("RuntimeException happened!");
+    }
+
     private void configure(HttpServletRequest request, LiveResponse response) {
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));

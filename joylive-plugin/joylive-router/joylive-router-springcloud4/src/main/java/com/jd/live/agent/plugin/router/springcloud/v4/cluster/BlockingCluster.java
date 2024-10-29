@@ -15,17 +15,14 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
@@ -46,8 +43,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
-
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
  * mechanism for handling HTTP requests, integrating load balancing and retry logic. It utilizes
@@ -61,13 +56,13 @@ import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircui
  */
 public class BlockingCluster extends AbstractClientCluster<BlockingClusterRequest, BlockingClusterResponse> {
 
-    private static final Logger logger = LoggerFactory.getLogger(BlockingCluster.class);
-
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
             "java.util.concurrent.TimeoutException",
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
+
+    private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     private static final String FIELD_LOAD_BALANCER = "loadBalancer";
 
@@ -133,26 +128,8 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     }
 
     @Override
-    public BlockingClusterResponse createResponse(Throwable throwable, BlockingClusterRequest request, SpringEndpoint endpoint) {
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new BlockingClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new BlockingClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new BlockingClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
-    public boolean isRetryable(Throwable throwable) {
-        // TODO modify isRetryable
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -169,16 +146,14 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         }
     }
 
-    /**
-     * Creates a {@link ClientHttpResponse} based on the provided {@link BlockingClusterRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param httpRequest   the original HTTP request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link ClientHttpResponse} configured according to the degrade configuration.
-     */
-    private ClientHttpResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
-        return new DegradeResponse(degradeConfig, httpRequest);
+    @Override
+    protected BlockingClusterResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
+        return new BlockingClusterResponse(new DegradeResponse(degradeConfig, httpRequest));
+    }
+
+    @Override
+    protected BlockingClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new BlockingClusterResponse(error, predicate);
     }
 
     /**
@@ -238,7 +213,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             if (attributes != null) {
                 attributes.forEach(headers::add);
             }
-            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
             headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
             return headers;
         }

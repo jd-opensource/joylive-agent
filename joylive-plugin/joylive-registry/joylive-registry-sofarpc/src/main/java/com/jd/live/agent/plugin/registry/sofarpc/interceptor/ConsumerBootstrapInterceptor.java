@@ -39,7 +39,7 @@ public class ConsumerBootstrapInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         ConsumerConfig<?> config = ((ConsumerBootstrap<?>) ctx.getTarget()).getConsumerConfig();
-        application.label((key, value) -> {
+        application.labelRegistry((key, value) -> {
             String old = config.getParameter(key);
             if (old == null || old.isEmpty()) {
                 config.setParameter(key, value);

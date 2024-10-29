@@ -154,29 +154,15 @@ public class Application {
      *
      * @param consumer label consumer
      */
-    public void label(BiConsumer<String, String> consumer) {
+    public void labelRegistry(BiConsumer<String, String> consumer) {
         if (consumer != null) {
-            accept(consumer, Constants.LABEL_APPLICATION, name);
-            accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
+            labelInstance(consumer);
             if (location != null) {
-                accept(consumer, Constants.LABEL_CLOUD, location.getCloud());
-                accept(consumer, Constants.LABEL_REGION, location.getRegion());
-                accept(consumer, Constants.LABEL_ZONE, location.getZone());
-                accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
-                accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
-                accept(consumer, Constants.LABEL_UNIT, location.getUnit());
-                accept(consumer, Constants.LABEL_CELL, location.getCell());
-                accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
-                accept(consumer, Constants.LABEL_LANE, location.getLane());
-                accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
+                labelZone(consumer);
+                labelLiveSpace(consumer);
+                labelLane(consumer);
             }
-            accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
-            if (service != null) {
-                Map<String, String> serviceMeta = service.getMeta();
-                if (serviceMeta != null) {
-                    serviceMeta.forEach(consumer);
-                }
-            }
+            labelService(consumer);
         }
     }
 
@@ -185,26 +171,81 @@ public class Application {
      *
      * @param consumer label consumer
      */
-    public void sync(BiConsumer<String, String> consumer) {
+    public void labelSync(BiConsumer<String, String> consumer) {
         if (consumer != null) {
-            accept(consumer, Constants.LABEL_APPLICATION, name);
-            accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
+            labelInstance(consumer);
             if (location != null) {
-                accept(consumer, Constants.LABEL_CLOUD, location.getCloud());
-                accept(consumer, Constants.LABEL_REGION, location.getRegion());
-                accept(consumer, Constants.LABEL_ZONE, location.getZone());
-                accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
-                accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
-                accept(consumer, Constants.LABEL_UNIT, location.getUnit());
-                accept(consumer, Constants.LABEL_CELL, location.getCell());
-                accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
-                accept(consumer, Constants.LABEL_LANE, location.getLane());
-                accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
+                labelZone(consumer);
+                labelLiveSpace(consumer);
+                labelLane(consumer);
                 accept(consumer, Constants.LABEL_INSTANCE_IP, location.getIp());
             }
             if (meta != null) {
                 accept(consumer, Constants.LABEL_AGENT_VERSION, meta.get(Constants.LABEL_AGENT_VERSION));
             }
+        }
+    }
+
+    /**
+     * Labels the instance information using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelInstance(BiConsumer<String, String> consumer) {
+        accept(consumer, Constants.LABEL_APPLICATION, name);
+        accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
+    }
+
+    /**
+     * Labels the service information using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelService(BiConsumer<String, String> consumer) {
+        if (service != null) {
+            accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
+            Map<String, String> serviceMeta = service.getMeta();
+            if (serviceMeta != null) {
+                serviceMeta.forEach(consumer);
+            }
+        }
+    }
+
+    /**
+     * Labels the zone information using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelZone(BiConsumer<String, String> consumer) {
+        accept(consumer, Constants.LABEL_CLOUD, location.getCloud());
+        accept(consumer, Constants.LABEL_REGION, location.getRegion());
+        accept(consumer, Constants.LABEL_ZONE, location.getZone());
+        accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
+    }
+
+    /**
+     * Labels the live space information using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelLiveSpace(BiConsumer<String, String> consumer) {
+        if (!location.isLiveless()) {
+            accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
+            accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
+            accept(consumer, Constants.LABEL_UNIT, location.getUnit());
+            accept(consumer, Constants.LABEL_CELL, location.getCell());
+        }
+    }
+
+    /**
+     * Labels the lane information using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelLane(BiConsumer<String, String> consumer) {
+        if (!location.isLaneless()) {
+            accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
+            accept(consumer, Constants.LABEL_LANE, location.getLane());
         }
     }
 

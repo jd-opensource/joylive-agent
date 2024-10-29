@@ -43,7 +43,7 @@ public class ReferenceConfigInterceptor extends InterceptorAdaptor {
         Map<String, String> argument = (Map<String, String>) ctx.getArguments()[0];
         ReferenceConfig<?> config = (ReferenceConfig<?>) ctx.getTarget();
 
-        application.label(argument::putIfAbsent);
+        application.labelRegistry(argument::putIfAbsent);
         policySupplier.subscribe(config.getInterface());
     }
 

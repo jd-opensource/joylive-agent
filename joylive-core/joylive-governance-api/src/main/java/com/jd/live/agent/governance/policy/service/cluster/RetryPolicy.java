@@ -15,16 +15,14 @@
  */
 package com.jd.live.agent.governance.policy.service.cluster;
 
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Consumer;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -40,12 +38,10 @@ import java.util.Set;
  *
  * @since 1.0.0
  */
-// TODO It is necessary to differentiate between read and write exceptions to simplify user configuration,
-//  eliminating the need to configure the exception type on each method
 @Setter
 @Getter
 @Consumer
-public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy> {
+public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy>, ErrorPolicy {
     /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
      * to attempt to recover from transient failures by retrying the failed operation.
@@ -55,7 +51,7 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     /**
      * Retry waiting interval, in milliseconds.
      */
-    private Long retryInterval;
+    private Long interval;
 
     /**
      * Retry execution timeout, in milliseconds.
@@ -68,14 +64,24 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private CodePolicy codePolicy;
 
     /**
-     * Collection of retry status codes. This parameter specifies which status codes should be considered retryable.
+     * Collection of retry error codes. This parameter specifies which status codes should be considered retryable.
      */
-    private Set<String> retryStatuses;
+    private Set<String> errorCodes;
 
     /**
      * A collection of retryable exception class names.
      */
-    private Set<String> retryExceptions;
+    private Set<String> exceptions;
+
+    /**
+     * A set of method names that should be retried in case of failure.
+     */
+    private Set<String> methods;
+
+    /**
+     * A set of method name prefixes that should be retried in case of failure.
+     */
+    private Set<String> methodPrefixes;
 
     @Override
     public void supplement(RetryPolicy source) {
@@ -85,8 +91,8 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (retry == null) {
             retry = source.retry;
         }
-        if (retryInterval == null) {
-            retryInterval = source.retryInterval;
+        if (interval == null) {
+            interval = source.interval;
         }
         if (timeout == null) {
             timeout = source.timeout;
@@ -94,11 +100,11 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if (codePolicy == null) {
             codePolicy = source.codePolicy == null ? null : source.codePolicy.clone();
         }
-        if ((retryStatuses == null || retryStatuses.isEmpty()) && source.retryStatuses != null) {
-            retryStatuses = source.retryStatuses;
+        if ((errorCodes == null || errorCodes.isEmpty()) && source.errorCodes != null) {
+            errorCodes = source.errorCodes;
         }
-        if ((retryExceptions == null || retryExceptions.isEmpty()) && source.retryExceptions != null) {
-            retryExceptions = source.retryExceptions;
+        if ((exceptions == null || exceptions.isEmpty()) && source.exceptions != null) {
+            exceptions = source.exceptions;
         }
     }
 
@@ -106,63 +112,60 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         return timeout != null && timeout > 0 ? startTime + timeout : 0;
     }
 
+    @Override
     public boolean isEnabled() {
-        return retry != null && retry > 0;
+        return retry != null && retry > 0 &&
+                (errorCodes != null && !errorCodes.isEmpty()
+                        || exceptions != null && !exceptions.isEmpty());
     }
 
-    public boolean isRetry(String status) {
-        return isEnabled() && status != null && retryStatuses != null && retryStatuses.contains(status);
+    @Override
+    public boolean containsError(String errorCode) {
+        return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
     }
 
-    public boolean isRetry(Throwable throwable) {
-        return isEnabled() && isRetry(retryExceptions, throwable);
+    @Override
+    public boolean containsException(String className) {
+        return className != null && exceptions != null && exceptions.contains(className);
+    }
+
+    @Override
+    public boolean containsException(Set<String> classNames) {
+        return ErrorPolicy.containsException(classNames, exceptions);
     }
 
     /**
-     * Checks if the body of the code should be parsed.
+     * Checks if the specified method name should be retried in case of failure.
      *
-     * @return true if the body of the code should be parsed, false otherwise.
+     * @param methodName the method name to check.
+     * @return true if the method name should be retried, false otherwise.
      */
-    public boolean isBodyRequest() {
-        return codePolicy != null && codePolicy.isBodyRequest();
-    }
-
-    /**
-     * Determines whether an operation that threw an exception should be retried, based on a set of
-     * exception class names deemed retryable. This method checks not only the top-level exception but
-     * also recursively examines any underlying causes to see if any of them match the retryable exceptions.
-     *
-     * @param exceptions A {@link Set} of fully qualified class names of exceptions that should trigger a retry.
-     *                   This set must not be null or empty for the method to check for retryable exceptions.
-     * @param throwable  The {@link Throwable} instance thrown during the operation. This includes both the
-     *                   immediate exception and any nested causes.
-     * @return {@code true} if the thrown exception or any of its causes is found in the {@code exceptions} set,
-     * indicating that the operation should be retried. Returns {@code false} otherwise, indicating
-     * that the operation should not be retried based on the exception thrown.
-     */
-    public static boolean isRetry(Set<String> exceptions, Throwable throwable) {
-        if (throwable == null || exceptions == null || exceptions.isEmpty()) {
+    public boolean containsMethod(String methodName) {
+        if (methodName == null || methodName.isEmpty()) {
             return false;
         }
-        Set<Class<?>> handled = new HashSet<>(16);
-        Queue<Throwable> queue = new LinkedList<>();
-        queue.add(throwable);
-        while (!queue.isEmpty()) {
-            Throwable e = queue.poll();
-            Class<?> type = e.getClass();
-            while (type != null && type != Object.class && handled.add(type)) {
-                if (exceptions.contains(type.getName())) {
-                    return true;
-                }
-                type = type.getSuperclass();
-            }
-
-            Throwable cause = e.getCause();
-            if (cause != null && !handled.contains(cause.getClass())) {
-                queue.add(cause);
+        boolean allowList = false;
+        if (methods != null && !methods.isEmpty()) {
+            allowList = true;
+            if (methods.contains(methodName)) {
+                return true;
             }
         }
-        return false;
+        if (methodPrefixes != null && !methodPrefixes.isEmpty()) {
+            allowList = true;
+            for (String methodPrefix : methodPrefixes) {
+                if (methodName.startsWith(methodPrefix)) {
+                    return true;
+                }
+            }
+        }
+        return !allowList;
+    }
+
+    public void cache() {
+        if (codePolicy != null) {
+            codePolicy.cache();
+        }
     }
 
 }

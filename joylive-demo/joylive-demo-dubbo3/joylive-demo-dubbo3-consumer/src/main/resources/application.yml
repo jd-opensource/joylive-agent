@@ -34,6 +34,7 @@ dubbo:
   application:
     name: ${spring.application.name}
     qos-port: 22221
+    enable-file-cache: false
   protocol:
     name: dubbo
     port: -1

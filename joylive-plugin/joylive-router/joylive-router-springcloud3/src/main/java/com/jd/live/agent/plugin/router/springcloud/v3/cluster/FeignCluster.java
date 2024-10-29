@@ -15,17 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
@@ -42,18 +40,20 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
-
-
+/**
+ * A cluster implementation for Feign clients that manages a group of servers and provides load balancing and failover capabilities.
+ *
+ * @see AbstractClientCluster
+ */
 public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, FeignClusterResponse> {
-
-    private static final Logger logger = LoggerFactory.getLogger(FeignCluster.class);
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
             "java.util.concurrent.TimeoutException",
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
+
+    private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     private static final String FIELD_DELEGATE = "delegate";
 
@@ -99,26 +99,8 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     }
 
     @Override
-    public FeignClusterResponse createResponse(Throwable throwable, FeignClusterRequest request, SpringEndpoint endpoint) {
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new FeignClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new FeignClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new FeignClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
-    public boolean isRetryable(Throwable throwable) {
-        // TODO modify isRetryable
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -139,15 +121,8 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
                         : new ResponseData(httpStatus, responseHeaders, null, requestData))));
     }
 
-    /**
-     * Creates a {@link feign.Response} based on the provided {@link FeignClusterRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param request       the original HTTP request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link feign.Response} configured according to the degrade configuration.
-     */
-    private feign.Response createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
+    @Override
+    protected FeignClusterResponse createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
         Request feignRequest = request.getRequest();
         String body = degradeConfig.getResponseBody();
         body = body == null ? "" : body;
@@ -157,14 +132,19 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
             degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
         }
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
-        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
+        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.contentType()));
 
-        return feign.Response.builder()
+        return new FeignClusterResponse(feign.Response.builder()
                 .status(degradeConfig.getResponseCode())
                 .body(data)
                 .headers(headers)
                 .request(feignRequest)
                 .requestTemplate(feignRequest.requestTemplate())
-                .build();
+                .build());
+    }
+
+    @Override
+    protected FeignClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new FeignClusterResponse(error, predicate);
     }
 }

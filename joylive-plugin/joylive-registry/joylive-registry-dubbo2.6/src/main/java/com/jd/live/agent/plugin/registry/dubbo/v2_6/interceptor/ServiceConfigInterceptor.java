@@ -43,7 +43,7 @@ public class ServiceConfigInterceptor extends InterceptorAdaptor {
         Map<String, String> argument = (Map<String, String>) ctx.getArguments()[2];
         ServiceConfig<?> config = (ServiceConfig<?>) ctx.getTarget();
 
-        application.label(argument::putIfAbsent);
+        application.labelRegistry(argument::putIfAbsent);
         policySupplier.subscribe(config.getInterface());
     }
 }

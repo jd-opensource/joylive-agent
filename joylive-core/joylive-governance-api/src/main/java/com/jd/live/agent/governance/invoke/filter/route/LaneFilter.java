@@ -52,7 +52,7 @@ public class LaneFilter implements RouteFilter {
         // Check if a target lane is specified
         if (targetLane != null) {
             // Get the application and gateway role from the invocation context
-            GatewayRole gatewayRole = invocation.getContext().getApplication().getService().getGateway();
+            GatewayRole gatewayRole = invocation.getGateway();
             // Retrieve the service policy  from the service metadata
             ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
             Boolean autoJoin = gatewayRole == GatewayRole.FRONTEND

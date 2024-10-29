@@ -267,7 +267,7 @@ public interface InvocationContext {
             chain.filter(invocation);
             invocation.onForward();
         } catch (RejectException e) {
-            invocation.onFailure(e);
+            invocation.onReject(e);
             throw e;
         }
     }
@@ -285,7 +285,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
-        return route(invocation, instances, (RouteFilter[]) null, true);
+        return route(invocation, instances, (RouteFilter[]) null);
     }
 
     /**
@@ -304,16 +304,14 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest,
-            E extends Endpoint, P> E route(OutboundInvocation<R> invocation,
-                                           List<P> instances,
-                                           Function<P, E> converter) {
+            E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
         List<E> endpoints = instances == null ? new ArrayList<>() : new ArrayList<>(instances.size());
         if (instances != null) {
             for (P instance : instances) {
                 endpoints.add(converter.apply(instance));
             }
         }
-        return route(invocation, endpoints, null, true);
+        return route(invocation, endpoints, (RouteFilter[]) null);
     }
 
     /**
@@ -328,7 +326,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-        return route(invocation, null, null, true);
+        return route(invocation, null, (RouteFilter[]) null);
     }
 
     /**
@@ -344,7 +342,6 @@ public interface InvocationContext {
      * @param instances      A list of initial {@link Endpoint} instances to be considered for the request.
      * @param filters        A collection of {@link RouteFilter} instances to apply to the endpoints. If
      *                       {@code null} or empty, the default set of route filters is used.
-     * @param notifyListener Whether to notify the listeners upon success or failure.
      * @return An {@link Endpoint} instance that has been filtered according to the
      * specified (or default) filters and is deemed suitable for the outbound request.
      * @throws RejectNoProviderException if no provider is found for the invocation.
@@ -352,10 +349,7 @@ public interface InvocationContext {
      */
     @SuppressWarnings("unchecked")
     default <R extends OutboundRequest,
-            E extends Endpoint> E route(OutboundInvocation<R> invocation,
-                                        List<E> instances,
-                                        RouteFilter[] filters,
-                                        boolean notifyListener) {
+            E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
@@ -365,17 +359,13 @@ public interface InvocationContext {
             List<? extends Endpoint> endpoints = invocation.getEndpoints();
             Endpoint endpoint = endpoints != null && !endpoints.isEmpty() ? endpoints.get(0) : null;
             if (endpoint != null || !invocation.getRequest().isInstanceSensitive()) {
-                if (notifyListener) {
-                    invocation.onSuccess(endpoint, null);
-                }
+                invocation.onForward(endpoint);
                 return (E) endpoint;
             } else {
-                throw new RejectNoProviderException("There is no provider for invocation");
+                throw new RejectNoProviderException("There is no provider for invocation " + invocation.getRequest().getService());
             }
         } catch (RejectException e) {
-            if (notifyListener) {
-                invocation.onFailure(null, e);
-            }
+            invocation.onReject(e);
             throw e;
         }
     }
@@ -393,7 +383,6 @@ public interface InvocationContext {
      * @param <R> The type of the outbound request, which must extend {@link OutboundRequest}.
      * @param <O> The type of the outbound response.
      * @param <E> The type of the endpoint to which requests are routed.
-     * @param <T> The type of the exception that can be thrown during invocation.
      * @param cluster The live cluster of the service.
      * @param invocation The outbound service request invocation to be processed.
      * @param endpoint The endpoint through which the request will be sent.
@@ -402,8 +391,7 @@ public interface InvocationContext {
      */
     default <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint,
-            T extends Throwable> CompletionStage<O> outbound(LiveCluster<R, O, E, T> cluster,
+            E extends Endpoint> CompletionStage<O> outbound(LiveCluster<R, O, E> cluster,
                                                              OutboundInvocation<R> invocation,
                                                              E endpoint) {
         try {
@@ -551,29 +539,24 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
-            return delegate.route(invocation, instances, (RouteFilter[]) null, true);
+            return delegate.route(invocation, instances, (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint, P> E route(OutboundInvocation<R> invocation,
-                                               List<P> instances,
-                                               Function<P, E> converter) {
+                E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
             return InvocationContext.super.route(invocation, instances, converter);
         }
 
         @Override
         public <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-            return delegate.route(invocation, null, (RouteFilter[]) null, true);
+            return delegate.route(invocation, null, (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint> E route(OutboundInvocation<R> invocation,
-                                            List<E> instances,
-                                            RouteFilter[] filters,
-                                            boolean notifyListener) {
-            return delegate.route(invocation, instances, filters, true);
+                E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+            return delegate.route(invocation, instances, filters);
         }
 
         @Override
@@ -603,11 +586,8 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint> E route(OutboundInvocation<R> invocation,
-                                            List<E> instances,
-                                            RouteFilter[] filters,
-                                            boolean notifyListener) {
-            E result = super.route(invocation, instances, filters, notifyListener);
+                E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+            E result = super.route(invocation, instances, filters);
             if (invocation.getRequest() instanceof HttpOutboundRequest) {
                 HttpOutboundRequest request = (HttpOutboundRequest) invocation.getRequest();
                 RouteTarget target = invocation.getRouteTarget();

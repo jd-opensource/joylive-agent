@@ -17,9 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -27,6 +26,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.RequestDataOutboundRequest;
@@ -34,15 +34,15 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.Request;
 import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
+import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
+import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.jd.live.agent.plugin.router.springcloud.v4.cluster.AbstractClientCluster.createException;
+import java.util.Set;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -56,13 +56,32 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public ServiceInstanceListSupplierInterceptor(InvocationContext context) {
+    private final Set<String> disableDiscovery;
+
+    private final boolean flowControlEnabled;
+
+    public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery, boolean flowControlEnabled) {
         this.context = context;
+        this.disableDiscovery = disableDiscovery;
+        this.flowControlEnabled = flowControlEnabled;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (LOCK.get() == null) {
+        MethodContext mc = (MethodContext) ctx;
+        ServiceInstanceListSupplier target = (ServiceInstanceListSupplier) ctx.getTarget();
+        if (target instanceof DelegatingServiceInstanceListSupplier
+                && disableDiscovery != null
+                && !disableDiscovery.isEmpty()
+                && disableDiscovery.contains(target.getClass().getName())) {
+            // disable
+            DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
+            Request<?> request = ctx.getArgument(0);
+            Object result = delegating.getDelegate().get(request);
+            mc.setResult(result);
+            mc.setSkip(true);
+        }
+        if (!flowControlEnabled && LOCK.get() == null) {
             // Prevent duplicate calls
             LOCK.set(ctx.getId());
         }
@@ -70,7 +89,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        if (LOCK.get() == ctx.getId()) {
+        if (!flowControlEnabled && LOCK.get() == ctx.getId()) {
             LOCK.remove();
         }
     }
@@ -84,7 +103,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        if (LOCK.get() == ctx.getId()) {
+        if (!flowControlEnabled && LOCK.get() == ctx.getId()) {
             MethodContext mc = (MethodContext) ctx;
             Object[] arguments = ctx.getArguments();
             Object result = mc.getResult();
@@ -96,21 +115,26 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         }
     }
 
-    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation,
-                                        List<ServiceInstance> instances) {
-        List<SpringEndpoint> endpoints = new ArrayList<>(instances.size());
-        for (ServiceInstance instance : instances) {
-            endpoints.add(new SpringEndpoint(instance));
-        }
-        invocation.setInstances(endpoints);
+    /**
+     * Routes the given outbound invocation to a service instance.
+     *
+     * @param invocation The outbound invocation to route.
+     * @param instances  The list of service instances to choose from.
+     * @return A list containing the selected service instance.
+     */
+    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> instances) {
         try {
+            invocation.setInstances(CollectionUtils.convert(instances, SpringEndpoint::new));
             SpringEndpoint endpoint = context.route(invocation);
             return Collections.singletonList(endpoint.getInstance());
-        } catch (RejectNoProviderException e) {
-            throw createException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "LoadBalancer does not contain an instance for the service " + invocation.getRequest().getService());
-        } catch (RejectException e) {
-            throw createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, e.getMessage());
+        } catch (Throwable e) {
+            SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
+            Throwable throwable =  thrower.createException(e, invocation.getRequest());
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException) throwable;
+            } else {
+                throw SpringOutboundThrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+            }
         }
     }
 

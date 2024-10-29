@@ -7,7 +7,8 @@
 
 #### 1.1.1 下载二进制包
 
-从[Release](https://github.com/jd-opensource/joylive-agent/releases)中下载最新的二进制包
+- 从[Release](https://github.com/jd-opensource/joylive-agent/releases)中下载最新的二进制包（zip 或tar.gz）
+- 从[Maven-1](https://mvnrepository.com/artifact/com.jd.live/joylive-package)或[Maven-2](https://search.maven.org/search?q=g:com.jd.live%20AND%20a:joylive-package)仓库下载最新的二进制包（zip 或tar.gz）
 
 #### 1.1.2 手动编译
 
@@ -21,15 +22,15 @@
 
 ### 1.2 获取Demo程序
 
-编译`joylive-agent`，获取`joylive-demo/joylive-demo-springcloud3`下各项目的二进制包
+编译`joylive-agent`，获取`joylive-demo/joylive-demo-springcloud2021`下各项目的二进制包
 
 - 网关
 
-  `joylive-demo-springcloud3-gateway` Spring Cloud Gateway网关demo
+  `joylive-demo-springcloud2021-gateway` Spring Cloud Gateway网关demo
 
 - 应用
 
-  `joylive-demo-springcloud3-provider` Spring Cloud应用demo
+  `joylive-demo-springcloud2021-provider` Spring Cloud应用demo
 
 ### 1.3 修改配置
 

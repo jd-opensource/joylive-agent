@@ -304,7 +304,7 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
      */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
-        application.sync(conn::setRequestProperty);
+        application.labelSync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
     }

@@ -27,6 +27,9 @@ import java.util.Set;
 @Setter
 public class LiveConfig {
 
+    /**
+     * A flag to determine if modifying MQ group is enabled.
+     */
     private boolean modifyMQGroupEnabled = true;
 
     private Set<String> topics;

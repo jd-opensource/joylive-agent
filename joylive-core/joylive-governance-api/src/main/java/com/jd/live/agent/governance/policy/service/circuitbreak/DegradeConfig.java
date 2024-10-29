@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.governance.policy.service.circuitbreak;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * DegradeConfig
@@ -28,18 +28,23 @@ import java.util.Map;
  */
 @Setter
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class DegradeConfig {
+
+    public static final String TYPE_STRING = "string";
+    public static final String TYPE_APPLICATION_TEXT = "application/text";
+    public static final String TYPE_APPLICATION_JSON = "application/json";
+    public static final String TYPE_JSON = "json";
 
     private int responseCode;
 
-    private String contentType = "application/json";
+    private String contentType;
 
     private Map<String, String> attributes;
 
     private String responseBody;
-
-    public DegradeConfig() {
-    }
 
     public DegradeConfig(DegradeConfig config) {
         this.responseCode = config.responseCode;
@@ -47,4 +52,26 @@ public class DegradeConfig {
         this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
         this.responseBody = config.responseBody;
     }
+
+    public String contentType() {
+        return contentType == null ? TYPE_APPLICATION_JSON : contentType;
+    }
+
+    public void foreach(BiConsumer<String, String> consumer) {
+        if (attributes != null) {
+            attributes.forEach(consumer);
+        }
+    }
+
+    public int bodyLength() {
+        return responseBody == null ? 0 : responseBody.length();
+    }
+
+    public boolean text() {
+        return TYPE_STRING.equalsIgnoreCase(contentType)
+                || TYPE_JSON.equalsIgnoreCase(contentType)
+                || TYPE_APPLICATION_TEXT.equalsIgnoreCase(contentType)
+                || TYPE_APPLICATION_JSON.equalsIgnoreCase(contentType);
+    }
+
 }

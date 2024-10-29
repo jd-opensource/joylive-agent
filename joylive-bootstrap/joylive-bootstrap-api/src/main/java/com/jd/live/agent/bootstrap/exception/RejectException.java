@@ -20,7 +20,7 @@ package com.jd.live.agent.bootstrap.exception;
  *
  * @since 1.0.0
  */
-public class RejectException extends LiveException {
+public class RejectException extends LiveException implements Unretryable {
 
     public RejectException() {
         super(null, null, false, false);
@@ -129,7 +129,7 @@ public class RejectException extends LiveException {
     /**
      * RejectEscapeException
      */
-    public static class RejectEscapeException extends RejectUnitException {
+    public static class RejectEscapeException extends RejectException {
 
         public RejectEscapeException() {
         }
@@ -143,6 +143,28 @@ public class RejectException extends LiveException {
         }
 
         public RejectEscapeException(Throwable cause) {
+            super(cause);
+        }
+
+    }
+
+    /**
+     * RejectPermissionException
+     */
+    public static class RejectPermissionException extends RejectException {
+
+        public RejectPermissionException() {
+        }
+
+        public RejectPermissionException(String message) {
+            super(message);
+        }
+
+        public RejectPermissionException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public RejectPermissionException(Throwable cause) {
             super(cause);
         }
 

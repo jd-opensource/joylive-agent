@@ -42,7 +42,7 @@ public class ServiceConfig {
      */
     @Getter
     @Setter
-    private boolean localFirst = false;
+    private boolean localFirst;
 
     /**
      * A map of unit failover thresholds, where the key is the unit identifier and the value is the threshold integer.
@@ -92,6 +92,21 @@ public class ServiceConfig {
     @Getter
     @Setter
     private Set<String> systemPaths;
+
+    /**
+     * Define the grouping matching relationship for calls between services.
+     * <p>k:v = service:group</p>
+     */
+    @Getter
+    @Setter
+    private Map<String, String> serviceGroups;
+
+    /**
+     * If the target service is not configured with a group, should all groups be allowed to call it
+     */
+    @Getter
+    @Setter
+    private boolean serviceGroupOpen = true;
 
     private final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
         List<PrefixPath> result = new ArrayList<>();

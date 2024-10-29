@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.sofarpc.consumer.service;
 
+import com.alipay.sofa.rpc.api.GenericService;
 import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.runtime.api.annotation.SofaReference;
 import com.alipay.sofa.runtime.api.annotation.SofaReferenceBinding;
@@ -56,6 +57,9 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
             binding = @SofaReferenceBinding(bindingType = "bolt"))
     private HelloService helloService;
 
+    @Resource
+    private GenericService genericService;
+
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -73,12 +77,18 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
         long status = 0;
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                int remain = (int) (counter++ % 2);
+                int remain = (int) (counter++ % 4);
                 switch (remain) {
                     case 0:
                         doEcho(context);
                         break;
                     case 1:
+                        doGenericEcho(context);
+                        break;
+                    case 2:
+                        doGenericStatus(context);
+                        break;
+                    default:
                         doStatus(context, (status++ % 20) == 0 ? 200 : 500);
                         break;
                 }
@@ -86,7 +96,7 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
                 logger.error(e.getMessage(), e);
             }
             try {
-                countDownLatch.await(1000L, TimeUnit.MILLISECONDS);
+                countDownLatch.await(300L, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -95,15 +105,36 @@ public class ConsumerService implements ApplicationListener<ApplicationReadyEven
     }
 
     private void doStatus(RpcInvokeContext attachment, int code) {
-        LiveResponse result = helloService.status(code);
-        addTrace(attachment, result);
-        output("Invoke status: \n{}", result);
+        Object result = genericService.$genericInvoke("status",
+                new String[]{"int"},
+                new Object[]{code});
+        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
+        addTrace(attachment, response);
+        output("Generic invoke status: \n{}", response);
     }
 
     private void doEcho(RpcInvokeContext attachment) {
         LiveResponse result = helloService.echo("hello");
         addTrace(attachment, result);
         output("Invoke result: \n{}", result);
+    }
+
+    private void doGenericEcho(RpcInvokeContext attachment) {
+        Object result = genericService.$genericInvoke("echo",
+                new String[]{"java.lang.String"},
+                new Object[]{"hello"});
+        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
+        addTrace(attachment, response);
+        output("Generic invoke result: \n{}", response);
+    }
+
+    private void doGenericStatus(RpcInvokeContext attachment) {
+        Object result = genericService.$invoke("echo",
+                new String[]{"java.lang.String"},
+                new Object[]{"hello"});
+        LiveResponse response = objectMapper.convertValue(result, LiveResponse.class);
+        addTrace(attachment, response);
+        output("Generic invoke result: \n{}", response);
     }
 
 

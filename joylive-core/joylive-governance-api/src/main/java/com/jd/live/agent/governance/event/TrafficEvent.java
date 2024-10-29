@@ -295,6 +295,11 @@ public class TrafficEvent {
         REJECT_NO_PROVIDER,
 
         /**
+         * The traffic event is rejected because the permission is denied.
+         */
+        REJECT_PERMISSION_DENIED,
+
+        /**
          * The traffic event is rejected because the request is unauthorized.
          */
         REJECT_UNAUTHORIZED,

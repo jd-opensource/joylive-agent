@@ -63,8 +63,8 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return true;
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace liveSpace = policy == null ? null : policy.getCurrentLiveSpace();
-        Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
+        LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
+        Unit local = liveSpace == null ? null : liveSpace.getLocalUnit();
         return local == null || local.getAccessMode().isWriteable();
     }
 
@@ -123,8 +123,8 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return isLiveEnabled(topic);
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace space = policy == null ? null : policy.getCurrentLiveSpace();
-        Unit unit = space == null ? null : space.getCurrentUnit();
+        LiveSpace space = policy == null ? null : policy.getLocalLiveSpace();
+        Unit unit = space == null ? null : space.getLocalUnit();
         return unit != null;
     }
 
@@ -137,7 +137,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return isLaneEnabled(topic);
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LaneSpace space = policy == null ? null : policy.getCurrentLaneSpace();
+        LaneSpace space = policy == null ? null : policy.getLocalLaneSpace();
         Lane lane = space == null ? null : space.getCurrentLane();
         return lane != null;
     }
@@ -190,7 +190,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         } else {
             GovernancePolicy policy = policySupplier.getPolicy();
             LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(liveSpaceId);
-            Unit local = liveSpace == null ? null : liveSpace.getCurrentUnit();
+            Unit local = liveSpace == null ? null : liveSpace.getLocalUnit();
             UnitRule rule = liveSpace == null ? null : liveSpace.getUnitRule(message.getRuleId());
             if (liveSpace == null) {
                 return MessageAction.CONSUME;

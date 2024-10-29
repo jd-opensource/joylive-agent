@@ -30,7 +30,6 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
@@ -94,7 +93,7 @@ public class LiveGatewayFilter implements GlobalFilter, Ordered {
 
         @Override
         public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-            if (getDelegate().getStatusCode() == HttpStatus.OK && body instanceof Flux) {
+            if (body instanceof Flux) {
                 Flux<? extends DataBuffer> fluxBody = Flux.from(body);
                 ServerHttpResponse delegate = getDelegate();
                 HttpHeaders headers = request.getHeaders();

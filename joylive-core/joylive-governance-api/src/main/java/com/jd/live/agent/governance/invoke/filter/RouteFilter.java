@@ -35,7 +35,11 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @Extensible(value = "RouteFilter")
 public interface RouteFilter {
 
-    int ORDER_CIRCUIT_BREAKER = 100;
+    int ORDER_READY = 0;
+
+    int ORDER_GROUP = ORDER_READY + 100;
+
+    int ORDER_CIRCUIT_BREAKER = ORDER_GROUP + 100;
 
     int ORDER_STICKY = ORDER_CIRCUIT_BREAKER + 100;
 

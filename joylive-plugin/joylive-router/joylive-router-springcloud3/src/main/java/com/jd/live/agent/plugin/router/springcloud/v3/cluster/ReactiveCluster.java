@@ -20,8 +20,9 @@ import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.response.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
@@ -32,7 +33,12 @@ import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.core.NestedRuntimeException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
+import org.springframework.lang.NonNull;
 import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -62,6 +68,8 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
             "java.util.concurrent.TimeoutException",
             "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
+
+    private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
 
@@ -111,14 +119,8 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
     }
 
     @Override
-    public ReactiveClusterResponse createResponse(Throwable throwable, ReactiveClusterRequest request, SpringEndpoint endpoint) {
-        // TODO CircuitBreakerException
-        return new ReactiveClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
-    }
-
-    @Override
-    public boolean isRetryable(Throwable throwable) {
-        return RetryPolicy.isRetry(RETRY_EXCEPTIONS, throwable);
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -171,5 +173,60 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
             }
         }
         return result;
+    }
+
+    @Override
+    protected ReactiveClusterResponse createResponse(ReactiveClusterRequest request, DegradeConfig degradeConfig) {
+        ExchangeStrategies strategies;
+        try {
+            FieldDesc field = ClassUtils.describe(request.getNext().getClass()).getFieldList().getField("strategies");
+            strategies = field == null ? ExchangeStrategies.withDefaults() : (ExchangeStrategies) field.get(request.getNext());
+        } catch (Throwable ignored) {
+            strategies = ExchangeStrategies.withDefaults();
+        }
+        return new ReactiveClusterResponse(ClientResponse.create(degradeConfig.getResponseCode(), strategies)
+                .body(degradeConfig.getResponseBody() == null ? "" : degradeConfig.getResponseBody())
+                .request(new DegradeHttpRequest(request))
+                .headers(headers -> {
+                    headers.addAll(request.getRequest().headers());
+                    degradeConfig.foreach(headers::add);
+                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
+                    headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(degradeConfig.bodyLength()));
+                }).build());
+    }
+
+    @Override
+    protected ReactiveClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new ReactiveClusterResponse(error, predicate);
+    }
+
+    /**
+     * A class that implements the HttpRequest interface and wrap a ReactiveClusterRequest.
+     */
+    private static class DegradeHttpRequest implements HttpRequest {
+
+        private final ReactiveClusterRequest request;
+
+        DegradeHttpRequest(ReactiveClusterRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        @NonNull
+        public String getMethodValue() {
+            return request.getRequest().method().name();
+        }
+
+        @Override
+        @NonNull
+        public URI getURI() {
+            return request.getRequest().url();
+        }
+
+        @Override
+        @NonNull
+        public HttpHeaders getHeaders() {
+            return request.getRequest().headers();
+        }
     }
 }

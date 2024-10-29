@@ -93,21 +93,26 @@
           "loadBalancePolicy": {
             "policyType": "ROUND_ROBIN"
           },
-          "retryPolicy": {
-            "type": "Resilience4j",
-            "retry": 10,
-            "retryInterval": 1000,
-            "timeout": 5000,
-            "retryStatuses": [
-              500,
-              502
-            ],
-            "retryExceptions": [
-              "java.lang.NullPointException"
-            ],
-            "version": 1704038400000
+          "clusterPolicy": {
+            "type": "failover",
+            "retryPolicy": {
+              "retry": 10,
+              "interval": 1000,
+              "timeout": 5000,
+              "errorCodes": [
+                500,
+                502
+              ],
+              "methods": [
+                "GET"
+              ],
+              "exceptions": [
+                "java.lang.NullPointException"
+              ],
+              "version": 1704038400000
+            }
           },
-          "authPolicies": [
+          "permissionPolicies": [
             {
               "name": "auth-rule-2",
               "version": 1704038400001,
@@ -125,6 +130,13 @@
               "type": "DENY"
             }
           ],
+          "authPolicy": {
+            "type": "token",
+            "params": {
+              "token": "1234567890",
+              "token.key": "Authorization"
+            }
+          },
           "rateLimitPolicies": [
             {
               "name": "limit-rule-1",
@@ -436,6 +448,18 @@
               {
                 "name": "status",
                 "servicePolicy": {
+                  "clusterPolicy": {
+                    "type": "failover",
+                    "retryPolicy": {
+                      "retry": 2,
+                      "interval": 1000,
+                      "timeout": 5000,
+                      "exceptions": [
+                        "com.jd.live.agent.demo.exception.RetryableException"
+                      ],
+                      "version": 1704038400000
+                    }
+                  },
                   "circuitBreakPolicies": [
                     {
                       "name": "cb1",
@@ -447,7 +471,7 @@
                         "3"
                       ],
                       "exceptions": [
-                        "java.lang.RuntimeException"
+                        "com.jd.live.agent.demo.exception.BreakableException"
                       ],
                       "failureRateThreshold": 20,
                       "slowCallRateThreshold": 20,
@@ -493,6 +517,68 @@
         "paths": [
           {
             "path": "com.jd.live.agent.demo.service.HelloService",
+            "matchType": "EQUAL",
+            "methods": [
+              {
+                "name": "status",
+                "servicePolicy": {
+                  "circuitBreakPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "java.lang.RuntimeException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 50,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "realizeType": "Resilience4j",
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.jd.live.agent.demo.service.HelloService",
+    "serviceType": "RPC_INTERFACE",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        },
+        "paths": [
+          {
+            "path": "/",
             "matchType": "EQUAL",
             "methods": [
               {

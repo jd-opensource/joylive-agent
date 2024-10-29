@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.test;
 
 import com.google.common.util.concurrent.RateLimiter;
-import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothTokenBucketLimiter;
+import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothBurstyLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 import org.junit.jupiter.api.Assertions;
@@ -38,13 +38,13 @@ import static org.mockito.Mockito.mock;
  */
 public class SmoothTokenBucketLimiterTest {
 
-    private SmoothTokenBucketLimiter limiter;
+    private SmoothBurstyLimiter limiter;
     private RateLimitPolicy mockPolicy;
 
     @BeforeEach
     void setUp() {
         mockPolicy = mock(RateLimitPolicy.class);
-        limiter = new SmoothTokenBucketLimiter(mockPolicy, new SlidingWindow(10, 1000L));
+        limiter = new SmoothBurstyLimiter(mockPolicy, new SlidingWindow(10, 1000L));
     }
 
     @ParameterizedTest

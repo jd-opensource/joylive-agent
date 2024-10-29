@@ -17,9 +17,8 @@ package com.jd.live.agent.plugin.router.sofarpc.response;
 
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
-
-import java.util.function.Predicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 
 /**
  * Represents a response in the SOFA RPC framework.
@@ -57,8 +56,8 @@ public interface SofaRpcResponse {
          *                  whether the call should be retried based on the response. Can be {@code null}
          *                  if retry logic is not applicable.
          */
-        public SofaRpcOutboundResponse(SofaResponse response, Predicate<Throwable> predicate) {
-            super(response, response != null && response.isError() ? new ServiceError(response.getErrorMsg(), true) : null, predicate);
+        public SofaRpcOutboundResponse(SofaResponse response, ErrorPredicate predicate) {
+            super(response, getError(response), predicate);
         }
 
         /**
@@ -69,8 +68,25 @@ public interface SofaRpcResponse {
          *                  whether the call should be retried based on the response. Can be {@code null}
          *                  if retry logic is not applicable.
          */
-        public SofaRpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+        public SofaRpcOutboundResponse(ServiceError error, ErrorPredicate predicate) {
             super(null, error, predicate);
+        }
+
+        /**
+         * Extracts the error information from a SofaResponse object.
+         *
+         * @param response The SofaResponse object to extract the error information from.
+         * @return A ServiceError object containing the error information, or null if no error is found.
+         */
+        private static ServiceError getError(SofaResponse response) {
+            if (response == null) {
+                return null;
+            } else if (response.isError()) {
+                return new ServiceError(response.getErrorMsg(), true);
+            } else if (response.getAppResponse() instanceof Throwable) {
+                return new ServiceError((Throwable) response.getAppResponse(), true);
+            }
+            return null;
         }
 
     }

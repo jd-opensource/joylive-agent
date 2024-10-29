@@ -6,7 +6,6 @@ spring:
     default-property-inclusion: non_null
     serialization:
       indent_output: true
-
 live:
   live-space-id: v4bEh4kd6Jvu5QBX09qYq-qlbcs
   rule-id: 1003

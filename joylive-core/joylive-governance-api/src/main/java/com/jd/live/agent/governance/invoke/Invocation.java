@@ -15,7 +15,10 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.bootstrap.exception.RejectException;
+import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.matcher.Matcher;
@@ -54,6 +57,7 @@ import java.util.Map;
  */
 public abstract class Invocation<T extends ServiceRequest> implements Matcher<TagCondition> {
 
+    public static final String REJECT_NAMESPACE_NOT_MATCH = "reject when namespace is not matched.";
     public static final String FAILOVER_UNIT_NOT_ACCESSIBLE = "failover when unit is not accessible.";
     public static final String REJECT_NO_UNIT = "reject when local unit is not found.";
     public static final String REJECT_UNIT_NOT_CENTER = "reject when unit is not center.";
@@ -61,7 +65,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     public static final String REJECT_UNIT_NOT_ACCESSIBLE = "reject when unit is not accessible.";
     public static final String REJECT_NO_VARIABLE = "reject when unit variable is not found.";
     public static final String REJECT_NO_UNIT_ROUTE = "reject when unit route is not found.";
-    public static final String REJECT_NO_INSTANCE = "reject when instance is not found.";
     public static final String FAILOVER_CENTER_NO_VARIABLE = "failover center unit when unit variable is not found.";
     public static final String FAILOVER_UNIT_ESCAPE = "failover unit when variable is not belong to this unit.";
     public static final String FAILOVER_CELL_ESCAPE = "failover cell when variable is not belong to this cell.";
@@ -126,7 +129,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         MetadataParser<LaneMetadata> laneParser = createLaneParser();
         ServiceMetadata serviceMetadata = serviceParser.parse();
         LiveMetadata liveMetadata = liveParser.parse();
-        this.serviceMetadata = serviceParser.configure(serviceMetadata, liveMetadata.getUnitRule());
+        this.serviceMetadata = serviceParser.configure(serviceMetadata, liveMetadata.getRule());
         this.liveMetadata = liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
         this.laneMetadata = laneParser.parse();
         this.policyId = parsePolicyId();
@@ -163,6 +166,10 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      */
     protected PolicyId parsePolicyId() {
         return serviceMetadata.getServicePolicy();
+    }
+
+    public GatewayRole getGateway() {
+        return GatewayRole.NONE;
     }
 
     /**
@@ -249,6 +256,29 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     }
 
     /**
+     * Handles a reject event by publishing a traffic event with the appropriate reject type.
+     *
+     * @param exception the reject exception that occurred.
+     */
+    public void onReject(RejectException exception) {
+        if (exception instanceof RejectUnreadyException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNREADY).requests(1));
+        } else if (exception instanceof RejectUnitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNIT_UNAVAILABLE).requests(1));
+        } else if (exception instanceof RejectCellException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_CELL_UNAVAILABLE).requests(1));
+        } else if (exception instanceof RejectEscapeException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_ESCAPE).requests(1));
+        } else if (exception instanceof RejectLimitException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_LIMIT).requests(1));
+        } else if (exception instanceof RejectPermissionException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_PERMISSION_DENIED).requests(1));
+        } else if (exception instanceof RejectAuthException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNAUTHORIZED).requests(1));
+        }
+    }
+
+    /**
      * Publishes a live event to a specified publisher using a configured live event builder.
      *
      * @param publisher The publisher to which the live event will be offered.
@@ -270,20 +300,20 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @return The configured live event builder.
      */
     protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        LiveSpace liveSpace = liveMetadata.getLiveSpace();
-        UnitRule unitRule = liveMetadata.getUnitRule();
-        Unit currentUnit = liveMetadata.getCurrentUnit();
-        Cell currentCell = liveMetadata.getCurrentCell();
+        LiveSpace liveSpace = liveMetadata.getTargetSpace();
+        UnitRule unitRule = liveMetadata.getRule();
+        Unit localUnit = liveMetadata.getLocalUnit();
+        Cell localCell = liveMetadata.getLocalCell();
         LaneSpace laneSpace = laneMetadata.getLaneSpace();
-        Lane currentLane = laneMetadata.getCurrentLane();
+        Lane localLane = laneMetadata.getCurrentLane();
         Lane targetLane = laneMetadata.getTargetLane();
         URI uri = policyId == null ? null : policyId.getUri();
         return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).
                 unitRuleId(unitRule == null ? null : unitRule.getId()).
-                localUnit(currentUnit == null ? null : currentUnit.getCode()).
-                localCell(currentCell == null ? null : currentCell.getCode()).
+                localUnit(localUnit == null ? null : localUnit.getCode()).
+                localCell(localCell == null ? null : localCell.getCode()).
                 laneSpaceId(laneSpace == null ? null : laneSpace.getId()).
-                localLane(currentLane == null ? null : currentLane.getCode()).
+                localLane(localLane == null ? null : localLane.getCode()).
                 targetLane(targetLane == null ? null : targetLane.getCode()).
                 policyId(policyId == null ? null : policyId.getId()).
                 service(uri == null ? null : uri.getHost()).
@@ -338,10 +368,10 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @return The constructed error message with detailed context information.
      */
     public String getError(String message, String unit, String cell) {
-        LiveSpace liveSpace = liveMetadata.getLiveSpace();
+        LiveSpace liveSpace = liveMetadata.getTargetSpace();
         return new StringBuilder(message.length() + 150).append(message).
                 append(". liveSpaceId=").append(liveSpace == null ? null : liveSpace.getId()).
-                append(", ruleId=").append(liveMetadata.getUnitRuleId()).
+                append(", ruleId=").append(liveMetadata.getRuleId()).
                 append(", unit=").append(unit).
                 append(", cell=").append(cell).
                 append(", application=").append(context.getApplication().getName()).

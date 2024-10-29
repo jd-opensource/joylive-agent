@@ -15,17 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.governance.response.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
@@ -60,14 +59,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 @Getter
 public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest, GatewayClusterResponse> {
-
-    private static final Logger logger = LoggerFactory.getLogger(GatewayCluster.class);
 
     private final LoadBalancerClientFactory clientFactory;
 
@@ -97,9 +93,9 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
                 RetryPolicy retryPolicy = new RetryPolicy();
                 retryPolicy.setRetry(retryConfig.getRetries());
-                retryPolicy.setRetryInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
-                retryPolicy.setRetryStatuses(statuses);
-                retryPolicy.setRetryExceptions(exceptions);
+                retryPolicy.setInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
+                retryPolicy.setErrorCodes(statuses);
+                retryPolicy.setExceptions(exceptions);
                 return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
             }
         }
@@ -114,33 +110,15 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Set<CodePolicy> codePolicies = request.getAttribute(Request.KEY_CODE_POLICY);
-            ServerWebExchange exchange = request.getExchange();
-            if (codePolicies != null && !codePolicies.isEmpty()) {
-                exchange = exchange.mutate().response(new BodyResponseDecorator(exchange, codePolicies)).build();
-            }
-            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse());
+            Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
+            ServerWebExchange exchange = policies != null && !policies.isEmpty()
+                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), policies)).build()
+                    : request.getExchange();
+            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(), () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
             return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
         } catch (Throwable e) {
             return Futures.future(e);
         }
-    }
-
-    @Override
-    public GatewayClusterResponse createResponse(Throwable throwable, GatewayClusterRequest request, SpringEndpoint endpoint) {
-        RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
-        if (circuitBreakException != null) {
-            DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
-                try {
-                    return new GatewayClusterResponse(createResponse(request, config));
-                } catch (Throwable e) {
-                    logger.warn("Exception occurred when create degrade response from circuit break. caused by " + e.getMessage(), e);
-                    return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), null);
-                }
-            }
-        }
-        return new GatewayClusterResponse(new ServiceError(createException(throwable, request, endpoint), false), this::isRetryable);
     }
 
     @Override
@@ -179,15 +157,8 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                         : new ResponseData(response.getResponse(), new RequestData(request.getRequest())))));
     }
 
-    /**
-     * Creates a {@link ServerHttpResponse} based on the provided {@link GatewayClusterRequest} and {@link DegradeConfig}.
-     * The response is configured with the status code, headers, and body specified in the degrade configuration.
-     *
-     * @param httpRequest   the original HTTP request containing headers.
-     * @param degradeConfig the degrade configuration specifying the response details such as status code, headers, and body.
-     * @return a {@link ServerHttpResponse} configured according to the degrade configuration.
-     */
-    private ServerHttpResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
+    @Override
+    protected GatewayClusterResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
         ServerHttpResponse response = httpRequest.getExchange().getResponse();
         ServerHttpRequest request = httpRequest.getExchange().getRequest();
 
@@ -196,7 +167,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         byte[] bytes = length == 0 ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
         DataBuffer buffer = response.bufferFactory().wrap(bytes);
 
-        HttpHeaders headers = response.getHeaders();
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
         headers.putAll(request.getHeaders());
         Map<String, String> attributes = degradeConfig.getAttributes();
         if (attributes != null) {
@@ -204,10 +175,15 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         }
         response.setRawStatusCode(degradeConfig.getResponseCode());
         response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
-        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
 
         response.writeWith(Flux.just(buffer)).block();
-        return response;
+        return new GatewayClusterResponse(response);
+    }
+
+    @Override
+    protected GatewayClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new GatewayClusterResponse(error, predicate);
     }
 
     /**
@@ -217,32 +193,30 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
         private final ServerWebExchange exchange;
 
-        private final Set<CodePolicy> codePolicies;
+        private final Set<ErrorPolicy> policies;
 
-        BodyResponseDecorator(ServerWebExchange exchange, Set<CodePolicy> codePolicies) {
+        BodyResponseDecorator(ServerWebExchange exchange, Set<ErrorPolicy> policies) {
             super(exchange.getResponse());
             this.exchange = exchange;
-            this.codePolicies = codePolicies;
+            this.policies = policies;
         }
 
         @NonNull
         @Override
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-            if (HttpStatus.OK.equals(getStatusCode()) && body instanceof Flux) {
-                String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-                if (policyMatch(contentType)) {
-                    Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                    return super.writeWith(fluxBody.buffer().map(
-                            dataBuffers -> {
-                                DataBufferFactory bufferFactory = bufferFactory();
-                                DataBuffer join = bufferFactory.join(dataBuffers);
-                                byte[] content = new byte[join.readableByteCount()];
-                                join.read(content);
-                                DataBufferUtils.release(join);
-                                exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
-                                return bufferFactory.wrap(content);
-                            }));
-                }
+            String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+            if (body instanceof Flux && policyMatch(contentType)) {
+                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                return super.writeWith(fluxBody.buffer().map(
+                        dataBuffers -> {
+                            DataBufferFactory bufferFactory = bufferFactory();
+                            DataBuffer join = bufferFactory.join(dataBuffers);
+                            byte[] content = new byte[join.readableByteCount()];
+                            join.read(content);
+                            DataBufferUtils.release(join);
+                            exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
+                            return bufferFactory.wrap(content);
+                        }));
             }
             return super.writeWith(body);
         }
@@ -254,8 +228,11 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
          * @return true if any of the code policies match the content type, false otherwise.
          */
         private boolean policyMatch(String contentType) {
-            for (CodePolicy policy : codePolicies) {
-                if (policy.match(contentType)) {
+            contentType = contentType == null ? null : contentType.toLowerCase();
+            CodePolicy codePolicy;
+            for (ErrorPolicy policy : policies) {
+                codePolicy = policy.getCodePolicy();
+                if (codePolicy != null && codePolicy.match(getRawStatusCode(), contentType, HttpStatus.OK.value())) {
                     return true;
                 }
             }

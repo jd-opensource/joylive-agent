@@ -39,7 +39,7 @@ public class ProviderBootstrapInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         ProviderConfig<?> config = ((ProviderBootstrap<?>) ctx.getTarget()).getProviderConfig();
-        application.label((key, value) -> {
+        application.labelRegistry((key, value) -> {
             String old = config.getParameter(key);
             if (old == null || old.isEmpty()) {
                 config.setParameter(key, value);

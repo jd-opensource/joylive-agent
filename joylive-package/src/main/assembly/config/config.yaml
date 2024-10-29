@@ -101,9 +101,6 @@ agent:
       enabled: ${CONFIG_REGISTRY_ENABLED:true}
     flowcontrol:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
-      loadbalance: ${CONFIG_LOADBALANCE_ENABLED:true}
-      sticky: ${CONFIG_STICKY_ENABLED:false}
-      limit: ${CONFIG_LIMIT_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
     protect:
@@ -121,6 +118,8 @@ agent:
   governance:
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
     service:
+      serviceGroups: ${CONFIG_SERVICE_GROUPS:}
+      serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}
       warmups: ${CONFIG_WARMUP_SERVICES:}
       systemPaths: ${CONFIG_SYSTEM_HTTP_PATHS}
       concurrencyLimiter:
@@ -143,6 +142,9 @@ agent:
       modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:false}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
+      spring:
+        discovery:
+          disables: ${CONFIG_SPRING_DISCOVERY_DISABLES}
       phevos:
         groupExpression: ${unit}-${cell}-${group}
     transmission:
@@ -227,6 +229,6 @@ agent:
     service: true
     readerInterval: 1000
     exporter:
-      type: logging
-      endpoint: null
+      type: ${CONFIG_COUNTER_EXPORTER_TYPE:logging}
+      endpoint: ${CONFIG_COUNTER_EXPORTER_ENDPOINT:}
       timeout: 5000

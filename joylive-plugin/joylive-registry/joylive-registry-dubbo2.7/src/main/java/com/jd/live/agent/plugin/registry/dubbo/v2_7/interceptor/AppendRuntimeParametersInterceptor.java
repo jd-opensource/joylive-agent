@@ -42,6 +42,6 @@ public class AppendRuntimeParametersInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Map<String, String> argument = (Map<String, String>) ctx.getArguments()[0];
-        application.label(argument::putIfAbsent);
+        application.labelRegistry(argument::putIfAbsent);
     }
 }

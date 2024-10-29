@@ -270,14 +270,13 @@
 
 ```mermaid
 stateDiagram-v2
-    Closed --> Open : fail [threshold reached]
-    Closed --> Closed : fail [under threshold]
-    Open --> HalfOpen : reset timeout
-    HalfOpen --> Closed : success
-    HalfOpen --> Open : fail
-    
-    Closed --> Closed : success
-    Open --> Open : call / raise circuit open
+    DIRECTION BT
+    关闭 --> 开启 : 失败达到阈值
+    开启 --> 半开 : 达到超时
+    半开 --> 关闭 : 成功
+    半开 --> 开启 : 失败
+    关闭 --> 关闭 : 成功/失败未到阈值
+    开启 --> 开启 : 调用抛出异常
 ```
 
 | 元素       | 说明                                    |

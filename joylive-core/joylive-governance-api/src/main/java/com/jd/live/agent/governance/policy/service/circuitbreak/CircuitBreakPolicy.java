@@ -15,9 +15,10 @@
  */
 package com.jd.live.agent.governance.policy.service.circuitbreak;
 
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
-import com.jd.live.agent.governance.policy.service.code.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,9 +34,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Setter
 @Getter
-public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy> {
+public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy {
 
     public static final String DEFAULT_CIRCUIT_BREAKER_TYPE = "Resilience4j";
+    public static final String SLIDING_WINDOW_TIME = "time";
+    public static final String SLIDING_WINDOW_COUNT = "count";
+    public static final int DEFAULT_FAILURE_RATE_THRESHOLD = 50;
+    public static final int DEFAULT_SLOW_CALL_RATE_THRESHOLD = 50;
+    public static final int DEFAULT_SLOW_CALL_DURATION_THRESHOLD = 10000;
+    public static final int DEFAULT_WAIT_DURATION_IN_OPEN_STATE = 60;
+    public static final int DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE = 10;
+    public static final int DEFAULT_SLIDING_WINDOW_SIZE = 100;
+    public static final int DEFAULT_MIN_CALLS_THRESHOLD = 10;
 
     /**
      * Name of this policy
@@ -55,17 +65,17 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     /**
      * Sliding window type (statistical window type): count, time
      */
-    private String slidingWindowType = "time";
+    private String slidingWindowType = SLIDING_WINDOW_TIME;
 
     /**
      * Sliding window size (statistical window size)
      */
-    private int slidingWindowSize = 100;
+    private int slidingWindowSize = DEFAULT_SLIDING_WINDOW_SIZE;
 
     /**
      * Minimum request threshold
      */
-    private int minCallsThreshold = 10;
+    private int minCallsThreshold = DEFAULT_MIN_CALLS_THRESHOLD;
 
     /**
      * Code policy
@@ -85,27 +95,27 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     /**
      * Failure rate threshold
      */
-    private float failureRateThreshold = 50;
+    private float failureRateThreshold = DEFAULT_FAILURE_RATE_THRESHOLD;
 
     /**
      * Threshold for slow call rate
      */
-    private float slowCallRateThreshold = 50;
+    private float slowCallRateThreshold = DEFAULT_SLOW_CALL_RATE_THRESHOLD;
 
     /**
      * Minimum duration for slow invocation (milliseconds)
      */
-    private int slowCallDurationThreshold = 10000;
+    private int slowCallDurationThreshold = DEFAULT_SLOW_CALL_DURATION_THRESHOLD;
 
     /**
      * Fuse time (seconds)
      */
-    private int waitDurationInOpenState = 60;
+    private int waitDurationInOpenState = DEFAULT_WAIT_DURATION_IN_OPEN_STATE;
 
     /**
      * In the half-open state, callable numbers
      */
-    private int allowedCallsInHalfOpenState = 10;
+    private int allowedCallsInHalfOpenState = DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE;
 
     /**
      * Whether to force the circuit breaker to be turned on
@@ -164,33 +174,24 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
         }
     }
 
-    /**
-     * Checks if the body of the code should be parsed.
-     *
-     * @return true if the body of the code should be parsed, false otherwise.
-     */
-    public boolean isBodyRequest() {
-        return codePolicy != null && codePolicy.isBodyRequest();
+    @Override
+    public boolean isEnabled() {
+        return (errorCodes != null && !errorCodes.isEmpty() || exceptions != null && !exceptions.isEmpty());
     }
 
-    /**
-     * Checks if the specified error code is present in the list of error codes.
-     *
-     * @param errorCode the error code to check.
-     * @return {@code true} if the error code is present, {@code false} otherwise.
-     */
+    @Override
     public boolean containsError(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
     }
 
-    /**
-     * Checks if the specified exception is present in the list of exceptions.
-     *
-     * @param throwable the exception to check.
-     * @return {@code true} if the error code is present, {@code false} otherwise.
-     */
-    public boolean containsException(Throwable throwable) {
-        return throwable != null && exceptions != null && exceptions.contains(throwable.getClass().getName());
+    @Override
+    public boolean containsException(String className) {
+        return className != null && exceptions != null && exceptions.contains(className);
+    }
+
+    @Override
+    public boolean containsException(Set<String> classNames) {
+        return ErrorPolicy.containsException(classNames, exceptions);
     }
 
     /**
@@ -232,6 +233,12 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     public void removeBroken(String id) {
         if (id != null) {
             broken.remove(id);
+        }
+    }
+
+    public void cache() {
+        if (codePolicy != null) {
+            codePolicy.cache();
         }
     }
 

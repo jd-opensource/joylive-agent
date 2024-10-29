@@ -15,48 +15,60 @@ package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 
 import java.util.concurrent.TimeUnit;
 
-public abstract class SleepingStopwatch {
+/**
+ * An interface for a stopwatch that can also sleep uninterruptedly.
+ * <p>
+ * Source code implementation borrows from com.google.common.util.concurrent.RateLimiter.SleepingStopwatch
+ * </p>
+ */
+public interface SleepingStopwatch {
 
     /**
-     * Constructor for use by subclasses.
+     * Returns the number of microseconds elapsed since this stopwatch was started.
+     *
+     * @return the number of microseconds elapsed
      */
-    protected SleepingStopwatch() {
-    }
+    long readMicros();
 
-    /*
-     * We always hold the mutex when calling this. TODO(cpovirk): Is that important? Perhaps we need
-     * to guarantee that each call to reserveEarliestAvailable, etc. sees a value >= the previous?
-     * Also, is it OK that we don't hold the mutex when sleeping?
+    /**
+     * Sleeps uninterruptedly for the specified number of microseconds.
+     *
+     * @param micros the number of microseconds to sleep
      */
-    protected abstract long readMicros();
+    void sleepMicrosUninterruptibly(long micros);
 
-    protected abstract void sleepMicrosUninterruptibly(long micros);
-
-    public static SleepingStopwatch createFromSystemTimer() {
+    /**
+     * Creates a new instance of SleepingStopwatch using the system timer.
+     *
+     * @return a new instance of SleepingStopwatch
+     */
+    static SleepingStopwatch createFromSystemTimer() {
+        // Used to get the time interval, so a new instance needs to be created.
         return new SleepingStopwatch() {
             private final Ticker ticker = Ticker.systemTicker();
             private final long startTick = ticker.read();
 
             @Override
-            protected long readMicros() {
-                return TimeUnit.MICROSECONDS.convert(elapsedNanos(), TimeUnit.NANOSECONDS);
+            public long readMicros() {
+                return TimeUnit.MICROSECONDS.convert(ticker.read() - startTick, TimeUnit.NANOSECONDS);
             }
 
             @Override
-            protected void sleepMicrosUninterruptibly(long micros) {
+            public void sleepMicrosUninterruptibly(long micros) {
                 if (micros > 0) {
                     sleepUninterruptibly(micros, TimeUnit.MICROSECONDS);
                 }
             }
-
-            private long elapsedNanos() {
-                return ticker.read() - startTick;
-            }
-
         };
     }
 
-    public static void sleepUninterruptibly(long sleepFor, TimeUnit unit) {
+    /**
+     * Sleeps uninterruptedly for the specified amount of time.
+     *
+     * @param sleepFor the amount of time to sleep
+     * @param unit     the unit of time for sleepFor
+     */
+    static void sleepUninterruptibly(long sleepFor, TimeUnit unit) {
         boolean interrupted = false;
         try {
             long remainingNanos = unit.toNanos(sleepFor);
@@ -78,33 +90,26 @@ public abstract class SleepingStopwatch {
         }
     }
 
-    static abstract class Ticker {
-        /**
-         * Constructor for use by subclasses.
-         */
-        protected Ticker() {
-        }
+    /**
+     * A nested interface for a ticker that returns the number of nanoseconds elapsed since a fixed point of reference.
+     */
+    interface Ticker {
 
         /**
          * Returns the number of nanoseconds elapsed since this ticker's fixed point of reference.
          */
-        public abstract long read();
+        long read();
 
         /**
          * A ticker that reads the current time using {@link System#nanoTime}.
          *
          * @since 10.0
          */
-        public static Ticker systemTicker() {
+        static Ticker systemTicker() {
             return SYSTEM_TICKER;
         }
 
-        private static final Ticker SYSTEM_TICKER =
-                new Ticker() {
-                    @Override
-                    public long read() {
-                        return System.nanoTime();
-                    }
-                };
+        Ticker SYSTEM_TICKER = System::nanoTime;
     }
+
 }

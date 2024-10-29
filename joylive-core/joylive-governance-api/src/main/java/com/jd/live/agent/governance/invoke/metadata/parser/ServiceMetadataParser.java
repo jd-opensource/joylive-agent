@@ -20,6 +20,8 @@ import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
+import java.util.Map;
+
 import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
 import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_METHOD;
 
@@ -72,7 +74,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     public ServiceMetadata parse() {
         String consumer = parseConsumer();
         String serviceName = parseServiceName();
-        String serviceGroup = parseServiceGroup();
+        String serviceGroup = parseServiceGroup(serviceName);
         Service service = parseService(serviceName);
         String path = service == null ? parsePath() : service.getServiceType().normalize(parsePath());
         String method = parseMethod();
@@ -116,9 +118,10 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     /**
      * Parses and returns the service group from either the application context or the service request.
      *
+     * @param serviceName the service name
      * @return the parsed service group
      */
-    protected abstract String parseServiceGroup();
+    protected abstract String parseServiceGroup(String serviceName);
 
     /**
      * Parses and returns the method from the service request.
@@ -197,8 +200,13 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseServiceGroup() {
-            return request.getGroup();
+        protected String parseServiceGroup(String serviceName) {
+            String group = request.getGroup();
+            if (group == null || group.isEmpty()) {
+                Map<String, String> groups = serviceConfig.getServiceGroups();
+                group = groups == null ? null : groups.get(serviceName);
+            }
+            return group;
         }
     }
 
@@ -228,7 +236,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseServiceGroup() {
+        protected String parseServiceGroup(String serviceName) {
             String group = application.getService().getGroup();
             return group == null || group.isEmpty() ? request.getGroup() : group;
         }
@@ -283,13 +291,6 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                                                    Application application,
                                                    GovernancePolicy governancePolicy) {
             super(request, serviceConfig, application, governancePolicy);
-        }
-
-        @Override
-        protected String parseServiceName() {
-            String result = application.getService().getName();
-            result = result != null ? result : request.getService();
-            return result;
         }
 
         @Override

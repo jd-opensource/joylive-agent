@@ -76,11 +76,6 @@ public class GovernanceConfig {
     public static final String CONFIG_REGISTRY_ENABLED = CONFIG_SWITCH_REGISTRY + ENABLED;
 
     public static final String CONFIG_FLOW_CONTROL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ENABLED;
-    public static final String CONFIG_CIRCUIT_BREAKER_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".circuitbreaker";
-    public static final String CONFIG_LOADBALANCE_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".loadbalance";
-    public static final String CONFIG_RETRY_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".retry";
-    public static final String CONFIG_STICKY_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".sticky";
-    public static final String CONFIG_LIMIT_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".limit";
     public static final String CONFIG_LOCALHOST_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".localhost";
     public static final String CONFIG_VIRTUAL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtual";
 
@@ -92,6 +87,10 @@ public class GovernanceConfig {
     public static final String CONFIG_PROTECT_REDIS_ENABLED = CONFIG_SWITCH_PROTECT + ".redis";
 
     public static final String CONFIG_COUNTER_ENABLED = CONFIG_SWITCH_COUNTER + ENABLED;
+
+    public static final String CONFIG_ROUTER = CONFIG_AGENT_GOVERNANCE + ".router";
+    public static final String CONFIG_ROUTER_SPRING = CONFIG_ROUTER + ".spring";
+    public static final String CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES = CONFIG_ROUTER_SPRING + ".discovery.disables";
 
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();

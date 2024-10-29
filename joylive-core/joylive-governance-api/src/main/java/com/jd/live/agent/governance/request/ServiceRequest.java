@@ -16,11 +16,15 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.governance.exception.ErrorName;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 /**
  * Defines an interface for service requests, extending the basic {@link Request} interface.
@@ -62,6 +66,54 @@ public interface ServiceRequest extends Request {
     String getPath();
 
     /**
+     * Returns the values of a specific header.
+     *
+     * @param key The name of the header.
+     * @return A list of values for the specified header, or null if the header does not exist.
+     */
+    List<String> getHeaders(String key);
+
+    /**
+     * Returns the values of a specific header.
+     *
+     * @param key The name of the header.
+     * @return A list of values for the specified header, or null if the header does not exist.
+     */
+    String getHeader(String key);
+
+    /**
+     * Returns the value of a specific query parameter.
+     *
+     * @param key The name of the query parameter.
+     * @return The value of the specified query parameter, or null if it does not exist.
+     */
+    String getQuery(String key);
+
+    /**
+     * Returns the values of a specific query.
+     *
+     * @param key The name of the query.
+     * @return A list of values for the specified query, or null if the query does not exist.
+     */
+    List<String> getQueries(String key);
+
+    /**
+     * Returns the values of a specific cookie.
+     *
+     * @param key The name of the header.
+     * @return A list of values for the specified cookie, or null if the cookie does not exist.
+     */
+    List<String> getCookies(String key);
+
+    /**
+     * Returns the value of a specific cookie.
+     *
+     * @param key The name of the cookie.
+     * @return The value of the specified cookie, or null if it does not exist.
+     */
+    String getCookie(String key);
+
+    /**
      * Returns the start time.
      *
      * @return the start time in milliseconds since the epoch (January 1, 1970, 00:00:00 GMT).
@@ -98,6 +150,16 @@ public interface ServiceRequest extends Request {
      * @return {@code true} if the request is a system message; {@code false} otherwise.
      */
     default boolean isSystem() {
+        return false;
+    }
+
+    /**
+     * Checks if the response body is required for the given error policy.
+     *
+     * @param policy the error policy to check
+     * @return true if the response body is required, false otherwise (default implementation always returns false)
+     */
+    default boolean requireResponseBody(ErrorPolicy policy) {
         return false;
     }
 
@@ -168,6 +230,11 @@ public interface ServiceRequest extends Request {
      */
     interface OutboundRequest extends ServiceRequest, StickyRequest {
 
+        Function<Throwable, ErrorName> DEFAULT_ERROR_FUNCTION =
+                throwable -> throwable instanceof LiveException || throwable instanceof ExecutionException
+                        ? null
+                        : new ErrorName(throwable.getClass().getName(), null);
+
         /**
          * Retrieves a set of identifiers that represent the attempts made for this request.
          *
@@ -229,34 +296,13 @@ public interface ServiceRequest extends Request {
         }
 
         /**
-         * Returns the error code associated with the given {@link Throwable}.
-         * This default implementation returns {@code null}.
+         * Returns the default error name function.
          *
-         * @param throwable the {@link Throwable} for which to get the error code
-         * @return the error code as a {@link String}, or {@code null} if not available
+         * @return The default error name function.
          */
-        default String getErrorCode(Throwable throwable) {
-            return null;
+        default Function<Throwable, ErrorName> getErrorFunction() {
+            return DEFAULT_ERROR_FUNCTION;
         }
-
-        /**
-         * Returns the cause of the given {@link Throwable}.
-         * This default implementation returns the provided {@link Throwable} itself.
-         *
-         * @param throwable the {@link Throwable} for which to get the cause
-         * @return the cause of the given {@link Throwable}, or the {@link Throwable} itself if no cause is available
-         */
-        default Throwable getCause(Throwable throwable) {
-            if (throwable instanceof LiveException
-                    || throwable instanceof ExecutionException) {
-                Throwable cause = throwable.getCause();
-                if (cause != null) {
-                    return cause;
-                }
-            }
-            return throwable;
-        }
-
 
     }
 }

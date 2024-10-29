@@ -55,4 +55,10 @@ public class ClusterPolicy extends PolicyId implements PolicyInheritWithId<Clust
             retryPolicy.supplement(source.retryPolicy);
         }
     }
+
+    public void cache() {
+        if (retryPolicy != null) {
+            retryPolicy.cache();
+        }
+    }
 }

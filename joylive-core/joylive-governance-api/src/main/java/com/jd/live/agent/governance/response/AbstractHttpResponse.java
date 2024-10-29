@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.request.Cookie;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * AbstractHttpResponse
@@ -43,17 +43,12 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected LazyObject<Map<String, List<Cookie>>> cookies;
-
-    /**
-     * Lazily evaluated, parsed query parameters from the HTTP request URL.
-     */
-    protected LazyObject<Map<String, List<String>>> queries;
+    protected UnsafeLazyObject<Map<String, List<String>>> cookies;
 
     /**
      * Lazily evaluated HTTP headers from the request.
      */
-    protected LazyObject<Map<String, List<String>>> headers;
+    protected UnsafeLazyObject<Map<String, List<String>>> headers;
 
     /**
      * The URI of the HTTP request.
@@ -63,17 +58,17 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     /**
      * Lazily evaluated port number of the request URI.
      */
-    protected LazyObject<Integer> port;
+    protected UnsafeLazyObject<Integer> port;
 
     /**
      * Lazily evaluated host of the request URI.
      */
-    protected LazyObject<String> host;
+    protected UnsafeLazyObject<String> host;
 
     /**
      * Lazily evaluated scheme of the request URI.
      */
-    protected LazyObject<String> schema;
+    protected UnsafeLazyObject<String> schema;
 
     /**
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
@@ -90,7 +85,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param error The original exception.
      * @param predicate A predicate used to determine if the response should be considered an error.
      */
-    public AbstractHttpResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public AbstractHttpResponse(ServiceError error, ErrorPredicate predicate) {
         this(null, error, predicate);
     }
 
@@ -101,11 +96,11 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param error     The original exception.
      * @param predicate A predicate used to determine if the response should be considered an error.
      */
-    public AbstractHttpResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+    public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate predicate) {
         super(response, error, predicate);
-        port = new LazyObject<>(this::parsePort);
-        host = new LazyObject<>(this::parseHost);
-        schema = new LazyObject<>(this::parseScheme);
+        port = new UnsafeLazyObject<>(this::parsePort);
+        host = new UnsafeLazyObject<>(this::parseHost);
+        schema = new UnsafeLazyObject<>(this::parseScheme);
     }
 
     @Override
@@ -143,32 +138,22 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     @Override
     public String getHeader(String key) {
         if (key == null) return null;
-        List<String> values = headers.get().get(key);
+        Map<String, List<String>> headers = getHeaders();
+        List<String> values = headers == null ? null : headers.get(key);
         return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     @Override
-    public String getQuery(String key) {
-        if (key == null) return null;
-        List<String> values = queries.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
-    }
-
-    @Override
-    public Map<String, List<String>> getQueries() {
-        return queries.get();
-    }
-
-    @Override
-    public Map<String, List<Cookie>> getCookies() {
-        return cookies.get();
+    public Map<String, List<String>> getCookies() {
+        return cookies == null ? null : cookies.get();
     }
 
     @Override
     public String getCookie(String key) {
         if (key == null) return null;
-        List<Cookie> values = cookies.get().get(key);
-        return values == null || values.isEmpty() ? null : values.get(0).getValue();
+        Map<String, List<String>> cookies = getCookies();
+        List<String> values = cookies == null ? null : cookies.get(key);
+        return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     /**
@@ -262,11 +247,11 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
             super(response);
         }
 
-        public AbstractHttpOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
+        public AbstractHttpOutboundResponse(ServiceError error, ErrorPredicate predicate) {
             super(error, predicate);
         }
 
-        public AbstractHttpOutboundResponse(T response, ServiceError error, Predicate<Throwable> predicate) {
+        public AbstractHttpOutboundResponse(T response, ServiceError error, ErrorPredicate predicate) {
             super(response, error, predicate);
         }
     }

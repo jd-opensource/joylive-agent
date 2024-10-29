@@ -34,6 +34,10 @@ public class CellAction {
      */
     private final String message;
 
+    public CellAction(CellActionType type) {
+        this(type, null);
+    }
+
     /**
      * Creates a new CellAction with the specified type and message.
      *

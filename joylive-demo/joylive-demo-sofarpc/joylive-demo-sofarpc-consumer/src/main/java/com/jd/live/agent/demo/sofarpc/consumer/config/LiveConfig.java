@@ -19,6 +19,7 @@ import com.jd.live.agent.demo.util.LiveTransmission;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.ImportResource;
 import org.springframework.stereotype.Component;
 
 import java.util.function.BiConsumer;
@@ -26,6 +27,7 @@ import java.util.function.BiConsumer;
 @Getter
 @Setter
 @Component
+@ImportResource("classpath:sofa-rpc.xml")
 @ConfigurationProperties(prefix = "live")
 public class LiveConfig {
 

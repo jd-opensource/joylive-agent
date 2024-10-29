@@ -17,8 +17,7 @@ package com.jd.live.agent.governance.invoke.matcher.cookie;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
-import com.jd.live.agent.governance.request.HttpRequest;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.List;
 public class CookieTagMatcher extends AbstractTagMatcher {
 
     @Override
-    protected List<String> getValues(TagCondition condition, Request request) {
-        return request instanceof HttpRequest ? ((HttpRequest) request).getCookies(condition.getKey()) : null;
+    protected List<String> getValues(TagCondition condition, ServiceRequest request) {
+        return request.getCookies(condition.getKey());
     }
 }

@@ -19,9 +19,11 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.ClientHttpResponse;
@@ -30,7 +32,6 @@ import org.springframework.lang.NonNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Predicate;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -47,10 +48,11 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
 
     public BlockingClusterResponse(ClientHttpResponse response) {
         super(response);
-        this.headers = new LazyObject<>(this.response.getHeaders());
+        this.headers = new UnsafeLazyObject<>(response::getHeaders);
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(response.getHeaders()).get(HttpHeaders.COOKIE)));
     }
 
-    public BlockingClusterResponse(ServiceError error, Predicate<Throwable> predicate) {
+    public BlockingClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
     }
 

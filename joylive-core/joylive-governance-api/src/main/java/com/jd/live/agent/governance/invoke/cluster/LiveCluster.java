@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
-import com.jd.live.agent.bootstrap.exception.RejectException;
-import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.exception.OutboundThrower;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
@@ -40,12 +40,10 @@ import java.util.concurrent.ExecutionException;
  * @param <R> The type of the outbound request.
  * @param <O> The type of the outbound response.
  * @param <E> The type of the endpoint to which requests are routed.
- * @param <T> The type of the exception that can be thrown during invocation.
  */
 public interface LiveCluster<R extends OutboundRequest,
         O extends OutboundResponse,
-        E extends Endpoint,
-        T extends Throwable> extends StickyRequest {
+        E extends Endpoint> extends StickyRequest, OutboundThrower<R, E> {
 
     /**
      * Routes the given request to a list of suitable endpoints.
@@ -57,16 +55,10 @@ public interface LiveCluster<R extends OutboundRequest,
 
     /**
      * Retrieves the default {@link ClusterPolicy} for the given request.
-     * <p>
-     * This method serves as a hook for providing a default policy when no specific policy is set
-     * for an invocation. Implementing classes can override this method to supply custom logic
-     * for determining the default policy based on the request or other contextual information.
-     * </p>
      *
      * @param request The request for which the default {@link ClusterPolicy} is to be obtained.
      * @return The default {@link ClusterPolicy} for the specified request, or {@code null} if there is none.
      */
-    // TODO change to ServicePolicy
     default ClusterPolicy getDefaultPolicy(R request) {
         return null;
     }
@@ -161,13 +153,12 @@ public interface LiveCluster<R extends OutboundRequest,
     O createResponse(Throwable throwable, R request, E endpoint);
 
     /**
-     * Determines whether a given throwable indicates that the request is retryable.
+     * Returns the retry predicate used to determine if a failed operation should be retried.
      *
-     * @param throwable The throwable to evaluate.
-     * @return {@code true} if the request that generated the throwable should be retried; {@code false} otherwise.
+     * @return the retry predicate, or null if no retry predicate is set.
      */
-    default boolean isRetryable(Throwable throwable) {
-        return false;
+    default ErrorPredicate getRetryPredicate() {
+        return null;
     }
 
     /**
@@ -181,91 +172,21 @@ public interface LiveCluster<R extends OutboundRequest,
     }
 
     /**
-     * Creates and returns an exception indicating that cluster is not ready.
-     *
-     * @return An exception instance indicating that cluster is not ready.
-     */
-    default T createUnReadyException(R request) {
-        return null;
-    }
-
-    /**
-     * Creates and returns an exception indicating that the cluster is not ready.
-     *
-     * @param message The message explaining why the cluster is not ready.
-     * @param request The request that cannot be processed because the cluster is not ready.
-     * @return An instance of the exception indicating that the cluster is not ready.
-     */
-    default T createUnReadyException(String message, R request) {
-        return null;
-    }
-
-    /**
-     * Creates an exception based on the provided throwable.
-     *
-     * @param throwable The exception that occurred during invocation.
-     * @param request   The request.
-     * @param endpoint  The endpoint.
-     * @return A response object representing the error.
-     */
-    T createException(Throwable throwable, R request, E endpoint);
-
-    /**
-     * Creates an exception to be thrown when no provider is available for the requested service.
-     *
-     * @param request The request for which no provider could be found.
-     * @return An exception of type T indicating that no provider is available.
-     */
-    T createNoProviderException(R request);
-
-    /**
-     * Creates an exception to be thrown when a limit is reached for the requested service.
-     *
-     * @param exception The {@link RejectException} that caused the limit to be reached.
-     * @param request   The request for which the limit has been reached.
-     * @return An exception of type T indicating that a limit has been reached.
-     */
-    T createLimitException(RejectException exception, R request);
-
-    /**
-     * Creates an exception to be thrown when a circuit breaker is triggered for the requested service.
-     *
-     * @param exception The {@link RejectException} that caused the circuit breaker to be triggered.
-     * @param request   The request for which the circuit breaker has been triggered.
-     * @return An exception of type T indicating that a circuit breaker has been triggered.
-     */
-    T createCircuitBreakException(RejectException exception, R request);
-
-    /**
-     * Creates an exception to be thrown when a request is explicitly rejected.
-     *
-     * @param exception The original rejection exception.
-     * @param request   The request for which no provider could be found.
-     * @return An exception of type T representing the rejection.
-     */
-    T createRejectException(RejectException exception, R request);
-
-    /**
-     * Creates a new instance of a retry exhaustion exception.
-     * <p>
-     * This method is responsible for creating an exception object that signifies that the retry attempts have been exhausted.
-     * The created exception typically encapsulates details from the original {@code RetryExhaustedException}, such as the
-     * number of attempts made and the policy that governed the retries. This can be used to inform callers that no more
-     * retries will be attempted and that the operation has ultimately failed after all allowed attempts.
-     * </p>
-     *
-     * @param exception The original {@code RetryExhaustedException} that contains information about the exhausted retry attempts.
-     * @return An instance of type {@code T} which extends {@code RetryExhaustedException}, with additional context or details if necessary.
-     */
-    T createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation);
-
-    /**
      * Called when a request starts. This method provides a hook that can be used to perform actions
      * before the actual processing of the request begins.
      *
      * @param request the request object that is about to be processed
      */
     default void onStart(R request) {
+
+    }
+
+    /**
+     * A default method that is called when a request is discarded.
+     *
+     * @param request the request that was discarded
+     */
+    default void onDiscard(R request) {
 
     }
 

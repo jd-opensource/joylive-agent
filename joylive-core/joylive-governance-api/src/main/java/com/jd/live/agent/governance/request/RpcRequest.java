@@ -15,6 +15,16 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.core.util.type.ValuePath;
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Cargo;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Defines an interface for RPC (Remote Procedure Call) requests, extending the {@link ServiceRequest} interface.
  * <p>
@@ -27,13 +37,6 @@ package com.jd.live.agent.governance.request;
 public interface RpcRequest extends ServiceRequest {
 
     /**
-     * Retrieves the arguments passed with the RPC request.
-     *
-     * @return An array of {@link Object} containing the arguments.
-     */
-    Object[] getArguments();
-
-    /**
      * Retrieves a specific argument from the RPC request based on its index.
      *
      * @param index The index of the argument to retrieve.
@@ -43,6 +46,71 @@ public interface RpcRequest extends ServiceRequest {
         Object[] arguments = getArguments();
         return arguments == null || index < 0 || index >= arguments.length ? null : arguments[index];
     }
+
+    @Override
+    default List<String> getQueries(String key) {
+        List<String> result = new ArrayList<>();
+        String query = getQuery(key);
+        if (query == null) {
+            return result;
+        } else {
+            result.add(query);
+            return result;
+        }
+    }
+
+    @Override
+    default String getQuery(String key) {
+        if (key == null || key.isEmpty()) {
+            return null;
+        }
+        Object[] arguments = getArguments();
+        if (arguments == null || arguments.length == 0) {
+            return null;
+        }
+        Map<String, Object> params = new HashMap<>(arguments.length);
+        for (int i = 0; i < arguments.length; i++) {
+            params.put("arg" + i, arguments[i]);
+        }
+
+        Object value = ValuePath.of(key).get(params);
+        return value == null ? null : value.toString();
+    }
+
+    @Override
+    default List<String> getHeaders(String key) {
+        String header = getHeader(key);
+        if (header == null) {
+            return null;
+        } else {
+            return Label.parseValue(header);
+        }
+    }
+
+    @Override
+    default String getHeader(String key) {
+        Object attachment = getAttachment(key);
+        return attachment == null ? null : attachment.toString();
+    }
+
+    @Override
+    default List<String> getCookies(String key) {
+        Cargo cargo = RequestContext.getCargo(key);
+        return cargo == null ? null : cargo.getValues();
+    }
+
+    @Override
+    default String getCookie(String key) {
+        Cargo cargo = RequestContext.getCargo(key);
+        return cargo == null ? null : cargo.getFirstValue();
+    }
+
+    /**
+     * Retrieves the arguments passed with the RPC request.
+     *
+     * @return An array of {@link Object} containing the arguments.
+     */
+    Object[] getArguments();
 
     /**
      * Retrieves an attachment by its key.
@@ -81,6 +149,15 @@ public interface RpcRequest extends ServiceRequest {
          * @return {@code true} if the current request is disabled; {@code false} otherwise.
          */
         default boolean isDisabled() {
+            return false;
+        }
+
+        /**
+         * Checks if this object is a generic type.
+         *
+         * @return true if this object is a generic type, false otherwise.
+         */
+        default boolean isGeneric() {
             return false;
         }
     }

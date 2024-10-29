@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.invoke.matcher.system;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.List;
 
@@ -30,8 +30,7 @@ public interface SystemTagProvider {
      * Retrieves values associated with the given key from the request.
      *
      * @param request The request object.
-     * @param key     The key for which values are to be retrieved.
      * @return A list of values associated with the key.
      */
-    List<String> getValues(Request request, String key);
+    List<String> getValues(ServiceRequest request);
 }

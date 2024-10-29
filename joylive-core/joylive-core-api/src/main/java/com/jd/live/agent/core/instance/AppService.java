@@ -31,7 +31,6 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@Builder
 public class AppService {
 
     /**
@@ -89,6 +88,7 @@ public class AppService {
      * @param protocol  The service communication protocol.
      * @param meta      The service metadata.
      */
+    @Builder
     public AppService(String name, GatewayRole gateway, String namespace, String group, String protocol, Map<String, String> meta) {
         this.name = name;
         this.gateway = gateway;
@@ -115,6 +115,10 @@ public class AppService {
      */
     public boolean isGateway() {
         return gateway != GatewayRole.NONE;
+    }
+
+    public boolean isFrontGateway() {
+        return gateway == GatewayRole.FRONTEND;
     }
 
 }

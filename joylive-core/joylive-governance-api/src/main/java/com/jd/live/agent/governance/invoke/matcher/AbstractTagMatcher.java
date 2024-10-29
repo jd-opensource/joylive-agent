@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.matcher;
 
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
@@ -33,7 +33,7 @@ public abstract class AbstractTagMatcher implements TagMatcher {
      * @return true if the condition matches the request, false otherwise.
      */
     @Override
-    public boolean match(TagCondition condition, Request request) {
+    public boolean match(TagCondition condition, ServiceRequest request) {
         return condition.match(getValues(condition, request));
     }
 
@@ -44,5 +44,5 @@ public abstract class AbstractTagMatcher implements TagMatcher {
      * @param request   The request.
      * @return The value list to be matched.
      */
-    protected abstract List<String> getValues(TagCondition condition, Request request);
+    protected abstract List<String> getValues(TagCondition condition, ServiceRequest request);
 }

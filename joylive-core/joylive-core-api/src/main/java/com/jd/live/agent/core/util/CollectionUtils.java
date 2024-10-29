@@ -15,13 +15,22 @@
  */
 package com.jd.live.agent.core.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * CollectionUtils
  */
 public class CollectionUtils {
+
+    /**
+     * Default load factor for {@link HashMap}/{@link LinkedHashMap} variants.
+     */
+    public static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     /**
      * Filters the provided list of objects based on the given predicate.
@@ -51,5 +60,56 @@ public class CollectionUtils {
         if (writeIndex < size) {
             objects.subList(writeIndex, size).clear();
         }
+    }
+
+    /**
+     * Converts a list of source objects into a list of target objects using the provided converter function.
+     *
+     * @param <S>       The type of source objects.
+     * @param <T>       The type of target objects.
+     * @param sources   The list of source objects to convert.
+     * @param converter The function to convert each source object into a target object.
+     * @return A list of target objects.
+     */
+    public static <S, T> List<T> convert(List<S> sources, Function<S, T> converter) {
+        if (sources == null || converter == null) {
+            return new ArrayList<>();
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (S instance : sources) {
+            result.add(converter.apply(instance));
+        }
+        return result;
+    }
+
+    /**
+     * Instantiate a new {@link LinkedHashMap} with an initial capacity
+     * that can accommodate the specified number of elements without
+     * any immediate resize/rehash operations to be expected.
+     */
+    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(int expectedSize) {
+        return new LinkedHashMap<>(computeMapInitialCapacity(expectedSize), DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Instantiate a new {@link HashMap} with an initial capacity
+     * that can accommodate the specified number of elements without
+     * any immediate resize/rehash operations to be expected.
+     * <p>This differs from the regular {@link HashMap} constructor
+     * which takes an initial capacity relative to a load factor
+     * but is effectively aligned with the JDK's
+     * {@link java.util.concurrent.ConcurrentHashMap#ConcurrentHashMap(int)}.
+     *
+     * @param expectedSize the expected number of elements (with a corresponding
+     *                     capacity to be derived so that no resize/rehash operations are needed)
+     * @see #newLinkedHashMap(int)
+     * @since 5.3
+     */
+    public static <K, V> HashMap<K, V> newHashMap(int expectedSize) {
+        return new HashMap<>(computeMapInitialCapacity(expectedSize), DEFAULT_LOAD_FACTOR);
+    }
+
+    private static int computeMapInitialCapacity(int expectedSize) {
+        return (int) Math.ceil(expectedSize / (double) DEFAULT_LOAD_FACTOR);
     }
 }

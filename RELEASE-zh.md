@@ -1,5 +1,22 @@
 # 发布历史
 
+## 1.3.3
+
+1. 修复字节码拦截器没有抛出异常的问题。
+
+## 1.3.2
+
+1. 修复认证过滤器空指针问题。
+
+## 1.3.1
+1. 修复Spring Gateway请求的默认重试策略。
+2. 支持Spring Cloud Gateway仅启用多活和泳道功能。
+3. 添加认证和权限策略。
+4. 修复FailsafeClusterInvoker响应。
+5. 修复反应式的断路器问题。
+6. 修复UnreadyInboundFilter过滤链调用错误。
+7. 修复对实时异常缺乏统一处理的问题。
+
 ## 1.3.0
 1. 在分区容错的时候支持本云优先，减少专线带宽
 2. 熔断和重试，支持采用JsonPath从应答体中提取异常码
@@ -35,9 +52,8 @@
 4. 支持泳道流量路由
 5. 支持微服务治理，包括集群重试策略，限流策略，负载均衡算法，标签路由策略，多活策略、泳道策略、优雅启动和下线。
 6. 支持常用的框架，包括：
-
-   1. 微服务治理：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc
-   2. 链路透传：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc，Grpc，Rocketmq 4/5，Kafka 3，Http client 3/4，Http servlet，Okhttp 1/3，JDK http connection，Thread pool。
+   - 微服务治理：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc
+   - 链路透传：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc，Grpc，Rocketmq 4/5，Kafka 3，Http client 3/4，Http servlet，Okhttp 1/3，JDK http connection，Thread pool。
 7. 发布配套的云原生多活控制器
 
 ## 限制
