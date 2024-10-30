@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.gprc.response;
 
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
-import com.jd.live.agent.governance.response.ServiceError;
-import java.util.function.Predicate;
 
 /**
  * Represents a generic response in the Dubbo RPC framework. This interface serves as a marker
@@ -28,16 +28,12 @@ public interface GrpcResponse {
 
     class GrpcOutboundResponse<T> extends AbstractRpcOutboundResponse<T> implements GrpcResponse {
 
-        public GrpcOutboundResponse(T response) {
-            this(response, null);
+        public GrpcOutboundResponse(T response, ServiceError error) {
+            super(response, error);
         }
 
-        public GrpcOutboundResponse(ServiceError error, Predicate<Throwable> predicate) {
-            super(null, error, predicate);
-        }
-
-        public GrpcOutboundResponse(T response, Predicate<Throwable> predicate) {
-            super(response, null, predicate);
+        public GrpcOutboundResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+            super(response, error, retryPredicate);
         }
     }
 }
