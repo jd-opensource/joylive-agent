@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.registry.ServiceProtocol;
 
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * RegistryInterceptor
@@ -38,18 +39,21 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     @Override
     protected ServiceInstance getInstance(MethodContext ctx) {
         URL url = ctx.getArgument(0);
+        Map<String, String> metadata = url.getParameters();
+        application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
                 .type("dubbo.v2_6")
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .host(url.getHost())
                 .port(url.getPort())
+                .metadata(metadata)
                 .protocols(Collections.singletonList(
                         ServiceProtocol.builder()
                                 .schema(url.getProtocol())
                                 .host(url.getHost())
                                 .port(url.getPort())
-                                .metadata(url.getParameters())
+                                .metadata(metadata)
                                 .build()))
                 .build();
     }

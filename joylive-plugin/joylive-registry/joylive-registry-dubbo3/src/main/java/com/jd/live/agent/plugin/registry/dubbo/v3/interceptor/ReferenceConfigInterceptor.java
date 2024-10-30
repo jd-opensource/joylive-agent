@@ -18,9 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import org.apache.dubbo.config.AbstractInterfaceConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 
 import java.util.Map;
@@ -28,27 +26,21 @@ import java.util.Map;
 /**
  * ReferenceConfigInterceptor
  */
-public class ReferenceConfigInterceptor extends InterceptorAdaptor {
-
-    private final Application application;
-
-    private final PolicySupplier policySupplier;
+public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<ReferenceConfig<?>> {
 
     public ReferenceConfigInterceptor(Application application, PolicySupplier policySupplier) {
-        this.application = application;
-        this.policySupplier = policySupplier;
+        super(application, policySupplier);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        AbstractInterfaceConfig config = (AbstractInterfaceConfig) ctx.getTarget();
-        Map<String, String> map = (Map<String, String>) mc.getResult();
+    protected Map<String, String> getContext(ExecutableContext ctx) {
+        return (Map<String, String>) ((MethodContext) ctx).getResult();
+    }
 
-        application.labelRegistry(map::putIfAbsent);
-        String service = ((ReferenceConfig<?>) config).getProvidedBy();
-        service = service != null && !service.isEmpty() ? service : config.getInterface();
-        policySupplier.subscribe(service);
+    @Override
+    protected int getRegistryType(ReferenceConfig<?> config) {
+        String service = config.getProvidedBy();
+        return service == null || service.isEmpty() ? REGISTRY_TYPE_INTERFACE : REGISTRY_TYPE_SERVICE;
     }
 }

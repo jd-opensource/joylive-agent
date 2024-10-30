@@ -21,12 +21,15 @@ import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.exception.SofaRpcRuntimeException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
+import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
 
 import java.util.function.Function;
+
+import static com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcInboundThrower.THROWER;
 
 /**
  * SofaRpcRequest
@@ -82,6 +85,31 @@ public interface SofaRpcRequest {
         @Override
         public String getClientIp() {
             return RpcInternalContext.getContext().getRemoteAddress().getAddress().getHostAddress();
+        }
+
+        /**
+         * Converts an object to a SofaRpc Result.
+         * <p>
+         * This method checks if the object is already a SofaRpc Result, and if so, returns it directly.
+         * If the object is a Throwable, it creates a new SofaResponse with the Throwable wrapped in a DubboException.
+         * Otherwise, it creates a new SofaResponse with the object as the result.
+         * </p>
+         *
+         * @param obj the object to convert to a SofaRpc Result.
+         * @return a SofaRpc Result representing the object.
+         */
+        public SofaResponse convert(Object obj) {
+            SofaResponse response;
+            if (obj instanceof SofaResponse) {
+                response = (SofaResponse) obj;
+            } else if (obj instanceof Throwable) {
+                response = new SofaResponse();
+                response.setAppResponse(THROWER.createException((Throwable) obj, this));
+            } else {
+                response = new SofaResponse();
+                response.setAppResponse(obj);
+            }
+            return response;
         }
     }
 

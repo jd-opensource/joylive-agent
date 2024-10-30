@@ -29,8 +29,6 @@ import com.jd.live.agent.plugin.transmission.dubbo.v2_7.interceptor.DubboProvide
 
 import java.util.List;
 
-import static com.jd.live.agent.plugin.transmission.dubbo.v2_7.definition.DubboConsumerDefinition.ARGUMENT_INVOKE;
-
 @Injectable
 @Extension(value = "DubboProviderDefinition_v2.7", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
@@ -45,6 +43,11 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE_MONITOR_FILTER = "org.apache.dubbo.rpc.filter.ContextFilter";
 
     private static final String METHOD_INVOKE = "invoke";
+
+    protected static final String[] ARGUMENT_INVOKE = new String[]{
+            "org.apache.dubbo.rpc.Invoker",
+            "org.apache.dubbo.rpc.Invocation"
+    };
 
     @Inject
     private List<CargoRequire> requires;

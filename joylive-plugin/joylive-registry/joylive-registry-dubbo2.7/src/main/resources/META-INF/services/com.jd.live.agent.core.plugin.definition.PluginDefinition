@@ -1,2 +1,3 @@
-com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.AbstractInterfaceConfigDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ReferenceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.RegistryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ServiceConfigDefinition

@@ -36,16 +36,18 @@ public class GroupFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
-        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
-        String group = serviceMetadata.getServiceGroup();
-        RouteTarget target = invocation.getRouteTarget();
-        if (group != null && !group.isEmpty()) {
-            // target group
-            target.filter(endpoint -> endpoint.isGroup(group));
-        } else if (serviceConfig != null && !serviceConfig.isServiceGroupOpen()) {
-            // default group
-            target.filter(endpoint -> endpoint.isGroup(null));
+        if (!invocation.getRequest().isNativeGroup()) {
+            ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
+            ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
+            String group = serviceMetadata.getServiceGroup();
+            RouteTarget target = invocation.getRouteTarget();
+            if (group != null && !group.isEmpty()) {
+                // target group
+                target.filter(endpoint -> endpoint.isGroup(group));
+            } else if (serviceConfig != null && !serviceConfig.isServiceGroupOpen()) {
+                // default group
+                target.filter(endpoint -> endpoint.isGroup(null));
+            }
         }
         chain.filter(invocation);
     }

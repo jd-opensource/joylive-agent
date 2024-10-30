@@ -393,9 +393,7 @@ public abstract class LiveMetadataParser implements LiveParser {
         protected String parseRuleId(String spaceId) {
             // TODO get target service rule.
             String result = super.parseRuleId(spaceId);
-            if (result != null && !result.isEmpty()) {
-                return result;
-            } else if (spaceId != null) {
+            if ((result == null || result.isEmpty()) && spaceId != null) {
                 Location location = application.getLocation();
                 if (spaceId.equals(location.getLiveSpaceId())) {
                     result = location.getUnitRuleId();
@@ -404,7 +402,7 @@ public abstract class LiveMetadataParser implements LiveParser {
                     }
                 }
             }
-            return null;
+            return result;
         }
     }
 

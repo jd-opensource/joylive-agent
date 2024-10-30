@@ -26,37 +26,30 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.AppendRuntimeParametersInterceptor;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.InitServiceMetadataInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ServiceConfigInterceptor;
 
 /**
- * AbstractInterfaceConfig
+ * ServiceConfigDefinition
  */
 @Injectable
-@Extension(value = "AbstractInterfaceConfig_v2.7", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "ServiceConfigDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
-@ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_ABSTRACT_INTERFACE_CONFIG)
-public class AbstractInterfaceConfigDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ReferenceConfigDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
+@ConditionalOnClass(ServiceConfigDefinition.TYPE_SERVICE_CONFIG)
+public class ServiceConfigDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_ABSTRACT_INTERFACE_CONFIG = "org.apache.dubbo.config.AbstractInterfaceConfig";
+    protected static final String TYPE_SERVICE_CONFIG = "org.apache.dubbo.config.ServiceConfig";
 
-    protected static final String TYPE_PROTOCOL_FILTER_WRAPPER = "org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper";
+    private static final String METHOD_FIND_CONFIGED_HOSTS = "findConfigedHosts";
 
-    private static final String METHOD_APPEND_RUNTIME_PARAMETERS = "appendRuntimeParameters";
-
-    private static final String METHOD_INIT_SERVICE_METADATA = "initServiceMetadata";
-
-    private static final String[] ARGUMENT_APPEND_RUNTIME_PARAMETERS = new String[]{
+    private static final String[] ARGUMENT_FIND_CONFIGED_HOSTS = new String[]{
+            "org.apache.dubbo.config.ProtocolConfig",
+            "java.util.List",
             "java.util.Map"
-    };
-
-    private static final String[] ARGUMENT_INIT_SERVICE_METADATA = new String[]{
-            "org.apache.dubbo.config.AbstractInterfaceConfig"
     };
 
     @Inject(Application.COMPONENT_APPLICATION)
@@ -65,17 +58,13 @@ public class AbstractInterfaceConfigDefinition extends PluginDefinitionAdapter {
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
-    public AbstractInterfaceConfigDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_INTERFACE_CONFIG);
+    public ServiceConfigDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_SERVICE_CONFIG);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_APPEND_RUNTIME_PARAMETERS).
-                                and(MatcherBuilder.arguments(ARGUMENT_APPEND_RUNTIME_PARAMETERS)),
-                        () -> new AppendRuntimeParametersInterceptor(application)),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INIT_SERVICE_METADATA).
-                                and(MatcherBuilder.arguments(ARGUMENT_INIT_SERVICE_METADATA)),
-                        () -> new InitServiceMetadataInterceptor(policySupplier))
+                        MatcherBuilder.named(METHOD_FIND_CONFIGED_HOSTS)
+                                .and(MatcherBuilder.arguments(ARGUMENT_FIND_CONFIGED_HOSTS)),
+                        () -> new ServiceConfigInterceptor(application, policySupplier))
         };
     }
 }

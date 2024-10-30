@@ -52,6 +52,16 @@ public interface ServiceRequest extends Request {
     String getGroup();
 
     /**
+     * Checks if the group is native.
+     * <p>
+     *
+     * @return true if the group is native, false otherwise.
+     */
+    default boolean isNativeGroup() {
+        return false;
+    }
+
+    /**
      * Retrieves the name of the method being called on the service.
      *
      * @return The method name as a String.

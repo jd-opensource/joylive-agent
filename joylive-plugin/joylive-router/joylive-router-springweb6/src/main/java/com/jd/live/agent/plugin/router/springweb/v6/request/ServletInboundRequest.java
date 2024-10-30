@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInbo
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.plugin.router.springweb.v6.exception.SpringInboundThrower.THROWER;
 
 /**
  * ServletHttpInboundRequest
@@ -133,6 +135,29 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
             }
         }
         return result;
+    }
+
+    /**
+     * Converts an object to a ModelAndView.
+     * <p>
+     * This method checks if the object is already a ModelAndView, and if so, returns it directly.
+     * Otherwise, it returns null.
+     * </p>
+     *
+     * @param obj the object to convert to a ModelAndView.
+     * @return a ModelAndView representing the object, or null if the object is not a ModelAndView.
+     */
+    public ModelAndView convert(Object obj) {
+        if (obj == null) {
+            return null;
+        } else if (obj instanceof ModelAndView) {
+            return (ModelAndView) obj;
+        } else if (obj instanceof Throwable) {
+            return new ExceptionView(THROWER.createException((Throwable) obj, this));
+        } else {
+            return new ExceptionView(THROWER.createException(new UnsupportedOperationException(
+                    "Expected type is " + ModelAndView.class.getName() + ", but actual type is " + obj.getClass()), this));
+        }
     }
 
     private Map<String, List<String>> parseCookie(HttpServletRequest request) {

@@ -102,6 +102,11 @@ public abstract class AbstractRpcRequest<T> extends AbstractServiceRequest<T> im
     }
 
     @Override
+    public boolean isNativeGroup() {
+        return true;
+    }
+
+    @Override
     public String getMethod() {
         return method;
     }

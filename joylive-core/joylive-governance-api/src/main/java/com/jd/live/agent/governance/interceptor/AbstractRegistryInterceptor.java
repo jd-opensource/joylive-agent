@@ -55,7 +55,7 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
                 lifecycle.addReadyHook(() -> {
                     logger.info("Register when application is ready, service=" + instance.getService());
                     registry.register(instance);
-                    return mc.invoke();
+                    return mc.invokeOrigin();
                 }, ctx.getType().getClassLoader());
                 mc.setSkip(true);
             }

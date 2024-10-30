@@ -40,7 +40,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     protected ServiceInstance getInstance(MethodContext ctx) {
         org.apache.dubbo.registry.client.ServiceInstance instance = ctx.getArgument(0);
         Map<String, String> metadata = instance.getMetadata();
-        application.labelRegistry(metadata::put);
+        application.labelRegistry(metadata::putIfAbsent);
         List<ServiceProtocol> protocols = new ArrayList<>();
         instance.getServiceMetadata().getServices().forEach((name, info) -> {
             protocols.add(ServiceProtocol.builder()

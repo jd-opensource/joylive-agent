@@ -19,7 +19,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.invoke.counter.Counter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
@@ -41,10 +40,7 @@ public class CounterFilter implements OutboundFilter {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster,
-                                                           OutboundInvocation<R> invocation,
-                                                           E endpoint,
-                                                           OutboundFilterChain chain) {
+            E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
         Counter counter = endpoint == null ? null : endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
         if (counter != null) {
             counter.getService().tryClean(invocation.getInstances());
@@ -52,7 +48,8 @@ public class CounterFilter implements OutboundFilter {
                 return Futures.future(FaultType.LIMIT.reject("Has reached the maximum number of active requests."));
             }
             long startTime = System.currentTimeMillis();
-            return chain.filter(cluster, invocation, endpoint).whenComplete((o, r) -> {
+            CompletionStage<O> stage = chain.filter(invocation, endpoint);
+            return stage.whenComplete((o, r) -> {
                 long elapsed = System.currentTimeMillis() - startTime;
                 if (r == null) {
                     counter.success(elapsed);
@@ -61,7 +58,7 @@ public class CounterFilter implements OutboundFilter {
                 }
             });
         } else {
-            return chain.filter(cluster, invocation, endpoint);
+            return chain.filter(invocation, endpoint);
         }
 
     }

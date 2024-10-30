@@ -38,13 +38,18 @@ import static com.jd.live.agent.plugin.transmission.dubbo.v3.definition.DubboCon
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CLASSLOADER_FILTER)
 @ConditionalOnClass(DubboProviderDefinition.TYPE_CONTEXT_FILTER)
 public class DubboProviderDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_CONTEXT_FILTER = "org.apache.dubbo.rpc.filter.ContextFilter";
 
     private static final String METHOD_INVOKE = "invoke";
+
+    protected static final String[] ARGUMENT_INVOKE = new String[]{
+            "org.apache.dubbo.rpc.Invoker",
+            "org.apache.dubbo.rpc.Invocation"
+    };
 
     @Inject
     private List<CargoRequire> requires;

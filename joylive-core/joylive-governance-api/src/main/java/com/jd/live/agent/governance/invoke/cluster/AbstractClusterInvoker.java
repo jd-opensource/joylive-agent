@@ -85,7 +85,8 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                     endpoint = context.route(invocation, v);
                     E instance = endpoint;
                     onStartRequest(cluster, request, endpoint);
-                    context.outbound(cluster, invocation, endpoint).whenComplete((o, r) -> {
+                    CompletionStage<O> stage = context.outbound(invocation, endpoint, () -> cluster.invoke(request, instance));
+                    stage.whenComplete((o, r) -> {
                         if (r != null) {
                             onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
                         } else if (o.getError() != null) {

@@ -16,9 +16,9 @@
 package com.jd.live.agent.plugin.router.sofarpc.response;
 
 import com.alipay.sofa.rpc.core.response.SofaResponse;
-import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
 
 /**
  * Represents a response in the SOFA RPC framework.

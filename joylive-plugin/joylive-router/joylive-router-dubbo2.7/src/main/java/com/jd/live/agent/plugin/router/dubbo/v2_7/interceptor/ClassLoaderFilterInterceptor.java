@@ -21,13 +21,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboInboundInvocation;
-import org.apache.dubbo.rpc.AppResponse;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
 import org.apache.dubbo.rpc.filter.ClassLoaderFilter;
-
-import static com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27InboundThrower.THROWER;
 
 /**
  * ClassLoaderFilterInterceptor
@@ -54,13 +51,8 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
         Invocation invocation = (Invocation) arguments[1];
         DubboInboundRequest request = new DubboInboundRequest(invocation);
         if (!request.isSystem()) {
-            try {
-                context.inbound(new DubboInboundInvocation(request, context));
-            } catch (Throwable e) {
-                Result result = new AppResponse(THROWER.createException(e, request));
-                mc.setResult(result);
-                mc.setSkip(true);
-            }
+            Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::convert);
+            mc.skipWithResult(result);
         }
     }
 }

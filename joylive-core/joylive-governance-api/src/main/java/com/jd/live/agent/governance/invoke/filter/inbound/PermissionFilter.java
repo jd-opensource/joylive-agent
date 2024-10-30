@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * PermissionFilter
@@ -41,36 +42,46 @@ import java.util.List;
 public class PermissionFilter implements InboundFilter {
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<PermissionPolicy> policies = servicePolicy == null ? null : servicePolicy.getPermissionPolicies();
         if (null != policies && !policies.isEmpty()) {
-            boolean hasAllow = false;
-            boolean allowed = false;
-            boolean denied = false;
-            for (PermissionPolicy policy : policies) {
-                // match logic
-                boolean passed = policy.match(invocation);
-                if (policy.getType() == AllowResult.ALLOW) {
-                    hasAllow = true;
-                    if (passed) {
-                        allowed = true;
-                    }
-                } else if (policy.getType() == AllowResult.DENY && passed) {
-                    denied = true;
-                    break;
+            pass(invocation, policies);
+        }
+        return chain.filter(invocation);
+    }
+
+    /**
+     * Passes the inbound invocation through the list of permission policies.
+     *
+     * @param invocation The inbound invocation to pass through the policies.
+     * @param policies The list of permission policies to apply.
+     */
+    private <T extends InboundRequest> void pass(InboundInvocation<T> invocation, List<PermissionPolicy> policies) {
+        boolean hasAllow = false;
+        boolean allowed = false;
+        boolean denied = false;
+        for (PermissionPolicy policy : policies) {
+            // match logic
+            boolean passed = policy.match(invocation);
+            if (policy.getType() == AllowResult.ALLOW) {
+                hasAllow = true;
+                if (passed) {
+                    allowed = true;
                 }
-            }
-            // If denied, return false directly.
-            if (denied) {
-                invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
-            }
-            // If there is a allow rule list, but it has not passed any allow rule, return false.
-            if (hasAllow && !allowed) {
-                invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
+            } else if (policy.getType() == AllowResult.DENY && passed) {
+                denied = true;
+                break;
             }
         }
-        chain.filter(invocation);
+        // If denied, return false directly.
+        if (denied) {
+            invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
+        }
+        // If there is a allow rule list, but it has not passed any allow rule, return false.
+        if (hasAllow && !allowed) {
+            invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
+        }
     }
 
 }

@@ -31,6 +31,7 @@ import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * AuthFilter
@@ -46,7 +47,7 @@ public class AuthFilter implements InboundFilter {
     private Map<String, Authenticate> authenticates;
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
         if (authPolicy != null && authPolicy.getType() != null) {
@@ -62,7 +63,7 @@ public class AuthFilter implements InboundFilter {
                 }
             }
         }
-        chain.filter(invocation);
+        return chain.filter(invocation);
     }
 
 }

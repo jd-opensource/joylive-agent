@@ -16,9 +16,9 @@
 package com.jd.live.agent.plugin.router.dubbo.v2_6.response;
 
 import com.alibaba.dubbo.rpc.Result;
-import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
 
 /**
  * Represents a response in the Dubbo RPC system. This interface serves as a marker
