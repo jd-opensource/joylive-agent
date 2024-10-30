@@ -15,13 +15,14 @@
  */
 package com.jd.live.agent.governance.invoke.filter;
 
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -44,7 +45,6 @@ public interface OutboundFilterChain {
     /**
      * Filters the outbound service request before it is sent to the remote service.
      *
-     * @param cluster    The live cluster of the service.
      * @param invocation The outbound service request invocation.
      * @param endpoint   The endpoint through which the request will be sent.
      * @param <R>        The type of the outbound service request.
@@ -54,9 +54,7 @@ public interface OutboundFilterChain {
      */
     <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster,
-                                                           OutboundInvocation<R> invocation,
-                                                           E endpoint);
+            E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint);
 
     /**
      * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of outbound filters.
@@ -94,14 +92,73 @@ public interface OutboundFilterChain {
         @Override
         public <R extends OutboundRequest,
                 O extends OutboundResponse,
-                E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster, OutboundInvocation<R> invocation, E endpoint) {
+                E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint) {
             CompletionStage<O> result = null;
             if (index < filters.length) {
-                result = filters[index++].filter(cluster, invocation, endpoint, this);
+                result = filters[index++].filter(invocation, endpoint, this);
+            } else if (index == filters.length) {
+                result = invoke(invocation);
             }
             result = result == null ? CompletableFuture.completedFuture(null) : result;
             return result;
         }
 
+        /**
+         * Invokes the inbound request asynchronously.
+         *
+         * @param invocation The inbound invocation to invoke.
+         * @return A completion stage that represents the result of the invocation.
+         */
+        protected <R extends OutboundRequest, O extends OutboundResponse> CompletionStage<O> invoke(OutboundInvocation<R> invocation) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+    }
+
+    /**
+     * A chain of filters that invokes a callable object.
+     */
+    class InvokerChain extends Chain {
+
+        private final Callable<Object> invoker;
+
+        /**
+         * Creates a new instance of the InvokerChain with the specified filters and invoker.
+         *
+         * @param filters The list of filters to apply.
+         * @param invoker The callable object to invoke.
+         */
+        public InvokerChain(List<? extends OutboundFilter> filters, Callable<Object> invoker) {
+            super(filters);
+            this.invoker = invoker;
+        }
+
+        /**
+         * Creates a new instance of the InvokerChain with the specified filters and invoker.
+         *
+         * @param filters The array of filters to apply.
+         * @param invoker The callable object to invoke.
+         */
+        public InvokerChain(OutboundFilter[] filters, Callable<Object> invoker) {
+            super(filters);
+            this.invoker = invoker;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        protected <R extends OutboundRequest, O extends OutboundResponse> CompletionStage<O> invoke(OutboundInvocation<R> invocation) {
+            try {
+                if (invoker == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                Object result = invoker.call();
+                if (result instanceof CompletionStage) {
+                    return (CompletionStage<O>) result;
+                }
+                return CompletableFuture.completedFuture((O) result);
+            } catch (Throwable e) {
+                return Futures.future(e);
+            }
+        }
     }
 }

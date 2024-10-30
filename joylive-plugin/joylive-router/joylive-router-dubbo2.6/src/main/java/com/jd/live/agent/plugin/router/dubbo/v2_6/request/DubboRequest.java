@@ -17,10 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.request;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.service.GenericException;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
@@ -29,6 +26,9 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboun
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 
 import java.util.function.Function;
+
+import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
+import static com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26InboundThrower.THROWER;
 
 /**
  * Defines a common interface for Dubbo RPC requests.
@@ -68,6 +68,32 @@ public interface DubboRequest {
         @Override
         public String getClientIp() {
             return RpcContext.getContext().getRemoteHost();
+        }
+
+        @Override
+        public boolean isSystem() {
+            return isDubboSystemService(service);
+        }
+
+        /**
+         * Converts an object to a Dubbo Result.
+         * <p>
+         * This method checks if the object is already a Dubbo Result, and if so, returns it directly.
+         * If the object is a Throwable, it creates a new RpcResult with the Throwable wrapped in a RpcException.
+         * Otherwise, it creates a new RpcResult with the object as the result.
+         * </p>
+         *
+         * @param obj the object to convert to a Dubbo Result.
+         * @return a Dubbo Result representing the object.
+         */
+        public Result convert(Object obj) {
+            if (obj instanceof Result) {
+                return (Result) obj;
+            } else if (obj instanceof Throwable) {
+                return new RpcResult(THROWER.createException((Throwable) obj, this));
+            } else {
+                return new RpcResult(obj);
+            }
         }
     }
 
@@ -114,6 +140,11 @@ public interface DubboRequest {
             String methodName = request.getMethodName();
             return METHOD_$INVOKE.equals(methodName)
                     && invoker.getInterface().isAssignableFrom(GenericService.class);
+        }
+
+        @Override
+        public boolean isSystem() {
+            return isDubboSystemService(service);
         }
     }
 }

@@ -31,6 +31,8 @@ import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
+import java.util.concurrent.CompletionStage;
+
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_ESCAPE;
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_ACCESSIBLE;
 
@@ -45,23 +47,17 @@ import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_A
 public class CellFilter implements InboundFilter {
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         UnitAction unitAction = invocation.getUnitAction();
         if (unitAction.getType() == UnitActionType.FORWARD) {
             CellAction cellAction = cellAction(invocation);
             invocation.setCellAction(cellAction);
-            switch (cellAction.getType()) {
-                case FORWARD:
-                    chain.filter(invocation);
-                    break;
-                case FAILOVER:
-                    Carrier carrier = RequestContext.getOrCreate();
-                    carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL, cellAction);
-                    chain.filter(invocation);
+            if (cellAction.getType() == CellActionType.FAILOVER) {
+                Carrier carrier = RequestContext.getOrCreate();
+                carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL, cellAction);
             }
-        } else {
-            chain.filter(invocation);
         }
+        return chain.filter(invocation);
     }
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {

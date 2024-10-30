@@ -40,13 +40,13 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((RpcInvocation) ctx.getArguments()[1]);
+        attachTag((RpcInvocation) ctx.getArguments()[0]);
     }
 
     private void attachTag(RpcInvocation invocation) {
         Carrier carrier = RequestContext.getOrCreate();
-        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
         carrier.addCargo(require, RpcContext.getClientAttachment().getObjectAttachments(), Label::parseValue);
+        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
         ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();
         String provider = (String) serviceMetadata.getAttachments().get(PROVIDED_BY);
         if (provider != null && !provider.isEmpty()) {

@@ -21,15 +21,14 @@ import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboun
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
-import org.apache.dubbo.rpc.Invocation;
-import org.apache.dubbo.rpc.Invoker;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.RpcException;
+import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.service.GenericException;
 import org.apache.dubbo.rpc.service.GenericService;
 
 import java.util.function.Function;
 
+import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
+import static com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3InboundThrower.THROWER;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 /**
@@ -38,8 +37,6 @@ import static org.apache.dubbo.common.constants.RegistryConstants.*;
  * the identification and processing of Dubbo-specific request data in RPC operations.
  */
 public interface DubboRequest {
-
-    String METADATA_SERVICE = "org.apache.dubbo.metadata.MetadataService";
 
     /**
      * generic call
@@ -91,7 +88,28 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return METADATA_SERVICE.equals(interfaceName);
+            return isDubboSystemService(interfaceName);
+        }
+
+        /**
+         * Converts an object to a Dubbo Result.
+         * <p>
+         * This method checks if the object is already a Dubbo Result, and if so, returns it directly.
+         * If the object is a Throwable, it creates a new AppResponse with the Throwable wrapped in a RpcException.
+         * Otherwise, it creates a new AppResponse with the object as the result.
+         * </p>
+         *
+         * @param obj the object to convert to a Dubbo Result.
+         * @return a Dubbo Result representing the object.
+         */
+        public Result convert(Object obj) {
+            if (obj instanceof Result) {
+                return (Result) obj;
+            } else if (obj instanceof Throwable) {
+                return AsyncRpcResult.newDefaultAsyncResult(THROWER.createException((Throwable) obj, this), this.request);
+            } else {
+                return AsyncRpcResult.newDefaultAsyncResult(obj, this.request);
+            }
         }
     }
 
@@ -134,7 +152,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return METADATA_SERVICE.equals(interfaceName);
+            return isDubboSystemService(interfaceName);
         }
 
         @Override

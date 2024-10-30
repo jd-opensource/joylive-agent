@@ -19,32 +19,19 @@ import com.alipay.sofa.rpc.bootstrap.ConsumerBootstrap;
 import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 
 /**
  * ConsumerBootstrapInterceptor
  */
-public class ConsumerBootstrapInterceptor extends InterceptorAdaptor {
-
-    private final Application application;
-
-    private final PolicySupplier policySupplier;
+public class ConsumerBootstrapInterceptor extends AbstractBootstrapInterceptor<ConsumerConfig<?>> {
 
     public ConsumerBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
-        this.application = application;
-        this.policySupplier = policySupplier;
+        super(application, policySupplier);
     }
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        ConsumerConfig<?> config = ((ConsumerBootstrap<?>) ctx.getTarget()).getConsumerConfig();
-        application.labelRegistry((key, value) -> {
-            String old = config.getParameter(key);
-            if (old == null || old.isEmpty()) {
-                config.setParameter(key, value);
-            }
-        });
-        policySupplier.subscribe(config.getInterfaceId());
+    protected ConsumerConfig<?> getConfig(ExecutableContext ctx) {
+        return ((ConsumerBootstrap<?>) ctx.getTarget()).getConsumerConfig();
     }
 }

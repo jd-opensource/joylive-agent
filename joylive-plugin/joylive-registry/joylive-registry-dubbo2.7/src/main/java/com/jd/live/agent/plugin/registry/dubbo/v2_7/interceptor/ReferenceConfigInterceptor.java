@@ -17,31 +17,29 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.policy.PolicySupplier;
+import org.apache.dubbo.config.ReferenceConfig;
 
 import java.util.Map;
 
 /**
- * AppendRuntimeParametersInterceptor
+ * ServiceConfigInterceptor
  */
-public class AppendRuntimeParametersInterceptor extends InterceptorAdaptor {
+public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<ReferenceConfig<?>> {
 
-    private final Application application;
-
-    public AppendRuntimeParametersInterceptor(Application application) {
-        this.application = application;
+    public ReferenceConfigInterceptor(Application application, PolicySupplier policySupplier) {
+        super(application, policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * @param ctx ExecutableContext
-     * @see org.apache.dubbo.config.AbstractInterfaceConfig#appendRuntimeParameters(Map)
-     */
     @SuppressWarnings("unchecked")
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        Map<String, String> argument = (Map<String, String>) ctx.getArguments()[0];
-        application.labelRegistry(argument::putIfAbsent);
+    protected Map<String, String> getContext(ExecutableContext ctx) {
+        return (Map<String, String>) ctx.getArguments()[0];
+    }
+
+    @Override
+    protected int getRegistryType(ReferenceConfig<?> config) {
+        String service = config.getProvidedBy();
+        return service == null || service.isEmpty() ? REGISTRY_TYPE_INTERFACE : REGISTRY_TYPE_SERVICE;
     }
 }

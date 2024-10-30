@@ -155,6 +155,16 @@ public class Application {
      * @param consumer label consumer
      */
     public void labelRegistry(BiConsumer<String, String> consumer) {
+        labelRegistry(consumer, false);
+    }
+
+    /**
+     * Applies labels to the application based on its properties.
+     *
+     * @param consumer     label consumer
+     * @param serviceGroup a flag indicating whether to include the service group in the labeling process.
+     */
+    public void labelRegistry(BiConsumer<String, String> consumer, boolean serviceGroup) {
         if (consumer != null) {
             labelInstance(consumer);
             if (location != null) {
@@ -162,7 +172,7 @@ public class Application {
                 labelLiveSpace(consumer);
                 labelLane(consumer);
             }
-            labelService(consumer);
+            labelService(consumer, serviceGroup);
         }
     }
 
@@ -199,11 +209,14 @@ public class Application {
     /**
      * Labels the service information using the provided consumer.
      *
-     * @param consumer the consumer to use for labeling
+     * @param consumer the BiConsumer to use for labeling. It takes two parameters: the label key and the label value.
+     * @param group    a flag indicating whether to include the service group in the labeling process.
      */
-    private void labelService(BiConsumer<String, String> consumer) {
+    private void labelService(BiConsumer<String, String> consumer, boolean group) {
         if (service != null) {
-            accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
+            if (group) {
+                accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
+            }
             Map<String, String> serviceMeta = service.getMeta();
             if (serviceMeta != null) {
                 serviceMeta.forEach(consumer);
@@ -257,7 +270,7 @@ public class Application {
      * @param value    label value
      */
     private void accept(BiConsumer<String, String> consumer, String key, String value) {
-        if (consumer != null && key != null && value != null) {
+        if (consumer != null && key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
             consumer.accept(key, value);
         }
     }

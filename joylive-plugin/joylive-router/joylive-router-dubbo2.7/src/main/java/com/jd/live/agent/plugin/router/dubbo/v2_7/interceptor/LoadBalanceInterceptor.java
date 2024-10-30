@@ -19,13 +19,13 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27OutboundThrower;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboOutboundInvocation;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27OutboundThrower;
 
 import java.util.List;
 
@@ -60,12 +60,11 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
                     invoked.forEach(p -> request.addAttempt(new DubboEndpoint<>(p).getId()));
                 }
                 DubboEndpoint<?> endpoint = context.route(new DubboOutboundInvocation(request, context), invokers, DubboEndpoint::of);
-                mc.setResult(endpoint.getInvoker());
+                mc.skipWithResult(endpoint.getInvoker());
             } catch (Throwable e) {
                 Dubbo27OutboundThrower thrower = new Dubbo27OutboundThrower((AbstractClusterInvoker<?>) ctx.getTarget());
-                mc.setThrowable(thrower.createException(e, request));
+                mc.skipWithThrowable(thrower.createException(e, request));
             }
-            mc.setSkip(true);
         }
     }
 

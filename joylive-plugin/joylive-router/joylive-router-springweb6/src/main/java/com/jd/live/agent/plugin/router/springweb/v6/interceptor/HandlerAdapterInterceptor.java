@@ -21,10 +21,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springweb.v6.request.ExceptionView;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ServletInboundRequest;
 import jakarta.servlet.http.HttpServletRequest;
-
-import static com.jd.live.agent.plugin.router.springweb.v6.exception.SpringInboundThrower.THROWER;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * HandlerAdapterInterceptor
@@ -44,11 +44,12 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         ServletInboundRequest request = new ServletInboundRequest((HttpServletRequest) arguments[0], arguments[2], config::isSystem);
         if (!request.isSystem()) {
-            try {
-                context.inbound(new HttpInboundInvocation<>(request, context));
-            } catch (Throwable e) {
-                mc.setThrowable(THROWER.createException(e, request));
-                mc.setSkip(true);
+            HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
+            ModelAndView view = context.inward(invocation, mc::invokeOrigin, request::convert);
+            if (view instanceof ExceptionView) {
+                mc.skipWithThrowable(((ExceptionView) view).getThrowable());
+            } else {
+                mc.skipWithResult(view);
             }
         }
     }

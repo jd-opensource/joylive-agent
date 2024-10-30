@@ -19,6 +19,8 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
+import java.util.concurrent.CompletionStage;
+
 /**
  * Defines an interface for inbound filters that handle inbound requests.
  * <p>
@@ -83,7 +85,7 @@ public interface InboundFilter {
      * @param chain      Represents the filter chain, providing a way to pass control to the next filter in the chain.
      * @param <T>        The type of the inbound request.
      */
-    <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain);
+    <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain);
 
 }
 

@@ -33,6 +33,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * ConcurrencyLimitFilter
@@ -61,7 +62,7 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
     }
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<ConcurrencyLimitPolicy> concurrencyLimitPolicies = servicePolicy == null ? null : servicePolicy.getConcurrencyLimitPolicies();
         if (null != concurrencyLimitPolicies && !concurrencyLimitPolicies.isEmpty()) {
@@ -75,7 +76,7 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
                 }
             }
         }
-        chain.filter(invocation);
+        return chain.filter(invocation);
     }
 
     /**

@@ -20,7 +20,6 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.invoke.fault.FaultInjection;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
@@ -49,10 +48,7 @@ public class FaultInjectionFilter implements OutboundFilter {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> filter(LiveCluster<R, O, E> cluster,
-                                                           OutboundInvocation<R> invocation,
-                                                           E endpoint,
-                                                           OutboundFilterChain chain) {
+            E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<FaultInjectionPolicy> faultPolicies = servicePolicy == null ? null : servicePolicy.getFaultInjectionPolicies();
         if (faultPolicies != null && !faultPolicies.isEmpty()) {
@@ -65,7 +61,7 @@ public class FaultInjectionFilter implements OutboundFilter {
                 }
             }
         }
-        return chain.filter(cluster, invocation, endpoint);
+        return chain.filter(invocation, endpoint);
 
     }
 

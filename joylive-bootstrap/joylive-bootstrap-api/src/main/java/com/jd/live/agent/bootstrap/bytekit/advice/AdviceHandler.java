@@ -53,8 +53,9 @@ public class AdviceHandler {
      * @throws Throwable if any exception occurs during interception
      */
     public static <T extends ExecutableContext> void onEnter(T context, String adviceKey) throws Throwable {
-        if (context == null || adviceKey == null)
+        if (context == null || adviceKey == null) {
             return;
+        }
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
         if (interceptors != null) {
@@ -70,10 +71,10 @@ public class AdviceHandler {
      * @param interceptors the list of interceptors to be executed
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onEnter(T context,
-                                                             List<Interceptor> interceptors) throws Throwable {
-        if (context == null || interceptors == null)
+    public static <T extends ExecutableContext> void onEnter(T context, List<Interceptor> interceptors) throws Throwable {
+        if (context == null || interceptors == null || context.getAndRemoveOrigin()) {
             return;
+        }
         for (Interceptor interceptor : interceptors) {
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("enter [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));

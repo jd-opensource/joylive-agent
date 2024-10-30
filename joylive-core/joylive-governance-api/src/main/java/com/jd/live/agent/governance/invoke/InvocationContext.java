@@ -21,13 +21,13 @@ import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -47,12 +47,15 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 /**
@@ -261,14 +264,135 @@ public interface InvocationContext {
      *                   with any associated data. This context is passed through the filter chain for
      *                   processing.
      */
-    default <R extends InboundRequest> void inbound(InboundInvocation<R> invocation) {
+    default <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation) {
+        return inbound(invocation, null);
+    }
+
+    /**
+     * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object.
+     * <p>
+     * This method is similar to the other {@code inbound} method, but it also allows you to specify a callable object
+     * that will be invoked after all the filters have been processed. This can be useful if you need to perform some
+     * additional processing or logic after the filters have run.
+     * </p>
+     *
+     * @param <R>        the type of the inbound request extending {@link InboundRequest}.
+     * @param invocation the inbound invocation context containing the request to be processed along
+     *                   with any associated data. This context is passed through the filter chain for
+     *                   processing.
+     * @param callable   the callable object to invoke after all the filters have been processed.
+     * @return a completion stage that represents the result of the inbound invocation.
+     */
+    default <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation, Callable<Object> callable) {
         try {
-            InboundFilterChain.Chain chain = new InboundFilterChain.Chain(getInboundFilters());
-            chain.filter(invocation);
-            invocation.onForward();
+            InboundFilter[] filters = getInboundFilters();
+            InboundFilterChain.Chain chain = callable == null
+                    ? new InboundFilterChain.Chain(filters)
+                    : new InboundFilterChain.InvokerChain(filters, callable);
+            return chain.filter(invocation).whenComplete((r, t) -> {
+                if (t == null) {
+                    invocation.onForward();
+                } else if (t instanceof RejectException) {
+                    invocation.onReject((RejectException) t);
+                }
+            });
         } catch (RejectException e) {
             invocation.onReject(e);
+            return Futures.future(e);
+        } catch (Throwable e) {
+            return Futures.future(e);
+        }
+    }
+
+    /**
+     * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object asynchronously,
+     * then applies a function to the result.
+     * <p>
+     * This method is similar to the other {@code inbound} methods, but it also allows you to specify a function that will be applied
+     * to the result of the callable object. This can be useful if you need to transform the result or perform some additional
+     * processing based on the result.
+     * </p>
+     *
+     * @param <R>        the type of the inbound request extending {@link InboundRequest}.
+     * @param <T>        the type of the result returned by the function.
+     * @param invocation the inbound invocation context containing the request to be processed along
+     *                   with any associated data. This context is passed through the filter chain for
+     *                   processing.
+     * @param callable   the callable object to invoke after all the filters have been processed.
+     * @param function   the function to apply to the result of the callable object.
+     * @return the result of applying the function to the result of the callable object.
+     */
+    default <R extends InboundRequest, T> T inbound(InboundInvocation<R> invocation,
+                                                    Callable<Object> callable,
+                                                    Function<CompletionStage<Object>, T> function) {
+        try {
+            CompletionStage<Object> stage = inbound(invocation, callable);
+            return function.apply(stage);
+        } catch (Throwable e) {
+            return function.apply(Futures.future(e));
+        }
+    }
+
+    /**
+     * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object synchronously.
+     * <p>
+     * This method is similar to the {@code inbound} method, but it blocks until the inbound invocation and the callable object
+     * have completed. It returns the result of the callable object, or throws any exception that occurred during the processing.
+     * </p>
+     *
+     * @param <R>        the type of the inbound request extending {@link InboundRequest}.
+     * @param invocation the inbound invocation context containing the request to be processed along
+     *                   with any associated data. This context is passed through the filter chain for
+     *                   processing.
+     * @param callable   the callable object to invoke after all the filters have been processed.
+     * @return the result of the callable object.
+     * @throws Throwable if any exception occurs during the processing.
+     */
+    default <R extends InboundRequest> Object inward(InboundInvocation<R> invocation, Callable<Object> callable) throws Throwable {
+        try {
+            CompletionStage<Object> stage = inbound(invocation, callable);
+            return stage.toCompletableFuture().get();
+        } catch (Throwable e) {
+            if (e instanceof ExecutionException) {
+                if (e.getCause() != null) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof InvocationTargetException) {
+                        if (cause.getCause() != null) {
+                            throw cause.getCause();
+                        }
+                    }
+                    throw cause;
+                }
+            }
             throw e;
+        }
+    }
+
+    /**
+     * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object synchronously,
+     * then applies a function to the result and the inbound request.
+     * <p>
+     * This method is similar to the other {@code inward} method, but it also allows you to specify a function that will be applied
+     * to the result of the callable object and the inbound request. This can be useful if you need to transform the result or
+     * perform some additional processing based on the inbound request.
+     * </p>
+     *
+     * @param <R>        the type of the inbound request extending {@link InboundRequest}.
+     * @param <T>        the type of the result returned by the function.
+     * @param invocation the inbound invocation context containing the request to be processed along
+     *                   with any associated data. This context is passed through the filter chain for
+     *                   processing.
+     * @param callable   the callable object to invoke after all the filters have been processed.
+     * @param function   the function to apply to the result of the callable object.
+     * @return the result of applying the function to the result of the callable object and the inbound request.
+     */
+    default <R extends InboundRequest, T> T inward(InboundInvocation<R> invocation,
+                                                   Callable<Object> callable,
+                                                   Function<Object, T> function) {
+        try {
+            return function.apply(inward(invocation, callable));
+        } catch (Throwable e) {
+            return function.apply(e);
         }
     }
 
@@ -353,9 +477,9 @@ public interface InvocationContext {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
-        RouteFilterChain.Chain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
-        chain.filter(invocation);
         try {
+            RouteFilterChain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
+            chain.filter(invocation);
             List<? extends Endpoint> endpoints = invocation.getEndpoints();
             Endpoint endpoint = endpoints != null && !endpoints.isEmpty() ? endpoints.get(0) : null;
             if (endpoint != null || !invocation.getRequest().isInstanceSensitive()) {
@@ -380,26 +504,27 @@ public interface InvocationContext {
      * filters are executed in the sequence they are arranged in the {@link OutboundFilterChain}.
      * </p>
      *
-     * @param <R> The type of the outbound request, which must extend {@link OutboundRequest}.
-     * @param <O> The type of the outbound response.
-     * @param <E> The type of the endpoint to which requests are routed.
-     * @param cluster The live cluster of the service.
+     * @param <R>        The type of the outbound request, which must extend {@link OutboundRequest}.
+     * @param <O>        The type of the outbound response.
+     * @param <E>        The type of the endpoint to which requests are routed.
      * @param invocation The outbound service request invocation to be processed.
-     * @param endpoint The endpoint through which the request will be sent.
+     * @param endpoint   The endpoint through which the request will be sent.
+     * @param callable   The callable object to invoke after all the filters have been processed.
      * @return A CompletionStage that will contain the outbound service response when the request is completed.
-     * @throws RejectException If any of the filters in the chain reject the request.
      */
     default <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> outbound(LiveCluster<R, O, E> cluster,
-                                                             OutboundInvocation<R> invocation,
-                                                             E endpoint) {
+            E extends Endpoint> CompletionStage<O> outbound(OutboundInvocation<R> invocation, E endpoint, Callable<Object> callable) {
         try {
-            OutboundFilterChain.Chain chain = new OutboundFilterChain.Chain(getOutboundFilters());
-            return chain.filter(cluster, invocation, endpoint);
+            OutboundFilterChain chain = callable == null
+                    ? new OutboundFilterChain.Chain(getOutboundFilters())
+                    : new OutboundFilterChain.InvokerChain(getOutboundFilters(), callable);
+            return chain.filter(invocation, endpoint);
         } catch (RejectException e) {
-            invocation.onFailure(endpoint, e);
-            throw e;
+            invocation.onReject(e);
+            return Futures.future(e);
+        } catch (Throwable e) {
+            return Futures.future(e);
         }
     }
 
@@ -533,8 +658,8 @@ public interface InvocationContext {
         }
 
         @Override
-        public <R extends InboundRequest> void inbound(InboundInvocation<R> invocation) {
-            delegate.inbound(invocation);
+        public <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation) {
+            return delegate.inbound(invocation);
         }
 
         @Override

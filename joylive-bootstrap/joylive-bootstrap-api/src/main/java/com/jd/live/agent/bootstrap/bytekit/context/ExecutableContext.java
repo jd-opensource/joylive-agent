@@ -25,46 +25,43 @@ import java.util.concurrent.atomic.AtomicLong;
  * An abstract class representing an executable context.
  * This class provides a structure to hold information related to an executable task or operation.
  */
+@Getter
 public abstract class ExecutableContext extends AbstractAttributes {
+
+    protected static ThreadLocal<Boolean> INVOKE_ORIGIN_METHOD;
 
     private static final AtomicLong COUNTER = new AtomicLong(0);
 
     /**
      * The id of the executable
      */
-    @Getter
     protected final long id;
 
     /**
      * The type of the executable.
      */
-    @Getter
     protected final Class<?> type;
 
     /**
      * The arguments passed to the executable.
      */
-    @Getter
     protected final Object[] arguments;
 
     /**
      * A description of the executable context.
      */
-    @Getter
     protected final String description;
 
     /**
      * The target object of the executable context.
      */
     @Setter
-    @Getter
     protected Object target;
 
     /**
      * Any throwable that occurred during the execution of the executable.
      */
     @Setter
-    @Getter
     protected Throwable throwable;
 
     /**
@@ -80,7 +77,6 @@ public abstract class ExecutableContext extends AbstractAttributes {
         this.description = description;
         this.id = COUNTER.incrementAndGet();
     }
-
 
     /**
      * Checks if the execution should be skipped.
@@ -103,6 +99,38 @@ public abstract class ExecutableContext extends AbstractAttributes {
     @SuppressWarnings("unchecked")
     public <T> T getArgument(int index) {
         return arguments == null || index < 0 || index >= arguments.length ? null : (T) arguments[index];
+    }
+
+    /**
+     * Marks the origin of the current invocation.
+     * <p>
+     * This method sets a thread-local flag indicating that the current invocation is the origin.
+     * </p>
+     */
+    protected void markOrigin() {
+        if (INVOKE_ORIGIN_METHOD == null) {
+            INVOKE_ORIGIN_METHOD = new ThreadLocal<>();
+        }
+        INVOKE_ORIGIN_METHOD.set(Boolean.TRUE);
+    }
+
+    /**
+     * Gets and removes the origin flag for the current thread.
+     * <p>
+     * This method checks if the current thread has marked the origin of the invocation and returns the result.
+     * If the origin flag is set, it is removed after being retrieved.
+     * </p>
+     *
+     * @return true if the current thread has marked the origin of the invocation, false otherwise.
+     */
+    public boolean getAndRemoveOrigin() {
+        if (INVOKE_ORIGIN_METHOD == null) {
+            return false;
+        } else {
+            Boolean result = INVOKE_ORIGIN_METHOD.get();
+            INVOKE_ORIGIN_METHOD.set(Boolean.FALSE);
+            return result != null && result;
+        }
     }
 
 }

@@ -29,7 +29,7 @@ import org.apache.dubbo.rpc.RpcException;
  */
 public class Dubbo3InboundThrower extends AbstractInboundThrower<DubboInboundRequest> {
 
-    public static final Dubbo3InboundThrower INSTANCE = new Dubbo3InboundThrower();
+    public static final Dubbo3InboundThrower THROWER = new Dubbo3InboundThrower();
 
     @Override
     protected RpcException createUnReadyException(RejectUnreadyException exception, DubboInboundRequest request) {

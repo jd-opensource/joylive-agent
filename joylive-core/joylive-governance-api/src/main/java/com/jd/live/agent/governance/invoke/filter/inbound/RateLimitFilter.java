@@ -33,6 +33,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * RateLimitFilter
@@ -59,7 +60,7 @@ public class RateLimitFilter implements InboundFilter, ExtensionInitializer {
     }
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<RateLimitPolicy> policies = servicePolicy == null ? null : servicePolicy.getRateLimitPolicies();
         if (null != policies && !policies.isEmpty()) {
@@ -73,7 +74,7 @@ public class RateLimitFilter implements InboundFilter, ExtensionInitializer {
                 }
             }
         }
-        chain.filter(invocation);
+        return chain.filter(invocation);
     }
 
     /**

@@ -32,6 +32,8 @@ import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
+import java.util.concurrent.CompletionStage;
+
 import static com.jd.live.agent.governance.invoke.Invocation.*;
 
 /**
@@ -45,23 +47,23 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 public class UnitFilter implements InboundFilter {
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         UnitAction unitAction = unitAction(invocation);
         invocation.setUnitAction(unitAction);
         switch (unitAction.getType()) {
-            case FORWARD:
-                chain.filter(invocation);
-                break;
             case FAILOVER_CENTER:
             case FAILOVER:
                 Carrier carrier = RequestContext.getOrCreate();
                 carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_UNIT, unitAction);
-                chain.filter(invocation);
                 break;
             case REJECT:
-            default:
                 invocation.reject(FaultType.UNIT, unitAction.getMessage());
+                break;
+            case FORWARD:
+            default:
+                break;
         }
+        return chain.filter(invocation);
     }
 
     /**

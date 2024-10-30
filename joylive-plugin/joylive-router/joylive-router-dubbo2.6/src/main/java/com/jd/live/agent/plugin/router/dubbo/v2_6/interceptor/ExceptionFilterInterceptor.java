@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcResult;
 import com.alibaba.dubbo.rpc.filter.ExceptionFilter;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
@@ -26,8 +25,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboInboundInvocation;
-
-import static com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26InboundThrower.THROWER;
 
 /**
  * ClassLoaderFilterInterceptor
@@ -52,13 +49,8 @@ public class ExceptionFilterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Invocation invocation = (Invocation) mc.getArguments()[1];
         DubboInboundRequest request = new DubboInboundRequest(invocation);
-        try {
-            context.inbound(new DubboInboundInvocation(request, context));
-        } catch (Throwable e) {
-            Result result = new RpcResult(THROWER.createException(e, request));
-            mc.setResult(result);
-            mc.setSkip(true);
-        }
+        Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::convert);
+        mc.skipWithResult(result);
     }
 
 }

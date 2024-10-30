@@ -23,11 +23,15 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.plugin.router.springweb.v6.exception.SpringInboundThrower.THROWER;
 
 /**
  * ReactiveInboundRequest
@@ -99,5 +103,31 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     public String getCookie(String key) {
         HttpCookie cookie = key == null ? null : request.getCookies().getFirst(key);
         return cookie == null ? null : cookie.getValue();
+    }
+
+    /**
+     * Converts a CompletionStage into a Mono that represents the completion of the stage.
+     * <p>
+     * This method takes a CompletionStage as input and returns a Mono that completes when the stage completes.
+     * If the stage completes with a result, the Mono completes with a null value. If the stage completes with an exception,
+     * the Mono completes with an error containing the exception wrapped in a DubboException.
+     * </p>
+     *
+     * @param stage the CompletionStage to convert into a Mono.
+     * @return a Mono that represents the completion of the stage.
+     */
+    public Mono<Void> convert(CompletionStage<Object> stage) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        stage.whenComplete((r, t) -> {
+            if (t != null) {
+                future.completeExceptionally(THROWER.createException(t, this));
+            } else if (r == null) {
+                future.complete(null);
+            } else {
+                future.completeExceptionally(new UnsupportedOperationException(
+                        "Expected type is " + Void.class.getName() + ", but actual type is " + r.getClass()));
+            }
+        });
+        return Mono.fromCompletionStage(future);
     }
 }

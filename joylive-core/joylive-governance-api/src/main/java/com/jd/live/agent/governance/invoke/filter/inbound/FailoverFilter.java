@@ -22,10 +22,13 @@ import com.jd.live.agent.governance.invoke.CellAction;
 import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.UnitAction;
+import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * FailoverFilter
@@ -38,28 +41,15 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 public class FailoverFilter implements InboundFilter {
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         UnitAction unitAction = invocation.getUnitAction();
-        switch (unitAction.getType()) {
-            case FAILOVER:
-            case FAILOVER_CENTER:
-                failoverUnit(invocation, unitAction);
-                return;
-        }
         CellAction cellAction = invocation.getCellAction();
-        if (cellAction.getType() == CellActionType.FAILOVER) {
-            failoverCell(invocation, cellAction);
-            return;
+        if (unitAction.getType() == UnitActionType.FAILOVER || unitAction.getType() == UnitActionType.FAILOVER_CENTER) {
+            invocation.failover(FaultType.UNIT, unitAction.getMessage());
+        } else if (cellAction.getType() == CellActionType.FAILOVER) {
+            invocation.failover(FaultType.CELL, cellAction.getMessage());
         }
-        chain.filter(invocation);
-    }
-
-    protected <T extends InboundRequest> void failoverUnit(InboundInvocation<T> invocation, UnitAction unitAction) {
-        invocation.failover(FaultType.UNIT, unitAction.getMessage());
-    }
-
-    protected <T extends InboundRequest> void failoverCell(InboundInvocation<T> invocation, CellAction cellAction) {
-        invocation.failover(FaultType.CELL, cellAction.getMessage());
+        return chain.filter(invocation);
     }
 
 }

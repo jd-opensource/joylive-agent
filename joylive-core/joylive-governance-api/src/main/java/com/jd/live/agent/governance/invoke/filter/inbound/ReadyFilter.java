@@ -29,6 +29,8 @@ import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
+import java.util.concurrent.CompletionStage;
+
 /**
  * ReadyFilter
  */
@@ -45,12 +47,12 @@ public class ReadyFilter implements InboundFilter {
     private Application application;
 
     @Override
-    public <T extends InboundRequest> void filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
+    public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         if (!application.getStatus().inbound()) {
             invocation.reject(FaultType.UNREADY, "Service instance is not ready,"
                     + " service=" + application.getService().getName()
                     + " address=" + Ipv4.getLocalIp());
         }
-        chain.filter(invocation);
+        return chain.filter(invocation);
     }
 }

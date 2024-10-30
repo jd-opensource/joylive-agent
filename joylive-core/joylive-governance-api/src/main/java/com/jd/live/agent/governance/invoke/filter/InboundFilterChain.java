@@ -15,10 +15,14 @@
  */
 package com.jd.live.agent.governance.invoke.filter;
 
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Defines an interface for the inbound filter chain that handles inbound requests.
@@ -43,15 +47,15 @@ public interface InboundFilterChain {
      * @param invocation Represents the invocation information of an inbound request.
      * @param <T>        The type of the inbound request.
      */
-    <T extends InboundRequest> void filter(InboundInvocation<T> invocation);
+    <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation);
 
     /**
      * A concrete implementation of the {@code InboundFilterChain} that manages and invokes a sequence of inbound filters.
      */
     class Chain implements InboundFilterChain {
 
-        private int index; // Tracks the current position in the filter chain
-        private final InboundFilter[] filters; // Array of filters in the chain
+        protected int index; // Tracks the current position in the filter chain
+        protected final InboundFilter[] filters; // Array of filters in the chain
 
         /**
          * Constructs a chain with a list of inbound filters.
@@ -82,12 +86,74 @@ public interface InboundFilterChain {
          * @param <T>        The type of the inbound request.
          */
         @Override
-        public <T extends InboundRequest> void filter(InboundInvocation<T> invocation) {
+        public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation) {
+            CompletionStage<Object> result = null;
             if (index < filters.length) {
-                filters[index++].filter(invocation, this);
+                result = filters[index++].filter(invocation, this);
+            } else if (index == filters.length) {
+                result = invoke(invocation);
             }
+            result = result == null ? CompletableFuture.completedFuture(null) : result;
+            return result;
         }
 
+        /**
+         * Invokes the inbound request asynchronously.
+         *
+         * @param invocation The inbound invocation to invoke.
+         * @return A completion stage that represents the result of the invocation.
+         */
+        protected <T extends InboundRequest> CompletionStage<Object> invoke(InboundInvocation<T> invocation) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+    }
+
+    /**
+     * A chain of filters that invokes a callable object.
+     */
+    class InvokerChain extends Chain {
+
+        private final Callable<Object> invoker;
+
+        /**
+         * Creates a new instance of the InvokerChain with the specified filters and invoker.
+         *
+         * @param filters The list of filters to apply.
+         * @param invoker The callable object to invoke.
+         */
+        public InvokerChain(List<? extends InboundFilter> filters, Callable<Object> invoker) {
+            super(filters);
+            this.invoker = invoker;
+        }
+
+        /**
+         * Creates a new instance of the InvokerChain with the specified filters and invoker.
+         *
+         * @param filters The array of filters to apply.
+         * @param invoker The callable object to invoke.
+         */
+        public InvokerChain(InboundFilter[] filters, Callable<Object> invoker) {
+            super(filters);
+            this.invoker = invoker;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        protected <T extends InboundRequest> CompletionStage<Object> invoke(InboundInvocation<T> invocation) {
+            try {
+                if (invoker == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                Object result = invoker.call();
+                if (result instanceof CompletionStage) {
+                    return (CompletionStage<Object>) result;
+                }
+                return CompletableFuture.completedFuture(result);
+            } catch (Throwable e) {
+                return Futures.future(e);
+            }
+        }
     }
 }
 

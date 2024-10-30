@@ -41,7 +41,7 @@ import java.util.*;
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(AbstractInterfaceConfigDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
+@ConditionalOnClass(ReferenceConfigDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
 @ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 

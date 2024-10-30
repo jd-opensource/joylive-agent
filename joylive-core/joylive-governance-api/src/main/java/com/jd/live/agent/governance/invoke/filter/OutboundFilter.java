@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.invoke.filter;
 import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
@@ -47,12 +46,9 @@ public interface OutboundFilter {
 
     int ORDER_AUTH = ORDER_FAULT_INJECTION + 100;
 
-    int ORDER_INVOKE = Integer.MAX_VALUE;
-
     /**
      * Filters the outbound service request before it is sent to the remote service.
      *
-     * @param cluster    The live cluster of the service.
      * @param invocation The outbound service request invocation.
      * @param endpoint   The endpoint through which the request will be sent.
      * @param chain      The filter chain that this filter is part of.
@@ -64,9 +60,6 @@ public interface OutboundFilter {
     <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint>
-    CompletionStage<O> filter(LiveCluster<R, O, E> cluster,
-                              OutboundInvocation<R> invocation,
-                              E endpoint,
-                              OutboundFilterChain chain);
+    CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain);
 
 }

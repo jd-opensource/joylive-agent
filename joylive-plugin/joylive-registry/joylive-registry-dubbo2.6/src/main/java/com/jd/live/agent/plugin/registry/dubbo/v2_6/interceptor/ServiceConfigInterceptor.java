@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.config.ServiceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 
 import java.util.Map;
@@ -26,24 +25,20 @@ import java.util.Map;
 /**
  * ServiceConfigInterceptor
  */
-public class ServiceConfigInterceptor extends InterceptorAdaptor {
-
-    private final Application application;
-
-    private final PolicySupplier policySupplier;
+public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceConfig<?>> {
 
     public ServiceConfigInterceptor(Application application, PolicySupplier policySupplier) {
-        this.application = application;
-        this.policySupplier = policySupplier;
+        super(application, policySupplier);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onSuccess(ExecutableContext ctx) {
-        Map<String, String> argument = (Map<String, String>) ctx.getArguments()[2];
-        ServiceConfig<?> config = (ServiceConfig<?>) ctx.getTarget();
+    protected Map<String, String> getContext(ExecutableContext ctx) {
+        return (Map<String, String>) ctx.getArguments()[2];
+    }
 
-        application.labelRegistry(argument::putIfAbsent);
-        policySupplier.subscribe(config.getInterface());
+    @Override
+    protected String getService(ServiceConfig<?> config) {
+        return config.getInterface();
     }
 }

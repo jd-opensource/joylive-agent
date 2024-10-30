@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
+package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import org.apache.dubbo.config.ApplicationConfig;
+import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
 import java.util.Map;
 
-import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE;
-import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INTERFACE;
+import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
+import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_TYPE;
 
 /**
- * ServiceRegistrationInterceptor
+ * ServiceConfigInterceptor
  */
 public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceConfig<?>> {
 
@@ -39,19 +38,23 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     @SuppressWarnings("unchecked")
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
-        return (Map<String, String>) ((MethodContext) ctx).getResult();
+        return (Map<String, String>) ctx.getArguments()[2];
     }
 
     @Override
     protected int getRegistryType(ServiceConfig<?> config) {
-        ApplicationConfig appCfg = config.getApplication();
-        String registerMode = appCfg.getRegisterMode();
-        if (DEFAULT_REGISTER_MODE_INSTANCE.equals(registerMode)) {
-            return REGISTRY_TYPE_SERVICE;
-        } else if (DEFAULT_REGISTER_MODE_INTERFACE.equals(registerMode)) {
-            return REGISTRY_TYPE_INTERFACE;
-        } else {
-            return REGISTRY_TYPE_ALL;
+        int result = 0;
+        if (config.getRegistries() != null) {
+            for (RegistryConfig registry : config.getRegistries()) {
+                Map<String, String> map = registry.getParameters();
+                if (map != null && SERVICE_REGISTRY_TYPE.equals(map.get(REGISTRY_TYPE_KEY))) {
+                    result |= REGISTRY_TYPE_SERVICE;
+                } else {
+                    result |= REGISTRY_TYPE_INTERFACE;
+                }
+            }
         }
+        return result;
     }
+
 }

@@ -36,15 +36,14 @@ import java.util.List;
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnClass(DubboConsumerDefinition.TYPE_ABSTRACT_CLUSTER_INVOKER)
 public class DubboConsumerDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_CONTEXT_FILTER = "com.alibaba.dubbo.rpc.filter.ConsumerContextFilter";
+    public static final String TYPE_ABSTRACT_CLUSTER_INVOKER = "com.alibaba.dubbo.rpc.cluster.support.AbstractClusterInvoker";
 
     private static final String METHOD_INVOKE = "invoke";
 
     protected static final String[] ARGUMENT_INVOKE = new String[]{
-            "com.alibaba.dubbo.rpc.Invoker",
             "com.alibaba.dubbo.rpc.Invocation"
     };
 
@@ -52,7 +51,7 @@ public class DubboConsumerDefinition extends PluginDefinitionAdapter {
     private List<CargoRequire> requires;
 
     public DubboConsumerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONTEXT_FILTER);
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER_INVOKER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
