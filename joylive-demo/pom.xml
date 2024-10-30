@@ -20,7 +20,6 @@
         <module>joylive-demo-multilive</module>
         <module>joylive-demo-rocketmq</module>
         <module>joylive-demo-sofarpc</module>
-        <module>joylive-demo-grpc</module>
     </modules>
 
     <properties>
@@ -66,4 +65,12 @@
         </pluginManagement>
     </build>
 
+    <profiles>
+        <profile>
+            <id>grpc</id>
+            <modules>
+                <module>joylive-demo-grpc</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
