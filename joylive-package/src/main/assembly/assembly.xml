@@ -204,6 +204,7 @@
             <unpack>false</unpack>
             <includes>
                 <include>com.jd.live:joylive-transmission-grpc</include>
+                <include>com.jd.live:joylive-router-grpc</include>
             </includes>
         </dependencySet>
 
