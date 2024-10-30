@@ -27,5 +27,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+
+      - name: Install protoc
+        run: |
+          sudo apt update
+          sudo apt install -y protobuf-compiler
+          protoc --version
+
       - name: Build with Maven
         run: mvn clean -DskipTests=true -Dmaven.javadoc.skip=true -B package --file pom.xml
