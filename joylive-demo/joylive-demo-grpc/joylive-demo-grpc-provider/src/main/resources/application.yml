@@ -1,16 +1,15 @@
 spring:
   application:
-    name: user-provider # 应用名
+    name: grpc-provider
   cloud:
     nacos:
-      # Nacos 作为注册中心的配置项，对应 NacosDiscoveryProperties 配置类
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
       discovery:
-        server-addr: 127.0.0.1:8848 # Nacos 服务器地址
-
+        server-addr: ${NACOS_ADDR}
+        namespace: ${NACOS_NAMESPACE:public}
 grpc:
-  # gRPC 服务器配置，对应 GrpcServerProperties 配置类
   server:
-    port: 9898 # gRPC Server 随机端口
-
+    port: 9898
 server:
-  port: 9899 # Web Server 随机端口
+  port: 8181

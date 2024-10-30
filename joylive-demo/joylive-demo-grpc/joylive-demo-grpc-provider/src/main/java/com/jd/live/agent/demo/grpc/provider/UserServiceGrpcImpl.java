@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 @GrpcService
 public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
-    private Logger logger = LoggerFactory.getLogger(getClass());
-
     @Override
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
         UserGetResponse.Builder builder = UserGetResponse.newBuilder();
