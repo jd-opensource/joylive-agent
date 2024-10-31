@@ -19,28 +19,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Configuration class for rate limiter settings.
+ * Configuration class load rate limiter settings.
  */
 @Getter
 @Setter
-public class RateLimiterConfig {
+public class LoadLimiterConfig {
 
-    /**
-     * The type of the rate limiter.
-     */
-    private String type;
+    private Integer cpuUsage;
 
-    /**
-     * The interval in milliseconds at which the rate limiter should clean up expired entries.
-     * Default is 30,000 milliseconds (30 seconds).
-     */
-    private long cleanInterval = 30000;
-
-    /**
-     * The time in milliseconds after which the rate limiter entries expire.
-     * Default is 60,000 milliseconds (60 seconds).
-     */
-    private long expireTime = 60000;
+    private Integer loadUsage;
 
 }
 

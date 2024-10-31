@@ -57,12 +57,22 @@ public interface InboundFilter {
     /**
      * Execution order for the request limiter filter
      */
-    int ORDER_LIMITER = ORDER_PERMISSION + 100;
+    int ORDER_LOAD_LIMITER = ORDER_PERMISSION + 100;
+
+    /**
+     * Execution order for the request limiter filter
+     */
+    int ORDER_CONCURRENCY_LIMITER = ORDER_LOAD_LIMITER + 100;
+
+    /**
+     * Execution order for the request limiter filter
+     */
+    int ORDER_RATE_LIMITER = ORDER_CONCURRENCY_LIMITER + 100;
 
     /**
      * Execution order for the live unit filter
      */
-    int ORDER_LIVE_UNIT = ORDER_LIMITER + 100;
+    int ORDER_LIVE_UNIT = ORDER_RATE_LIMITER + 100;
 
     /**
      * Execution order for the live cell filter

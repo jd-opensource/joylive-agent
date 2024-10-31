@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
+import com.jd.live.agent.governance.policy.service.limit.LoadLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
@@ -60,6 +61,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Setter
     @Getter
     private List<ConcurrencyLimitPolicy> concurrencyLimitPolicies;
+
+    @Setter
+    @Getter
+    private List<LoadLimitPolicy> loadLimitPolicies;
 
     @Setter
     @Getter
@@ -115,6 +120,9 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (concurrencyLimitPolicies != null && !concurrencyLimitPolicies.isEmpty()) {
             concurrencyLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, r.getName())));
         }
+        if (loadLimitPolicies != null && !loadLimitPolicies.isEmpty()) {
+            loadLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_LOAD_LIMIT, r.getName())));
+        }
         if (routePolicies != null && !routePolicies.isEmpty()) {
             routePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_ROUTE, r.getName())));
         }
@@ -151,6 +159,12 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
                 concurrencyLimitPolicies = copy(source.concurrencyLimitPolicies,
                         s -> new ConcurrencyLimitPolicy(),
                         s -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, s.getName()));
+            }
+            if ((loadLimitPolicies == null || loadLimitPolicies.isEmpty()) &&
+                    (source.loadLimitPolicies != null && !source.loadLimitPolicies.isEmpty())) {
+                loadLimitPolicies = copy(source.loadLimitPolicies,
+                        s -> new LoadLimitPolicy(),
+                        s -> uri.parameter(KEY_SERVICE_LOAD_LIMIT, s.getName()));
             }
             if ((routePolicies == null || routePolicies.isEmpty()) &&
                     (source.routePolicies != null && !source.routePolicies.isEmpty())) {

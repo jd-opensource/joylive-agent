@@ -95,6 +95,10 @@ public class ServiceConfig {
     @Setter
     private RateLimiterConfig rateLimiter;
 
+    @Getter
+    @Setter
+    private LoadLimiterConfig loadLimiter;
+
     /**
      * The config of system http inbound paths
      */
