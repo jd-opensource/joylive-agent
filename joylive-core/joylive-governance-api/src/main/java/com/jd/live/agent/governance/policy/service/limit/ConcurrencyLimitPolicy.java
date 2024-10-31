@@ -44,7 +44,18 @@ public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements Polic
     /**
      * The maximum number of concurrent requests allowed.
      */
-    private int maxConcurrency;
+    private Integer maxConcurrency;
+
+    /**
+     * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
+     * concurrency or rate limit has been reached.
+     */
+    private Long maxWaitMs;
+
+    /**
+     * Specifies the algorithm or component used for implementing the limiting logic.
+     */
+    private String realizeType;
 
     /**
      * Constructs a new {@code ConcurrencyLimitPolicy} with default settings.
@@ -70,10 +81,10 @@ public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements Polic
      * @param maxConcurrency the maximum number of concurrent requests allowed
      * @param version        the version of the rate limiting policy
      */
-    public ConcurrencyLimitPolicy(String name, String realizeType, List<TagCondition> matchSource,
-                                  int maxConcurrency, long version) {
-        super(name, realizeType, matchSource, version);
+    public ConcurrencyLimitPolicy(String name, String realizeType, List<TagCondition> matchSource, int maxConcurrency, long version) {
+        super(name, matchSource, version);
         this.maxConcurrency = maxConcurrency;
+        this.realizeType = realizeType;
     }
 
     /**
@@ -89,8 +100,14 @@ public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements Polic
             return;
         }
         super.supplement(source);
-        if (maxConcurrency <= 0) {
+        if (maxConcurrency == null) {
             maxConcurrency = source.maxConcurrency;
+        }
+        if (maxWaitMs == null) {
+            maxWaitMs = source.getMaxWaitMs();
+        }
+        if (realizeType == null) {
+            realizeType = source.getRealizeType();
         }
     }
 }

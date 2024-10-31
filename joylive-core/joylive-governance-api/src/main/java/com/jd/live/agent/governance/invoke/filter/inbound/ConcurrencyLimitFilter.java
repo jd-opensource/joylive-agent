@@ -41,7 +41,7 @@ import java.util.concurrent.CompletionStage;
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ConcurrencyLimitFilter", order = InboundFilter.ORDER_LIMITER)
+@Extension(value = "ConcurrencyLimitFilter", order = InboundFilter.ORDER_CONCURRENCY_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializer {
 
@@ -68,10 +68,12 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
         if (null != concurrencyLimitPolicies && !concurrencyLimitPolicies.isEmpty()) {
             for (ConcurrencyLimitPolicy policy : concurrencyLimitPolicies) {
                 // match logic
-                if (policy.match(invocation)) {
+                if (policy.getMaxConcurrency() != null && policy.getMaxConcurrency() > 0 && policy.match(invocation)) {
                     ConcurrencyLimiter limiter = getConcurrencyLimiter(policy);
                     if (null != limiter && !limiter.acquire()) {
-                        invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejected the request.");
+                        invocation.reject(FaultType.LIMIT,
+                                "The request is rejected by concurrency limiter. maxConcurrency=" +
+                                        policy.getMaxConcurrency());
                     }
                 }
             }

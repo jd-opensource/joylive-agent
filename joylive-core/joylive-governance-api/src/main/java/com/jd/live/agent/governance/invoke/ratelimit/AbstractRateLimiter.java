@@ -60,7 +60,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     public AbstractRateLimiter(RateLimitPolicy policy) {
         this.policy = policy;
         this.option = MapOption.of(policy.getParameters());
-        this.timeout = Duration.ofMillis(policy.getMaxWaitMs() < 0 ? 0 : policy.getMaxWaitMs());
+        this.timeout = Duration.ofMillis(policy.getMaxWaitMs() == null || policy.getMaxWaitMs() < 0 ? 0 : policy.getMaxWaitMs());
     }
 
     @Override

@@ -19,7 +19,6 @@ import com.jd.live.agent.governance.rule.ConditionalMatcher;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * Represents a policy that limits actions based on specific conditions.
@@ -43,38 +42,6 @@ public interface LimitPolicy extends ConditionalMatcher<TagCondition>, Serializa
     default String getName() {
         return null;
     }
-
-    /**
-     * Gets the version of the limit policy.
-     *
-     * <p>The version can be used to differentiate between different versions of
-     * the same policy, allowing for versioning and evolution of policies over time.</p>
-     *
-     * @return the version of the limit policy.
-     */
-    long getVersion();
-
-    /**
-     * Gets the realize type of the limit policy.
-     *
-     * <p>This method returns a string that identifies the type of strategy
-     * this limit policy uses to apply limitations. The strategy type helps
-     * in understanding the approach taken by this policy.</p>
-     *
-     * @return the realize type of the limit policy.
-     */
-    String getRealizeType();
-
-    /**
-     * Gets the action parameters of the limit policy.
-     *
-     * <p>This method returns a map of parameters that define the actions to be taken
-     * when the limit policy's conditions are met. Each entry in the map represents a parameter
-     * with its name as the key and its value as the value.</p>
-     *
-     * @return a map of action parameters, where each key is the parameter name and each value is the parameter value.
-     */
-    Map<String, String> getParameters();
 
 }
 

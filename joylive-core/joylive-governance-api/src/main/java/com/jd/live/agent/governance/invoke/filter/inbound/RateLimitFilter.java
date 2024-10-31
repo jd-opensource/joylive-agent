@@ -39,7 +39,7 @@ import java.util.concurrent.CompletionStage;
  * RateLimitFilter
  */
 @Injectable
-@Extension(value = "RateLimitFilter", order = InboundFilter.ORDER_LIMITER)
+@Extension(value = "RateLimitFilter", order = InboundFilter.ORDER_RATE_LIMITER)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class RateLimitFilter implements InboundFilter, ExtensionInitializer {
 
@@ -69,7 +69,7 @@ public class RateLimitFilter implements InboundFilter, ExtensionInitializer {
                 if (policy.match(invocation)) {
                     RateLimiter rateLimiter = getRateLimiter(policy);
                     if (null != rateLimiter && !rateLimiter.acquire()) {
-                        invocation.reject(FaultType.LIMIT, "The traffic limiting policy rejected the request.");
+                        invocation.reject(FaultType.LIMIT, "The request is rejected by rate limiter. ");
                     }
                 }
             }

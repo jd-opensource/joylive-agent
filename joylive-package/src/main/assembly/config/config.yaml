@@ -129,9 +129,12 @@ agent:
         cleanInterval: 30000
         expireTime: 60000
       rateLimiter:
-        type: Resilience4j
+        type: SmoothBursty
         cleanInterval: 30000
         expireTime: 60000
+      loadLimiter:
+        cpuUsage: ${CONFIG_MAX_CPU_USAGE:}
+        loadUsage: ${CONFIG_MAX_LOAD_USAGE:}
       circuitBreaker:
         type: Resilience4j
         cleanInterval: 30000

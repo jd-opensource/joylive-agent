@@ -23,7 +23,8 @@ public class CharSequence2IntConverter extends IntConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Integer.parseInt(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Integer.parseInt(value);
     }
 
     @Override

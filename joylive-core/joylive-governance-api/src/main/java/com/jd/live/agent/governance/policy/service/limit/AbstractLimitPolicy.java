@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.policy.service.limit;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.rule.RelationType;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
@@ -23,7 +22,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Provides a base implementation for limiting policies. This abstract class defines common attributes
@@ -42,8 +40,6 @@ import java.util.Map;
 @Setter
 public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolicy {
 
-    public static final String DEFAULT_LIMIT_REALIZE_TYPE = "Resilience4j";
-
     /**
      * The name of the limiting policy.
      */
@@ -58,23 +54,6 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
      * A list of conditions (tags) that determine when the policy is applicable.
      */
     protected List<TagCondition> conditions;
-
-    /**
-     * Specifies the algorithm or component used for implementing the limiting logic.
-     */
-    private String realizeType = DEFAULT_LIMIT_REALIZE_TYPE;
-
-    /**
-     * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
-     * concurrency or rate limit has been reached.
-     */
-    private long maxWaitMs;
-
-    /**
-     * A map of parameters that further customize the action of the limiting strategy.
-     */
-    @JsonAlias("actionParameters")
-    private Map<String, String> parameters;
 
     /**
      * The version of the limiting policy.
@@ -100,27 +79,24 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
      * Constructs a new limiting policy with detailed specifications.
      *
      * @param name        the name of the limiting policy
-     * @param realizeType the realize type of the limiting policy
      * @param conditions  a list of conditions (tags) for the limiting policy
      * @param version     the version of the limiting policy
      */
-    public AbstractLimitPolicy(String name, String realizeType, List<TagCondition> conditions, long version) {
-        this(name, realizeType, RelationType.AND, conditions, version);
+    public AbstractLimitPolicy(String name, List<TagCondition> conditions, long version) {
+        this(name, RelationType.AND, conditions, version);
     }
 
     /**
      * Constructs a new limiting policy with comprehensive specifications including relation type.
      *
      * @param name         the name of the limiting policy
-     * @param realizeType  the realize type of the limiting policy
      * @param relationType how conditions are related when evaluating the applicability of the policy
      * @param conditions   a list of conditions (tags) for the limiting policy
      * @param version      the version of the limiting policy
      */
-    public AbstractLimitPolicy(String name, String realizeType, RelationType relationType,
+    public AbstractLimitPolicy(String name, RelationType relationType,
                                List<TagCondition> conditions, long version) {
         this.name = name;
-        this.realizeType = realizeType;
         this.relationType = relationType;
         this.conditions = conditions;
         this.version = version;
@@ -145,12 +121,6 @@ public abstract class AbstractLimitPolicy extends PolicyId implements LimitPolic
         }
         if (conditions == null) {
             conditions = source.conditions;
-        }
-        if (realizeType == null) {
-            realizeType = source.realizeType;
-        }
-        if (parameters == null) {
-            parameters = source.parameters;
         }
         if (version <= 0) {
             version = source.version;

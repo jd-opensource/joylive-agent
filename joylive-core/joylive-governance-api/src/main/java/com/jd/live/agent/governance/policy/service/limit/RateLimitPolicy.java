@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.limit;
 
+import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import com.jd.live.agent.governance.policy.service.annotation.Provider;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
@@ -22,6 +23,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a rate limiting policy using a sliding window mechanism. This class is designed
@@ -54,6 +56,23 @@ public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheri
     private List<SlidingWindow> slidingWindows;
 
     /**
+     * The maximum time, in milliseconds, a request can wait to be executed before it is rejected, when the maximum
+     * concurrency or rate limit has been reached.
+     */
+    private Long maxWaitMs;
+
+    /**
+     * A map of parameters that further customize the action of the limiting strategy.
+     */
+    @JsonAlias("actionParameters")
+    private Map<String, String> parameters;
+
+    /**
+     * Specifies the algorithm or component used for implementing the limiting logic.
+     */
+    private String realizeType;
+
+    /**
      * Default constructor for creating an instance without initializing fields.
      */
     public RateLimitPolicy() {
@@ -80,7 +99,8 @@ public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheri
      */
     public RateLimitPolicy(String name, String realizeType, List<TagCondition> conditions,
                            List<SlidingWindow> slidingWindows, long version) {
-        super(name, realizeType, conditions, version);
+        super(name, conditions, version);
+        this.realizeType = realizeType;
         this.slidingWindows = slidingWindows;
     }
 
@@ -97,8 +117,17 @@ public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheri
             return;
         }
         super.supplement(source);
+        if (maxWaitMs == null) {
+            maxWaitMs = source.maxWaitMs;
+        }
+        if (parameters == null) {
+            parameters = source.parameters;
+        }
         if (slidingWindows == null) {
             slidingWindows = source.slidingWindows;
+        }
+        if (realizeType == null) {
+            realizeType = source.realizeType;
         }
     }
 }

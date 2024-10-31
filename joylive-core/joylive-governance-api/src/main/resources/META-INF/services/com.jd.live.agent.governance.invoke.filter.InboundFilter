@@ -6,3 +6,4 @@ com.jd.live.agent.governance.invoke.filter.inbound.CellFilter
 com.jd.live.agent.governance.invoke.filter.inbound.FailoverFilter
 com.jd.live.agent.governance.invoke.filter.inbound.RateLimitFilter
 com.jd.live.agent.governance.invoke.filter.inbound.ConcurrencyLimitFilter
+com.jd.live.agent.governance.invoke.filter.inbound.LoadLimitFilter
