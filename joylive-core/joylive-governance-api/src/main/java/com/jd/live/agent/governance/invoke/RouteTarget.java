@@ -51,8 +51,7 @@ public class RouteTarget {
     /**
      * The unit group associated with the unit in this route target.
      */
-    @Getter
-    private final UnitGroup unitGroup;
+    private UnitGroup unitGroup;
 
     /**
      * The unit that is the subject of the action in this route target.
@@ -106,6 +105,16 @@ public class RouteTarget {
         this.unitRoute = unitRoute;
         this.cellRoute = cellRoute;
         this.endpoints = unitGroup != null ? unitGroup.getEndpoints() : this.instances;
+    }
+
+    public UnitGroup getUnitGroup() {
+        // previous filters may filtrate the endpoints
+        if (unitGroup != null && unitGroup.size() == size()) {
+            return unitGroup;
+        } else {
+            unitGroup = new UnitGroup(unit.getCode(), endpoints);
+            return unitGroup;
+        }
     }
 
     /**

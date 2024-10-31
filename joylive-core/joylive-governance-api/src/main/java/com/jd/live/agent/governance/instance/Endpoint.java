@@ -334,6 +334,16 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Determines if the cluster label matches the specified cluster.
+     *
+     * @param cluster The cluster to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isCluster(String cluster) {
+        return cluster != null && !cluster.isEmpty() && cluster.equals(getLabel(Constants.LABEL_CLUSTER));
+    }
+
+    /**
      * Determines if the group label matches the specified group.
      *
      * @param group The group to match.

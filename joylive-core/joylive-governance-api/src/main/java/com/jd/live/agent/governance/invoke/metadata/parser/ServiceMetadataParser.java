@@ -333,7 +333,6 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             }
             livePolicy = livePolicy != null ? livePolicy.clone() : new ServiceLivePolicy();
             livePolicy.setUnitPolicy(UnitPolicy.UNIT);
-            livePolicy.setCellPolicy(metadata.getServiceConfig().isLocalFirst() ? CellPolicy.PREFER_LOCAL_CELL : CellPolicy.ANY);
             livePolicy.setWriteProtect(metadata.isWrite());
             ServicePolicy result = policy != null ? policy.clone() : new ServicePolicy();
             // TODO policyId;
