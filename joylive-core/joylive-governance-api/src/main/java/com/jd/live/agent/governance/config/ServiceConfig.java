@@ -42,7 +42,16 @@ public class ServiceConfig {
      */
     @Getter
     @Setter
-    private boolean localFirst;
+    private boolean localFirst = true;
+
+    /**
+     * The local-first routing mode for this component.
+     *
+     * @see LocalFirstMode
+     */
+    @Getter
+    @Setter
+    private LocalFirstMode localFirstMode = LocalFirstMode.CELL;
 
     /**
      * A map of unit failover thresholds, where the key is the unit identifier and the value is the threshold integer.
