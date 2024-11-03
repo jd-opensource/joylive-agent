@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.instance;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invoker;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
@@ -61,32 +62,20 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
 
     @Override
     public Long getTimestamp() {
-        try {
-            return Long.parseLong(url.getParameter(REMOTE_TIMESTAMP_KEY));
-        } catch (NumberFormatException e) {
-            return null;
+        String timestamp = getLabel(REMOTE_TIMESTAMP_KEY);
+        if (timestamp == null || timestamp.isEmpty()) {
+            timestamp = getLabel(KEY_TIMESTAMP);
         }
+        return Converts.getLong(timestamp, null);
     }
 
     @Override
-    protected int computeWeight(ServiceRequest request) {
-        int result = url.getMethodParameter(request.getMethod(), KEY_WEIGHT, DEFAULT_WEIGHT);
-        if (result > 0) {
-            long timestamp = url.getParameter(REMOTE_TIMESTAMP_KEY, 0L);
-            if (timestamp > 0L) {
-                long uptime = System.currentTimeMillis() - timestamp;
-                if (uptime < 0) {
-                    result = 1;
-                } else {
-                    int warmup = url.getParameter(KEY_WARMUP, DEFAULT_WARMUP);
-                    if (uptime > 0 && uptime < warmup) {
-                        int ww = (int) (uptime / ((float) warmup / result));
-                        result = ww < 1 ? 1 : Math.min(ww, result);
-                    }
-                }
-            }
+    public Integer getOriginWeight(ServiceRequest request) {
+        String weight = url.getMethodParameter(request.getMethod(), KEY_WEIGHT, null);
+        if (weight == null || weight.isEmpty()) {
+            weight = url.getParameter(KEY_WEIGHT);
         }
-        return Math.max(result, 0);
+        return Converts.getInteger(weight, DEFAULT_WEIGHT);
     }
 
     @Override

@@ -11,7 +11,7 @@
 
     <artifactId>joylive-bytekit-bytebuddy</artifactId>
     <properties>
-        <byte-buddy.version>1.14.10</byte-buddy.version>
+        <byte-buddy.version>1.15.8</byte-buddy.version>
     </properties>
 
     <dependencies>

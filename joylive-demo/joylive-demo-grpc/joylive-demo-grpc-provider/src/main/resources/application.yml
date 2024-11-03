@@ -3,13 +3,13 @@ spring:
     name: grpc-provider
   cloud:
     nacos:
-      username: ${NACOS_USERNAME:nacos}
-      password: ${NACOS_PASSWORD:nacos}
       discovery:
         server-addr: ${NACOS_ADDR}
         namespace: ${NACOS_NAMESPACE:public}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
 grpc:
   server:
     port: 9898
 server:
-  port: 8181
+  port: 9899

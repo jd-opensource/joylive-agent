@@ -36,22 +36,24 @@ import java.util.List;
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
-@ConditionalOnClass(GrpcServerDefinition.TYPE_ABSTRACT_SERVER_IMPL_BUILDER)
+@ConditionalOnClass(GrpcServerDefinition.TYPE_SERVER_IMPL_BUILDER)
 public class GrpcServerDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_ABSTRACT_SERVER_IMPL_BUILDER = "io.grpc.internal.AbstractServerImplBuilder";
+    public static final String TYPE_SERVER_IMPL_BUILDER = "io.grpc.internal.ServerImplBuilder";
 
+    // router interceptor is added in constructor
+    // transmission interceptor is added in build method.
+    // Interceptor is called in reverse order
     private static final String METHOD_BUILD = "build";
 
     @Inject
     private List<CargoRequire> requires;
 
     public GrpcServerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_SERVER_IMPL_BUILDER);
+        this.matcher = () -> MatcherBuilder.named(TYPE_SERVER_IMPL_BUILDER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_BUILD).
-                                and(MatcherBuilder.arguments(0)),
+                        MatcherBuilder.named(METHOD_BUILD).and(MatcherBuilder.arguments(0)),
                         () -> new GrpcServerInterceptor(requires))};
     }
 }

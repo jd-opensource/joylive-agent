@@ -3,8 +3,6 @@ package com.jd.live.agent.demo.grpc.provider;
 import com.jd.live.agent.demo.grpc.service.api.*;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @GrpcService
 public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {

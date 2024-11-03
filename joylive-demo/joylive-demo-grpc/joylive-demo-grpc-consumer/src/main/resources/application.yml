@@ -3,12 +3,11 @@ spring:
     name: grpc-consumer
   cloud:
     nacos:
-      username: ${NACOS_USERNAME:nacos}
-      password: ${NACOS_PASSWORD:nacos}
       discovery:
         server-addr: ${NACOS_ADDR}
         namespace: ${NACOS_NAMESPACE:public}
-
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
 grpc:
   client:
     grpc-provider:
@@ -18,7 +17,6 @@ grpc:
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext
-      default-load-balancing-policy: round_robin
 
 server:
   port: 8080 # Web Server

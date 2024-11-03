@@ -35,29 +35,27 @@ public class GrpcServerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object target = ctx.getTarget();
-        if (target instanceof ServerBuilder) {
-            ((ServerBuilder<?>) target).intercept(new ServerInterceptor() {
-                @Override
-                public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
-                        ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
-                    if (headers != null) {
-                        RequestContext.create().addCargo(require, headers.keys(),
-                                name -> Label.parseValue(headers.get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER))));
-                    }
-                    return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
-                        @Override
-                        protected ServerCall<ReqT, RespT> delegate() {
-                            return call;
-                        }
-
-                        @Override
-                        public MethodDescriptor<ReqT, RespT> getMethodDescriptor() {
-                            return call.getMethodDescriptor();
-                        }
-                    }, headers);
+        ServerBuilder<?> target = (ServerBuilder<?>) ctx.getTarget();
+        target.intercept(new ServerInterceptor() {
+            @Override
+            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                    ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
+                if (headers != null) {
+                    RequestContext.create().addCargo(require, headers.keys(),
+                            name -> Label.parseValue(headers.get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER))));
                 }
-            });
-        }
+                return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
+                    @Override
+                    protected ServerCall<ReqT, RespT> delegate() {
+                        return call;
+                    }
+
+                    @Override
+                    public MethodDescriptor<ReqT, RespT> getMethodDescriptor() {
+                        return call.getMethodDescriptor();
+                    }
+                }, headers);
+            }
+        });
     }
 }

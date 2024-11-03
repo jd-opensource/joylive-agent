@@ -15,15 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v3.instance;
 
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.ClusterInvoker;
-
-import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_SERVICE_REFERENCE_PATH;
 
 /**
  * Represents a network endpoint in a Dubbo RPC system, wrapping an {@link Invoker} instance.
@@ -62,43 +60,13 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     }
 
     @Override
-    public Long getTimestamp() {
-        try {
-            return Long.parseLong(url.getParameter(CommonConstants.TIMESTAMP_KEY));
-        } catch (NumberFormatException e) {
-            return null;
+    public Integer getOriginWeight(ServiceRequest request) {
+        URL target = invoker instanceof ClusterInvoker ? ((ClusterInvoker<?>) invoker).getRegistryUrl() : url;
+        String weight = target.getMethodParameter(request.getMethod(), KEY_WEIGHT, null);
+        if (weight == null || weight.isEmpty()) {
+            weight = getLabel(KEY_WEIGHT);
         }
-    }
-
-    @Override
-    protected int computeWeight(ServiceRequest request) {
-        int result;
-        URL target = url;
-        if (invoker instanceof ClusterInvoker) {
-            target = ((ClusterInvoker<?>) invoker).getRegistryUrl();
-        }
-        // Multiple registry scenario, load balance among multiple registries.
-        if (REGISTRY_SERVICE_REFERENCE_PATH.equals(target.getServiceInterface())) {
-            result = target.getParameter(KEY_WEIGHT, DEFAULT_WEIGHT);
-        } else {
-            result = target.getMethodParameter(request.getMethod(), KEY_WEIGHT, DEFAULT_WEIGHT);
-            if (result > 0) {
-                long timestamp = url.getParameter(KEY_TIMESTAMP, 0L);
-                if (timestamp > 0L) {
-                    long uptime = System.currentTimeMillis() - timestamp;
-                    if (uptime < 0) {
-                        result = 1;
-                    } else {
-                        int warmup = url.getParameter(KEY_WARMUP, DEFAULT_WARMUP);
-                        if (uptime > 0 && uptime < warmup) {
-                            int ww = (int) (uptime / ((float) warmup / result));
-                            result = ww < 1 ? 1 : Math.min(ww, result);
-                        }
-                    }
-                }
-            }
-        }
-        return Math.max(result, 0);
+        return Converts.getInteger(weight, DEFAULT_WEIGHT);
     }
 
     @Override

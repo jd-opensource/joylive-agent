@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.instance;
 import com.jd.live.agent.bootstrap.util.Attributes;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.matcher.Matcher;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.request.ServiceRequest;
@@ -110,18 +111,52 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return The timestamp, or null if not available.
      */
     default Long getTimestamp() {
-        return null;
+        return Converts.getLong(getLabel(KEY_TIMESTAMP), null);
     }
 
     /**
-     * Gets the weight of the endpoint for load balancing purposes.
-     * The weight can influence the distribution of requests among multiple endpoints.
+     * Gets the warm-up time for this endpoint.
      *
-     * @param request The service request for which the weight is being determined.
-     * @return The weight of the endpoint, or null if not specified.
+     * @return the warm-up time in seconds, or the default value if not specified
+     */
+    default Integer getWarmup() {
+        return Converts.getInteger(getLabel(KEY_WARMUP), DEFAULT_WARMUP);
+    }
+
+    /**
+     * Gets the weight for the specified service request, taking into account the origin weight and warm-up time.
+     *
+     * @param request the service request for which to get the weight
+     * @return the weight for this endpoint, taking into account the origin weight and warm-up time
      */
     default Integer getWeight(ServiceRequest request) {
-        return null;
+        int weight = getOriginWeight(request);
+        if (weight > 0) {
+            Long timestamp = getTimestamp();
+            if (timestamp != null && timestamp > 0L) {
+                long uptime = System.currentTimeMillis() - timestamp;
+                if (uptime < 0) {
+                    weight = 1;
+                } else {
+                    int warmup = getWarmup();
+                    if (uptime > 0 && uptime < warmup) {
+                        int ww = (int) (uptime / ((float) warmup / weight));
+                        weight = ww < 1 ? 1 : Math.min(ww, weight);
+                    }
+                }
+            }
+        }
+        return Math.max(weight, 0);
+    }
+
+    /**
+     * Gets the origin weight for the specified service request.
+     *
+     * @param request the service request for which to get the origin weight
+     * @return the origin weight, or the default value if not specified
+     */
+    default Integer getOriginWeight(ServiceRequest request) {
+        return Converts.getInteger(getLabel(KEY_WEIGHT), DEFAULT_WEIGHT);
     }
 
     /**
