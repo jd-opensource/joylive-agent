@@ -10,33 +10,17 @@
     <artifactId>joylive-router-grpc</artifactId>
 
     <properties>
-        <grpc-all.version>1.60.0</grpc-all.version>
-        <grpc-spring.version>2.8.0.RELEASE</grpc-spring.version>
-        <alibaba-nacos-discovery.version>2021.0.6.0</alibaba-nacos-discovery.version>
+        <grpc.version>1.63.0</grpc.version>
     </properties>
 
     <dependencies>
-        <!-- 引入 gRPC -->
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-all</artifactId>
-            <version>${grpc-all.version}</version>
+            <artifactId>grpc-api</artifactId>
+            <version>${grpc.version}</version>
             <scope>provided</scope>
         </dependency>
 
-        <!-- 引入 gRPC Server Starter 依赖，实现对 gRPC 的自动配置 -->
-        <dependency>
-            <groupId>net.devh</groupId>
-            <artifactId>grpc-spring-boot-starter</artifactId>
-            <version>${grpc-spring.version}</version>
-        </dependency>
-
-        <!-- 引入 Spring Cloud Alibaba Nacos Discovery 相关依赖，将 Nacos 作为注册中心，并实现对其的自动配置 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>${alibaba-nacos-discovery.version}</version>
-        </dependency>
     </dependencies>
 
 </project>

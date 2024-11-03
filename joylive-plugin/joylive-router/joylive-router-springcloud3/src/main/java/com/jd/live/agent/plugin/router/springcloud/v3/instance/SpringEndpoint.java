@@ -15,10 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.instance;
 
-import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.request.ServiceRequest;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.Response;
@@ -52,32 +50,6 @@ public class SpringEndpoint extends AbstractEndpoint {
     @Override
     public int getPort() {
         return instance.getPort();
-    }
-
-    @Override
-    public Long getTimestamp() {
-        return Converts.getLong(getLabel(KEY_TIMESTAMP), null);
-    }
-
-    @Override
-    protected int computeWeight(ServiceRequest request) {
-        int result = Converts.getInteger(getLabel(KEY_WEIGHT), DEFAULT_WEIGHT);
-        if (result > 0) {
-            long timestamp = Converts.getLong(getLabel(KEY_TIMESTAMP), 0L);
-            if (timestamp > 0L) {
-                long uptime = System.currentTimeMillis() - timestamp;
-                if (uptime < 0) {
-                    result = 1;
-                } else {
-                    int warmup = Converts.getInteger(getLabel(KEY_WARMUP), DEFAULT_WARMUP);
-                    if (uptime > 0 && uptime < warmup) {
-                        int ww = (int) (uptime / ((float) warmup / result));
-                        result = ww < 1 ? 1 : Math.min(ww, result);
-                    }
-                }
-            }
-        }
-        return Math.max(result, 0);
     }
 
     @Override

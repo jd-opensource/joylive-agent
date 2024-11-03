@@ -87,6 +87,7 @@ agent:
       enabled: ${CONFIG_LIVE_ENABLED:true}
       mq: ${CONFIG_LIVE_MQ_ENABLED:false}
       dubbo: true
+      grpc: true
       sofarpc: true
       jsf: true
       spring: true
@@ -140,6 +141,7 @@ agent:
         cleanInterval: 30000
         expireTime: 60000
     live:
+      fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
       topics: ${CONFIG_LIVE_TOPICS}
       modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:false}
     lane:

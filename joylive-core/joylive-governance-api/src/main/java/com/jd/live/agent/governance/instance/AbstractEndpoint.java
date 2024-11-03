@@ -97,10 +97,8 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     @Override
     public Integer getWeight(ServiceRequest request) {
         if (weight == null) {
-            weight = computeWeight(request);
+            weight = getWeight(request);
         }
         return weight;
     }
-
-    protected abstract int computeWeight(ServiceRequest request);
 }

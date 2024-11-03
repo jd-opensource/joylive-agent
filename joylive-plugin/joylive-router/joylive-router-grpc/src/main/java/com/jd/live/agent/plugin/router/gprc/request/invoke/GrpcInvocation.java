@@ -18,11 +18,17 @@ package com.jd.live.agent.plugin.router.gprc.request.invoke;
 import com.jd.live.agent.governance.invoke.InboundInvocation.RpcInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.RpcOutboundInvocation;
-import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcInboundRequest;
+import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 
+/**
+ * Interface representing a gRPC invocation.
+ */
 public interface GrpcInvocation {
 
+    /**
+     * Class representing an inbound gRPC invocation.
+     */
     class GrpcInboundInvocation extends RpcInboundInvocation<GrpcInboundRequest> implements GrpcInvocation {
 
         public GrpcInboundInvocation(GrpcInboundRequest request, InvocationContext context) {
@@ -30,6 +36,9 @@ public interface GrpcInvocation {
         }
     }
 
+    /**
+     * Class representing an outbound gRPC invocation.
+     */
     class GrpcOutboundInvocation extends RpcOutboundInvocation<GrpcOutboundRequest> implements GrpcInvocation {
 
         public GrpcOutboundInvocation(GrpcOutboundRequest request, InvocationContext context) {

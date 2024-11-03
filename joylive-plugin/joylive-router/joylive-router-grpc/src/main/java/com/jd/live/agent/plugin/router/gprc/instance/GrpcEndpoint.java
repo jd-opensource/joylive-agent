@@ -2,39 +2,60 @@ package com.jd.live.agent.plugin.router.gprc.instance;
 
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.request.ServiceRequest;
-import net.devh.boot.grpc.client.config.GrpcChannelProperties;
+import io.grpc.Attributes;
+import io.grpc.LoadBalancer.Subchannel;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.List;
+
+/**
+ * A gRPC endpoint that provides a way to expose services over gRPC.
+ */
 public class GrpcEndpoint extends AbstractEndpoint {
 
-    private final GrpcChannelProperties properties;
+    private final Subchannel subchannel;
 
-    public GrpcEndpoint(GrpcChannelProperties properties) {
-        this.properties = properties;
-    }
+    private final InetSocketAddress address;
 
-    @Override
-    protected int computeWeight(ServiceRequest request) {
-        return 0;
+    public GrpcEndpoint(Subchannel subchannel) {
+        this.subchannel = subchannel;
+        this.address = getInetSocketAddress();
     }
 
     @Override
     public String getHost() {
-        return properties.getAddress().getHost();
+        if (address != null) {
+            return address.getHostString();
+        }
+        return null;
     }
 
     @Override
     public int getPort() {
-        return properties.getAddress().getPort();
+        if (address != null) {
+            return address.getPort();
+        }
+        return 0;
     }
 
     @Override
     public String getLabel(String key) {
-        return "";
+        return key == null || key.isEmpty() ? null : subchannel.getAttributes().get(Attributes.Key.create(key));
     }
 
     @Override
     public EndpointState getState() {
+        return EndpointState.HEALTHY;
+    }
+
+    private InetSocketAddress getInetSocketAddress() {
+        List<SocketAddress> addresses = subchannel.getAllAddresses().get(0).getAddresses();
+        for (SocketAddress addr : addresses) {
+            if (addr instanceof InetSocketAddress) {
+                return (InetSocketAddress) addr;
+            }
+        }
         return null;
     }
 }

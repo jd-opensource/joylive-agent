@@ -18,41 +18,56 @@ package com.jd.live.agent.plugin.router.gprc.request;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
+import io.grpc.*;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+
+/**
+ * An interface representing a gRPC request.
+ */
 public interface GrpcRequest {
 
-    class GrpcInboundRequest<T> extends AbstractRpcInboundRequest<T> implements GrpcRequest {
+    /**
+     * A nested class representing an inbound gRPC request.
+     */
+    class GrpcInboundRequest extends AbstractRpcInboundRequest<ServerCall<?, ?>> implements GrpcRequest {
 
-        public GrpcInboundRequest(T request) {
+        private final Metadata headers;
+
+        public GrpcInboundRequest(ServerCall<?, ?> request, Metadata headers) {
             super(request);
+            this.headers = headers;
+            MethodDescriptor<?, ?> descriptor = request.getMethodDescriptor();
+            this.path = descriptor.getServiceName();
+            this.method = descriptor.getBareMethodName();
         }
 
         @Override
         public String getClientIp() {
-           return null;
+            SocketAddress address = request.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+            return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getHostString() : null;
         }
 
         @Override
-        public boolean isSystem() {
+        public boolean isNativeGroup() {
             return false;
         }
     }
 
-    class GrpcOutboundRequest<T> extends AbstractRpcOutboundRequest<T> implements GrpcRequest {
+    /**
+     * A nested class representing an outbound gRPC request.
+     */
+    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<ClientCall<?, ?>> implements GrpcRequest {
 
-        public GrpcOutboundRequest(T request) {
+        public GrpcOutboundRequest(ClientCall<?, ?> request) {
             super(request);
 
         }
 
-        public GrpcOutboundRequest(T request, GrpcCluster cluster) {
+        public GrpcOutboundRequest(ClientCall<?, ?> request, GrpcCluster cluster) {
             super(request);
 
-        }
-
-        @Override
-        public boolean isSystem() {
-            return false;
         }
     }
 }

@@ -24,7 +24,7 @@ public class ClientCallImplInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((Metadata) ctx.getArguments()[1]);
+        attachTag((Metadata) ctx.getArguments()[0]);
     }
 
     private void attachTag(Metadata metadata) {

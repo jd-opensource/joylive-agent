@@ -118,8 +118,17 @@ public abstract class LiveMetadataParser implements LiveParser {
      * @return The parsed live space ID as a Long, or null if the live space ID is not found.
      */
     protected String parseLiveSpaceId() {
+        String result = null;
         Cargo cargo = RequestContext.getCargo(Constants.LABEL_LIVE_SPACE_ID);
-        return cargo == null ? null : cargo.getFirstValue();
+        if (cargo != null) {
+            result = cargo.getFirstValue();
+        } else if (isFallbackLocationIfNoSpace()) {
+            result = application.getLocation().getLiveSpaceId();
+            if (result != null && !result.isEmpty()) {
+                RequestContext.getOrCreate().addCargo(Constants.LABEL_LIVE_SPACE_ID, result);
+            }
+        }
+        return result;
     }
 
     /**
@@ -128,8 +137,29 @@ public abstract class LiveMetadataParser implements LiveParser {
      * @return The parsed rule ID as a Long, or null if the rule ID is not found.
      */
     protected String parseRuleId(String spaceId) {
+        String result = null;
         Cargo cargo = RequestContext.getCargo(Constants.LABEL_RULE_ID);
-        return cargo == null ? null : cargo.getFirstValue();
+        if (cargo != null) {
+            result = cargo.getFirstValue();
+        } else if (spaceId != null && !spaceId.isEmpty() && isFallbackLocationIfNoSpace()) {
+            Location location = application.getLocation();
+            if (spaceId.equals(location.getLiveSpaceId())) {
+                result = location.getUnitRuleId();
+                if (result != null && !result.isEmpty()) {
+                    RequestContext.getOrCreate().addCargo(Constants.LABEL_RULE_ID, result);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Checks if the fallback location should be used when there is no space available.
+     *
+     * @return true if the fallback location should be used when there is no space available, false otherwise
+     */
+    protected boolean isFallbackLocationIfNoSpace() {
+        return liveConfig.isFallbackLocationIfNoSpace();
     }
 
     /**
@@ -378,31 +408,14 @@ public abstract class LiveMetadataParser implements LiveParser {
         }
 
         @Override
-        protected String parseLiveSpaceId() {
-            String result = super.parseLiveSpaceId();
-            if (result == null || result.isEmpty()) {
-                result = application.getLocation().getLiveSpaceId();
-                if (result != null && !result.isEmpty()) {
-                    RequestContext.getOrCreate().setCargo(Constants.LABEL_LIVE_SPACE_ID, result);
-                }
-            }
-            return result;
+        protected String parseRuleId(String spaceId) {
+            // TODO get target service rule.
+            return super.parseRuleId(spaceId);
         }
 
         @Override
-        protected String parseRuleId(String spaceId) {
-            // TODO get target service rule.
-            String result = super.parseRuleId(spaceId);
-            if ((result == null || result.isEmpty()) && spaceId != null) {
-                Location location = application.getLocation();
-                if (spaceId.equals(location.getLiveSpaceId())) {
-                    result = location.getUnitRuleId();
-                    if (result != null && !result.isEmpty()) {
-                        RequestContext.getOrCreate().setCargo(Constants.LABEL_RULE_ID, result);
-                    }
-                }
-            }
-            return result;
+        protected boolean isFallbackLocationIfNoSpace() {
+            return true;
         }
     }
 

@@ -27,6 +27,8 @@ import java.util.Set;
 @Setter
 public class LiveConfig {
 
+    private boolean fallbackLocationIfNoSpace;
+
     /**
      * A flag to determine if modifying MQ group is enabled.
      */
