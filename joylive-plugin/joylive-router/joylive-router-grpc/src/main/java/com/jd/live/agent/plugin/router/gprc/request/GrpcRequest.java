@@ -18,10 +18,7 @@ package com.jd.live.agent.plugin.router.gprc.request;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
-import io.grpc.ClientCall;
-import io.grpc.Grpc;
-import io.grpc.Metadata;
-import io.grpc.ServerCall;
+import io.grpc.*;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -41,7 +38,9 @@ public interface GrpcRequest {
         public GrpcInboundRequest(ServerCall<?, ?> request, Metadata headers) {
             super(request);
             this.headers = headers;
-            this.path = request.getMethodDescriptor().getServiceName();
+            MethodDescriptor<?, ?> descriptor = request.getMethodDescriptor();
+            this.path = descriptor.getServiceName();
+            this.method = descriptor.getBareMethodName();
         }
 
         @Override
