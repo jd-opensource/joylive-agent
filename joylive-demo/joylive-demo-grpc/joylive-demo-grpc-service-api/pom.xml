@@ -14,7 +14,7 @@
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
 <!--        <os.detected.classifier>osx-x86_64</os.detected.classifier>-->
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <protoc.version>4.28.3</protoc.version>
+        <protoc.version>3.25.5</protoc.version>
     </properties>
 
     <dependencies>
