@@ -58,6 +58,10 @@ public class AppService {
      */
     private String protocol;
 
+    private Integer weight;
+
+    private Integer warmupDuration;
+
     /**
      * Metadata associated with the service.
      */

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v3.instance;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
@@ -62,9 +63,9 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     @Override
     public Integer getOriginWeight(ServiceRequest request) {
         URL target = invoker instanceof ClusterInvoker ? ((ClusterInvoker<?>) invoker).getRegistryUrl() : url;
-        String weight = target.getMethodParameter(request.getMethod(), KEY_WEIGHT, null);
+        String weight = target.getMethodParameter(request.getMethod(), Constants.LABEL_WEIGHT, null);
         if (weight == null || weight.isEmpty()) {
-            weight = getLabel(KEY_WEIGHT);
+            weight = getLabel(Constants.LABEL_WEIGHT);
         }
         return Converts.getInteger(weight, DEFAULT_WEIGHT);
     }
