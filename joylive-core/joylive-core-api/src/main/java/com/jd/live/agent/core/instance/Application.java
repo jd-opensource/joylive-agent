@@ -101,12 +101,16 @@ public class Application {
     @Setter
     private volatile AppStatus status = AppStatus.STARTING;
 
+    @Setter
+    private Long timestamp;
+
     /**
      * Default constructor initializes the process ID and instance with a unique application ID.
      */
     public Application() {
         this.pid = pid();
         this.instance = APP_ID;
+        this.timestamp = System.currentTimeMillis();
     }
 
     /**
@@ -204,6 +208,7 @@ public class Application {
     private void labelInstance(BiConsumer<String, String> consumer) {
         accept(consumer, Constants.LABEL_APPLICATION, name);
         accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
+        accept(consumer, Constants.LABEL_TIMESTAMP, timestamp == null ? null : String.valueOf(timestamp));
     }
 
     /**
@@ -214,9 +219,9 @@ public class Application {
      */
     private void labelService(BiConsumer<String, String> consumer, boolean group) {
         if (service != null) {
-            if (group) {
-                accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
-            }
+            accept(consumer, Constants.LABEL_WEIGHT, service.getWeight() == null ? null : service.getWeight().toString());
+            accept(consumer, Constants.LABEL_WARMUP, service.getWarmupDuration() == null ? null : service.getWarmupDuration().toString());
+            accept(consumer, Constants.LABEL_SERVICE_GROUP, !group ? null : service.getGroup());
             Map<String, String> serviceMeta = service.getMeta();
             if (serviceMeta != null) {
                 serviceMeta.forEach(consumer);

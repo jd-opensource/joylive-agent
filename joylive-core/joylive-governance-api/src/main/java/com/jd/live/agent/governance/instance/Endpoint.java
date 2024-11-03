@@ -34,21 +34,6 @@ import java.util.Set;
 public interface Endpoint extends Matcher<TagCondition>, Attributes {
 
     /**
-     * Key for the timestamp property of the endpoint.
-     */
-    String KEY_TIMESTAMP = "timestamp";
-
-    /**
-     * Key for the weight property of the endpoint.
-     */
-    String KEY_WEIGHT = "weight";
-
-    /**
-     * Key for the warmup period property of the endpoint.
-     */
-    String KEY_WARMUP = "warmup";
-
-    /**
      * Key for the counter attribute of the endpoint.
      */
     String ATTRIBUTE_COUNTER = "counter";
@@ -61,7 +46,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     /**
      * Default warmup period for the endpoint in milliseconds.
      */
-    int DEFAULT_WARMUP = 10 * 60 * 1000;
+    int DEFAULT_WARMUP = 2 * 60 * 1000;
 
     /**
      * Default weight for the endpoint.
@@ -111,7 +96,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return The timestamp, or null if not available.
      */
     default Long getTimestamp() {
-        return Converts.getLong(getLabel(KEY_TIMESTAMP), null);
+        return Converts.getLong(getLabel(Constants.LABEL_TIMESTAMP), null);
     }
 
     /**
@@ -120,7 +105,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return the warm-up time in seconds, or the default value if not specified
      */
     default Integer getWarmup() {
-        return Converts.getInteger(getLabel(KEY_WARMUP), DEFAULT_WARMUP);
+        return Converts.getInteger(getLabel(Constants.LABEL_WARMUP), DEFAULT_WARMUP);
     }
 
     /**
@@ -156,7 +141,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return the origin weight, or the default value if not specified
      */
     default Integer getOriginWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(KEY_WEIGHT), DEFAULT_WEIGHT);
+        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), DEFAULT_WEIGHT);
     }
 
     /**

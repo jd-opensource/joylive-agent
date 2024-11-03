@@ -132,8 +132,22 @@ public interface Constants {
     String LABEL_SERVICE_CONSUMER = LABEL_SERVICE_PREFIX + "consumer";
 
     /**
+     * Key for the timestamp property of the endpoint.
+     */
+    String LABEL_TIMESTAMP = "timestamp";
+    /**
+     * Key for the weight property of the endpoint.
+     */
+    String LABEL_WEIGHT = "weight";
+    /**
+     * Key for the warmup period property of the endpoint.
+     */
+    String LABEL_WARMUP = "warmup";
+
+    /**
      * Default value for labels.
      */
     String DEFAULT_VALUE = "";
+
 }
 

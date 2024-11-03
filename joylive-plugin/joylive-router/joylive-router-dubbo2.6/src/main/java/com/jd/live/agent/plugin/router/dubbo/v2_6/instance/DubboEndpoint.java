@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.instance;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invoker;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
@@ -64,16 +65,16 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     public Long getTimestamp() {
         String timestamp = getLabel(REMOTE_TIMESTAMP_KEY);
         if (timestamp == null || timestamp.isEmpty()) {
-            timestamp = getLabel(KEY_TIMESTAMP);
+            timestamp = getLabel(Constants.LABEL_TIMESTAMP);
         }
         return Converts.getLong(timestamp, null);
     }
 
     @Override
     public Integer getOriginWeight(ServiceRequest request) {
-        String weight = url.getMethodParameter(request.getMethod(), KEY_WEIGHT, null);
+        String weight = url.getMethodParameter(request.getMethod(), Constants.LABEL_WEIGHT, null);
         if (weight == null || weight.isEmpty()) {
-            weight = url.getParameter(KEY_WEIGHT);
+            weight = url.getParameter(Constants.LABEL_WEIGHT);
         }
         return Converts.getInteger(weight, DEFAULT_WEIGHT);
     }
