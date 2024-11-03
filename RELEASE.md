@@ -14,12 +14,13 @@
 10. Support for leaky bucket and smooth preheat token bucket rate limiting algorithms
 11. Support for rate limiting based on system load
 12. RPC now also supports Query and Cookie matching for hot parameter rate limiting
-13. Fixed the issue of not being able to return non-standard HTTP response codes
-14. Fixed routing issues under multiple spaces
-15. Fixed the issue where retry did not handle wrapped exceptions properly
-16. Fixed the notification problem of routing
-17. Fixed the issue of getting response body when Spring Cloud Gateway is in circuit breaking mode
-18. Fixed the case sensitivity issue with HTTP Header and Cookie names.
+13. Service registration now includes warm-up parameters, including startup time, weight, and warm-up time 
+14. Fixed the issue of not being able to return non-standard HTTP response codes 
+15. Fixed routing issues under multiple spaces 
+16. Fixed the issue where retry did not handle wrapped exceptions properly 
+17. Fixed the notification problem of routing 
+18. Fixed the issue of getting response body when Spring Cloud Gateway is in circuit breaking mode 
+19. Fixed the case sensitivity issue with HTTP Header and Cookie names.
 
 ## 1.3.3
 
