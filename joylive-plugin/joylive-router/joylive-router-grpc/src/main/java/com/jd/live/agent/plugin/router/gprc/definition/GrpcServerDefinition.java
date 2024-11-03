@@ -34,6 +34,7 @@ import com.jd.live.agent.plugin.router.gprc.interceptor.GrpcServerInterceptor;
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_GRPC_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(GrpcServerDefinition.TYPE_SERVER_IMPL_BUILDER)
 public class GrpcServerDefinition extends PluginDefinitionAdapter {
 

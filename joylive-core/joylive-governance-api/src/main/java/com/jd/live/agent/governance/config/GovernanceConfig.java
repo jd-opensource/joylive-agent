@@ -58,6 +58,7 @@ public class GovernanceConfig {
 
     public static final String CONFIG_LIVE_ENABLED = CONFIG_SWITCH_LIVE + ENABLED;
     public static final String CONFIG_LIVE_DUBBO_ENABLED = CONFIG_SWITCH_LIVE + ".dubbo";
+    public static final String CONFIG_LIVE_GRPC_ENABLED = CONFIG_SWITCH_LIVE + ".grpc";
     public static final String CONFIG_LIVE_SOFARPC_ENABLED = CONFIG_SWITCH_LIVE + ".sofarpc";
     public static final String CONFIG_LIVE_JSF_ENABLED = CONFIG_SWITCH_LIVE + ".jsf";
     public static final String CONFIG_LIVE_SPRING_ENABLED = CONFIG_SWITCH_LIVE + ".spring";

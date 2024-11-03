@@ -87,6 +87,7 @@ agent:
       enabled: ${CONFIG_LIVE_ENABLED:true}
       mq: ${CONFIG_LIVE_MQ_ENABLED:false}
       dubbo: true
+      grpc: true
       sofarpc: true
       jsf: true
       spring: true
