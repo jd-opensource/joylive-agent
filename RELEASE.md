@@ -1,5 +1,26 @@
 # Release History
 
+## 1.4.0
+
+1. Support for Spring Cloud gRPC
+2. Routing now supports cluster priority mode
+3. InboundFilter has been changed to asynchronous mode
+4. Support for using JsonPath or ValuePath to get error codes
+5. Optimized non-active-active service routing
+6. Improved group routing
+7. Retry test now includes method matching conditions
+8. Support for disabling conflicting Spring Cloud instance providers
+9. Support for token authentication
+10. Added leaky bucket and smooth preheat token bucket rate limiting algorithms
+11. Support for rate limiting based on system load
+12. RPC now also supports Query and Cookie matching for hot parameter rate limiting
+13. Fixed the issue of not being able to return non-standard HTTP response codes
+14. Fixed routing issues under multiple spaces
+15. Fixed the issue where retry did not handle wrapped exceptions properly
+16. Fixed the notification problem of routing
+17. Fixed the issue of getting response body when Spring Cloud Gateway is in circuit breaking mode
+18. Fixed the case sensitivity issue with HTTP Header and Cookie names.
+
 ## 1.3.3
 
 1. Fixed the problem that bytecode interceptors did not throw exceptions 
