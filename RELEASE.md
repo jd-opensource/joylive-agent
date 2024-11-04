@@ -2,7 +2,7 @@
 
 ## 1.4.0
 
-1. Support for Spring Cloud gRPC
+1. Supports Spring Cloud gRPC inbound traffic governance
 2. Support for cluster priority routing
 3. InboundFilter has been changed to asynchronous mode
 4. Support for using JsonPath or ValuePath to get error codes

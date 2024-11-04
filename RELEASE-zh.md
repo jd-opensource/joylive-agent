@@ -2,7 +2,7 @@
 
 ## 1.4.0
 
-1. 支持 spring cloud grpc；
+1. 支持 spring cloud grpc 入流量治理；
 2. 支持集群优先路由；
 3. InboundFilter改成异步模式；
 4. 支持使用JsonPath或ValuePath来获取异常码；
