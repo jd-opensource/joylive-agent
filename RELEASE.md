@@ -11,7 +11,7 @@
 7. Retry strategy now includes method matching conditions
 8. Support for disabling conflicting Spring Cloud instance providers
 9. Support for token authentication
-10. Support for leaky bucket and smooth preheat token bucket rate limiting algorithms
+10. Support for leaky bucket and smooth warmup token bucket rate limiting algorithms
 11. Support for rate limiting based on system load
 12. RPC now also supports Query and Cookie matching for hot parameter rate limiting
 13. Service registration now includes warm-up parameters, including startup time, weight, and warm-up time 
