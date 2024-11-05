@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>joylive-parser-fastjson2</module>
         <module>joylive-parser-jackson</module>
         <module>joylive-parser-properties</module>
     </modules>
