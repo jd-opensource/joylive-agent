@@ -60,6 +60,7 @@
                 <include>com.jd.live:joylive-function-bkdrhash</include>
                 <include>com.jd.live:joylive-logger-slf4j</include>
                 <include>com.jd.live:joylive-parser-jackson</include>
+                <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
                 <include>com.jd.live:joylive-service-file</include>
                 <include>com.jd.live:joylive-service-multilive</include>

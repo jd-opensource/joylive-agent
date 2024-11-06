@@ -53,6 +53,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-parser-fastjson2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-parser-properties</artifactId>
         </dependency>
         <dependency>

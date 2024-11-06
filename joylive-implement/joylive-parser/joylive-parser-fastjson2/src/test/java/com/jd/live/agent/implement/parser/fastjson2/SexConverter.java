@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.parser.jackson;
+package com.jd.live.agent.implement.parser.fastjson2;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.parser.json.JsonConverter;
 
-@Extension(value = {ObjectParser.YAML, ObjectParser.YML}, provider = "jackson", order = 1)
-public class JacksonYamlParser extends AbstractJacksonParser {
+public class SexConverter implements JsonConverter<Integer, Sex> {
 
     @Override
-    protected JsonFactory createFactory() {
-        return new YAMLFactory();
+    public Sex convert(Integer source) {
+        if (source == null) {
+            return null;
+        }
+        return source == 1 ? Sex.FEMALE : Sex.MALE;
     }
 }

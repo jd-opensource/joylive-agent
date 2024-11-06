@@ -26,7 +26,10 @@ import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.parser.json.*;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -83,11 +86,10 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
         JsonFormat format = ann.getAnnotation(JsonFormat.class);
         if (format != null) {
             String pattern = format.pattern();
-            String timezone = format.timezone();
-            if (pattern.isEmpty() && timezone.isEmpty()) {
+            if (pattern.isEmpty()) {
                 return null;
             }
-            return Value.forPattern(pattern).withTimeZone(timezone.isEmpty() ? null : TimeZone.getTimeZone(timezone));
+            return Value.forPattern(pattern);
         }
         return null;
     }

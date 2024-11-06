@@ -10,19 +10,14 @@
 
     <properties>
         <fastjson2.version>2.0.53</fastjson2.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>${fastjson2.version}</version>
         </dependency>
+
     </dependencies>
     <build>
         <plugins>
@@ -35,7 +30,6 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.alibaba.fastjson2:*</include>
-                                    <include>org.yaml:*</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
@@ -55,10 +49,6 @@
                                 <relocation>
                                     <pattern>com.alibaba.fastjson2</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.com.alibaba.fastjson2</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.yaml</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.org.yaml</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

@@ -1,63 +1,65 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.jd.live.agent.implement.parser.fastjson2;
 
+import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.codec.FieldInfo;
 import com.alibaba.fastjson2.modules.ObjectReaderAnnotationProcessor;
 import com.alibaba.fastjson2.modules.ObjectReaderModule;
+import com.alibaba.fastjson2.reader.ObjectReader;
 import com.alibaba.fastjson2.util.BeanUtils;
 import com.jd.live.agent.core.parser.json.*;
-import com.jd.live.agent.implement.parser.fastjson2.proxy.object.ProxyObjectReader;
-import com.jd.live.agent.implement.parser.fastjson2.proxy.time.ProxyTimeReader;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Stack;
+import java.lang.reflect.Type;
 
-import static com.alibaba.fastjson2.util.BeanUtils.getAnnotations;
+import static com.jd.live.agent.implement.parser.fastjson2.Converters.getConverter;
 
+/**
+ * A module for the ObjectReader that handles custom annotations for JSON deserialization.
+ */
 public class JoyLiveReaderModule implements ObjectReaderModule {
 
-    final JoyLiveReadAnnotationProcessor annotationProcessor;
-
     public JoyLiveReaderModule() {
-        this.annotationProcessor = new JoyLiveReadAnnotationProcessor();
     }
 
     public ObjectReaderAnnotationProcessor getAnnotationProcessor() {
-        return annotationProcessor;
+        return JoyLiveReadAnnotationProcessor.INSTANCE;
     }
 
-    public class JoyLiveReadAnnotationProcessor implements ObjectReaderAnnotationProcessor {
-        @Override
-        public void getFieldInfo(FieldInfo fieldInfo, Class objectClass, Method method) {
-            String methodName = method.getName();
-            String fieldName;
+    /**
+     * A private static class that implements the ObjectReaderAnnotationProcessor interface.
+     */
+    private static class JoyLiveReadAnnotationProcessor implements ObjectReaderAnnotationProcessor {
 
-            if (methodName.startsWith("set")) {
-                fieldName = BeanUtils.setterName(methodName, null);
-            } else {
-                fieldName = BeanUtils.getterName(methodName, null);
-            }
-
-            BeanUtils.declaredFields(objectClass, field -> {
-                if (field.getName().equals(fieldName)) {
-                    int modifiers = field.getModifiers();
-                    if (!Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers)) {
-                        Annotation[] annotations = getAnnotations(field);
-                        processAnnotation(fieldInfo, annotations, field);
-                    }
-                }
-            });
-        }
+        private static final JoyLiveReadAnnotationProcessor INSTANCE = new JoyLiveReadAnnotationProcessor();
 
         @Override
         public void getFieldInfo(FieldInfo fieldInfo, Class objectClass, Field field) {
-            Annotation[] annotations = getAnnotations(field);
-            processAnnotation(fieldInfo, annotations, field);
+            processAnnotation(fieldInfo, BeanUtils.getAnnotations(field), field);
         }
 
+        /**
+         * Processes the annotations for a given field.
+         *
+         * @param fieldInfo   The field information.
+         * @param annotations The annotations on the field.
+         * @param field       The field being processed.
+         */
         private void processAnnotation(FieldInfo fieldInfo, Annotation[] annotations, Field field) {
             for (Annotation annotation : annotations) {
                 Class<? extends Annotation> annotationType = annotation.annotationType();
@@ -79,64 +81,77 @@ public class JoyLiveReaderModule implements ObjectReaderModule {
             }
         }
 
+        /**
+         * Processes the JsonField annotation on a field.
+         *
+         * @param fieldInfo The field information.
+         * @param jsonField The JsonField annotation.
+         */
         private void processJsonField(FieldInfo fieldInfo, JsonField jsonField) {
-            String jsonFieldName = jsonField.value();
-            if (!jsonFieldName.isEmpty()) {
-                fieldInfo.fieldName = jsonFieldName;
-            }
+            fieldInfo.fieldName = !jsonField.value().isEmpty() ? jsonField.value() : fieldInfo.fieldName;
         }
 
+        /**
+         * Processes the JsonAlias annotation on a field.
+         *
+         * @param fieldInfo The field information.
+         * @param jsonAlias The JsonAlias annotation.
+         */
         private void processJsonAlias(FieldInfo fieldInfo, JsonAlias jsonAlias) {
             String[] values = jsonAlias.value();
             if (values.length > 0) {
-                fieldInfo.alternateNames = values;
-            }
-        }
-
-        private void processJsonFormat(FieldInfo fieldInfo, JsonFormat jsonFormat, Field field) {
-            String pattern = jsonFormat.pattern();
-            String timezone = jsonFormat.timezone();
-            String typeName = field.getType().getName();
-            String fieldName = field.getName();
-            boolean typeMatch = "java.util.Date".equals(typeName) ||
-                    "java.util.Calendar".equals(typeName) ||
-                    "java.time.ZonedDateTime".equals(typeName) ||
-                    "java.time.OffsetDateTime".equals(typeName) ||
-                    "java.time.OffsetTime".equals(typeName);
-            if (typeMatch) {
-                String cachedKey = field.getDeclaringClass().getName() + "." + field.getName();
-                if (!ProxySupport.cachedKey.get().contains(cachedKey)) {
-                    ProxySupport.timeFormatThreadLocal.get().computeIfAbsent(fieldName, key -> new Stack<>())
-                            .push(new String[]{pattern, timezone});
-                    ProxySupport.cachedKey.get().add(cachedKey);
+                String[] alternateNames = fieldInfo.alternateNames;
+                if (alternateNames == null || alternateNames.length == 0) {
+                    fieldInfo.alternateNames = values;
+                } else {
+                    String[] newValues = new String[alternateNames.length + values.length];
+                    System.arraycopy(alternateNames, 0, newValues, 0, alternateNames.length);
+                    System.arraycopy(values, 0, newValues, alternateNames.length, values.length);
+                    fieldInfo.alternateNames = newValues;
                 }
-                fieldInfo.readUsing = ProxyTimeReader.class;
-            } else {
-                fieldInfo.format = pattern;
             }
         }
 
-        private void processDeserializerConverter(FieldInfo fieldInfo, DeserializeConverter deserializeConverter, Field field) {
-            try {
-                Class<? extends JsonConverter<?, ?>> clazz = deserializeConverter.value();
-                String className = clazz.getName();
+        /**
+         * Processes the JsonFormat annotation on a field.
+         *
+         * @param fieldInfo  The field information.
+         * @param jsonFormat The JsonFormat annotation.
+         * @param field      The field being processed.
+         */
+        private void processJsonFormat(FieldInfo fieldInfo, JsonFormat jsonFormat, Field field) {
+            fieldInfo.format = jsonFormat.pattern();
+        }
 
-                ProxySupport.jsonConverterThreadLocal.get().computeIfAbsent(field.getName(), key -> new Stack<>())
-                        .push(
-                                ProxySupport.converterMap.computeIfAbsent(className, key -> {
-                                    try {
-                                        Constructor<? extends JsonConverter<?, ?>> constructor = clazz.getConstructor();
-                                        constructor.setAccessible(true);
-                                        return constructor.newInstance();
-                                    } catch (Exception e) {
-                                        throw new RuntimeException(e.getMessage(), e);
-                                    }
-                                })
-                        );
-                fieldInfo.readUsing = ProxyObjectReader.class;
-            } catch (Exception e) {
-                throw new RuntimeException(e.getMessage(), e);
+        /**
+         * Processes the DeserializeConverter annotation on a field.
+         *
+         * @param fieldInfo            The field information.
+         * @param deserializeConverter The DeserializeConverter annotation.
+         * @param field                The field being processed.
+         */
+        private void processDeserializerConverter(FieldInfo fieldInfo, DeserializeConverter deserializeConverter, Field field) {
+            Class<? extends JsonConverter<?, ?>> clazz = deserializeConverter.value();
+            String name = field.getName() + "@" + field.getType().getTypeName();
+            Converters.getOrCreateConverter(name, clazz);
+            fieldInfo.readUsing = ProxyObjectReader.class;
+        }
+    }
+
+    /**
+     * A proxy object reader that uses custom converters for deserialization.
+     */
+    public static class ProxyObjectReader implements ObjectReader<Object> {
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object readObject(JSONReader jsonReader, Type fieldType, Object fieldName, long features) {
+            String name = fieldName.toString() + "@" + fieldType.getTypeName();
+            JsonConverter<Object, Object> jsonConverter = (JsonConverter<Object, Object>) getConverter(name);
+            if (jsonConverter != null) {
+                return jsonConverter.convert(jsonReader.readAny());
             }
+            return null;
         }
     }
 }

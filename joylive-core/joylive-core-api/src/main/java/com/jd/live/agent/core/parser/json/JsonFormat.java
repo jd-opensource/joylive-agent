@@ -41,11 +41,4 @@ public @interface JsonFormat {
      */
     String pattern() default "";
 
-    /**
-     * Specifies the timezone to be used for formatting/parsing the date/time value.
-     * This is particularly useful for applications that operate across multiple time zones.
-     *
-     * @return The ID of the timezone, such as "UTC" or "GMT+10".
-     */
-    String timezone() default "";
 }

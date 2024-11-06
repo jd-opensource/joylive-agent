@@ -15,40 +15,10 @@
  */
 package com.jd.live.agent.implement.parser.jackson;
 
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.JsonPathException;
-import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 
-import java.io.IOException;
-import java.io.InputStream;
+@Extension(value = ObjectParser.JSON, provider = "jackson", order = 1)
+public class JacksonJsonParser extends AbstractJacksonParser {
 
-@Extension(value = ObjectParser.JSON, provider = "jackson")
-public class JacksonJsonParser extends AbstractJacksonParser implements JsonPathParser {
-
-    @Override
-    public <T> T read(String reader, String path) {
-        if (reader == null || path == null) {
-            return null;
-        }
-        try {
-            return JsonPath.read(reader, path);
-        } catch (JsonPathException e) {
-            throw new ParseException("failed to parse " + path, e);
-        }
-    }
-
-    @Override
-    public <T> T read(InputStream in, String path) {
-        if (in == null || path == null) {
-            return null;
-        }
-        try {
-            return JsonPath.read(in, path);
-        } catch (JsonPathException | IOException e) {
-            throw new ParseException("failed to parse " + path, e);
-        }
-    }
 }
