@@ -74,6 +74,14 @@ public class LaneSpace {
         return domainCache.get(host);
     }
 
+    public int getDomainSize() {
+        return domains == null ? 0 : domains.size();
+    }
+
+    public int getRuleSize() {
+        return rules == null ? 0 : rules.size();
+    }
+
     public boolean withTopic(String topic) {
         return topic != null && topics != null && topics.contains(topic);
     }

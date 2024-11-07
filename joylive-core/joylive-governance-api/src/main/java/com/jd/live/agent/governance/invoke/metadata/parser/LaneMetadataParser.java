@@ -226,18 +226,15 @@ public class LaneMetadataParser implements LaneParser {
 
         @Override
         protected String parseLane(String laneSpaceId, LaneSpace laneSpace) {
-            LaneDomain laneDomain = laneSpace == null || domainPolicy == null ? null : domainPolicy.getLaneDomain();
-            if (laneDomain == null) {
-                return fallbackLane(laneSpaceId, laneSpace);
-            }
-            LanePath lanePath = laneDomain.getPath(request.getPath());
-            if (lanePath != null) {
-                LaneRule laneRule = laneSpace.getLaneRule(lanePath.getRuleId());
-                Map<String, TagGroup> conditions = laneRule == null ? null : laneRule.getConditions();
-                if (conditions != null) {
-                    for (Map.Entry<String, TagGroup> entry : conditions.entrySet()) {
-                        if (entry.getValue().match(matcher)) {
-                            return entry.getKey();
+            if (laneSpace != null) {
+                LaneRule laneRule = getLaneRule(laneSpace);
+                if (laneRule != null) {
+                    Map<String, TagGroup> conditions = laneRule.getConditions();
+                    if (conditions != null) {
+                        for (Map.Entry<String, TagGroup> entry : conditions.entrySet()) {
+                            if (entry.getValue().match(matcher)) {
+                                return entry.getKey();
+                            }
                         }
                     }
                 }
@@ -263,6 +260,30 @@ public class LaneMetadataParser implements LaneParser {
          */
         protected String fallbackLane(String laneSpaceId, LaneSpace laneSpace) {
             return super.parseLane(laneSpaceId, laneSpace);
+        }
+
+        /**
+         * Retrieves the LaneRule associated with a given LaneSpace based on the LaneDomain policy.
+         *
+         * @param laneSpace The LaneSpace for which to retrieve the LaneRule
+         * @return The LaneRule associated with the LaneSpace, or null if no rule applies
+         */
+        protected LaneRule getLaneRule(LaneSpace laneSpace) {
+            LaneDomain domain = domainPolicy == null ? null : domainPolicy.getLaneDomain();
+            LaneRule rule = null;
+            if (domain == null) {
+                if (laneSpace.getDomainSize() == 0 && laneSpace.getRuleSize() == 1) {
+                    rule = laneSpace.getRules().get(0);
+                }
+            } else {
+                LanePath path = domain.getPath(request.getPath());
+                if (path != null) {
+                    rule = laneSpace.getLaneRule(path.getRuleId());
+                } else if (domain.getPathSize() == 0 && laneSpace.getRuleSize() == 1) {
+                    rule = laneSpace.getRules().get(0);
+                }
+            }
+            return rule;
         }
 
     }

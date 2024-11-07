@@ -39,6 +39,10 @@ public class LaneDomain {
         return pathTrie.match(path, PathMatchType.PREFIX);
     }
 
+    public int getPathSize() {
+        return paths == null ? 0 : paths.size();
+    }
+
     public void cache() {
         getPath("");
     }
