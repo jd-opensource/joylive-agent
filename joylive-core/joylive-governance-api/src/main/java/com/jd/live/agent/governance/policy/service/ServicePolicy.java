@@ -74,10 +74,6 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Getter
     private ServiceLivePolicy livePolicy;
 
-    @Getter
-    @Setter
-    private Boolean autoLaneEnabled;
-
     @Setter
     @Getter
     private List<LanePolicy> lanePolicies;

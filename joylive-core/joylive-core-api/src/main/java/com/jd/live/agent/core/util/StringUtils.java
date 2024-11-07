@@ -96,6 +96,21 @@ public class StringUtils {
     }
 
     /**
+     * Checks if two CharSequences are equal or if one of them is an empty string.
+     *
+     * @param cs1 the first CharSequence to compare
+     * @param cs2 the second CharSequence to compare
+     * @return true if the CharSequences are equal or if one of them is an empty string, false otherwise
+     */
+    public static boolean isEqualsOrEmpty(CharSequence cs1, CharSequence cs2) {
+        if (cs1 != null && cs1.length() > 0) {
+            return cs1.equals(cs2);
+        } else {
+            return cs2 == null || cs2.length() == 0;
+        }
+    }
+
+    /**
      * Splits the provided source string into an array of strings, using the provided character as the delimiter.
      *
      * @param source The string to be split.

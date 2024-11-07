@@ -304,8 +304,8 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         UnitRule unitRule = liveMetadata.getRule();
         Unit localUnit = liveMetadata.getLocalUnit();
         Cell localCell = liveMetadata.getLocalCell();
-        LaneSpace laneSpace = laneMetadata.getLaneSpace();
-        Lane localLane = laneMetadata.getCurrentLane();
+        LaneSpace laneSpace = laneMetadata.getTargetSpace();
+        Lane localLane = laneMetadata.getLocalLane();
         Lane targetLane = laneMetadata.getTargetLane();
         URI uri = policyId == null ? null : policyId.getUri();
         return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).

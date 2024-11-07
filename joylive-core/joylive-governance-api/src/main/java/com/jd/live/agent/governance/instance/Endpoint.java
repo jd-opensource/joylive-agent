@@ -27,6 +27,8 @@ import com.jd.live.agent.governance.rule.tag.TagCondition;
 import java.util.List;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.StringUtils.isEqualsOrEmpty;
+
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
  * Endpoints are fundamental entities that can represent services, nodes, or instances within a system.
@@ -319,7 +321,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the lane space ID matches, false otherwise.
      */
     default boolean isLaneSpace(String laneSpaceId) {
-        return laneSpaceId != null && laneSpaceId.equals(getLaneSpaceId());
+        return isEqualsOrEmpty(getLaneSpaceId(), laneSpaceId);
     }
 
     /**
@@ -329,7 +331,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the lane matches, false otherwise.
      */
     default boolean isLane(String lane) {
-        return lane != null && lane.equals(getLane());
+        return isEqualsOrEmpty(getLane(), lane);
     }
 
     /**

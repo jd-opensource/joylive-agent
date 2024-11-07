@@ -27,9 +27,9 @@ import java.util.Set;
 @Setter
 public class LaneConfig {
 
-    private boolean modifyMQGroupEnabled = true;
+    private boolean fallbackLocationIfNoSpace = true;
 
-    private boolean autoJoinEnabled = true;
+    private boolean modifyMQGroupEnabled = true;
 
     private Set<String> topics;
 

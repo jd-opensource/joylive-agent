@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
+import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.GatewayInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.HttpInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.GatewayInboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.HttpInboundLiveMetadataParser;
@@ -232,6 +233,12 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
                 }
             }
             super.parsePolicy();
+        }
+
+        @Override
+        protected LaneParser createLaneParser() {
+            return new GatewayInboundLaneMetadataParser(request, context.getGovernanceConfig().getLaneConfig(),
+                    context.getApplication(), governancePolicy, domainPolicy, this);
         }
 
         @Override
