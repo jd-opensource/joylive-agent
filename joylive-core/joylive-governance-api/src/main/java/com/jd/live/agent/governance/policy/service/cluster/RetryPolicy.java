@@ -106,6 +106,12 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
         if ((exceptions == null || exceptions.isEmpty()) && source.exceptions != null) {
             exceptions = source.exceptions;
         }
+        if ((methods == null || methods.isEmpty()) && source.methods != null) {
+            methods = source.methods;
+        }
+        if ((methodPrefixes == null || methodPrefixes.isEmpty()) && source.methodPrefixes != null) {
+            methodPrefixes = source.methodPrefixes;
+        }
     }
 
     public long getDeadline(long startTime) {
