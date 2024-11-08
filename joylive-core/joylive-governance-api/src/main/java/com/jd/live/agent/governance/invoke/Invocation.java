@@ -202,7 +202,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
             case READ_WRITE:
                 return true;
             case READ:
-                return !serviceMetadata.isWrite();
+                return !serviceMetadata.isWriteProtect();
         }
         return false;
     }

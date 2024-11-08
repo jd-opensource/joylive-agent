@@ -29,6 +29,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service live policy
@@ -50,6 +51,20 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
     @Setter
     @JsonAlias("writeProtected")
     private Boolean writeProtect;
+
+    /**
+     * A set of method names that should be retried in case of failure.
+     */
+    @Getter
+    @Setter
+    private Set<String> methods;
+
+    /**
+     * A set of method name prefixes that should be retried in case of failure.
+     */
+    @Getter
+    @Setter
+    private Set<String> methodPrefixes;
 
     /**
      * Expression for parsing unit variable
@@ -152,6 +167,12 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
         if (writeProtect == null) {
             writeProtect = source.getWriteProtect();
         }
+        if ((methods == null || methods.isEmpty()) && source.methods != null) {
+            methods = source.methods;
+        }
+        if ((methodPrefixes == null || methodPrefixes.isEmpty()) && source.methodPrefixes != null) {
+            methodPrefixes = source.methodPrefixes;
+        }
         if (unitPolicy == null) {
             unitPolicy = source.getUnitPolicy();
             defaultUnitThreshold = source.getDefaultUnitThreshold();
@@ -174,6 +195,34 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
             cellRemotes = cellRemotes == null ? new ArrayList<>() : cellRemotes;
             source.getCellRemotes().forEach(o -> cellRemotes.add(o.clone()));
         }
+    }
+
+    /**
+     * Checks whether the specified method is write-protected.
+     *
+     * @param methodName The name of the method to check.
+     * @return <code>true</code> if the method is write-protected, otherwise <code>false</code>.
+     */
+    public boolean isWriteProtect(String methodName) {
+        if (writeProtect == null || !writeProtect || methodName == null || methodName.isEmpty()) {
+            return false;
+        }
+        boolean allowList = false;
+        if (methods != null && !methods.isEmpty()) {
+            allowList = true;
+            if (methods.contains(methodName)) {
+                return true;
+            }
+        }
+        if (methodPrefixes != null && !methodPrefixes.isEmpty()) {
+            allowList = true;
+            for (String methodPrefix : methodPrefixes) {
+                if (methodName.startsWith(methodPrefix)) {
+                    return true;
+                }
+            }
+        }
+        return !allowList;
     }
 
     public ServiceLivePolicy clone() {

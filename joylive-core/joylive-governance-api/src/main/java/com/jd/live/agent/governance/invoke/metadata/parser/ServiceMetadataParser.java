@@ -79,7 +79,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         String path = service == null ? parsePath() : service.getServiceType().normalize(parsePath());
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
-        boolean isWrite = parseWrite(servicePolicy);
+        boolean writeProtect = parseWriteProtect(servicePolicy);
         URI uri = URI.builder().host(serviceName).path(path).build();
         if (serviceGroup != null && !serviceGroup.isEmpty()) {
             uri = uri.parameters(KEY_SERVICE_GROUP, serviceGroup, KEY_SERVICE_METHOD, method);
@@ -97,7 +97,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                 service(service).
                 uri(uri).
                 servicePolicy(servicePolicy).
-                write(isWrite).
+                writeProtect(writeProtect).
                 build();
     }
 
@@ -170,9 +170,9 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      * @param servicePolicy the service policy from which to parse the write protection status
      * @return {@code true} if write protection is enabled, {@code false} otherwise
      */
-    protected boolean parseWrite(ServicePolicy servicePolicy) {
+    protected boolean parseWriteProtect(ServicePolicy servicePolicy) {
         ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
-        Boolean result = livePolicy != null ? livePolicy.getWriteProtect() : null;
+        Boolean result = livePolicy != null ? livePolicy.isWriteProtect(request.getMethod()) : null;
         return result != null && result;
     }
 
@@ -257,7 +257,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected boolean parseWrite(ServicePolicy servicePolicy) {
+        protected boolean parseWriteProtect(ServicePolicy servicePolicy) {
             ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
             Boolean result = livePolicy != null ? livePolicy.getWriteProtect() : null;
             if (result != null) {
@@ -333,7 +333,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             }
             livePolicy = livePolicy != null ? livePolicy.clone() : new ServiceLivePolicy();
             livePolicy.setUnitPolicy(UnitPolicy.UNIT);
-            livePolicy.setWriteProtect(metadata.isWrite());
+            livePolicy.setWriteProtect(metadata.isWriteProtect());
             ServicePolicy result = policy != null ? policy.clone() : new ServicePolicy();
             // TODO policyId;
             result.setLivePolicy(livePolicy);
@@ -345,7 +345,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
                     method(metadata.getMethod()).
                     service(metadata.getService()).
                     servicePolicy(metadata.getServicePolicy()).
-                    write(metadata.isWrite()).build();
+                    writeProtect(metadata.isWriteProtect()).build();
         }
     }
 }

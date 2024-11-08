@@ -47,7 +47,7 @@ public class ServiceMetadata {
     /**
      * Indicates if the service request is a write operation.
      */
-    private boolean write;
+    private boolean writeProtect;
 
     /**
      * The service metadata for this invocation.
