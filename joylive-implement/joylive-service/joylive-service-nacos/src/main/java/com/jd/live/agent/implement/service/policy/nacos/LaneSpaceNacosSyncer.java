@@ -42,7 +42,10 @@ import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * LaneSpaceNacosSyncer is responsible for synchronizing lane spaces policies from nacos.
@@ -158,7 +161,7 @@ public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyS
     /**
      * Creates a new policy based on the given service.
      *
-     * @param policy policy
+     * @param policy     policy
      * @param laneSpaces lane spaces
      * @return the new policy.
      */

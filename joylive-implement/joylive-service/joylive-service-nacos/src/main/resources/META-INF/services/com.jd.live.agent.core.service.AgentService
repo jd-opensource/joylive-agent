@@ -1,1 +1,3 @@
-com.jd.live.agent.implement.service.policy.nacos.NacoServiceSyncer
+com.jd.live.agent.implement.service.policy.nacos.ServiceNacosSyncer
+com.jd.live.agent.implement.service.policy.nacos.LiveSpaceNacosSyncer
+com.jd.live.agent.implement.service.policy.nacos.LaneSpaceNacosSyncer

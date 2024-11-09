@@ -12,7 +12,7 @@
     <artifactId>joylive-service-nacos</artifactId>
 
     <properties>
-        <nacos.version>2.4.2</nacos.version>
+        <nacos.version>2.4.3</nacos.version>
     </properties>
 
     <dependencies>
