@@ -1,7 +1,28 @@
 路线图
 ===
+# 2024/12
 
-# 1. 2024-6 发布版本1.0.0
+1. 支持gRPC
+2. 支持从配置中心同步策略
+3. 完善泳道路由
+
+# 2024/11
+
+1. 支持熔断
+2. 支持本云优先
+3. 支持认证和授权
+4. 支持服务注册注入预热参数
+5. 支持漏桶和平滑预热令牌桶限流算法
+6. 支持分组路由
+7. 支持从应答内容中解析响应码
+
+# 2024/08
+
+1. 支持 Spring cloud2023
+
+# 2024/6 
+
+1. 发布版本1.0.0
 
 ## 特性
 1. 实现代理框架，包括微内核架构、类加载器隔离和插件管理等等。
@@ -11,8 +32,8 @@
 5. 支持微服务治理，包括集群重试策略，限流策略，负载均衡算法，标签路由策略，多活策略、泳道策略、优雅启动和下线。
 6. 支持常用的框架，包括：
    
-   1. 微服务治理：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc
-   2. 链路透传：Spring cloud 3，Spring gateway 3，Dubbo 2.6/2.7/3，SofaRpc，Grpc，Rocketmq 4/5，Kafka，Http client 3/4，Http servlet，Okhttp 1/3，JDK http connection，Thread pool。
+   1. 微服务治理：Spring cloud 2021，Spring gateway 2021，Dubbo 2.6/2.7/3，SofaRpc
+   2. 链路透传：Spring cloud 2021，Spring gateway 2021，Dubbo 2.6/2.7/3，SofaRpc，Grpc，Rocketmq 4/5，Kafka，Http client 3/4，Http servlet，Okhttp 1/3，JDK http connection，Thread pool。
 7. 发布配套的云原生多活控制器 
 
 
