@@ -13,30 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy;
+package com.jd.live.agent.core.config;
 
-/**
- * Enumerates the types of policies.
- * <p>
- * This enum is used to distinguish between different types of governance policies
- * that can be applied within a system. These include policies for live spaces,
- * lane spaces, and service policies.
- * </p>
- */
-public enum PolicyType {
+public interface ConfigListener {
 
-    /**
-     * Represents a policy type for live spaces.
-     */
-    LIVE_SPACE,
+    void onUpdate(Configuration config);
 
-    /**
-     * Represents a policy type for lane spaces.
-     */
-    LANE_SPACE,
-
-    /**
-     * Represents a policy type for service policies.
-     */
-    SERVICE_POLICY
 }

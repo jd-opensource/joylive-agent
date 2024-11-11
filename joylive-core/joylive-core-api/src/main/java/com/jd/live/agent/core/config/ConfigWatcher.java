@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.file.config;
+package com.jd.live.agent.core.config;
 
-import com.jd.live.agent.core.config.SyncConfig;
-import com.jd.live.agent.governance.policy.service.MergePolicy;
-import lombok.Getter;
-import lombok.Setter;
+public interface ConfigWatcher {
 
-/**
- * ServiceFileConfig
- *
- * @since 1.0.0
- */
-@Getter
-@Setter
-public class ServiceSyncConfig extends SyncConfig {
+    String COMPONENT_CONFIG_WATCHER = "configWatcher";
 
-    private MergePolicy policy = MergePolicy.ALL;
+    String TYPE_LIVE_SPACE = "liveSpace";
+
+    String TYPE_SERVICE_SPACE = "serviceSpace";
+
+    String TYPE_LANE_SPACE = "laneSpace";
+
+    void addListener(String type, ConfigListener listener);
+
+    void removeListener(String type, ConfigListener listener);
 
 }

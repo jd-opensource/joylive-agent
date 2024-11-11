@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.service.policy.multilive;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
@@ -28,7 +29,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.core.service.AbstractSyncer;
+import com.jd.live.agent.core.service.AbstractConfigSyncer;
 import com.jd.live.agent.core.service.SyncResult;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpState;
@@ -37,10 +38,7 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 import com.jd.live.agent.implement.service.policy.multilive.reponse.Error;
 import com.jd.live.agent.implement.service.policy.multilive.reponse.Response;
@@ -61,16 +59,13 @@ import java.util.Map;
 @Extension("LiveSpaceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String, Long>> implements PolicyService, ExtensionInitializer {
+public class LiveSpaceSyncer extends AbstractConfigSyncer<List<LiveSpace>, Map<String, Long>> implements ExtensionInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveSpaceSyncer.class);
 
     private static final String SPACE_ID = "space_id";
 
     private static final String SPACE_VERSION = "space_version";
-
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
@@ -84,8 +79,19 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
     private Template template;
 
     @Override
-    public PolicyType getPolicyType() {
-        return PolicyType.LIVE_SPACE;
+    protected SyncResult<List<LiveSpace>, Map<String, Long>> doSynchronize(Map<String, Long> last) throws Exception {
+        Location location = application.getLocation();
+        String liveSpaceId = location == null ? null : location.getLiveSpaceId();
+        if (liveSpaceId == null) {
+            return syncSpaces(last);
+        } else {
+            return syncSpace(liveSpaceId, last);
+        }
+    }
+
+    @Override
+    public String getType() {
+        return ConfigWatcher.TYPE_LIVE_SPACE;
     }
 
     @Override
@@ -96,11 +102,6 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
     @Override
     protected SyncConfig getSyncConfig() {
         return syncConfig;
-    }
-
-    @Override
-    protected boolean updateOnce(List<LiveSpace> value, Map<String, Long> meta) {
-        return policySupervisor.update(policy -> newPolicy(value, meta, policy));
     }
 
     @Override
@@ -120,29 +121,17 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
         logger.error(getErrorMessage(throwable), throwable);
     }
 
-    @Override
-    protected SyncResult<List<LiveSpace>, Map<String, Long>> doSynchronize(SyncConfig config, Map<String, Long> last) throws Exception {
-        Location location = application.getLocation();
-        String liveSpaceId = location == null ? null : location.getLiveSpaceId();
-        if (liveSpaceId == null) {
-            return syncSpaces(config, last);
-        } else {
-            return syncSpace(liveSpaceId, config, last);
-        }
-    }
-
     /**
      * Synchronizes a specific live space.
      *
      * @param liveSpaceId the ID of the live space.
      * @param version the version of the live space.
-     * @param config the synchronization configuration.
      * @param versions the map of versions.
      * @return the synchronized live space.
      * @throws IOException if an I/O error occurs.
      */
-    private LiveSpace syncSpace(String liveSpaceId, long version, SyncConfig config, Map<String, Long> versions) throws IOException {
-        Response<LiveSpace> response = getSpace(liveSpaceId, version, (LiveSyncConfig) config);
+    private LiveSpace syncSpace(String liveSpaceId, long version, Map<String, Long> versions) throws IOException {
+        Response<LiveSpace> response = getSpace(liveSpaceId, version);
         HttpStatus status = response.getStatus();
         switch (status) {
             case OK:
@@ -152,6 +141,7 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
             case NOT_MODIFIED:
                 versions.put(liveSpaceId, version);
                 return null;
+            case NOT_FOUND:
             default:
                 versions.remove(liveSpaceId);
                 return null;
@@ -162,17 +152,16 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
      * Synchronizes a specific live space and returns the result.
      *
      * @param liveSpaceId the ID of the live space.
-     * @param config the synchronization configuration.
      * @param last the last synchronization metadata.
      * @return the result of the synchronization.
      * @throws IOException if an I/O error occurs.
      */
-    private SyncResult<List<LiveSpace>, Map<String, Long>> syncSpace(String liveSpaceId, SyncConfig config, Map<String, Long> last) throws IOException {
+    private SyncResult<List<LiveSpace>, Map<String, Long>> syncSpace(String liveSpaceId, Map<String, Long> last) throws IOException {
         List<LiveSpace> liveSpaces = new ArrayList<>();
         Long version = last == null ? null : last.get(liveSpaceId);
         version = version == null ? 0 : version;
         Map<String, Long> versions = new HashMap<>();
-        LiveSpace space = syncSpace(liveSpaceId, version, config, versions);
+        LiveSpace space = syncSpace(liveSpaceId, version, versions);
         if (space != null) {
             liveSpaces.add(space);
             return new SyncResult<>(liveSpaces, versions);
@@ -186,20 +175,19 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
     /**
      * Synchronizes all live spaces and returns the result.
      *
-     * @param config the synchronization configuration.
      * @param last the last synchronization metadata.
      * @return the result of the synchronization.
      * @throws IOException if an I/O error occurs.
      */
-    private SyncResult<List<LiveSpace>, Map<String, Long>> syncSpaces(SyncConfig config, Map<String, Long> last) throws IOException {
+    private SyncResult<List<LiveSpace>, Map<String, Long>> syncSpaces(Map<String, Long> last) throws IOException {
         List<LiveSpace> liveSpaces = new ArrayList<>();
-        Map<String, Long> spaces = getSpaces((LiveSyncConfig) config);
+        Map<String, Long> spaces = getSpaces();
         for (Map.Entry<String, Long> entry : spaces.entrySet()) {
             String liveSpaceId = entry.getKey();
             Long version = entry.getValue() == null ? 0L : entry.getValue();
-            Long lastVersion = last == null ? 0L : last.getOrDefault(liveSpaceId, 0L);
+            long lastVersion = last == null ? 0L : last.getOrDefault(liveSpaceId, 0L);
             if (!version.equals(lastVersion)) {
-                LiveSpace liveSpace = syncSpace(liveSpaceId, lastVersion, config, spaces);
+                LiveSpace liveSpace = syncSpace(liveSpaceId, lastVersion, spaces);
                 if (liveSpace != null) {
                     liveSpaces.add(liveSpace);
                 }
@@ -235,14 +223,13 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
     /**
      * Retrieves the map of live spaces and their versions from the remote server.
      *
-     * @param config the synchronization configuration.
      * @return the map of live spaces and their versions.
      * @throws IOException if an I/O error occurs.
      */
-    private Map<String, Long> getSpaces(LiveSyncConfig config) throws IOException {
-        String uri = config.getSpacesUrl();
+    private Map<String, Long> getSpaces() throws IOException {
+        String uri = syncConfig.getSpacesUrl();
         HttpResponse<Response<List<Workspace>>> httpResponse = HttpUtils.get(uri,
-                conn -> configure(config, conn),
+                this::configure,
                 reader -> jsonParser.read(reader, new TypeReference<Response<List<Workspace>>>() {
                 }));
         if (httpResponse.getStatus() == HttpStatus.OK) {
@@ -268,17 +255,16 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
      *
      * @param workspaceId the ID of the workspace to retrieve.
      * @param version the version of the workspace to retrieve.
-     * @param config the synchronization configuration.
      * @return the response containing the live space information.
      * @throws IOException if an I/O error occurs during the HTTP request.
      */
-    private Response<LiveSpace> getSpace(String workspaceId, Long version, LiveSyncConfig config) throws IOException {
+    private Response<LiveSpace> getSpace(String workspaceId, Long version) throws IOException {
         Map<String, Object> context = new HashMap<>(2);
         context.put(SPACE_ID, workspaceId);
         context.put(SPACE_VERSION, version);
         String uri = template.evaluate(context);
         HttpResponse<Response<LiveSpace>> httpResponse = HttpUtils.get(uri,
-                conn -> configure(config, conn),
+                this::configure,
                 reader -> jsonParser.read(reader, new TypeReference<Response<LiveSpace>>() {
                 }));
         if (httpResponse.getStatus() == HttpStatus.OK) {
@@ -299,14 +285,13 @@ public class LiveSpaceSyncer extends AbstractSyncer<List<LiveSpace>, Map<String,
     /**
      * Configures the HTTP connection with the necessary headers and timeout settings.
      *
-     * @param config the synchronization configuration.
      * @param conn the HTTP connection to configure.
      */
-    private void configure(SyncConfig config, HttpURLConnection conn) {
-        config.header(conn::setRequestProperty);
+    private void configure(HttpURLConnection conn) {
+        syncConfig.header(conn::setRequestProperty);
         application.labelSync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
-        conn.setConnectTimeout((int) config.getTimeout());
+        conn.setConnectTimeout((int) syncConfig.getTimeout());
     }
 
     /**

@@ -53,11 +53,6 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
     protected Daemon daemon;
 
     /**
-     * The synchronization configuration.
-     */
-    protected SyncConfig config;
-
-    /**
      * The last metadata object obtained from the synchronization process.
      */
     protected M last;
@@ -78,7 +73,6 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
     protected CompletableFuture<Void> doStart() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         waiter = new MutexWaiter();
-        config = getSyncConfig();
         daemon = createDaemon(future);
         daemon.start();
         return future;
@@ -131,7 +125,7 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @return The fault tolerance value.
      */
     protected long getFault() {
-        return config.getFault();
+        return getSyncConfig().getFault();
     }
 
     /**
@@ -140,7 +134,7 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @return The randomized interval value.
      */
     protected long getInterval() {
-        return random(config.getInterval(), 2000);
+        return random(getSyncConfig().getInterval(), 2000);
     }
 
     /**
@@ -149,7 +143,7 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @return The randomized delay value.
      */
     protected long getDelay() {
-        return random(config.getDelay(), 1000);
+        return random(getSyncConfig().getDelay(), 1000);
     }
 
     /**
@@ -170,7 +164,7 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
             throwable = e;
         }
         if (!waitForInitial.isDone()) {
-            long timeout = config.getInitialTimeout();
+            long timeout = getSyncConfig().getInitialTimeout();
             if (timeout > 0 && (System.currentTimeMillis() - startTime > timeout)) {
                 waitForInitial.completeExceptionally(new InitialTimeoutException("It's timeout to initialize " + getName() +
                         (throwable == null ? "" : ", caused by " + throwable.getMessage())));
@@ -187,7 +181,7 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @throws Exception If an error occurs during synchronization.
      */
     protected boolean syncAndUpdate() throws Exception {
-        SyncResult<T, M> result = doSynchronize(config, last);
+        SyncResult<T, M> result = doSynchronize(last);
         if (result != null) {
             last = result.getMeta();
             for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
@@ -252,13 +246,12 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
     protected abstract boolean updateOnce(T value, M meta);
 
     /**
-     * Performs synchronization based on the provided configuration and the last metadata.
+     * Performs synchronization based on the provided the last metadata.
      *
-     * @param config The SyncConfig instance.
      * @param last The last metadata object.
      * @return A SyncResult instance containing the new data and metadata.
      * @throws Exception If an error occurs during synchronization.
      */
-    protected abstract SyncResult<T, M> doSynchronize(SyncConfig config, M last) throws Exception;
+    protected abstract SyncResult<T, M> doSynchronize(M last) throws Exception;
 }
 

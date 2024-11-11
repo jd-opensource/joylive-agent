@@ -36,7 +36,6 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;

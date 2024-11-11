@@ -182,6 +182,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private ServiceManager serviceManager;
 
+    private ConfigWatcher configWatcher;
+
     /**
      * Supervises plugins, handling their lifecycle.
      */
@@ -274,6 +276,7 @@ public class Bootstrap implements AgentLifecycle {
             }
             createSourceSuppliers();  //
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
+            configWatcher = createConfigWatcher(); // depend on serviceManager
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
@@ -533,8 +536,8 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(AgentPath.COMPONENT_AGENT_PATH, agentPath);
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
-                //
-                ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, (ServiceSupervisor) () -> serviceManager.getServices());
+                ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, serviceManager);
+                ctx.add(ConfigWatcher.COMPONENT_CONFIG_WATCHER, configWatcher);
                 ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());
@@ -562,6 +565,16 @@ public class Bootstrap implements AgentLifecycle {
         ServiceManager result = new ServiceManager();
         injector.inject(result);
         return result;
+    }
+
+    private ConfigWatcher createConfigWatcher() {
+        List<ConfigWatcher> watchers = new ArrayList<>();
+        serviceManager.service(service -> {
+            if (service instanceof ConfigWatcher) {
+                watchers.add((ConfigWatcher) service);
+            }
+        });
+        return new ConfigWatcherAdapter(watchers);
     }
 
     private PluginSupervisor createPluginManager() {

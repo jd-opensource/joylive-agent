@@ -30,6 +30,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.service.AbstractConfigSyncer;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
@@ -44,7 +45,6 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfig;
@@ -71,7 +71,7 @@ import java.util.function.Predicate;
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "jmsf")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class MicroServiceSyncer extends AbstractService implements PolicyService, ExtensionInitializer {
+public class MicroServiceSyncer extends AbstractConfigSyncer, ExtensionInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(MicroServiceSyncer.class);
 

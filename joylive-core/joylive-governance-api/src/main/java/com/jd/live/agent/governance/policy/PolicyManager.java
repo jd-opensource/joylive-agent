@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -28,7 +30,9 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.AgentService;
+import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
@@ -44,10 +48,13 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
+import com.jd.live.agent.governance.policy.listener.LaneSpaceListener;
+import com.jd.live.agent.governance.policy.listener.LiveSpaceListener;
+import com.jd.live.agent.governance.policy.listener.ServiceListener;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
-import com.jd.live.agent.governance.service.PolicyService;
 import lombok.Getter;
 
 import java.util.*;
@@ -84,6 +91,15 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
+
+    @Inject(ConfigWatcher.COMPONENT_CONFIG_WATCHER)
+    private ConfigWatcher configWatcher;
+
+    @Inject(ObjectParser.JSON)
+    private ObjectParser objectParser;
+
+    @Config(SyncConfig.SYNC_MICROSERVICE_MERGE_POLICY)
+    private MergePolicy mergePolicy = MergePolicy.ALL;
 
     @Getter
     @Config(GovernanceConfig.CONFIG_LIVE_ENABLED)
@@ -218,8 +234,19 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         if (service == null || service.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
-        String namespace = application.getService() == null ? null : application.getService().getNamespace();
-        PolicySubscriber subscriber = new PolicySubscriber(service, namespace, PolicyType.SERVICE_POLICY, policyServices);
+        String namespace = application.getService().getNamespace();
+        PolicySubscriber subscriber = new PolicySubscriber(service, namespace, ConfigWatcher.TYPE_SERVICE_SPACE, policyServices);
+        subscribe(subscriber);
+        return subscriber.getFuture();
+    }
+
+    @Override
+    public CompletableFuture<Void> subscribe(String namespace, String service) {
+        if (service == null || service.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
+        PolicySubscriber subscriber = new PolicySubscriber(service, namespace, ConfigWatcher.TYPE_SERVICE_SPACE, policyServices);
         subscribe(subscriber);
         return subscriber.getFuture();
     }
@@ -265,11 +292,14 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 }
             }
         });
+        configWatcher.addListener(ConfigWatcher.TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
+        configWatcher.addListener(ConfigWatcher.TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
+        configWatcher.addListener(ConfigWatcher.TYPE_SERVICE_SPACE, new ServiceListener(this, mergePolicy, objectParser));
     }
 
     /**
      * Computes a list of policy service names by inspecting the available services from the service supervisor.
-     * Only services of type {@link PolicyService} with a policy type of {@link PolicyType#SERVICE_POLICY} are included.
+     * Only services of type {@link ConfigService} with a policy type of {@link ConfigWatcher#TYPE_SERVICE_SPACE} are included.
      *
      * @return A list of policy service names that match the criteria.
      */
@@ -279,10 +309,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             List<AgentService> services = serviceSupervisor.getServices();
             if (services != null) {
                 for (AgentService service : services) {
-                    if (service instanceof PolicyService) {
-                        PolicyService policyService = (PolicyService) service;
-                        if (policyService.getPolicyType() == PolicyType.SERVICE_POLICY) {
-                            result.add(policyService.getName());
+                    if (service instanceof ConfigService) {
+                        ConfigService configService = (ConfigService) service;
+                        if (ConfigWatcher.TYPE_SERVICE_SPACE.equals(configService.getType())) {
+                            result.add(configService.getName());
                         }
                     }
                 }
@@ -306,7 +336,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 warmups.add(name);
             }
             if (!warmups.isEmpty()) {
-                warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, PolicyType.SERVICE_POLICY, policyServices)));
+                warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, ConfigWatcher.TYPE_SERVICE_SPACE, policyServices)));
             }
         }
     }

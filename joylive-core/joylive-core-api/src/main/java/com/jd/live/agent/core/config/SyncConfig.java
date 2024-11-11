@@ -38,6 +38,8 @@ public class SyncConfig {
 
     public static final String SYNC_MICROSERVICE_TYPE = SYNC_MICROSERVICE + ".type";
 
+    public static final String SYNC_MICROSERVICE_MERGE_POLICY = SYNC_MICROSERVICE + ".policy";
+
     public static final String SYNC_LIVE_SPACE = SYNC + ".liveSpace";
 
     public static final String SYNC_LIVE_SPACE_TYPE = SYNC_LIVE_SPACE + ".type";

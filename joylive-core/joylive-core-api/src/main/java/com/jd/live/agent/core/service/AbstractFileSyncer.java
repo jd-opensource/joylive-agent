@@ -15,16 +15,13 @@
  */
 package com.jd.live.agent.core.service;
 
-import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.FileEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.service.file.FileContent;
-import com.jd.live.agent.core.service.file.FileDigest;
 import com.jd.live.agent.core.util.Futures;
+import lombok.Getter;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -34,17 +31,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.zip.CRC32;
 
+import static com.jd.live.agent.core.service.AbstractFileSyncer.FileDigest;
+
 /**
  * Abstract class that provides a framework for synchronizing files with some external source.
  * It handles the basic lifecycle and synchronization logic, subclasses should provide
  * parsing and event handling specific to their needs.
- *
- * @param <T> the type of object that the file's content will be parsed into
  */
-public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest> {
-
-    @Inject(ObjectParser.JSON)
-    protected ObjectParser jsonParser;
+public abstract class AbstractFileSyncer extends AbstractConfigSyncer<String, FileDigest> {
 
     @Inject(Publisher.CONFIG)
     protected Publisher<FileEvent> publisher;
@@ -55,10 +49,9 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        config = getSyncConfig();
         file = getConfigFile();
         if (file == null) {
-            return Futures.future(new FileNotFoundException("File is not found. " + getResource(config)));
+            return Futures.future(new FileNotFoundException("File is not found. " + getResource()));
         }
         if (publisher != null) {
             publisher.addHandler(handler);
@@ -80,12 +73,11 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
     }
 
     @Override
-    public SyncResult<T, FileDigest> doSynchronize(SyncConfig config, FileDigest last) throws IOException {
+    public SyncResult<String, FileDigest> doSynchronize(FileDigest last) throws IOException {
         if (file != null) {
             FileContent content = readFile(last);
             if (content != null) {
-                T result = parse(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
-                return new SyncResult<>(result, new FileDigest(content.getLastModified(), content.getCrc32()));
+                return new SyncResult<>(new String(content.getBytes()), new FileDigest(content.getLastModified(), content.getCrc32()));
             }
         }
         return null;
@@ -93,14 +85,27 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
 
     /**
      * Retrieves the resource URL from the sync configuration.
-     * @param config the sync configuration to get the resource from
      * @return the resource URL as a String
      */
-    protected String getResource(SyncConfig config) {
-        return config.getUrl();
+    protected String getResource() {
+        String result = getSyncConfig().getUrl();
+        return isResource(result) ? result : getDefaultResource();
     }
 
-    protected boolean isConfigFile(String file) {
+    /**
+     * Gets the default resource for this configuration.
+     *
+     * @return The default resource for this configuration.
+     */
+    protected abstract String getDefaultResource();
+
+    /**
+     * Checks if the given file path represents a valid configuration file.
+     *
+     * @param file The file path to check.
+     * @return true if the file is a valid configuration file, false otherwise.
+     */
+    protected boolean isResource(String file) {
         if (file == null || file.isEmpty()) {
             return false;
         } else if (file.startsWith("http://") || file.startsWith("https://")) {
@@ -112,14 +117,6 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
             return resource != null;
         }
     }
-
-    /**
-     * Parses the file content into an object of type T.
-     * @param reader an InputStreamReader for the file content
-     * @return the parsed object
-     * @throws IOException if an error occurs during parsing
-     */
-    protected abstract T parse(InputStreamReader reader) throws IOException;
 
     /**
      * Reads the file and calculates its digest.
@@ -189,8 +186,13 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
         }
     }
 
+    /**
+     * Retrieves the configuration file associated with the specified resource.
+     *
+     * @return The configuration file if it exists, otherwise null.
+     */
     protected File getConfigFile() {
-        String resource = getResource(getSyncConfig());
+        String resource = getResource();
         URL url = this.getClass().getClassLoader().getResource(resource);
         if (url != null) {
             try {
@@ -204,4 +206,36 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<T, FileDigest
         return null;
     }
 
+    /**
+     * Inner class representing a digest of a file, which includes the last modified timestamp
+     * and the CRC32 digest of the file's content.
+     */
+    @Getter
+    public static class FileDigest {
+
+        protected final long lastModified;
+
+        protected final long crc32;
+
+        public FileDigest(long lastModified, long crc32) {
+            this.lastModified = lastModified;
+            this.crc32 = crc32;
+        }
+
+    }
+
+    /**
+     * Inner class representing the content of a file including its last modified timestamp,
+     * the bytes of its content, and the CRC32 digest of the content.
+     */
+    @Getter
+    public static class FileContent extends FileDigest {
+
+        private final byte[] bytes;
+
+        public FileContent(long lastModified, long crc32, byte[] bytes) {
+            super(lastModified, crc32);
+            this.bytes = bytes;
+        }
+    }
 }

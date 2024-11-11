@@ -37,7 +37,7 @@ public class PolicySubscriber {
 
     private final String namespace;
 
-    private final PolicyType type;
+    private final String type;
 
     private final Map<String, AtomicBoolean> states;
 
@@ -53,7 +53,7 @@ public class PolicySubscriber {
      * @param type      The type of the subscriber.
      * @param owners    The owner of the subscriber.
      */
-    public PolicySubscriber(String name, String namespace, PolicyType type, List<String> owners) {
+    public PolicySubscriber(String name, String namespace, String type, List<String> owners) {
         this.name = name;
         this.namespace = namespace;
         this.type = type;
@@ -140,6 +140,10 @@ public class PolicySubscriber {
         if (action != null) {
             future.whenComplete(action);
         }
+    }
+
+    public String getUniqueName() {
+        return name + "@" + namespace + "@" + type;
     }
 
 }

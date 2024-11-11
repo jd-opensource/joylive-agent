@@ -68,8 +68,6 @@ public class NacosSyncConfig extends SyncConfig {
      */
     private String liveSpaceNacosGroup;
 
-
-
     private MergePolicy policy = MergePolicy.ALL;
 
 }
