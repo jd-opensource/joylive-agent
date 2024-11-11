@@ -261,7 +261,8 @@ public class ServiceNacosSyncer extends AbstractNacosSyncer implements PolicySer
      */
     private void configure(SyncConfig config, HttpURLConnection conn) {
         config.header(conn::setRequestProperty);
-        application.sync(conn::setRequestProperty);
+        // TODO no method application.sync
+        // application.sync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
     }

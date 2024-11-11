@@ -21,9 +21,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- *  NacosSyncConfig is responsible for Nacos settings.
+ * NacosSyncConfig is responsible for Nacos settings.
  */
-
 @Getter
 @Setter
 public class NacosSyncConfig extends SyncConfig {
@@ -67,7 +66,6 @@ public class NacosSyncConfig extends SyncConfig {
      * note 2: liveSpace nacos data_id is workspaceId which is from workspaces
      */
     private String liveSpaceNacosGroup;
-
 
 
     private MergePolicy policy = MergePolicy.ALL;
