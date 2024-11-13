@@ -10,25 +10,60 @@
       {
         "code": "beta",
         "name": "beta lane"
+      },
+      {
+        "code": "test",
+        "name": "test lane"
       }
     ],
     "rules": [
       {
         "id": 1,
-        "conditions": {
-          "beta": {
-            "conditions": [
-              {
-                "type": "query",
-                "opType": "EQUAL",
-                "key": "beta",
-                "values": [
-                  "true"
-                ]
-              }
+        "laneCode": "beta",
+        "relationType": "OR",
+        "order": 0,
+        "conditions": [
+          {
+            "type": "query",
+            "opType": "EQUAL",
+            "key": "aaa",
+            "values": [
+              "true"
+            ]
+          },
+          {
+            "type": "query",
+            "opType": "EQUAL",
+            "key": "bbb",
+            "values": [
+              "true"
             ]
           }
-        }
+        ]
+      },
+      {
+        "id": 2,
+        "laneCode": "test",
+        "relationType": "AND",
+        "order": 10,
+        "conditions": [
+          {
+            "type": "domain",
+            "opType": "EQUAL",
+            "key": "",
+            "values": [
+              "www.jd.com"
+            ]
+          },
+          {
+            "type": "query",
+            "opType": "EQUAL",
+            "key": "beta",
+            "values": [
+              "true"
+            ]
+          }
+        ]
       }
     ],
     "domains": [

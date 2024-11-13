@@ -15,9 +15,6 @@ import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.lane.*;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
-import com.jd.live.agent.governance.rule.tag.TagGroup;
-
-import java.util.Map;
 
 /**
  * The {@code LaneMetadataParser} class is responsible for parsing metadata related to lanes,
@@ -69,21 +66,21 @@ public class LaneMetadataParser implements LaneParser {
         Location location = application.getLocation();
         String targetSpaceId = parseLaneSpace();
         LaneSpace targetSpace = governancePolicy == null ? null : governancePolicy.getLaneSpace(targetSpaceId);
-        String targetLaneId = parseLane(targetSpaceId, targetSpace);
-        Lane targetLane = targetSpace == null ? null : targetSpace.getLane(targetLaneId);
+        String targetLaneCode = parseLane(targetSpaceId, targetSpace);
+        Lane targetLane = targetSpace == null ? null : targetSpace.getLane(targetLaneCode);
         String localSpaceId = location.getLaneSpaceId();
         LaneSpace localSpace = governancePolicy == null ? null : governancePolicy.getLaneSpace(localSpaceId);
-        String localLaneId = location.getLane();
-        Lane localLane = localSpace == null ? null : localSpace.getLane(localLaneId);
+        String localLaneCode = location.getLane();
+        Lane localLane = localSpace == null ? null : localSpace.getLane(localLaneCode);
         LaneMetadata metadata = LaneMetadata.builder()
                 .laneConfig(laneConfig)
                 .targetSpaceId(targetSpaceId)
                 .targetSpace(targetSpace)
-                .targetLaneId(targetLaneId)
+                .targetLaneId(targetLaneCode)
                 .targetLane(targetLane)
                 .localSpaceId(localSpaceId)
                 .localSpace(localSpace)
-                .localLaneId(localLaneId)
+                .localLaneId(localLaneCode)
                 .localLane(localLane)
                 .build();
         inject(metadata);
@@ -107,8 +104,8 @@ public class LaneMetadataParser implements LaneParser {
     /**
      * Parses the lane code from the request context.
      *
-     * @param laneSpaceId  The lane space id.
-     * @param laneSpace    The lane space.
+     * @param laneSpaceId The lane space id.
+     * @param laneSpace   The lane space.
      * @return The lane code as a String, or null if not found.
      */
     protected String parseLane(String laneSpaceId, LaneSpace laneSpace) {
@@ -229,13 +226,8 @@ public class LaneMetadataParser implements LaneParser {
             if (laneSpace != null) {
                 LaneRule laneRule = getLaneRule(laneSpace);
                 if (laneRule != null) {
-                    Map<String, TagGroup> conditions = laneRule.getConditions();
-                    if (conditions != null) {
-                        for (Map.Entry<String, TagGroup> entry : conditions.entrySet()) {
-                            if (entry.getValue().match(matcher)) {
-                                return entry.getKey();
-                            }
-                        }
+                    if (laneRule.match(matcher)) {
+                        return laneRule.getLaneCode();
                     }
                 }
             }
