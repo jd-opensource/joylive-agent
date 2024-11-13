@@ -18,7 +18,7 @@
     ],
     "rules": [
       {
-        "id": 1,
+        "id": "1",
         "laneCode": "beta",
         "relationType": "OR",
         "order": 0,
@@ -42,13 +42,13 @@
         ]
       },
       {
-        "id": 2,
+        "id": "2",
         "laneCode": "test",
         "relationType": "AND",
         "order": 10,
         "conditions": [
           {
-            "type": "domain",
+            "type": "host",
             "opType": "EQUAL",
             "key": "",
             "values": [
@@ -72,7 +72,7 @@
         "paths": [
           {
             "path": "/",
-            "ruleId": 1
+            "ruleId": "1"
           }
         ]
       }
