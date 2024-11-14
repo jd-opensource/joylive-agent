@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service.sync;
+package com.jd.live.agent.core.service;
 
 import com.jd.live.agent.core.exception.StatusException;
-import com.jd.live.agent.core.service.AgentService;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;

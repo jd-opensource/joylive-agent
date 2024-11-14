@@ -22,33 +22,33 @@ import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 
 import java.io.StringReader;
 import java.util.*;
 
-import static com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
+import static com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
 
 /**
- * An abstract class that provides a base implementation for synchronizing LiveSpace objects using subscriptions.
+ * An abstract class that provides a base implementation for synchronizing LaneSpace objects using subscriptions.
  */
-public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey> extends AbstractSubscriptionSyncer<K, LiveSpace> {
+public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends AbstractSyncer<K, LaneSpace> {
 
     protected Syncer<K, List<ApiSpace>> spaceListSyncer;
 
-    protected Subscription<K, List<ApiSpace>> spaceListSubscription = new Subscription<>(getName(), createSpacesKey(), this::onSpaceListResponse);
+    protected Subscription<K, List<ApiSpace>> spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
 
     @Override
     public String getType() {
-        return ConfigWatcher.TYPE_LIVE_SPACE;
+        return ConfigWatcher.TYPE_LANE_SPACE;
     }
 
     @Override
     protected void startSync() throws Exception {
-        spaceListSyncer = createSpacesSyncer();
+        spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
-        String laneSpaceId = location == null ? null : location.getLiveSpaceId();
+        String laneSpaceId = location == null ? null : location.getLaneSpaceId();
         if (laneSpaceId == null) {
             syncSpaceList();
         } else {
@@ -63,17 +63,17 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
     }
 
     /**
-     * Creates a key for synchronizing a list of LiveSpace objects.
+     * Creates a key for synchronizing a list of LaneSpace objects.
      *
-     * @return A unique identifier for the list of LiveSpace objects.
+     * @return A unique identifier for the list of LaneSpace objects.
      */
-    protected abstract K createSpacesKey();
+    protected abstract K createSpaceListKey();
 
     /**
-     * Creates a key for synchronizing a single LiveSpace object.
+     * Creates a key for synchronizing a single LaneSpace object.
      *
-     * @param spaceId The ID of the LiveSpace object to synchronize.
-     * @return A unique identifier for the specified LiveSpace object.
+     * @param spaceId The ID of the LaneSpace object to synchronize.
+     * @return A unique identifier for the specified LaneSpace object.
      */
     protected abstract K createSpaceKey(String spaceId);
 
@@ -82,23 +82,23 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
      *
      * @return A Syncer object for synchronizing a list of ApiSpace objects.
      */
-    protected abstract Syncer<K, List<ApiSpace>> createSpacesSyncer();
+    protected abstract Syncer<K, List<ApiSpace>> createSpaceListSyncer();
 
     /**
-     * Synchronizes the list of LiveSpace objects with the remote server.
+     * Synchronizes the list of LaneSpace objects with the remote server.
      */
     protected void syncSpaceList() {
         spaceListSyncer.sync(spaceListSubscription);
     }
 
     /**
-     * Synchronizes a single LiveSpace object with the remote server.
+     * Synchronizes a single LaneSpace object with the remote server.
      *
-     * @param spaceId The ID of the LiveSpace object to synchronize.
+     * @param spaceId The ID of the LaneSpace object to synchronize.
      */
     protected void syncSpace(String spaceId) {
         subscriptions.computeIfAbsent(spaceId, k -> {
-            Subscription<K, LiveSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+            Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
             syncer.sync(subscription);
             return subscription;
         });
@@ -117,19 +117,19 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
             case NOT_MODIFIED:
                 break;
             case NOT_FOUND:
-                throw new SyncException("Failed to sync live spaces policy, caused by the spaces is not found.");
+                throw new SyncException("Failed to sync lane spaces policy, caused by the spaces is not found.");
             case ERROR:
                 throw new SyncException(response.getError());
         }
     }
 
     /**
-     * Handles the response from the sync operation for a LiveSpace object.
+     * Handles the response from the sync operation for a LaneSpace object.
      *
      * @param response The SyncResponse object containing the response from the sync operation.
      * @param spaceId The space id.
      */
-    protected void onSpaceResponse(SyncResponse<LiveSpace> response, String spaceId) {
+    protected void onSpaceResponse(SyncResponse<LaneSpace> response, String spaceId) {
         switch (response.getStatus()) {
             case SUCCESS:
                 updateSpace(response.getData());
@@ -145,9 +145,9 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
     }
 
     /**
-     * Updates the list of LiveSpace objects based on the provided list of ApiSpace objects.
+     * Updates the list of LaneSpace objects based on the provided list of ApiSpace objects.
      *
-     * @param apiSpaces The list of ApiSpace objects to update the LiveSpace objects from.
+     * @param apiSpaces The list of ApiSpace objects to update the LaneSpace objects from.
      */
     protected void updateSpaceList(List<ApiSpace> apiSpaces) {
         Set<String> spaces = new HashSet<>();
@@ -157,7 +157,7 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
                 syncSpace(apiSpace.getId());
             }
         }
-        for (Map.Entry<String, Subscription<K, LiveSpace>> entry : subscriptions.entrySet()) {
+        for (Map.Entry<String, Subscription<K, LaneSpace>> entry : subscriptions.entrySet()) {
             if (!spaces.contains(entry.getKey())) {
                 deleteSpace(entry.getKey());
             }
@@ -165,13 +165,13 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
     }
 
     /**
-     * Updates the specified LiveSpace object.
+     * Updates the specified LaneSpace object.
      *
-     * @param space The LiveSpace object to update.
+     * @param space The LaneSpace object to update.
      */
-    protected void updateSpace(LiveSpace space) {
-        Subscription<K, LiveSpace> subscription = subscriptions.get(space.getId());
-        long version = space.getSpec().getVersion();
+    protected void updateSpace(LaneSpace space) {
+        Subscription<K, LaneSpace> subscription = subscriptions.get(space.getId());
+        long version = space.getVersion();
         if (subscription != null) {
             synchronized (subscription) {
                 if (subscription.getVersion() < version) {
@@ -180,7 +180,7 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
                             .type(EventType.UPDATE_ITEM)
                             .name(space.getId())
                             .value(space)
-                            .description("live space " + space.getId())
+                            .description("lane space " + space.getId())
                             .watcher(getName())
                             .build());
                 }
@@ -194,14 +194,14 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
      * @param spaceId The ID of the lane space to delete.
      */
     protected void deleteSpace(String spaceId) {
-        Subscription<K, LiveSpace> subscription = subscriptions.remove(spaceId);
+        Subscription<K, LaneSpace> subscription = subscriptions.remove(spaceId);
         if (subscription != null) {
             synchronized (subscription) {
                 syncer.remove(subscription);
                 publish(ConfigEvent.builder()
                         .type(EventType.DELETE_ITEM)
                         .name(spaceId)
-                        .description("live space " + spaceId)
+                        .description("lane space " + spaceId)
                         .watcher(getName())
                         .build());
             }
@@ -214,7 +214,7 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
      * @param config The configuration string to parse.
      * @return A list of ApiSpace objects.
      */
-    protected List<ApiSpace> parseSpaces(String config) {
+    protected List<ApiSpace> parseSpaceList(String config) {
         if (config == null || config.isEmpty()) {
             return new ArrayList<>();
         }
@@ -223,16 +223,16 @@ public abstract class AbstractLiveSpaceSubscriptionSyncer<K extends LiveSpaceKey
     }
 
     /**
-     * Parses a configuration string into a LiveSpace object.
+     * Parses a configuration string into a LaneSpace object.
      *
      * @param config The configuration string to parse.
-     * @return A LiveSpace object, or null if the configuration is empty.
+     * @return A LaneSpace object, or null if the configuration is empty.
      */
-    protected LiveSpace parseSpace(String config) {
+    protected LaneSpace parseSpace(String config) {
         if (config == null || config.isEmpty()) {
             return null;
         }
-        return parser.read(new StringReader(config), LiveSpace.class);
+        return parser.read(new StringReader(config), LaneSpace.class);
     }
 
     /**

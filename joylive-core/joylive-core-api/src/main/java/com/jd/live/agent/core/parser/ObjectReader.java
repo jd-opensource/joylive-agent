@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.parser;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -35,6 +36,29 @@ public interface ObjectReader<R extends Reader, T> {
      * @throws IOException If an I/O error occurs while reading from the reader.
      */
     T read(R reader) throws IOException;
+
+    /**
+     * A class that reads a string from a reader.
+     *
+     * @param <R> The type of the reader.
+     */
+    class StringReader<R extends Reader> implements ObjectReader<R, String> {
+
+        @Override
+        public String read(R reader) throws IOException {
+            BufferedReader bufferedReader = reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            int i = 0;
+            while ((line = bufferedReader.readLine()) != null) {
+                if (i++ > 0) {
+                    stringBuilder.append('\n');
+                }
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
+        }
+    }
 
 }
 

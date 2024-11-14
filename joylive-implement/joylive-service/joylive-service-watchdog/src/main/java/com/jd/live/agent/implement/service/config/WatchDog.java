@@ -25,7 +25,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.service.sync.AbstractService;
+import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Daemon;
 import com.jd.live.agent.core.util.Waiter.Waiting;
 

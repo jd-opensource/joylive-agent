@@ -49,7 +49,7 @@ import static com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 /**
  * An abstract class that provides a basic implementation of a service syncer.
  */
-public abstract class AbstractServiceSyncer<K extends ServiceKey> extends AbstractSubscriptionSyncer<K, Service> implements ConfigService {
+public abstract class AbstractServiceSyncer<K extends ServiceKey> extends AbstractSyncer<K, Service> implements ConfigService {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractServiceSyncer.class);
 
@@ -111,13 +111,6 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @return A new instance of the synchronization engine.
      */
     protected abstract Syncer<K, Service> createSyncer();
-
-    /**
-     * Returns the synchronization configuration for this service syncer.
-     *
-     * @return The synchronization configuration.
-     */
-    protected abstract SyncConfig getSyncConfig();
 
     /**
      * Creates a new Subscription object for synchronizing Service objects.

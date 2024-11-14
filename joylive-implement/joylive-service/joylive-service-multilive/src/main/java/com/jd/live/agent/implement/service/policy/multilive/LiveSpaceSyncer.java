@@ -21,7 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceHttpSyncer;
+import com.jd.live.agent.governance.service.sync.http.AbstractLiveSpaceHttpSyncer;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
 
 /**
@@ -44,6 +44,5 @@ public class LiveSpaceSyncer extends AbstractLiveSpaceHttpSyncer {
     protected SyncConfig getSyncConfig() {
         return syncConfig;
     }
-
 
 }

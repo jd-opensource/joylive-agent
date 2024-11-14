@@ -21,7 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceHttpSyncer;
+import com.jd.live.agent.governance.service.sync.http.AbstractLaneSpaceHttpSyncer;
 import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
 
 /**

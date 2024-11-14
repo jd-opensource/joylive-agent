@@ -24,7 +24,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
-import com.jd.live.agent.governance.service.sync.AbstractServiceHttpSyncer;
+import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
 

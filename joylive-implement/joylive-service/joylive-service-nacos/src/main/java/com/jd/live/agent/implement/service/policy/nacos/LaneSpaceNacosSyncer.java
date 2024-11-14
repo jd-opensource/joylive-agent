@@ -24,8 +24,8 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSubscriptionSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey;
+import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
@@ -46,7 +46,7 @@ import static com.jd.live.agent.implement.service.policy.nacos.LaneSpaceNacosSyn
 @Extension("LaneSpaceNacosSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "nacos")
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
-public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSubscriptionSyncer<NacosLaneSpaceKey> {
+public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpaceKey> {
 
     @Config(SyncConfig.SYNC_LANE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
@@ -67,12 +67,17 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSubscriptionSyncer<Na
     }
 
     @Override
+    protected NacosSyncConfig getSyncConfig() {
+        return syncConfig;
+    }
+
+    @Override
     protected Template createTemplate() {
         return new Template(syncConfig.getLaneSpaceKeyTemplate());
     }
 
     @Override
-    protected NacosLaneSpaceKey createSpacesKey() {
+    protected NacosLaneSpaceKey createSpaceListKey() {
         return new NacosLaneSpaceKey(null, syncConfig.getLaneSpacesKey(), syncConfig.getLaneSpaceGroup());
     }
 
@@ -85,8 +90,8 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSubscriptionSyncer<Na
     }
 
     @Override
-    protected Syncer<NacosLaneSpaceKey, List<ApiSpace>> createSpacesSyncer() {
-        return client.createSyncer(this::parseSpaces);
+    protected Syncer<NacosLaneSpaceKey, List<ApiSpace>> createSpaceListSyncer() {
+        return client.createSyncer(this::parseSpaceList);
     }
 
     @Override
@@ -95,7 +100,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSubscriptionSyncer<Na
     }
 
     @Getter
-    protected static class NacosLaneSpaceKey extends SyncKey.LaneSpaceKey implements NacosSyncKey {
+    protected static class NacosLaneSpaceKey extends LaneSpaceKey implements NacosSyncKey {
 
         private final String dataId;
 

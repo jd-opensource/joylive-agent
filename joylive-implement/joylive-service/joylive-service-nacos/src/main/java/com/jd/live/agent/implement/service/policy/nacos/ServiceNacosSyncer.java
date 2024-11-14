@@ -28,7 +28,7 @@ import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey;
+import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosSyncKey;
@@ -98,7 +98,7 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
     }
 
     @Getter
-    protected static class NacosServiceKey extends SyncKey.ServiceKey implements NacosSyncKey {
+    protected static class NacosServiceKey extends ServiceKey implements NacosSyncKey {
 
         private final String dataId;
 

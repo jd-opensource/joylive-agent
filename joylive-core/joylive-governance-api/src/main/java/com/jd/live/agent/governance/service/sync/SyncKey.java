@@ -17,7 +17,10 @@ package com.jd.live.agent.governance.service.sync;
 
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.service.ServiceName;
+import com.jd.live.agent.governance.service.sync.http.HttpResource;
 import lombok.Getter;
+
+import java.io.File;
 
 /**
  * Represents a key used to identify a subscription.
@@ -25,6 +28,12 @@ import lombok.Getter;
 public interface SyncKey {
 
     String getType();
+
+    interface HttpSyncKey extends SyncKey, HttpResource {
+
+        String getUrl();
+
+    }
 
     @Getter
     class ServiceKey implements SyncKey, ServiceName {
@@ -85,4 +94,18 @@ public interface SyncKey {
             return "lane space";
         }
     }
+
+    @Getter
+    class FileKey implements SyncKey {
+
+        protected final File file;
+
+        protected final String type;
+
+        public FileKey(File file, String type) {
+            this.file = file;
+            this.type = type;
+        }
+    }
+
 }

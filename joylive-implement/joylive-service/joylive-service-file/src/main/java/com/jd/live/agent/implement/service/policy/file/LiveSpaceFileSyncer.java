@@ -21,9 +21,18 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.service.sync.AbstractFileSyncer;
+import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
+import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.file.FileWatcher;
 import lombok.Getter;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.util.List;
 
 /**
  * LiveSpaceFileSyncer
@@ -35,7 +44,7 @@ import lombok.Getter;
 @Extension("LiveSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "file")
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceFileSyncer extends AbstractFileSyncer {
+public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 
     private static final String CONFIG_LIVE_SPACE = "livespaces.json";
 
@@ -50,5 +59,13 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer {
     @Override
     protected String getDefaultResource() {
         return CONFIG_LIVE_SPACE;
+    }
+
+    @Override
+    protected Syncer<FileKey, List<LiveSpace>> createSyncer() {
+        fileWatcher = new FileWatcher(getName(), getSyncConfig(), publisher);
+        return fileWatcher.createSyncer(file,
+                data -> parser.read(new InputStreamReader(new ByteArrayInputStream(data)), new TypeReference<List<LiveSpace>>() {
+                }));
     }
 }

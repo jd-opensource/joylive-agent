@@ -22,10 +22,20 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.service.sync.AbstractFileSyncer;
+import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
+import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
+import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.file.FileWatcher;
 import lombok.Getter;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.List;
 
 /**
  * ServiceFileSyncer
@@ -34,7 +44,7 @@ import lombok.Getter;
 @Injectable
 @Extension("ServiceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "file")
-public class ServiceFileSyncer extends AbstractFileSyncer {
+public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     private static final String CONFIG_MICROSERVICE = "microservice.json";
 
@@ -52,13 +62,31 @@ public class ServiceFileSyncer extends AbstractFileSyncer {
     }
 
     @Override
-    protected ServiceEvent create(String value) {
-        return ServiceEvent.creator()
+    protected void onSuccess(List<Service> data) {
+        publish(ServiceEvent.creator()
                 .type(EventType.UPDATE_ALL)
-                .value(value)
+                .value(data)
                 .description(getType())
                 .watcher(getName())
                 .mergePolicy(MergePolicy.ALL)
-                .build();
+                .build());
+    }
+
+    @Override
+    protected void onNotFound(File file) {
+        publish(ServiceEvent.creator()
+                .type(EventType.UPDATE_ALL)
+                .description(getType())
+                .watcher(getName())
+                .mergePolicy(MergePolicy.ALL)
+                .build());
+    }
+
+    @Override
+    protected Syncer<FileKey, List<Service>> createSyncer() {
+        fileWatcher = new FileWatcher(getName(), getSyncConfig(), publisher);
+        return fileWatcher.createSyncer(file,
+                data -> parser.read(new InputStreamReader(new ByteArrayInputStream(data)), new TypeReference<List<Service>>() {
+                }));
     }
 }

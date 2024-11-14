@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.service.sync;
+package com.jd.live.agent.governance.service.sync.http;
 
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -25,9 +25,11 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.sync.*;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.api.ApiError;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
+import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;

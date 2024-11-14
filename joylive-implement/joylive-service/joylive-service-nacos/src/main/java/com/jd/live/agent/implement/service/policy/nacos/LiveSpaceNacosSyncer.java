@@ -24,8 +24,8 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceSubscriptionSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey;
+import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
@@ -46,7 +46,7 @@ import static com.jd.live.agent.implement.service.policy.nacos.LiveSpaceNacosSyn
 @Extension("LiveSpaceNacosSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSubscriptionSyncer<NacosLiveSpaceKey> {
+public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpaceKey, NacosLiveSpaceKey> {
 
     @Config(SyncConfig.SYNC_LANE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
@@ -67,12 +67,17 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSubscriptionSyncer<Na
     }
 
     @Override
+    protected NacosSyncConfig getSyncConfig() {
+        return syncConfig;
+    }
+
+    @Override
     protected Template createTemplate() {
         return new Template(syncConfig.getLiveSpaceKeyTemplate());
     }
 
     @Override
-    protected NacosLiveSpaceKey createSpacesKey() {
+    protected NacosLiveSpaceKey createSpaceListKey() {
         return new NacosLiveSpaceKey(null, syncConfig.getLiveSpacesKey(), syncConfig.getLiveSpaceGroup());
     }
 
@@ -85,8 +90,8 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSubscriptionSyncer<Na
     }
 
     @Override
-    protected Syncer<NacosLiveSpaceKey, List<ApiSpace>> createSpacesSyncer() {
-        return client.createSyncer(this::parseSpaces);
+    protected Syncer<NacosLiveSpaceKey, List<ApiSpace>> createSpaceListSyncer() {
+        return client.createSyncer(this::parseSpaceList);
     }
 
     @Override
@@ -95,7 +100,7 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSubscriptionSyncer<Na
     }
 
     @Getter
-    protected static class NacosLiveSpaceKey extends SyncKey.LiveSpaceKey implements NacosSyncKey {
+    protected static class NacosLiveSpaceKey extends LiveSpaceKey implements NacosSyncKey {
 
         private final String dataId;
 
