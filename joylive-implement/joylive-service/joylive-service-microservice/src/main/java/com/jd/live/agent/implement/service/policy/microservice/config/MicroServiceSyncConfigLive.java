@@ -17,9 +17,10 @@ package com.jd.live.agent.implement.service.policy.microservice.config;
 
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.util.StringUtils;
-import com.jd.live.agent.governance.policy.service.MergePolicy;
-import lombok.Getter;
+import com.jd.live.agent.governance.service.sync.SyncAddress;
 import lombok.Setter;
+
+import static com.jd.live.agent.core.util.StringUtils.url;
 
 /**
  * MicroServiceSyncConfig
@@ -27,13 +28,31 @@ import lombok.Setter;
  * @since 1.0.0
  */
 @Setter
-public class MicroServiceSyncConfig extends SyncConfig {
+public class MicroServiceSyncConfigLive extends SyncConfig implements SyncAddress.ServiceAddress, SyncAddress.LaneSpaceAddress {
+
+    private String laneSpacesUrl;
+
+    private String laneSpaceUrl;
 
     private String serviceUrl;
 
-    @Getter
-    private MergePolicy policy = MergePolicy.FLOW_CONTROL;
+    @Override
+    public String getLaneSpacesUrl() {
+        if (laneSpacesUrl == null && getUrl() != null) {
+            laneSpacesUrl = url(getUrl(), "/laneSpaces");
+        }
+        return laneSpacesUrl;
+    }
 
+    @Override
+    public String getLaneSpaceUrl() {
+        if (laneSpaceUrl == null && getUrl() != null) {
+            laneSpaceUrl = url(getUrl(), "/laneSpace/${space_id}/version/${space_version}");
+        }
+        return laneSpaceUrl;
+    }
+
+    @Override
     public String getServiceUrl() {
         if (serviceUrl == null && getUrl() != null) {
             serviceUrl = StringUtils.url(getUrl(), "/space/${space}/service/${service_name}/version/${service_version}?application=${application}");

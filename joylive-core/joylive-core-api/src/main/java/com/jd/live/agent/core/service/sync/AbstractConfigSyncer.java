@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.core.service.sync;
 
+import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.config.ConfigListener;
-import com.jd.live.agent.core.config.Configuration;
+import com.jd.live.agent.core.service.ConfigService;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * An abstract class for a configuration synchronization service that extends the AbstractSyncer class and implements the ConfigService interface.
+ *
+ * @param <T> The type of the source data.
+ * @param <M> The type of the target data.
+ */
 public abstract class AbstractConfigSyncer<T, M> extends AbstractSyncer<T, M> implements ConfigService {
 
     protected final List<ConfigListener> listeners = new CopyOnWriteArrayList<>();
@@ -40,8 +48,12 @@ public abstract class AbstractConfigSyncer<T, M> extends AbstractSyncer<T, M> im
     }
 
     @Override
-    protected boolean updateOnce(T value, M digest) {
-        listeners.forEach(listener -> listener.onUpdate(create(value)));
+    protected boolean update(T value, M digest) {
+        for (ConfigListener listener : listeners) {
+            if (!listener.onUpdate(create(value))) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -51,8 +63,8 @@ public abstract class AbstractConfigSyncer<T, M> extends AbstractSyncer<T, M> im
      * @param value The value of the configuration.
      * @return A newly created Configuration object.
      */
-    protected Configuration create(T value) {
-        return Configuration.builder().value(value).description(getType()).watcher(getName()).build();
+    protected ConfigEvent create(T value) {
+        return ConfigEvent.builder().type(EventType.UPDATE_ITEM).value(value).description(getType()).watcher(getName()).build();
     }
 
 }

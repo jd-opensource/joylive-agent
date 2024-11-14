@@ -13,23 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.policy.listener;
 
+import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
-@Builder
-public class Configuration {
+public class ServiceEvent extends ConfigEvent {
 
-    private String name;
+    @Setter
+    private MergePolicy mergePolicy;
 
-    private Object value;
+    private final Map<String, Long> versions = new HashMap<>();
 
-    private String watcher;
+    public ServiceEvent() {
+    }
 
-    private String description;
+    @Builder(builderMethodName = "creator")
+    public ServiceEvent(EventType type, String name, Object value, String description, String watcher, MergePolicy mergePolicy) {
+        super(type, name, value, description, watcher);
+        this.mergePolicy = mergePolicy;
+    }
 
 }

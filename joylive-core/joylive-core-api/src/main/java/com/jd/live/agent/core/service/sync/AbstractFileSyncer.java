@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.core.service.sync;
 
+import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.FileEvent;
@@ -31,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.zip.CRC32;
 
-import static com.jd.live.agent.core.service.AbstractFileSyncer.FileDigest;
+import static com.jd.live.agent.core.service.sync.AbstractFileSyncer.FileDigest;
 
 /**
  * Abstract class that provides a framework for synchronizing files with some external source.
@@ -81,6 +83,13 @@ public abstract class AbstractFileSyncer extends AbstractConfigSyncer<String, Fi
             }
         }
         return null;
+    }
+
+    @Override
+    protected ConfigEvent create(String value) {
+        ConfigEvent result = super.create(value);
+        result.setType(EventType.UPDATE_ALL);
+        return result;
     }
 
     /**

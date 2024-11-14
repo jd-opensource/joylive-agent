@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.service.sync.api;
 
-/**
- * An interface for listening to configuration updates.
- */
-public interface ConfigListener {
+import com.jd.live.agent.core.parser.json.JsonAlias;
+import lombok.Getter;
+import lombok.Setter;
 
-    /**
-     * Handles the update of a configuration setting.
-     *
-     * @param event The updated configuration object.
-     * @return true if the update was successful, false otherwise.
-     */
-    boolean onUpdate(ConfigEvent event);
+@Getter
+@Setter
+public class ApiSpace {
+
+    @JsonAlias("workspaceId")
+    private String id;
+
+    private String code;
+
+    private String name;
+
+    private long version;
 
 }
-

@@ -15,56 +15,49 @@
  */
 package com.jd.live.agent.governance.policy.listener;
 
-import com.jd.live.agent.core.config.Configuration;
+import com.jd.live.agent.core.config.ConfigEvent;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LaneSpaceListener extends AbstractListener<List<LaneSpace>> {
+import static com.jd.live.agent.core.util.CollectionUtils.filter;
 
-    private final ObjectParser parser;
+/**
+ * A listener class for lane space configuration updates that extends the AbstractListener class.
+ */
+public class LaneSpaceListener extends AbstractListener<LaneSpace> {
 
     public LaneSpaceListener(PolicySupervisor supervisor, ObjectParser parser) {
-        super(supervisor);
-        this.parser = parser;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected List<LaneSpace> parse(Configuration config) {
-        Object value = config.getValue();
-        if (value instanceof List) {
-            return (List<LaneSpace>) value;
-        } else if (value instanceof LaneSpace) {
-            List<LaneSpace> result = new ArrayList<>();
-            result.add((LaneSpace) value);
-            return result;
-        } else if (value instanceof String) {
-            String str = (String) value;
-            str = str.trim();
-            if (str.isEmpty()) {
-                return new ArrayList<>();
-            } else if (str.startsWith("[")) {
-                return parser.read(new StringReader(str), new TypeReference<List<LaneSpace>>() {
-                });
-            } else {
-                List<LaneSpace> result = new ArrayList<>();
-                result.add(parser.read(new StringReader(str), LaneSpace.class));
-                return result;
-            }
-        } else {
-            return new ArrayList<>();
-        }
+        super(LaneSpace.class, supervisor, parser);
     }
 
     @Override
-    protected void update(GovernancePolicy policy, List<LaneSpace> spaces, String watcher) {
+    protected void updateItems(GovernancePolicy policy, List<LaneSpace> items, ConfigEvent event) {
+        policy.setLaneSpaces(items);
+    }
+
+    @Override
+    protected void updateItem(GovernancePolicy policy, LaneSpace item, ConfigEvent event) {
+        List<LaneSpace> spaces = policy.getLaneSpaces() == null ? new ArrayList<>() : policy.getLaneSpaces();
+        filter(spaces, space -> !space.getId().equals(item.getId()));
+        spaces.add(item);
         policy.setLaneSpaces(spaces);
     }
+
+    @Override
+    protected void deleteItem(GovernancePolicy policy, ConfigEvent event) {
+        if (event.getName() == null) {
+            return;
+        }
+        List<LaneSpace> spaces = policy.getLaneSpaces();
+        if (spaces != null) {
+            filter(spaces, space -> !space.getId().equals(event.getName()));
+        }
+
+    }
+
 }

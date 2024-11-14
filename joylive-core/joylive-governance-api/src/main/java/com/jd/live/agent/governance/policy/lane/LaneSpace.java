@@ -44,6 +44,10 @@ public class LaneSpace {
 
     @Getter
     @Setter
+    private long version;
+
+    @Getter
+    @Setter
     private Set<String> topics;
 
     private final transient Cache<String, Lane> laneCache = new MapCache<>(new ListBuilder<>(() -> lanes, Lane::getCode));

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.core.service.sync;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -184,11 +184,9 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
         SyncResult<T, M> result = doSynchronize(last);
         if (result != null) {
             last = result.getMeta();
-            for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
-                if (updateOnce(result.getData(), result.getMeta())) {
-                    onUpdated();
-                    return true;
-                }
+            if (update(result.getData(), result.getMeta())) {
+                onUpdated();
+                return true;
             }
         } else {
             onNotModified();
@@ -243,7 +241,7 @@ public abstract class AbstractSyncer<T, M> extends AbstractService {
      * @param meta The new metadata to update.
      * @return True if the update was successful, false otherwise.
      */
-    protected abstract boolean updateOnce(T value, M meta);
+    protected abstract boolean update(T value, M meta);
 
     /**
      * Performs synchronization based on the provided the last metadata.

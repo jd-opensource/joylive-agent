@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
+import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.service.AbstractFileSyncer;
+import com.jd.live.agent.core.service.sync.AbstractFileSyncer;
+import com.jd.live.agent.governance.policy.listener.ServiceEvent;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
 import lombok.Getter;
 
 /**
@@ -44,13 +47,18 @@ public class ServiceFileSyncer extends AbstractFileSyncer {
     }
 
     @Override
-    protected String getResource() {
-        String result = super.getResource();
-        return isResource(result) ? result : CONFIG_MICROSERVICE;
+    protected String getDefaultResource() {
+        return CONFIG_MICROSERVICE;
     }
 
     @Override
-    protected String getDefaultResource() {
-        return CONFIG_MICROSERVICE;
+    protected ServiceEvent create(String value) {
+        return ServiceEvent.creator()
+                .type(EventType.UPDATE_ALL)
+                .value(value)
+                .description(getType())
+                .watcher(getName())
+                .mergePolicy(MergePolicy.ALL)
+                .build();
     }
 }

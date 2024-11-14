@@ -16,7 +16,6 @@
 package com.jd.live.agent.core.util;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * A utility class that provides methods to facilitate the closing of resources and threads.
@@ -111,21 +110,29 @@ public class Close {
     }
 
     /**
-     * Attempts to close or clean up the provided resource using the specified {@code closer} action.
+     * Closes the given value using the provided closer, if the value is not null.
      *
-     * @param <T>    the type of the target.
-     * @param value  the resource to be closed or cleaned up; if {@code null}, the {@code closer} is not invoked
-     * @param closer a {@link Consumer} that accepts the resource and performs the necessary action to close
-     *               or clean it up
-     * @return this instance, enabling method chaining
+     * @param <T>    The type of the value to be closed.
+     * @param value  The value to be closed.
+     * @param closer The closer to use for closing the value.
+     * @return This object, allowing for method chaining.
      */
-    public <T> Close closeIfExists(T value, Consumer<T> closer) {
+    public <T> Close closeIfExists(T value, Closeable<T> closer) {
         if (value != null) {
-            closer.accept(value);
+            try {
+                closer.close(value);
+            } catch (Exception ignored) {
+            }
         }
         return this;
     }
 
+    /**
+     * Executes the given runnable closer, if it is not null.
+     *
+     * @param closer The runnable closer to execute.
+     * @return This object, allowing for method chaining.
+     */
     public Close close(Runnable closer) {
         if (closer != null) {
             closer.run();
@@ -145,6 +152,13 @@ public class Close {
             thread.interrupt();
         }
         return this;
+    }
+
+    @FunctionalInterface
+    public interface Closeable<T> {
+
+        void close(T value) throws Exception;
+
     }
 }
 

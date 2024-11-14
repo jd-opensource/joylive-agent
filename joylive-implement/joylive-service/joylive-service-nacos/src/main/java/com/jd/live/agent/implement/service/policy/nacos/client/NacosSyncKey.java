@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.implement.service.policy.nacos.client;
 
-/**
- * An interface for listening to configuration updates.
- */
-public interface ConfigListener {
+import com.jd.live.agent.governance.service.sync.SyncKey;
 
-    /**
-     * Handles the update of a configuration setting.
-     *
-     * @param event The updated configuration object.
-     * @return true if the update was successful, false otherwise.
-     */
-    boolean onUpdate(ConfigEvent event);
+public interface NacosSyncKey extends SyncKey {
 
+    String getDataId();
+
+    String getGroup();
 }
-

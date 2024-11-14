@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.core.service.sync;
 
 import com.jd.live.agent.core.exception.StatusException;
+import com.jd.live.agent.core.service.AgentService;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,11 +50,6 @@ public abstract class AbstractService implements AgentService {
      * Service status indicating the service is in the process of stopping.
      */
     protected static final int STATUS_STOPPING = 3;
-
-    /**
-     * Maximum number of retries for status updates.
-     */
-    protected static final int UPDATE_MAX_RETRY = 100;
 
     /**
      * Current status of the service, managed atomically to ensure thread safety.

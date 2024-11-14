@@ -15,57 +15,47 @@
  */
 package com.jd.live.agent.governance.policy.listener;
 
-import com.jd.live.agent.core.config.Configuration;
+import com.jd.live.agent.core.config.ConfigEvent;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LiveSpaceListener extends AbstractListener<List<LiveSpace>> {
+import static com.jd.live.agent.core.util.CollectionUtils.filter;
 
-    private final ObjectParser parser;
+/**
+ * A listener class for live space configuration updates that extends the AbstractListener class.
+ */
+public class LiveSpaceListener extends AbstractListener<LiveSpace> {
 
     public LiveSpaceListener(PolicySupervisor supervisor, ObjectParser parser) {
-        super(supervisor);
-        this.parser = parser;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected List<LiveSpace> parse(Configuration config) {
-        Object value = config.getValue();
-        if (value instanceof List) {
-            return (List<LiveSpace>) value;
-        } else if (value instanceof LiveSpace) {
-            List<LiveSpace> result = new ArrayList<>();
-            result.add((LiveSpace) value);
-            return result;
-        } else if (value instanceof String) {
-            String str = (String) value;
-            str = str.trim();
-            if (str.isEmpty()) {
-                return new ArrayList<>();
-            } else if (str.startsWith("[")) {
-                return parser.read(new StringReader(str), new TypeReference<List<LiveSpace>>() {
-                });
-            } else {
-                List<LiveSpace> result = new ArrayList<>();
-                result.add(parser.read(new StringReader(str), LiveSpace.class));
-                return result;
-            }
-        } else {
-            return new ArrayList<>();
-        }
+        super(LiveSpace.class, supervisor, parser);
     }
 
     @Override
-    protected void update(GovernancePolicy policy, List<LiveSpace> spaces, String watcher) {
+    protected void updateItems(GovernancePolicy policy, List<LiveSpace> items, ConfigEvent event) {
+        policy.setLiveSpaces(items);
+    }
+
+    @Override
+    protected void updateItem(GovernancePolicy policy, LiveSpace item, ConfigEvent event) {
+        List<LiveSpace> spaces = policy.getLiveSpaces() == null ? new ArrayList<>() : policy.getLiveSpaces();
+        filter(spaces, space -> !space.getId().equals(item.getId()));
+        spaces.add(item);
         policy.setLiveSpaces(spaces);
+    }
+
+    @Override
+    protected void deleteItem(GovernancePolicy policy, ConfigEvent event) {
+        if (event.getName() == null) {
+            return;
+        }
+        List<LiveSpace> spaces = policy.getLiveSpaces();
+        if (spaces != null) {
+            filter(spaces, space -> !space.getId().equals(event.getName()));
+        }
     }
 }

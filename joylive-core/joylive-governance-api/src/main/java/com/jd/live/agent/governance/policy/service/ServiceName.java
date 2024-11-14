@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.multilive.reponse;
+package com.jd.live.agent.governance.policy.service;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
-import lombok.Getter;
-import lombok.Setter;
+/**
+ * Represents the name of a service, including its namespace.
+ */
+public interface ServiceName {
 
-@Getter
-@Setter
-public class Workspace {
+    /**
+     * Returns the namespace of the service.
+     *
+     * @return The namespace of the service.
+     */
+    String getNamespace();
 
-    @JsonAlias("workspaceId")
-    private String id;
+    /**
+     * Returns the name of the service.
+     *
+     * @return The name of the service.
+     */
+    String getName();
 
-    private String code;
-
-    private String name;
-
-    private Long version;
-
+    default String getUniqueName() {
+        String namespace = getNamespace();
+        return namespace == null || namespace.isEmpty() ? getName() : getName() + "@" + namespace;
+    }
 }

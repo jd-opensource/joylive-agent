@@ -30,6 +30,8 @@ import java.util.function.BiConsumer;
 @Getter
 public class SyncConfig {
 
+    public static final String CONFIG_PREFIX = "govern";
+
     public static final String SYNC = "agent.sync";
 
     public static final String SYNC_MICROSERVICE = SYNC + ".microservice";

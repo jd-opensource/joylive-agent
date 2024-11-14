@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.microservice.reponse;
+package com.jd.live.agent.governance.service.sync;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
-import lombok.Getter;
-import lombok.Setter;
+/**
+ * A functional interface for listening to synchronization events.
+ *
+ * @param <T> Type of the synchronized data.
+ */
+@FunctionalInterface
+public interface SyncListener<T> {
 
-@Getter
-@Setter
-public class Workspace {
-
-    @JsonAlias("workspaceId")
-    private String id;
-
-    private String code;
-
-    private String name;
-
-    private Long version;
-
+    /**
+     * Called when a synchronization update is received.
+     *
+     * @param response The synchronization response containing the updated data.
+     */
+    void onUpdate(SyncResponse<T> response);
 }
+

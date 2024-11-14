@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.service.sync;
 
 /**
- * An interface for listening to configuration updates.
+ * Represents the possible synchronization statuses.
  */
-public interface ConfigListener {
+public enum SyncStatus {
 
     /**
-     * Handles the update of a configuration setting.
-     *
-     * @param event The updated configuration object.
-     * @return true if the update was successful, false otherwise.
+     * Indicates that the synchronization operation was successful.
      */
-    boolean onUpdate(ConfigEvent event);
+    SUCCESS,
 
+    /**
+     * Indicates that the requested resource was not found during the synchronization operation.
+     */
+    NOT_FOUND,
+
+    /**
+     * Indicates that the requested resource has not been modified since the last synchronization operation.
+     */
+    NOT_MODIFIED,
+
+    /**
+     * Indicates that an error occurred during the synchronization operation.
+     */
+    ERROR
 }
-

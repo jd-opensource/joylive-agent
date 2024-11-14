@@ -21,7 +21,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.service.AbstractFileSyncer;
+import com.jd.live.agent.core.service.sync.AbstractFileSyncer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import lombok.Getter;
 

@@ -574,7 +574,7 @@ public class Bootstrap implements AgentLifecycle {
                 watchers.add((ConfigWatcher) service);
             }
         });
-        return new ConfigWatcherAdapter(watchers);
+        return new ConfigWatcher.ConfigWatcherAdapter(watchers);
     }
 
     private PluginSupervisor createPluginManager() {

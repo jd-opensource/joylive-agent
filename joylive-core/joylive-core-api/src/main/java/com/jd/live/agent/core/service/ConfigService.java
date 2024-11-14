@@ -17,8 +17,16 @@ package com.jd.live.agent.core.service;
 
 import com.jd.live.agent.core.config.ConfigWatcher;
 
+/**
+ * An interface for a configuration service that extends the AgentService interface and implements the ConfigWatcher interface.
+ */
 public interface ConfigService extends AgentService, ConfigWatcher {
 
+    /**
+     * Returns the type of the configuration service.
+     *
+     * @return The type of the configuration service.
+     */
     String getType();
 }
 

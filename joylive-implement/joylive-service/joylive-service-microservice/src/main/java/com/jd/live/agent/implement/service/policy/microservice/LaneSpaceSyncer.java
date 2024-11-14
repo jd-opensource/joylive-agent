@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.multilive;
+package com.jd.live.agent.implement.service.policy.microservice;
 
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
@@ -21,29 +21,28 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceHttpSyncer;
-import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
+import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceHttpSyncer;
+import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
 
 /**
- * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive control plane.
+ * LaneSpaceSyncer is responsible for synchronizing lane spaces from a microservice control plane.
  */
 @Injectable
 @Extension("LiveSpaceSyncer")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceSyncer extends AbstractLiveSpaceHttpSyncer {
+@ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "jmsf")
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+public class LaneSpaceSyncer extends AbstractLaneSpaceHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
-    private LiveSyncConfigLive syncConfig = new LiveSyncConfigLive();
+    private MicroServiceSyncConfigLive syncConfig = new MicroServiceSyncConfigLive();
 
-    public LiveSpaceSyncer() {
-        name = "multilive";
+    public LaneSpaceSyncer() {
+        name = "jmsf";
     }
 
     @Override
     protected SyncConfig getSyncConfig() {
         return syncConfig;
     }
-
 
 }

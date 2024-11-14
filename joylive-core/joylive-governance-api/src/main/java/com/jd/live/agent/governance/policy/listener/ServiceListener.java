@@ -15,94 +15,52 @@
  */
 package com.jd.live.agent.governance.policy.listener;
 
+import com.jd.live.agent.core.config.ConfigEvent;
 import com.jd.live.agent.core.config.ConfigWatcher;
-import com.jd.live.agent.core.config.Configuration;
 import com.jd.live.agent.core.event.Event;
-import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 
-import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ServiceListener extends AbstractListener<List<Service>> {
-
-    private final Publisher<PolicySubscriber> publisher;
-
-    private final MergePolicy mergePolicy;
-
-    private final ObjectParser parser;
+/**
+ * A listener class for service configuration updates that extends the AbstractListener class.
+ */
+public class ServiceListener extends AbstractListener<Service> {
 
     private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
-
-    private final EventHandler<PolicySubscriber> handler = this::onEvent;
 
     private final AtomicBoolean loaded = new AtomicBoolean();
 
     private Map<String, Long> versions = new HashMap<>();
 
-    private Map<String, Long> newVersions;
-
     public ServiceListener(PolicySupervisor supervisor,
-                           Publisher<PolicySubscriber> publisher,
-                           MergePolicy mergePolicy,
-                           ObjectParser parser) {
-        super(supervisor);
-        this.publisher = publisher;
-        this.mergePolicy = mergePolicy;
-        this.parser = parser;
-        publisher.addHandler(handler);
+                           ObjectParser parser,
+                           Publisher<PolicySubscriber> publisher) {
+        super(Service.class, supervisor, parser);
+        publisher.addHandler(this::onEvent);
         supervisor.getSubscribers().forEach(this::subscribe);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected List<Service> parse(Configuration config) {
-        Object value = config.getValue();
-        if (value instanceof List) {
-            return (List<Service>) value;
-        } else if (value instanceof Service) {
-            List<Service> result = new ArrayList<>();
-            result.add((Service) value);
-            return result;
-        } else if (value instanceof String) {
-            String str = (String) value;
-            str = str.trim();
-            if (str.isEmpty()) {
-                return new ArrayList<>();
-            } else if (str.startsWith("[")) {
-                return parser.read(new StringReader(str), new TypeReference<List<Service>>() {
-                });
-            } else {
-                List<Service> result = new ArrayList<>();
-                result.add(parser.read(new StringReader(str), Service.class));
-                return result;
-            }
-        } else {
-            return new ArrayList<>();
-        }
-    }
-
-    @Override
-    protected void update(GovernancePolicy policy, List<Service> services, String watcher) {
+    protected void updateItems(GovernancePolicy policy, List<Service> items, ConfigEvent event) {
+        ServiceEvent se = (ServiceEvent) event;
+        Map<String, Long> newVersions = se.getVersions();
         List<Service> updates = new ArrayList<>();
         Set<String> deletes = new HashSet<>();
-        newVersions = new HashMap<>();
         // AddOrUpdate
-        if (services != null && !services.isEmpty()) {
-            for (Service service : services) {
-                newVersions.put(service.getName(), service.getVersion());
-                long oldVersion = versions.getOrDefault(service.getName(), -1L);
-                if (service.getVersion() > oldVersion) {
-                    updates.add(service);
+        if (items != null && !items.isEmpty()) {
+            for (Service item : items) {
+                newVersions.put(item.getName(), item.getVersion());
+                long oldVersion = versions.getOrDefault(item.getName(), -1L);
+                if (item.getVersion() > oldVersion) {
+                    updates.add(item);
                 }
             }
         }
@@ -113,30 +71,63 @@ public class ServiceListener extends AbstractListener<List<Service>> {
             }
         }
 
-        policy.setServices(policy.onUpdate(updates, deletes, mergePolicy, watcher));
+        List<Service> newServices = policy.onUpdate(updates, deletes, se.getMergePolicy(), event.getWatcher());
+        policy.setServices(newServices);
     }
 
     @Override
-    protected void onSuccess(Configuration config) {
-        versions = newVersions;
-        newVersions = null;
-        if (loaded.compareAndSet(false, true)) {
-            subscribers.forEach((key, value) -> value.complete(config.getWatcher()));
-        }
-        super.onSuccess(config);
+    protected void updateItem(GovernancePolicy policy, Service item, ConfigEvent event) {
+        ServiceEvent se = (ServiceEvent) event;
+        Map<String, Long> newVersions = se.getVersions();
+        newVersions.putAll(versions);
+        newVersions.put(item.getName(), item.getVersion());
+        List<Service> newServices = policy.onUpdate(Collections.singletonList(item), null, se.getMergePolicy(), event.getWatcher());
+        policy.setServices(newServices);
     }
 
+    @Override
+    protected void deleteItem(GovernancePolicy policy, ConfigEvent event) {
+        if (event.getName() == null) {
+            return;
+        }
+        ServiceEvent se = (ServiceEvent) event;
+        Map<String, Long> newVersions = se.getVersions();
+        List<Service> newServices = policy.onDelete(event.getName(), se.getMergePolicy(), event.getWatcher());
+        newVersions.putAll(versions);
+        newVersions.remove(event.getName());
+        policy.setServices(newServices);
+    }
+
+    @Override
+    protected void onSuccess(ConfigEvent event) {
+        versions = ((ServiceEvent) event).getVersions();
+        if (loaded.compareAndSet(false, true)) {
+            subscribers.forEach((key, value) -> value.complete(event.getWatcher()));
+        }
+        super.onSuccess(event);
+    }
+
+    /**
+     * Handles a list of events by subscribing to each event's policy subscriber.
+     *
+     * @param events A list of events containing policy subscribers to subscribe to.
+     */
     private void onEvent(List<Event<PolicySubscriber>> events) {
         events.forEach(e -> subscribe(e.getData()));
     }
 
+    /**
+     * Subscribes to a policy subscriber, replacing any existing subscriber with the same unique name.
+     *
+     * @param subscriber The policy subscriber to subscribe to.
+     */
     private void subscribe(PolicySubscriber subscriber) {
         if (subscriber != null && ConfigWatcher.TYPE_SERVICE_SPACE.equals(subscriber.getType())) {
             PolicySubscriber old = subscribers.putIfAbsent(subscriber.getUniqueName(), subscriber);
             if (old != null && old != subscriber) {
                 old.trigger((v, t) -> {
                     if (t == null) {
-                        subscriber.complete(getName());
+                        subscriber.complete();
                     } else {
                         subscriber.completeExceptionally(t);
                     }
@@ -144,4 +135,5 @@ public class ServiceListener extends AbstractListener<List<Service>> {
             }
         }
     }
+
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.microservice.reponse;
+package com.jd.live.agent.governance.service.sync.api;
 
 import com.jd.live.agent.core.util.http.HttpStatus;
 import lombok.Getter;
@@ -21,23 +21,23 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Response<T> {
+public class ApiResponse<T> {
 
     private String requestId;
 
-    private Error error;
+    private ApiError error;
 
     private T data;
 
-    public Response() {
+    public ApiResponse() {
     }
 
-    public Response(String requestId, T data) {
+    public ApiResponse(String requestId, T data) {
         this.requestId = requestId;
         this.data = data;
     }
 
-    public Response(String requestId, Error error) {
+    public ApiResponse(String requestId, ApiError error) {
         this.requestId = requestId;
         this.error = error;
     }

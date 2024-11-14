@@ -15,18 +15,76 @@
  */
 package com.jd.live.agent.core.config;
 
+import java.util.List;
+
+/**
+ * An interface for watching and managing configuration updates.
+ */
 public interface ConfigWatcher {
 
+    /**
+     * A constant representing the component name for the configuration watcher.
+     */
     String COMPONENT_CONFIG_WATCHER = "configWatcher";
 
+    /**
+     * A constant representing the type of configuration space for live space.
+     */
     String TYPE_LIVE_SPACE = "liveSpace";
 
+    /**
+     * A constant representing the type of configuration space for service space.
+     */
     String TYPE_SERVICE_SPACE = "serviceSpace";
 
+    /**
+     * A constant representing the type of configuration space for lane space.
+     */
     String TYPE_LANE_SPACE = "laneSpace";
 
+    /**
+     * Adds a listener for configuration updates of the specified type.
+     *
+     * @param type     The type of configuration space to listen for updates.
+     * @param listener The listener to be notified of configuration updates.
+     */
     void addListener(String type, ConfigListener listener);
 
+    /**
+     * Removes a listener for configuration updates of the specified type.
+     *
+     * @param type     The type of configuration space to stop listening for updates.
+     * @param listener The listener to be removed.
+     */
     void removeListener(String type, ConfigListener listener);
 
+    /**
+     * An adapter class for the ConfigWatcher interface.
+     */
+    class ConfigWatcherAdapter implements ConfigWatcher {
+
+        private final List<ConfigWatcher> watchers;
+
+        public ConfigWatcherAdapter(List<ConfigWatcher> watchers) {
+            this.watchers = watchers;
+        }
+
+        @Override
+        public void addListener(String type, ConfigListener listener) {
+            if (type != null && listener != null && watchers != null) {
+                for (ConfigWatcher watcher : watchers) {
+                    watcher.addListener(type, listener);
+                }
+            }
+        }
+
+        @Override
+        public void removeListener(String type, ConfigListener listener) {
+            if (type != null && listener != null && watchers != null) {
+                for (ConfigWatcher watcher : watchers) {
+                    watcher.removeListener(type, listener);
+                }
+            }
+        }
+    }
 }

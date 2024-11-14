@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.multilive.reponse;
+package com.jd.live.agent.core.exception;
 
-import com.jd.live.agent.core.util.http.HttpState;
-import lombok.Getter;
-import lombok.Setter;
+import com.jd.live.agent.bootstrap.exception.LiveException;
 
-@Getter
-@Setter
-public class Error implements HttpState {
+/**
+ * SyncException
+ */
+public class SyncException extends LiveException {
+    public SyncException() {
+    }
 
-    String status;
+    public SyncException(String message) {
+        super(message);
+    }
 
-    private int code;
+    public SyncException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    private String message;
-
+    public SyncException(Throwable cause) {
+        super(cause);
+    }
 }

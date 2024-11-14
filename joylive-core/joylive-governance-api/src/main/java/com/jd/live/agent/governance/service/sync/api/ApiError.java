@@ -13,20 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.microservice.reponse;
+package com.jd.live.agent.governance.service.sync.api;
 
 import com.jd.live.agent.core.util.http.HttpState;
+import com.jd.live.agent.core.util.http.HttpStatus;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class Error implements HttpState {
+@NoArgsConstructor
+@AllArgsConstructor
+public class ApiError implements HttpState {
 
     String status;
 
     private int code;
 
     private String message;
+
+    public ApiError(HttpStatus status) {
+        this.status = status.name();
+        this.code = status.value();
+        this.message = status.getReasonPhrase();
+    }
 
 }

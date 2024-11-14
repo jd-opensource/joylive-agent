@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.service.sync;
 
 /**
- * An interface for listening to configuration updates.
+ * Represents a key used to identify a subscription.
  */
-public interface ConfigListener {
+public interface SyncKey {
 
-    /**
-     * Handles the update of a configuration setting.
-     *
-     * @param event The updated configuration object.
-     * @return true if the update was successful, false otherwise.
-     */
-    boolean onUpdate(ConfigEvent event);
+    String getType();
 
 }
-
