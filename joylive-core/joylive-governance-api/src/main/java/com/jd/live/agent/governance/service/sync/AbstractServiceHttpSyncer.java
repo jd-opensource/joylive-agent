@@ -25,6 +25,7 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.api.ApiError;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 
@@ -37,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * An abstract class that provides a base implementation for synchronizing data with an HTTP service.
  */
-public abstract class AbstractServiceHttpSyncer extends AbstractServiceSyncer {
+public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends AbstractServiceSyncer<K> {
 
     protected static final String APPLICATION_NAME = "application";
 
@@ -63,10 +64,10 @@ public abstract class AbstractServiceHttpSyncer extends AbstractServiceSyncer {
     }
 
     @Override
-    protected Syncer<ServiceKey, Service> createSyncer() {
+    protected Syncer<K, Service> createSyncer() {
         return subscription -> {
             SyncConfig config = getSyncConfig();
-            ServiceKey key = subscription.getKey();
+            K key = subscription.getKey();
             try {
                 ApiResponse<Service> response = getService(subscription, config);
                 HttpStatus status = response.getStatus();
@@ -100,7 +101,7 @@ public abstract class AbstractServiceHttpSyncer extends AbstractServiceSyncer {
      * @return An {@link ApiResponse} object containing the requested service.
      * @throws IOException If an I/O error occurs during the request.
      */
-    protected ApiResponse<Service> getService(Subscription<ServiceKey, Service> subscription, SyncConfig config) throws IOException {
+    protected ApiResponse<Service> getService(Subscription<K, Service> subscription, SyncConfig config) throws IOException {
         ServiceKey key = subscription.getKey();
         Map<String, Object> context = new HashMap<>(4);
         context.put(APPLICATION_NAME, application.getName());
@@ -127,7 +128,10 @@ public abstract class AbstractServiceHttpSyncer extends AbstractServiceSyncer {
             case OK:
                 return response.getData();
             case NOT_FOUND:
-                return new ApiResponse<>("", new ApiError(HttpStatus.NOT_FOUND));
+                return new ApiResponse<>("",
+                        new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                "The resource is not found."));
             case NOT_MODIFIED:
                 return new ApiResponse<>("", new ApiError(HttpStatus.NOT_MODIFIED));
             default:

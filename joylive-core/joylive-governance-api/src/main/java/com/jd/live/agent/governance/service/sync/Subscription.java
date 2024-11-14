@@ -27,18 +27,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * @param <K> The type of the subscription key, which must extend the {@link SyncKey} interface.
  * @param <T> The type of the data being subscribed to.
  */
-@Getter
 public class Subscription<K extends SyncKey, T> implements SyncListener<T> {
 
     private static final int INTERVALS = 10;
 
+    @Getter
     private final String owner;
 
+    @Getter
     private final K key;
 
     @Setter
     private SyncListener<T> listener;
 
+    @Getter
     @Setter
     private long version;
 

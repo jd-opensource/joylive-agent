@@ -34,8 +34,6 @@ import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.policy.service.ServiceName;
-import lombok.Getter;
 
 import java.io.StringReader;
 import java.util.List;
@@ -46,7 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static com.jd.live.agent.governance.service.sync.AbstractServiceSyncer.ServiceKey;
+import static com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 
 /**
  * An abstract class that provides a basic implementation of a service syncer.
@@ -337,36 +335,6 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      */
     protected Service parse(String config) {
         return config == null || config.isEmpty() ? null : parser.read(new StringReader(config), Service.class);
-    }
-
-    @Getter
-    protected static class ServiceKey implements SyncKey, ServiceName {
-
-        protected final PolicySubscriber subscriber;
-
-        public ServiceKey(PolicySubscriber subscriber) {
-            this.subscriber = subscriber;
-        }
-
-        @Override
-        public String getNamespace() {
-            return subscriber.getNamespace();
-        }
-
-        @Override
-        public String getName() {
-            return subscriber.getName();
-        }
-
-        @Override
-        public String getType() {
-            return "service";
-        }
-
-        @Override
-        public String toString() {
-            return subscriber.getUniqueName();
-        }
     }
 
 }

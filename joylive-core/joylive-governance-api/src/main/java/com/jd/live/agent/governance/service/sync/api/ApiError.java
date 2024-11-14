@@ -28,7 +28,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ApiError implements HttpState {
 
-    String status;
+    private String status;
 
     private int code;
 

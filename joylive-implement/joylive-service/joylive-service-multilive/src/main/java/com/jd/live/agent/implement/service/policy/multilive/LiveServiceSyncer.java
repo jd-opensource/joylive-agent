@@ -21,9 +21,11 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.service.sync.AbstractServiceHttpSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
 
 /**
@@ -34,7 +36,7 @@ import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfi
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveServiceSyncer extends AbstractServiceHttpSyncer {
+public class LiveServiceSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private LiveSyncConfigLive syncConfig = new LiveSyncConfigLive();
@@ -46,6 +48,11 @@ public class LiveServiceSyncer extends AbstractServiceHttpSyncer {
     @Override
     protected SyncConfig getSyncConfig() {
         return syncConfig;
+    }
+
+    @Override
+    protected ServiceKey createServiceKey(PolicySubscriber subscriber) {
+        return new ServiceKey(subscriber);
     }
 
     @Override

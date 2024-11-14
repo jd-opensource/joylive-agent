@@ -21,9 +21,11 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.service.sync.AbstractServiceHttpSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
 
 /**
@@ -34,7 +36,7 @@ import com.jd.live.agent.implement.service.policy.microservice.config.MicroServi
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "jmsf")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class MicroServiceSyncer extends AbstractServiceHttpSyncer {
+public class MicroServiceSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
     @Config(SyncConfig.SYNC_MICROSERVICE)
     private MicroServiceSyncConfigLive syncConfig = new MicroServiceSyncConfigLive();
@@ -46,6 +48,11 @@ public class MicroServiceSyncer extends AbstractServiceHttpSyncer {
     @Override
     protected SyncConfig getSyncConfig() {
         return syncConfig;
+    }
+
+    @Override
+    protected ServiceKey createServiceKey(PolicySubscriber subscriber) {
+        return new ServiceKey(subscriber);
     }
 
     @Override

@@ -24,12 +24,11 @@ import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
-import lombok.Getter;
 
 import java.io.StringReader;
 import java.util.*;
 
-import static com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSubscriptionSyncer.LaneSpaceKey;
+import static com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
 
 /**
  * An abstract class that provides a base implementation for synchronizing LaneSpace objects using subscriptions.
@@ -99,7 +98,7 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
      */
     protected void syncSpace(String spaceId) {
         subscriptions.computeIfAbsent(spaceId, k -> {
-            Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), this::onSpaceResponse);
+            Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
             syncer.sync(subscription);
             return subscription;
         });
@@ -116,8 +115,9 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
                 updateSpaceList(response.getData());
                 break;
             case NOT_MODIFIED:
+                break;
             case NOT_FOUND:
-                throw new SyncException("Failed to sync lane spaces policy.");
+                throw new SyncException("Failed to sync lane spaces policy, caused by the spaces is not found.");
             case ERROR:
                 throw new SyncException(response.getError());
         }
@@ -127,8 +127,9 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
      * Handles the response from the sync operation for a LaneSpace object.
      *
      * @param response The SyncResponse object containing the response from the sync operation.
+     * @param spaceId The space id.
      */
-    protected void onSpaceResponse(SyncResponse<LaneSpace> response) {
+    protected void onSpaceResponse(SyncResponse<LaneSpace> response, String spaceId) {
         switch (response.getStatus()) {
             case SUCCESS:
                 updateSpace(response.getData());
@@ -136,7 +137,8 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
             case NOT_MODIFIED:
                 break;
             case NOT_FOUND:
-                throw new SyncException("Failed to sync lane space policy.");
+                deleteSpace(spaceId);
+                break;
             case ERROR:
                 throw new SyncException(response.getError());
         }
@@ -168,7 +170,22 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
      * @param space The LaneSpace object to update.
      */
     protected void updateSpace(LaneSpace space) {
-
+        Subscription<K, LaneSpace> subscription = subscriptions.get(space.getId());
+        long version = space.getVersion();
+        if (subscription != null) {
+            synchronized (subscription) {
+                if (subscription.getVersion() < version) {
+                    subscription.setVersion(version);
+                    publish(ConfigEvent.builder()
+                            .type(EventType.UPDATE_ITEM)
+                            .name(space.getId())
+                            .value(space)
+                            .description("lane space " + space.getId())
+                            .watcher(getName())
+                            .build());
+                }
+            }
+        }
     }
 
     /**
@@ -179,8 +196,15 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
     protected void deleteSpace(String spaceId) {
         Subscription<K, LaneSpace> subscription = subscriptions.remove(spaceId);
         if (subscription != null) {
-            syncer.remove(subscription);
-            publish(ConfigEvent.builder().type(EventType.DELETE_ITEM).name(spaceId).description("lane space " + spaceId).watcher(getName()).build());
+            synchronized (subscription) {
+                syncer.remove(subscription);
+                publish(ConfigEvent.builder()
+                        .type(EventType.DELETE_ITEM)
+                        .name(spaceId)
+                        .description("lane space " + spaceId)
+                        .watcher(getName())
+                        .build());
+            }
         }
     }
 
@@ -221,21 +245,6 @@ public abstract class AbstractLaneSpaceSubscriptionSyncer<K extends LaneSpaceKey
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
         return template.evaluate(context);
-    }
-
-    @Getter
-    protected static class LaneSpaceKey implements SyncKey {
-
-        protected final String id;
-
-        public LaneSpaceKey(String id) {
-            this.id = id;
-        }
-
-        @Override
-        public String getType() {
-            return "lane space";
-        }
     }
 
 }

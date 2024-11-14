@@ -25,6 +25,7 @@ import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSubscriptionSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
@@ -94,7 +95,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSubscriptionSyncer<Na
     }
 
     @Getter
-    protected static class NacosLaneSpaceKey extends LaneSpaceKey implements NacosSyncKey {
+    protected static class NacosLaneSpaceKey extends SyncKey.LaneSpaceKey implements NacosSyncKey {
 
         private final String dataId;
 

@@ -25,6 +25,7 @@ import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceSubscriptionSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
@@ -94,7 +95,7 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSubscriptionSyncer<Na
     }
 
     @Getter
-    protected static class NacosLiveSpaceKey extends LiveSpaceKey implements NacosSyncKey {
+    protected static class NacosLiveSpaceKey extends SyncKey.LiveSpaceKey implements NacosSyncKey {
 
         private final String dataId;
 
