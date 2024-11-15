@@ -55,6 +55,10 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
 
     private NacosClient client;
 
+    public ServiceNacosSyncer() {
+        name = "service-nacos-syncer";
+    }
+
     @Override
     protected void startSync() throws Exception {
         client = new NacosClient(syncConfig);

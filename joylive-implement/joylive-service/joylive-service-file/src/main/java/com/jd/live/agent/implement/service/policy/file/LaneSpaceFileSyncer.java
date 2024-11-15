@@ -24,9 +24,9 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.file.FileWatcher;
 import lombok.Getter;
 
@@ -50,6 +50,10 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
 
     @Config(SyncConfig.SYNC_LANE_SPACE)
     private SyncConfig syncConfig = new SyncConfig();
+
+    public LaneSpaceFileSyncer() {
+        name = "lane-space-file-syncer";
+    }
 
     @Override
     public String getType() {

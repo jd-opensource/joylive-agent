@@ -53,6 +53,10 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
 
     private NacosClient client;
 
+    public LiveSpaceNacosSyncer() {
+        name = "live-space-nacos-syncer";
+    }
+
     @Override
     protected void startSync() throws Exception {
         client = new NacosClient(syncConfig);

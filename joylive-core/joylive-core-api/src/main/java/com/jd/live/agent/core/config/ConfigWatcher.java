@@ -15,17 +15,10 @@
  */
 package com.jd.live.agent.core.config;
 
-import java.util.List;
-
 /**
  * An interface for watching and managing configuration updates.
  */
 public interface ConfigWatcher {
-
-    /**
-     * A constant representing the component name for the configuration watcher.
-     */
-    String COMPONENT_CONFIG_WATCHER = "configWatcher";
 
     /**
      * A constant representing the type of configuration space for live space.
@@ -58,33 +51,4 @@ public interface ConfigWatcher {
      */
     void removeListener(String type, ConfigListener listener);
 
-    /**
-     * An adapter class for the ConfigWatcher interface.
-     */
-    class ConfigWatcherAdapter implements ConfigWatcher {
-
-        private final List<ConfigWatcher> watchers;
-
-        public ConfigWatcherAdapter(List<ConfigWatcher> watchers) {
-            this.watchers = watchers;
-        }
-
-        @Override
-        public void addListener(String type, ConfigListener listener) {
-            if (type != null && listener != null && watchers != null) {
-                for (ConfigWatcher watcher : watchers) {
-                    watcher.addListener(type, listener);
-                }
-            }
-        }
-
-        @Override
-        public void removeListener(String type, ConfigListener listener) {
-            if (type != null && listener != null && watchers != null) {
-                for (ConfigWatcher watcher : watchers) {
-                    watcher.removeListener(type, listener);
-                }
-            }
-        }
-    }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.microservice;
+package com.jd.live.agent.implement.service.policy.multilive;
 
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
@@ -26,23 +26,23 @@ import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
-import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
+import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
 
 /**
- * MicroServiceSyncer is responsible for synchronizing microservice policies from a microservice control plane.
+ * LiveServiceSyncer is responsible for synchronizing live service policies from a multilive control plane.
  */
 @Injectable
-@Extension("MicroServiceSyncer")
-@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "jmsf")
-@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-public class MicroServiceSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
+@Extension("LiveServiceSyncer")
+@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
+@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
-    @Config(SyncConfig.SYNC_MICROSERVICE)
-    private MicroServiceSyncConfigLive syncConfig = new MicroServiceSyncConfigLive();
+    @Config(SyncConfig.SYNC_LIVE_SPACE)
+    private LiveSyncConfigLive syncConfig = new LiveSyncConfigLive();
 
-    public MicroServiceSyncer() {
-        name = "jmsf";
+    public LiveServiceHttpSyncer() {
+        name = "live-service-multilive-syncer";
     }
 
     @Override
@@ -57,6 +57,6 @@ public class MicroServiceSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
     @Override
     protected void configure(ServiceEvent event) {
-        event.setMergePolicy(MergePolicy.FLOW_CONTROL);
+        event.setMergePolicy(MergePolicy.LIVE);
     }
 }

@@ -26,9 +26,9 @@ import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.file.FileWatcher;
 import lombok.Getter;
 
@@ -50,6 +50,10 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     @Config(SyncConfig.SYNC_MICROSERVICE)
     private SyncConfig syncConfig = new SyncConfig();
+
+    public ServiceFileSyncer() {
+        name = "service-file-syncer";
+    }
 
     @Override
     public String getType() {

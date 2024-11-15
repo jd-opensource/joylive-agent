@@ -31,13 +31,13 @@ import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfi
 @Extension("LiveSpaceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceSyncer extends AbstractLiveSpaceHttpSyncer {
+public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private LiveSyncConfigLive syncConfig = new LiveSyncConfigLive();
 
-    public LiveSpaceSyncer() {
-        name = "multilive";
+    public LiveSpaceHttpSyncer() {
+        name = "live-space-multilive-syncer";
     }
 
     @Override

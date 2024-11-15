@@ -53,6 +53,10 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
 
     private NacosClient client;
 
+    public LaneSpaceNacosSyncer() {
+        name = "lane-space-nacos-syncer";
+    }
+
     @Override
     protected void startSync() throws Exception {
         client = new NacosClient(syncConfig);

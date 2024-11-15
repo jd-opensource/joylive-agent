@@ -1,2 +1,2 @@
-com.jd.live.agent.implement.service.policy.multilive.LiveSpaceSyncer
-com.jd.live.agent.implement.service.policy.multilive.LiveServiceSyncer
+com.jd.live.agent.implement.service.policy.multilive.LiveSpaceHttpSyncer
+com.jd.live.agent.implement.service.policy.multilive.LiveServiceHttpSyncer

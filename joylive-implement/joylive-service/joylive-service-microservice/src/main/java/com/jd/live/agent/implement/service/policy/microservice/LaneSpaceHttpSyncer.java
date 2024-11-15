@@ -31,13 +31,13 @@ import com.jd.live.agent.implement.service.policy.microservice.config.MicroServi
 @Extension("LiveSpaceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "jmsf")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
-public class LaneSpaceSyncer extends AbstractLaneSpaceHttpSyncer {
+public class LaneSpaceHttpSyncer extends AbstractLaneSpaceHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private MicroServiceSyncConfigLive syncConfig = new MicroServiceSyncConfigLive();
 
-    public LaneSpaceSyncer() {
-        name = "jmsf";
+    public LaneSpaceHttpSyncer() {
+        name = "lane-space-jmsf-syncer";
     }
 
     @Override

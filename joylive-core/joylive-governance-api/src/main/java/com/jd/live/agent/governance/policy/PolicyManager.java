@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.core.config.ConfigSupervisor;
 import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
@@ -30,9 +31,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.service.AgentService;
 import com.jd.live.agent.core.service.ConfigService;
-import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -92,8 +91,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(ConfigWatcher.COMPONENT_CONFIG_WATCHER)
-    private ConfigWatcher configWatcher;
+    @Inject(ConfigSupervisor.COMPONENT_CONFIG_SUPERVISOR)
+    private ConfigSupervisor configSupervisor;
 
     @Inject(ObjectParser.JSON)
     private ObjectParser objectParser;
@@ -153,9 +152,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject
     private OutboundFilter[] outboundFilters;
-
-    @Inject(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR)
-    private ServiceSupervisor serviceSupervisor;
 
     @Getter
     @Inject
@@ -289,9 +285,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 }
             }
         });
-        configWatcher.addListener(TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
-        configWatcher.addListener(TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
-        configWatcher.addListener(TYPE_SERVICE_SPACE, new ServiceListener(this, objectParser, policyPublisher));
+        configSupervisor.addListener(TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
+        configSupervisor.addListener(TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
+        configSupervisor.addListener(TYPE_SERVICE_SPACE, new ServiceListener(this, objectParser, policyPublisher));
     }
 
     /**
@@ -302,15 +298,13 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      */
     private List<String> getServiceSyncers() {
         List<String> result = new ArrayList<>();
-        if (serviceSupervisor != null) {
-            List<AgentService> services = serviceSupervisor.getServices();
-            if (services != null) {
-                for (AgentService service : services) {
-                    if (service instanceof ConfigService) {
-                        ConfigService configService = (ConfigService) service;
-                        if (TYPE_SERVICE_SPACE.equals(configService.getType())) {
-                            result.add(configService.getName());
-                        }
+        List<ConfigWatcher> watchers = configSupervisor.getWatchers();
+        if (watchers != null) {
+            for (ConfigWatcher service : watchers) {
+                if (service instanceof ConfigService) {
+                    ConfigService configService = (ConfigService) service;
+                    if (TYPE_SERVICE_SPACE.equals(configService.getType())) {
+                        result.add(configService.getName());
                     }
                 }
             }
