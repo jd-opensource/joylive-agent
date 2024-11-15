@@ -36,6 +36,7 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * An abstract class that provides a base implementation for synchronizing data with an HTTP service.
@@ -89,7 +90,7 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
             } catch (IOException e) {
                 subscription.onUpdate(new SyncResponse<>(e));
             } finally {
-                long delay = config.getInterval() + (long) (Math.random() * 1000);
+                long delay = config.getInterval() + ThreadLocalRandom.current().nextLong(2000);
                 timer.delay(getName() + "-" + key.getName(), delay, () -> addTask(key.getSubscriber()));
             }
         };
