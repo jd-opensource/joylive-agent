@@ -185,11 +185,15 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param service      The new service data to update the subscriber with.
      */
     protected void onSuccess(Subscription<K, Service> subscription, Service service) {
-        PolicySubscriber subscriber = subscription.getKey().getSubscriber();
-        if (update(subscriber.getName(), service)) {
-            subscription.setVersion(service.getVersion());
-            subscriber.complete(subscription.getOwner());
-            logger.info(subscription.getSuccessMessage(SyncStatus.SUCCESS));
+        if (service == null) {
+            onNotFound(subscription);
+        } else {
+            PolicySubscriber subscriber = subscription.getKey().getSubscriber();
+            if (update(subscriber.getName(), service)) {
+                subscription.setVersion(service.getVersion());
+                subscriber.complete(subscription.getOwner());
+                logger.info(subscription.getSuccessMessage(SyncStatus.SUCCESS));
+            }
         }
     }
 
@@ -326,8 +330,12 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param config The configuration string to parse.
      * @return A Service object representing the parsed configuration, or null if the configuration string is null or empty.
      */
-    protected Service parse(String config) {
-        return config == null || config.isEmpty() ? null : parser.read(new StringReader(config), Service.class);
+    protected SyncResponse<Service> parse(String config) {
+        if (config == null || config.isEmpty()) {
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
+        }
+        Service service = parser.read(new StringReader(config), Service.class);
+        return new SyncResponse<>(SyncStatus.SUCCESS, service);
     }
 
 }

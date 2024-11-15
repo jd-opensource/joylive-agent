@@ -90,10 +90,9 @@ public class HttpWatcher implements AutoCloseable {
      */
     public void subscribe(HttpResource resource, HttpListener listener) {
         if (resource != null && listener != null) {
-            subscriptions.computeIfAbsent(resource, f -> {
+            if (subscriptions.putIfAbsent(resource, listener) == null) {
                 request(resource, listener);
-                return listener;
-            });
+            }
         }
     }
 
@@ -193,13 +192,13 @@ public class HttpWatcher implements AutoCloseable {
      * @param <T>      The type of the data to synchronize.
      * @return A new Syncer instance.
      */
-    public <K extends HttpSyncKey, T> Syncer<K, T> createSyncer(Function<String, T> function) {
+    public <K extends HttpSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> function) {
         return subscription -> {
             try {
                 subscribe(subscription.getKey(), event -> {
                     switch (event.getType()) {
                         case UPDATE:
-                            subscription.onUpdate(new SyncResponse<>(SyncStatus.SUCCESS, function.apply(event.getData())));
+                            subscription.onUpdate(function.apply(event.getData()));
                             break;
                         case DELETE:
                             subscription.onUpdate(new SyncResponse<>(SyncStatus.NOT_FOUND, null));

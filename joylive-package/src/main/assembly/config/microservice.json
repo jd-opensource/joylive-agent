@@ -408,24 +408,6 @@
     ]
   },
   {
-    "name": "com.jd.live.agent.demo.service.HelloService",
-    "serviceType": "RPC_INTERFACE",
-    "version": 0,
-    "groups": [
-      {
-        "name": "default",
-        "defaultGroup": true,
-        "servicePolicy": {
-          "livePolicy": {
-            "unitPolicy": "UNIT",
-            "writeProtect": false,
-            "cellPolicy": "PREFER_LOCAL_CELL"
-          }
-        }
-      }
-    ]
-  },
-  {
     "name": "dubbo3-provider",
     "serviceType": "RPC_APP",
     "version": 0,

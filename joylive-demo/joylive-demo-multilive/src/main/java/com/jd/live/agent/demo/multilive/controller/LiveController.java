@@ -22,6 +22,8 @@ import com.jd.live.agent.demo.multilive.vo.Response;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.sync.api.ApiError;
+import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,45 +46,41 @@ public class LiveController {
     }
 
     @GetMapping("/v1/workspaces")
-    public Response<List<Workspace>> getWorkspaces() {
+    public ApiResponse<List<Workspace>> getWorkspaces() {
         List<Workspace> workspaces = liveService.getLiveSpaces();
-        Response.Result<List<Workspace>> result = new Response.Result<>(HttpStatus.OK.value(), null, workspaces);
-        return new Response<>(String.valueOf(counter.incrementAndGet()), Response.SUCCESS, result);
+        return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), workspaces);
     }
 
     @GetMapping("/v1/workspaces/{spaceId}/version/{version}")
-    public Response<LiveSpace> getLiveSpace(@PathVariable("spaceId") String spaceId,
+    public ApiResponse<LiveSpace> getLiveSpace(@PathVariable("spaceId") String spaceId,
                                             @PathVariable("version") long version) {
         Response.Result<LiveSpace> result;
         LiveSpace liveSpace = liveService.getLiveSpace(spaceId);
         if (liveSpace == null) {
-            result = new Response.Result<>(HttpStatus.NOT_FOUND.value(), null, null);
+            return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_FOUND));
         } else {
             LiveSpec liveSpec = liveSpace.getSpec();
             Long ver = liveSpec == null ? null : liveSpec.getVersion();
             ver = ver == null ? 0 : ver;
             if (ver <= version) {
-                result = new Response.Result<>(HttpStatus.NOT_MODIFIED.value(), null, null);
+                return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_MODIFIED));
             } else {
-                result = new Response.Result<>(HttpStatus.OK.value(), null, liveSpace);
+                return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), liveSpace);
             }
         }
-        return new Response<>(String.valueOf(counter.incrementAndGet()), Response.SUCCESS, result);
     }
 
     @GetMapping("/v1/services/{service}/version/{version}")
-    public Response<Service> getServiceLivePolicy(@PathVariable("service") String name,
+    public ApiResponse<Service> getServiceLivePolicy(@PathVariable("service") String name,
                                                   @PathVariable("version") long version) {
-        Response.Result<Service> result;
         Service service = liveService.getService(name);
         if (service == null) {
-            result = new Response.Result<>(HttpStatus.NOT_FOUND.value(), null, null);
+            return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_FOUND));
         } else if (service.getVersion() <= version) {
-            result = new Response.Result<>(HttpStatus.NOT_MODIFIED.value(), null, null);
+            return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_MODIFIED));
         } else {
-            result = new Response.Result<>(HttpStatus.OK.value(), null, service);
+            return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), service);
         }
-        return new Response<>(String.valueOf(counter.incrementAndGet()), Response.SUCCESS, result);
     }
 
 }

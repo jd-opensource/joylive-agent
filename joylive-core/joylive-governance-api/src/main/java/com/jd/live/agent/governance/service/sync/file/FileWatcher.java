@@ -104,10 +104,9 @@ public class FileWatcher implements AutoCloseable {
      */
     public void subscribe(File file, FileListener listener) {
         if (file != null && listener != null) {
-            subscriptions.computeIfAbsent(file, f -> {
-                load(f, listener);
-                return listener;
-            });
+            if (subscriptions.putIfAbsent(file, listener) == null) {
+                load(file, listener);
+            }
         }
     }
 

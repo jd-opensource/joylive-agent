@@ -65,6 +65,9 @@ public abstract class HttpUtils {
      *                     reading the response, or if the URL is not valid.
      */
     public static <T> HttpResponse<T> get(String uri, Consumer<HttpURLConnection> configure, ObjectReader<Reader, T> reader) throws IOException {
+        if (!uri.contains("://")) {
+            uri = "http://" + uri;
+        }
         URL url = new URL(uri);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         try {

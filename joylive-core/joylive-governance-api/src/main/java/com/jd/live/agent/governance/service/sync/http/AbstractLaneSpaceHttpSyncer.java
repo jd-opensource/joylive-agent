@@ -18,18 +18,18 @@ package com.jd.live.agent.governance.service.sync.http;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
-import com.jd.live.agent.governance.service.sync.Subscription;
-import com.jd.live.agent.governance.service.sync.SyncAddress;
+import com.jd.live.agent.governance.service.sync.*;
 import com.jd.live.agent.governance.service.sync.SyncAddress.LaneSpaceAddress;
 import com.jd.live.agent.governance.service.sync.SyncKey.HttpSyncKey;
 import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
-import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import lombok.Getter;
 
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +102,26 @@ public abstract class AbstractLaneSpaceHttpSyncer extends AbstractLaneSpaceSynce
     protected Syncer<HttpLaneSpaceKey, LaneSpace> createSyncer() {
         watcher = new HttpWatcher(getType(), getSyncConfig(), application);
         return watcher.createSyncer(this::parseSpace);
+    }
+
+    @Override
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
+        if (config == null || config.isEmpty()) {
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
+        }
+        ApiResponse<List<ApiSpace>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<List<ApiSpace>>>() {
+        });
+        return response.toSyncResponse();
+    }
+
+    @Override
+    protected SyncResponse<LaneSpace> parseSpace(String config) {
+        if (config == null || config.isEmpty()) {
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
+        }
+        ApiResponse<LaneSpace> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<LaneSpace>>() {
+        });
+        return response.toSyncResponse();
     }
 
     @Getter

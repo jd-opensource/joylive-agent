@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
-import com.jd.live.agent.governance.service.sync.SyncStatus;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
@@ -100,14 +99,14 @@ public class NacosClient implements AutoCloseable {
      * @param <T> The type of the object returned by the parser function.
      * @return A new Syncer object that can be used to synchronize data between Nacos and a local cache.
      */
-    public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(Function<String, T> parser) {
+    public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> parser) {
         return subscription -> {
             try {
                 subscribe(subscription.getKey().getDataId(), subscription.getKey().getGroup(), new AbstractListener() {
                     // TODO executor
                     @Override
                     public void receiveConfigInfo(String configInfo) {
-                        subscription.onUpdate(new SyncResponse<>(SyncStatus.SUCCESS, parser.apply(configInfo)));
+                        subscription.onUpdate(parser.apply(configInfo));
                     }
                 });
             } catch (Throwable e) {

@@ -16,6 +16,8 @@
 package com.jd.live.agent.governance.service.sync.api;
 
 import com.jd.live.agent.core.util.http.HttpStatus;
+import com.jd.live.agent.governance.service.sync.SyncResponse;
+import com.jd.live.agent.governance.service.sync.SyncStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,5 +47,18 @@ public class ApiResponse<T> {
     public HttpStatus getStatus() {
         HttpStatus status = error == null ? HttpStatus.OK : HttpStatus.resolve(error.getCode());
         return status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
+    }
+
+    public SyncResponse<T> toSyncResponse() {
+        switch (getStatus()) {
+            case OK:
+                return new SyncResponse<>(SyncStatus.SUCCESS, data);
+            case NOT_FOUND:
+                return new SyncResponse<>(SyncStatus.NOT_FOUND, data);
+            case NOT_MODIFIED:
+                return new SyncResponse<>(SyncStatus.NOT_MODIFIED, data);
+            default:
+                return new SyncResponse<>(error.getMessage());
+        }
     }
 }

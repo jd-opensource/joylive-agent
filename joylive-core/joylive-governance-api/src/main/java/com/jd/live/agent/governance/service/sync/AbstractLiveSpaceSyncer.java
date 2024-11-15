@@ -97,11 +97,10 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
      * @param spaceId The ID of the LiveSpace object to synchronize.
      */
     protected void syncSpace(String spaceId) {
-        subscriptions.computeIfAbsent(spaceId, k -> {
-            Subscription<K1, LiveSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+        Subscription<K1, LiveSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+        if (subscriptions.put(spaceId, subscription) == null) {
             syncer.sync(subscription);
-            return subscription;
-        });
+        }
     }
 
     /**
@@ -132,7 +131,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
     protected void onSpaceResponse(SyncResponse<LiveSpace> response, String spaceId) {
         switch (response.getStatus()) {
             case SUCCESS:
-                updateSpace(response.getData());
+                updateSpace(spaceId, response.getData());
                 break;
             case NOT_MODIFIED:
                 break;
@@ -167,22 +166,27 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
     /**
      * Updates the specified LiveSpace object.
      *
+     * @param spaceId The space id.
      * @param space The LiveSpace object to update.
      */
-    protected void updateSpace(LiveSpace space) {
-        Subscription<K1, LiveSpace> subscription = subscriptions.get(space.getId());
-        long version = space.getSpec().getVersion();
-        if (subscription != null) {
-            synchronized (subscription) {
-                if (subscription.getVersion() < version) {
-                    subscription.setVersion(version);
-                    publish(ConfigEvent.builder()
-                            .type(EventType.UPDATE_ITEM)
-                            .name(space.getId())
-                            .value(space)
-                            .description("live space " + space.getId())
-                            .watcher(getName())
-                            .build());
+    protected void updateSpace(String spaceId, LiveSpace space) {
+        if (space == null) {
+            deleteSpace(spaceId);
+        } else {
+            Subscription<K1, LiveSpace> subscription = subscriptions.get(space.getId());
+            long version = space.getSpec().getVersion();
+            if (subscription != null) {
+                synchronized (subscription) {
+                    if (subscription.getVersion() < version) {
+                        subscription.setVersion(version);
+                        publish(ConfigEvent.builder()
+                                .type(EventType.UPDATE_ITEM)
+                                .name(space.getId())
+                                .value(space)
+                                .description("live space " + space.getId())
+                                .watcher(getName())
+                                .build());
+                    }
                 }
             }
         }
@@ -214,12 +218,13 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
      * @param config The configuration string to parse.
      * @return A list of ApiSpace objects.
      */
-    protected List<ApiSpace> parseSpaceList(String config) {
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
         if (config == null || config.isEmpty()) {
-            return new ArrayList<>();
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
-        return parser.read(new StringReader(config), new TypeReference<List<ApiSpace>>() {
+        List<ApiSpace> spaces = parser.read(new StringReader(config), new TypeReference<List<ApiSpace>>() {
         });
+        return new SyncResponse<>(SyncStatus.SUCCESS, spaces);
     }
 
     /**
@@ -228,11 +233,13 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
      * @param config The configuration string to parse.
      * @return A LiveSpace object, or null if the configuration is empty.
      */
-    protected LiveSpace parseSpace(String config) {
+    protected SyncResponse<LiveSpace> parseSpace(String config) {
         if (config == null || config.isEmpty()) {
-            return null;
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
-        return parser.read(new StringReader(config), LiveSpace.class);
+        LiveSpace space = parser.read(new StringReader(config), new TypeReference<LiveSpace>() {
+        });
+        return new SyncResponse<>(SyncStatus.SUCCESS, space);
     }
 
     /**

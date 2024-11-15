@@ -97,11 +97,10 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
      * @param spaceId The ID of the LaneSpace object to synchronize.
      */
     protected void syncSpace(String spaceId) {
-        subscriptions.computeIfAbsent(spaceId, k -> {
-            Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+        Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+        if (subscriptions.putIfAbsent(spaceId, subscription) == null) {
             syncer.sync(subscription);
-            return subscription;
-        });
+        }
     }
 
     /**
@@ -132,7 +131,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     protected void onSpaceResponse(SyncResponse<LaneSpace> response, String spaceId) {
         switch (response.getStatus()) {
             case SUCCESS:
-                updateSpace(response.getData());
+                updateSpace(spaceId, response.getData());
                 break;
             case NOT_MODIFIED:
                 break;
@@ -167,22 +166,27 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     /**
      * Updates the specified LaneSpace object.
      *
+     * @param spaceId The id of the space.
      * @param space The LaneSpace object to update.
      */
-    protected void updateSpace(LaneSpace space) {
-        Subscription<K, LaneSpace> subscription = subscriptions.get(space.getId());
-        long version = space.getVersion();
-        if (subscription != null) {
-            synchronized (subscription) {
-                if (subscription.getVersion() < version) {
-                    subscription.setVersion(version);
-                    publish(ConfigEvent.builder()
-                            .type(EventType.UPDATE_ITEM)
-                            .name(space.getId())
-                            .value(space)
-                            .description("lane space " + space.getId())
-                            .watcher(getName())
-                            .build());
+    protected void updateSpace(String spaceId, LaneSpace space) {
+        if (space == null) {
+            deleteSpace(spaceId);
+        } else {
+            Subscription<K, LaneSpace> subscription = subscriptions.get(space.getId());
+            long version = space.getVersion();
+            if (subscription != null) {
+                synchronized (subscription) {
+                    if (subscription.getVersion() < version) {
+                        subscription.setVersion(version);
+                        publish(ConfigEvent.builder()
+                                .type(EventType.UPDATE_ITEM)
+                                .name(space.getId())
+                                .value(space)
+                                .description("lane space " + space.getId())
+                                .watcher(getName())
+                                .build());
+                    }
                 }
             }
         }
@@ -214,25 +218,28 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
      * @param config The configuration string to parse.
      * @return A list of ApiSpace objects.
      */
-    protected List<ApiSpace> parseSpaceList(String config) {
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
         if (config == null || config.isEmpty()) {
-            return new ArrayList<>();
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
-        return parser.read(new StringReader(config), new TypeReference<List<ApiSpace>>() {
+        List<ApiSpace> spaces = parser.read(new StringReader(config), new TypeReference<List<ApiSpace>>() {
         });
+        return new SyncResponse<>(SyncStatus.SUCCESS, spaces);
     }
 
     /**
-     * Parses a configuration string into a LaneSpace object.
+     * Parses a configuration string into a LiveSpace object.
      *
      * @param config The configuration string to parse.
-     * @return A LaneSpace object, or null if the configuration is empty.
+     * @return A LiveSpace object, or null if the configuration is empty.
      */
-    protected LaneSpace parseSpace(String config) {
+    protected SyncResponse<LaneSpace> parseSpace(String config) {
         if (config == null || config.isEmpty()) {
-            return null;
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
-        return parser.read(new StringReader(config), LaneSpace.class);
+        LaneSpace space = parser.read(new StringReader(config), new TypeReference<LaneSpace>() {
+        });
+        return new SyncResponse<>(SyncStatus.SUCCESS, space);
     }
 
     /**
