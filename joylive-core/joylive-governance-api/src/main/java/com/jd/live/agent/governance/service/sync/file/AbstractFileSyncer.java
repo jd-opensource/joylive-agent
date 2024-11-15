@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.service.sync.file;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.event.FileEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -130,7 +131,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
      * @param data The data to publish with the configuration event.
      */
     protected void onSuccess(T data) {
-        publish(new ConfigEvent(ConfigEvent.EventType.UPDATE_ALL, "", data, getType(), getName()));
+        publish(createEvent(data));
     }
 
     /**
@@ -139,7 +140,11 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
      * @param file The file that does not exist.
      */
     protected void onNotFound(File file) {
-        publish(new ConfigEvent(ConfigEvent.EventType.UPDATE_ALL, "", null, getType(), getName()));
+        publish(createEvent(null));
+    }
+
+    protected ConfigEvent createEvent(T data) {
+        return new ConfigEvent(EventType.UPDATE_ALL, "", data, getType(), getName());
     }
 
     /**

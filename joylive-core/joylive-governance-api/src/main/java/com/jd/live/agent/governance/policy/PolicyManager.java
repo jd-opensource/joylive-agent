@@ -223,17 +223,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     }
 
     @Override
-    public CompletableFuture<Void> subscribe(String service) {
-        if (service == null || service.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        String namespace = application.getService().getNamespace();
-        PolicySubscriber subscriber = new PolicySubscriber(service, namespace, TYPE_SERVICE_SPACE, serviceSyncers);
-        subscribe(subscriber);
-        return subscriber.getFuture();
-    }
-
-    @Override
     public CompletableFuture<Void> subscribe(String namespace, String service) {
         if (service == null || service.isEmpty()) {
             return CompletableFuture.completedFuture(null);

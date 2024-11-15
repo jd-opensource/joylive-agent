@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy.listener;
 
 import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
@@ -27,7 +28,6 @@ import com.jd.live.agent.governance.policy.service.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A listener class for service configuration updates that extends the AbstractListener class.
@@ -36,9 +36,11 @@ public class ServiceListener extends AbstractListener<Service> {
 
     private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
 
-    private final AtomicBoolean loaded = new AtomicBoolean();
+    private Set<String> loadedServices = new HashSet<>();
 
-    private Map<String, Long> versions = new HashMap<>();
+    private boolean loadedAll = false;
+
+    private final Object mutex = new Object();
 
     public ServiceListener(PolicySupervisor supervisor,
                            ObjectParser parser,
@@ -51,37 +53,42 @@ public class ServiceListener extends AbstractListener<Service> {
     @Override
     protected void updateItems(GovernancePolicy policy, List<Service> items, ConfigEvent event) {
         ServiceEvent se = (ServiceEvent) event;
-        Map<String, Long> newVersions = se.getVersions();
+        Map<String, Long> newVersions = new HashMap<>(items == null ? 0 : items.size());
+        List<Service> oldServices = policy.getServices();
+        Map<String, Long> oldVersions = new HashMap<>(oldServices == null ? 0 : oldServices.size());
+        if (oldServices != null) {
+            oldServices.forEach(s -> oldVersions.put(s.getName(), s.getVersion()));
+        }
         List<Service> updates = new ArrayList<>();
         Set<String> deletes = new HashSet<>();
         // AddOrUpdate
-        if (items != null && !items.isEmpty()) {
+        if (items != null) {
+            Set<String> loadedServices = se.getLoadedServices();
             for (Service item : items) {
+                loadedServices.add(item.getName());
                 newVersions.put(item.getName(), item.getVersion());
-                long oldVersion = versions.getOrDefault(item.getName(), -1L);
+                long oldVersion = oldVersions.getOrDefault(item.getName(), -1L);
                 if (item.getVersion() > oldVersion) {
                     updates.add(item);
                 }
             }
         }
         // Remove
-        for (String name : versions.keySet()) {
+        for (String name : oldVersions.keySet()) {
             if (!newVersions.containsKey(name)) {
                 deletes.add(name);
             }
         }
 
-        List<Service> newServices = policy.onUpdate(updates, deletes, se.getMergePolicy(), event.getWatcher());
+        List<Service> newServices = policy.onUpdate(updates, deletes, se.getMergePolicy(), se.getWatcher());
         policy.setServices(newServices);
     }
 
     @Override
     protected void updateItem(GovernancePolicy policy, Service item, ConfigEvent event) {
         ServiceEvent se = (ServiceEvent) event;
-        Map<String, Long> newVersions = se.getVersions();
-        newVersions.putAll(versions);
-        newVersions.put(item.getName(), item.getVersion());
-        List<Service> newServices = policy.onUpdate(Collections.singletonList(item), null, se.getMergePolicy(), event.getWatcher());
+        se.getLoadedServices().add(item.getName());
+        List<Service> newServices = policy.onUpdate(Collections.singletonList(item), null, se.getMergePolicy(), se.getWatcher());
         policy.setServices(newServices);
     }
 
@@ -91,20 +98,27 @@ public class ServiceListener extends AbstractListener<Service> {
             return;
         }
         ServiceEvent se = (ServiceEvent) event;
-        Map<String, Long> newVersions = se.getVersions();
-        List<Service> newServices = policy.onDelete(event.getName(), se.getMergePolicy(), event.getWatcher());
-        newVersions.putAll(versions);
-        newVersions.remove(event.getName());
+        se.getLoadedServices().remove(event.getName());
+        List<Service> newServices = policy.onDelete(se.getName(), se.getMergePolicy(), se.getWatcher());
         policy.setServices(newServices);
     }
 
     @Override
-    protected void onSuccess(ConfigEvent event) {
-        versions = ((ServiceEvent) event).getVersions();
-        if (loaded.compareAndSet(false, true)) {
-            subscribers.forEach((key, value) -> value.complete(event.getWatcher()));
+    protected synchronized void onSuccess(ConfigEvent event) {
+        synchronized (mutex) {
+            ServiceEvent se = (ServiceEvent) event;
+            Set<String> loaded = se.getLoadedServices();
+            loaded.addAll(loadedServices);
+            loadedServices = loaded;
+            loadedAll = loadedAll || event.getType() == EventType.UPDATE_ALL;
+            subscribers.forEach((key, value) -> {
+                if (loadedAll || loaded.contains(key)) {
+                    value.complete(event.getWatcher());
+                }
+            });
         }
         super.onSuccess(event);
+
     }
 
     /**
@@ -123,7 +137,8 @@ public class ServiceListener extends AbstractListener<Service> {
      */
     private void subscribe(PolicySubscriber subscriber) {
         if (subscriber != null && ConfigWatcher.TYPE_SERVICE_SPACE.equals(subscriber.getType())) {
-            PolicySubscriber old = subscribers.putIfAbsent(subscriber.getUniqueName(), subscriber);
+            String name = subscriber.getName();
+            PolicySubscriber old = subscribers.putIfAbsent(name, subscriber);
             if (old != null && old != subscriber) {
                 old.trigger((v, t) -> {
                     if (t == null) {
@@ -132,6 +147,12 @@ public class ServiceListener extends AbstractListener<Service> {
                         subscriber.completeExceptionally(t);
                     }
                 });
+            } else {
+                synchronized (mutex) {
+                    if (loadedAll || loadedServices.contains(name)) {
+                        subscriber.complete();
+                    }
+                }
             }
         }
     }

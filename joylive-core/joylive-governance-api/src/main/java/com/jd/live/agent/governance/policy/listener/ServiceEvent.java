@@ -21,8 +21,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 public class ServiceEvent extends ConfigEvent {
@@ -30,7 +30,7 @@ public class ServiceEvent extends ConfigEvent {
     @Setter
     private MergePolicy mergePolicy;
 
-    private final Map<String, Long> versions = new HashMap<>();
+    private final Set<String> loadedServices = new HashSet<>();
 
     public ServiceEvent() {
     }

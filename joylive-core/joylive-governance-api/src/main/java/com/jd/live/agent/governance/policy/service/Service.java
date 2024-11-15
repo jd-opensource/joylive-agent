@@ -35,13 +35,17 @@ import java.util.function.BiConsumer;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-public class Service extends PolicyOwner {
+public class Service extends PolicyOwner implements ServiceName {
 
     private static final URI SERVICE_URI = URI.builder().schema("service").build();
 
     @Getter
     @Setter
     private String name;
+
+    @Getter
+    @Setter
+    private String namespace;
 
     @Getter
     @Setter
@@ -192,6 +196,7 @@ public class Service extends PolicyOwner {
         result.id = id;
         result.uri = uri;
         result.name = name;
+        result.namespace = namespace;
         result.serviceType = serviceType;
         result.version = version;
         result.groups = groups == null ? null : new ArrayList<>(groups.size());

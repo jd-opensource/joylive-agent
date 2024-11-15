@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
+import com.jd.live.agent.core.config.ConfigEvent;
 import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
@@ -33,7 +34,6 @@ import com.jd.live.agent.governance.service.sync.file.FileWatcher;
 import lombok.Getter;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStreamReader;
 import java.util.List;
 
@@ -66,24 +66,14 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     }
 
     @Override
-    protected void onSuccess(List<Service> data) {
-        publish(ServiceEvent.creator()
+    protected ConfigEvent createEvent(List<Service> data) {
+        return ServiceEvent.creator()
                 .type(EventType.UPDATE_ALL)
                 .value(data)
                 .description(getType())
                 .watcher(getName())
                 .mergePolicy(MergePolicy.ALL)
-                .build());
-    }
-
-    @Override
-    protected void onNotFound(File file) {
-        publish(ServiceEvent.creator()
-                .type(EventType.UPDATE_ALL)
-                .description(getType())
-                .watcher(getName())
-                .mergePolicy(MergePolicy.ALL)
-                .build());
+                .build();
     }
 
     @Override
