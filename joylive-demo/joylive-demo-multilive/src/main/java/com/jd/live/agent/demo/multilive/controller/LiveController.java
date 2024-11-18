@@ -18,12 +18,12 @@ package com.jd.live.agent.demo.multilive.controller;
 import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.demo.multilive.entity.Workspace;
 import com.jd.live.agent.demo.multilive.service.LiveService;
-import com.jd.live.agent.demo.multilive.vo.Response;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.api.ApiError;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
+import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,15 +46,14 @@ public class LiveController {
     }
 
     @GetMapping("/v1/workspaces")
-    public ApiResponse<List<Workspace>> getWorkspaces() {
+    public ApiResponse<ApiResult<List<Workspace>>> getWorkspaces() {
         List<Workspace> workspaces = liveService.getLiveSpaces();
-        return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), workspaces);
+        return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiResult<>(HttpStatus.OK, workspaces));
     }
 
     @GetMapping("/v1/workspaces/{spaceId}/version/{version}")
-    public ApiResponse<LiveSpace> getLiveSpace(@PathVariable("spaceId") String spaceId,
+    public ApiResponse<ApiResult<LiveSpace>> getLiveSpace(@PathVariable("spaceId") String spaceId,
                                             @PathVariable("version") long version) {
-        Response.Result<LiveSpace> result;
         LiveSpace liveSpace = liveService.getLiveSpace(spaceId);
         if (liveSpace == null) {
             return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_FOUND));
@@ -65,13 +64,13 @@ public class LiveController {
             if (ver <= version) {
                 return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_MODIFIED));
             } else {
-                return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), liveSpace);
+                return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiResult<>(HttpStatus.OK, liveSpace));
             }
         }
     }
 
     @GetMapping("/v1/services/{service}/version/{version}")
-    public ApiResponse<Service> getServiceLivePolicy(@PathVariable("service") String name,
+    public ApiResponse<ApiResult<Service>> getServiceLivePolicy(@PathVariable("service") String name,
                                                   @PathVariable("version") long version) {
         Service service = liveService.getService(name);
         if (service == null) {
@@ -79,7 +78,7 @@ public class LiveController {
         } else if (service.getVersion() <= version) {
             return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiError(HttpStatus.NOT_MODIFIED));
         } else {
-            return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), service);
+            return new ApiResponse<>(String.valueOf(counter.incrementAndGet()), new ApiResult<>(HttpStatus.OK, service));
         }
     }
 

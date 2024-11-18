@@ -31,6 +31,10 @@ public class ApiResult<T> {
         this.data = data;
     }
 
+    public ApiResult(HttpStatus status, T data) {
+        this(status.value(), status.getReasonPhrase(), data);
+    }
+
     public HttpStatus getStatus() {
         HttpStatus status = HttpStatus.resolve(code);
         return status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
