@@ -16,21 +16,16 @@
 package com.jd.live.agent.implement.service.policy.nacos.config;
 
 import com.jd.live.agent.core.config.SyncConfig;
-import com.jd.live.agent.governance.policy.service.MergePolicy;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * NacosSyncConfig is responsible for Nacos settings.
+ *  NacosSyncConfig is responsible for Nacos settings.
  */
+
 @Getter
 @Setter
 public class NacosSyncConfig extends SyncConfig {
-
-    /**
-     * nacos server address
-     */
-    private String serverAddr;
 
     /**
      * nacos namespace
@@ -47,27 +42,22 @@ public class NacosSyncConfig extends SyncConfig {
      */
     private String password;
 
+    private String serviceKeyTemplate = CONFIG_PREFIX + "-service-${name}";
 
-    /**
-     * service nacos group
-     * note: nacos data id  is service name
-     */
-    private String serviceNacosGroup;
+    private String serviceGroup = "DEFAULT_GROUP";
 
-    /**
-     * lane space nacos group
-     * note: nacos data id  is  "lanes.json"
-     */
-    private String laneSpaceNacosGroup;
+    private String laneSpacesKey = CONFIG_PREFIX + "-laneSpaces";
 
-    /**
-     * live space nacos group
-     * note 1: workspaces nacos data_id is "workspaces.json"
-     * note 2: liveSpace nacos data_id is workspaceId which is from workspaces
-     */
-    private String liveSpaceNacosGroup;
+    private String laneSpaceKeyTemplate = CONFIG_PREFIX + "-laneSpace-${id}";
 
+    private String laneSpaceGroup = "DEFAULT_GROUP";
 
-    private MergePolicy policy = MergePolicy.ALL;
+    private String liveSpacesKey = CONFIG_PREFIX + "-liveSpaces";
+
+    private String liveSpaceKeyTemplate = CONFIG_PREFIX + "-liveSpace-${id}";
+
+    private String liveServiceTemplate = CONFIG_PREFIX + "-liveService-${name}";
+
+    private String liveSpaceGroup = "DEFAULT_GROUP";
 
 }

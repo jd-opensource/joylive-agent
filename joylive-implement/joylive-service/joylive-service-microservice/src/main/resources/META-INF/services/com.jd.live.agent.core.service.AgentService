@@ -1,1 +1,2 @@
-com.jd.live.agent.implement.service.policy.microservice.MicroServiceSyncer
+com.jd.live.agent.implement.service.policy.microservice.ServiceHttpSyncer
+com.jd.live.agent.implement.service.policy.microservice.LaneSpaceHttpSyncer

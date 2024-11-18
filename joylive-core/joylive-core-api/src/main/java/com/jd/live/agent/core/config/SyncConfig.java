@@ -18,6 +18,7 @@ package com.jd.live.agent.core.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.net.URL;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -30,6 +31,8 @@ import java.util.function.BiConsumer;
 @Getter
 public class SyncConfig {
 
+    public static final String CONFIG_PREFIX = "govern";
+
     public static final String SYNC = "agent.sync";
 
     public static final String SYNC_MICROSERVICE = SYNC + ".microservice";
@@ -37,6 +40,8 @@ public class SyncConfig {
     public static final String SYNC_MICROSERVICE_ENABLED = SYNC_MICROSERVICE + ".enabled";
 
     public static final String SYNC_MICROSERVICE_TYPE = SYNC_MICROSERVICE + ".type";
+
+    public static final String SYNC_MICROSERVICE_MERGE_POLICY = SYNC_MICROSERVICE + ".policy";
 
     public static final String SYNC_LIVE_SPACE = SYNC + ".liveSpace";
 
@@ -76,6 +81,35 @@ public class SyncConfig {
     public void header(BiConsumer<String, String> consumer) {
         if (headers != null && consumer != null) {
             headers.forEach(consumer);
+        }
+    }
+
+    /**
+     * Retrieves the resource URL from the sync configuration.
+     *
+     * @param defaultResource the default resource.
+     * @return the resource URL as a String
+     */
+    public String getResource(String defaultResource) {
+        return isResource(url) ? url : defaultResource;
+    }
+
+    /**
+     * Checks if the given file path represents a valid configuration file.
+     *
+     * @param file The file path to check.
+     * @return true if the file is a valid configuration file, false otherwise.
+     */
+    protected boolean isResource(String file) {
+        if (file == null || file.isEmpty()) {
+            return false;
+        } else if (file.startsWith("http://") || file.startsWith("https://")) {
+            return false;
+        } else if (file.startsWith("${") && file.endsWith("}")) {
+            return false;
+        } else {
+            URL resource = getClass().getClassLoader().getResource(file);
+            return resource != null;
         }
     }
 }

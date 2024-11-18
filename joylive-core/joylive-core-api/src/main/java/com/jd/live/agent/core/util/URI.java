@@ -137,6 +137,14 @@ public class URI {
         return new URI(schema, host, port, path, newParameters);
     }
 
+    public String getAddress() {
+        if (port == null) {
+            return host;
+        } else {
+            return host + ":" + port;
+        }
+    }
+
     /**
      * Retrieves the value of a specific query parameter.
      *

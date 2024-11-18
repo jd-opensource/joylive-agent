@@ -15,165 +15,72 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.ConfigEvent.EventType;
+import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
-import com.jd.live.agent.core.event.Event;
-import com.jd.live.agent.core.event.EventHandler;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.core.service.AbstractFileSyncer;
-import com.jd.live.agent.core.service.file.FileDigest;
-import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
+import com.jd.live.agent.governance.policy.listener.ServiceEvent;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.service.PolicyService;
-import com.jd.live.agent.implement.service.policy.file.config.ServiceSyncConfig;
+import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
+import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
+import com.jd.live.agent.governance.service.sync.file.FileWatcher;
+import lombok.Getter;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 
 /**
  * ServiceFileSyncer
  */
+@Getter
 @Injectable
 @Extension("ServiceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "file")
-public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> implements PolicyService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ServiceFileSyncer.class);
+public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     private static final String CONFIG_MICROSERVICE = "microservice.json";
 
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
-
-    @Inject(Publisher.POLICY_SUBSCRIBER)
-    protected Publisher<PolicySubscriber> publisher;
-
     @Config(SyncConfig.SYNC_MICROSERVICE)
-    private ServiceSyncConfig syncConfig = new ServiceSyncConfig();
+    private SyncConfig syncConfig = new SyncConfig();
 
-    private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
-
-    private final EventHandler<PolicySubscriber> handler = this::onEvent;
-
-    private final AtomicBoolean loaded = new AtomicBoolean();
-
-    private Map<String, Long> versions = new HashMap<>();
-
-    @Override
-    public PolicyType getPolicyType() {
-        return PolicyType.SERVICE_POLICY;
+    public ServiceFileSyncer() {
+        name = "service-file-syncer";
     }
 
     @Override
-    protected CompletableFuture<Void> doStart() {
-        publisher.addHandler(handler);
-        policySupervisor.getSubscribers().forEach(this::subscribe);
-        return super.doStart();
+    public String getType() {
+        return ConfigWatcher.TYPE_SERVICE_SPACE;
     }
 
     @Override
-    protected CompletableFuture<Void> doStop() {
-        publisher.removeHandler(handler);
-        return super.doStop();
+    protected String getDefaultResource() {
+        return CONFIG_MICROSERVICE;
     }
 
     @Override
-    protected List<Service> parse(InputStreamReader reader) {
-        return jsonParser.read(reader, new TypeReference<List<Service>>() {
-        });
+    protected ConfigEvent createEvent(List<Service> data) {
+        return ServiceEvent.creator()
+                .type(EventType.UPDATE_ALL)
+                .value(data)
+                .description(getType())
+                .watcher(getName())
+                .mergePolicy(MergePolicy.ALL)
+                .build();
     }
 
     @Override
-    protected SyncConfig getSyncConfig() {
-        return syncConfig;
-    }
-
-    @Override
-    protected String getResource(SyncConfig config) {
-        String result = super.getResource(config);
-        return isConfigFile(result) ? result : CONFIG_MICROSERVICE;
-    }
-
-    @Override
-    protected boolean updateOnce(List<Service> services, FileDigest meta) {
-        List<Service> updates = new ArrayList<>();
-        Set<String> deletes = new HashSet<>();
-        Map<String, Long> newVersions = new HashMap<>();
-        // AddOrUpdate
-        if (services != null && !services.isEmpty()) {
-            for (Service service : services) {
-                newVersions.put(service.getName(), service.getVersion());
-                long oldVersion = versions.getOrDefault(service.getName(), -1L);
-                if (service.getVersion() > oldVersion) {
-                    updates.add(service);
-                }
-            }
-        }
-        // Remove
-        for (String name : versions.keySet()) {
-            if (!newVersions.containsKey(name)) {
-                deletes.add(name);
-            }
-        }
-
-        if (policySupervisor.update(policy -> newPolicy(updates, deletes, policy))) {
-            versions = newVersions;
-            logger.info("Success synchronizing file " + file.getPath());
-            onLoaded();
-            return true;
-        }
-        return false;
-    }
-
-    private GovernancePolicy newPolicy(List<Service> updates, Set<String> deletes, GovernancePolicy policy) {
-        GovernancePolicy result = policy == null ? new GovernancePolicy() : policy.copy();
-        result.setServices(result.onUpdate(updates, deletes, syncConfig.getPolicy(), getName()));
-        return result;
-    }
-
-    private void onLoaded() {
-        if (loaded.compareAndSet(false, true)) {
-            for (PolicySubscriber subscriber : subscribers.values()) {
-                subscriber.complete(getName());
-            }
-        }
-    }
-
-    private void onEvent(List<Event<PolicySubscriber>> events) {
-        events.forEach(e -> subscribe(e.getData()));
-    }
-
-    private void subscribe(PolicySubscriber subscriber) {
-        if (subscriber != null && subscriber.getType() == PolicyType.SERVICE_POLICY) {
-            if (!isStarted()) {
-                subscriber.completeExceptionally(new IllegalStateException("Microservice has been stopped"));
-            } else {
-                PolicySubscriber old = subscribers.putIfAbsent(subscriber.getName(), subscriber);
-                if (loaded.get()) {
-                    subscriber.complete(getName());
-                } else if (old != null && old != subscriber) {
-                    old.trigger((v, t) -> {
-                        if (t == null) {
-                            subscriber.complete(getName());
-                        } else {
-                            subscriber.completeExceptionally(t);
-                        }
-                    });
-                }
-            }
-        }
+    protected Syncer<FileKey, List<Service>> createSyncer() {
+        fileWatcher = new FileWatcher(getName(), getSyncConfig(), publisher);
+        return fileWatcher.createSyncer(file,
+                data -> parser.read(new InputStreamReader(new ByteArrayInputStream(data)), new TypeReference<List<Service>>() {
+                }));
     }
 }

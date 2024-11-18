@@ -19,12 +19,14 @@ import com.jd.live.agent.governance.rule.tag.TagGroup;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 @Getter
 @Setter
-public class LaneRule extends TagGroup {
+public class LaneRule {
 
     private String id;
 
-    private String laneCode;
+    private Map<String, TagGroup> conditions;
 
 }

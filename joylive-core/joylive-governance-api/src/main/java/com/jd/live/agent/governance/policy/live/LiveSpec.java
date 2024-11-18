@@ -48,7 +48,7 @@ public class LiveSpec {
 
     @Getter
     @Setter
-    private Long version;
+    private long version;
 
     @Getter
     @Setter

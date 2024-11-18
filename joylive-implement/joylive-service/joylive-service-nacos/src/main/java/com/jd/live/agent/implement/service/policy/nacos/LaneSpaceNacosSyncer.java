@@ -15,169 +15,113 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
-import com.alibaba.nacos.api.config.listener.Listener;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.core.config.SyncConfig;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.service.PolicyService;
+import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
+import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
+import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.api.ApiSpace;
+import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientApi;
+import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
+import lombok.Getter;
 
-import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import static com.jd.live.agent.implement.service.policy.nacos.LaneSpaceNacosSyncer.NacosLaneSpaceKey;
 
 /**
  * LaneSpaceNacosSyncer is responsible for synchronizing lane spaces policies from nacos.
  */
 @Injectable
 @Extension("LaneSpaceNacosSyncer")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LaneSpaceNacosSyncer extends AbstractNacosSyncer implements PolicyService {
+@ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "nacos")
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpaceKey> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServiceNacosSyncer.class);
-    private static final String LANE_SPACE_DATA_ID = "lanes.json";
-
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
-
-    private static final int CONCURRENCY = 3;
-
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
-    @Inject(Timer.COMPONENT_TIMER)
-    private Timer timer;
-
-    @Inject(Publisher.POLICY_SUBSCRIBER)
-    private Publisher<PolicySubscriber> publisher;
-
-    @Inject(ObjectParser.JSON)
-    private ObjectParser jsonParser;
-
-    @Config(SyncConfig.SYNC_LIVE_SPACE)
+    @Config(SyncConfig.SYNC_LANE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
-    private ExecutorService executorService;
-    /**
-     * catch nacos listeners
-     */
-    private Listener listener;
+    private NacosClientApi client;
+
+    public LaneSpaceNacosSyncer() {
+        name = "lane-space-nacos-syncer";
+    }
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        int concurrency = syncConfig.getConcurrency() <= 0 ? CONCURRENCY : syncConfig.getConcurrency();
-        executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory(getName(), true));
-        super.doStart();
-        syncAndUpdate();
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    protected CompletableFuture<Void> doStop() {
-        Close.instance().closeIfExists(executorService, ExecutorService::shutdownNow);
-        return super.doStop();
-    }
-
-    /**
-     * Synchronizes and updates the LanSpaces
-     */
-    private void syncAndUpdate() {
         try {
-            //first: get config
-            String config = getConfigService().getConfig(LANE_SPACE_DATA_ID, syncConfig.getLaneSpaceNacosGroup(), syncConfig.getTimeout());
-            List<LaneSpace> laneSpaces = parseLaneSpaces(config);
-            // then: add listener
-            if (listener == null) {
-                Listener listener = new Listener() {
-                    @Override
-                    public Executor getExecutor() {
-                        return executorService;
-                    }
-
-                    @Override
-                    public void receiveConfigInfo(String configInfo) {
-                        syncAndUpdate();
-                    }
-                };
-                getConfigService().addListener(LANE_SPACE_DATA_ID, syncConfig.getServiceNacosGroup(), listener);
-                this.listener = listener;
-            }
-
-            for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
-                if (updateOnce(laneSpaces)) {
-                    return;
-                }
-            }
-        } catch (Throwable t) {
-            logger.error("syn lane space failed", t);
-            throw new RuntimeException(t);
+            client = NacosClientFactory.create(syncConfig);
+            client.connect();
+        } catch (NacosException e) {
+            return Futures.future(e);
         }
-
-    }
-
-    protected List<LaneSpace> parseLaneSpaces(String configInfo) {
-        try (StringReader reader = new StringReader(configInfo)) {
-            return jsonParser.read(reader, new TypeReference<List<LaneSpace>>() {
-            });
-        }
-    }
-
-    /**
-     * Performs synchronization and updates the state once.
-     *
-     * @return True if the synchronization and update were successful, false otherwise.
-     */
-    protected boolean updateOnce(List<LaneSpace> laneSpaces) {
-        if (policySupervisor.update(policy -> newPolicy(policy, laneSpaces))) {
-            logger.info("Success synchronizing");
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Creates a new policy based on the given service.
-     *
-     * @param policy     policy
-     * @param laneSpaces lane spaces
-     * @return the new policy.
-     */
-    private GovernancePolicy newPolicy(GovernancePolicy policy, List<LaneSpace> laneSpaces) {
-        GovernancePolicy result = policy == null ? new GovernancePolicy() : policy.copy();
-        result.setLaneSpaces(laneSpaces);
-        return result;
+        return super.doStart();
     }
 
     @Override
-    public PolicyType getPolicyType() {
-        return PolicyType.LANE_SPACE;
+    protected void stopSync() {
+        Close.instance().close(client);
+        super.stopSync();
     }
 
     @Override
     protected NacosSyncConfig getSyncConfig() {
         return syncConfig;
     }
+
+    @Override
+    protected Template createTemplate() {
+        return new Template(syncConfig.getLaneSpaceKeyTemplate());
+    }
+
+    @Override
+    protected NacosLaneSpaceKey createSpaceListKey() {
+        return new NacosLaneSpaceKey(null, syncConfig.getLaneSpacesKey(), syncConfig.getLaneSpaceGroup());
+    }
+
+    @Override
+    protected NacosLaneSpaceKey createSpaceKey(String spaceId) {
+        Map<String, Object> context = new HashMap<>();
+        context.put("id", spaceId);
+        String dataId = template.evaluate(context);
+        return new NacosLaneSpaceKey(spaceId, dataId, syncConfig.getLaneSpaceGroup());
+    }
+
+    @Override
+    protected Syncer<NacosLaneSpaceKey, List<ApiSpace>> createSpaceListSyncer() {
+        return client.createSyncer(this::parseSpaceList);
+    }
+
+    @Override
+    protected Syncer<NacosLaneSpaceKey, LaneSpace> createSyncer() {
+        return client.createSyncer(this::parseSpace);
+    }
+
+    @Getter
+    protected static class NacosLaneSpaceKey extends LaneSpaceKey implements NacosSyncKey {
+
+        private final String dataId;
+
+        private final String group;
+
+        public NacosLaneSpaceKey(String id, String dataId, String group) {
+            super(id);
+            this.dataId = dataId;
+            this.group = group;
+        }
+    }
+
 }

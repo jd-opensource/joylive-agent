@@ -25,7 +25,7 @@ import java.util.function.Consumer;
  */
 public interface ServiceSupervisor {
 
-    String COMPONENT_SERVICE_SUPERVISOR = "ServiceSupervisor";
+    String COMPONENT_SERVICE_SUPERVISOR = "serviceSupervisor";
 
     /**
      * Retrieves a list of {@code AgentService} instances that are currently managed
@@ -37,6 +37,11 @@ public interface ServiceSupervisor {
      */
     List<AgentService> getServices();
 
+    /**
+     * Provides a way to access and process the available agent services.
+     *
+     * @param consumer A callback function that will be invoked for each agent service, passing the service instance as a parameter.
+     */
     default void service(Consumer<AgentService> consumer) {
         if (consumer != null) {
             List<AgentService> services = getServices();

@@ -51,11 +51,6 @@ public abstract class AbstractService implements AgentService {
     protected static final int STATUS_STOPPING = 3;
 
     /**
-     * Maximum number of retries for status updates.
-     */
-    protected static final int UPDATE_MAX_RETRY = 100;
-
-    /**
      * Current status of the service, managed atomically to ensure thread safety.
      */
     protected final AtomicInteger status = new AtomicInteger(STATUS_INITIAL);

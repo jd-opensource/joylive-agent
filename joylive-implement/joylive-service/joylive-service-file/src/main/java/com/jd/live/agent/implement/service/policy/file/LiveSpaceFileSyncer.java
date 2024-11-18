@@ -15,27 +15,22 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.config.ConfigWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
-import com.jd.live.agent.core.event.FileEvent;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.core.service.AbstractFileSyncer;
-import com.jd.live.agent.core.service.file.FileDigest;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.policy.PolicyType;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.service.PolicyService;
+import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
+import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
+import com.jd.live.agent.governance.service.sync.file.FileWatcher;
+import lombok.Getter;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 
@@ -44,67 +39,37 @@ import java.util.List;
  *
  * @since 1.0.0
  */
+@Getter
 @Injectable
 @Extension("LiveSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "file")
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> implements PolicyService {
-
-    private static final Logger logger = LoggerFactory.getLogger(LiveSpaceFileSyncer.class);
+public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 
     private static final String CONFIG_LIVE_SPACE = "livespaces.json";
-
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private SyncConfig syncConfig = new SyncConfig();
 
     public LiveSpaceFileSyncer() {
-    }
-
-    public LiveSpaceFileSyncer(PolicySupervisor policySupervisor, ObjectParser jsonParser,
-                               Publisher<FileEvent> publisher) {
-        this.policySupervisor = policySupervisor;
-        this.jsonParser = jsonParser;
-        this.publisher = publisher;
+        name = "live-space-file-syncer";
     }
 
     @Override
-    public PolicyType getPolicyType() {
-        return PolicyType.LIVE_SPACE;
+    public String getType() {
+        return ConfigWatcher.TYPE_LIVE_SPACE;
     }
 
     @Override
-    protected List<LiveSpace> parse(InputStreamReader reader) {
-        return jsonParser.read(reader, new TypeReference<List<LiveSpace>>() {
-        });
+    protected String getDefaultResource() {
+        return CONFIG_LIVE_SPACE;
     }
 
     @Override
-    protected SyncConfig getSyncConfig() {
-        return syncConfig;
+    protected Syncer<FileKey, List<LiveSpace>> createSyncer() {
+        fileWatcher = new FileWatcher(getName(), getSyncConfig(), publisher);
+        return fileWatcher.createSyncer(file,
+                data -> parser.read(new InputStreamReader(new ByteArrayInputStream(data)), new TypeReference<List<LiveSpace>>() {
+                }));
     }
-
-    @Override
-    protected String getResource(SyncConfig config) {
-        String result = super.getResource(config);
-        return isConfigFile(result) ? result : CONFIG_LIVE_SPACE;
-    }
-
-    @Override
-    protected boolean updateOnce(List<LiveSpace> liveSpaces, FileDigest meta) {
-        if (policySupervisor.update(policy -> newPolicy(policy, liveSpaces))) {
-            logger.info("success synchronizing file " + file.getPath());
-            return true;
-        }
-        return false;
-    }
-
-    private GovernancePolicy newPolicy(GovernancePolicy policy, List<LiveSpace> liveSpaces) {
-        GovernancePolicy update = policy == null ? new GovernancePolicy() : policy.copy();
-        update.setLiveSpaces(liveSpaces);
-        return update;
-    }
-
 }

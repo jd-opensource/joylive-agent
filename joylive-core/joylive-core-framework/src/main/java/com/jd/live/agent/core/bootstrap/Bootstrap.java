@@ -57,6 +57,7 @@ import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
+import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.service.ServiceManager;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Close;
@@ -182,6 +183,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private ServiceManager serviceManager;
 
+    private ConfigSupervisor configSupervisor;
+
     /**
      * Supervises plugins, handling their lifecycle.
      */
@@ -272,8 +275,10 @@ public class Bootstrap implements AgentLifecycle {
                 //depend on agentConfig
                 throw new InitializeException("the jvm version is not supported enhancement.");
             }
-            createSourceSuppliers();  //
+            configSupervisor = createConfigSupervisor();
+            createSourceSuppliers();  // depend on configWatcher
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
+            addConfigWatcher(); // depend on serviceManager & configSupervisor
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
@@ -533,8 +538,8 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(AgentPath.COMPONENT_AGENT_PATH, agentPath);
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
-                //
-                ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, (ServiceSupervisor) () -> serviceManager.getServices());
+                ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, serviceManager);
+                ctx.add(ConfigSupervisor.COMPONENT_CONFIG_SUPERVISOR, configSupervisor);
                 ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());
@@ -562,6 +567,18 @@ public class Bootstrap implements AgentLifecycle {
         ServiceManager result = new ServiceManager();
         injector.inject(result);
         return result;
+    }
+
+    private ConfigWatcherManager createConfigSupervisor() {
+        return new ConfigWatcherManager();
+    }
+
+    private void addConfigWatcher() {
+        serviceManager.service(service -> {
+            if (service instanceof ConfigService) {
+                configSupervisor.addWatcher((ConfigService) service);
+            }
+        });
     }
 
     private PluginSupervisor createPluginManager() {

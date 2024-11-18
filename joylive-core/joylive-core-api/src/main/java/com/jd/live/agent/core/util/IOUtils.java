@@ -18,6 +18,7 @@ package com.jd.live.agent.core.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * A utility class for working with input and output streams.
@@ -42,5 +43,23 @@ public class IOUtils {
             out.write(buffer, 0, bytesRead);
         }
         return out.toByteArray();
+    }
+
+    /**
+     * Copies data from an InputStream to an OutputStream.
+     *
+     * @param is the InputStream to copy from
+     * @param os the OutputStream to copy to
+     * @throws IOException if an error occurs during the copy
+     */
+    public static void copy(final InputStream is, final OutputStream os) throws IOException {
+        if (is == null || os == null) {
+            return;
+        }
+        byte[] buffer = new byte[1024 * 4];
+        int c;
+        while ((c = is.read(buffer, 0, buffer.length)) >= 0) {
+            os.write(buffer, 0, c);
+        }
     }
 }

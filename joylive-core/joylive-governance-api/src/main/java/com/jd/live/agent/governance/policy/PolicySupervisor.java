@@ -54,8 +54,10 @@ public interface PolicySupervisor extends PolicySupplier {
         if (updater != null) {
             GovernancePolicy old = getPolicy();
             GovernancePolicy update = updater.apply(old);
-            update.cache();
-            return update(old, update);
+            if (update != null) {
+                update.cache();
+                return update(old, update);
+            }
         }
         return false;
     }

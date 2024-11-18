@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.governance.policy.service.ServiceName;
 import lombok.Getter;
 
 import java.util.List;
@@ -31,13 +32,13 @@ import java.util.stream.Collectors;
  * of the policy subscription process.
  */
 @Getter
-public class PolicySubscriber {
+public class PolicySubscriber implements ServiceName {
 
     private final String name;
 
     private final String namespace;
 
-    private final PolicyType type;
+    private final String type;
 
     private final Map<String, AtomicBoolean> states;
 
@@ -53,7 +54,7 @@ public class PolicySubscriber {
      * @param type      The type of the subscriber.
      * @param owners    The owner of the subscriber.
      */
-    public PolicySubscriber(String name, String namespace, PolicyType type, List<String> owners) {
+    public PolicySubscriber(String name, String namespace, String type, List<String> owners) {
         this.name = name;
         this.namespace = namespace;
         this.type = type;
@@ -79,6 +80,25 @@ public class PolicySubscriber {
                 future.complete(null);
             }
             return true;
+        }
+        return false;
+    }
+
+    /**
+     * Completes the asynchronous operation represented by this class.
+     *
+     * @return true if the operation was successfully completed, false otherwise.
+     */
+    public boolean complete() {
+        if (states == null) {
+            return future.complete(null);
+        }
+        for (Map.Entry<String, AtomicBoolean> entry : states.entrySet()) {
+            if (entry.getValue().compareAndSet(false, true)) {
+                if (counter.decrementAndGet() == 0) {
+                    return future.complete(null);
+                }
+            }
         }
         return false;
     }

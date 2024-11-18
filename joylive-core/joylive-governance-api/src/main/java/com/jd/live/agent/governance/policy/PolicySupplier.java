@@ -43,14 +43,23 @@ public interface PolicySupplier {
 
     /**
      * Subscribes a specific service policy based on its name.
-     * <p>
-     * This method returns a {@link CompletableFuture} that completes when the subscription process is finished.
-     * </p>
      *
      * @param service The service name of the policy to subscribe to.
      * @return A {@link CompletableFuture} that completes when the subscription is successful.
      */
-    CompletableFuture<Void> subscribe(String service);
+    default CompletableFuture<Void> subscribe(String service) {
+        return subscribe(null, service);
+    }
+
+
+    /**
+     * Subscribes a specific service policy based on its name.
+     *
+     * @param namespace The namespace of the service.
+     * @param service   The service name of the policy to subscribe to.
+     * @return A {@link CompletableFuture} that completes when the subscription is successful.
+     */
+    CompletableFuture<Void> subscribe(String namespace, String service);
 
     /**
      * Checks if the task associated with the given name has completed successfully.

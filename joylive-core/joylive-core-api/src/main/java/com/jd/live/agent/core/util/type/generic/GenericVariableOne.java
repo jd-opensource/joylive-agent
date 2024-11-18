@@ -29,7 +29,7 @@ public class GenericVariableOne implements GenericVariableList {
 
     @Override
     public GenericVariableList addVariable(GenericVariable variable) {
-        return variable == null ? this : new GenericVariableSeveral(variable);
+        return variable == null ? this : new GenericVariableSeveral(this.variable, variable);
     }
 
     @Override
