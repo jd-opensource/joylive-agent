@@ -22,6 +22,7 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
+import com.jd.live.agent.implement.service.policy.nacos.config.NacosConfig;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.util.Map;
@@ -41,10 +42,11 @@ public abstract class NacosClientFactory {
      * @return A new instance of NacosClientApi based on the provided NacosSyncConfig.
      */
     public static NacosClientApi create(NacosSyncConfig config) {
+        NacosConfig nacos = config.getNacos();
         URI uri = URI.parse(config.getUrl());
-        String namespace = StringUtils.isEmpty(config.getNamespace()) ? NacosClientApi.DEFAULT_NAMESPACE : config.getNamespace();
-        String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
-        String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();
+        String namespace = StringUtils.isEmpty(nacos.getNamespace()) ? NacosClientApi.DEFAULT_NAMESPACE : nacos.getNamespace();
+        String username = StringUtils.isEmpty(nacos.getUsername()) ? "" : nacos.getUsername();
+        String password = StringUtils.isEmpty(nacos.getPassword()) ? "" : nacos.getPassword();
         String name = username + ":" + password + "@" + uri.getAddress() + "/" + namespace;
         SharedNacosClientApi client = clients.computeIfAbsent(name, n -> new SharedNacosClientApi(new NacosClient(config)));
         client.reference.incrementAndGet();

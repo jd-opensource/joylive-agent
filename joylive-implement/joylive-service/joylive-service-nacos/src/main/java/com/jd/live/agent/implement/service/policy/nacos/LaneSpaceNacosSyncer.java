@@ -84,12 +84,12 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
 
     @Override
     protected Template createTemplate() {
-        return new Template(syncConfig.getLaneSpaceKeyTemplate());
+        return new Template(syncConfig.getNacos().getLaneSpaceKeyTemplate());
     }
 
     @Override
     protected NacosLaneSpaceKey createSpaceListKey() {
-        return new NacosLaneSpaceKey(null, syncConfig.getLaneSpacesKey(), syncConfig.getLaneSpaceGroup());
+        return new NacosLaneSpaceKey(null, syncConfig.getNacos().getLaneSpacesKey(), syncConfig.getNacos().getLaneSpaceGroup());
     }
 
     @Override
@@ -97,7 +97,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
         String dataId = template.evaluate(context);
-        return new NacosLaneSpaceKey(spaceId, dataId, syncConfig.getLaneSpaceGroup());
+        return new NacosLaneSpaceKey(spaceId, dataId, syncConfig.getNacos().getLaneSpaceGroup());
     }
 
     @Override

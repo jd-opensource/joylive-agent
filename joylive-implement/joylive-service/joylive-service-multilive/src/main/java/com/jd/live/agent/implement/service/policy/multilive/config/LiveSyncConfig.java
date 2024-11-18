@@ -20,43 +20,28 @@ import com.jd.live.agent.governance.service.sync.SyncAddress.LiveSpaceAddress;
 import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
 import lombok.Setter;
 
-import static com.jd.live.agent.core.util.StringUtils.url;
-
 /**
  * LiveSyncConfig
  *
  * @since 1.0.0
  */
 @Setter
-public class LiveSyncConfigLive extends SyncConfig implements ServiceAddress, LiveSpaceAddress {
+public class LiveSyncConfig extends SyncConfig implements ServiceAddress, LiveSpaceAddress {
 
-    private String spacesUrl;
-
-    private String spaceUrl;
-
-    private String serviceUrl;
+    private LiveConfig multilive = new LiveConfig();
 
     @Override
     public String getSpacesUrl() {
-        if (spacesUrl == null && getUrl() != null) {
-            spacesUrl = url(getUrl(), "/workspaces");
-        }
-        return spacesUrl;
+        return getPath(multilive.spacesUrl, "/workspaces");
     }
 
     @Override
     public String getSpaceUrl() {
-        if (spaceUrl == null && getUrl() != null) {
-            spaceUrl = url(getUrl(), "/workspaces/${space_id}/version/${space_version}");
-        }
-        return spaceUrl;
+        return getPath(multilive.spaceUrl, "/workspaces/${space_id}/version/${space_version}");
     }
 
     @Override
     public String getServiceUrl() {
-        if (serviceUrl == null && getUrl() != null) {
-            serviceUrl = url(getUrl(), "/services/${service_name}/version/${service_version}");
-        }
-        return serviceUrl;
+        return getPath(multilive.serviceUrl, "/services/${service_name}/version/${service_version}");
     }
 }

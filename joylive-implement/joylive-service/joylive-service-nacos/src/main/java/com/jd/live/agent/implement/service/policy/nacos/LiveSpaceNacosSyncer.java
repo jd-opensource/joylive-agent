@@ -85,12 +85,12 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
 
     @Override
     protected Template createTemplate() {
-        return new Template(syncConfig.getLiveSpaceKeyTemplate());
+        return new Template(syncConfig.getNacos().getLiveSpaceKeyTemplate());
     }
 
     @Override
     protected NacosLiveSpaceKey createSpaceListKey() {
-        return new NacosLiveSpaceKey(null, syncConfig.getLiveSpacesKey(), syncConfig.getLiveSpaceGroup());
+        return new NacosLiveSpaceKey(null, syncConfig.getNacos().getLiveSpacesKey(), syncConfig.getNacos().getLiveSpaceGroup());
     }
 
     @Override
@@ -98,7 +98,7 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
         String dataId = template.evaluate(context);
-        return new NacosLiveSpaceKey(spaceId, dataId, syncConfig.getLiveSpaceGroup());
+        return new NacosLiveSpaceKey(spaceId, dataId, syncConfig.getNacos().getLiveSpaceGroup());
     }
 
     @Override

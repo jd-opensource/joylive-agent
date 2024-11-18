@@ -81,7 +81,7 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
 
     @Override
     protected Template createTemplate() {
-        return new Template(syncConfig.getServiceKeyTemplate());
+        return new Template(syncConfig.getNacos().getServiceKeyTemplate());
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
         context.put("name", subscriber.getName());
         context.put("space", application.getService().getNamespace());
         String dataId = template.evaluate(context);
-        return new NacosServiceKey(subscriber, dataId, syncConfig.getServiceGroup());
+        return new NacosServiceKey(subscriber, dataId, syncConfig.getNacos().getServiceGroup());
     }
 
     @Override
