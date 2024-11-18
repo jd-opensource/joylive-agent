@@ -82,6 +82,13 @@ agent:
       liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
     laneSpace:
       type: file
+      # for nacos
+      username: ${CONFIG_NACOS_USERNAME:nacos}
+      password: ${CONFIG_NACOS_PASSWORD:nacos}
+      namespace: ${CONFIG_NACOS_NAMESPACE:public}
+      laneSpaceGroup: ${CONFIG_NACOS_GROUP_LANE_SPACE:DEFAULT_GROUP}
+      laneSpacesKey: ${CONFIG_NACOS_KEY_LANE_SPACES:govern-laneSpaces}
+      laneSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LANE_SPACE_TEMPLATE:govern-laneSpace-${id}}
     microservice:
       type: ${CONFIG_SERVICE_API_TYPE:file}
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
@@ -89,6 +96,12 @@ agent:
       interval: 5000
       timeout: 3000
       initialTimeout: 20000
+      # for nacos
+      username: ${CONFIG_NACOS_USERNAME:nacos}
+      password: ${CONFIG_NACOS_PASSWORD:nacos}
+      namespace: ${CONFIG_NACOS_NAMESPACE:public}
+      serviceGroup: ${CONFIG_NACOS_GROUP_SERVICE:DEFAULT_GROUP}
+      serviceKeyTemplate: ${CONFIG_NACOS_KEY_SERVICE_TEMPLATE:govern-service-${name}}
   watchdog:
     enabled: true
     delay: 5000
