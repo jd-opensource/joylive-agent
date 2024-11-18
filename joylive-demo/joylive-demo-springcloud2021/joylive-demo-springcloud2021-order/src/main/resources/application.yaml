@@ -9,7 +9,7 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR}
+        server-addr: ${NACOS_ADDR:${AP_SD_INTERNAL_ADDRESS}:${AP_SD_INTERNAL_HTTP_PORT}}
         fail-fast: true
         namespace: ${NACOS_NAMESPACE:public}
         username: ${NACOS_USERNAME}
