@@ -66,42 +66,55 @@ agent:
       fault: 5000
       headers: ${CONFIG_LIVE_SPACE_API_HEADERS}
       # for multilive
-      spacesUrl: ${CONFIG_LIVE_SPACE_API_URL}/workspaces
-      spaceUrl: ${CONFIG_LIVE_SPACE_API_URL}/workspaces/${space_id}/version/${space_version}
-      serviceUrl: ${CONFIG_LIVE_SPACE_API_URL}/services/${service_name}/version/${service_version}
+      multilive:
+        spacesUrl: /workspaces
+        spaceUrl: /workspaces/${space_id}/version/${space_version}
+        serviceUrl: /services/${service_name}/version/${service_version}
       # for multilive-openapi
-      accessKey: ${CONFIG_MULTILIVE_ACCESS_KEY}
-      secretKey: ${CONFIG_MULTILIVE_SECRET_KEY}
+      jdcloud:
+        accessKey: ${CONFIG_MULTILIVE_ACCESS_KEY}
+        secretKey: ${CONFIG_MULTILIVE_SECRET_KEY}
       # for nacos
-      username: ${CONFIG_NACOS_USERNAME:nacos}
-      password: ${CONFIG_NACOS_PASSWORD:nacos}
-      namespace: ${CONFIG_NACOS_NAMESPACE:public}
-      liveSpaceGroup: ${CONFIG_NACOS_GROUP_LIVE_SPACE:DEFAULT_GROUP}
-      liveSpacesKey: ${CONFIG_NACOS_KEY_LIVE_SPACES:govern-liveSpaces}
-      liveSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LIVE_SPACE_TEMPLATE:govern-liveSpace-${id}}
-      liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
+      nacos:
+        username: ${CONFIG_NACOS_USERNAME:nacos}
+        password: ${CONFIG_NACOS_PASSWORD:nacos}
+        namespace: ${CONFIG_NACOS_NAMESPACE:public}
+        liveSpaceGroup: ${CONFIG_NACOS_GROUP_LIVE_SPACE:DEFAULT_GROUP}
+        liveSpacesKey: ${CONFIG_NACOS_KEY_LIVE_SPACES:govern-liveSpaces}
+        liveSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LIVE_SPACE_TEMPLATE:govern-liveSpace-${id}}
+        liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
     laneSpace:
-      type: file
+      type: file # [file,jmsf,nacos]
+      url: ${CONFIG_LANE_SPACE_API_URL:http:http://api.jmsf.local:8080/v1}
+      # for jmsf
+      jmsf:
+        spacesUrl: /laneSpaces
+        spaceUrl: /laneSpace/${space_id}/version/${space_version}
       # for nacos
-      username: ${CONFIG_NACOS_USERNAME:nacos}
-      password: ${CONFIG_NACOS_PASSWORD:nacos}
-      namespace: ${CONFIG_NACOS_NAMESPACE:public}
-      laneSpaceGroup: ${CONFIG_NACOS_GROUP_LANE_SPACE:DEFAULT_GROUP}
-      laneSpacesKey: ${CONFIG_NACOS_KEY_LANE_SPACES:govern-laneSpaces}
-      laneSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LANE_SPACE_TEMPLATE:govern-laneSpace-${id}}
+      nacos:
+        username: ${CONFIG_NACOS_USERNAME:nacos}
+        password: ${CONFIG_NACOS_PASSWORD:nacos}
+        namespace: ${CONFIG_NACOS_NAMESPACE:public}
+        laneSpaceGroup: ${CONFIG_NACOS_GROUP_LANE_SPACE:DEFAULT_GROUP}
+        laneSpacesKey: ${CONFIG_NACOS_KEY_LANE_SPACES:govern-laneSpaces}
+        laneSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LANE_SPACE_TEMPLATE:govern-laneSpace-${id}}
     microservice:
-      type: ${CONFIG_SERVICE_API_TYPE:file}
+      type: ${CONFIG_SERVICE_API_TYPE:file} # [file,jmsf,nacos]
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
       headers: ${CONFIG_SERVICE_API_HEADERS}
       interval: 5000
       timeout: 3000
       initialTimeout: 20000
+      # for jmsf
+      jmsf:
+        serviceUrl: /space/${space}/service/${service_name}/version/${service_version}?application=${application}
       # for nacos
-      username: ${CONFIG_NACOS_USERNAME:nacos}
-      password: ${CONFIG_NACOS_PASSWORD:nacos}
-      namespace: ${CONFIG_NACOS_NAMESPACE:public}
-      serviceGroup: ${CONFIG_NACOS_GROUP_SERVICE:DEFAULT_GROUP}
-      serviceKeyTemplate: ${CONFIG_NACOS_KEY_SERVICE_TEMPLATE:govern-service-${name}}
+      nacos:
+        username: ${CONFIG_NACOS_USERNAME:nacos}
+        password: ${CONFIG_NACOS_PASSWORD:nacos}
+        namespace: ${CONFIG_NACOS_NAMESPACE:public}
+        serviceGroup: ${CONFIG_NACOS_GROUP_SERVICE:DEFAULT_GROUP}
+        serviceKeyTemplate: ${CONFIG_NACOS_KEY_SERVICE_TEMPLATE:govern-service-${name}}
   watchdog:
     enabled: true
     delay: 5000

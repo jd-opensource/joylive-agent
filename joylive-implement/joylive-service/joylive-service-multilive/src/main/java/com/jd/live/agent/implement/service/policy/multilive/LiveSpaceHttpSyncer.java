@@ -29,7 +29,7 @@ import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.governance.service.sync.http.AbstractLiveSpaceHttpSyncer;
-import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
+import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 
 import java.io.StringReader;
 import java.util.List;
@@ -44,7 +44,7 @@ import java.util.List;
 public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
-    private LiveSyncConfigLive syncConfig = new LiveSyncConfigLive();
+    private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
     public LiveSpaceHttpSyncer() {
         name = "live-space-multilive-syncer";

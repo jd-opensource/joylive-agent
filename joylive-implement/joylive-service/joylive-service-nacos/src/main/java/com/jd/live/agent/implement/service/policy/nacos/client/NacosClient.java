@@ -26,6 +26,7 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
+import com.jd.live.agent.implement.service.policy.nacos.config.NacosConfig;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.util.Properties;
@@ -49,12 +50,13 @@ public class NacosClient implements NacosClientApi {
         Properties properties = new Properties();
         URI uri = URI.parse(config.getUrl());
         properties.put(PropertyKeyConst.SERVER_ADDR, uri.getAddress());
-        if (!StringUtils.isEmpty(config.getNamespace()) && !DEFAULT_NAMESPACE.equals(config.getNamespace())) {
-            properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
+        NacosConfig nacosConfig = config.getNacos();
+        if (!StringUtils.isEmpty(nacosConfig.getNamespace()) && !DEFAULT_NAMESPACE.equals(nacosConfig.getNamespace())) {
+            properties.put(PropertyKeyConst.NAMESPACE, nacosConfig.getNamespace());
         }
-        if (!StringUtils.isEmpty(config.getUsername())) {
-            properties.put(PropertyKeyConst.USERNAME, config.getUsername());
-            properties.put(PropertyKeyConst.PASSWORD, config.getPassword());
+        if (!StringUtils.isEmpty(nacosConfig.getUsername())) {
+            properties.put(PropertyKeyConst.USERNAME, nacosConfig.getUsername());
+            properties.put(PropertyKeyConst.PASSWORD, nacosConfig.getPassword());
         }
         configService = NacosFactory.createConfigService(properties);
     }

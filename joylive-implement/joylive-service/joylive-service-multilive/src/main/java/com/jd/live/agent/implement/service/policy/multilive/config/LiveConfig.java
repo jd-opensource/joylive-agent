@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos.config;
+package com.jd.live.agent.implement.service.policy.multilive.config;
 
-import com.jd.live.agent.core.config.SyncConfig;
-import lombok.Getter;
 import lombok.Setter;
 
 /**
- *  NacosSyncConfig is responsible for Nacos settings.
+ * LiveConfig
+ *
+ * @since 1.0.0
  */
-
-@Getter
 @Setter
-public class NacosSyncConfig extends SyncConfig {
+public class LiveConfig {
 
-    private NacosConfig nacos = new NacosConfig();
+    protected String spacesUrl;
 
+    protected String spaceUrl;
+
+    protected String serviceUrl;
 }

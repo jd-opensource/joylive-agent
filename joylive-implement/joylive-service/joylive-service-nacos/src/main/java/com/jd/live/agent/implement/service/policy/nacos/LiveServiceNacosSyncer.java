@@ -82,7 +82,7 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
 
     @Override
     protected Template createTemplate() {
-        return new Template(syncConfig.getLiveServiceTemplate());
+        return new Template(syncConfig.getNacos().getLiveServiceTemplate());
     }
 
     @Override
@@ -91,7 +91,7 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
         context.put("name", subscriber.getName());
         context.put("space", application.getService().getNamespace());
         String dataId = template.evaluate(context);
-        return new NacosServiceKey(subscriber, dataId, syncConfig.getLiveSpaceGroup());
+        return new NacosServiceKey(subscriber, dataId, syncConfig.getNacos().getLiveSpaceGroup());
     }
 
     @Override

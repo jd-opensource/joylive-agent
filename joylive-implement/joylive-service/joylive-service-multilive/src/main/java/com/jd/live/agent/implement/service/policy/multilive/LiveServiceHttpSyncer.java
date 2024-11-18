@@ -33,7 +33,7 @@ import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
-import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
+import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 
 import java.io.IOException;
 
@@ -48,7 +48,7 @@ import java.io.IOException;
 public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
-    private LiveSyncConfigLive syncConfig = new LiveSyncConfigLive();
+    private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
     public LiveServiceHttpSyncer() {
         name = "live-service-multilive-syncer";

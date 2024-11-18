@@ -22,6 +22,9 @@ import java.net.URL;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.StringUtils.url;
+
 /**
  * SyncConfig
  *
@@ -111,5 +114,22 @@ public class SyncConfig {
             URL resource = getClass().getClassLoader().getResource(file);
             return resource != null;
         }
+    }
+
+    /**
+     * Returns the path to use for a request, based on the provided path and default path.
+     *
+     * @param path        The path to use if it is not empty and does not start with a slash.
+     * @param defaultPath The default path to use if the provided path is empty.
+     * @return The path to use for the request.
+     */
+    protected String getPath(String path, String defaultPath) {
+        String root = getUrl();
+        if (isEmpty(path) && root != null) {
+            return url(root, defaultPath);
+        } else if (!isEmpty(path) && path.startsWith("/") && root != null) {
+            return url(root, path);
+        }
+        return path;
     }
 }
