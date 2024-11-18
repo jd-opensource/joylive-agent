@@ -111,7 +111,7 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
         }
         ApiResponse<List<ApiSpace>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<List<ApiSpace>>>() {
         });
-        return response.toSyncResponse();
+        return response.asSyncResponse();
     }
 
     @Override
@@ -121,7 +121,7 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
         }
         ApiResponse<LiveSpace> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<LiveSpace>>() {
         });
-        return response.toSyncResponse();
+        return response.asSyncResponse();
     }
 
     protected HttpWatcher creatWatcher() {

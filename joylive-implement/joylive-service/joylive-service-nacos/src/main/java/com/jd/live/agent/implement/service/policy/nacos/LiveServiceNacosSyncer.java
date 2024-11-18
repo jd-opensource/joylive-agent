@@ -25,40 +25,37 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
+import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.listener.ServiceEvent;
+import com.jd.live.agent.governance.policy.service.MergePolicy;
+import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
 import com.jd.live.agent.governance.service.sync.Syncer;
-import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
-import lombok.Getter;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.jd.live.agent.implement.service.policy.nacos.LiveSpaceNacosSyncer.NacosLiveSpaceKey;
-
 /**
- * LiveSpaceSyncer is responsible for synchronizing live spaces from nacos.
+ * LiveServiceNacosSyncer is responsible for synchronizing live service policies from nacos.
  */
 @Injectable
-@Extension("LiveSpaceNacosSyncer")
+@Extension("LiveServiceNacosSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpaceKey, NacosLiveSpaceKey> {
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
     private NacosClientApi client;
 
-    public LiveSpaceNacosSyncer() {
-        name = "live-space-nacos-syncer";
+    public LiveServiceNacosSyncer() {
+        name = "service-nacos-syncer";
     }
 
     @Override
@@ -85,43 +82,27 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
 
     @Override
     protected Template createTemplate() {
-        return new Template(syncConfig.getLiveSpaceKeyTemplate());
+        return new Template(syncConfig.getLiveServiceTemplate());
     }
 
     @Override
-    protected NacosLiveSpaceKey createSpaceListKey() {
-        return new NacosLiveSpaceKey(null, syncConfig.getLiveSpacesKey(), syncConfig.getLiveSpaceGroup());
-    }
-
-    @Override
-    protected NacosLiveSpaceKey createSpaceKey(String spaceId) {
+    protected NacosServiceKey createServiceKey(PolicySubscriber subscriber) {
         Map<String, Object> context = new HashMap<>();
-        context.put("id", spaceId);
+        context.put("name", subscriber.getName());
+        context.put("space", application.getService().getNamespace());
         String dataId = template.evaluate(context);
-        return new NacosLiveSpaceKey(spaceId, dataId, syncConfig.getLiveSpaceGroup());
+        return new NacosServiceKey(subscriber, dataId, syncConfig.getLiveSpaceGroup());
     }
 
     @Override
-    protected Syncer<NacosLiveSpaceKey, List<ApiSpace>> createSpaceListSyncer() {
-        return client.createSyncer(this::parseSpaceList);
+    protected Syncer<NacosServiceKey, Service> createSyncer() {
+        return client.createSyncer(this::parse);
     }
 
     @Override
-    protected Syncer<NacosLiveSpaceKey, LiveSpace> createSyncer() {
-        return client.createSyncer(this::parseSpace);
+    protected void configure(ServiceEvent event) {
+        event.setMergePolicy(MergePolicy.LIVE);
     }
 
-    @Getter
-    protected static class NacosLiveSpaceKey extends LiveSpaceKey implements NacosSyncKey {
 
-        private final String dataId;
-
-        private final String group;
-
-        public NacosLiveSpaceKey(String id, String dataId, String group) {
-            super(id);
-            this.dataId = dataId;
-            this.group = group;
-        }
-    }
 }

@@ -21,8 +21,11 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.jd.live.agent.core.util.StringUtils;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.util.Properties;
@@ -31,7 +34,7 @@ import java.util.function.Function;
 /**
  * A client for interacting with the Nacos configuration service.
  */
-public class NacosClient implements AutoCloseable {
+public class NacosClient implements NacosClientApi {
 
     private final NacosSyncConfig config;
 
@@ -41,17 +44,18 @@ public class NacosClient implements AutoCloseable {
         this.config = config;
     }
 
-    /**
-     * Connects to the Nacos server using the specified configuration.
-     *
-     * @throws NacosException If there is an error connecting to the Nacos server.
-     */
+    @Override
     public void connect() throws NacosException {
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, config.getServerAddr());
-        properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
-        properties.put(PropertyKeyConst.USERNAME, config.getUsername());
-        properties.put(PropertyKeyConst.PASSWORD, config.getPassword());
+        URI uri = URI.parse(config.getUrl());
+        properties.put(PropertyKeyConst.SERVER_ADDR, uri.getAddress());
+        if (!StringUtils.isEmpty(config.getNamespace()) && !DEFAULT_NAMESPACE.equals(config.getNamespace())) {
+            properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
+        }
+        if (!StringUtils.isEmpty(config.getUsername())) {
+            properties.put(PropertyKeyConst.USERNAME, config.getUsername());
+            properties.put(PropertyKeyConst.PASSWORD, config.getPassword());
+        }
         configService = NacosFactory.createConfigService(properties);
     }
 
@@ -62,14 +66,7 @@ public class NacosClient implements AutoCloseable {
         }
     }
 
-    /**
-     * Subscribes to configuration changes for the specified dataId and group.
-     *
-     * @param dataId   The dataId of the configuration to subscribe to.
-     * @param group    The group of the configuration to subscribe to.
-     * @param listener The listener to notify when configuration changes occur.
-     * @throws NacosException If there is an error subscribing to the configuration changes.
-     */
+    @Override
     public void subscribe(String dataId, String group, Listener listener) throws NacosException {
         if (configService == null) {
             throw new NacosException(NacosException.CLIENT_DISCONNECT, "nacos is not connected.");
@@ -79,26 +76,14 @@ public class NacosClient implements AutoCloseable {
         configService.addListener(dataId, group, listener);
     }
 
-    /**
-     * Unsubscribes from configuration changes for the specified dataId and group.
-     *
-     * @param dataId   The dataId of the configuration to unsubscribe from.
-     * @param group    The group of the configuration to unsubscribe from.
-     * @param listener The listener to remove from the subscription.
-     */
+    @Override
     public void unsubscribe(String dataId, String group, Listener listener) {
         if (configService != null) {
             configService.removeListener(dataId, group, listener);
         }
     }
 
-    /**
-     * Creates a new Syncer object that can be used to synchronize data between Nacos and a local cache.
-     * @param parser A function that takes a configuration string as input and returns an object of type T.
-     * @param <K> The type of the NacosSyncKey used to identify the configuration in Nacos.
-     * @param <T> The type of the object returned by the parser function.
-     * @return A new Syncer object that can be used to synchronize data between Nacos and a local cache.
-     */
+    @Override
     public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> parser) {
         return subscription -> {
             try {

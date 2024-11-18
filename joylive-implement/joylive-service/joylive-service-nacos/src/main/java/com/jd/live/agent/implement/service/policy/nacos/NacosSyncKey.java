@@ -13,13 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos.client;
+package com.jd.live.agent.implement.service.policy.nacos;
 
 import com.jd.live.agent.governance.service.sync.SyncKey;
 
+/**
+ * An interface representing a Nacos synchronization key.
+ */
 public interface NacosSyncKey extends SyncKey {
 
+    /**
+     * Gets the data ID of the key.
+     *
+     * @return The data ID of the key.
+     */
     String getDataId();
 
+    /**
+     * Gets the group of the key.
+     * @return The group of the key.
+     */
     String getGroup();
 }

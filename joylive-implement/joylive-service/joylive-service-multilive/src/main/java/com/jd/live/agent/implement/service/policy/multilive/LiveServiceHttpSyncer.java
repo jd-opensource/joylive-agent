@@ -20,13 +20,22 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.util.http.HttpResponse;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
+import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
+import com.jd.live.agent.governance.service.sync.SyncResponse;
+import com.jd.live.agent.governance.service.sync.api.ApiResponse;
+import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
+
+import java.io.IOException;
 
 /**
  * LiveServiceSyncer is responsible for synchronizing live service policies from a multilive control plane.
@@ -60,4 +69,12 @@ public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey>
         event.setMergePolicy(MergePolicy.LIVE);
     }
 
+    @Override
+    protected SyncResponse<Service> getResponse(SyncConfig config, String uri) throws IOException {
+        HttpResponse<ApiResponse<ApiResult<Service>>> response = HttpUtils.get(uri,
+                conn -> configure(config, conn),
+                reader -> jsonParser.read(reader, new TypeReference<ApiResponse<ApiResult<Service>>>() {
+                }));
+        return ApiResponse.from(response).asSyncResponse(ApiResult::asSyncResponse);
+    }
 }

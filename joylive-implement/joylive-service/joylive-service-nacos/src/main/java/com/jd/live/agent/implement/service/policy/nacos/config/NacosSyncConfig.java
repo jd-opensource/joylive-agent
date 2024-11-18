@@ -28,11 +28,6 @@ import lombok.Setter;
 public class NacosSyncConfig extends SyncConfig {
 
     /**
-     * nacos server address
-     */
-    private String serverAddr;
-
-    /**
      * nacos namespace
      */
     private String namespace;

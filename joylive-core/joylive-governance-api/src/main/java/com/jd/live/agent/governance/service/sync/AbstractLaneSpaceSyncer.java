@@ -37,7 +37,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
 
     protected Syncer<K, List<ApiSpace>> spaceListSyncer;
 
-    protected Subscription<K, List<ApiSpace>> spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
+    protected Subscription<K, List<ApiSpace>> spaceListSubscription;
 
     @Override
     public String getType() {
@@ -46,6 +46,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
 
     @Override
     protected void startSync() throws Exception {
+        spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
         spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
         String laneSpaceId = location == null ? null : location.getLaneSpaceId();

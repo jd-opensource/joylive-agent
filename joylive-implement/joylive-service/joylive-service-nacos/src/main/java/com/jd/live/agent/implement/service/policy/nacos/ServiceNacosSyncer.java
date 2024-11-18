@@ -15,12 +15,14 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
@@ -28,42 +30,42 @@ import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosSyncKey;
+import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientApi;
+import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
-import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.jd.live.agent.implement.service.policy.nacos.ServiceNacosSyncer.NacosServiceKey;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * ServiceNacosSyncer is responsible for synchronizing live service policies from nacos.
  */
 @Injectable
 @Extension("ServiceNacosSyncer")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
-@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "nacos")
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
 
-    @Config(SyncConfig.SYNC_LIVE_SPACE)
+    @Config(SyncConfig.SYNC_MICROSERVICE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
-    private NacosClient client;
+    private NacosClientApi client;
 
     public ServiceNacosSyncer() {
         name = "service-nacos-syncer";
     }
 
     @Override
-    protected void startSync() throws Exception {
-        client = new NacosClient(syncConfig);
-        client.connect();
-        super.startSync();
+    protected CompletableFuture<Void> doStart() {
+        try {
+            client = NacosClientFactory.create(syncConfig);
+            client.connect();
+        } catch (NacosException e) {
+            return Futures.future(e);
+        }
+        return super.doStart();
     }
 
     @Override
@@ -99,20 +101,6 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
     @Override
     protected void configure(ServiceEvent event) {
         event.setMergePolicy(MergePolicy.FLOW_CONTROL);
-    }
-
-    @Getter
-    protected static class NacosServiceKey extends ServiceKey implements NacosSyncKey {
-
-        private final String dataId;
-
-        private final String group;
-
-        public NacosServiceKey(PolicySubscriber subscriber, String dataId, String group) {
-            super(subscriber);
-            this.dataId = dataId;
-            this.group = group;
-        }
     }
 
 }

@@ -20,16 +20,13 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpResponse;
-import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.*;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
-import com.jd.live.agent.governance.service.sync.api.ApiError;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
-import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -72,21 +69,8 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
             SyncConfig config = getSyncConfig();
             K key = subscription.getKey();
             try {
-                ApiResponse<Service> response = getService(subscription, config);
-                HttpStatus status = response.getStatus();
-                switch (status) {
-                    case OK:
-                        subscription.onUpdate(new SyncResponse<>(SyncStatus.SUCCESS, response.getData()));
-                        break;
-                    case NOT_FOUND:
-                        subscription.onUpdate(new SyncResponse<>(SyncStatus.NOT_FOUND, response.getData()));
-                        break;
-                    case NOT_MODIFIED:
-                        subscription.onUpdate(new SyncResponse<>(SyncStatus.NOT_MODIFIED, response.getData()));
-                        break;
-                    default:
-                        subscription.onUpdate(new SyncResponse<>(response.getError() != null ? response.getError().getMessage() : "Unknown error!"));
-                }
+                SyncResponse<Service> response = getService(subscription, config);
+                subscription.onUpdate(response);
             } catch (IOException e) {
                 subscription.onUpdate(new SyncResponse<>(e));
             } finally {
@@ -104,7 +88,7 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
      * @return An {@link ApiResponse} object containing the requested service.
      * @throws IOException If an I/O error occurs during the request.
      */
-    protected ApiResponse<Service> getService(Subscription<K, Service> subscription, SyncConfig config) throws IOException {
+    protected SyncResponse<Service> getService(Subscription<K, Service> subscription, SyncConfig config) throws IOException {
         ServiceKey key = subscription.getKey();
         Map<String, Object> context = new HashMap<>(4);
         context.put(APPLICATION_NAME, application.getName());
@@ -112,34 +96,23 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
         context.put(SERVICE_NAME, key.getName());
         context.put(SERVICE_VERSION, String.valueOf(subscription.getVersion()));
         String uri = template.evaluate(context);
+        return getResponse(config, uri);
+    }
+
+    /**
+     * Gets an SyncResponse object from a SyncConfig and a URI.
+     *
+     * @param config The SyncConfig object used to configure the connection.
+     * @param uri    The URI to send the GET request to.
+     * @return The SyncResponse object containing the response.
+     * @throws IOException If an I/O error occurs while sending the request or parsing the response.
+     */
+    protected SyncResponse<Service> getResponse(SyncConfig config, String uri) throws IOException {
         HttpResponse<ApiResponse<Service>> response = HttpUtils.get(uri,
                 conn -> configure(config, conn),
                 reader -> jsonParser.read(reader, new TypeReference<ApiResponse<Service>>() {
                 }));
-        return getApiResponse(response);
-    }
-
-    /**
-     * Extracts the API response from the given HTTP response and returns it as an {@link ApiResponse} object.
-     *
-     * @param response The HTTP response containing the API response.
-     * @return The extracted API response as an {@link ApiResponse} object.
-     */
-    protected ApiResponse<Service> getApiResponse(HttpResponse<ApiResponse<Service>> response) {
-        HttpStatus status = response.getStatus();
-        switch (status) {
-            case OK:
-                return response.getData();
-            case NOT_FOUND:
-                return new ApiResponse<>("",
-                        new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.name(),
-                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                                "The resource is not found."));
-            case NOT_MODIFIED:
-                return new ApiResponse<>("", new ApiError(HttpStatus.NOT_MODIFIED));
-            default:
-                return new ApiResponse<>("", new ApiError(status.name(), response.getCode(), response.getMessage()));
-        }
+        return ApiResponse.from(response).asSyncResponse();
     }
 
     /**

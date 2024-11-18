@@ -24,8 +24,8 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
-import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
+import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
 import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
 
 /**
@@ -34,7 +34,6 @@ import com.jd.live.agent.implement.service.policy.microservice.config.MicroServi
 @Injectable
 @Extension("MicroServiceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "jmsf")
-@ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class ServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 

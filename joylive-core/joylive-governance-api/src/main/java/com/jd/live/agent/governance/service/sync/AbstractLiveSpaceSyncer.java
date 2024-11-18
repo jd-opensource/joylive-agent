@@ -37,7 +37,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
 
     protected Syncer<K2, List<ApiSpace>> spaceListSyncer;
 
-    protected Subscription<K2, List<ApiSpace>> spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
+    protected Subscription<K2, List<ApiSpace>> spaceListSubscription;
 
     @Override
     public String getType() {
@@ -46,6 +46,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
 
     @Override
     protected void startSync() throws Exception {
+        spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
         spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
         String laneSpaceId = location == null ? null : location.getLiveSpaceId();

@@ -20,9 +20,19 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.service.sync.SyncResponse;
+import com.jd.live.agent.governance.service.sync.SyncStatus;
+import com.jd.live.agent.governance.service.sync.api.ApiResponse;
+import com.jd.live.agent.governance.service.sync.api.ApiResult;
+import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.governance.service.sync.http.AbstractLiveSpaceHttpSyncer;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfigLive;
+
+import java.io.StringReader;
+import java.util.List;
 
 /**
  * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive control plane.
@@ -45,4 +55,23 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
         return syncConfig;
     }
 
+    @Override
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
+        if (config == null || config.isEmpty()) {
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
+        }
+        ApiResponse<ApiResult<List<ApiSpace>>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<ApiResult<List<ApiSpace>>>>() {
+        });
+        return response.asSyncResponse(ApiResult::asSyncResponse);
+    }
+
+    @Override
+    protected SyncResponse<LiveSpace> parseSpace(String config) {
+        if (config == null || config.isEmpty()) {
+            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
+        }
+        ApiResponse<ApiResult<LiveSpace>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<ApiResult<LiveSpace>>>() {
+        });
+        return response.asSyncResponse(ApiResult::asSyncResponse);
+    }
 }

@@ -111,7 +111,7 @@ public abstract class AbstractLaneSpaceHttpSyncer extends AbstractLaneSpaceSynce
         }
         ApiResponse<List<ApiSpace>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<List<ApiSpace>>>() {
         });
-        return response.toSyncResponse();
+        return response.asSyncResponse();
     }
 
     @Override
@@ -121,7 +121,7 @@ public abstract class AbstractLaneSpaceHttpSyncer extends AbstractLaneSpaceSynce
         }
         ApiResponse<LaneSpace> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<LaneSpace>>() {
         });
-        return response.toSyncResponse();
+        return response.asSyncResponse();
     }
 
     @Getter

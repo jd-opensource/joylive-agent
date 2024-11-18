@@ -15,12 +15,14 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
@@ -28,14 +30,15 @@ import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosClient;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosSyncKey;
+import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientApi;
+import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.jd.live.agent.implement.service.policy.nacos.LaneSpaceNacosSyncer.NacosLaneSpaceKey;
 
@@ -51,17 +54,21 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
     @Config(SyncConfig.SYNC_LANE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
-    private NacosClient client;
+    private NacosClientApi client;
 
     public LaneSpaceNacosSyncer() {
         name = "lane-space-nacos-syncer";
     }
 
     @Override
-    protected void startSync() throws Exception {
-        client = new NacosClient(syncConfig);
-        client.connect();
-        super.startSync();
+    protected CompletableFuture<Void> doStart() {
+        try {
+            client = NacosClientFactory.create(syncConfig);
+            client.connect();
+        } catch (NacosException e) {
+            return Futures.future(e);
+        }
+        return super.doStart();
     }
 
     @Override

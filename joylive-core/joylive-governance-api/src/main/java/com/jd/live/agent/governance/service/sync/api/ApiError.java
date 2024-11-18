@@ -28,16 +28,22 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ApiError implements HttpState {
 
-    private String status;
-
     private int code;
+
+    private String status;
 
     private String message;
 
     public ApiError(HttpStatus status) {
-        this.status = status.name();
         this.code = status.value();
+        this.status = status.name();
         this.message = status.getReasonPhrase();
+    }
+
+    public ApiError(HttpStatus status, String message) {
+        this.code = status.value();
+        this.status = status.name();
+        this.message = message == null ? status.getReasonPhrase() : message;
     }
 
 }
