@@ -54,9 +54,6 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
      * @throws IllegalArgumentException if the request is null.
      */
     public AbstractServiceRequest(T request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Request cannot be null");
-        }
         this.request = request;
         this.startTime = System.currentTimeMillis();
     }

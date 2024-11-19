@@ -36,7 +36,6 @@ public class MethodContext extends ExecutableContext {
      * The result of the method execution.
      */
     @Setter
-    @Getter
     private Object result;
 
     /**
@@ -82,6 +81,11 @@ public class MethodContext extends ExecutableContext {
     public void skipWithThrowable(Throwable throwable) {
         setThrowable(throwable);
         skip();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getResult() {
+        return (T) result;
     }
 
     /**

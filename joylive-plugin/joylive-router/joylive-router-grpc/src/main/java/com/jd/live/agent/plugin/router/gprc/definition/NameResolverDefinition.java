@@ -17,38 +17,39 @@ package com.jd.live.agent.plugin.router.gprc.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.*;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.gprc.interceptor.GrpcServerInterceptor;
+import com.jd.live.agent.plugin.router.gprc.interceptor.NameResolverInterceptor;
 
 @Injectable
-@Extension(value = "GrpcServerDefinition", order = PluginDefinition.ORDER_ROUTER)
+@Extension(value = "NameResolverDefinition", order = PluginDefinition.ORDER_ROUTER)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.OR)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_GRPC_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(GrpcServerDefinition.TYPE_SERVER_IMPL_BUILDER)
-public class GrpcServerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(NameResolverDefinition.TYPE)
+public class NameResolverDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_SERVER_IMPL_BUILDER = "io.grpc.internal.ServerImplBuilder";
+    public static final String TYPE = "net.devh.boot.grpc.client.nameresolver.DiscoveryClientNameResolver";
 
-    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
-    private InvocationContext context;
+    private static final String METHOD = "getAttributes";
 
-    public GrpcServerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_SERVER_IMPL_BUILDER);
+    private static final String[] ARGUMENTS = new String[]{
+            "org.springframework.cloud.client.ServiceInstance"
+    };
+
+    public NameResolverDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new GrpcServerInterceptor(context))
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        NameResolverInterceptor::new)
         };
 
     }

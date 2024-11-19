@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.gprc.request;
 
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
-import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
 import io.grpc.*;
 
 import java.net.InetSocketAddress;
@@ -60,14 +59,12 @@ public interface GrpcRequest {
      */
     class GrpcOutboundRequest extends AbstractRpcOutboundRequest<ClientCall<?, ?>> implements GrpcRequest {
 
-        public GrpcOutboundRequest(ClientCall<?, ?> request) {
+        public GrpcOutboundRequest(ClientCall<?, ?> request, String serviceName, MethodDescriptor<?, ?> method) {
             super(request);
-
+            this.service = serviceName;
+            this.path = method.getServiceName();
+            this.method = method.getBareMethodName();
         }
 
-        public GrpcOutboundRequest(ClientCall<?, ?> request, GrpcCluster cluster) {
-            super(request);
-
-        }
     }
 }

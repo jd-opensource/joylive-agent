@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.grpc.provider;
+package com.jd.live.agent.demo.grpc.consumer.interceptor;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import io.grpc.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@SpringBootApplication
-public class GrpcProviderApplication {
+public class MyClientGrpcInterceptor implements ClientInterceptor {
 
-    public static void main(String[] args) {
-        SpringApplication.run(GrpcProviderApplication.class, args);
+    private static final Logger log = LoggerFactory.getLogger(MyClientGrpcInterceptor.class);
+
+    @Override
+    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
+        log.info("MyClientGrpcInterceptor");
+        return next.newCall(method, callOptions);
     }
-
 }

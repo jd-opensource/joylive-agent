@@ -21,7 +21,6 @@ import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.invoke.exception.AbstractInboundThrower;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcInboundRequest;
 import io.grpc.Metadata;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 /**
@@ -35,41 +34,41 @@ public class GrpcInboundThrower extends AbstractInboundThrower<GrpcInboundReques
 
     @Override
     protected StatusRuntimeException createUnReadyException(RejectUnreadyException exception, GrpcInboundRequest request) {
-        return Status.UNAVAILABLE.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createUnReadyException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createLiveException(LiveException exception, GrpcInboundRequest request) {
-        return Status.INTERNAL.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createLiveException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createPermissionException(RejectPermissionException exception, GrpcInboundRequest request) {
-        return Status.PERMISSION_DENIED.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createPermissionException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createAuthException(RejectAuthException exception, GrpcInboundRequest request) {
-        return Status.UNAUTHENTICATED.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createAuthException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createLimitException(RejectLimitException exception, GrpcInboundRequest request) {
-        return Status.RESOURCE_EXHAUSTED.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createLimitException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, GrpcInboundRequest request) {
-        return Status.RESOURCE_EXHAUSTED.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createCircuitBreakException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createEscapeException(RejectEscapeException exception, GrpcInboundRequest request) {
-        return Status.OUT_OF_RANGE.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createEscapeException(exception).asRuntimeException(new Metadata());
     }
 
     @Override
     protected StatusRuntimeException createRejectException(RejectException exception, GrpcInboundRequest request) {
-        return Status.INTERNAL.withDescription(exception.getMessage()).asRuntimeException(new Metadata());
+        return GrpcStatus.createRejectException(exception).asRuntimeException(new Metadata());
     }
 }

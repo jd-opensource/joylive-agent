@@ -187,7 +187,8 @@ public class FieldDesc implements ObjectAccessor {
      */
     @Override
     public Object get(final Object target) {
-        if (target == null) {
+        if (target == null && (field.getModifiers() & Modifier.STATIC) == 0) {
+            // none static field with null target
             return null;
         }
         try {
