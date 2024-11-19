@@ -54,7 +54,7 @@ public class LiveDiscovery {
     }
 
     public static String getService(String interfaceName) {
-        return interfaceName == null ? null : SERVICES.get(interfaceName);
+        return interfaceName == null || interfaceName.isEmpty() ? null : SERVICES.getOrDefault(interfaceName, interfaceName);
     }
 
     public static void putService(String interfaceName, String service) {

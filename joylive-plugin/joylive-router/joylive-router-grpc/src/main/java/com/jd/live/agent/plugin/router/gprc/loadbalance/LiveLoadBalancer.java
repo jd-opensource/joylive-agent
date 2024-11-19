@@ -20,6 +20,7 @@ import io.grpc.EquivalentAddressGroup;
 import io.grpc.LoadBalancer;
 import io.grpc.Status;
 
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -38,8 +39,7 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     public LiveLoadBalancer(Helper helper) {
         this.helper = helper;
-        // TODO optimize this
-        this.serviceName = helper.getAuthority();
+        this.serviceName = getServiceName(helper);
     }
 
     @Override
@@ -73,6 +73,28 @@ public class LiveLoadBalancer extends LoadBalancer {
     @Override
     public void shutdown() {
         subchannels.values().forEach(Subchannel::shutdown);
+    }
+
+    protected String getServiceName(Helper helper) {
+        if (helper.getClass().getName().equals("io.grpc.internal.ManagedChannelImpl$LbHelperImpl")) {
+            try {
+                Field field = helper.getClass().getDeclaredField("this$0");
+                field.setAccessible(true);
+                Object target = field.get(helper);
+                field = target.getClass().getDeclaredField("target");
+                field.setAccessible(true);
+                target = field.get(target);
+                String url = target.toString();
+                int index = url.indexOf(":///");
+                if (index != -1) {
+                    return url.substring(index + 4);
+                } else {
+                    return url;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return helper.getAuthority();
     }
 
     public String getServiceName() {
