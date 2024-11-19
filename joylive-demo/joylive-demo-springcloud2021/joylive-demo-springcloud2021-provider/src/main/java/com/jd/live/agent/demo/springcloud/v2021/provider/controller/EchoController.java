@@ -24,9 +24,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.concurrent.CountDownLatch;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 public class EchoController {
@@ -34,12 +33,11 @@ public class EchoController {
     @Value("${spring.application.name}")
     private String applicationName;
 
-    private final CountDownLatch latch = new CountDownLatch(1);
-
     @GetMapping("/echo/{str}")
     public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
         try {
-            latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
+            String waitTime = Optional.ofNullable(System.getenv("RESPONSE_WAIT_TIME")).orElse("2000");
+            Thread.sleep(Integer.parseInt(waitTime) + ThreadLocalRandom.current().nextInt(1000));
         } catch (InterruptedException ignore) {
         }
         LiveResponse response = new LiveResponse(str);

@@ -75,7 +75,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: production
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud2021-provider:1.5.0-76a0f505-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud2021-provider:1.5.0-21f62c26-AMD64
           imagePullPolicy: IfNotPresent
           name: joylive-demo-springcloud2021-provider
           ports:
@@ -160,7 +160,7 @@ spec:
               value: "1"
             - name: APPLICATION_LOCATION_LANE
               value: beta
-          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud2021-provider:1.5.0-76a0f505-AMD64
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud2021-provider:1.5.0-21f62c26-AMD64
           imagePullPolicy: IfNotPresent
           name: joylive-demo-springcloud2021-provider-gray
           ports:
