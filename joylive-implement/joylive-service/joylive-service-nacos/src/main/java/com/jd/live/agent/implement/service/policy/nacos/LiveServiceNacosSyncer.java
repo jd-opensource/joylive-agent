@@ -104,5 +104,4 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
         event.setMergePolicy(MergePolicy.LIVE);
     }
 
-
 }
