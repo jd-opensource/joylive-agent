@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LiveLoadBalancer extends LoadBalancer {
 
+    public static final String SCHEMA_DISCOVERY = "discovery:///";
     private final Helper helper;
 
     private final String serviceName;
@@ -85,11 +86,8 @@ public class LiveLoadBalancer extends LoadBalancer {
                 field.setAccessible(true);
                 target = field.get(target);
                 String url = target.toString();
-                int index = url.indexOf(":///");
-                if (index != -1) {
-                    return url.substring(index + 4);
-                } else {
-                    return url;
+                if (url.startsWith(SCHEMA_DISCOVERY)) {
+                    return url.substring(SCHEMA_DISCOVERY.length());
                 }
             } catch (Throwable ignored) {
             }
