@@ -21,6 +21,7 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import feign.Request;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.http.HttpHeaders;
@@ -49,12 +50,14 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
      *
      * @param request                   the Feign request
      * @param loadBalancerClientFactory the factory to create a load balancer client
+     * @param properties                the LoadBalancerProperties object containing the configuration for the load balancer.
      * @param options                   the options for the Feign request, such as timeouts
      */
     public FeignClusterRequest(Request request,
                                LoadBalancerClientFactory loadBalancerClientFactory,
+                               LoadBalancerProperties properties,
                                Request.Options options) {
-        super(request, loadBalancerClientFactory);
+        super(request, loadBalancerClientFactory, properties);
         this.options = options;
         this.uri = URI.create(request.url());
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.requestTemplate().queryLine()));

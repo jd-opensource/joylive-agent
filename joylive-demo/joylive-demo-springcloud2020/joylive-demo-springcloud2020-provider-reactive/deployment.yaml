@@ -1,0 +1,184 @@
+#
+# Copyright © ${year} ${owner} (${email})
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: joylive-demo-springcloud2020-provider-reactive
+    x-live-enabled: "true"
+  name: joylive-demo-springcloud2020-provider-reactive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: joylive-demo-springcloud2020-provider-reactive
+  template:
+    metadata:
+      labels:
+        app: joylive-demo-springcloud2020-provider-reactive
+        x-live-enabled: "true"
+    spec:
+      containers:
+        - env:
+            - name: CONFIG_LIVE_SPACE_API_TYPE
+              value: multilive
+            - name: CONFIG_LIVE_SPACE_API_URL
+              value: http://api.live.local/v1
+            - name: CONFIG_LIVE_SPACE_API_HEADERS
+              value: pin=demo
+            - name: CONFIG_SERVICE_API_TYPE
+              value: jmsf
+            - name: CONFIG_SERVICE_API_URL
+              value: http://api.jmsf.local/v1
+            - name: LIVE_LOG_LEVEL
+              value: info
+            - name: CONFIG_LANE_ENABLED
+              value: "false"
+            - name: NACOS_ADDR
+              value: nacos-server.nacos.svc:8848
+            - name: NACOS_USERNAME
+              value: nacos
+            - name: NACOS_PASSWORD
+              value: nacos
+            - name: APPLICATION_NAME
+              value: springcloud2020-provider
+            - name: APPLICATION_SERVICE_NAME
+              value: service-provider
+            - name: APPLICATION_SERVICE_NAMESPACE
+              value: default
+            - name: SERVER_PORT
+              value: "18081"
+            - name: APPLICATION_LOCATION_REGION
+              value: region1
+            - name: APPLICATION_LOCATION_ZONE
+              value: zone1
+            - name: APPLICATION_LOCATION_LIVESPACE_ID
+              value: v4bEh4kd6Jvu5QBX09qYq-qlbcs
+            - name: APPLICATION_LOCATION_UNIT
+              value: unit1
+            - name: APPLICATION_LOCATION_CELL
+              value: cell1
+            - name: APPLICATION_LOCATION_LANESPACE_ID
+              value: "1"
+            - name: APPLICATION_LOCATION_LANE
+              value: production
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud2020-provider-reactive:1.5.0-21f62c26-AMD64
+          imagePullPolicy: Always
+          name: joylive-demo-springcloud2020-provider-reactive
+          ports:
+            - containerPort: 18081
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "4"
+              memory: "8Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: { }
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: joylive-demo-springcloud2020-provider-reactive-gray
+    x-live-enabled: "true"
+  name: joylive-demo-springcloud2020-provider-reactive-gray
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: joylive-demo-springcloud2020-provider-reactive-gray
+  template:
+    metadata:
+      labels:
+        app: joylive-demo-springcloud2020-provider-reactive-gray
+        x-live-enabled: "true"
+    spec:
+      containers:
+        - env:
+            - name: CONFIG_LIVE_SPACE_API_TYPE
+              value: multilive
+            - name: CONFIG_LIVE_SPACE_API_URL
+              value: http://api.live.local/v1
+            - name: CONFIG_LIVE_SPACE_API_HEADERS
+              value: pin=demo
+            - name: CONFIG_SERVICE_API_TYPE
+              value: jmsf
+            - name: CONFIG_SERVICE_API_URL
+              value: http://api.jmsf.local/v1
+            - name: LIVE_LOG_LEVEL
+              value: info
+            - name: CONFIG_LANE_ENABLED
+              value: "false"
+            - name: NACOS_ADDR
+              value: nacos-server.nacos.svc:8848
+            - name: NACOS_USERNAME
+              value: nacos
+            - name: NACOS_PASSWORD
+              value: nacos
+            - name: APPLICATION_NAME
+              value: springcloud2020-provider-gray
+            - name: APPLICATION_SERVICE_NAME
+              value: service-provider
+            - name: APPLICATION_SERVICE_NAMESPACE
+              value: default
+            - name: SERVER_PORT
+              value: "18081"
+            - name: APPLICATION_LOCATION_REGION
+              value: region2
+            - name: APPLICATION_LOCATION_ZONE
+              value: zone2
+            - name: APPLICATION_LOCATION_LIVESPACE_ID
+              value: v4bEh4kd6Jvu5QBX09qYq-qlbcs
+            - name: APPLICATION_LOCATION_UNIT
+              value: unit2
+            - name: APPLICATION_LOCATION_CELL
+              value: cell4
+            - name: APPLICATION_LOCATION_LANESPACE_ID
+              value: "1"
+            - name: APPLICATION_LOCATION_LANE
+              value: beta
+          image: hub-vpc.jdcloud.com/jmsf/joylive-demo-springcloud2020-provider-reactive:1.5.0-21f62c26-AMD64
+          imagePullPolicy: Always
+          name: joylive-demo-springcloud2020-provider-reactive-gray
+          ports:
+            - containerPort: 18081
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "4"
+              memory: "8Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: { }
+      terminationGracePeriodSeconds: 30
+

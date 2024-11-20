@@ -99,10 +99,16 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     public AbstractClusterRequest(T request,
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory) {
+        this(request, loadBalancerFactory, null);
+    }
+
+    public AbstractClusterRequest(T request,
+                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
+                                  LoadBalancerProperties properties) {
         super(request);
         this.loadBalancerFactory = loadBalancerFactory;
         this.lifecycles = new UnsafeLazyObject<>(this::buildLifecycleProcessors);
-        this.properties = new UnsafeLazyObject<>(this::buildProperties);
+        this.properties = properties != null ? new UnsafeLazyObject<>(() -> properties) : new UnsafeLazyObject<>(this::buildProperties);
         this.lbRequest = new UnsafeLazyObject<>(this::buildLbRequest);
         this.instanceSupplier = new UnsafeLazyObject<>(this::buildServiceInstanceListSupplier);
         this.requestData = new UnsafeLazyObject<>(this::buildRequestData);
@@ -160,7 +166,12 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
     protected abstract RequestData buildRequestData();
 
     private LoadBalancerProperties buildProperties() {
-        return loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
+        // fix spring cloud 3.0.6 without getProperties
+        try {
+            return loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
+        } catch (Throwable e) {
+            return null;
+        }
     }
 
     /**

@@ -21,6 +21,7 @@
         <module>joylive-demo-rocketmq</module>
         <module>joylive-demo-sofarpc</module>
         <module>joylive-demo-grpc</module>
+        <module>joylive-demo-springcloud2020</module>
     </modules>
 
     <properties>

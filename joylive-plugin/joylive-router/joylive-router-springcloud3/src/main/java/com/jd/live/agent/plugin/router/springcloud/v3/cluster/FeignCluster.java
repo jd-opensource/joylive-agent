@@ -20,10 +20,10 @@ import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
@@ -58,12 +58,15 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     private static final String FIELD_DELEGATE = "delegate";
 
     private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
+    private static final String FIELD_LOAD_BALANCER_PROPERTIES = "properties";
 
     private final Client client;
 
     private final Client delegate;
 
     private final LoadBalancerClientFactory loadBalancerClientFactory;
+
+    private final LoadBalancerProperties loadBalancerProperties;
 
     public FeignCluster(Client client) {
         this.client = client;
@@ -73,10 +76,16 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
         this.delegate = (Client) (field == null ? null : field.get(client));
         field = fieldList.getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
         this.loadBalancerClientFactory = (LoadBalancerClientFactory) (field == null ? null : field.get(client));
+        field = fieldList.getField(FIELD_LOAD_BALANCER_PROPERTIES);
+        this.loadBalancerProperties = field == null || !(LoadBalancerProperties.class.isAssignableFrom(field.getField().getType())) ? null : (LoadBalancerProperties) field.get(client);
     }
 
     public LoadBalancerClientFactory getLoadBalancerClientFactory() {
         return loadBalancerClientFactory;
+    }
+
+    public LoadBalancerProperties getLoadBalancerProperties() {
+        return loadBalancerProperties;
     }
 
     @Override
@@ -110,8 +119,7 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
         RequestData requestData = request.getRequestData();
         int status = response.getResponse().status();
         HttpStatus httpStatus = HttpStatus.resolve(response.getResponse().status());
-        LoadBalancerProperties properties = request.getProperties();
-        boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
+        boolean useRawStatusCodeInResponseData = isUseRawStatusCodeInResponseData(request.getProperties());
         request.lifecycles(l -> l.onComplete(new CompletionContext<>(
                 CompletionContext.Status.SUCCESS,
                 request.getLbRequest(),

@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.BlockingCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
@@ -58,7 +58,10 @@ public class BlockingClusterInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         BlockingCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCluster::new);
         BlockingClusterRequest request = new BlockingClusterRequest((HttpRequest) arguments[0],
-                cluster.getLoadBalancerFactory(), (byte[]) arguments[1], (ClientHttpRequestExecution) arguments[2]);
+                cluster.getLoadBalancerFactory(),
+                cluster.getLoadBalancerProperties(),
+                (byte[]) arguments[1],
+                (ClientHttpRequestExecution) arguments[2]);
         HttpOutboundInvocation<BlockingClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();

@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.FeignCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
@@ -51,7 +51,7 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         FeignCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCluster::new);
         FeignClusterRequest request = new FeignClusterRequest((Request) arguments[0],
-                cluster.getLoadBalancerClientFactory(), (Request.Options) arguments[1]);
+                cluster.getLoadBalancerClientFactory(), cluster.getLoadBalancerProperties(), (Request.Options) arguments[1]);
         HttpOutboundInvocation<FeignClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         FeignClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();

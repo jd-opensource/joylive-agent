@@ -20,9 +20,9 @@ import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
@@ -70,6 +70,8 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
 
+    private static final String FIELD_LOAD_BALANCER_PROPERTIES = "properties";
+
     /**
      * An interceptor for HTTP requests, used to apply additional processing or modification
      * to requests before they are executed.
@@ -88,6 +90,8 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
      */
     private final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
+    private final LoadBalancerProperties loadBalancerProperties;
+
     /**
      * Constructs a {@code BlockingCluster} with the specified HTTP request interceptor.
      * Initializes the {@code requestFactory} and {@code loadBalancerFactory} fields by
@@ -102,8 +106,11 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         FieldList fieldList = describe.getFieldList();
         this.requestFactory = (LoadBalancerRequestFactory) fieldList.getField(FIELD_REQUEST_FACTORY).get(interceptor);
         LoadBalancerClient client = (LoadBalancerClient) fieldList.getField(FIELD_LOAD_BALANCER).get(interceptor);
-        FieldDesc field = ClassUtils.describe(client.getClass()).getFieldList().getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+        fieldList = ClassUtils.describe(client.getClass()).getFieldList();
+        FieldDesc field = fieldList.getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
         this.loadBalancerFactory = (ReactiveLoadBalancer.Factory<ServiceInstance>) field.get(client);
+        field = fieldList.getField(FIELD_LOAD_BALANCER_PROPERTIES);
+        this.loadBalancerProperties = field == null || !(LoadBalancerProperties.class.isAssignableFrom(field.getField().getType())) ? null : (LoadBalancerProperties) field.get(client);
     }
 
     public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
@@ -132,6 +139,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         return RETRY_PREDICATE;
     }
 
+    public LoadBalancerProperties getLoadBalancerProperties() {
+        return loadBalancerProperties;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(BlockingClusterResponse response, BlockingClusterRequest request, SpringEndpoint endpoint) {
@@ -142,8 +153,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             RequestData requestData = request.getRequestData();
             HttpStatus httpStatus = httpResponse.getStatusCode();
             int rawStatusCode = httpResponse.getRawStatusCode();
-            LoadBalancerProperties properties = request.getProperties();
-            boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
+            boolean useRawStatusCodeInResponseData = isUseRawStatusCodeInResponseData(request.getProperties());
             res = useRawStatusCodeInResponseData
                     ? new ResponseData(responseHeaders, null, requestData, rawStatusCode)
                     : new ResponseData(httpStatus, responseHeaders, null, requestData);

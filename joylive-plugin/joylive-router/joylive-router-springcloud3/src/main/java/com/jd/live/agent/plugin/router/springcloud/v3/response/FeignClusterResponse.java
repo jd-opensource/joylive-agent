@@ -69,14 +69,18 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
                 try {
                     InputStream in = bodied.asInputStream();
                     body = IOUtils.read(in);
-                    response = Response.builder()
+                    Response.Builder builder = Response.builder()
                             .body(body)
                             .headers(response.headers())
-                            .protocolVersion(response.protocolVersion())
                             .reason(response.reason())
                             .request(response.request())
-                            .status(response.status())
-                            .build();
+                            .status(response.status());
+                    // fix for spring cloud 2020
+                    try {
+                        builder.protocolVersion(response.protocolVersion());
+                    } catch (Throwable ignored) {
+                    }
+                    response = builder.build();
                     Close.instance().close(in);
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
