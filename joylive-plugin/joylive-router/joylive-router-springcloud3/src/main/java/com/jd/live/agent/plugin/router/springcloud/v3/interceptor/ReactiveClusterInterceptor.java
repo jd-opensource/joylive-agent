@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveCluster;
@@ -31,11 +30,12 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ClientClusterInterceptor
+ * ReactiveClusterInterceptor
  *
  * @since 1.0.0
  */
@@ -51,14 +51,17 @@ public class ReactiveClusterInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        ReactiveCluster cluster = clusters.computeIfAbsent((LoadBalancedExchangeFilterFunction) ctx.getTarget(), ReactiveCluster::new);
+        LoadBalancedExchangeFilterFunction filter = (LoadBalancedExchangeFilterFunction) ctx.getTarget();
+        ReactiveCluster cluster = clusters.computeIfAbsent(filter, ReactiveCluster::new);
         ReactiveClusterRequest request = new ReactiveClusterRequest((ClientRequest) arguments[0],
-                cluster.getLoadBalancerFactory(), (ExchangeFunction) arguments[1]);
+                cluster.getLoadBalancerFactory(), cluster.getLoadBalancerProperties(), (ExchangeFunction) arguments[1]);
         HttpOutboundInvocation<ReactiveClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);
-        Mono<ClientResponse> mono = Mono.fromFuture(Futures.future(response).thenApply(ReactiveClusterResponse::getResponse));
+        CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
+        Mono<ClientResponse> mono = Mono.fromFuture(future);
         mc.setResult(mono);
         mc.setSkip(true);
     }

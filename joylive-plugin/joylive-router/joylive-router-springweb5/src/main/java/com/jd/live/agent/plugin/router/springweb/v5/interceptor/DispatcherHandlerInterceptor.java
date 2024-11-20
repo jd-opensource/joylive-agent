@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvoc
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v5.request.ReactiveInboundRequest;
+import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -41,6 +42,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // private Mono<HandlerResult> invokeHandler(ServerWebExchange exchange, Object handler)
         ServiceConfig config = context.getGovernanceConfig().getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
@@ -50,7 +52,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
-            Mono<Void> mono = context.inbound(invocation, () -> ((Mono<Void>) mc.invokeOrigin()).toFuture(), request::convert);
+            Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
             mc.skipWithResult(mono);
         }
     }

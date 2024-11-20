@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.HttpHeaders;
@@ -37,16 +38,17 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
     private final ExchangeFunction next;
 
     /**
-     * Constructs a new ClientOutboundRequest with the specified parameters.
-     *
-     * @param request             The original client request to be processed.
-     * @param loadBalancerFactory A factory for creating instances of ReactiveLoadBalancer for service instances.
-     * @param next                The next processing step in the request handling pipeline.
+     * Creates a new instance of ReactiveClusterRequest.
+     * @param request The ClientRequest object representing the original request.
+     * @param loadBalancerFactory The ReactiveLoadBalancer.Factory object used to create the load balancer.
+     * @param properties The LoadBalancerProperties object containing the configuration for the load balancer.
+     * @param next The ExchangeFunction object representing the next step in the request processing chain.
      */
     public ReactiveClusterRequest(ClientRequest request,
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
+                                  LoadBalancerProperties properties,
                                   ExchangeFunction next) {
-        super(request, loadBalancerFactory);
+        super(request, loadBalancerFactory, properties);
         this.uri = request.url();
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.url().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.headers()));

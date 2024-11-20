@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.HttpHeaders;
@@ -51,14 +52,16 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
      *
      * @param request             The original HTTP request.
      * @param loadBalancerFactory The factory to obtain a load balancer instance for routing decisions.
+     * @param properties          The LoadBalancerProperties object containing the configuration for the load balancer.
      * @param body                The body of the request as a byte array.
      * @param execution           The execution context for processing the request.
      */
     public BlockingClusterRequest(HttpRequest request,
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
+                                  LoadBalancerProperties properties,
                                   byte[] body,
                                   ClientHttpRequestExecution execution) {
-        super(request, loadBalancerFactory);
+        super(request, loadBalancerFactory, properties);
         this.uri = request.getURI();
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));

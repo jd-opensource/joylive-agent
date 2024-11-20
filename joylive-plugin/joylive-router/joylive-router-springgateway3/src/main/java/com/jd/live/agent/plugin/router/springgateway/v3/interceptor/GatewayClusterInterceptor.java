@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
+import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -32,6 +33,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRe
 import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
@@ -68,6 +70,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
+    private static final String FIELD_LOADBALANCER_PROPERTIES = "loadBalancerProperties";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
     private static final String SCHEME_REGEX = "[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*";
     private static final Pattern SCHEME_PATTERN = Pattern.compile(SCHEME_REGEX);
@@ -106,7 +109,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         InvocationContext ic = chain.isLoadBalance() ? context : new HttpForwardContext(context);
         ReactiveLoadBalancer.Factory<ServiceInstance> factory = chain.isLoadBalance() ? cluster.getClientFactory() : null;
         RetryConfig retryConfig = RequestContext.removeAttribute(GatewayConfig.ATTRIBUTE_RETRY_CONFIG);
-        GatewayClusterRequest request = new GatewayClusterRequest(exchange, chain, factory, retryConfig, config);
+        GatewayClusterRequest request = new GatewayClusterRequest(exchange, chain, factory, filterConfig.getProperties(), retryConfig, config);
         OutboundInvocation<GatewayClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, ic);
 
         CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
@@ -136,6 +139,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         List<GatewayFilter> globalFilters = getGlobalFilters(target);
         List<GatewayFilter> filters = new ArrayList<>(globalFilters.size());
         LoadBalancerClientFactory factory = null;
+        LoadBalancerProperties properties = null;
         for (GatewayFilter filter : globalFilters) {
             if (filter instanceof OrderedGatewayFilter) {
                 filter = ((OrderedGatewayFilter) filter).getDelegate();
@@ -145,7 +149,9 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
                 GlobalFilter globalFilter = getGlobalFilter(filter);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
                     // skip ReactiveLoadBalancerClientFilter, because it's implement by RouteFilter
-                    factory = getLoadBalancerClientFactory(globalFilter);
+                    FieldList fieldList = ClassUtils.describe(globalFilter.getClass()).getFieldList();
+                    factory = getLoadBalancerClientFactory(globalFilter, fieldList);
+                    properties = getLoadBalancerProperties(globalFilter, fieldList);
                 } else if (!globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     filters.add(filter);
@@ -153,7 +159,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
             }
         }
 
-        return new FilterConfig(target, filters, pathFilters, new GatewayCluster(factory));
+        return new FilterConfig(target, filters, pathFilters, properties, new GatewayCluster(factory));
     }
 
     /**
@@ -171,17 +177,31 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Returns the load balancer client factory associated with the given global filter.
-     *
-     * @param globalFilter The global filter.
-     * @return The load balancer client factory.
+     * Returns the LoadBalancerClientFactory associated with the given GlobalFilter and FieldList.
+     * @param globalFilter The GlobalFilter object to retrieve the LoadBalancerClientFactory from.
+     * @param fields The FieldList object containing the FieldDesc objects.
+     * @return The LoadBalancerClientFactory instance associated with the given GlobalFilter and FieldList.
      */
-    private LoadBalancerClientFactory getLoadBalancerClientFactory(GlobalFilter globalFilter) {
-        return (LoadBalancerClientFactory) ClassUtils
-                .describe(globalFilter.getClass())
-                .getFieldList()
-                .getField(FIELD_CLIENT_FACTORY)
-                .get(globalFilter);
+    private LoadBalancerClientFactory getLoadBalancerClientFactory(GlobalFilter globalFilter, FieldList fields) {
+        FieldDesc fieldDesc = fields.getField(FIELD_CLIENT_FACTORY);
+        return (LoadBalancerClientFactory) fieldDesc.get(globalFilter);
+    }
+
+    /**
+     * Returns the LoadBalancerProperties associated with the given GlobalFilter and FieldList.
+     *
+     * @param globalFilter The GlobalFilter object to retrieve the LoadBalancerProperties from.
+     * @param fields       The FieldList object containing the FieldDesc objects.
+     * @return The LoadBalancerProperties instance associated with the given GlobalFilter and FieldList, or null if not found.
+     */
+    private LoadBalancerProperties getLoadBalancerProperties(GlobalFilter globalFilter, FieldList fields) {
+        // fix for spring cloud gateway 2020
+        FieldDesc fieldDesc = fields.getField(FIELD_LOADBALANCER_PROPERTIES);
+        try {
+            return fieldDesc == null ? null : (LoadBalancerProperties) fieldDesc.get(globalFilter);
+        } catch (Throwable e) {
+            return null;
+        }
     }
 
     /**
@@ -249,14 +269,17 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
         private final Set<String> pathFilters;
 
+        private final LoadBalancerProperties properties;
+
         private final GatewayCluster cluster;
 
         private Optional<FieldDesc> retryOption;
 
-        FilterConfig(Object target, List<GatewayFilter> globalFilters, Set<String> pathFilters, GatewayCluster cluster) {
+        FilterConfig(Object target, List<GatewayFilter> globalFilters, Set<String> pathFilters, LoadBalancerProperties properties, GatewayCluster cluster) {
             this.target = target;
             this.globalFilters = globalFilters;
             this.pathFilters = pathFilters;
+            this.properties = properties;
             this.cluster = cluster;
         }
 

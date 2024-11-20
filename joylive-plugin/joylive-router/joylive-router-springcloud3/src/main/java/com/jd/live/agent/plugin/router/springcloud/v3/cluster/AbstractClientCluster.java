@@ -170,5 +170,17 @@ public abstract class AbstractClientCluster<
     protected HttpHeaders getHttpHeaders(Map<String, List<String>> headers) {
         return headers == null ? new HttpHeaders() : new HttpHeaders(new MultiValueMapAdapter<>(headers));
     }
+
+    protected boolean isUseRawStatusCodeInResponseData(LoadBalancerProperties properties) {
+        boolean useRawStatusCodeInResponseData = false;
+        if (properties != null) {
+            // fix for spring cloud 2020
+            try {
+                useRawStatusCodeInResponseData = properties.isUseRawStatusCodeInResponseData();
+            } catch (Throwable ignored) {
+            }
+        }
+        return useRawStatusCodeInResponseData;
+    }
 }
 

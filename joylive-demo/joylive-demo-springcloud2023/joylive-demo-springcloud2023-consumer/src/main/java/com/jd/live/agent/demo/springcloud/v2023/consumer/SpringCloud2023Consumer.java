@@ -21,7 +21,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication(scanBasePackages = "com.jd.live.agent.demo.springcloud.v2023.consumer")
+@SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
 public class SpringCloud2023Consumer {

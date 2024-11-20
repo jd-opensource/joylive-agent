@@ -26,7 +26,7 @@ public class ReactiveService implements HelloService {
     private final WebClient webClient;
 
     public ReactiveService(WebClient.Builder builder) {
-        this.webClient = builder.baseUrl("http://service-provider").build();
+        this.webClient = builder.baseUrl("http://service-provider-reactive").build();
     }
 
     @Override

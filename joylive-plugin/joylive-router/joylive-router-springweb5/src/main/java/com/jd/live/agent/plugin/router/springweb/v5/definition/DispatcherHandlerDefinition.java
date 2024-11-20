@@ -27,7 +27,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v5.interceptor.DispatcherHandlerInterceptor;
 
 /**
- * FilteringWebHandlerPluginDefinition
+ * DispatcherHandlerDefinition
  *
  * @author Zhiguo.Chen
  * @since 1.0.0

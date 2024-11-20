@@ -32,7 +32,10 @@ import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterR
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.*;
+import org.springframework.cloud.client.loadbalancer.CompletionContext;
+import org.springframework.cloud.client.loadbalancer.DefaultResponse;
+import org.springframework.cloud.client.loadbalancer.RequestData;
+import org.springframework.cloud.client.loadbalancer.ResponseData;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
@@ -146,8 +149,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(GatewayClusterResponse response, GatewayClusterRequest request, SpringEndpoint endpoint) {
-        LoadBalancerProperties properties = request.getProperties();
-        boolean useRawStatusCodeInResponseData = properties != null && properties.isUseRawStatusCodeInResponseData();
+        boolean useRawStatusCodeInResponseData = isUseRawStatusCodeInResponseData(request.getProperties());
         request.lifecycles(l -> l.onComplete(new CompletionContext<>(
                 CompletionContext.Status.SUCCESS,
                 request.getLbRequest(),

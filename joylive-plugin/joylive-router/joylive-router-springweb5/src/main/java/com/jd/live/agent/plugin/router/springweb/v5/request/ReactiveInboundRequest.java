@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInbo
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -107,25 +108,22 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     /**
      * Converts a CompletionStage into a Mono that represents the completion of the stage.
-     * <p>
-     * This method takes a CompletionStage as input and returns a Mono that completes when the stage completes.
-     * If the stage completes with a result, the Mono completes with a null value. If the stage completes with an exception,
-     * the Mono completes with an error containing the exception wrapped in a DubboException.
-     * </p>
      *
      * @param stage the CompletionStage to convert into a Mono.
      * @return a Mono that represents the completion of the stage.
      */
-    public Mono<Void> convert(CompletionStage<Object> stage) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+    public Mono<HandlerResult> convert(CompletionStage<Object> stage) {
+        CompletableFuture<HandlerResult> future = new CompletableFuture<>();
         stage.whenComplete((r, t) -> {
             if (t != null) {
                 future.completeExceptionally(THROWER.createException(t, this));
             } else if (r == null) {
                 future.complete(null);
+            } else if (r instanceof HandlerResult) {
+                future.complete((HandlerResult) r);
             } else {
                 future.completeExceptionally(new UnsupportedOperationException(
-                        "Expected type is " + Void.class.getName() + ", but actual type is " + r.getClass()));
+                        "Expected type is " + HandlerResult.class.getName() + ", but actual type is " + r.getClass()));
             }
         });
         return Mono.fromCompletionStage(future);
