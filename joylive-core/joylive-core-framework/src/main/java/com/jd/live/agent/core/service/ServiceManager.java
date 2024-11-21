@@ -57,7 +57,7 @@ public class ServiceManager implements ServiceSupervisor {
     }
 
     public CompletableFuture<Void> start() {
-        return execute(AgentService::start, s -> "Service " + s.getName() + " is started.").whenComplete((v, t) -> {
+        return execute(this::startService, s -> "Service " + s.getName() + " is started.").whenComplete((v, t) -> {
             if (t == null) {
                 publisher.offer(new AgentEvent(EventType.AGENT_SERVICE_READY, "All services are started."));
             }
@@ -81,6 +81,27 @@ public class ServiceManager implements ServiceSupervisor {
             stop().join();
         } catch (Throwable e) {
             logger.warn("Failed to shutdown service, caused by " + e.getMessage());
+        }
+    }
+
+    /**
+     * Starts the given AgentService asynchronously.
+     *
+     * @param service The AgentService to start.
+     * @return A CompletableFuture that represents the asynchronous start operation of the AgentService.
+     */
+    private CompletableFuture<Void> startService(AgentService service) {
+        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = service.getClass().getClassLoader();
+        try {
+            if (classLoader != contextLoader) {
+                Thread.currentThread().setContextClassLoader(classLoader);
+            }
+            return service.start();
+        } finally {
+            if (classLoader != contextLoader) {
+                Thread.currentThread().setContextClassLoader(contextLoader);
+            }
         }
     }
 
