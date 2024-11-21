@@ -229,7 +229,8 @@
             <includes>
                 <include>com.jd.live:joylive-transmission-thread</include>
                 <include>com.jd.live:joylive-transmission-jdkhttp</include>
-                <include>com.jd.live:joylive-transmission-httpservlet</include>
+                <include>com.jd.live:joylive-transmission-servlet-javax</include>
+                <include>com.jd.live:joylive-transmission-servlet-jakarta</include>
             </includes>
         </dependencySet>
 

@@ -183,9 +183,9 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         Throwable cause = error.getThrowable();
         boolean serverError = error.isServerError();
         response = response != null && serverError ? response : cluster.createResponse(cause, request, endpoint);
+        error = response.getError();
         try {
             invocation.onFailure(endpoint, cause);
-            error = response.getError();
             if (error == null) {
                 // Request was handled successfully by degrade
                 cluster.onSuccess(response, request, endpoint);
@@ -199,7 +199,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         } catch (Throwable e) {
             logger.warn("Exception occurred when onException, caused by " + e.getMessage(), e);
         } finally {
-            result.complete(response);
+            if (error == null) {
+                result.complete(response);
+            } else {
+                result.completeExceptionally(error.getThrowable());
+            }
         }
     }
 }

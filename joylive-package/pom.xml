@@ -249,7 +249,11 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-transmission-httpservlet</artifactId>
+            <artifactId>joylive-transmission-servlet-javax</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-transmission-servlet-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
