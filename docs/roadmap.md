@@ -1,5 +1,10 @@
 Roadmap
 ===
+# 2025/Q1
+1. Optimize MQ routing
+2. Support Zuul
+3. Support xDS
+
 # 2024/12
 
 1. Support gRPC
