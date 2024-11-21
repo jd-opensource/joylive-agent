@@ -10,7 +10,7 @@ Roadmap
 1. Support gRPC
 2. Support synchronizing policies from the configuration center
 3. Enhance swimlane routing
-4. Support Spring cloud 2020 & 2023
+4. Support Spring cloud 2020 & 2022
 
 # 2024/11
 
