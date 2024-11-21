@@ -12,7 +12,9 @@
     <artifactId>joylive-demo</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>joylive-demo-springcloud2020</module>
         <module>joylive-demo-springcloud2021</module>
+        <module>joylive-demo-springcloud2022</module>
         <module>joylive-demo-springcloud2023</module>
         <module>joylive-demo-dubbo3</module>
         <module>joylive-demo-dubbo2.7</module>
@@ -21,7 +23,7 @@
         <module>joylive-demo-rocketmq</module>
         <module>joylive-demo-sofarpc</module>
         <module>joylive-demo-grpc</module>
-        <module>joylive-demo-springcloud2020</module>
+
     </modules>
 
     <properties>

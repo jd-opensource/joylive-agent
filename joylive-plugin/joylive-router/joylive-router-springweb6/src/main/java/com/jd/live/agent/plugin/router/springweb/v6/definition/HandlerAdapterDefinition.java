@@ -50,8 +50,8 @@ public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_HANDLE = "handle";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
-            "javax.servlet.http.HttpServletRequest",
-            "javax.servlet.http.HttpServletResponse",
+            "jakarta.servlet.http.HttpServletRequest",
+            "jakarta.servlet.http.HttpServletResponse",
             "java.lang.Object"
     };
 

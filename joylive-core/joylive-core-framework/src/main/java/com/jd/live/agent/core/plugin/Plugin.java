@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.plugin.PluginEvent;
 import com.jd.live.agent.bootstrap.plugin.PluginEvent.EventType;
 import com.jd.live.agent.bootstrap.plugin.PluginListener;
 import com.jd.live.agent.core.extension.ExtensibleLoader;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.PluginDeclare;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import lombok.Getter;
@@ -26,6 +27,7 @@ import lombok.Getter;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -152,7 +154,15 @@ public class Plugin implements PluginDeclare {
         if (status == Status.LOADED) {
             status = Status.SUCCESS;
             List<String> names = new ArrayList<>(definitions.size());
-            definitions.forEach(t -> names.add(t.getClass().getSimpleName()));
+            definitions.forEach(t -> {
+                Extension extension = t.getClass().getAnnotation(Extension.class);
+                String[] values = extension.value();
+                if (values != null && values.length > 0) {
+                    names.addAll(Arrays.asList(values));
+                } else {
+                    names.add(t.getClass().getSimpleName());
+                }
+            });
             publish(new PluginEvent(this, EventType.SUCCESS, "Install plugin " + name + ". definitions=" + names));
         }
     }

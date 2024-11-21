@@ -340,7 +340,12 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-transmission-httpservlet</artifactId>
+                <artifactId>joylive-transmission-servlet-javax</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-transmission-servlet-jakarta</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

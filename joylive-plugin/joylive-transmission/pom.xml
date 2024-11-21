@@ -20,7 +20,8 @@
         <module>joylive-transmission-jdkhttp</module>
         <module>joylive-transmission-okhttp1</module>
         <module>joylive-transmission-okhttp3</module>
-        <module>joylive-transmission-httpservlet</module>
+        <module>joylive-transmission-servlet-javax</module>
+        <module>joylive-transmission-servlet-jakarta</module>
         <module>joylive-transmission-grpc</module>
         <module>joylive-transmission-dubbo3</module>
         <module>joylive-transmission-dubbo2.7</module>

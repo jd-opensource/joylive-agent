@@ -23,7 +23,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.transmission.httpclient.v4.interceptor.HttpClientInterceptor;
 
-@Extension(value = "HttpClient4Definition", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "HttpClientDefinition_v4", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
