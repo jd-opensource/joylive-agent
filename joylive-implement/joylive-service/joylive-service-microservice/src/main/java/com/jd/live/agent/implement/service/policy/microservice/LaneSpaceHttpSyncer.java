@@ -22,7 +22,7 @@ import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.service.sync.http.AbstractLaneSpaceHttpSyncer;
-import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
+import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfig;
 
 /**
  * LaneSpaceSyncer is responsible for synchronizing lane spaces from a microservice control plane.
@@ -34,7 +34,7 @@ import com.jd.live.agent.implement.service.policy.microservice.config.MicroServi
 public class LaneSpaceHttpSyncer extends AbstractLaneSpaceHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
-    private MicroServiceSyncConfigLive syncConfig = new MicroServiceSyncConfigLive();
+    private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     public LaneSpaceHttpSyncer() {
         name = "lane-space-jmsf-syncer";

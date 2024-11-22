@@ -55,7 +55,7 @@ public abstract class AbstractLaneSpaceHttpSyncer extends AbstractLaneSpaceSynce
 
     @Override
     protected Template createTemplate() {
-        return new Template(((SyncAddress.LiveSpaceAddress) getSyncConfig()).getSpaceUrl());
+        return new Template(((LaneSpaceAddress) getSyncConfig()).getLaneSpaceUrl());
     }
 
     @Override
@@ -68,7 +68,7 @@ public abstract class AbstractLaneSpaceHttpSyncer extends AbstractLaneSpaceSynce
 
             @Override
             public String getUrl() {
-                return ((LaneSpaceAddress) getSyncConfig()).getLaneSpaceUrl();
+                return ((LaneSpaceAddress) getSyncConfig()).getLaneSpacesUrl();
             }
         });
     }

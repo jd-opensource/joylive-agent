@@ -26,7 +26,7 @@ import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
-import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfigLive;
+import com.jd.live.agent.implement.service.policy.microservice.config.MicroServiceSyncConfig;
 
 /**
  * MicroServiceSyncer is responsible for synchronizing microservice policies from a microservice control plane.
@@ -38,7 +38,7 @@ import com.jd.live.agent.implement.service.policy.microservice.config.MicroServi
 public class ServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
     @Config(SyncConfig.SYNC_MICROSERVICE)
-    private MicroServiceSyncConfigLive syncConfig = new MicroServiceSyncConfigLive();
+    private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     public ServiceHttpSyncer() {
         name = "service-jmsf-syncer";

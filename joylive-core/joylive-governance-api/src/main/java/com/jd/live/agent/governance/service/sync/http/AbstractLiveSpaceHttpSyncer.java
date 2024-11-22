@@ -55,7 +55,7 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
 
     @Override
     protected Template createTemplate() {
-        return new Template(((LiveSpaceAddress) getSyncConfig()).getSpaceUrl());
+        return new Template(((LiveSpaceAddress) getSyncConfig()).getLiveSpaceUrl());
     }
 
     @Override
@@ -68,7 +68,7 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
 
             @Override
             public String getUrl() {
-                return ((LiveSpaceAddress) getSyncConfig()).getSpacesUrl();
+                return ((LiveSpaceAddress) getSyncConfig()).getLiveSpacesUrl();
             }
         });
     }

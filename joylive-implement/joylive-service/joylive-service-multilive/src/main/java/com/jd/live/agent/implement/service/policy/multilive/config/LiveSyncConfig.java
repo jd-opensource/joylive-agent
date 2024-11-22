@@ -31,12 +31,12 @@ public class LiveSyncConfig extends SyncConfig implements ServiceAddress, LiveSp
     private LiveConfig multilive = new LiveConfig();
 
     @Override
-    public String getSpacesUrl() {
+    public String getLiveSpacesUrl() {
         return getPath(multilive.spacesUrl, "/workspaces");
     }
 
     @Override
-    public String getSpaceUrl() {
+    public String getLiveSpaceUrl() {
         return getPath(multilive.spaceUrl, "/workspaces/${space_id}/version/${space_version}");
     }
 

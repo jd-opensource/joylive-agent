@@ -47,14 +47,14 @@ public interface SyncAddress {
          *
          * @return The URL for spaces.
          */
-        String getSpacesUrl();
+        String getLiveSpacesUrl();
 
         /**
          * Returns the URL for an individual space.
          *
          * @return The URL for an individual space.
          */
-        String getSpaceUrl();
+        String getLiveSpaceUrl();
     }
 
     /**
