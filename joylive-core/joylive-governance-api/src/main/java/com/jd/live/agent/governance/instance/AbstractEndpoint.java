@@ -97,7 +97,7 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     @Override
     public Integer getWeight(ServiceRequest request) {
         if (weight == null) {
-            weight = getWeight(request);
+            weight = Endpoint.super.getWeight(request);
         }
         return weight;
     }
