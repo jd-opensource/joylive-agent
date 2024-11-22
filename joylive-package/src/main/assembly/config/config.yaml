@@ -84,7 +84,7 @@ agent:
         liveSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LIVE_SPACE_TEMPLATE:govern-liveSpace-${id}}
         liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
     laneSpace:
-      type: file # [file,jmsf,nacos]
+      type: ${CONFIG_LANE_SPACE_API_TYPE:file} # [file,jmsf,nacos]
       url: ${CONFIG_LANE_SPACE_API_URL:http:http://api.jmsf.local:8080/v1}
       # for jmsf
       jmsf:
