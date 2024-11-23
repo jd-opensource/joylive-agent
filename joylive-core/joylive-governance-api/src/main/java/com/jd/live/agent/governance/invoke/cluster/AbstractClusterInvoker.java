@@ -43,8 +43,8 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
-                                                            OutboundInvocation<R> invocation,
-                                                            ClusterPolicy defaultPolicy) {
+                                                           OutboundInvocation<R> invocation,
+                                                           ClusterPolicy defaultPolicy) {
         cluster.onStart(invocation.getRequest());
         return invoke(cluster, invocation, 0);
     }
@@ -88,6 +88,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                     CompletionStage<O> stage = context.outbound(invocation, endpoint, () -> cluster.invoke(request, instance));
                     stage.whenComplete((o, r) -> {
                         if (r != null) {
+                            logger.error("Exception occurred when invoke, caused by {}", r.getMessage(), r);
                             onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
                         } else if (o.getError() != null) {
                             onException(cluster, invocation, o, o.getError(), instance, result);
@@ -96,9 +97,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                         }
                     });
                 } catch (Throwable e) {
+                    logger.error("Exception occurred when routing, caused by {}", e.getMessage(), e);
                     onException(cluster, invocation, null, new ServiceError(e, false), endpoint, result);
                 }
             } else {
+                logger.error("Exception occurred when service discovery, caused by {}", t.getMessage(), t);
                 onException(cluster, invocation, null, new ServiceError(t, false), null, result);
             }
         });
@@ -138,11 +141,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> void onSuccess(LiveCluster<R, O, E> cluster,
-                                                OutboundInvocation<R> invocation,
-                                                O response,
-                                                R request,
-                                                E endpoint,
-                                                CompletableFuture<O> result) {
+                                               OutboundInvocation<R> invocation,
+                                               O response,
+                                               R request,
+                                               E endpoint,
+                                               CompletableFuture<O> result) {
         try {
             invocation.onSuccess(endpoint, response);
             cluster.onSuccess(response, request, endpoint);
@@ -173,11 +176,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> void onException(LiveCluster<R, O, E> cluster,
-                                                  OutboundInvocation<R> invocation,
-                                                  O response,
-                                                  ServiceError error,
-                                                  E endpoint,
-                                                  CompletableFuture<O> result) {
+                                                 OutboundInvocation<R> invocation,
+                                                 O response,
+                                                 ServiceError error,
+                                                 E endpoint,
+                                                 CompletableFuture<O> result) {
 
         R request = invocation.getRequest();
         Throwable cause = error.getThrowable();
