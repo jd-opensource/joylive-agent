@@ -53,7 +53,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         int shortestCount = 0;
         // The index of invokers having the same estimated shortest response time
         int[] shortestIndexes = new int[length];
-        // the weight of every invokers
+        // the weight of every invoker
         int[] weights = new int[length];
         // The sum of the warmup weights of all the shortest response  invokers
         int totalWeight = 0;

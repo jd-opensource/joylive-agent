@@ -275,6 +275,8 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_PERMISSION_DENIED).requests(1));
         } else if (exception instanceof RejectAuthException) {
             publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNAUTHORIZED).requests(1));
+        } else if (exception instanceof RejectCircuitBreakException) {
+            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_CIRCUIT_BREAK).requests(1));
         }
     }
 

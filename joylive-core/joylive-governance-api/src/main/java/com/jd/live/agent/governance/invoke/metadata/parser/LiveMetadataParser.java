@@ -93,7 +93,7 @@ public abstract class LiveMetadataParser implements LiveParser {
         String variable = parseVariable();
         builder.liveConfig(liveConfig).
                 localSpaceId(application.getLocation().getLiveSpaceId()).
-                localSpace(governancePolicy.getLocalLiveSpace()).
+                localSpace(governancePolicy == null ? null : governancePolicy.getLocalLiveSpace()).
                 targetSpaceId(spaceId).
                 targetSpace(liveSpace).
                 ruleId(unitRuleId).

@@ -49,5 +49,4 @@ public class HandshakeWebSocketServiceInterceptor extends InterceptorAdaptor {
         RequestContext.cargos(tag -> headers.addAll(tag.getKey(), tag.getValues()));
     }
 
-
 }
