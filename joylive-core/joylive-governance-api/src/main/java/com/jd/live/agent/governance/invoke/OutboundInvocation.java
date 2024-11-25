@@ -85,7 +85,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         this.liveMetadata = invocation.getLiveMetadata();
         this.laneMetadata = invocation.getLaneMetadata();
         ServiceParser serviceParser = createServiceParser();
-        this.serviceMetadata = serviceParser.configure(serviceParser.parse(), liveMetadata.getRule());
+        this.serviceMetadata = serviceParser.configure(serviceParser.parse(), liveMetadata == null ? null : liveMetadata.getRule());
     }
 
     @Override
