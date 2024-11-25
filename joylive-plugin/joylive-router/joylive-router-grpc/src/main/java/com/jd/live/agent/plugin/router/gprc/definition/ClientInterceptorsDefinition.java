@@ -18,49 +18,49 @@ package com.jd.live.agent.plugin.router.gprc.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.gprc.interceptor.ClusterInterceptor;
+import com.jd.live.agent.plugin.router.gprc.interceptor.ClientInterceptorsInterceptor;
 
 @Injectable
-@Extension(value = "GrpcClusterDefinition")
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ClusterDefinition.TYPE_ABSTRACT_CLUSTER)
-public class ClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "ClientInterceptorsDefinition", order = PluginDefinition.ORDER_ROUTER)
+@ConditionalOnProperty(name = {
+        GovernanceConfig.CONFIG_LIVE_ENABLED,
+        GovernanceConfig.CONFIG_LANE_ENABLED,
+        GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
+}, matchIfMissing = true, relation = ConditionalRelation.OR)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_GRPC_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ClientInterceptorsDefinition.TYPE)
+public class ClientInterceptorsDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_ABSTRACT_CLUSTER = "net.devh.boot.grpc.client.nameresolver.DiscoveryClientNameResolver$Resolve";
+    public static final String TYPE = "io.grpc.ClientInterceptors";
 
-    private static final String METHOD_DO_INVOKE = "Resolve";
+    private static final String METHOD = "intercept";
 
-    private static final String[] ARGUMENT_DO_INVOKE = new String[]{
-
+    private static final String[] ARGUMENTS = new String[]{
+            "io.grpc.Channel",
+            "java.util.List"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(ObjectParser.JSON)
-    private ObjectParser parser;
-
-    public ClusterDefinition() {
-        System.out.println("----> ClusterDefinition");
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER)
-                .and(MatcherBuilder.not(MatcherBuilder.isAbstract()));
+    public ClientInterceptorsDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_DO_INVOKE)
-                                .or(MatcherBuilder.arguments(ARGUMENT_DO_INVOKE)),
-                        () -> new ClusterInterceptor(context, parser)
-                )
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new ClientInterceptorsInterceptor(context))
         };
+
     }
 
 }

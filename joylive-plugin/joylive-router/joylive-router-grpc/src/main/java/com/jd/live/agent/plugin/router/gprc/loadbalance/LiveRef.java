@@ -13,16 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.grpc.provider;
+package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import io.grpc.Attributes.Key;
+import io.grpc.ConnectivityState;
 
-@SpringBootApplication
-public class GrpcProviderApplication {
+final class LiveRef<T> {
 
-    public static void main(String[] args) {
-        SpringApplication.run(GrpcProviderApplication.class, args);
+    public static final Key<LiveRef<ConnectivityState>> KEY_STATE = Key.create("x-state");
+
+    T value;
+
+    LiveRef(T value) {
+        this.value = value;
     }
 
+    public void setValue(T value) {
+        this.value = value;
+    }
+
+    public T getValue() {
+        return value;
+    }
 }
