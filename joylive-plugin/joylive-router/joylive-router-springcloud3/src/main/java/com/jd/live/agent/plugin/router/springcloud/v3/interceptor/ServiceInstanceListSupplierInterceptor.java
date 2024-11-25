@@ -80,11 +80,8 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
                 && disableDiscovery.contains(target.getClass().getName())) {
             // disable
             DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
-            Request<?> request = ctx.getArgument(0);
-            Object result = delegating.getDelegate().get(request);
-            mc.skipWithResult(result);
-        }
-        if (!flowControlEnabled && LOCK.get() == null) {
+            mc.skipWithResult(delegating.getDelegate().get(ctx.getArgument(0)));
+        } else if (!flowControlEnabled && LOCK.get() == null) {
             // Prevent duplicate calls
             LOCK.set(ctx.getId());
         }
