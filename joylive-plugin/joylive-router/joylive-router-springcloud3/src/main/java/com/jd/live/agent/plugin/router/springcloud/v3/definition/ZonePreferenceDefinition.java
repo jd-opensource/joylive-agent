@@ -34,6 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ZonePreference
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ZonePreferenceDefinition.TYPE_ZONE_PREFERENCE_SERVICE_INSTANCE_LIST_SUPPLIER)
+@ConditionalOnClass(BlockingClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ZonePreferenceDefinition extends PluginDefinitionAdapter {
 

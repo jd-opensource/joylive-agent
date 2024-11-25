@@ -46,6 +46,7 @@ import java.util.Set;
         @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
+@ConditionalOnClass(BlockingClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {
 
