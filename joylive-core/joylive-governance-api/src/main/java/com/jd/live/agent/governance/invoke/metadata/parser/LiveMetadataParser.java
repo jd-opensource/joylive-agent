@@ -86,16 +86,18 @@ public abstract class LiveMetadataParser implements LiveParser {
      * @return The configured live metadata builder.
      */
     protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
-        String spaceId = parseLiveSpaceId();
-        LiveSpace liveSpace = parseLiveSpace(spaceId);
-        String unitRuleId = parseRuleId(spaceId);
-        UnitRule unitRule = liveSpace == null || unitRuleId == null ? null : liveSpace.getUnitRule(unitRuleId);
+        String targetSpaceId = parseLiveSpaceId();
+        LiveSpace targetLiveSpace = parseLiveSpace(targetSpaceId);
+        String unitRuleId = parseRuleId(targetSpaceId);
+        UnitRule unitRule = targetLiveSpace == null || unitRuleId == null ? null : targetLiveSpace.getUnitRule(unitRuleId);
         String variable = parseVariable();
+        String localSpaceId = application.getLocation().getLiveSpaceId();
+        LiveSpace localSpace = governancePolicy == null ? null : governancePolicy.getLocalLiveSpace();
         builder.liveConfig(liveConfig).
-                localSpaceId(application.getLocation().getLiveSpaceId()).
-                localSpace(governancePolicy == null ? null : governancePolicy.getLocalLiveSpace()).
-                targetSpaceId(spaceId).
-                targetSpace(liveSpace).
+                localSpaceId(localSpaceId).
+                localSpace(localSpace).
+                targetSpaceId(targetSpaceId).
+                targetSpace(targetLiveSpace).
                 ruleId(unitRuleId).
                 rule(unitRule).
                 variable(variable);
@@ -301,9 +303,11 @@ public abstract class LiveMetadataParser implements LiveParser {
                 VariableFunction variableFunction = variableSource == null ? null : variableFunctions.apply(variableSource.getFunc());
                 variable = parser == null ? null : parser.parse((HttpRequest) request, variableSource, variableFunction);
             }
+            String localSpaceId = application.getLocation().getLiveSpaceId();
+            LiveSpace localSpace = governancePolicy == null ? null : governancePolicy.getLocalLiveSpace();
             return builder.liveConfig(liveConfig).
-                    localSpaceId(application.getLocation().getLiveSpaceId()).
-                    localSpace(governancePolicy.getLocalLiveSpace()).
+                    localSpaceId(localSpaceId).
+                    localSpace(localSpace).
                     targetSpaceId(liveSpace.getId()).
                     targetSpace(liveSpace).
                     host(host).
