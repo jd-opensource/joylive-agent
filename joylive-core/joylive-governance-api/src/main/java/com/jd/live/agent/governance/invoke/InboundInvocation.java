@@ -187,7 +187,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         protected PolicyId parsePolicyId() {
-            if (domainPolicy != null) {
+            if (domainPolicy != null && liveMetadata != null) {
                 return ((LiveDomainMetadata) liveMetadata).getPolicyId();
             }
             return super.parsePolicyId();
@@ -195,7 +195,8 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            return super.configure(builder).variable(((LiveDomainMetadata) liveMetadata).getBizVariable());
+            TrafficEventBuilder result = super.configure(builder);
+            return liveMetadata == null ? result : result.variable(((LiveDomainMetadata) liveMetadata).getBizVariable());
         }
     }
 

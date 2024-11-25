@@ -117,21 +117,16 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
 
     /**
      * Parses and configures the policy metadata.
-     * <p>
-     * This method creates instances of {@link ServiceParser}, {@link LiveParser}, and {@link MetadataParser}
-     * for parsing and configuring the service metadata, live metadata, and lane metadata, respectively.
-     * The parsed and configured metadata is stored in the corresponding instance variables of the class.
-     * </p>
      */
     protected void parsePolicy() {
         ServiceParser serviceParser = createServiceParser();
-        LiveParser liveParser = createLiveParser();
-        MetadataParser<LaneMetadata> laneParser = createLaneParser();
+        LiveParser liveParser = !context.isLiveEnabled() ? null : createLiveParser();
+        MetadataParser<LaneMetadata> laneParser = !context.isLaneEnabled() ? null : createLaneParser();
         ServiceMetadata serviceMetadata = serviceParser.parse();
-        LiveMetadata liveMetadata = liveParser.parse();
-        this.serviceMetadata = serviceParser.configure(serviceMetadata, liveMetadata.getRule());
-        this.liveMetadata = liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
-        this.laneMetadata = laneParser.parse();
+        LiveMetadata liveMetadata = liveParser == null ? null : liveParser.parse();
+        this.serviceMetadata = liveMetadata == null ? serviceMetadata : serviceParser.configure(serviceMetadata, liveMetadata.getRule());
+        this.liveMetadata = liveParser == null ? null : liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
+        this.laneMetadata = laneParser == null ? null : laneParser.parse();
         this.policyId = parsePolicyId();
     }
 
@@ -302,13 +297,13 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @return The configured live event builder.
      */
     protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        LiveSpace liveSpace = liveMetadata.getTargetSpace();
-        UnitRule unitRule = liveMetadata.getRule();
-        Unit localUnit = liveMetadata.getLocalUnit();
-        Cell localCell = liveMetadata.getLocalCell();
-        LaneSpace laneSpace = laneMetadata.getTargetSpace();
-        Lane localLane = laneMetadata.getLocalLane();
-        Lane targetLane = laneMetadata.getTargetLane();
+        LiveSpace liveSpace = liveMetadata == null ? null : liveMetadata.getTargetSpace();
+        UnitRule unitRule = liveMetadata == null ? null : liveMetadata.getRule();
+        Unit localUnit = liveMetadata == null ? null : liveMetadata.getLocalUnit();
+        Cell localCell = liveMetadata == null ? null : liveMetadata.getLocalCell();
+        LaneSpace laneSpace = laneMetadata == null ? null : laneMetadata.getTargetSpace();
+        Lane localLane = laneMetadata == null ? null : laneMetadata.getLocalLane();
+        Lane targetLane = laneMetadata == null ? null : laneMetadata.getTargetLane();
         URI uri = policyId == null ? null : policyId.getUri();
         return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).
                 unitRuleId(unitRule == null ? null : unitRule.getId()).
@@ -370,16 +365,29 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @return The constructed error message with detailed context information.
      */
     public String getError(String message, String unit, String cell) {
-        LiveSpace liveSpace = liveMetadata.getTargetSpace();
-        return new StringBuilder(message.length() + 150).append(message).
-                append(". liveSpaceId=").append(liveSpace == null ? null : liveSpace.getId()).
-                append(", ruleId=").append(liveMetadata.getRuleId()).
-                append(", unit=").append(unit).
-                append(", cell=").append(cell).
-                append(", application=").append(context.getApplication().getName()).
-                append(", service=").append(serviceMetadata.getServiceName()).
-                append(", group=").append(serviceMetadata.getServiceGroup()).
-                append(", path=").append(serviceMetadata.getPath()).
-                append(", variable=").append(liveMetadata.getVariable()).append("\n").toString();
+        LiveSpace liveSpace = liveMetadata == null ? null : liveMetadata.getTargetSpace();
+        String liveSpaceId = liveSpace == null ? null : liveSpace.getId();
+        String ruleId = liveMetadata == null ? null : liveMetadata.getRuleId();
+        String variable = liveMetadata == null ? null : liveMetadata.getVariable();
+        unit = liveMetadata == null ? null : unit;
+        cell = liveMetadata == null ? null : cell;
+        StringBuilder builder = new StringBuilder(message.length() + 150).append(message).append('.');
+        append(builder, "liveSpaceId", liveSpaceId, " ");
+        append(builder, "ruleId", ruleId, ", ");
+        append(builder, "unit", unit, ", ");
+        append(builder, "cell", cell, ", ");
+        append(builder, "application", context.getApplication().getName(), ", ");
+        append(builder, "service", serviceMetadata.getServiceName(), ", ");
+        append(builder, "group", serviceMetadata.getServiceGroup(), ", ");
+        append(builder, "path", serviceMetadata.getPath(), ", ");
+        append(builder, "variable", variable, ", ");
+        builder.append('\n');
+        return builder.toString();
+    }
+
+    protected void append(StringBuilder builder, String key, String value, String delimiter) {
+        if (value != null) {
+            builder.append(delimiter).append(key).append('=').append(value);
+        }
     }
 }
