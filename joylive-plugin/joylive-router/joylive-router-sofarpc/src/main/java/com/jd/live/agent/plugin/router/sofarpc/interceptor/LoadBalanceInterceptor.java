@@ -20,6 +20,8 @@ import com.alipay.sofa.rpc.client.ProviderInfo;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -36,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * ClusterInterceptor
  */
 public class LoadBalanceInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(LoadBalanceInterceptor.class);
 
     private final InvocationContext context;
 
@@ -68,11 +72,11 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
                 SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
                 invoked.forEach(p -> request.addAttempt(p.getHost() + ":" + p.getPort()));
                 SofaRpcEndpoint endpoint = context.route(invocation);
-                mc.setResult(endpoint.getProvider());
+                mc.skipWithResult(endpoint.getProvider());
             } catch (Throwable e) {
-                mc.setThrowable(cluster.createException(e, request));
+                logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
+                mc.skipWithThrowable(cluster.createException(e, request));
             }
-            mc.setSkip(true);
         }
     }
 

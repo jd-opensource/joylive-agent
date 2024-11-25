@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3OutboundThrower;
@@ -34,6 +36,8 @@ import java.util.List;
  * LoadBalanceInterceptor
  */
 public class LoadBalanceInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(LoadBalanceInterceptor.class);
 
     private final InvocationContext context;
 
@@ -62,7 +66,8 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
                 }
                 DubboEndpoint<?> endpoint = context.route(new DubboOutboundInvocation(request, context), invokers, DubboEndpoint::of);
                 mc.skipWithResult(endpoint.getInvoker());
-            } catch (LiveException e) {
+            } catch (Throwable e) {
+                logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
                 Dubbo3OutboundThrower thrower = new Dubbo3OutboundThrower((AbstractClusterInvoker<?>) ctx.getTarget());
                 mc.skipWithThrowable(thrower.createException(e, request));
             }

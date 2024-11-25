@@ -17,6 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.governance.context.RequestContext;
@@ -52,6 +54,8 @@ import java.util.Set;
  */
 public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(ServiceInstanceListSupplierInterceptor.class);
+
     private static final ThreadLocal<Long> LOCK = new ThreadLocal<>();
 
     private final InvocationContext context;
@@ -78,8 +82,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
             Request<?> request = ctx.getArgument(0);
             Object result = delegating.getDelegate().get(request);
-            mc.setResult(result);
-            mc.setSkip(true);
+            mc.skipWithResult(result);
         }
         if (!flowControlEnabled && LOCK.get() == null) {
             // Prevent duplicate calls
@@ -94,12 +97,6 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         }
     }
 
-    /**
-     * Enhanced logic after method execution
-     *
-     * @param ctx ExecutableContext
-     * @see org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier#get(org.springframework.cloud.client.loadbalancer.Request)
-     */
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
@@ -128,6 +125,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             SpringEndpoint endpoint = context.route(invocation);
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {
+            logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
             SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
             Throwable throwable = thrower.createException(e, invocation.getRequest());
             if (throwable instanceof RuntimeException) {
