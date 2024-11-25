@@ -16,4 +16,5 @@ See [membership.md](./membership.md) for the definition of these community contr
 | Zhibang Yuan  | zinu-x       | <yuanzhibang@jd.com> |
 | Zhao Liu      | moxygen2001  | <liuzhao40@jd.com>   |
 | Jinzhong Yuan | yuanjinzhong | <991242629@qq.com>   |
+| Chaoyang Shi  | scy251147    | <278753517@qq.com>   |
 
