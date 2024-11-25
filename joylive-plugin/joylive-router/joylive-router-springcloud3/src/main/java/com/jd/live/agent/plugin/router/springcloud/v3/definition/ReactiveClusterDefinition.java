@@ -40,7 +40,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactiveCluste
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ReactiveClusterDefinition.TYPE_LOADBALANCED_EXCHANGE_FILTER_FUNCTION)
 @ConditionalOnClass(ReactiveClusterDefinition.REACTOR_MONO)
-@ConditionalOnClass(BlockingClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
+@ConditionalOnClass(StickySessionDefinition.TYPE_REQUEST_BASED_STICKY_SESSION_SERVICE_INSTANCE_LIST_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ReactiveClusterDefinition extends PluginDefinitionAdapter {
 

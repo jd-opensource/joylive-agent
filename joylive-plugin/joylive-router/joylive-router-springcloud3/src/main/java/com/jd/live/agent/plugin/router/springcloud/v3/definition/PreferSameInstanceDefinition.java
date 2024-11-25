@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.PreferSameInst
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(PreferSameInstanceDefinition.TYPE_SAME_INSTANCE_PREFERENCE_SERVICE_INSTANCE_LIST_SUPPLIER)
-@ConditionalOnClass(BlockingClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
+@ConditionalOnClass(StickySessionDefinition.TYPE_REQUEST_BASED_STICKY_SESSION_SERVICE_INSTANCE_LIST_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class PreferSameInstanceDefinition extends PluginDefinitionAdapter {
 

@@ -39,15 +39,13 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.BlockingCluste
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(BlockingClusterDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
-@ConditionalOnClass(BlockingClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
+@ConditionalOnClass(StickySessionDefinition.TYPE_REQUEST_BASED_STICKY_SESSION_SERVICE_INSTANCE_LIST_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class BlockingClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor";
 
     protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
-
-    protected static final String TYPE_LOAD_BALANCER_PROPERTIES = "org.springframework.cloud.client.loadbalancer.LoadBalancerProperties";
 
     private static final String METHOD_INTERCEPT = "intercept";
 
