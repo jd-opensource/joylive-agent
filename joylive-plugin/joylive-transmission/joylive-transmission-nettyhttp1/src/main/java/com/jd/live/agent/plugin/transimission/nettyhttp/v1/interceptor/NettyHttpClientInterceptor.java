@@ -37,10 +37,17 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        HttpClient client = (HttpClient) mc.getResult();
+        HttpClient client = mc.getResult();
         if (RequestContext.hasCargo()) {
-            client = client.headers(headers -> RequestContext.cargos(cargo -> headers.set(cargo.getKey(), cargo.getValue())));
-            mc.setResult(client);
+            HttpClient newClient = client.headers(headers -> RequestContext.cargos(cargo -> headers.set(cargo.getKey(), cargo.getValue())));
+            if (newClient.getClass() != client.getClass()) {
+                // for netty reactor 0.9.20.RELEASE
+                try {
+                    newClient = (HttpClient) mc.invokeOrigin(newClient);
+                } catch (Exception ignored) {
+                }
+            }
+            mc.setResult(newClient);
         }
     }
 }

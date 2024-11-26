@@ -100,15 +100,22 @@ public class MethodContext extends ExecutableContext {
 
     /**
      * Invokes the target method with the specified arguments.
-     * <p>
-     * This method uses reflection to invoke the target method on the specified target object with the specified arguments.
-     * If the method is not accessible, it will be made accessible before invocation.
-     * </p>
      *
      * @return the result of the method invocation.
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin() throws Exception {
+        return invokeOrigin(target);
+    }
+
+    /**
+     * Invokes the target method with the specified arguments.
+     *
+     * @param target the target.
+     * @return the result of the method invocation.
+     * @throws Exception if any exception occurs during the method invocation.
+     */
+    public Object invokeOrigin(Object target) throws Exception {
         try {
             markOrigin();
             if (!method.isAccessible()) {

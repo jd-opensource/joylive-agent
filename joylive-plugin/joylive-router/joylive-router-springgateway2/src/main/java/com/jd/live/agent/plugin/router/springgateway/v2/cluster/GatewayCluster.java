@@ -189,18 +189,18 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         @Override
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
             String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-            if (body instanceof Flux && policyMatch(contentType)) {
-                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                return super.writeWith(fluxBody.buffer().map(
-                        dataBuffers -> {
-                            DataBufferFactory bufferFactory = bufferFactory();
-                            DataBuffer join = bufferFactory.join(dataBuffers);
-                            byte[] content = new byte[join.readableByteCount()];
-                            join.read(content);
-                            DataBufferUtils.release(join);
-                            exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
-                            return bufferFactory.wrap(content);
-                        }));
+            contentType = contentType != null ? contentType : getHeaders().getFirst(HttpHeaders.CONTENT_TYPE);
+            if (body instanceof Mono && policyMatch(contentType)) {
+                Mono<? extends DataBuffer> monoBody = Mono.from(body);
+                return super.writeWith(monoBody.map(dataBuffer -> {
+                    DataBufferFactory bufferFactory = bufferFactory();
+                    byte[] data = new byte[dataBuffer.readableByteCount()];
+                    dataBuffer.read(data);
+                    DataBufferUtils.release(dataBuffer);
+                    String res = new String(data, StandardCharsets.UTF_8);
+                    exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, res);
+                    return bufferFactory.wrap(data);
+                }));
             }
             return super.writeWith(body);
         }

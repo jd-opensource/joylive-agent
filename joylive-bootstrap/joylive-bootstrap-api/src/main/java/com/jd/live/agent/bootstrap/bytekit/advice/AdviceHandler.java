@@ -58,9 +58,7 @@ public class AdviceHandler {
         }
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
-        if (interceptors != null) {
-            onEnter(context, interceptors);
-        }
+        onEnter(context, interceptors);
     }
 
     /**
@@ -72,7 +70,7 @@ public class AdviceHandler {
      * @throws Throwable if any exception occurs during interception
      */
     public static <T extends ExecutableContext> void onEnter(T context, List<Interceptor> interceptors) throws Throwable {
-        if (context == null || interceptors == null || context.getAndRemoveOrigin()) {
+        if (context == null || interceptors == null || context.isOrigin()) {
             return;
         }
         for (Interceptor interceptor : interceptors) {
@@ -100,9 +98,8 @@ public class AdviceHandler {
     public static <T extends ExecutableContext> void onExit(T context, String adviceKey) throws Throwable {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
-        if (interceptors != null) {
-            onExit(context, interceptors);
-        }
+        // call onExit to remove origin flag
+        onExit(context, interceptors);
     }
 
     /**
@@ -115,7 +112,7 @@ public class AdviceHandler {
      */
     public static <T extends ExecutableContext> void onExit(T context,
                                                             List<Interceptor> interceptors) throws Throwable {
-        if (context == null || interceptors == null)
+        if (context == null || context.getAndRemoveOrigin() || interceptors == null)
             return;
         for (Interceptor interceptor : interceptors) {
             if (logger.isDebugEnabled()) {
