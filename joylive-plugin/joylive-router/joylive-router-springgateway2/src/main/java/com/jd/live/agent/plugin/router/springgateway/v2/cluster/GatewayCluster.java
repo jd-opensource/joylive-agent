@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springgateway.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -109,10 +110,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
-            ServerWebExchange exchange = policies != null && !policies.isEmpty()
-                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), policies)).build()
-                    : request.getExchange();
+            ServerWebExchange exchange = getWebExchange(request);
             GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(), () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
             return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
         } catch (Throwable e) {
@@ -168,6 +166,27 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     protected GatewayClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new GatewayClusterResponse(error, predicate);
+    }
+
+    /**
+     * Returns a mutated ServerWebExchange based on the given GatewayClusterRequest.
+     *
+     * @param request The GatewayClusterRequest to process
+     * @return The mutated ServerWebExchange
+     */
+    private ServerWebExchange getWebExchange(GatewayClusterRequest request) {
+        Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
+        ServerWebExchange.Builder builder = null;
+        if (policies != null && !policies.isEmpty() || RequestContext.hasCargo()) {
+            builder = request.getExchange().mutate();
+            if (policies != null && !policies.isEmpty()) {
+                builder = builder.response(new BodyResponseDecorator(request.getExchange(), policies));
+            }
+            if (RequestContext.hasCargo()) {
+                builder = builder.request(b -> b.headers(headers -> RequestContext.cargos(headers::set)));
+            }
+        }
+        return builder == null ? request.getExchange() : builder.build();
     }
 
     /**
