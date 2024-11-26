@@ -18,9 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -31,17 +29,26 @@ import com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
+import com.netflix.loadbalancer.ILoadBalancer;
+import com.netflix.loadbalancer.Server;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
+import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
+import org.springframework.cloud.loadbalancer.core.RandomLoadBalancer;
+import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import org.springframework.cloud.loadbalancer.support.SimpleObjectProvider;
+import org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient;
+import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.handler.FilteringWebHandler;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -49,8 +56,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import static com.jd.live.agent.core.util.type.ClassUtils.describe;
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 /**
@@ -69,10 +79,11 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
-    private static final String FIELD_LOADBALANCER_PROPERTIES = "loadBalancerProperties";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
     private static final String SCHEME_REGEX = "[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*";
     private static final Pattern SCHEME_PATTERN = Pattern.compile(SCHEME_REGEX);
+    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
+    private static final String FIELD_LOAD_BALANCER = "loadBalancer";
 
     private final InvocationContext context;
 
@@ -135,20 +146,31 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
      * @return The filter configuration.
      */
     private FilterConfig createFilterConfig(Object target) {
-        List<GatewayFilter> globalFilters = getGlobalFilters(target);
+        List<GatewayFilter> globalFilters = getValue(target, FIELD_GLOBAL_FILTERS);
         List<GatewayFilter> filters = new ArrayList<>(globalFilters.size());
-        LoadBalancerClientFactory factory = null;
+        ReactiveLoadBalancer.Factory<ServiceInstance> factory = null;
         for (GatewayFilter filter : globalFilters) {
             if (filter instanceof OrderedGatewayFilter) {
                 filter = ((OrderedGatewayFilter) filter).getDelegate();
             }
             String filterClassName = filter.getClass().getName();
             if (filterClassName.equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
-                GlobalFilter globalFilter = getGlobalFilter(filter);
+                GlobalFilter globalFilter = getValue(filter, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
                     // skip ReactiveLoadBalancerClientFilter, because it's implement by RouteFilter
-                    FieldList fieldList = ClassUtils.describe(globalFilter.getClass()).getFieldList();
-                    factory = getLoadBalancerClientFactory(globalFilter, fieldList);
+                    factory = getValue(globalFilter, FIELD_CLIENT_FACTORY);
+                } else if (globalFilter instanceof LoadBalancerClientFilter) {
+                    // skip LoadBalancerClientFilter, because it's implement by RouteFilter
+                    LoadBalancerClient client = getValue(globalFilter, FIELD_LOAD_BALANCER);
+                    if (client instanceof BlockingLoadBalancerClient) {
+                        factory = getValue(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+                    } else if (client instanceof RibbonLoadBalancerClient) {
+                        SpringClientFactory clientFactory = getValue(client, "clientFactory");
+                        factory = serviceId -> {
+                            ILoadBalancer loadBalancer = clientFactory.getLoadBalancer(serviceId);
+                            return new RandomLoadBalancer(new SimpleObjectProvider<>(new RibbonServiceInstanceListSupplier(serviceId, loadBalancer)), serviceId);
+                        };
+                    }
                 } else if (!globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     filters.add(filter);
@@ -157,46 +179,6 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         }
 
         return new FilterConfig(target, filters, pathFilters, new GatewayCluster(factory));
-    }
-
-    /**
-     * Returns the global filter associated with the given gateway filter.
-     *
-     * @param filter The gateway filter.
-     * @return The global filter.
-     */
-    private GlobalFilter getGlobalFilter(GatewayFilter filter) {
-        return (GlobalFilter) ClassUtils
-                .describe(filter.getClass())
-                .getFieldList()
-                .getField(FIELD_DELEGATE)
-                .get(filter);
-    }
-
-    /**
-     * Returns the LoadBalancerClientFactory associated with the given GlobalFilter and FieldList.
-     * @param globalFilter The GlobalFilter object to retrieve the LoadBalancerClientFactory from.
-     * @param fields The FieldList object containing the FieldDesc objects.
-     * @return The LoadBalancerClientFactory instance associated with the given GlobalFilter and FieldList.
-     */
-    private LoadBalancerClientFactory getLoadBalancerClientFactory(GlobalFilter globalFilter, FieldList fields) {
-        FieldDesc fieldDesc = fields.getField(FIELD_CLIENT_FACTORY);
-        return (LoadBalancerClientFactory) fieldDesc.get(globalFilter);
-    }
-
-    /**
-     * Returns the list of global gateway filters associated with the given target object.
-     *
-     * @param target The target object.
-     * @return The list of gateway filters.
-     */
-    @SuppressWarnings("unchecked")
-    private List<GatewayFilter> getGlobalFilters(Object target) {
-        return (List<GatewayFilter>) ClassUtils
-                .describe(target.getClass())
-                .getFieldList()
-                .getField(FIELD_GLOBAL_FILTERS)
-                .get(target);
     }
 
     /**
@@ -306,7 +288,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
          */
         private void onRetryFilter(GatewayFilter filter) {
             if (retryOption == null) {
-                retryOption = Optional.ofNullable(ClassUtils.describe(filter.getClass()).getFieldList().getField(FIELD_RETRY_CONFIG));
+                retryOption = Optional.ofNullable(describe(filter.getClass()).getFieldList().getField(FIELD_RETRY_CONFIG));
             }
             retryOption.ifPresent(f -> {
                 RetryConfig retryConfig = (RetryConfig) f.get(filter);
@@ -354,5 +336,82 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
             return SCHEMA_LB.equals(scheme) || SCHEMA_LB.equals(schemePrefix);
         }
 
+    }
+
+    private static class RibbonServiceInstanceListSupplier implements ServiceInstanceListSupplier {
+        public static final String FIELD_METADATA = "metadata";
+        private final String serviceId;
+        private final ILoadBalancer loadBalancer;
+
+        RibbonServiceInstanceListSupplier(String serviceId, ILoadBalancer loadBalancer) {
+            this.serviceId = serviceId;
+            this.loadBalancer = loadBalancer;
+        }
+
+        @Override
+        public String getServiceId() {
+            return serviceId;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Flux<List<ServiceInstance>> get() {
+            List<Server> servers = loadBalancer.getAllServers();
+            List<ServiceInstance> instances = new ArrayList<>(servers.size());
+            Function<Server, Map<String, String>> metadataFunc = null;
+            for (Server server : servers) {
+                if (metadataFunc == null) {
+                    FieldDesc fieldDesc = describe(server.getClass()).getFieldList().getField(FIELD_METADATA);
+                    metadataFunc = fieldDesc == null ? s -> null : s -> (Map<String, String>) fieldDesc.get(s);
+                }
+                instances.add(new RibbonServiceInstance(serviceId, server, metadataFunc));
+            }
+            return Flux.just(instances);
+        }
+    }
+
+    private static class RibbonServiceInstance implements ServiceInstance {
+        private final String serviceId;
+        private final Server server;
+        private final URI uri;
+        private final Map<String, String> metadata;
+
+        RibbonServiceInstance(String serviceId, Server server, Function<Server, Map<String, String>> metadataFunc) {
+            this.serviceId = serviceId;
+            this.server = server;
+            String scheme = server.getScheme() == null || server.getScheme().isEmpty() ? "http" : server.getScheme();
+            this.uri = URI.create(scheme + "://" + server.getHost() + ":" + server.getPort());
+            this.metadata = metadataFunc.apply(server);
+        }
+
+        @Override
+        public String getServiceId() {
+            return serviceId;
+        }
+
+        @Override
+        public String getHost() {
+            return server.getHost();
+        }
+
+        @Override
+        public int getPort() {
+            return server.getPort();
+        }
+
+        @Override
+        public boolean isSecure() {
+            return "https".equals(server.getScheme());
+        }
+
+        @Override
+        public URI getUri() {
+            return uri;
+        }
+
+        @Override
+        public Map<String, String> getMetadata() {
+            return metadata;
+        }
     }
 }

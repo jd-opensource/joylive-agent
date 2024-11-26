@@ -32,10 +32,10 @@ import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterR
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -64,9 +64,9 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
 @Getter
 public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest, GatewayClusterResponse> {
 
-    private final LoadBalancerClientFactory clientFactory;
+    private final ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
-    public GatewayCluster(LoadBalancerClientFactory clientFactory) {
+    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
         this.clientFactory = clientFactory;
     }
 

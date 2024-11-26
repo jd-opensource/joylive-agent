@@ -108,6 +108,11 @@ public class ClassDesc {
         return constructorList.get();
     }
 
+    public Object getValue(String fieldName, Object target) {
+        FieldDesc fieldDesc = getFieldList().getField(fieldName);
+        return fieldDesc == null ? null : fieldDesc.get(target);
+    }
+
     /**
      * Retrieves the metadata of the fields.
      *

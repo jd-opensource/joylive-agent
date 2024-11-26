@@ -62,6 +62,14 @@ public class ClassUtils {
         return type == null ? null : classDescs.computeIfAbsent(type, ClassDesc::new);
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T getValue(Object target, String fieldName) {
+        if (target == null) {
+            return null;
+        }
+        return (T) describe(target.getClass()).getValue(fieldName, target);
+    }
+
     /**
      * Determines if the provided class is considered an "entity" according to custom rules defined in TypeScanner.
      *
