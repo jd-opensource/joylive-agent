@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.interceptor;
+package com.jd.live.agent.plugin.router.springgateway.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
@@ -27,10 +27,10 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
-import com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster;
-import com.jd.live.agent.plugin.router.springgateway.v2.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v3.cluster.GatewayCluster;
+import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;

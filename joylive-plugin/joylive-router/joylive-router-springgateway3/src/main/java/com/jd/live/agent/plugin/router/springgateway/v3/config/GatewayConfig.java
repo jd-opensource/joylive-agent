@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.config;
+package com.jd.live.agent.plugin.router.springgateway.v3.config;
 
 import lombok.Getter;
 import lombok.Setter;

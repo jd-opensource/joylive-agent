@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.cluster;
+package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
@@ -27,8 +27,8 @@ import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
-import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;

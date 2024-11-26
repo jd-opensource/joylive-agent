@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.definition;
+package com.jd.live.agent.plugin.router.springgateway.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -28,8 +28,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springgateway.v2.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v2.interceptor.GatewayClusterInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClusterInterceptor;
 
 /**
  * GatewayClusterDefinition

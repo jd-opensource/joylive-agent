@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.request;
+package com.jd.live.agent.plugin.router.springgateway.v3.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractClusterRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;

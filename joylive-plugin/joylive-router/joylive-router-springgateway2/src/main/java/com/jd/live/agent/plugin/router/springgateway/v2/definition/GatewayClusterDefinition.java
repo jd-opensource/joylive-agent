@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springgateway.v2.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -42,7 +41,7 @@ import com.jd.live.agent.plugin.router.springgateway.v2.interceptor.GatewayClust
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
+//@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @Injectable
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
