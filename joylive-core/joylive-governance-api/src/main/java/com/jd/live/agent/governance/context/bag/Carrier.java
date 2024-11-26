@@ -39,6 +39,8 @@ public interface Carrier extends Attributes {
 
     String ATTRIBUTE_SERVICE_ID = Constants.LABEL_SERVICE_ID;
 
+    String ATTRIBUTE_REQUEST = "request";
+
     String ATTRIBUTE_GATEWAY = Constants.LABEL_LIVE_PREFIX + "gateway";
 
     String ATTRIBUTE_DEADLINE = "deadline";

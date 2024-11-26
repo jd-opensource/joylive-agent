@@ -72,7 +72,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.jd.live.agent.demo.springcloud.v2020.consumer.springcloud-hoxtonConsumer</mainClass>
+                    <mainClass>com.jd.live.agent.demo.springcloud.hoxton.consumer.SpringCloudHoxtonConsumer</mainClass>
                 </configuration>
             </plugin>
         </plugins>

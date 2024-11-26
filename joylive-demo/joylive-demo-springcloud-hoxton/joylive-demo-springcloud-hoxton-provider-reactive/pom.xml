@@ -62,7 +62,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.jd.live.agent.demo.springcloud.v2020.provider.springcloud-hoxtonProviderReactive</mainClass>
+                    <mainClass>com.jd.live.agent.demo.springcloud.hoxton.provider.SpringCloudHoxtonProviderReactive</mainClass>
                 </configuration>
             </plugin>
         </plugins>

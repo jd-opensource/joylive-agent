@@ -97,6 +97,13 @@ public interface InvocationContext {
     boolean isLaneEnabled();
 
     /**
+     * Checks if the flow control feature is enabled.
+     *
+     * @return {@code true} if the flow control feature is enabled, {@code false} otherwise
+     */
+    boolean isFlowControlEnabled();
+
+    /**
      * Checks if the governance context is ready.
      * <p>
      * This default implementation checks if the application's status is {@code AppStatus.READY}.
@@ -579,6 +586,11 @@ public interface InvocationContext {
         @Override
         public boolean isLaneEnabled() {
             return delegate.isLaneEnabled();
+        }
+
+        @Override
+        public boolean isFlowControlEnabled() {
+            return delegate.isFlowControlEnabled();
         }
 
         @Override
