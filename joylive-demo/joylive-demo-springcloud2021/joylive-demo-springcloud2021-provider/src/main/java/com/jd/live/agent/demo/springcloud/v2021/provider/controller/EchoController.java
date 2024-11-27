@@ -40,9 +40,6 @@ public class EchoController {
             Thread.sleep(Integer.parseInt(waitTime) + ThreadLocalRandom.current().nextInt(1000));
         } catch (InterruptedException ignore) {
         }
-        if (str.equals("aaa")) {
-            throw new NullPointerException("runtime exception");
-        }
         LiveResponse response = new LiveResponse(str);
         configure(request, response);
         return response;
