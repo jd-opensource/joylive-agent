@@ -28,6 +28,7 @@ import reactor.netty.http.client.HttpClient;
 @Deprecated
 public class NettyHttpClientInterceptor extends InterceptorAdaptor {
 
+
     /**
      * Enhanced logic after method successfully execute
      *
@@ -37,10 +38,13 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        HttpClient client = (HttpClient) mc.getResult();
+        HttpClient client = mc.getResult();
         if (RequestContext.hasCargo()) {
-            client = client.headers(headers -> RequestContext.cargos(cargo -> headers.set(cargo.getKey(), cargo.getValue())));
-            mc.setResult(client);
+            HttpClient newClient = client.headers(headers -> RequestContext.cargos(cargo -> headers.set(cargo.getKey(), cargo.getValue())));
+            if (client.getClass().isAssignableFrom(newClient.getClass())) {
+                // fix netty reactor 0.9.20.RELEASE
+                mc.setResult(newClient);
+            }
         }
     }
 }

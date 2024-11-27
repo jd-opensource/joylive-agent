@@ -179,7 +179,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
         headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
 
-        response.writeWith(Flux.just(buffer)).block();
+        response.writeWith(Flux.just(buffer)).subscribe();
         return new GatewayClusterResponse(response);
     }
 

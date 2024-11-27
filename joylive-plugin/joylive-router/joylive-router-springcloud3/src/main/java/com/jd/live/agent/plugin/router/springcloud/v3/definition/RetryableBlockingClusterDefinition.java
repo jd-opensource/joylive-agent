@@ -40,6 +40,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.BlockingCluste
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(RetryableBlockingClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
 @ConditionalOnClass(RetryableBlockingClusterDefinition.TYPE_RETRY_TEMPLATE)
+@ConditionalOnClass(BlockingClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class RetryableBlockingClusterDefinition extends PluginDefinitionAdapter {
 

@@ -1,7 +1,4 @@
 com.jd.live.agent.plugin.router.springcloud.v4.definition.ServiceInstanceListSupplierDefinition
-com.jd.live.agent.plugin.router.springcloud.v4.definition.StickySessionDefinition
-com.jd.live.agent.plugin.router.springcloud.v4.definition.PreferSameInstanceDefinition
-com.jd.live.agent.plugin.router.springcloud.v4.definition.ZonePreferenceDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.ReactorLoadBalancerDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.ReactiveClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.FeignClusterDefinition

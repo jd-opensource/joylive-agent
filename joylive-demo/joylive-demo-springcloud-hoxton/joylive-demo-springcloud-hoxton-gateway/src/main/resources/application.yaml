@@ -1,0 +1,92 @@
+server:
+  port: ${SERVER_PORT:8888}
+management:
+  endpoint:
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "gateway"
+spring:
+  application:
+    name: spring-gateway
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    default-property-inclusion: non_null
+    serialization:
+      indent_output: true
+  cloud:
+    gateway:
+      routes:
+        - id: rocketmq
+          uri: lb://service-rocketmq
+          predicates:
+            - Path=/service-rocketmq/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+        - id: order
+          uri: lb://service-order
+          predicates:
+            - Path=/service-order/**
+          filters:
+            - StripPrefix=1
+        - id: consumer
+          uri: lb://service-consumer
+          predicates:
+            - Path=/service-consumer/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+        - id: provider-reactive
+          uri: lb://service-provider-reactive
+          predicates:
+            - Path=/service-provider-reactive/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+            - Retry=5
+        - id: provider
+          uri: lb://service-provider
+          predicates:
+            - Path=/service-provider/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+            - name: Retry
+              args:
+                retries: 1
+                series:
+                  - SERVER_ERROR
+                methods:
+                  - GET
+                  - POST
+                exceptions:
+                  - java.io.IOException
+        - id: http
+          uri: http://demo.live.local:11813/
+          predicates:
+            - Path=/http/**
+            - Method=GET
+          filters:
+            - StripPrefix=1
+      discovery:
+        locator:
+          enabled: true
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:${AP_SD_INTERNAL_ADDRESS}:${AP_SD_INTERNAL_HTTP_PORT}}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        namespace: ${NACOS_NAMESPACE:public}
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: ${LIVE_LOG_LEVEL:INFO}
+    reactor:
+      netty: ${LIVE_LOG_LEVEL:INFO}
+    root: ${LIVE_LOG_LEVEL:INFO}

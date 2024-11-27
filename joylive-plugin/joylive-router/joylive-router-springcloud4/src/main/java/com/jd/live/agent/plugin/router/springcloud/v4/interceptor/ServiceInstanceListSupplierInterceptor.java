@@ -43,6 +43,7 @@ import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -62,12 +63,21 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final Set<String> disableDiscovery;
 
-    private final boolean flowControlEnabled;
-
-    public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery, boolean flowControlEnabled) {
+    public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
-        this.disableDiscovery = disableDiscovery;
-        this.flowControlEnabled = flowControlEnabled;
+        this.disableDiscovery = disableDiscovery == null ? new HashSet<>() : new HashSet<>(disableDiscovery);
+        if (context.isLiveEnabled()) {
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.ZonePreferenceServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SubsetServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier");
+        }
+        if (context.isFlowControlEnabled()) {
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.RetryAwareServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.WeightedServiceInstanceListSupplier");
+        }
     }
 
     @Override
@@ -81,7 +91,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             // disable
             DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
             mc.skipWithResult(delegating.getDelegate().get(ctx.getArgument(0)));
-        } else if (!flowControlEnabled && LOCK.get() == null) {
+        } else if (!context.isFlowControlEnabled() && LOCK.get() == null) {
             // Prevent duplicate calls
             LOCK.set(ctx.getId());
         }
@@ -89,7 +99,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        if (!flowControlEnabled && LOCK.get() == ctx.getId()) {
+        if (!context.isFlowControlEnabled() && LOCK.get() == ctx.getId()) {
             LOCK.remove();
         }
     }
@@ -97,7 +107,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        if (!flowControlEnabled && LOCK.get() == ctx.getId()) {
+        if (!context.isFlowControlEnabled() && LOCK.get() == ctx.getId()) {
             MethodContext mc = (MethodContext) ctx;
             Object[] arguments = ctx.getArguments();
             Object result = mc.getResult();

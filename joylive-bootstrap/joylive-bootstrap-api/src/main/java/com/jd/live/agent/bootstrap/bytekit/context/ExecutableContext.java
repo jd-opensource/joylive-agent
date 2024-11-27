@@ -103,9 +103,6 @@ public abstract class ExecutableContext extends AbstractAttributes {
 
     /**
      * Marks the origin of the current invocation.
-     * <p>
-     * This method sets a thread-local flag indicating that the current invocation is the origin.
-     * </p>
      */
     protected void markOrigin() {
         if (INVOKE_ORIGIN_METHOD == null) {
@@ -116,10 +113,6 @@ public abstract class ExecutableContext extends AbstractAttributes {
 
     /**
      * Gets and removes the origin flag for the current thread.
-     * <p>
-     * This method checks if the current thread has marked the origin of the invocation and returns the result.
-     * If the origin flag is set, it is removed after being retrieved.
-     * </p>
      *
      * @return true if the current thread has marked the origin of the invocation, false otherwise.
      */
@@ -129,6 +122,20 @@ public abstract class ExecutableContext extends AbstractAttributes {
         } else {
             Boolean result = INVOKE_ORIGIN_METHOD.get();
             INVOKE_ORIGIN_METHOD.set(Boolean.FALSE);
+            return result != null && result;
+        }
+    }
+
+    /**
+     * Gets the origin flag for the current thread.
+     *
+     * @return true if the current thread has marked the origin of the invocation, false otherwise.
+     */
+    public boolean isOrigin() {
+        if (INVOKE_ORIGIN_METHOD == null) {
+            return false;
+        } else {
+            Boolean result = INVOKE_ORIGIN_METHOD.get();
             return result != null && result;
         }
     }

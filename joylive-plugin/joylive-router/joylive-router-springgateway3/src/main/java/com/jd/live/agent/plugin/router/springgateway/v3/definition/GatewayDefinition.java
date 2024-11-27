@@ -34,21 +34,18 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayInter
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
-@ConditionalOnClass(GatewayDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(GatewayDefinition.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
+@ConditionalOnClass(GatewayClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
+@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class GatewayDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
-
-    protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
 
     private static final String METHOD_HANDLE = "handle";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
             "org.springframework.web.server.ServerWebExchange"
     };
-
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
     public GatewayDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);

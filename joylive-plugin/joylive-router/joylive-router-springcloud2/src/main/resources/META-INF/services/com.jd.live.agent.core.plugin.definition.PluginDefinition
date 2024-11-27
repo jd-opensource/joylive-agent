@@ -1,0 +1,6 @@
+com.jd.live.agent.plugin.router.springcloud.v2.definition.ServiceInstanceListSupplierDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.FeignClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.FeignRibbonClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.RetryableFeignClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.BlockingClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.RetryableBlockingClusterDefinition

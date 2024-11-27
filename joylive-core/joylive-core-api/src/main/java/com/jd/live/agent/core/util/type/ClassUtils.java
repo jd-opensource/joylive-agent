@@ -18,6 +18,7 @@ package com.jd.live.agent.core.util.type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * Utility class providing a collection of helper methods for class manipulation and metadata access.
@@ -60,6 +61,68 @@ public class ClassUtils {
      */
     public static ClassDesc describe(final Class<?> type) {
         return type == null ? null : classDescs.computeIfAbsent(type, ClassDesc::new);
+    }
+
+    /**
+     * Retrieves the value of a field from the given target object.
+     *
+     * @param <T>       the type of the field value
+     * @param target    the target object
+     * @param fieldName the name of the field
+     * @return the value of the field, or null if the field does not exist or is inaccessible
+     */
+    public static <T> T getValue(Object target, String fieldName) {
+        return getValue(target, fieldName, null);
+    }
+
+    /**
+     * Retrieves the value of a field from the given target object, applying an optional predicate to filter the result.
+     *
+     * @param <T>       the type of the field value
+     * @param target    the target object
+     * @param fieldName the name of the field
+     * @param predicate an optional predicate to filter the result
+     * @return the value of the field, or null if the field does not exist, is inaccessible, or does not pass the predicate test
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getValue(Object target, String fieldName, Predicate<Object> predicate) {
+        if (target == null) {
+            return null;
+        }
+        Object value = describe(target.getClass()).getValue(fieldName, target);
+        return predicate == null || predicate.test(value) ? (T) value : null;
+    }
+
+    /**
+     * Retrieves the value of a nested property from the given target object, applying an optional predicate to filter the result.
+     *
+     * @param <T>        the type of the property value
+     * @param target     the target object
+     * @param properties an array of property names, representing the path to the desired property
+     * @param predicate  an optional predicate to filter the result
+     * @return the value of the property, or null if the property does not exist, is inaccessible, or does not pass the predicate test
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getValue(Object target, String[] properties, Predicate<Object> predicate) {
+        if (target == null || properties == null) {
+            return null;
+        }
+        Object value;
+        int pos;
+        String name;
+        for (String fieldName : properties) {
+            value = target;
+            while (fieldName != null && !fieldName.isEmpty() && value != null) {
+                pos = fieldName.indexOf('.');
+                name = pos > 0 ? fieldName.substring(0, pos) : fieldName;
+                fieldName = pos > 0 ? fieldName.substring(pos + 1) : null;
+                value = describe(value.getClass()).getValue(name, value);
+            }
+            if (value != null && (predicate == null || predicate.test(value))) {
+                return (T) value;
+            }
+        }
+        return null;
     }
 
     /**

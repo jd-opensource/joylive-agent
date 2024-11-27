@@ -40,6 +40,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignClusterIn
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(RetryableFeignClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
 @ConditionalOnClass(RetryableFeignClusterDefinition.TYPE_RETRY_TEMPLATE)
+@ConditionalOnClass(BlockingClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class RetryableFeignClusterDefinition extends PluginDefinitionAdapter {
 

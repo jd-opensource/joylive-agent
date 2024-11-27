@@ -42,6 +42,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClust
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
+@ConditionalOnClass(GatewayClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
 @ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
 @Injectable
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
@@ -49,6 +50,8 @@ public class GatewayClusterDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
 
     protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
+
+    protected static final String TYPE_LOAD_BALANCER_PROPERTIES = "org.springframework.cloud.client.loadbalancer.LoadBalancerProperties";
 
     private static final String METHOD_HANDLE = "handle";
 

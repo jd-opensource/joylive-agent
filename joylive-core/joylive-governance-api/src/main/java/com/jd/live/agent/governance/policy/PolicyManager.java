@@ -106,6 +106,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private boolean laneEnabled = true;
 
     @Getter
+    @Config(GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED)
+    private boolean flowControlEnabled;
+
+    @Getter
     @Config(GovernanceConfig.CONFIG_AGENT_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 

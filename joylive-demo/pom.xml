@@ -16,6 +16,7 @@
         <module>joylive-demo-springcloud2021</module>
         <module>joylive-demo-springcloud2022</module>
         <module>joylive-demo-springcloud2023</module>
+        <module>joylive-demo-springcloud-hoxton</module>
         <module>joylive-demo-dubbo3</module>
         <module>joylive-demo-dubbo2.7</module>
         <module>joylive-demo-common</module>

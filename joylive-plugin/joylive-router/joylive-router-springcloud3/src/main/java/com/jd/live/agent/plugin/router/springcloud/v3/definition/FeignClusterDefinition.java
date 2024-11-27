@@ -39,6 +39,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignClusterIn
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(FeignClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
+@ConditionalOnClass(BlockingClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class FeignClusterDefinition extends PluginDefinitionAdapter {
 
