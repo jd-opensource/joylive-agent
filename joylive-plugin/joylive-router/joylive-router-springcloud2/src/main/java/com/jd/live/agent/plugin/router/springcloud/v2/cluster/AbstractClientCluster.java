@@ -52,33 +52,42 @@ public abstract class AbstractClientCluster<
         O extends OutboundResponse>
         extends AbstractLiveCluster<R, O, SpringEndpoint> {
 
-    protected LoadBalancerRetryProperties retry;
+    protected RetryPolicy defaultRetryPolicy;
 
     protected final SpringOutboundThrower<R> thrower = new SpringOutboundThrower<>();
 
     @Override
     public ClusterPolicy getDefaultPolicy(R request) {
-        if (isRetryable()) {
-            RetryPolicy retryPolicy = null;
-            if (retry != null && retry.isEnabled() && (request.getHttpMethod() == HttpMethod.GET || retry.isRetryOnAllOperations())) {
-                Set<String> statuses = new HashSet<>(retry.getRetryableStatusCodes().size());
-                retry.getRetryableStatusCodes().forEach(status -> statuses.add(String.valueOf(status)));
-                retryPolicy = new RetryPolicy();
-                retryPolicy.setRetry(retry.getMaxRetriesOnNextServiceInstance());
-                retryPolicy.setInterval(retry.getBackoff().getMinBackoff().toMillis());
-                retryPolicy.setErrorCodes(statuses);
-            }
-            return new ClusterPolicy(retryPolicy == null ? ClusterInvoker.TYPE_FAILFAST : ClusterInvoker.TYPE_FAILOVER, retryPolicy);
+        if (defaultRetryPolicy != null && defaultRetryPolicy.containsMethod(request.getHttpMethod().name())) {
+            return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, defaultRetryPolicy);
         }
         return new ClusterPolicy(ClusterInvoker.TYPE_FAILFAST);
     }
 
     /**
-     * Determines if the current cluster support for retry.
+     * Creates a RetryPolicy based on the provided LoadBalancerRetryProperties.
      *
-     * @return {@code true} if the operation is retryable; {@code false} otherwise.
+     * @param properties the LoadBalancerRetryProperties object containing the retry configuration
+     * @return a RetryPolicy instance, or null if retry is not enabled
      */
-    protected abstract boolean isRetryable();
+    protected RetryPolicy createRetryPolicy(LoadBalancerRetryProperties properties) {
+        if (properties == null || !properties.isEnabled()) {
+            return null;
+        }
+        RetryPolicy retryPolicy = new RetryPolicy();
+        Set<Integer> codes = properties.getRetryableStatusCodes();
+        Set<String> statuses = new HashSet<>(codes.size());
+        codes.forEach(status -> statuses.add(String.valueOf(status)));
+        retryPolicy.setRetry(properties.getMaxRetriesOnNextServiceInstance());
+        retryPolicy.setInterval(properties.getBackoff().getMinBackoff().toMillis());
+        retryPolicy.setErrorCodes(statuses);
+        if (!properties.isRetryOnAllOperations()) {
+            Set<String> methods = new HashSet<>(1);
+            methods.add(HttpMethod.GET.name());
+            retryPolicy.setMethods(methods);
+        }
+        return retryPolicy;
+    }
 
     /**
      * Discover the service instances for the requested service.

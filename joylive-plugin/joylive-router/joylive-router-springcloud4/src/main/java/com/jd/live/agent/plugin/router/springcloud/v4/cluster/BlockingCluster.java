@@ -16,13 +16,9 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
@@ -42,6 +38,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
@@ -64,11 +62,9 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private static final String FIELD_LOAD_BALANCER = "loadBalancer";
-
     private static final String FIELD_REQUEST_FACTORY = "requestFactory";
 
-    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
+    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancer.loadBalancerClientFactory";
 
     /**
      * An interceptor for HTTP requests, used to apply additional processing or modification
@@ -95,15 +91,10 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
      *
      * @param interceptor the HTTP request interceptor to be used by this cluster
      */
-    @SuppressWarnings("unchecked")
     public BlockingCluster(ClientHttpRequestInterceptor interceptor) {
         this.interceptor = interceptor;
-        ClassDesc describe = ClassUtils.describe(interceptor.getClass());
-        FieldList fieldList = describe.getFieldList();
-        this.requestFactory = (LoadBalancerRequestFactory) fieldList.getField(FIELD_REQUEST_FACTORY).get(interceptor);
-        LoadBalancerClient client = (LoadBalancerClient) fieldList.getField(FIELD_LOAD_BALANCER).get(interceptor);
-        FieldDesc field = ClassUtils.describe(client.getClass()).getFieldList().getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
-        this.loadBalancerFactory = (ReactiveLoadBalancer.Factory<ServiceInstance>) field.get(client);
+        this.requestFactory = getValue(interceptor, FIELD_REQUEST_FACTORY);
+        this.loadBalancerFactory = getValue(interceptor, new String[]{FIELD_LOAD_BALANCER_CLIENT_FACTORY}, v -> v instanceof ReactiveLoadBalancer.Factory);
     }
 
     public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {

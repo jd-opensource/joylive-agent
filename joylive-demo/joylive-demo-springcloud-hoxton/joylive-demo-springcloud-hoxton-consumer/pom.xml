@@ -12,7 +12,9 @@
     <artifactId>joylive-demo-springcloud-hoxton-consumer</artifactId>
 
     <properties>
-        <okhttp.version>4.12.0</okhttp.version>
+        <okhttp.version>4.6.0</okhttp.version>
+        <feign-okhttp.version>10.12</feign-okhttp.version>
+        <spring-retry.version>1.2.5.RELEASE</spring-retry.version>
     </properties>
 
     <dependencies>
@@ -42,9 +44,15 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>${okhttp.version}</version>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-okhttp</artifactId>
+            <version>${feign-okhttp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+            <version>${spring-retry.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

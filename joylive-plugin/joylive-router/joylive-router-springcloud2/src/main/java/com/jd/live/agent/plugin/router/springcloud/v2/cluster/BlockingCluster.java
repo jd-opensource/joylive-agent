@@ -16,18 +16,18 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2.response.BlockingClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2.util.LoadBalancerUtil;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.*;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,6 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
@@ -68,7 +70,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     private static final String FIELD_REQUEST_FACTORY = "requestFactory";
 
-    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
+    private static final String FIELD_LB_PROPERTIES = "lbProperties";
 
     /**
      * An interceptor for HTTP requests, used to apply additional processing or modification
@@ -95,23 +97,12 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
      *
      * @param interceptor the HTTP request interceptor to be used by this cluster
      */
-    @SuppressWarnings("unchecked")
     public BlockingCluster(ClientHttpRequestInterceptor interceptor) {
         this.interceptor = interceptor;
-        ClassDesc describe = ClassUtils.describe(interceptor.getClass());
-        FieldList fieldList = describe.getFieldList();
-        this.requestFactory = (LoadBalancerRequestFactory) fieldList.getField(FIELD_REQUEST_FACTORY).get(interceptor);
-        LoadBalancerClient client = (LoadBalancerClient) fieldList.getField(FIELD_LOAD_BALANCER).get(interceptor);
-        fieldList = ClassUtils.describe(client.getClass()).getFieldList();
-        FieldDesc field = fieldList.getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
-        this.loadBalancerFactory = field == null ? null : (ReactiveLoadBalancer.Factory<ServiceInstance>) field.get(client);
-        field = fieldList.getField("lbProperties");
-        if (field != null) {
-            Object lbProperties = field.get(client);
-            if (lbProperties instanceof LoadBalancerRetryProperties) {
-                retry = (LoadBalancerRetryProperties) lbProperties;
-            }
-        }
+        this.requestFactory = getValue(interceptor, FIELD_REQUEST_FACTORY);
+        LoadBalancerClient client = getValue(interceptor, FIELD_LOAD_BALANCER);
+        this.loadBalancerFactory = LoadBalancerUtil.getFactory(client);
+        this.defaultRetryPolicy = createRetryPolicy(getValue(interceptor, FIELD_LB_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties));
     }
 
     public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
@@ -119,13 +110,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     }
 
     @Override
-    protected boolean isRetryable() {
-        return interceptor instanceof RetryLoadBalancerInterceptor;
-    }
-
-    @Override
     public CompletionStage<BlockingClusterResponse> invoke(BlockingClusterRequest request, SpringEndpoint endpoint) {
-        // TODO sticky session
         try {
             LoadBalancerRequest<ClientHttpResponse> lbRequest = requestFactory.createRequest(request.getRequest(), request.getBody(), request.getExecution());
             ClientHttpResponse response = lbRequest.apply(endpoint.getInstance());

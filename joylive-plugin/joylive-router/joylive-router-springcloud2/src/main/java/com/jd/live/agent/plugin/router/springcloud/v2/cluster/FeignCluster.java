@@ -16,9 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -26,20 +23,21 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2.response.FeignClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2.util.LoadBalancerUtil;
 import feign.Client;
 import feign.Request;
-import org.springframework.cloud.client.loadbalancer.LoadBalancedRetryFactory;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools;
-import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
-import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.HttpHeaders;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * A cluster implementation for Feign clients that manages a group of servers and provides load balancing and failover capabilities.
@@ -58,47 +56,29 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     private static final String FIELD_DELEGATE = "delegate";
 
-    private static final String FIELD_LOAD_BALANCER_CLIENT = "loadBalancerClient";
+    private static final String[] FIELD_CLIENT_FACTORIES = {"loadBalancerClient", "lbClientFactory"};
 
-    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
-
-    private static final String FIELD_LOAD_BALANCED_RETRY_FACTORY = "loadBalancedRetryFactory";
-
-    private static final String FIELD_RETRY_PROPERTIES = "retryProperties";
+    private static final String[] FIELD_RETRY_PROPERTIES = {
+            "loadBalancedRetryFactory.retryProperties",
+            "lbClientFactory.loadBalancedRetryFactory.retryProperties"
+    };
 
     private final Client client;
 
     private final Client delegate;
 
-    private final LoadBalancerClientFactory loadBalancerClientFactory;
+    private final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
     public FeignCluster(Client client) {
         this.client = client;
-        FieldList fieldList = ClassUtils.describe(client.getClass()).getFieldList();
-        FieldDesc field = fieldList.getField(FIELD_DELEGATE);
-        this.delegate = (Client) (field == null ? null : field.get(client));
-        field = fieldList.getField(FIELD_LOAD_BALANCER_CLIENT);
-        BlockingLoadBalancerClient loadBalancerClient = null;
-        if (field != null) {
-            loadBalancerClient = (BlockingLoadBalancerClient) field.get(client);
-            field = ClassUtils.describe(BlockingLoadBalancerClient.class).getFieldList().getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
-        }
-        this.loadBalancerClientFactory = (LoadBalancerClientFactory) (field == null ? null : field.get(loadBalancerClient));
-        field = fieldList.getField(FIELD_LOAD_BALANCED_RETRY_FACTORY);
-        if (field != null) {
-            LoadBalancedRetryFactory retryFactory = (LoadBalancedRetryFactory) field.get(client);
-            field = ClassUtils.describe(retryFactory.getClass()).getFieldList().getField(FIELD_RETRY_PROPERTIES);
-            this.retry = field == null ? null : (LoadBalancerRetryProperties) field.get(retryFactory);
-        }
+        this.delegate = getValue(client, FIELD_DELEGATE);
+        Object loadBalancerClient = getValue(client, FIELD_CLIENT_FACTORIES, null);
+        this.loadBalancerFactory = LoadBalancerUtil.getFactory(loadBalancerClient);
+        this.defaultRetryPolicy = createRetryPolicy(getValue(client, FIELD_RETRY_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties));
     }
 
-    public LoadBalancerClientFactory getLoadBalancerClientFactory() {
-        return loadBalancerClientFactory;
-    }
-
-    @Override
-    protected boolean isRetryable() {
-        return client instanceof RetryableFeignBlockingLoadBalancerClient;
+    public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
+        return loadBalancerFactory;
     }
 
     @Override

@@ -16,24 +16,21 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster;
 
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
 import feign.Client;
 import feign.Request;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.CompletionContext;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.ResponseData;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,6 +39,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * A client cluster implementation for Feign-based service calls.
@@ -64,20 +63,16 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     private final Client delegate;
 
-    private final LoadBalancerClientFactory loadBalancerClientFactory;
+    private final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
     public FeignCluster(Client client) {
         this.client = client;
-        ClassDesc describe = ClassUtils.describe(client.getClass());
-        FieldList fieldList = describe.getFieldList();
-        FieldDesc field = fieldList.getField(FIELD_DELEGATE);
-        this.delegate = (Client) (field == null ? null : field.get(client));
-        field = fieldList.getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
-        this.loadBalancerClientFactory = (LoadBalancerClientFactory) (field == null ? null : field.get(client));
+        this.delegate = getValue(client, FIELD_DELEGATE);
+        this.loadBalancerFactory = getValue(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
     }
 
-    public LoadBalancerClientFactory getLoadBalancerClientFactory() {
-        return loadBalancerClientFactory;
+    public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
+        return loadBalancerFactory;
     }
 
     @Override

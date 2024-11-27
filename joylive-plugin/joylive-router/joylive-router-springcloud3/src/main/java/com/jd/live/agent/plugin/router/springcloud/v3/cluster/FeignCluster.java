@@ -16,10 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster;
 
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -29,8 +25,9 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterReques
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
 import feign.Client;
 import feign.Request;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,6 +36,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * A cluster implementation for Feign clients that manages a group of servers and provides load balancing and failover capabilities.
@@ -58,30 +57,26 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     private static final String FIELD_DELEGATE = "delegate";
 
     private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
-    private static final String FIELD_LOAD_BALANCER_PROPERTIES = "properties";
+
+    private static final String FIELD_PROPERTIES = "properties";
 
     private final Client client;
 
     private final Client delegate;
 
-    private final LoadBalancerClientFactory loadBalancerClientFactory;
+    private final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
     private final LoadBalancerProperties loadBalancerProperties;
 
     public FeignCluster(Client client) {
         this.client = client;
-        ClassDesc describe = ClassUtils.describe(client.getClass());
-        FieldList fieldList = describe.getFieldList();
-        FieldDesc field = fieldList.getField(FIELD_DELEGATE);
-        this.delegate = (Client) (field == null ? null : field.get(client));
-        field = fieldList.getField(FIELD_LOAD_BALANCER_CLIENT_FACTORY);
-        this.loadBalancerClientFactory = (LoadBalancerClientFactory) (field == null ? null : field.get(client));
-        field = fieldList.getField(FIELD_LOAD_BALANCER_PROPERTIES);
-        this.loadBalancerProperties = field == null || !(LoadBalancerProperties.class.isAssignableFrom(field.getField().getType())) ? null : (LoadBalancerProperties) field.get(client);
+        this.delegate = getValue(client, FIELD_DELEGATE);
+        this.loadBalancerFactory = getValue(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+        this.loadBalancerProperties = getValue(loadBalancerFactory, FIELD_PROPERTIES, v -> v instanceof LoadBalancerProperties);
     }
 
-    public LoadBalancerClientFactory getLoadBalancerClientFactory() {
-        return loadBalancerClientFactory;
+    public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
+        return loadBalancerFactory;
     }
 
     public LoadBalancerProperties getLoadBalancerProperties() {

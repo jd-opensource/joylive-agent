@@ -17,6 +17,7 @@
         <spring-web.version>5.2.15.RELEASE</spring-web.version>
         <openfeign.version>10.12</openfeign.version>
         <spring-retry.version>1.2.5.RELEASE</spring-retry.version>
+        <ribbon-loadbalancer.version>2.3.0</ribbon-loadbalancer.version>
     </properties>
 
     <dependencies>
@@ -60,6 +61,18 @@
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>
             <version>${spring-retry.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-netflix-ribbon</artifactId>
+            <version>${spring.cloud.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.netflix.ribbon</groupId>
+            <artifactId>ribbon-loadbalancer</artifactId>
+            <version>${ribbon-loadbalancer.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

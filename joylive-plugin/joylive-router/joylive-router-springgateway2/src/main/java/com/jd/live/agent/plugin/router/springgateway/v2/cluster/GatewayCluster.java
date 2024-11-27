@@ -103,11 +103,6 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     }
 
     @Override
-    protected boolean isRetryable() {
-        return true;
-    }
-
-    @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
             ServerWebExchange exchange = getWebExchange(request);

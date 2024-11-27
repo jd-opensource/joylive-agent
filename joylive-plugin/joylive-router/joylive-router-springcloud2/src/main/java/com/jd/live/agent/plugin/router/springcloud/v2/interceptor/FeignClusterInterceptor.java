@@ -56,7 +56,7 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
         if (context.isFlowControlEnabled()) {
             FeignCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCluster::new);
             FeignClusterRequest clusterRequest = new FeignClusterRequest(request,
-                    cluster.getLoadBalancerClientFactory(), (Request.Options) arguments[1]);
+                    cluster.getLoadBalancerFactory(), (Request.Options) arguments[1]);
             HttpOutboundInvocation<FeignClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
             FeignClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();

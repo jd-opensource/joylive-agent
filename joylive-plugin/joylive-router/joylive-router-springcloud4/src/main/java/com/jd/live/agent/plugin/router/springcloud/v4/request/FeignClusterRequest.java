@@ -21,7 +21,9 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import feign.Request;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMapAdapter;
@@ -52,7 +54,7 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
      * @param options                   the options for the Feign request, such as timeouts
      */
     public FeignClusterRequest(Request request,
-                               LoadBalancerClientFactory loadBalancerClientFactory,
+                               ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerClientFactory,
                                Request.Options options) {
         super(request, loadBalancerClientFactory);
         this.options = options;
