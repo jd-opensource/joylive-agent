@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.bootstrap.plugin.definition;
 
-import com.jd.live.agent.bootstrap.bytekit.advice.ExceptionHandler;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 
 /**
@@ -55,13 +54,5 @@ public interface Interceptor {
      */
     void onExit(ExecutableContext ctx);
 
-    /**
-     * Current Interceptor's ExceptionHandler
-     *
-     * @return ExceptionHandler
-     */
-    default ExceptionHandler getExceptionHandler() {
-        return null;
-    }
 }
 

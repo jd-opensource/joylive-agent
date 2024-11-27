@@ -83,11 +83,9 @@ public class AdviceHandler {
             if (!context.isSuccess()) {
                 throw context.getThrowable();
             } else if (context.isSkip()) {
-                // TODO continue?
                 break;
             }
         }
-
     }
 
     /**
@@ -118,7 +116,11 @@ public class AdviceHandler {
                                                             List<Interceptor> interceptors) throws Throwable {
         if (context == null || interceptors == null)
             return;
-        for (Interceptor interceptor : interceptors) {
+        // reverse order
+        int size = interceptors.size();
+        Interceptor interceptor;
+        for (int i = size - 1; i >= 0; i--) {
+            interceptor = interceptors.get(i);
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("exit [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
             }
@@ -149,16 +151,7 @@ public class AdviceHandler {
             consumer.accept(interceptor, context);
         } catch (Throwable t) {
             logger.error(String.format("failed to %s %s, caused by %s", action, context.getDescription(), t.getMessage()), t);
-            ExceptionHandler exceptionHandler = interceptor.getExceptionHandler();
-            if (exceptionHandler != null) {
-                try {
-                    exceptionHandler.handle(context, interceptor, t);
-                } catch (Throwable e) {
-                    logger.error(String.format("failed to handle %s %s error, caused by %s", action, context.getDescription(), t.getMessage()), t);
-                }
-            } else {
-                throw t;
-            }
+            throw t;
         }
     }
 
