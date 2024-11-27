@@ -86,6 +86,15 @@ public interface ServiceResponse extends Response {
     }
 
     /**
+     * Returns the exception message of the service call.
+     *
+     * @return exception message or null
+     */
+    default String getExceptionMessage() {
+        return null;
+    }
+
+    /**
      * Defines an interface for outbound service response.
      * <p>
      * This interface represents the response received from another service or component from the current service。

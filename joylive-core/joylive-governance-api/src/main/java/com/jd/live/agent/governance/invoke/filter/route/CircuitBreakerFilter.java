@@ -23,11 +23,13 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
+import com.jd.live.agent.governance.exception.ExceptionMessage;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -49,6 +51,7 @@ import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -80,6 +83,9 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
+
+    @Inject(ObjectParser.JSON)
+    private ObjectParser parser;
 
     private String defaultType;
 
@@ -124,7 +130,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 }
             }
             // add listener before acquire permit
-            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, errorParsers, serviceBreakers, instancePolicies));
+            invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, errorParsers, serviceBreakers, instancePolicies, parser));
             // acquire service permit
             acquire(invocation, serviceBreakers);
             // filter broken instance
@@ -222,15 +228,19 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
         private final int index;
 
+        private ObjectParser parser;
+
         CircuitBreakerListener(CircuitBreakerFactory factory,
                                Map<String, CodeParser> errorParsers,
                                List<CircuitBreaker> circuitBreakers,
-                               List<CircuitBreakPolicy> instancePolicies) {
+                               List<CircuitBreakPolicy> instancePolicies,
+                               ObjectParser parser) {
             this.factory = factory;
             this.errorParsers = errorParsers;
             this.circuitBreakers = circuitBreakers;
             this.instancePolicies = instancePolicies;
             this.index = circuitBreakers.size();
+            this.parser = parser;
         }
 
         @Override
@@ -282,6 +292,17 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             }
             ServiceError error = response.getError();
             Throwable throwable = error == null ? null : error.getThrowable();
+            String exceptionMessage = response.getExceptionMessage();
+            if (exceptionMessage != null) {
+                try {
+                    ExceptionMessage ex = parser.read(new StringReader(exceptionMessage), ExceptionMessage.class);
+                    if (ex.containsException(policy.getExceptions())) {
+                        return true;
+                    }
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
             if (throwable != null) {
                 ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 return cause.match(policy);

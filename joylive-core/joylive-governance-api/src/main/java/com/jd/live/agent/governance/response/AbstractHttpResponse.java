@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -238,6 +239,11 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      */
     protected String parseScheme() {
         return uri.getScheme();
+    }
+
+    @Override
+    public String getExceptionMessage() {
+        return getHeader(Constants.EXCEPTION_MESSAGE_LABEL);
     }
 
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>

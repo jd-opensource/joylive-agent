@@ -149,5 +149,10 @@ public interface Constants {
      */
     String DEFAULT_VALUE = "";
 
+    /**
+     * Constant for the http exception header.
+     */
+    String EXCEPTION_MESSAGE_LABEL = "x-exception-message";
+
 }
 

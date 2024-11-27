@@ -39,6 +39,9 @@ public class EchoController {
     @GetMapping("/echo/{str}")
     public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
         try {
+            if ("aaa".equals(str)) {
+                throw new RuntimeException("RuntimeException happened!");
+            }
             latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
         } catch (InterruptedException ignore) {
         }
