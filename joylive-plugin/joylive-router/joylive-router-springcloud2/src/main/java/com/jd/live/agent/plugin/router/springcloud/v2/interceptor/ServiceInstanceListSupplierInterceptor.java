@@ -41,6 +41,7 @@ import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -62,7 +63,13 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
-        this.disableDiscovery = disableDiscovery;
+        this.disableDiscovery = disableDiscovery == null ? new HashSet<>() : new HashSet<>(disableDiscovery);
+        if (context.isLiveEnabled()) {
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.ZonePreferenceServiceInstanceListSupplier");
+        } else if (context.isFlowControlEnabled()) {
+            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
+        }
     }
 
     @Override
@@ -94,7 +101,6 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         if (!context.isFlowControlEnabled() && LOCK.get() == ctx.getId()) {
             MethodContext mc = (MethodContext) ctx;
-            Object[] arguments = ctx.getArguments();
             Object result = mc.getResult();
             Flux<List<ServiceInstance>> flux = (Flux<List<ServiceInstance>>) result;
             OutboundInvocation<HttpOutboundRequest> invocation = buildInvocation();

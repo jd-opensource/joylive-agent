@@ -61,7 +61,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
             "java.util.concurrent.TimeoutException",
-            "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
+            "org.springframework.cloud.client.loadbalancer.RetryableStatusCodeException"
     ));
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);

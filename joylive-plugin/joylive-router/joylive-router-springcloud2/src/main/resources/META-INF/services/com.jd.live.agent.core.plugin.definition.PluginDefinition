@@ -1,6 +1,4 @@
 com.jd.live.agent.plugin.router.springcloud.v2.definition.ServiceInstanceListSupplierDefinition
-com.jd.live.agent.plugin.router.springcloud.v2.definition.PreferSameInstanceDefinition
-com.jd.live.agent.plugin.router.springcloud.v2.definition.ZonePreferenceDefinition
 com.jd.live.agent.plugin.router.springcloud.v2.definition.FeignClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v2.definition.FeignRibbonClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v2.definition.RetryableFeignClusterDefinition
