@@ -4,7 +4,7 @@
 
 1. Added support for routing governance of outbound traffic from Spring Cloud gRPC
 2. Added support for synchronizing policies from Nacos configuration center
-3. Added support for Spring Cloud 2020 & 2022
+3. Added support for Spring Cloud Hoxton & 2020 & 2022
 4. Improved swimlane routing
 5. Added support for configuring write method prefixes in service multi-active strategies
 6. Added support for Fastjson2 as a JSON and JsonPath parser

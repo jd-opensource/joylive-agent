@@ -4,7 +4,7 @@
 
 1. 支持spring cloud grpc 出流量的路由治理
 2. 支持从Nacos配置中心同步策略
-3. 支持Spring cloud 2020 & 2022
+3. 支持Spring cloud Hoxton & 2020 & 2022
 4. 完善泳道路由
 5. 支持服务多活策略中的写方法前缀配置
 6. 支持Fastjson2作为Json和JsonPath的解析器
