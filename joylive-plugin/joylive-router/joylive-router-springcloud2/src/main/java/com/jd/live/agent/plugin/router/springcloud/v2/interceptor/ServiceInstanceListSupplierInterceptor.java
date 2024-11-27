@@ -67,7 +67,8 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         if (context.isLiveEnabled()) {
             this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
             this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.ZonePreferenceServiceInstanceListSupplier");
-        } else if (context.isFlowControlEnabled()) {
+        }
+        if (context.isFlowControlEnabled()) {
             this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
         }
     }

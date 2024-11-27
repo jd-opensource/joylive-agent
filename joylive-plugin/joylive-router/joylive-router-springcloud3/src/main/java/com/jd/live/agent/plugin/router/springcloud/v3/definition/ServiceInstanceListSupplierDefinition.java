@@ -46,7 +46,7 @@ import java.util.Set;
         @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 }, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
-@ConditionalOnClass(StickySessionDefinition.TYPE_REQUEST_BASED_STICKY_SESSION_SERVICE_INSTANCE_LIST_SUPPLIER)
+@ConditionalOnClass(BlockingClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {
 
@@ -64,9 +64,6 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
     @Config(GovernanceConfig.CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES)
     private Set<String> disableDiscovery;
 
-    @Config(GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED)
-    private boolean flowControlEnabled;
-
     public ServiceInstanceListSupplierDefinition() {
         // enhance default method. so isImplementOf is not used.
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_INSTANCE_LIST_SUPPLIER);
@@ -74,7 +71,7 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET).
                                 and(MatcherBuilder.arguments(ARGUMENTS_GET)),
-                        () -> new ServiceInstanceListSupplierInterceptor(context, disableDiscovery, flowControlEnabled)
+                        () -> new ServiceInstanceListSupplierInterceptor(context, disableDiscovery)
                 )
         };
     }
