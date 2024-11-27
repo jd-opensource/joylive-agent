@@ -14,8 +14,15 @@ English | [简体中文](./README-zh.md)
 
 ## Overview
 
-Service Governance Framework, supporting traditional microservice governance, swimlane governance, and multi-active (unit) traffic governance.
-Following the traditional SDK governance model and Sidecar governance model, an exploration and implementation of the new generation Proxyless mode based on a microkernel extensible architecture, providing a high-performance, low-resource-consumption, cost-effective traffic governance framework for the enterprise Java ecosystem.
+Microservice governance framework, leveraging bytecode enhancement technology, 
+employs a micro-kernel extensible architecture's proxyless implementation, 
+offering superior performance and resource efficiency compared to the sidecar pattern. 
+In addition to supporting conventional microservice governance features such as circuit breaking, rate limiting, and degradation, 
+it also facilitates swimlane governance and application multi-active traffic governance.
+Offers traffic governance plugins for Spring cloud hoxton/2020/2021/2022/2023, Dubbo 2.6/2.7/3, SofaRpc, Rocketmq, and Kafka. 
+This enables existing java applications within enterprises to seamlessly integrate traffic governance capabilities without altering business code,
+supporting traffic scheduling in same-region, cross-region and multi-cloud multi-active scenarios, 
+thereby enhancing business stability and disaster recovery capabilities.
 
 ## Architecture
 1. Agent for multi-live   
