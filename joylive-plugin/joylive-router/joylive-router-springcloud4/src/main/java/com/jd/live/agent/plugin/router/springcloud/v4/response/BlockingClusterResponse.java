@@ -49,7 +49,7 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     public BlockingClusterResponse(ClientHttpResponse response) {
         super(response);
         this.headers = new UnsafeLazyObject<>(response::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(response.getHeaders()).get(HttpHeaders.COOKIE)));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.getHeaders().get(HttpHeaders.COOKIE)));
     }
 
     public BlockingClusterResponse(ServiceError error, ErrorPredicate predicate) {
