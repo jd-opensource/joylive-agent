@@ -20,9 +20,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -43,14 +41,12 @@ public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
 
     protected static final String METHOD_EXECUTE = "processHandlerException";
 
-    @Inject(ObjectParser.JSON)
-    private ObjectParser parser;
 
     public ExceptionCarryingDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE), () -> new ExceptionCarryingInterceptor(parser)
+                        MatcherBuilder.named(METHOD_EXECUTE), ExceptionCarryingInterceptor::new
                 )
         };
     }

@@ -95,6 +95,14 @@ public interface ServiceResponse extends Response {
     }
 
     /**
+     * Returns the exception names of the service call.
+     * @return exception names or null
+     */
+    default String getExceptionNames() {
+        return null;
+    }
+
+    /**
      * Defines an interface for outbound service response.
      * <p>
      * This interface represents the response received from another service or component from the current service。

@@ -17,6 +17,8 @@ package com.jd.live.agent.governance.exception;
 
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -95,5 +97,19 @@ public interface ErrorPolicy {
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if any of the exception sources are present in the set of target exceptions.
+     *
+     * @param sources   exception names of type string
+     * @param separator separator
+     * @param target    the set of target exceptions to check against.
+     * @return true if any of the exception sources are found in the set of target exceptions, false otherwise.
+     */
+    static boolean containsException(String sources, String separator, Set<String> target) {
+        String[] names = sources.split(separator);
+        Set<String> sourceSet = new HashSet<>(Arrays.asList(names));
+        return containsException(sourceSet, target);
     }
 }

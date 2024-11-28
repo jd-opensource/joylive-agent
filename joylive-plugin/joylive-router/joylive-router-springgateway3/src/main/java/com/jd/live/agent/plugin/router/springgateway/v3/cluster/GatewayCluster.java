@@ -119,7 +119,10 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         try {
             Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
             ServerWebExchange exchange = request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), policies)).build();
-            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(), () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY), () -> (String) exchange.getAttributes().get(Constants.EXCEPTION_MESSAGE_LABEL));
+            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(),
+                                                                         () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY),
+                                                                         () -> (String) exchange.getAttributes().get(Constants.EXCEPTION_MESSAGE_LABEL),
+                                                                         () -> (String) exchange.getAttributes().get(Constants.EXCEPTION_NAMES_LABEL));
             return request.getChain().filter(exchange).toFuture().thenApply(v -> response);
         } catch (Throwable e) {
             return Futures.future(e);
@@ -208,9 +211,15 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         @NonNull
         @Override
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-            List<String> exceptionMessage = exchange.getResponse().getHeaders().remove(Constants.EXCEPTION_MESSAGE_LABEL);
+            HttpHeaders headers = exchange.getResponse().getHeaders();
+            List<String> exceptionMessage = headers.remove(Constants.EXCEPTION_MESSAGE_LABEL);
             if (exceptionMessage != null && !exceptionMessage.isEmpty()) {
                 exchange.getAttributes().put(Constants.EXCEPTION_MESSAGE_LABEL, exceptionMessage.get(0));
+            }
+
+            List<String> exceptionNames = headers.remove(Constants.EXCEPTION_NAMES_LABEL);
+            if (exceptionNames != null && !exceptionNames.isEmpty()) {
+                exchange.getAttributes().put(Constants.EXCEPTION_NAMES_LABEL, exceptionNames.get(0));
             }
 
             if (this.policies != null && !this.policies.isEmpty()) {

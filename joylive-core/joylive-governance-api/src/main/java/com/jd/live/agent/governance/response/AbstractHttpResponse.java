@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 
 import java.net.URI;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -243,7 +244,12 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
 
     @Override
     public String getExceptionMessage() {
-        return getHeader(Constants.EXCEPTION_MESSAGE_LABEL);
+        return new String(Base64.getDecoder().decode(getHeader(Constants.EXCEPTION_MESSAGE_LABEL)));
+    }
+
+    @Override
+    public String getExceptionNames() {
+        return getHeader(Constants.EXCEPTION_NAMES_LABEL);
     }
 
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>
