@@ -19,11 +19,10 @@
     <property scope="context" name="logger.dir" value="${LIVE_LOG_DIR}"/>
     <property scope="context" name="logger.application" value="${LIVE_APP_NAME}"/>
     <property scope="context" name="logger.level" value="${LIVE_LOG_LEVEL:-info}"/>
-    <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-20GB}"/>
-    <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-10}"/>
-    <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-10MB}"/>
-    <property scope="context" name="logger.cleanHistoryOnStart" value="${LIVE_LOG_CLEAN_HISTORY_ONSTART:-true}"/>
-    <property scope="context" name="logger.fileNamePattern" value="${LIVE_FILE_NAME_PATTERN:-${logger.dir}/%d{yyyy-MM-dd}/live-agent-%i.log}"/>
+    <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-10GB}"/>
+    <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-30}"/>
+    <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-1GB}"/>
+    <property scope="context" name="logger.fileNamePattern" value="${LIVE_FILE_NAME_PATTERN:-${logger.dir}/live-agent.log.%d{yyyyMMdd}.%i}"/>
 
     <appender name="CONSOLE_APPENDER" class="com.jd.live.agent.shaded.ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -39,7 +38,6 @@
             <maxHistory>${logger.maxHistory}</maxHistory>
             <maxFileSize>${logger.maxFileSize}</maxFileSize>
             <totalSizeCap>${logger.totalSize}</totalSizeCap>
-            <cleanHistoryOnStart>${logger.cleanHistoryOnStart}</cleanHistoryOnStart>
         </rollingPolicy>
         <filter class="com.jd.live.agent.shaded.ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
