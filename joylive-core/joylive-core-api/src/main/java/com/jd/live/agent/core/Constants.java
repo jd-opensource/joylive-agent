@@ -164,5 +164,10 @@ public interface Constants {
      */
     String EXCEPTION_MESSAGE_LABEL = "x-exception-message";
 
+    /**
+     * Constant for the http exception message codec charset.
+     */
+    String EXCEPTION_NAMES_CODEC_CHARSET_NAME = "UTF-8";
+
 }
 

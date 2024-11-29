@@ -23,7 +23,6 @@ import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOu
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 
-import java.util.Base64;
 import java.util.function.Supplier;
 
 /**
@@ -35,28 +34,22 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     private final UnsafeLazyObject<String> body;
 
-    private final UnsafeLazyObject<String> exceptionMessage;
-
-    private final UnsafeLazyObject<String> exceptionNames;
 
     public GatewayClusterResponse(ServerHttpResponse response) {
         this(response, null, null, null);
     }
 
     public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> bodySupplier, Supplier<String> exceptionMessage, Supplier<String> exceptionNames) {
-        super(response);
+        super(response, exceptionNames, exceptionMessage);
         this.headers = new UnsafeLazyObject<>(response::getHeaders);
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.getCookies(), ResponseCookie::getValue));
         this.body = new UnsafeLazyObject<>(bodySupplier);
-        this.exceptionMessage = new UnsafeLazyObject<>(exceptionMessage);
-        this.exceptionNames = new UnsafeLazyObject<>(exceptionNames);
     }
 
     public GatewayClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
         this.body = null;
         this.exceptionMessage = null;
-        this.exceptionNames = null;
     }
 
     @Override
@@ -68,15 +61,5 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     @Override
     public Object getResult() {
         return body == null ? null : body.get();
-    }
-
-    @Override
-    public String getExceptionMessage() {
-        return exceptionMessage == null ? null : new String(Base64.getDecoder().decode(exceptionMessage.get()));
-    }
-
-    @Override
-    public String getExceptionNames() {
-        return exceptionNames == null ? null : exceptionNames.get();
     }
 }

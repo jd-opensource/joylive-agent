@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -54,6 +53,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
@@ -286,8 +286,8 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             Throwable throwable = error == null ? null : error.getThrowable();
 
             //Parse http exception names
-            String exceptionNames = response.getExceptionNames();
-            if (exceptionNames != null && ErrorPolicy.containsException(exceptionNames, Constants.EXCEPTION_NAMES_SEPARATOR, policy.getExceptions())) {
+            Set<String> exceptionNames = response.getExceptionNames();
+            if (exceptionNames != null && ErrorPolicy.containsException(exceptionNames, policy.getExceptions())) {
                 return true;
             }
 

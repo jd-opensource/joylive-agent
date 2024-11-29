@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.exception;
 
+import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 
 import java.util.Arrays;
@@ -100,16 +101,13 @@ public interface ErrorPolicy {
     }
 
     /**
-     * Checks if any of the exception sources are present in the set of target exceptions.
-     *
-     * @param sources   exception names of type string
+     * Resolves Exception names of string type to set type
+     * @param source Exception names of string type
      * @param separator separator
-     * @param target    the set of target exceptions to check against.
-     * @return true if any of the exception sources are found in the set of target exceptions, false otherwise.
+     * @return Exception names of set type
      */
-    static boolean containsException(String sources, String separator, Set<String> target) {
-        String[] names = sources.split(separator);
-        Set<String> sourceSet = new HashSet<>(Arrays.asList(names));
-        return containsException(sourceSet, target);
+    static Set<String> parseExceptionNames(String source, String separator) {
+        String[] split = StringUtils.split(source, separator);
+        return new HashSet<>(Arrays.asList(split));
     }
 }
