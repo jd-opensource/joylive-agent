@@ -19,6 +19,7 @@
     <property scope="context" name="logger.dir" value="${LIVE_LOG_DIR}"/>
     <property scope="context" name="logger.application" value="${LIVE_APP_NAME}"/>
     <property scope="context" name="logger.level" value="${LIVE_LOG_LEVEL:-info}"/>
+    <property scope="context" name="logger.advice.level" value="${LIVE_LOG_ADVICE_LEVEL:-${logger.level}"/>
     <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-10GB}"/>
     <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-30}"/>
     <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-1GB}"/>
@@ -41,9 +42,6 @@
             <maxFileSize>${logger.maxFileSize}</maxFileSize>
             <totalSizeCap>${logger.totalSize}</totalSizeCap>
         </rollingPolicy>
-        <filter class="com.jd.live.agent.shaded.ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
         <encoder>
             <pattern>
                 ${LIVE_LOG_FILE_PATTERN}
@@ -51,7 +49,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler" level="${logger.level}"/>
+    <logger name="com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler" level="${logger.advice.level}"/>
 
     <root level="${logger.level}">
         <appender-ref ref="${LIVE_LOG_APPENDER:-ROLLING_APPENDER}"/>
