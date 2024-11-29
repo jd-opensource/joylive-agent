@@ -22,7 +22,8 @@
     <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-10GB}"/>
     <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-30}"/>
     <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-1GB}"/>
-    <property scope="context" name="logger.fileNamePattern" value="${LIVE_FILE_NAME_PATTERN:-${logger.dir}/live-agent.log.%d{yyyyMMdd}.%i}"/>
+    <property scope="context" name="logger.fileName" value="${LIVE_LOG_FILE_NAME:-${logger.dir}/live-agent.log}"/>
+    <property scope="context" name="logger.fileNamePattern" value="${LIVE_LOG_FILE_NAME_PATTERN:-${logger.fileName}.%d{yyyyMMdd}.%i}"/>
 
     <appender name="CONSOLE_APPENDER" class="com.jd.live.agent.shaded.ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -33,6 +34,7 @@
     </appender>
 
     <appender name="ROLLING_APPENDER" class="com.jd.live.agent.shaded.ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${logger.fileName}</File>
         <rollingPolicy class="com.jd.live.agent.shaded.ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${logger.fileNamePattern}</fileNamePattern>
             <maxHistory>${logger.maxHistory}</maxHistory>
@@ -52,8 +54,7 @@
     <logger name="com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler" level="${logger.level}"/>
 
     <root level="${logger.level}">
-        <appender-ref ref="CONSOLE_APPENDER"/>
-        <appender-ref ref="ROLLING_APPENDER"/>
+        <appender-ref ref="${LIVE_LOG_APPENDER:-ROLLING_APPENDER}"/>
     </root>
 
 </configuration>
