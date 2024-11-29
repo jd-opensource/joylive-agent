@@ -19,7 +19,7 @@
     <property scope="context" name="logger.dir" value="${LIVE_LOG_DIR}"/>
     <property scope="context" name="logger.application" value="${LIVE_APP_NAME}"/>
     <property scope="context" name="logger.level" value="${LIVE_LOG_LEVEL:-info}"/>
-    <property scope="context" name="logger.advice.level" value="${LIVE_LOG_ADVICE_LEVEL:-${logger.level}"/>
+    <property scope="context" name="logger.advice.level" value="${LIVE_LOG_ADVICE_LEVEL:-${logger.level}}"/>
     <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-10GB}"/>
     <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-30}"/>
     <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-1GB}"/>
