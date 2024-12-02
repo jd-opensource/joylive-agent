@@ -15,9 +15,6 @@ import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.lane.*;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
-import com.jd.live.agent.governance.rule.tag.TagGroup;
-
-import java.util.Map;
 
 /**
  * The {@code LaneMetadataParser} class is responsible for parsing metadata related to lanes,
@@ -229,13 +226,8 @@ public class LaneMetadataParser implements LaneParser {
             if (laneSpace != null) {
                 LaneRule laneRule = getLaneRule(laneSpace);
                 if (laneRule != null) {
-                    Map<String, TagGroup> conditions = laneRule.getConditions();
-                    if (conditions != null) {
-                        for (Map.Entry<String, TagGroup> entry : conditions.entrySet()) {
-                            if (entry.getValue().match(matcher)) {
-                                return entry.getKey();
-                            }
-                        }
+                    if (laneRule.match(matcher)) {
+                        return laneRule.getLaneCode();
                     }
                 }
             }
