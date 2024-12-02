@@ -43,7 +43,7 @@ import java.util.List;
 @Injectable
 @Extension("LaneSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "file")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
 
     private static final String CONFIG_LANE_SPACE = "lanes.json";
