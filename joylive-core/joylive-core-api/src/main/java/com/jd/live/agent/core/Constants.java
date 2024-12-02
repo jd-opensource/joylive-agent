@@ -87,6 +87,11 @@ public interface Constants {
     String LABEL_INSTANCE_IP = LABEL_LIVE_PREFIX + "instance-ip";
 
     /**
+     * Constant for the framework.
+     */
+    String LABEL_FRAMEWORK = LABEL_LIVE_PREFIX + "framework";
+
+    /**
      * Constant for the live agent version.
      */
     String LABEL_AGENT_VERSION = LABEL_LIVE_PREFIX + "agent-version";
