@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayInter
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_LOAD_BALANCER_PROPERTIES)
+@ConditionalOnClass(GatewayClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class GatewayDefinition extends PluginDefinitionAdapter {
 
