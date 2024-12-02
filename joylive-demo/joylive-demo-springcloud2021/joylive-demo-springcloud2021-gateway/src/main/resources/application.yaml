@@ -65,7 +65,7 @@ spring:
                 exceptions:
                   - java.io.IOException
         - id: http
-          uri: http://demo.live.local:11813/
+          uri: http://demo.live.local:11374/
           predicates:
             - Path=/http/**
             - Method=GET

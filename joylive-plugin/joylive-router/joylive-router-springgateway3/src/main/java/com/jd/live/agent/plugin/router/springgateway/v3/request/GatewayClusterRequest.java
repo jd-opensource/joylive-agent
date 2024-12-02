@@ -23,7 +23,6 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractClusterReq
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -61,10 +60,9 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     public GatewayClusterRequest(ServerWebExchange exchange,
                                  GatewayFilterChain chain,
                                  ReactiveLoadBalancer.Factory<ServiceInstance> factory,
-                                 LoadBalancerProperties properties,
                                  RetryConfig retryConfig,
                                  GatewayConfig gatewayConfig) {
-        super(exchange.getRequest(), factory, properties);
+        super(exchange.getRequest(), factory, null);
         this.exchange = exchange;
         this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
         this.chain = chain;

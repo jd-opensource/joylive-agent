@@ -40,20 +40,22 @@ import com.jd.live.agent.plugin.router.springgateway.v2.interceptor.GatewayClust
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
+@ConditionalOnClass(GatewayClusterDefinition.TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER)
 @ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
 @ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @Injectable
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
+    // Order 10150
+    protected static final String TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";
 
     protected static final String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
 
-    private static final String METHOD_HANDLE = "handle";
+    private static final String METHOD_FILTER = "filter";
 
-    private static final String[] ARGUMENT_HANDLE = new String[]{
-            "org.springframework.web.server.ServerWebExchange"
+    private static final String[] ARGUMENT_FILTER = new String[]{
+            "org.springframework.web.server.ServerWebExchange",
+            "org.springframework.cloud.gateway.filter.GatewayFilterChain"
     };
 
     protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
@@ -65,11 +67,11 @@ public class GatewayClusterDefinition extends PluginDefinitionAdapter {
     private GatewayConfig config;
 
     public GatewayClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
+        this.matcher = () -> MatcherBuilder.named(TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_HANDLE).
-                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
+                        MatcherBuilder.named(METHOD_FILTER).
+                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
                         () -> new GatewayClusterInterceptor(context, config)
                 )
         };
