@@ -28,12 +28,12 @@ import com.jd.live.agent.implement.service.policy.microservice.config.MicroServi
  * LaneSpaceSyncer is responsible for synchronizing lane spaces from a microservice control plane.
  */
 @Injectable
-@Extension("LiveSpaceSyncer")
+@Extension("LaneSpaceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "jmsf")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 public class LaneSpaceHttpSyncer extends AbstractLaneSpaceHttpSyncer {
 
-    @Config(SyncConfig.SYNC_LIVE_SPACE)
+    @Config(SyncConfig.SYNC_LANE_SPACE)
     private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     public LaneSpaceHttpSyncer() {
