@@ -64,14 +64,35 @@ public class LaneMetadataParser implements LaneParser {
     @Override
     public LaneMetadata parse() {
         Location location = application.getLocation();
+
+        // target space
         String targetSpaceId = parseLaneSpace();
         LaneSpace targetSpace = governancePolicy == null ? null : governancePolicy.getLaneSpace(targetSpaceId);
+        targetSpaceId = targetSpace == null ? targetSpaceId : targetSpace.getId();
+
+        // target lane
         String targetLaneId = parseLane(targetSpaceId, targetSpace);
         Lane targetLane = targetSpace == null ? null : targetSpace.getLane(targetLaneId);
+        targetLaneId = targetLane == null ? targetLaneId : targetLane.getCode();
+
+        // local space
         String localSpaceId = location.getLaneSpaceId();
         LaneSpace localSpace = governancePolicy == null ? null : governancePolicy.getLaneSpace(localSpaceId);
+        localSpaceId = localSpace == null ? localSpaceId : localSpace.getId();
+
+        // local lane
         String localLaneId = location.getLane();
         Lane localLane = localSpace == null ? null : localSpace.getLane(localLaneId);
+        localLaneId = localLane == null ? localLaneId : localLane.getCode();
+
+        // default space
+        LaneSpace defaultSpace = governancePolicy == null ? null : governancePolicy.getDefaultLaneSpace();
+        String defaultSpaceId = defaultSpace == null ? null : defaultSpace.getId();
+
+        // default lane
+        Lane defaultLane = defaultSpace == null ? null : defaultSpace.getDefaultLane();
+        String defaultLaneId = defaultLane == null ? null : defaultLane.getCode();
+
         LaneMetadata metadata = LaneMetadata.builder()
                 .laneConfig(laneConfig)
                 .targetSpaceId(targetSpaceId)
@@ -82,6 +103,10 @@ public class LaneMetadataParser implements LaneParser {
                 .localSpace(localSpace)
                 .localLaneId(localLaneId)
                 .localLane(localLane)
+                .defaultSpaceId(defaultSpaceId)
+                .defaultSpace(defaultSpace)
+                .defaultLaneId(defaultLaneId)
+                .defaultLane(defaultLane)
                 .build();
         inject(metadata);
         return metadata;

@@ -58,4 +58,27 @@ public class LaneMetadata {
      */
     private Lane localLane;
 
+    /**
+     * The default lane space id for this invocation.
+     */
+    private String defaultSpaceId;
+
+    /**
+     * The default lance space for this invocation.
+     */
+    private LaneSpace defaultSpace;
+
+    /**
+     * The default lane id for this invocation.
+     */
+    private String defaultLaneId;
+
+    /**
+     * The default lane for this invocation.
+     */
+    private Lane defaultLane;
+
+    public Lane getTargetLaneOrDefault(Lane defaultLane) {
+        return targetLane == null ? defaultLane : targetLane;
+    }
 }

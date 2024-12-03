@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.lane;
 
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,14 @@ public class LaneSpace {
     @Getter
     @Setter
     private String id;
+
+    @Getter
+    @Setter
+    private String name;
+
+    @Getter
+    @Setter
+    private boolean defaultSpace;
 
     @Getter
     @Setter
@@ -56,8 +65,14 @@ public class LaneSpace {
 
     private final transient Cache<String, LaneRule> ruleCache = new MapCache<>(new ListBuilder<>(() -> rules, LaneRule::getId));
 
-    @Getter
-    private transient Lane defaultLane;
+    private final transient UnsafeLazyObject<Lane> defaultLaneCache = new UnsafeLazyObject<>(() -> {
+        for (Lane lane : lanes) {
+            if (lane.isDefaultLane()) {
+                return lane;
+            }
+        }
+        return null;
+    });
 
     @Getter
     private transient Lane currentLane;
@@ -67,11 +82,15 @@ public class LaneSpace {
     }
 
     public Lane getLane(String code) {
-        return laneCache.get(code);
+        return defaultSpace && (code == null || code.isEmpty()) ? defaultLaneCache.get() : laneCache.get(code);
     }
 
     public Lane getOrDefault(String code) {
-        return laneCache.get(code, defaultLane);
+        return defaultSpace && (code == null || code.isEmpty()) ? defaultLaneCache.get() : laneCache.get(code, defaultLaneCache::get);
+    }
+
+    public Lane getDefaultLane() {
+        return defaultLaneCache.get();
     }
 
     public LaneDomain getDomain(String host) {
@@ -95,16 +114,12 @@ public class LaneSpace {
     }
 
     public void cache() {
-        if (defaultLane == null && lanes != null) {
-            for (Lane lane : lanes) {
-                if (lane.isDefaultLane()) {
-                    defaultLane = lane;
-                }
-            }
-        }
         getLane("");
         getDomain("");
         getLaneRule("");
+        if (name == null || name.isEmpty()) {
+            name = id;
+        }
         if (domains != null) {
             domains.forEach(LaneDomain::cache);
         }

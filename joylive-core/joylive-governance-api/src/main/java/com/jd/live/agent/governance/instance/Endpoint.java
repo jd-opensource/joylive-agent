@@ -210,12 +210,31 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Gets the lane space ID associated with this endpoint.
+     *
+     * @return The lane space ID, or the default value if not specified.
+     */
+    default String getLaneSpaceId(String defaultValue) {
+        return getLabel(Constants.LABEL_LANE_SPACE_ID, defaultValue);
+    }
+
+    /**
      * Gets the lane associated with this endpoint.
      *
      * @return The lane, or the default value if not specified.
      */
     default String getLane() {
         return getLabel(Constants.LABEL_LANE, Constants.DEFAULT_VALUE);
+    }
+
+    /**
+     * Gets the lane associated with this endpoint.
+     *
+     * @param defaultValue The default value to return if the lane is not specified.
+     * @return The lane, or the default value if not specified.
+     */
+    default String getLane(String defaultValue) {
+        return getLabel(Constants.LABEL_LANE, defaultValue);
     }
 
     /**
@@ -315,34 +334,16 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
-     * Determines if the lane space ID matches the specified lane space ID.
-     *
-     * @param laneSpaceId The lane space ID to match.
-     * @return true if the lane space ID matches, false otherwise.
-     */
-    default boolean isLaneSpace(String laneSpaceId) {
-        return isEqualsOrEmpty(getLaneSpaceId(), laneSpaceId);
-    }
-
-    /**
-     * Determines if the lane matches the specified lane.
-     *
-     * @param lane The lane to match.
-     * @return true if the lane matches, false otherwise.
-     */
-    default boolean isLane(String lane) {
-        return isEqualsOrEmpty(getLane(), lane);
-    }
-
-    /**
      * Determines if the lane space and lane match the specified lane space ID and lane.
      *
-     * @param laneSpaceId The lane space ID to match.
-     * @param lane        The lane to match.
+     * @param laneSpaceId    The lane space ID to match.
+     * @param lane           The lane to match.
+     * @param defaultSpaceId The default lane space ID.
+     * @param defaultLane    The default lane.
      * @return true if both the lane space ID and lane match, false otherwise.
      */
-    default boolean isLane(String laneSpaceId, String lane) {
-        return isLaneSpace(laneSpaceId) && isLane(lane);
+    default boolean isLane(String laneSpaceId, String lane, String defaultSpaceId, String defaultLane) {
+        return isEqualsOrEmpty(getLaneSpaceId(defaultSpaceId), laneSpaceId) && isEqualsOrEmpty(getLane(defaultLane), lane);
     }
 
     /**
@@ -409,7 +410,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      */
     default String getLabel(String key, String defaultValue) {
         String result = getLabel(key);
-        return result == null ? defaultValue : result;
+        return result == null || result.isEmpty() ? defaultValue : result;
     }
 
     /**

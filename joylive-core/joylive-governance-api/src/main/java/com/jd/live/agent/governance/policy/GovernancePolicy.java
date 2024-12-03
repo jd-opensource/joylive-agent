@@ -19,6 +19,7 @@ import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.db.DatabaseCluster;
 import com.jd.live.agent.governance.policy.domain.Domain;
@@ -61,10 +62,21 @@ public class GovernancePolicy {
     private List<DatabaseCluster> dbClusters;
 
     @Getter
-    private LiveSpace localLiveSpace;
+    private transient LiveSpace localLiveSpace;
 
     @Getter
-    private LaneSpace localLaneSpace;
+    private transient LaneSpace localLaneSpace;
+
+    private final transient UnsafeLazyObject<LaneSpace> defaultLaneSpaceCache = new UnsafeLazyObject<>(() -> {
+        if (laneSpaces != null) {
+            for (LaneSpace laneSpace : laneSpaces) {
+                if (laneSpace.isDefaultSpace()) {
+                    return laneSpace;
+                }
+            }
+        }
+        return null;
+    });
 
     private final transient Cache<String, DatabaseCluster> dbAddressCache = new MapCache<>(new ListBuilder<>(() -> dbClusters, DatabaseCluster::getAddress));
 
@@ -154,7 +166,11 @@ public class GovernancePolicy {
      * @return The lane space with the specified ID, or {@code null} if not found.
      */
     public LaneSpace getLaneSpace(String id) {
-        return id == null ? null : laneSpaceCache.get(id);
+        return id == null || id.isEmpty() ? defaultLaneSpaceCache.get() : laneSpaceCache.get(id);
+    }
+
+    public LaneSpace getDefaultLaneSpace() {
+        return defaultLaneSpaceCache.get();
     }
 
     /**
@@ -256,6 +272,7 @@ public class GovernancePolicy {
         getService("");
         getDbCluster("");
         getDbCluster("", 0);
+        getDefaultLaneSpace();
 
         if (liveSpaces != null) {
             liveSpaces.forEach(LiveSpace::cache);
