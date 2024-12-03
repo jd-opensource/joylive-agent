@@ -1,5 +1,13 @@
 # Release History
 
+## 1.5.2
+
+1. Hot fix for policy timed update
+
+## 1.5.1
+
+1. Hot fix for swimlane policy
+
 ## 1.5.0
 
 1. Added support for routing governance of outbound traffic from Spring Cloud gRPC

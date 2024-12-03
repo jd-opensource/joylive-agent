@@ -72,6 +72,7 @@ public class HttpWatcher implements AutoCloseable {
                 .condition(this::isStarted)
                 .runnable(this::run)
                 .build();
+        this.daemon.start();
     }
 
     @Override

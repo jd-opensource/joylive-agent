@@ -83,6 +83,7 @@ public class FileWatcher implements AutoCloseable {
                 .condition(this::isStarted)
                 .runnable(this::run)
                 .build();
+        this.daemon.start();
         if (publisher != null) {
             publisher.addHandler(handler);
         }
