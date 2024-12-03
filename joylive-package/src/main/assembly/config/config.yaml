@@ -85,7 +85,10 @@ agent:
         liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
     laneSpace:
       type: ${CONFIG_LANE_SPACE_API_TYPE:file} # [file,jmsf,nacos]
-      url: ${CONFIG_LANE_SPACE_API_URL:http:http://api.jmsf.local:8080/v1}
+      url: ${CONFIG_LANE_SPACE_API_URL:http://api.jmsf.local:8080/v1}
+      interval: 5000
+      timeout: 3000
+      initialTimeout: 20000
       # for jmsf
       jmsf:
         spacesUrl: /laneSpaces

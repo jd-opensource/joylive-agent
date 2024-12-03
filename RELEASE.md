@@ -1,5 +1,9 @@
 # Release History
 
+## 1.5.2
+
+1. Hot fix for policy timed update
+
 ## 1.5.1
 
 1. Hot fix for swimlane policy
