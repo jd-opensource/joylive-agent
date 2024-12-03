@@ -154,5 +154,25 @@ public interface Constants {
      */
     String DEFAULT_VALUE = "";
 
+    /**
+     * Constant for the http exception names header.
+     */
+    String EXCEPTION_NAMES_LABEL = "x-exception-names";
+
+    /**
+     * exception names separator
+     */
+    String EXCEPTION_NAMES_SEPARATOR = ",";
+
+    /**
+     * Constant for the http exception message header.
+     */
+    String EXCEPTION_MESSAGE_LABEL = "x-exception-message";
+
+    /**
+     * Constant for the http exception message codec charset.
+     */
+    String EXCEPTION_NAMES_CODEC_CHARSET_NAME = "UTF-8";
+
 }
 

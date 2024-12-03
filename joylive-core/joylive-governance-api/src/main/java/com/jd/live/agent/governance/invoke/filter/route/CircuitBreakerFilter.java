@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
@@ -222,6 +223,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
         private final int index;
 
+
         CircuitBreakerListener(CircuitBreakerFactory factory,
                                Map<String, CodeParser> errorParsers,
                                List<CircuitBreaker> circuitBreakers,
@@ -282,6 +284,13 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             }
             ServiceError error = response.getError();
             Throwable throwable = error == null ? null : error.getThrowable();
+
+            //Parse http exception names
+            Set<String> exceptionNames = response.getExceptionNames();
+            if (exceptionNames != null && ErrorPolicy.containsException(exceptionNames, policy.getExceptions())) {
+                return true;
+            }
+
             if (throwable != null) {
                 ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 return cause.match(policy);
