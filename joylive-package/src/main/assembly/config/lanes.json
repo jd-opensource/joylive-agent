@@ -1,6 +1,8 @@
 [
   {
     "id": "1",
+    "name": "默认空间",
+    "defaultSpace": true,
     "lanes": [
       {
         "code": "production",

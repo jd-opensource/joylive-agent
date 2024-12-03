@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.util.cache;
 
+import java.util.function.Supplier;
+
 /**
  * Represents a generic cache system interface, providing essential operations such as retrieving, checking size,
  * and clearing the cache. The cache is designed to store key-value pairs, where keys and values can be of any type
@@ -44,6 +46,22 @@ public interface Cache<K, T> {
     default T get(K key, T defaultValue) {
         T result = get(key);
         return result == null ? defaultValue : result;
+    }
+
+    /**
+     * Retrieves the value associated with the specified key, or returns a default value if the key is not present in the cache.
+     * This is a convenience method that provides a simple way to retrieve a value, supplying a default if the key is not found.
+     *
+     * @param key             the key whose associated value is to be returned
+     * @param defaultSupplier the default value supplier
+     * @return the value associated with the specified key or {@code defaultValue} if the key is not found
+     */
+    default T get(K key, Supplier<T> defaultSupplier) {
+        T result = get(key);
+        if (result == null) {
+            result = defaultSupplier == null ? null : defaultSupplier.get();
+        }
+        return result;
     }
 
     /**

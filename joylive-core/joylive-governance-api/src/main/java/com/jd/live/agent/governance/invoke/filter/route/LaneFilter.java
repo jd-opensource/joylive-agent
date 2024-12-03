@@ -47,34 +47,39 @@ public class LaneFilter implements RouteFilter {
         // Retrieve the current route target
         RouteTarget target = invocation.getRouteTarget();
         LaneMetadata metadata = invocation.getLaneMetadata();
-        LaneSpace laneSpace = metadata.getTargetSpace();
+        String targetSpaceId = metadata.getTargetSpaceId();
+        String targetLaneId = metadata.getTargetLaneId();
+        LaneSpace targetSpace = metadata.getTargetSpace();
+        String defaultSpaceId = metadata.getDefaultSpaceId();
+        String defaultLaneId = metadata.getDefaultLaneId();
 
         // Check if a target lane is specified
-        if (laneSpace != null) {
-            // Retrieve the service policy from the service metadata
+        if (targetSpace != null) {
+            // redirect according to the service policy
             ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-            LanePolicy lanePolicy = servicePolicy == null ? null : servicePolicy.getLanePolicy(laneSpace.getId());
-            String redirect = lanePolicy == null ? null : lanePolicy.getTarget(metadata.getTargetLaneId());
-            Lane lane = redirect == null || redirect.isEmpty() ? metadata.getTargetLane() : laneSpace.getOrDefault(redirect);
-            lane = lane == null ? laneSpace.getDefaultLane() : lane;
+            LanePolicy lanePolicy = servicePolicy == null ? null : servicePolicy.getLanePolicy(targetSpaceId);
+            String redirect = lanePolicy == null ? null : lanePolicy.getTarget(targetLaneId);
+            Lane targetLane = redirect == null || redirect.isEmpty()
+                    ? metadata.getTargetLaneOrDefault(targetSpace.getDefaultLane())
+                    : targetSpace.getOrDefault(redirect);
 
-            if (lane != null) {
-                Lane defaultLane = laneSpace.getDefaultLane();
-                boolean withDefaultLane = defaultLane != null && lane != defaultLane;
+            if (targetLane != null) {
+                Lane defaultLane = targetSpace.getDefaultLane();
+                boolean redirectDefaultLane = defaultLane != null && targetLane != defaultLane;
 
-                String code = lane.getCode();
                 // Filter the route target based on the lane space ID and route lane code
-                int count = target.filter(e -> e.isLane(laneSpace.getId(), code), -1, !withDefaultLane);
+                int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, !redirectDefaultLane);
                 // If no matches and a default lane exists, use the default lane
-                if (count <= 0 && withDefaultLane) {
-                    target.filter(e -> e.isLane(laneSpace.getId(), defaultLane.getCode()), -1, true);
+                if (count <= 0 && redirectDefaultLane) {
+                    target.filter(e -> e.isLane(targetSpaceId, defaultLane.getCode(), defaultSpaceId, defaultLaneId), -1, true);
                 }
             } else {
-                String code = redirect == null || redirect.isEmpty() ? metadata.getTargetLaneId() : redirect;
-                target.filter(e -> e.isLane(laneSpace.getId(), code), -1, true);
+                String code = redirect == null || redirect.isEmpty() ? targetLaneId : redirect;
+                target.filter(e -> e.isLane(targetSpaceId, code, defaultSpaceId, defaultLaneId), -1, true);
             }
         } else {
-            target.filter(e -> e.isLaneSpace(null), -1, true);
+            // target space is not exists. or empty target space id and without default lane space.
+            target.filter(e -> e.isLane(targetSpaceId, targetLaneId, defaultSpaceId, defaultLaneId), -1, true);
         }
         // Proceed with the next filter in the chain
         chain.filter(invocation);
