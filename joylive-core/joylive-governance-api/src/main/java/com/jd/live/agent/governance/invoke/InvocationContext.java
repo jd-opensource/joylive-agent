@@ -710,6 +710,12 @@ public interface InvocationContext {
      */
     class HttpForwardContext extends DelegateContext {
 
+        private static final String KEY_UNIT = "unit";
+
+        private static final String KEY_CELL = "cell";
+
+        private static final String KEY_HOST = "host";
+
         private static final Map<String, Template> TEMPLATES = new ConcurrentHashMap<>();
 
         /**
@@ -742,9 +748,9 @@ public interface InvocationContext {
                         Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
                         if (template.getVariables() > 0) {
                             Map<String, Object> context = new HashMap<>();
-                            context.put("unit", unit.getHostPrefix());
-                            context.put("cell", cell.getHostPrefix());
-                            context.put("host", host);
+                            context.put(KEY_UNIT, unit.getHostPrefix());
+                            context.put(KEY_CELL, cell.getHostPrefix());
+                            context.put(KEY_HOST, host);
                             unitHost = template.evaluate(context);
                         }
                         request.forward(unitHost);

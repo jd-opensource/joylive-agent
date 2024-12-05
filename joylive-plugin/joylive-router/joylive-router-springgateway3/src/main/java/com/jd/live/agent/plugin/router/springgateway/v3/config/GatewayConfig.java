@@ -18,21 +18,19 @@ package com.jd.live.agent.plugin.router.springgateway.v3.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
 @Setter
 public class GatewayConfig {
 
-    public static final String ATTRIBUTE_RETRY_CONFIG = "retryConfig";
-
     public static final String CONFIG_SPRING_GATEWAY_PREFIX = "agent.governance.router.springgateway";
 
-    public static final String KEY_UNIT = "unit";
+    public static final String TYPE_REWRITE_PATH_FILTER = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$1";
 
-    public static final String KEY_CELL = "cell";
-
-    public static final String KEY_HOST = "host";
+    public static final String TYPE_STRIP_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$1";
 
     public static final String KEY_HOST_EXPRESSION = "hostExpression";
 
@@ -40,6 +38,16 @@ public class GatewayConfig {
 
     private String hostExpression;
 
-    private Set<String> pathFilters;
+    private Set<String> pathFilters = new HashSet<>(Arrays.asList(TYPE_REWRITE_PATH_FILTER, TYPE_STRIP_PREFIX));
+
+    /**
+     * Checks if the given name is a path filter.
+     *
+     * @param filter The filter class name.
+     * @return true if the filter is a path filter, false otherwise.
+     */
+    public boolean isPathFilter(String filter) {
+        return pathFilters != null && filter != null && pathFilters.contains(filter);
+    }
 
 }

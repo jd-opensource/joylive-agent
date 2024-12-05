@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.governance.exception.ErrorPolicy.containsException;
+
 @AllArgsConstructor
 public class ErrorCause {
 
@@ -30,6 +32,8 @@ public class ErrorCause {
     private Throwable cause;
 
     private String errorCode;
+
+    private String errorMessage;
 
     private Set<String> exceptions;
 
@@ -44,9 +48,45 @@ public class ErrorCause {
      * @return true if the policy matches the error code or exceptions, false otherwise
      */
     public boolean match(ErrorPolicy policy) {
-        return matched
-                || policy != null && (policy.containsError(errorCode) || policy.containsException(exceptions))
-                || ErrorPolicy.containsException(exceptions, targets);
+        if (matched) {
+            return true;
+        }
+        if (policy != null && (policy.containsErrorCode(errorCode)
+                || policy.containsException(exceptions)
+                || policy.containsErrorMessage(errorMessage))) {
+            return true;
+        }
+        return containsException(exceptions, targets);
+    }
+
+    /**
+     * Creates an ErrorCause instance based on the provided ServiceError, name function, and error predicate.
+     *
+     * @param error     the ServiceError instance containing the error information
+     * @param nameFunc  a function that maps a Throwable to an ErrorName
+     * @param predicate an optional ErrorPredicate used to filter the error cause
+     * @return an ErrorCause instance, or null if no error cause can be determined
+     */
+    public static ErrorCause cause(ServiceError error,
+                                   Function<Throwable, ErrorName> nameFunc,
+                                   ErrorPredicate predicate) {
+        if (error == null) {
+            return null;
+        }
+        Throwable throwable = error.getThrowable();
+        if (throwable != null) {
+            return cause(throwable, nameFunc, predicate);
+        } else {
+            Set<String> exceptions = error.getExceptions();
+            Set<String> targets = predicate == null ? null : predicate.getExceptions();
+            String errorMessage = error.getError();
+            if (exceptions != null && !exceptions.isEmpty()) {
+                return new ErrorCause(null, null, errorMessage, exceptions, targets, false);
+            } else if (errorMessage != null && !errorMessage.isEmpty()) {
+                return new ErrorCause(null, null, errorMessage, null, null, false);
+            }
+        }
+        return null;
     }
 
     /**
@@ -54,22 +94,26 @@ public class ErrorCause {
      *
      * @param throwable The throwable object to build the ErrorCause from.
      * @param nameFunc  The function to extract the error name and code from each cause of the throwable.
+     * @param predicate The error predicate.
      * @return An ErrorCause object containing the root cause, error code, and set of exception names.
      */
     public static ErrorCause cause(Throwable throwable,
                                    Function<Throwable, ErrorName> nameFunc,
-                                   ErrorPredicate retryPredicate) {
+                                   ErrorPredicate predicate) {
+        if (throwable == null) {
+            return null;
+        }
         boolean matched = false;
         String errorCode = null;
-        Set<String> targets = retryPredicate == null ? null : retryPredicate.getExceptions();
+        Set<String> targets = predicate == null ? null : predicate.getExceptions();
         Set<String> exceptions = new HashSet<>(8);
         Throwable cause = null;
         Throwable candiate = null;
         Throwable t = throwable;
         ErrorName errorName;
-        Predicate<Throwable> predicate = retryPredicate == null ? null : retryPredicate.getPredicate();
+        Predicate<Throwable> test = predicate == null ? null : predicate.getPredicate();
         while (t != null) {
-            if (predicate != null && predicate.test(t)) {
+            if (test != null && test.test(t)) {
                 matched = true;
                 break;
             }
@@ -103,6 +147,6 @@ public class ErrorCause {
             t = t.getCause() != t ? t.getCause() : null;
         }
         cause = cause == null ? (candiate == null ? throwable : candiate) : cause;
-        return new ErrorCause(cause, errorCode, exceptions, targets, matched);
+        return new ErrorCause(cause, errorCode, throwable.getMessage(), exceptions, targets, matched);
     }
 }

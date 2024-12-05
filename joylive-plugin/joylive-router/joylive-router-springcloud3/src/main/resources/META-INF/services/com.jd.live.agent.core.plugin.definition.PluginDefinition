@@ -5,4 +5,3 @@ com.jd.live.agent.plugin.router.springcloud.v3.definition.FeignClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.RetryableFeignClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.BlockingClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.RetryableBlockingClusterDefinition
-com.jd.live.agent.plugin.router.springcloud.v3.definition.ExceptionCarryingDefinition

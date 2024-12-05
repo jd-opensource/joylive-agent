@@ -126,7 +126,7 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     }
 
     @Override
-    public boolean containsError(String errorCode) {
+    public boolean containsErrorCode(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
     }
 

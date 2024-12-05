@@ -36,20 +36,19 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
 
     public GatewayClusterResponse(ServerHttpResponse response) {
-        this(response, null, null, null);
+        this(response, () -> null, null);
     }
 
-    public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> bodySupplier, Supplier<String> exceptionMessage, Supplier<String> exceptionNames) {
-        super(response, exceptionNames, exceptionMessage);
+    public GatewayClusterResponse(ServerHttpResponse response, Supplier<ServiceError> errorSupplier, Supplier<String> bodySupplier) {
+        super(response, errorSupplier, null);
         this.headers = new UnsafeLazyObject<>(response::getHeaders);
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.getCookies(), ResponseCookie::getValue));
         this.body = new UnsafeLazyObject<>(bodySupplier);
     }
 
-    public GatewayClusterResponse(ServiceError error, ErrorPredicate predicate) {
-        super(error, predicate);
+    public GatewayClusterResponse(ServiceError error, ErrorPredicate retryPredicate) {
+        super(error, retryPredicate);
         this.body = null;
-        this.exceptionMessage = null;
     }
 
     @Override

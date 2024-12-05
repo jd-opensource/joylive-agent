@@ -28,7 +28,6 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundListener;
@@ -44,7 +43,6 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.exception.CodeParser;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
@@ -53,10 +51,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
+import static com.jd.live.agent.governance.util.Predicates.isError;
 
 /**
  * CircuitBreakerFilter
@@ -261,70 +259,12 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             OutboundRequest request = invocation.getRequest();
             long duration = request.getDuration();
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                if (response != null && isBreakError(circuitBreaker, request, response)) {
+                if (response != null && isError(circuitBreaker.getPolicy(), request, response, null, errorParsers::get)) {
                     circuitBreaker.onError(duration, new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(duration);
                 }
             }
-        }
-
-        /**
-         * Checks if the given service response indicates a break error according to the circuit breaker's policy.
-         *
-         * @param circuitBreaker the circuit breaker instance
-         * @param request        the outbound request
-         * @param response       the service response
-         * @return true if the response indicates a break error, false otherwise
-         */
-        private boolean isBreakError(CircuitBreaker circuitBreaker, OutboundRequest request, ServiceResponse response) {
-            CircuitBreakPolicy policy = circuitBreaker.getPolicy();
-            if (policy.containsError(response.getCode())) {
-                return true;
-            }
-            ServiceError error = response.getError();
-            Throwable throwable = error == null ? null : error.getThrowable();
-
-            //Parse http exception names
-            Set<String> exceptionNames = response.getExceptionNames();
-            if (exceptionNames != null && ErrorPolicy.containsException(exceptionNames, policy.getExceptions())) {
-                return true;
-            }
-
-            if (throwable != null) {
-                ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
-                return cause.match(policy);
-            } else if (response.match(policy)) {
-                String code = parseCode(policy.getCodePolicy(), response.getResult());
-                return policy.containsError(code);
-            }
-            return false;
-        }
-
-        /**
-         * Parses the error code from the given result object using the specified code policy.
-         *
-         * @param policy the code policy to use for parsing
-         * @param result the result object to parse
-         * @return the parsed error code, or null if no code could be parsed
-         */
-        private String parseCode(CodePolicy policy, Object result) {
-            String code = null;
-            if (policy != null && result != null) {
-                String errorParser = policy.getParser();
-                String errorExpression = policy.getExpression();
-                if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
-                    CodeParser parser = errorParsers.get(errorParser);
-                    if (parser != null) {
-                        try {
-                            code = parser.getCode(errorExpression, result);
-                        } catch (Throwable e) {
-                            logger.error(e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-            return code;
         }
 
         @Override
@@ -334,7 +274,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 long duration = request.getDuration();
                 ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
-                    if (cause.match(circuitBreaker.getPolicy())) {
+                    if (cause != null && cause.match(circuitBreaker.getPolicy())) {
                         circuitBreaker.onError(duration, cause.getCause());
                     } else {
                         circuitBreaker.onSuccess(duration);

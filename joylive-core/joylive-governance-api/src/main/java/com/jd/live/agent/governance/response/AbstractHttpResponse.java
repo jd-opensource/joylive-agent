@@ -15,18 +15,13 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
-import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -77,48 +72,47 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     protected UnsafeLazyObject<String> schema;
 
     /**
-     * Lazily evaluated exception names of the request.
-     */
-    protected UnsafeLazyObject<Set<String>> exceptionNames;
-
-    /**
-     * Lazily evaluated exception message of the request.
-     */
-    protected UnsafeLazyObject<String> exceptionMessage;
-
-    /**
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
      *
      * @param response The original response object.
      */
     public AbstractHttpResponse(T response) {
-        this(response, null, null, null, null);
+        this(response, () -> null, null);
     }
 
     /**
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
      *
      * @param error     The original exception.
-     * @param predicate A predicate used to determine if the response should be considered an error.
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractHttpResponse(ServiceError error, ErrorPredicate predicate) {
-        this(null, error, predicate, null, null);
+    public AbstractHttpResponse(ServiceError error, ErrorPredicate retryPredicate) {
+        this(null, error, retryPredicate);
     }
 
     /**
      * Creates a new instance of AbstractHttpResponse with the original response object.
      *
-     * @param response  The original response object.
-     * @param error     The original exception.
-     * @param predicate A predicate used to determine if the response should be considered an error.
+     * @param response       The original response object.
+     * @param error          The original exception.
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate predicate, Supplier<String> namesSupplier, Supplier<String> messageSupplier) {
-        super(response, error, predicate);
+    public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+        this(response, () -> error, retryPredicate);
+    }
+
+    /**
+     * Creates a new instance of AbstractHttpResponse with the original response object.
+     *
+     * @param response       The original response object.
+     * @param errorSupplier  The error supplier.
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
+     */
+    public AbstractHttpResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
+        super(response, errorSupplier, retryPredicate);
         port = new UnsafeLazyObject<>(this::parsePort);
         host = new UnsafeLazyObject<>(this::parseHost);
         schema = new UnsafeLazyObject<>(this::parseScheme);
-        exceptionNames = new UnsafeLazyObject<>(() -> this.parseExceptionNames(namesSupplier));
-        exceptionMessage = new UnsafeLazyObject<>(() -> this.decodeExceptionMessage(messageSupplier));
     }
 
     @Override
@@ -258,53 +252,6 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
         return uri.getScheme();
     }
 
-    @Override
-    public String getExceptionMessage() {
-        return exceptionMessage == null ? null : exceptionMessage.get();
-    }
-
-    @Override
-    public Set<String> getExceptionNames() {
-        return exceptionNames == null ? null : exceptionNames.get();
-    }
-
-    /**
-     *  parse exception names by namesSupplier or header
-     * @param namesSupplier exception names supplier
-     * @return exception names set
-     */
-    protected Set<String> parseExceptionNames(Supplier<String> namesSupplier) {
-        String exceptionNames = getHeader(Constants.EXCEPTION_NAMES_LABEL);
-        if (exceptionNames == null && namesSupplier != null) {
-            exceptionNames = namesSupplier.get();
-        }
-
-        return ErrorPolicy.parseExceptionNames(exceptionNames, Constants.EXCEPTION_NAMES_SEPARATOR);
-    }
-
-    /**
-     * decode exception message by messageSupplier or header
-     * @param messageSupplier exception message supplier
-     * @return decoded message
-     */
-    protected String decodeExceptionMessage(Supplier<String> messageSupplier) {
-        String exceptionMessage = getHeader(Constants.EXCEPTION_MESSAGE_LABEL);
-        if (exceptionMessage == null && messageSupplier != null) {
-            exceptionMessage = messageSupplier.get();
-        }
-
-        if (exceptionMessage == null) {
-            return null;
-        }
-
-        String decode = null;
-        try {
-            decode = URLDecoder.decode(exceptionMessage, Constants.EXCEPTION_NAMES_CODEC_CHARSET_NAME);
-        } catch (UnsupportedEncodingException e) {
-            return null;
-        }
-        return decode;
-    }
 
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>
             implements HttpResponse.HttpOutboundResponse {
@@ -313,16 +260,16 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
             super(response);
         }
 
-        public AbstractHttpOutboundResponse(T response, Supplier<String> exceptionNames, Supplier<String> exceptionMessage) {
-            super(response, null, null, exceptionNames, exceptionMessage);
+        public AbstractHttpOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
+            super(error, retryPredicate);
         }
 
-        public AbstractHttpOutboundResponse(ServiceError error, ErrorPredicate predicate) {
-            super(error, predicate);
+        public AbstractHttpOutboundResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+            super(response, error, retryPredicate);
         }
 
-        public AbstractHttpOutboundResponse(T response, ServiceError error, ErrorPredicate predicate) {
-            super(response, error, predicate, null, null);
+        public AbstractHttpOutboundResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
+            super(response, errorSupplier, retryPredicate);
         }
     }
 }

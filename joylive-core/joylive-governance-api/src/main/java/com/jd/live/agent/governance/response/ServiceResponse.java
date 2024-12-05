@@ -19,8 +19,6 @@ import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 
-import java.util.Set;
-
 /**
  * ServiceResponse
  *
@@ -85,23 +83,6 @@ public interface ServiceResponse extends Response {
      */
     default boolean match(ErrorPolicy errorPolicy) {
         return false;
-    }
-
-    /**
-     * Returns the exception message of the service call.
-     *
-     * @return exception message or null
-     */
-    default String getExceptionMessage() {
-        return null;
-    }
-
-    /**
-     * Returns the exception names of the service call.
-     * @return exception names or null
-     */
-    default Set<String> getExceptionNames() {
-        return null;
     }
 
     /**

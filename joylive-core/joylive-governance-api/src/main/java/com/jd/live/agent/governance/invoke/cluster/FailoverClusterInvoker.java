@@ -34,7 +34,6 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.exception.CodeParser;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -45,6 +44,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.governance.exception.ErrorCause.cause;
+import static com.jd.live.agent.governance.util.Predicates.isError;
 
 /**
  * An implementation of {@link ClusterInvoker} that provides failover support for service requests.
@@ -230,65 +232,17 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             } else if (!retryPolicy.containsMethod(request.getMethod())) {
                 return RetryType.NONE;
             } else {
-                ErrorCause cause = ErrorCause.cause(e, request.getErrorFunction(), response == null ? null : response.getRetryPredicate());
-                if (cause.match(retryPolicy)) {
+                ErrorCause cause = cause(e, request.getErrorFunction(), response == null ? null : response.getRetryPredicate());
+                if (cause != null && cause.match(retryPolicy)) {
                     return RetryType.RETRY;
                 } else if (response == null) {
                     return RetryType.NONE;
-                } else if (isRetryError(request, response)) {
+                } else if (isError(retryPolicy, request, response, response.getRetryPredicate(), errorParsers::get)) {
                     return RetryType.RETRY;
                 } else {
                     return RetryType.NONE;
                 }
             }
-        }
-
-        /**
-         * Checks if a service response represents an error, according to the circuit breaker policy.
-         *
-         * @param request  The request that was being processed.
-         * @param response The service response to check.
-         * @return true if the response represents an error, false otherwise.
-         */
-        private boolean isRetryError(R request, O response) {
-            if (retryPolicy.containsError(response.getCode())) {
-                return true;
-            }
-            ServiceError error = response.getError();
-            Throwable throwable = error == null ? null : error.getThrowable();
-            if (throwable != null) {
-                return ErrorCause.cause(throwable, request.getErrorFunction(), response.getRetryPredicate()).match(retryPolicy);
-            } else if (response.match(retryPolicy)) {
-                String code = parseCode(retryPolicy.getCodePolicy(), response.getResult());
-                return retryPolicy.containsError(code);
-            }
-
-            return false;
-        }
-
-        /**
-         * Parses the error code from the given result object using the specified code policy.
-         *
-         * @param policy the code policy to use for parsing
-         * @param result the result object to parse
-         * @return the parsed error code, or null if no code could be parsed
-         */
-        private String parseCode(CodePolicy policy, Object result) {
-            if (policy != null && result != null) {
-                String codeParser = policy.getParser();
-                String codeExpression = policy.getExpression();
-                if (codeParser != null && !codeParser.isEmpty() && codeExpression != null && !codeExpression.isEmpty()) {
-                    CodeParser parser = errorParsers.get(codeParser);
-                    if (parser != null) {
-                        try {
-                            return parser.getCode(codeExpression, result);
-                        } catch (Throwable e) {
-                            logger.error("Failed to extract error code from body, caused by " + e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-            return null;
         }
     }
 

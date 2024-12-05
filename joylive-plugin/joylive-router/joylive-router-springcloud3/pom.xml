@@ -16,7 +16,6 @@
         <spring.cloud.version>3.1.8</spring.cloud.version>
         <spring-web.version>5.3.31</spring-web.version>
         <openfeign.version>11.10</openfeign.version>
-        <tomcat-embed.version>10.1.26</tomcat-embed.version>
     </properties>
 
     <dependencies>
@@ -54,12 +53,6 @@
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-core</artifactId>
             <version>${openfeign.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
-            <version>${tomcat-embed.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

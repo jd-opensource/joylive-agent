@@ -61,7 +61,17 @@ public interface ErrorPolicy {
      * @param errorCode the error code to check.
      * @return {@code true} if the error code is present, {@code false} otherwise.
      */
-    boolean containsError(String errorCode);
+    boolean containsErrorCode(String errorCode);
+
+    /**
+     * Checks if the error message is present in this instance.
+     *
+     * @param errorMessage the error message to search for
+     * @return true if the error message is found, false otherwise
+     */
+    default boolean containsErrorMessage(String errorMessage) {
+        return false;
+    }
 
     /**
      * Checks if the given class name is present in the list of exceptions.
