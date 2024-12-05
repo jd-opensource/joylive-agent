@@ -18,7 +18,7 @@ package com.jd.live.agent.governance.exception;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -106,7 +106,7 @@ public class ErrorCause {
         boolean matched = false;
         String errorCode = null;
         Set<String> targets = predicate == null ? null : predicate.getExceptions();
-        Set<String> exceptions = new HashSet<>(8);
+        Set<String> exceptions = new LinkedHashSet<>(8);
         Throwable cause = null;
         Throwable candiate = null;
         Throwable t = throwable;

@@ -25,6 +25,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -63,7 +64,7 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
         if (t == null) {
             return null;
         }
-        Set<String> exceptionNames = new HashSet<>(8);
+        Set<String> exceptionNames = new LinkedHashSet<>(8);
         int size = 0;
         boolean isBreak = false;
         while (t != null) {

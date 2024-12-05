@@ -240,7 +240,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
             }
             List<String> exceptionNames = headers.remove(Constants.EXCEPTION_NAMES_LABEL);
             String exceptionName = exceptionNames != null && !exceptionNames.isEmpty() ? exceptionNames.get(0) : null;
-            Set<String> exceptionNamesSet = exceptionName == null || exceptionName.isEmpty() ? null : new HashSet<>(asList(split(exceptionName)));
+            Set<String> exceptionNamesSet = exceptionName == null || exceptionName.isEmpty() ? null : new LinkedHashSet<>(asList(split(exceptionName)));
             if (exceptionMessage != null && !exceptionMessage.isEmpty() || exceptionNamesSet != null && !exceptionNamesSet.isEmpty()) {
                 ServiceError error = new ServiceError(exceptionMessage, exceptionNamesSet, true);
                 exchange.getAttributes().put(Request.KEY_SERVER_ERROR, error);
