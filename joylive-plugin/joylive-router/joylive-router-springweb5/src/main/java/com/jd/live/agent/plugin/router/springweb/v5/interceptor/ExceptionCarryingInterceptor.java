@@ -63,7 +63,7 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
         if (t == null) {
             return null;
         }
-        Set<String> exceptionNames = new HashSet<>();
+        Set<String> exceptionNames = new HashSet<>(8);
         int size = 0;
         boolean isBreak = false;
         while (t != null) {
