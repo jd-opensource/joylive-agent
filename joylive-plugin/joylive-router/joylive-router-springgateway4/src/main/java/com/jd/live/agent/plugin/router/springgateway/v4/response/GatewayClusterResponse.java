@@ -20,7 +20,6 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 
@@ -35,31 +34,31 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     private final UnsafeLazyObject<String> body;
 
+
     public GatewayClusterResponse(ServerHttpResponse response) {
-        this(response, null);
+        this(response, () -> null, null);
     }
 
-    public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> supplier) {
-        super(response);
+    public GatewayClusterResponse(ServerHttpResponse response, Supplier<ServiceError> errorSupplier, Supplier<String> bodySupplier) {
+        super(response, errorSupplier, null);
         this.headers = new UnsafeLazyObject<>(response::getHeaders);
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.getCookies(), ResponseCookie::getValue));
-        this.body = new UnsafeLazyObject<>(supplier);
+        this.body = new UnsafeLazyObject<>(bodySupplier);
     }
 
-    public GatewayClusterResponse(ServiceError error, ErrorPredicate predicate) {
-        super(error, predicate);
+    public GatewayClusterResponse(ServiceError error, ErrorPredicate retryPredicate) {
+        super(error, retryPredicate);
         this.body = null;
     }
 
     @Override
     public String getCode() {
-        HttpStatusCode status = response == null ? null : response.getStatusCode();
-        return status == null ? null : String.valueOf(status.value());
+        Integer code = response == null ? null : response.getRawStatusCode();
+        return code == null ? null : code.toString();
     }
 
     @Override
     public Object getResult() {
         return body == null ? null : body.get();
     }
-
 }

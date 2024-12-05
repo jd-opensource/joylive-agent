@@ -17,6 +17,8 @@ package com.jd.live.agent.governance.exception;
 
 import lombok.Getter;
 
+import java.util.Set;
+
 @Getter
 public class ServiceError {
 
@@ -24,19 +26,31 @@ public class ServiceError {
 
     private final Throwable throwable;
 
+    private final Set<String> exceptions;
+
     private final boolean serverError;
 
     public ServiceError(String error, boolean serverError) {
-        this(error, null, serverError);
+        this(error, null, null, serverError);
     }
 
     public ServiceError(Throwable throwable, boolean serverError) {
-        this(null, throwable, serverError);
+        this(null, throwable, null, serverError);
     }
 
-    public ServiceError(String error, Throwable throwable, boolean serverError) {
-        this.error = error == null && throwable != null ? throwable.getMessage() : error;
+    public ServiceError(String error, Set<String> exceptions, boolean serverError) {
+        this(error, null, exceptions, serverError);
+    }
+
+    public ServiceError(String error, Throwable throwable, Set<String> exceptions, boolean serverError) {
+        this.error = error;
         this.throwable = throwable;
+        this.exceptions = exceptions;
         this.serverError = serverError;
+    }
+
+    public boolean hasException() {
+        // ignore exception names
+        return throwable != null;
     }
 }

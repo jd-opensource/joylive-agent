@@ -50,24 +50,29 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
 
     private final GatewayFilterChain chain;
 
-    private final RetryConfig retryConfig;
-
     private final GatewayConfig gatewayConfig;
 
+    private final RetryConfig retryConfig;
+
+    private final int index;
+
     public GatewayClusterRequest(ServerWebExchange exchange,
-                                 GatewayFilterChain chain,
                                  ReactiveLoadBalancer.Factory<ServiceInstance> factory,
+                                 GatewayFilterChain chain,
+                                 GatewayConfig gatewayConfig,
                                  RetryConfig retryConfig,
-                                 GatewayConfig gatewayConfig) {
+                                 int index) {
         super(exchange.getRequest(), factory);
         this.exchange = exchange;
-        this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
         this.chain = chain;
+        this.retryConfig = retryConfig;
+        this.gatewayConfig = gatewayConfig;
+        this.index = index;
+        this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
-        this.retryConfig = retryConfig;
-        this.gatewayConfig = gatewayConfig;
+
     }
 
     @Override

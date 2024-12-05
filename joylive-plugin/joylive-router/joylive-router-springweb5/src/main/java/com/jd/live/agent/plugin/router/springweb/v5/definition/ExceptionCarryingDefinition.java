@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.definition;
+package com.jd.live.agent.plugin.router.springweb.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -25,42 +25,27 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.router.springgateway.v2.interceptor.RetryFilterInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v5.interceptor.ExceptionCarryingInterceptor;
 
 /**
- * RetryFilterDefinition
- *
- * @since 1.6.0
+ * @author Axkea
  */
-@Extension(value = "RetryFilterDefinition_v2")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(RetryFilterDefinition.TYPE_RETRY_GATEWAY_FILTER_FACTORY_$1)
-@ConditionalOnClass(RetryFilterDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 @Injectable
-public class RetryFilterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "ExceptionCarryingDefinition_v5")
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ExceptionCarryingDefinition.TYPE_DISPATCHER_SERVLET)
+@ConditionalOnMissingClass(DispatcherHandlerDefinition.TYPE_ERROR_RESPONSE)
+public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
+    protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
-    // Order 2
-    protected static final String TYPE_RETRY_GATEWAY_FILTER_FACTORY_$1 = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
+    protected static final String METHOD = "processHandlerException";
 
-    private static final String METHOD_HANDLE = "filter";
-
-    private static final String[] ARGUMENT_HANDLE = new String[]{
-            "org.springframework.web.server.ServerWebExchange",
-            "org.springframework.cloud.gateway.filter.GatewayFilterChain"
-    };
-
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
-
-    public RetryFilterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_RETRY_GATEWAY_FILTER_FACTORY_$1);
+    public ExceptionCarryingDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_HANDLE).
-                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        RetryFilterInterceptor::new
+                        MatcherBuilder.named(METHOD), ExceptionCarryingInterceptor::new
                 )
         };
     }

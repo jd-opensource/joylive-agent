@@ -52,7 +52,7 @@ public class LiveGatewayFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -2;
+        return HIGHEST_PRECEDENCE + 2;
     }
 
     @Override

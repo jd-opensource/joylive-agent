@@ -23,6 +23,8 @@ import org.springframework.cloud.client.loadbalancer.Response;
 
 public class SpringEndpoint extends AbstractEndpoint {
 
+    public static final String KEY_SERVICE_ENDPOINT = "x-service-endpoint";
+
     private static final String STATE_HANGUP = "hangup";
     private static final String STATE_SUSPEND = "suspend";
     private static final String LABEL_STATE = "state";

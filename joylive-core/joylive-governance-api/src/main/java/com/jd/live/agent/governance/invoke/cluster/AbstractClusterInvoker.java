@@ -90,10 +90,13 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                         if (r != null) {
                             logger.error("Exception occurred when invoke, caused by " + r.getMessage(), r);
                             onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
-                        } else if (o.getError() != null) {
-                            onException(cluster, invocation, o, o.getError(), instance, result);
                         } else {
-                            onSuccess(cluster, invocation, o, request, instance, result);
+                            ServiceError error = o.getError();
+                            if (error != null && error.hasException()) {
+                                onException(cluster, invocation, o, error, instance, result);
+                            } else {
+                                onSuccess(cluster, invocation, o, request, instance, result);
+                            }
                         }
                     });
                 } catch (Throwable e) {

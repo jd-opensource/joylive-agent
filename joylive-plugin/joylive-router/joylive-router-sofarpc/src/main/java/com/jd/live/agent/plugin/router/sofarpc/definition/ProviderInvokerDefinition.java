@@ -31,6 +31,7 @@ import com.jd.live.agent.plugin.router.sofarpc.interceptor.ProviderInvokerInterc
 @ConditionalOnProperties(value = {
         @ConditionalOnProperty(name = {
                 GovernanceConfig.CONFIG_LIVE_ENABLED,
+                GovernanceConfig.CONFIG_LANE_ENABLED,
                 GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
         }, matchIfMissing = true, relation = ConditionalRelation.OR),
         @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)

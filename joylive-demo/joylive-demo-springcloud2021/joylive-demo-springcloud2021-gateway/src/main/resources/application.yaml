@@ -56,7 +56,7 @@ spring:
             - StripPrefix=1
             - name: Retry
               args:
-                retries: 1
+                retries: 2
                 series:
                   - SERVER_ERROR
                 methods:

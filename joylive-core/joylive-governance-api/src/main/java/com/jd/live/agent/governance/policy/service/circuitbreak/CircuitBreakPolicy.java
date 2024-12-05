@@ -180,7 +180,7 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     }
 
     @Override
-    public boolean containsError(String errorCode) {
+    public boolean containsErrorCode(String errorCode) {
         return errorCode != null && errorCodes != null && errorCodes.contains(errorCode);
     }
 

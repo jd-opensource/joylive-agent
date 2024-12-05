@@ -16,9 +16,12 @@
 package com.jd.live.agent.governance.response;
 
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import lombok.Getter;
+
+import java.util.function.Supplier;
 
 /**
  * Provides a base implementation for service response objects, encapsulating common
@@ -43,7 +46,7 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * service operation. A {@code null} value indicates that the operation completed
      * without errors.
      */
-    protected final ServiceError error;
+    protected final UnsafeLazyObject<ServiceError> error;
 
     /**
      * An optional predicate used to determine if the response should be retried.
@@ -62,13 +65,27 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      */
     public AbstractServiceResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
         this.response = response;
-        this.error = error;
+        this.error = new UnsafeLazyObject<>(() -> error);
+        this.retryPredicate = retryPredicate;
+    }
+
+    /**
+     * Constructs an instance of {@code AbstractServiceResponse} with the specified
+     * response content, throwable, and a custom retry predicate.
+     *
+     * @param response       the response content
+     * @param errorSupplier  the error supplier
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
+     */
+    public AbstractServiceResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
+        this.response = response;
+        this.error = new UnsafeLazyObject<>(errorSupplier);
         this.retryPredicate = retryPredicate;
     }
 
     @Override
     public ServiceError getError() {
-        return error;
+        return error.get();
     }
 
 }

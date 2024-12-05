@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * AbstractHttpResponse
@@ -76,28 +77,39 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param response The original response object.
      */
     public AbstractHttpResponse(T response) {
-        this(response, null, null);
+        this(response, () -> null, null);
     }
 
     /**
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
      *
-     * @param error The original exception.
-     * @param predicate A predicate used to determine if the response should be considered an error.
+     * @param error     The original exception.
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractHttpResponse(ServiceError error, ErrorPredicate predicate) {
-        this(null, error, predicate);
+    public AbstractHttpResponse(ServiceError error, ErrorPredicate retryPredicate) {
+        this(null, error, retryPredicate);
     }
 
     /**
      * Creates a new instance of AbstractHttpResponse with the original response object.
      *
-     * @param response  The original response object.
-     * @param error     The original exception.
-     * @param predicate A predicate used to determine if the response should be considered an error.
+     * @param response       The original response object.
+     * @param error          The original exception.
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
-    public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate predicate) {
-        super(response, error, predicate);
+    public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+        this(response, () -> error, retryPredicate);
+    }
+
+    /**
+     * Creates a new instance of AbstractHttpResponse with the original response object.
+     *
+     * @param response       The original response object.
+     * @param errorSupplier  The error supplier.
+     * @param retryPredicate a custom predicate to evaluate retryability of the response
+     */
+    public AbstractHttpResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
+        super(response, errorSupplier, retryPredicate);
         port = new UnsafeLazyObject<>(this::parsePort);
         host = new UnsafeLazyObject<>(this::parseHost);
         schema = new UnsafeLazyObject<>(this::parseScheme);
@@ -240,6 +252,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
         return uri.getScheme();
     }
 
+
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>
             implements HttpResponse.HttpOutboundResponse {
 
@@ -247,12 +260,16 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
             super(response);
         }
 
-        public AbstractHttpOutboundResponse(ServiceError error, ErrorPredicate predicate) {
-            super(error, predicate);
+        public AbstractHttpOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
+            super(error, retryPredicate);
         }
 
-        public AbstractHttpOutboundResponse(T response, ServiceError error, ErrorPredicate predicate) {
-            super(response, error, predicate);
+        public AbstractHttpOutboundResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
+            super(response, error, retryPredicate);
+        }
+
+        public AbstractHttpOutboundResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
+            super(response, errorSupplier, retryPredicate);
         }
     }
 }

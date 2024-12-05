@@ -21,27 +21,13 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
-import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
-import com.jd.live.agent.plugin.router.springgateway.v4.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
-import com.jd.live.agent.plugin.router.springgateway.v4.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveChainBuilder;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
-import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_SCHEME_PREFIX_ATTR;
 
 /**
  * GatewayClusterInterceptor
@@ -50,14 +36,11 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
  */
 public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
-    private static final String FIELD_CLIENT_FACTORY = "clientFactory";
-    private static final String SCHEMA_LB = "lb";
-
     private final InvocationContext context;
 
     private final GatewayConfig config;
 
-    private final Map<Object, GatewayCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<Object, LiveChainBuilder> filterConfigs = new ConcurrentHashMap<>();
 
     public GatewayClusterInterceptor(InvocationContext context, GatewayConfig config) {
         this.context = context;
@@ -67,32 +50,17 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
 
-        MethodContext mc = (MethodContext) ctx;
-
         RequestContext.setAttribute(Carrier.ATTRIBUTE_GATEWAY, Boolean.TRUE);
+
+        Object target = ctx.getTarget();
         ServerWebExchange exchange = ctx.getArgument(0);
-        GatewayFilterChain chain = ctx.getArgument(1);
-        URI url = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
-        String schemePrefix = exchange.getAttribute(GATEWAY_SCHEME_PREFIX_ATTR);
-        GatewayCluster cluster = clusters.computeIfAbsent(ctx.getTarget(), t -> new GatewayCluster(getValue(t, FIELD_CLIENT_FACTORY)));
-        RetryConfig retryConfig = RequestContext.removeAttribute(GatewayConfig.ATTRIBUTE_RETRY_CONFIG);
-        boolean lb = url != null && (GatewayClusterInterceptor.SCHEMA_LB.equals(url.getScheme()) || GatewayClusterInterceptor.SCHEMA_LB.equals(schemePrefix));
-        GatewayClusterRequest request = new GatewayClusterRequest(exchange, chain, lb ? cluster.getClientFactory() : null, retryConfig, config);
-        InvocationContext ic = lb ? context : new HttpForwardContext(context);
-        OutboundInvocation<GatewayClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, ic);
 
-        CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
-        CompletableFuture<Void> result = new CompletableFuture<>();
-        response.whenComplete((v, t) -> {
-            if (t != null) {
-                result.completeExceptionally(t);
-            } else if (v.getError() != null) {
-                result.completeExceptionally(v.getError().getThrowable());
-            } else {
-                result.complete(null);
-            }
-        });
+        LiveChainBuilder builder = filterConfigs.computeIfAbsent(target, t -> new LiveChainBuilder(context, config, t));
+        GatewayFilterChain chain = builder.chain(exchange);
 
-        mc.skipWithResult(Mono.fromCompletionStage(result));
+        MethodContext mc = (MethodContext) ctx;
+        mc.skipWithResult(chain.filter(exchange));
     }
+
+
 }
