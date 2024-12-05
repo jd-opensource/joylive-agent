@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.router.dubbo.v2_7.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.annotation.*;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -30,8 +28,14 @@ import com.jd.live.agent.plugin.router.dubbo.v2_7.interceptor.ClassLoaderFilterI
 
 @Injectable
 @Extension(value = "ClassLoaderFilterDefinition_v2.7")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
+@ConditionalOnProperties(value = {
+        @ConditionalOnProperty(name = {
+                GovernanceConfig.CONFIG_LIVE_ENABLED,
+                GovernanceConfig.CONFIG_LANE_ENABLED,
+                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
+        }, matchIfMissing = true, relation = ConditionalRelation.OR),
+        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
+}, relation = ConditionalRelation.AND)
 @ConditionalOnClass(ClassLoaderFilterDefinition.TYPE_CLASSLOADER_FILTER)
 @ConditionalOnClass(ClassLoaderFilterDefinition.TYPE_PROTOCOL_FILTER_WRAPPER)
 public class ClassLoaderFilterDefinition extends PluginDefinitionAdapter {
