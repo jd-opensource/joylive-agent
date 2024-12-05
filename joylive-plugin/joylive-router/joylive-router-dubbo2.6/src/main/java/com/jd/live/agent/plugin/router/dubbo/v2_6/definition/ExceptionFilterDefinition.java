@@ -32,8 +32,6 @@ import com.jd.live.agent.plugin.router.dubbo.v2_6.interceptor.ExceptionFilterInt
 @Extension(value = "ExceptionFilterDefinition_v2.6")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_REGISTRY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ExceptionFilterDefinition.TYPE_EXCEPTION_FILTER)
 public class ExceptionFilterDefinition extends PluginDefinitionAdapter {
 
