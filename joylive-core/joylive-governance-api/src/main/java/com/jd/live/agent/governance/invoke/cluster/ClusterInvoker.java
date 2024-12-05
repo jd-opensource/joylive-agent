@@ -37,7 +37,7 @@ public interface ClusterInvoker {
 
     String TYPE_FAILOVER = "failover";
 
-    String TYPE_FAILSAFE = "failsafe ";
+    String TYPE_FAILSAFE = "failsafe";
 
     int ORDER_FAILFAST = 0;
 
