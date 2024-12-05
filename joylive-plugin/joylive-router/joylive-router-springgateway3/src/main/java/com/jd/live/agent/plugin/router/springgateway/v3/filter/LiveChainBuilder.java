@@ -150,7 +150,7 @@ public class LiveChainBuilder {
 
         }
         LiveGatewayFilter liveFilter = new LiveGatewayFilter(context, gatewayConfig, cluster, retryConfig, pos);
-        filters.add(pos, new OrderedGatewayFilter(liveFilter, pos));
+        filters.add(pos, new OrderedGatewayFilter(liveFilter, WRITE_RESPONSE_FILTER_ORDER - 1));
 
         boolean loadbalancer = pareURI(exchange, route, pathFilters);
 
