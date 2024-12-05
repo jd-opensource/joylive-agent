@@ -9,37 +9,73 @@ build:
 	mvn package -f ../pom.xml -DskipTests=true package
 
 image-joylive-demo-springcloud2021-consumer:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-consumer:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-consumer
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-consumer:${version}-amd64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-consumer
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2021-consumer:${version}-arm64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-consumer
 
 push-joylive-demo-springcloud2021-consumer:
-	docker push ${repo}/joylive-demo-springcloud2021-consumer:${version}-AMD64
+	docker push ${repo}/joylive-demo-springcloud2021-consumer:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2021-consumer:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2021-consumer:${version} \
+	  ${repo}/joylive-demo-springcloud2021-consumer:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2021-consumer:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2021-consumer:${version}
 
 image-joylive-demo-springcloud2021-provider:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-provider:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-provider:${version}-amd64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2021-provider:${version}-arm64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider
 
 push-joylive-demo-springcloud2021-provider:
-	docker push ${repo}/joylive-demo-springcloud2021-provider:${version}-AMD64
+	docker push ${repo}/joylive-demo-springcloud2021-provider:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2021-provider:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2021-provider:${version} \
+	  ${repo}/joylive-demo-springcloud2021-provider:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2021-provider:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2021-provider:${version}
 
 image-joylive-demo-springcloud2021-provider-reactive:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider-reactive
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-amd64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider-reactive
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-arm64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-provider-reactive
 
 push-joylive-demo-springcloud2021-provider-reactive:
-	docker push ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-AMD64
+	docker push ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2021-provider-reactive:${version} \
+	  ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2021-provider-reactive:${version}
 
 image-joylive-demo-springcloud2021-order:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-order:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-order
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-order:${version}-amd64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-order
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2021-order:${version}-arm64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-order
 
 push-joylive-demo-springcloud2021-order:
-	docker push ${repo}/joylive-demo-springcloud2021-order:${version}-AMD64
+	docker push ${repo}/joylive-demo-springcloud2021-order:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2021-order:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2021-order:${version} \
+	  ${repo}/joylive-demo-springcloud2021-order:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2021-order:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2021-order:${version}
 
 image-joylive-demo-springcloud2021-gateway:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-gateway:${version}-AMD64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-gateway
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2021-gateway:${version}-amd64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-gateway
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2021-gateway:${version}-arm64 ./joylive-demo-springcloud2021/joylive-demo-springcloud2021-gateway
 
 push-joylive-demo-springcloud2021-gateway:
-	docker push ${repo}/joylive-demo-springcloud2021-gateway:${version}-AMD64
+	docker push ${repo}/joylive-demo-springcloud2021-gateway:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2021-gateway:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2021-gateway:${version} \
+	  ${repo}/joylive-demo-springcloud2021-gateway:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2021-gateway:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2021-gateway:${version}
 
 image-joylive-demo-rocketmq:
-	docker build --platform linux/amd64 -t ${repo}/joylive-demo-rocketmq:${version}-AMD64 ./joylive-demo-rocketmq
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-rocketmq:${version}-amd64 ./joylive-demo-rocketmq
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-rocketmq:${version}-arm64 ./joylive-demo-rocketmq
 
 push-joylive-demo-rocketmq:
-	docker push ${repo}/joylive-demo-rocketmq:${version}-AMD64
+	docker push ${repo}/joylive-demo-rocketmq:${version}-amd64
+	docker push ${repo}/joylive-demo-rocketmq:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-rocketmq:${version} \
+	  ${repo}/joylive-demo-rocketmq:${version}-amd64 \
+	  ${repo}/joylive-demo-rocketmq:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-rocketmq:${version}
