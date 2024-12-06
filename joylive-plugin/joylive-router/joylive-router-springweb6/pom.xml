@@ -14,8 +14,7 @@
     <properties>
         <package.plugin.type>plugin</package.plugin.type>
         <spring-web.version>6.1.12</spring-web.version>
-        <jakarta.api.version>6.1.0</jakarta.api.version>
-        <javax.api.version>4.0.1</javax.api.version>
+        <servlet.api.version>6.1.0</servlet.api.version>
     </properties>
 
     <dependencies>
@@ -40,13 +39,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>${jakarta.api.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.api.version}</version>
+            <version>${servlet.api.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
