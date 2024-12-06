@@ -15,15 +15,28 @@
  */
 package com.jd.live.agent.core.util;
 
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.Constants.EXCEPTION_MESSAGE_LABEL;
+import static com.jd.live.agent.core.Constants.EXCEPTION_NAMES_LABEL;
 
 /**
  * A utility class for working with exceptions.
  */
 public class ExceptionUtils {
+
+    public static final int HEADER_SIZE_LIMIT = 1024 * 2;
+
+    public static final Predicate<Throwable> NONE_EXECUTION_PREDICATE = e -> !(e instanceof ExecutionException) && !(e instanceof InvocationTargetException);
 
     /**
      * Iterates over the exception chain starting from the given throwable and stops when the provided predicate returns false.
@@ -111,6 +124,59 @@ public class ExceptionUtils {
             builder.append(name);
         }
         return builder.toString();
+    }
+
+    /**
+     * Describes a Throwable by extracting its exception names and message, and passing them to a BiConsumer.
+     *
+     * @param e         the Throwable to describe
+     * @param predicate a Predicate to filter the exception names
+     * @param maxLength the maximum length of the exception names and message; if 0 or negative, no truncation occurs
+     * @param consumer  a BiConsumer to accept the exception names and message
+     */
+    public static void describe(Throwable e, Predicate<Throwable> predicate, int maxLength, BiConsumer<String, String> consumer) {
+        if (consumer != null && e != null) {
+            String name = asString(getExceptions(e, predicate), ',', maxLength);
+            String message = e.getMessage();
+            if (message != null && message.length() > maxLength) {
+                message = message.substring(0, maxLength);
+            }
+            if (name != null || message != null) {
+                consumer.accept(name, message);
+            }
+        }
+    }
+
+    /**
+     * Generates exception-related HTTP headers from a Throwable object.
+     *
+     * @param e        the Throwable object to generate headers from
+     * @param consumer a BiConsumer to accept the generated headers
+     */
+    public static void exceptionHeaders(Throwable e, BiConsumer<String, String> consumer) {
+        exceptionHeaders(e, null, consumer);
+    }
+
+    /**
+     * Generates exception-related HTTP headers from a Throwable object.
+     *
+     * @param e         the Throwable object to generate headers from
+     * @param predicate a Predicate to filter the exception names
+     * @param consumer  a BiConsumer to accept the generated headers
+     */
+    public static void exceptionHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
+        describe(e, predicate == null ? NONE_EXECUTION_PREDICATE : predicate, HEADER_SIZE_LIMIT, (name, message) -> {
+            if (name != null && !name.isEmpty()) {
+                consumer.accept(EXCEPTION_NAMES_LABEL, name);
+            }
+            if (message != null && !message.isEmpty()) {
+                try {
+                    String encodeMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.name());
+                    consumer.accept(EXCEPTION_MESSAGE_LABEL, encodeMessage);
+                } catch (UnsupportedEncodingException ignore) {
+                }
+            }
+        });
     }
 
 }

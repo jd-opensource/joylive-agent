@@ -41,6 +41,10 @@ import static com.jd.live.agent.plugin.router.springweb.v6.exception.SpringInbou
  */
 public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHttpRequest> {
 
+    public static final String KEY_LIVE_REQUEST = "x-live-request";
+
+    public static final String KEY_LIVE_EXCEPTION = "x-live-exception";
+
     private static final String ACTUATOR_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
 
     private static final Class<?> ACTUATOR_CLASS = loadClass(ACTUATOR_TYPE, ServerWebExchange.class.getClassLoader());
