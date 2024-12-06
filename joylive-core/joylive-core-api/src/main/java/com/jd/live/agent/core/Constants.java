@@ -169,5 +169,10 @@ public interface Constants {
      */
     String EXCEPTION_MESSAGE_LABEL = "x-exception-message";
 
+    /**
+     * http header size limit
+     */
+    int DEFAULT_HEADER_SIZE_LIMIT = 1024 * 2;
+
 }
 

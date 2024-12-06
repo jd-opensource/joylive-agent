@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
+package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.jd.live.agent.core.Constants.DEFAULT_HEADER_SIZE_LIMIT;
 import static com.jd.live.agent.core.Constants.EXCEPTION_MESSAGE_LABEL;
 import static com.jd.live.agent.core.Constants.EXCEPTION_NAMES_LABEL;
 import static com.jd.live.agent.core.util.ExceptionUtils.asString;
@@ -34,10 +35,7 @@ import static com.jd.live.agent.core.util.ExceptionUtils.getExceptions;
 /**
  * @author Axkea
  */
-public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
-
-    //The default buffer size of tomcat's response header is 1024 * 8
-    private static final int DEFAULT_HEADER_SIZE_LIMIT = 1024 * 2;
+public class ExceptionCarryingJavaxInterceptor extends InterceptorAdaptor {
 
     private static final Set<String> exclude = new HashSet<>(Arrays.asList(
             "java.util.concurrent.ExecutionException",
