@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
 import javax.servlet.http.HttpServletResponse;
@@ -25,8 +24,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static com.jd.live.agent.core.Constants.EXCEPTION_MESSAGE_LABEL;
+import static com.jd.live.agent.core.Constants.EXCEPTION_NAMES_LABEL;
+import static com.jd.live.agent.core.util.ExceptionUtils.asString;
+import static com.jd.live.agent.core.util.ExceptionUtils.getExceptions;
 
 /**
  * @author Axkea
@@ -46,61 +49,18 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
         // org.springframework.web.servlet.DispatcherServlet.processHandlerException
         HttpServletResponse response = ctx.getArgument(1);
         Exception ex = ctx.getArgument(3);
-        String exceptionNames = parseExceptionNames(ex);
+        String exceptionNames = asString(getExceptions(ex, e -> !exclude.contains(e.getClass().getName())), ',', DEFAULT_HEADER_SIZE_LIMIT);
         String message = ex.getMessage();
         if (exceptionNames != null && !exceptionNames.isEmpty()) {
-            response.setHeader(Constants.EXCEPTION_NAMES_LABEL, exceptionNames);
+            response.setHeader(EXCEPTION_NAMES_LABEL, exceptionNames);
         }
         if (message != null && !message.isEmpty()) {
             try {
                 String encodeMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.name());
-                response.setHeader(Constants.EXCEPTION_MESSAGE_LABEL, encodeMessage);
+                response.setHeader(EXCEPTION_MESSAGE_LABEL, encodeMessage);
             } catch (UnsupportedEncodingException ignore) {
             }
         }
-    }
-
-    private String parseExceptionNames(Throwable t) {
-        if (t == null) {
-            return null;
-        }
-        Set<String> exceptionNames = new LinkedHashSet<>(8);
-        int size = 0;
-        boolean isBreak = false;
-        while (t != null) {
-            Class<?> clazz = t.getClass();
-            String clazzName = clazz.getName();
-            int len = clazzName.length();
-            if (!exclude.contains(clazzName)) {
-                if (size + len > DEFAULT_HEADER_SIZE_LIMIT) {
-                    break;
-                }
-                if (exceptionNames.add(clazzName)) {
-                    size += len;
-                    clazz = clazz.getSuperclass();
-                    while (clazz != null && clazz != Object.class) {
-                        clazzName = clazz.getName();
-                        len = clazzName.length();
-                        if (size + len > DEFAULT_HEADER_SIZE_LIMIT) {
-                            isBreak = true;
-                            break;
-                        }
-                        if (exceptionNames.add(clazzName)) {
-                            size += len;
-                            clazz = clazz.getSuperclass();
-                        } else {
-                            break;
-                        }
-                    }
-                    if (isBreak) {
-                        break;
-                    }
-                }
-            }
-            t = t.getCause();
-        }
-
-        return String.join(Constants.EXCEPTION_NAMES_SEPARATOR, exceptionNames);
     }
 
 }
