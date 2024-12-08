@@ -15,14 +15,23 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.core.util.StringUtils.split;
+import static java.util.Arrays.asList;
 
 /**
  * AbstractHttpResponse
@@ -109,7 +118,8 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
     public AbstractHttpResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
-        super(response, errorSupplier, retryPredicate);
+        super(response, retryPredicate);
+        error = new UnsafeLazyObject<>(() -> parseServiceError(errorSupplier));
         port = new UnsafeLazyObject<>(this::parsePort);
         host = new UnsafeLazyObject<>(this::parseHost);
         schema = new UnsafeLazyObject<>(this::parseScheme);
@@ -205,6 +215,33 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
             }
         }
         return result;
+    }
+
+    /**
+     * parse service error from http response header if errorSupplier doesn't provide it
+     * @param errorSupplier errorSupplier
+     * @return ServiceError
+     */
+    protected ServiceError parseServiceError(Supplier<ServiceError> errorSupplier) {
+        ServiceError serviceError = errorSupplier.get();
+        if (serviceError == null) {
+            //Repeat the logic com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster.BodyResponseDecorator.handleError
+            String message = getHeader(Constants.EXCEPTION_MESSAGE_LABEL);
+            String names = getHeader(Constants.EXCEPTION_NAMES_LABEL);
+
+            try {
+                message = message == null || message.isEmpty()
+                        ? message
+                        : URLDecoder.decode(message, StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+            }
+            Set<String> exceptionNamesSet = names == null || names.isEmpty() ? null : new LinkedHashSet<>(asList(split(
+                    names)));
+            if (message != null && !message.isEmpty() || exceptionNamesSet != null && !exceptionNamesSet.isEmpty()) {
+                serviceError = new ServiceError(message, exceptionNamesSet, true);
+            }
+        }
+        return serviceError;
     }
 
     /**
