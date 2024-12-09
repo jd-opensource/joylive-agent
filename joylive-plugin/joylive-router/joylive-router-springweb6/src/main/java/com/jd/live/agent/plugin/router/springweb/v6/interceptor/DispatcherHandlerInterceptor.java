@@ -28,7 +28,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
+import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_EXCEPTION_HANDLED;
 import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_REQUEST;
 

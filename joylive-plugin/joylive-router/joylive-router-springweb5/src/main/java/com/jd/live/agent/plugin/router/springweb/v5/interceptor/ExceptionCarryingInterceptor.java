@@ -20,7 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
 import javax.servlet.http.HttpServletResponse;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
+import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
  * @author Axkea

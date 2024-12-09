@@ -31,8 +31,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
 import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
  * DispatcherHandlerInterceptor

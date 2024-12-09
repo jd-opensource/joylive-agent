@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import jakarta.servlet.http.HttpServletResponse;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
+import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
  * @author Axkea
