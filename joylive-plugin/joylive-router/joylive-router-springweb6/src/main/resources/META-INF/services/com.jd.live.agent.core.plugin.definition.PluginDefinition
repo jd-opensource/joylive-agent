@@ -1,2 +1,3 @@
 com.jd.live.agent.plugin.router.springweb.v6.definition.DispatcherHandlerDefinition
 com.jd.live.agent.plugin.router.springweb.v6.definition.HandlerAdapterDefinition
+com.jd.live.agent.plugin.router.springweb.v6.definition.ExceptionCarryingDefinition

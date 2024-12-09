@@ -25,9 +25,10 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v6.interceptor.DispatcherHandlerInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v6.interceptor.HandleResultInterceptor;
 
 /**
- * FilteringWebHandlerPluginDefinition
+ * DispatcherHandlerDefinition
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
@@ -53,10 +54,20 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
 
     // For spring web 6
     private static final String METHOD_HANDLE_REQUEST_WITH = "handleRequestWith";
+    // For spring web flux 6.1.*
+    private static final String METHOD_HANDLE_RESULT = "handleResult";
+    // For spring web flux 6.0.*
+    private static final String METHOD_DO_HANDLE_RESULT = "doHandleResult";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
             "org.springframework.web.server.ServerWebExchange",
             "java.lang.Object"
+    };
+
+    private static final String[] ARGUMENT_HANDLE_RESULT = new String[]{
+            "org.springframework.web.server.ServerWebExchange",
+            "org.springframework.web.reactive.HandlerResult",
+            "java.lang.String"
     };
 
     protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
@@ -71,7 +82,17 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_HANDLE_REQUEST_WITH).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
                         () -> new DispatcherHandlerInterceptor(context)
-                )
+                ),
+                new InterceptorDefinitionAdapter(
+                        // For spring web flux 6.1.*
+                        MatcherBuilder.named(METHOD_HANDLE_RESULT).
+                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
+                        HandleResultInterceptor::new),
+                new InterceptorDefinitionAdapter(
+                        // For spring web flux 6.0.*
+                        MatcherBuilder.named(METHOD_DO_HANDLE_RESULT).
+                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
+                        HandleResultInterceptor::new)
         };
     }
 }

@@ -64,9 +64,7 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
     public AbstractServiceResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
-        this.response = response;
-        this.error = new UnsafeLazyObject<>(() -> error);
-        this.retryPredicate = retryPredicate;
+        this(response, error == null ? null : () -> error, retryPredicate);
     }
 
     /**
@@ -79,13 +77,17 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      */
     public AbstractServiceResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
         this.response = response;
-        this.error = new UnsafeLazyObject<>(errorSupplier);
+        this.error = new UnsafeLazyObject<>(errorSupplier != null ? errorSupplier : this::parseError);
         this.retryPredicate = retryPredicate;
     }
 
     @Override
     public ServiceError getError() {
-        return error.get();
+        return error == null ? null : error.get();
+    }
+
+    protected ServiceError parseError() {
+        return null;
     }
 
 }

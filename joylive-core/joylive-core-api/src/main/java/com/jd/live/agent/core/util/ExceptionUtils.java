@@ -81,36 +81,4 @@ public class ExceptionUtils {
         return names;
     }
 
-    /**
-     * Converts a Set of Strings to a String, using the specified delimiter and truncating if the resulting String exceeds the maximum length.
-     *
-     * @param names     the Set of Strings to convert
-     * @param delimiter the character to use as a delimiter between the Strings
-     * @param maxLength the maximum length of the resulting String; if 0 or negative, no truncation occurs
-     * @return a String representation of the Set, using the specified delimiter and truncation rules
-     */
-    public static String asString(Set<String> names, char delimiter, int maxLength) {
-        if (names == null) {
-            return null;
-        }
-        StringBuilder builder = new StringBuilder();
-        int i = 0;
-        int size = 0;
-        int len;
-        for (String name : names) {
-            if (maxLength > 0) {
-                len = name.length() + (i > 0 ? 1 : 0);
-                size += len;
-                if (size > maxLength) {
-                    break;
-                }
-            }
-            if (i++ > 0) {
-                builder.append(delimiter);
-            }
-            builder.append(name);
-        }
-        return builder.toString();
-    }
-
 }

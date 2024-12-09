@@ -24,14 +24,22 @@ import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvoc
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v5.request.ReactiveInboundRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
  * DispatcherHandlerInterceptor
  */
 public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
+
+    private static final String FIELD_EXCEPTION_HANDLER = "exceptionHandler";
 
     private final InvocationContext context;
 
@@ -53,6 +61,17 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
+            mono = mono.doOnError(ex -> {
+                HttpHeaders headers = exchange.getResponse().getHeaders();
+                labelHeaders(ex, headers::set);
+            }).doOnSuccess(result -> {
+                Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
+                result.setExceptionHandler(ex -> {
+                    HttpHeaders headers = exchange.getResponse().getHeaders();
+                    labelHeaders(ex, headers::set);
+                    return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
+                });
+            });
             mc.skipWithResult(mono);
         }
     }
