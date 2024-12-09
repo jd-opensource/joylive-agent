@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.ExceptionUtils;
 import jakarta.servlet.http.HttpServletResponse;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
