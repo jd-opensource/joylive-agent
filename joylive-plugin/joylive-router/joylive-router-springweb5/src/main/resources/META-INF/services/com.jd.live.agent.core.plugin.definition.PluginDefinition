@@ -1,4 +1,3 @@
 com.jd.live.agent.plugin.router.springweb.v5.definition.DispatcherHandlerDefinition
 com.jd.live.agent.plugin.router.springweb.v5.definition.HandlerAdapterDefinition
 com.jd.live.agent.plugin.router.springweb.v5.definition.ExceptionCarryingDefinition
-com.jd.live.agent.plugin.router.springweb.v5.definition.ExceptionCarryingWebFluxDefinition

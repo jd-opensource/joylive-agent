@@ -86,7 +86,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param response The original response object.
      */
     public AbstractHttpResponse(T response) {
-        this(response, () -> null, null);
+        this(response, (Supplier<ServiceError>) null, null);
     }
 
     /**
@@ -96,7 +96,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
     public AbstractHttpResponse(ServiceError error, ErrorPredicate retryPredicate) {
-        this(null, error, retryPredicate);
+        this(null, error == null ? null : () -> error, retryPredicate);
     }
 
     /**
@@ -107,7 +107,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
     public AbstractHttpResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
-        this(response, () -> error, retryPredicate);
+        this(response, error == null ? null : () -> error, retryPredicate);
     }
 
     /**
@@ -118,8 +118,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @param retryPredicate a custom predicate to evaluate retryability of the response
      */
     public AbstractHttpResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
-        super(response, retryPredicate);
-        error = new UnsafeLazyObject<>(() -> parseServiceError(errorSupplier));
+        super(response, errorSupplier, retryPredicate);
         port = new UnsafeLazyObject<>(this::parsePort);
         host = new UnsafeLazyObject<>(this::parseHost);
         schema = new UnsafeLazyObject<>(this::parseScheme);
@@ -217,31 +216,22 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
         return result;
     }
 
-    /**
-     * parse service error from http response header if errorSupplier doesn't provide it
-     * @param errorSupplier errorSupplier
-     * @return ServiceError
-     */
-    protected ServiceError parseServiceError(Supplier<ServiceError> errorSupplier) {
-        ServiceError serviceError = errorSupplier.get();
-        if (serviceError == null) {
-            //Repeat the logic com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster.BodyResponseDecorator.handleError
-            String message = getHeader(Constants.EXCEPTION_MESSAGE_LABEL);
-            String names = getHeader(Constants.EXCEPTION_NAMES_LABEL);
-
-            try {
-                message = message == null || message.isEmpty()
-                        ? message
-                        : URLDecoder.decode(message, StandardCharsets.UTF_8.name());
-            } catch (UnsupportedEncodingException e) {
-            }
-            Set<String> exceptionNamesSet = names == null || names.isEmpty() ? null : new LinkedHashSet<>(asList(split(
-                    names)));
-            if (message != null && !message.isEmpty() || exceptionNamesSet != null && !exceptionNamesSet.isEmpty()) {
-                serviceError = new ServiceError(message, exceptionNamesSet, true);
-            }
+    @Override
+    protected ServiceError parseError() {
+        //Repeat the logic com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster.BodyResponseDecorator.handleError
+        String message = getHeader(Constants.EXCEPTION_MESSAGE_LABEL);
+        String names = getHeader(Constants.EXCEPTION_NAMES_LABEL);
+        try {
+            message = message == null || message.isEmpty()
+                    ? message
+                    : URLDecoder.decode(message, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException ignored) {
         }
-        return serviceError;
+        Set<String> exceptionNames = names == null || names.isEmpty() ? null : new LinkedHashSet<>(asList(split(names)));
+        if (message != null && !message.isEmpty() || exceptionNames != null && !exceptionNames.isEmpty()) {
+            return new ServiceError(message, exceptionNames, true);
+        }
+        return null;
     }
 
     /**

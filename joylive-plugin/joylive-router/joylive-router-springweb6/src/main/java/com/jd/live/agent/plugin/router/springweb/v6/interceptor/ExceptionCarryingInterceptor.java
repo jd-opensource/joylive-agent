@@ -17,9 +17,10 @@ package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.ExceptionUtils;
 import jakarta.servlet.http.HttpServletResponse;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.exceptionHeaders;
+import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
 
 /**
  * @author Axkea
@@ -31,7 +32,7 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
         // org.springframework.web.servlet.DispatcherServlet.processHandlerException
         HttpServletResponse response = ctx.getArgument(1);
         Exception ex = ctx.getArgument(3);
-        exceptionHeaders(ex, response::setHeader);
+        labelHeaders(ex, response::setHeader);
     }
 
 }

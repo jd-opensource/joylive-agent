@@ -54,9 +54,9 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
 
     // For spring web 6
     private static final String METHOD_HANDLE_REQUEST_WITH = "handleRequestWith";
-
+    // For spring web flux 6.1.*
     private static final String METHOD_HANDLE_RESULT = "handleResult";
-
+    // For spring web flux 6.0.*
     private static final String METHOD_DO_HANDLE_RESULT = "doHandleResult";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
@@ -84,10 +84,12 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
                         () -> new DispatcherHandlerInterceptor(context)
                 ),
                 new InterceptorDefinitionAdapter(
+                        // For spring web flux 6.1.*
                         MatcherBuilder.named(METHOD_HANDLE_RESULT).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
                         HandleResultInterceptor::new),
                 new InterceptorDefinitionAdapter(
+                        // For spring web flux 6.0.*
                         MatcherBuilder.named(METHOD_DO_HANDLE_RESULT).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
                         HandleResultInterceptor::new)

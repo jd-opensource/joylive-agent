@@ -43,7 +43,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     public static final String KEY_LIVE_REQUEST = "x-live-request";
 
-    public static final String KEY_LIVE_EXCEPTION = "x-live-exception";
+    public static final String KEY_LIVE_EXCEPTION_HANDLED = "x-live-exception-handled";
 
     private static final String ACTUATOR_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
 

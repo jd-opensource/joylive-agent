@@ -34,9 +34,12 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     private final UnsafeLazyObject<String> body;
 
-
     public GatewayClusterResponse(ServerHttpResponse response) {
-        this(response, () -> null, null);
+        this(response, null, null);
+    }
+
+    public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> bodySupplier) {
+        this(response, null, null);
     }
 
     public GatewayClusterResponse(ServerHttpResponse response, Supplier<ServiceError> errorSupplier, Supplier<String> bodySupplier) {

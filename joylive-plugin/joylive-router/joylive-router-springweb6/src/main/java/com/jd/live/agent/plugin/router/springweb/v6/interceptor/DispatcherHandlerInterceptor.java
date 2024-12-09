@@ -28,8 +28,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.exceptionHeaders;
-import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_EXCEPTION;
+import static com.jd.live.agent.core.util.ExceptionUtils.labelHeaders;
+import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_EXCEPTION_HANDLED;
 import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_REQUEST;
 
 /**
@@ -59,10 +59,10 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                     : new HttpInboundInvocation<>(request, context);
             Mono<Void> mono = context.inbound(invocation, () -> ((Mono<Void>) mc.invokeOrigin()).toFuture(), request::convert);
             mono = mono.doOnError(ex -> {
-                Boolean handled = (Boolean) exchange.getAttributes().get(KEY_LIVE_EXCEPTION);
+                Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
                 if (handled == null || !handled) {
                     HttpHeaders headers = exchange.getResponse().getHeaders();
-                    exceptionHeaders(ex, headers::set);
+                    labelHeaders(ex, headers::set);
                 }
             });
             mc.skipWithResult(mono);

@@ -153,8 +153,8 @@ public class ExceptionUtils {
      * @param e        the Throwable object to generate headers from
      * @param consumer a BiConsumer to accept the generated headers
      */
-    public static void exceptionHeaders(Throwable e, BiConsumer<String, String> consumer) {
-        exceptionHeaders(e, null, consumer);
+    public static void labelHeaders(Throwable e, BiConsumer<String, String> consumer) {
+        labelHeaders(e, null, consumer);
     }
 
     /**
@@ -164,7 +164,7 @@ public class ExceptionUtils {
      * @param predicate a Predicate to filter the exception names
      * @param consumer  a BiConsumer to accept the generated headers
      */
-    public static void exceptionHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
+    public static void labelHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
         describe(e, predicate == null ? NONE_EXECUTION_PREDICATE : predicate, HEADER_SIZE_LIMIT, (name, message) -> {
             if (name != null && !name.isEmpty()) {
                 consumer.accept(EXCEPTION_NAMES_LABEL, name);

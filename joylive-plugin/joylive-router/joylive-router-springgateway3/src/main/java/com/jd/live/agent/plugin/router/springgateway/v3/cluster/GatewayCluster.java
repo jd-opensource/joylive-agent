@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.cluster;
 
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -56,15 +55,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.core.util.StringUtils.split;
-import static java.util.Arrays.asList;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
@@ -117,10 +112,10 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
             Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
-            BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);
-            ServerWebExchange exchange = request.getExchange().mutate().response(decorator).build();
+            ServerWebExchange exchange = policies != null && !policies.isEmpty()
+                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), policies)).build()
+                    : request.getExchange();
             GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(),
-                    () -> (ServiceError) exchange.getAttributes().get(Request.KEY_SERVER_ERROR),
                     () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
             GatewayFilterChain chain = request.getChain();
             if (chain instanceof LiveGatewayFilterChain) {
@@ -222,50 +217,20 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         @NonNull
         @Override
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-            handleError();
-
-            if (policies != null && !policies.isEmpty()) {
-                String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-                if (body instanceof Flux && policyMatch(contentType)) {
-                    Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                    return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
-                        DataBufferFactory bufferFactory = bufferFactory();
-                        DataBuffer join = bufferFactory.join(dataBuffers);
-                        byte[] content = new byte[join.readableByteCount()];
-                        join.read(content);
-                        DataBufferUtils.release(join);
-                        exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
-                        return bufferFactory.wrap(content);
-                    }));
-                }
+            String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+            if (body instanceof Flux && policyMatch(contentType)) {
+                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
+                    DataBufferFactory bufferFactory = bufferFactory();
+                    DataBuffer join = bufferFactory.join(dataBuffers);
+                    byte[] content = new byte[join.readableByteCount()];
+                    join.read(content);
+                    DataBufferUtils.release(join);
+                    exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
+                    return bufferFactory.wrap(content);
+                }));
             }
             return super.writeWith(body);
-        }
-
-        /**
-         * Handles any errors that occurred during the processing of the request.
-         *
-         * @return true if an error was handled, false otherwise
-         */
-        protected boolean handleError() {
-            HttpHeaders headers = exchange.getResponse().getHeaders();
-            List<String> exceptionMessages = headers.remove(Constants.EXCEPTION_MESSAGE_LABEL);
-            String exceptionMessage = exceptionMessages != null && !exceptionMessages.isEmpty() ? exceptionMessages.get(0) : null;
-            try {
-                exceptionMessage = exceptionMessage == null || exceptionMessage.isEmpty()
-                        ? exceptionMessage
-                        : URLDecoder.decode(exceptionMessage, StandardCharsets.UTF_8.name());
-            } catch (UnsupportedEncodingException ignore) {
-            }
-            List<String> exceptionNames = headers.remove(Constants.EXCEPTION_NAMES_LABEL);
-            String exceptionName = exceptionNames != null && !exceptionNames.isEmpty() ? exceptionNames.get(0) : null;
-            Set<String> exceptionNamesSet = exceptionName == null || exceptionName.isEmpty() ? null : new LinkedHashSet<>(asList(split(exceptionName)));
-            if (exceptionMessage != null && !exceptionMessage.isEmpty() || exceptionNamesSet != null && !exceptionNamesSet.isEmpty()) {
-                ServiceError error = new ServiceError(exceptionMessage, exceptionNamesSet, true);
-                exchange.getAttributes().put(Request.KEY_SERVER_ERROR, error);
-                return true;
-            }
-            return false;
         }
 
         /**
