@@ -44,8 +44,14 @@ public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_FEIGN = "feign";
 
-    private static final String[] ARGUMENT_FEIGN = new String[]{
+    // for spring cloud feign 2/3
+    private static final String[] ARGUMENT_FEIGN3 = new String[]{
             "org.springframework.cloud.openfeign.FeignContext"
+    };
+
+    // for spring cloud feign 4
+    private static final String[] ARGUMENT_FEIGN4 = new String[]{
+            "org.springframework.cloud.openfeign.FeignClientFactory"
     };
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
@@ -56,7 +62,11 @@ public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FEIGN).
-                                and(MatcherBuilder.arguments(ARGUMENT_FEIGN)),
+                                and(MatcherBuilder.arguments(ARGUMENT_FEIGN3)),
+                        () -> new FeignClientFactoryBeanInterceptor(policySupplier)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_FEIGN).
+                                and(MatcherBuilder.arguments(ARGUMENT_FEIGN4)),
                         () -> new FeignClientFactoryBeanInterceptor(policySupplier))
         };
     }

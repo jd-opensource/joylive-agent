@@ -44,8 +44,10 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_STARTED = "started";
 
+    // for spring 2.2.9+
     private static final String METHOD_READY = "ready";
 
+    // for spring 2.2.9
     private static final String METHOD_RUNNING = "running";
 
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
