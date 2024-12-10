@@ -18,11 +18,13 @@ package com.jd.live.agent.plugin.router.springgateway.v2.filter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilterChain.DefaultGatewayFilterChain;
 import lombok.Getter;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
@@ -32,9 +34,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import static com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveRouteFilter.ROUTE_VERSION;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 /**
@@ -80,7 +84,9 @@ public class LiveChainBuilder {
      */
     private final GatewayCluster cluster;
 
-    private LoadBalancerClientFactory clientFactory;
+    private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
+
+    private final Map<Route, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new FilterConfig instance with the specified parameters.
@@ -104,13 +110,32 @@ public class LiveChainBuilder {
      * @return a new GatewayFilterChain instance
      */
     public GatewayFilterChain chain(ServerWebExchange exchange) {
-
-        RetryGatewayFilterFactory.RetryConfig retryConfig = null;
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
+        long version = ROUTE_VERSION.get();
+        // get filter from cache
+        LiveRouteFilter routeFilter = routeFilters.computeIfAbsent(route, r -> createRouteFilter(r, version));
+        if (routeFilter.getVersion() != version) {
+            // route is changed. so remove from cache
+            routeFilters.remove(route);
+        }
+
+        boolean loadbalancer = pareURI(exchange, route, routeFilter.getPathFilters());
+
+        return new DefaultGatewayFilterChain(routeFilter.getFilters(), loadbalancer);
+    }
+
+    /**
+     * Creates a new instance of LiveRouteFilter based on the given Route object and version.
+     *
+     * @param route   the Route object to create the LiveRouteFilter from
+     * @param version the version of the LiveRouteFilter
+     * @return a new instance of LiveRouteFilter
+     */
+    private LiveRouteFilter createRouteFilter(Route route, long version) {
         List<GatewayFilter> routeFilters = route.getFilters();
         List<GatewayFilter> pathFilters = new ArrayList<>(4);
-
         List<GatewayFilter> filters = globalFilters;
+        RetryGatewayFilterFactory.RetryConfig retryConfig = null;
         if (!routeFilters.isEmpty()) {
             filters = new ArrayList<>(globalFilters);
             GatewayFilter delegate;
@@ -151,10 +176,7 @@ public class LiveChainBuilder {
         }
         LiveGatewayFilter liveFilter = new LiveGatewayFilter(context, gatewayConfig, cluster, retryConfig, pos);
         filters.add(pos, new OrderedGatewayFilter(liveFilter, WRITE_RESPONSE_FILTER_ORDER - 1));
-
-        boolean loadbalancer = pareURI(exchange, route, pathFilters);
-
-        return new LiveGatewayFilterChain.DefaultGatewayFilterChain(filters, loadbalancer);
+        return new LiveRouteFilter(route, filters, pathFilters, version);
     }
 
     /**
@@ -214,7 +236,7 @@ public class LiveChainBuilder {
         }
 
         if (pathFilters != null && !pathFilters.isEmpty()) {
-            LiveGatewayFilterChain.DefaultGatewayFilterChain chain = new LiveGatewayFilterChain.DefaultGatewayFilterChain(pathFilters);
+            LiveGatewayFilterChain chain = new DefaultGatewayFilterChain(pathFilters);
             chain.filter(exchange).subscribe();
         }
         URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());

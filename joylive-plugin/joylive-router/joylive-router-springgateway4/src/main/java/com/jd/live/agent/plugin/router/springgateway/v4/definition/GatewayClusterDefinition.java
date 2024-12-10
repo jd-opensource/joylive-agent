@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayClust
  *
  * @since 1.0.0
  */
-@Extension(value = "GatewayClusterDefinition_v3")
+@Extension(value = "GatewayClusterDefinition_v4")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
