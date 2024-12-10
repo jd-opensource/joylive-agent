@@ -49,7 +49,6 @@ import static com.jd.live.agent.governance.event.TrafficEvent.*;
 @Configurable
 @Injectable
 @Extension("EventExporter")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_COUNTER_ENABLED, matchIfMissing = true)
 public class EventExporter implements Subscription<TrafficEvent>, ExtensionInitializer {
 

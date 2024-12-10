@@ -28,6 +28,7 @@
         <error_prone_annotations.version>2.18.0</error_prone_annotations.version>
         <proto-google-common-protos.version>2.29.0</proto-google-common-protos.version>
         <perfmark-api.version>0.26.0</perfmark-api.version>
+        <prometheus.version>1.3.4</prometheus.version>
     </properties>
 
     <dependencyManagement>
@@ -278,10 +279,19 @@
             <version>${error_prone_annotations.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>prometheus-metrics-model</artifactId>
+            <version>${prometheus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>prometheus-metrics-exposition-formats</artifactId>
+            <version>${prometheus.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -295,6 +305,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>io.opentelemetry:*</include>
+                                    <include>io.prometheus:*</include>
                                     <include>io.grpc:*</include>
                                     <include>io.perfmark:*</include>
                                     <include>com.google.code.findbugs:*</include>
@@ -322,6 +333,10 @@
                                 <relocation>
                                     <pattern>io.opentelemetry</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.io.opentelemetry</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.prometheus</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.prometheus</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>io.grpc</pattern>
