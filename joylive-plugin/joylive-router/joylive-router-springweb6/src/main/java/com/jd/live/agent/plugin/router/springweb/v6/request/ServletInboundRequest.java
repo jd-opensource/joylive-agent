@@ -109,6 +109,11 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     }
 
     @Override
+    public String getHeader(String key) {
+        return request.getHeader(key);
+    }
+
+    @Override
     protected String parseScheme() {
         String result = super.parseScheme();
         return result == null ? request.getScheme() : result;
