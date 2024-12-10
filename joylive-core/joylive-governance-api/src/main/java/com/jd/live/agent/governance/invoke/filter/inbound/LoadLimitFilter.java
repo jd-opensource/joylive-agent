@@ -57,6 +57,8 @@ public class LoadLimitFilter implements InboundFilter {
     private static final Logger logger = LoggerFactory.getLogger(LoadLimitFilter.class);
     public static final String LOAD_LIMITER_TIMER = "load-limiter";
 
+    private static final int DEFAULT_INTERVAL = 2000;
+
     private static volatile SystemLoad load;
 
     private static volatile long processCpuTime = 0;
@@ -78,13 +80,13 @@ public class LoadLimitFilter implements InboundFilter {
         LoadLimiterConfig limiterConfig = serviceConfig == null ? null : serviceConfig.getLoadLimiter();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<LoadLimitPolicy> loadLimitPolicies = servicePolicy == null ? null : servicePolicy.getLoadLimitPolicies();
-        if (limiterConfig != null) {
-            schedule();
+
+        if (limiterConfig != null && !limiterConfig.isEmpty()) {
             pass(invocation, new SystemLoad(limiterConfig.getCpuUsage(), limiterConfig.getLoadUsage()), load);
-        } else if (null != loadLimitPolicies && !loadLimitPolicies.isEmpty()) {
-            schedule();
+        }
+        if (null != loadLimitPolicies && !loadLimitPolicies.isEmpty()) {
             for (LoadLimitPolicy policy : loadLimitPolicies) {
-                if (policy.match(invocation)) {
+                if (!policy.isEmpty() && policy.match(invocation)) {
                     pass(invocation, new SystemLoad(policy.getCpuUsage(), policy.getLoadUsage()), load);
                 }
             }
@@ -98,7 +100,7 @@ public class LoadLimitFilter implements InboundFilter {
      */
     private void schedule() {
         if (scheduled.compareAndSet(false, true)) {
-            addTask(1000);
+            addTask(DEFAULT_INTERVAL);
         }
     }
 
@@ -110,6 +112,9 @@ public class LoadLimitFilter implements InboundFilter {
      * @param load       the current system load metrics
      */
     private void pass(InboundInvocation<?> invocation, SystemLoad threshold, SystemLoad load) {
+        if (!scheduled.get()) {
+            schedule();
+        }
         if (threshold == null || load == null) {
             return;
         }
@@ -155,7 +160,7 @@ public class LoadLimitFilter implements InboundFilter {
             double loadAverage = osBean.getSystemLoadAverage();
 
             load = new SystemLoad((int) cpuUsage, (int) loadAverage);
-            addTask(1000);
+            addTask(DEFAULT_INTERVAL);
         } catch (Throwable e) {
             logger.warn("Failed to get system metrics from JMX. caused by " + e.getMessage());
             addTask(10000);
