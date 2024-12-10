@@ -19,26 +19,37 @@ import com.jd.live.agent.demo.response.LiveLocation;
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
+import com.jd.live.agent.demo.springcloud.v2021.provider.config.EchoConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 @RestController
 public class EchoController {
 
-    @Value("${spring.application.name}")
-    private String applicationName;
+    private final String applicationName;
+
+    private final EchoConfig config;
+
+    public EchoController(@Value("${spring.application.name}") String applicationName, EchoConfig config) {
+        this.applicationName = applicationName;
+        this.config = config;
+    }
 
     @GetMapping("/echo/{str}")
     public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
-        try {
-            String waitTime = Optional.ofNullable(System.getenv("RESPONSE_WAIT_TIME")).orElse("2000");
-            Thread.sleep(Integer.parseInt(waitTime) + ThreadLocalRandom.current().nextInt(1000));
-        } catch (InterruptedException ignore) {
+        int sleepTime = config.getSleepTime();
+        if (sleepTime > 0) {
+            if (config.getRandomTime() > 0) {
+                sleepTime = sleepTime + ThreadLocalRandom.current().nextInt(config.getRandomTime());
+            }
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException ignore) {
+            }
         }
         LiveResponse response = new LiveResponse(str);
         configure(request, response);
@@ -55,7 +66,9 @@ public class EchoController {
 
     @RequestMapping(value = "/sleep/{millis}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
     public LiveResponse sleep(@PathVariable int millis, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
-        Thread.sleep(millis);
+        if (millis > 0) {
+            Thread.sleep(millis);
+        }
         LiveResponse lr = new LiveResponse(200, null, millis);
         configure(request, lr);
         return lr;
