@@ -29,5 +29,9 @@ public class LoadLimiterConfig {
 
     private Integer loadUsage;
 
+    public boolean isEmpty() {
+        return cpuUsage == null && loadUsage == null;
+    }
+
 }
 

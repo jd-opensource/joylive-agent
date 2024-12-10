@@ -17,9 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
+import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -29,12 +28,15 @@ import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.function.SingletonSupplier;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.describe;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -44,6 +46,8 @@ import java.util.function.Consumer;
  * dynamic client requests in a distributed system.
  */
 public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
+
+    protected static final String FIELD_SERVICE_INSTANCE_LIST_SINGLETON_SUPPLIER = "serviceInstanceListSingletonSupplier";
 
     protected static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
 
@@ -99,10 +103,16 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     public AbstractClusterRequest(T request,
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory) {
+        this(request, loadBalancerFactory, null);
+    }
+
+    public AbstractClusterRequest(T request,
+                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
+                                  LoadBalancerProperties properties) {
         super(request);
         this.loadBalancerFactory = loadBalancerFactory;
         this.lifecycles = new UnsafeLazyObject<>(this::buildLifecycleProcessors);
-        this.properties = new UnsafeLazyObject<>(this::buildProperties);
+        this.properties = new UnsafeLazyObject<>(() -> buildProperties(properties));
         this.lbRequest = new UnsafeLazyObject<>(this::buildLbRequest);
         this.instanceSupplier = new UnsafeLazyObject<>(this::buildServiceInstanceListSupplier);
         this.requestData = new UnsafeLazyObject<>(this::buildRequestData);
@@ -159,8 +169,15 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     protected abstract RequestData buildRequestData();
 
-    private LoadBalancerProperties buildProperties() {
-        return loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
+    /**
+     * Builds the LoadBalancerProperties based on the default properties and the LoadBalancerFactory.
+     *
+     * @param defaultProperties the default LoadBalancerProperties
+     * @return the built LoadBalancerProperties
+     */
+    private LoadBalancerProperties buildProperties(LoadBalancerProperties defaultProperties) {
+        LoadBalancerProperties result = loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
+        return result == null ? defaultProperties : result;
     }
 
     /**
@@ -203,21 +220,39 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @return A ServiceInstanceListSupplier that provides a list of available service instances, or null if the
      * load balancer does not provide such a supplier.
      */
-    @SuppressWarnings("unchecked")
     private ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
         return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(getService(), service -> {
+            ServiceInstanceListSupplier supplier = null;
             ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
             if (loadBalancer != null) {
-                ClassDesc describe = ClassUtils.describe(loadBalancer.getClass());
-                FieldDesc field = describe.getFieldList().getField(FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-                if (field != null) {
-                    ObjectProvider<ServiceInstanceListSupplier> provider = (ObjectProvider<ServiceInstanceListSupplier>) field.get(loadBalancer);
-                    return CacheObject.of(provider.getIfAvailable());
-                }
+                supplier = getServiceInstanceListSupplier(loadBalancer);
             }
-            return CacheObject.of(null);
+            return CacheObject.of(supplier);
         }).get();
 
+    }
+
+    /**
+     * Retrieves the ServiceInstanceListSupplier provider from the given ReactiveLoadBalancer.
+     *
+     * @param loadBalancer the ReactiveLoadBalancer to retrieve the ServiceInstanceListSupplier provider from
+     * @return an instance of ServiceInstanceListSupplier
+     */
+    @SuppressWarnings("unchecked")
+    protected ServiceInstanceListSupplier getServiceInstanceListSupplier(ReactiveLoadBalancer<ServiceInstance> loadBalancer) {
+        FieldList fieldList = describe(loadBalancer.getClass()).getFieldList();
+        FieldDesc fieldDesc = fieldList.getField(FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
+        if (fieldDesc != null) {
+            ObjectProvider<ServiceInstanceListSupplier> provider = (ObjectProvider<ServiceInstanceListSupplier>) fieldDesc.get(loadBalancer);
+            return provider == null ? null : provider.getIfAvailable();
+        } else {
+            fieldDesc = fieldList.getField(FIELD_SERVICE_INSTANCE_LIST_SINGLETON_SUPPLIER);
+            if (fieldDesc != null) {
+                SingletonSupplier<ServiceInstanceListSupplier> supplier = (SingletonSupplier<ServiceInstanceListSupplier>) fieldDesc.get(loadBalancer);
+                return supplier == null ? null : supplier.get();
+            }
+        }
+        return null;
     }
 
     /**

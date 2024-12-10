@@ -25,8 +25,8 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractClientCluster;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v4.cluster.AbstractClientCluster;
+import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v4.response.GatewayClusterResponse;
@@ -36,11 +36,11 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.CompletionContext;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.ResponseData;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -67,9 +67,9 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
 @Getter
 public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest, GatewayClusterResponse> {
 
-    private final LoadBalancerClientFactory clientFactory;
+    private final ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
-    public GatewayCluster(LoadBalancerClientFactory clientFactory) {
+    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
         this.clientFactory = clientFactory;
     }
 

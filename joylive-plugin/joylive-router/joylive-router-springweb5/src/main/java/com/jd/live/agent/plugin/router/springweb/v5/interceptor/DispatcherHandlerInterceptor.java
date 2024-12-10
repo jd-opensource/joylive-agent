@@ -65,12 +65,14 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                 HttpHeaders headers = exchange.getResponse().getHeaders();
                 labelHeaders(ex, headers::set);
             }).doOnSuccess(result -> {
-                Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
-                result.setExceptionHandler(ex -> {
-                    HttpHeaders headers = exchange.getResponse().getHeaders();
-                    labelHeaders(ex, headers::set);
-                    return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
-                });
+                if (result != null) {
+                    Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
+                    result.setExceptionHandler(ex -> {
+                        HttpHeaders headers = exchange.getResponse().getHeaders();
+                        labelHeaders(ex, headers::set);
+                        return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
+                    });
+                }
             });
             mc.skipWithResult(mono);
         }
