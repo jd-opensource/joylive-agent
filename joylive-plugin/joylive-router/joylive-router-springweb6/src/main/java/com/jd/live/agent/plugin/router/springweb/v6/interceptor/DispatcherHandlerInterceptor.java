@@ -58,13 +58,15 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
             Mono<Void> mono = context.inbound(invocation, () -> ((Mono<Void>) mc.invokeOrigin()).toFuture(), request::convert);
-            mono = mono.doOnError(ex -> {
-                Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
-                if (handled == null || !handled) {
-                    HttpHeaders headers = exchange.getResponse().getHeaders();
-                    labelHeaders(ex, headers::set);
-                }
-            });
+            if (config.isResponseException()) {
+                mono = mono.doOnError(ex -> {
+                    Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
+                    if (handled == null || !handled) {
+                        HttpHeaders headers = exchange.getResponse().getHeaders();
+                        labelHeaders(ex, headers::set);
+                    }
+                });
+            }
             mc.skipWithResult(mono);
         }
     }

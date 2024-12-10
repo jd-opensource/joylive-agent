@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.ServiceConfig;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,12 +28,20 @@ import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
  */
 public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
 
+    private final ServiceConfig config;
+
+    public ExceptionCarryingInterceptor(ServiceConfig config) {
+        this.config = config;
+    }
+
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // org.springframework.web.servlet.DispatcherServlet.processHandlerException
-        HttpServletResponse response = ctx.getArgument(1);
-        Exception ex = ctx.getArgument(3);
-        labelHeaders(ex, response::setHeader);
+        if (config.isResponseException()) {
+            // org.springframework.web.servlet.DispatcherServlet.processHandlerException
+            HttpServletResponse response = ctx.getArgument(1);
+            Exception ex = ctx.getArgument(3);
+            labelHeaders(ex, response::setHeader);
+        }
     }
 
 }

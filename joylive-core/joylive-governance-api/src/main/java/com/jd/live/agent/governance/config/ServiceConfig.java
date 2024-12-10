@@ -121,6 +121,10 @@ public class ServiceConfig {
     @Setter
     private boolean serviceGroupOpen = true;
 
+    @Getter
+    @Setter
+    private boolean responseException = true;
+
     private final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
         List<PrefixPath> result = new ArrayList<>();
         if (systemPaths != null) {

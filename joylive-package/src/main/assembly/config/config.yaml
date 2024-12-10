@@ -164,6 +164,7 @@ agent:
       localFirstMode: ${CONFIG_LOCAL_FIRST_MODE:CELL}
       serviceGroups: ${CONFIG_SERVICE_GROUPS:}
       serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}
+      responseException: ${CONFIG_RESPONSE_EXCEPTION:true}
       warmups: ${CONFIG_WARMUP_SERVICES:}
       systemPaths: ${CONFIG_SYSTEM_HTTP_PATHS}
       concurrencyLimiter:

@@ -61,19 +61,21 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
-            mono = mono.doOnError(ex -> {
-                HttpHeaders headers = exchange.getResponse().getHeaders();
-                labelHeaders(ex, headers::set);
-            }).doOnSuccess(result -> {
-                if (result != null) {
-                    Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
-                    result.setExceptionHandler(ex -> {
-                        HttpHeaders headers = exchange.getResponse().getHeaders();
-                        labelHeaders(ex, headers::set);
-                        return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
-                    });
-                }
-            });
+            if (config.isResponseException()) {
+                mono = mono.doOnError(ex -> {
+                    HttpHeaders headers = exchange.getResponse().getHeaders();
+                    labelHeaders(ex, headers::set);
+                }).doOnSuccess(result -> {
+                    if (result != null) {
+                        Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
+                        result.setExceptionHandler(ex -> {
+                            HttpHeaders headers = exchange.getResponse().getHeaders();
+                            labelHeaders(ex, headers::set);
+                            return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
+                        });
+                    }
+                });
+            }
             mc.skipWithResult(mono);
         }
     }

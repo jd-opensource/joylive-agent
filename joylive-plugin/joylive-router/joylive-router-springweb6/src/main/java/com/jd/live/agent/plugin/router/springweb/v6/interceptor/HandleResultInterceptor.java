@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -31,20 +32,28 @@ import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInbou
  */
 public class HandleResultInterceptor extends InterceptorAdaptor {
 
+    private final ServiceConfig config;
+
+    public HandleResultInterceptor(ServiceConfig config) {
+        this.config = config;
+    }
+
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
-        Boolean live = (Boolean) exchange.getAttributes().remove(KEY_LIVE_REQUEST);
-        if (live != null && live) {
-            Mono<Void> mono = mc.getResult();
-            mono = mono.onErrorResume(ex -> {
-                exchange.getAttributes().put(KEY_LIVE_EXCEPTION_HANDLED, Boolean.TRUE);
-                HttpHeaders headers = exchange.getResponse().getHeaders();
-                labelHeaders(ex, headers::set);
-                return Mono.error(ex);
-            });
-            mc.setResult(mono);
+        if (config.isResponseException()) {
+            MethodContext mc = (MethodContext) ctx;
+            ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
+            Boolean live = (Boolean) exchange.getAttributes().remove(KEY_LIVE_REQUEST);
+            if (live != null && live) {
+                Mono<Void> mono = mc.getResult();
+                mono = mono.onErrorResume(ex -> {
+                    exchange.getAttributes().put(KEY_LIVE_EXCEPTION_HANDLED, Boolean.TRUE);
+                    HttpHeaders headers = exchange.getResponse().getHeaders();
+                    labelHeaders(ex, headers::set);
+                    return Mono.error(ex);
+                });
+                mc.setResult(mono);
+            }
         }
     }
 }

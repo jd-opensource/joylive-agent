@@ -20,11 +20,13 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.plugin.router.springweb.v5.interceptor.ExceptionCarryingInterceptor;
 
 /**
@@ -41,11 +43,15 @@ public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
 
     protected static final String METHOD = "processHandlerException";
 
+    @Inject(ServiceConfig.COMPONENT_SERVICE_CONFIG)
+    private ServiceConfig serviceConfig;
+
     public ExceptionCarryingDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD), ExceptionCarryingInterceptor::new
+                        MatcherBuilder.named(METHOD),
+                        () -> new ExceptionCarryingInterceptor(serviceConfig)
                 )
         };
     }

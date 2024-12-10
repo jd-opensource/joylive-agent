@@ -87,12 +87,12 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
                         // For spring web flux 6.1.*
                         MatcherBuilder.named(METHOD_HANDLE_RESULT).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
-                        HandleResultInterceptor::new),
+                        () -> new HandleResultInterceptor(context.getGovernanceConfig().getServiceConfig())),
                 new InterceptorDefinitionAdapter(
                         // For spring web flux 6.0.*
                         MatcherBuilder.named(METHOD_DO_HANDLE_RESULT).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
-                        HandleResultInterceptor::new)
+                        () -> new HandleResultInterceptor(context.getGovernanceConfig().getServiceConfig()))
         };
     }
 }
