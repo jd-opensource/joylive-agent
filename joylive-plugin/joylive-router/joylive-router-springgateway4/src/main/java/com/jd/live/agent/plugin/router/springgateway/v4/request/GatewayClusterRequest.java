@@ -19,7 +19,7 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
-import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v4.request.AbstractClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
@@ -121,4 +121,5 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         return policy.getCodePolicy() != null && policy.getCodePolicy().isBodyRequest()
                 || policy.getExceptions() != null && !policy.getExceptions().isEmpty();
     }
+
 }

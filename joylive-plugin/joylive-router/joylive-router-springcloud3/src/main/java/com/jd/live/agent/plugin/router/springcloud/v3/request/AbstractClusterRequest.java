@@ -17,9 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -35,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -165,9 +164,16 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     protected abstract RequestData buildRequestData();
 
+    /**
+     * Builds the LoadBalancerProperties based on the default properties and the LoadBalancerFactory.
+     *
+     * @param defaultProperties the default LoadBalancerProperties
+     * @return the built LoadBalancerProperties
+     */
     private LoadBalancerProperties buildProperties(LoadBalancerProperties defaultProperties) {
         try {
-            return loadBalancerFactory == null ? defaultProperties : loadBalancerFactory.getProperties(getService());
+            LoadBalancerProperties result = loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
+            return result == null ? defaultProperties : result;
         } catch (Throwable e) {
             // fix spring cloud 3.0.6 without getProperties
             return defaultProperties;
@@ -214,21 +220,27 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @return A ServiceInstanceListSupplier that provides a list of available service instances, or null if the
      * load balancer does not provide such a supplier.
      */
-    @SuppressWarnings("unchecked")
     private ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
         return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(getService(), service -> {
+            ServiceInstanceListSupplier supplier = null;
             ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
             if (loadBalancer != null) {
-                ClassDesc describe = ClassUtils.describe(loadBalancer.getClass());
-                FieldDesc field = describe.getFieldList().getField(FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-                if (field != null) {
-                    ObjectProvider<ServiceInstanceListSupplier> provider = (ObjectProvider<ServiceInstanceListSupplier>) field.get(loadBalancer);
-                    return CacheObject.of(provider.getIfAvailable());
-                }
+                supplier = getServiceInstanceListSupplier(loadBalancer);
             }
-            return CacheObject.of(null);
+            return CacheObject.of(supplier);
         }).get();
 
+    }
+
+    /**
+     * Retrieves the ServiceInstanceListSupplier provider from the given ReactiveLoadBalancer.
+     *
+     * @param loadBalancer the ReactiveLoadBalancer to retrieve the ServiceInstanceListSupplier provider from
+     * @return an instance of ServiceInstanceListSupplier
+     */
+    protected ServiceInstanceListSupplier getServiceInstanceListSupplier(ReactiveLoadBalancer<ServiceInstance> loadBalancer) {
+        ObjectProvider<ServiceInstanceListSupplier> provider = getValue(loadBalancer, FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
+        return provider == null ? null : provider.getIfAvailable();
     }
 
     /**
