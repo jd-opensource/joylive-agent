@@ -39,6 +39,8 @@ public interface Request extends Attributes {
 
     String KEY_RESPONSE_BODY = "x-response-body";
 
+    String KEY_SERVER_ERROR = "x-response-error";
+
     String KEY_ERROR_POLICY = "x-error-policy";
 
 }

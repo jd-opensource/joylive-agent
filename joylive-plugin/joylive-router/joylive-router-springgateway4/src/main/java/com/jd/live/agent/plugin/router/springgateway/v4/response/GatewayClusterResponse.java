@@ -39,7 +39,7 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     }
 
     public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> bodySupplier) {
-        this(response, null, null);
+        this(response, null, bodySupplier);
     }
 
     public GatewayClusterResponse(ServerHttpResponse response, Supplier<ServiceError> errorSupplier, Supplier<String> bodySupplier) {

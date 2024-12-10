@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -142,6 +143,11 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
         if (lifecycles != null && consumer != null) {
             lifecycles.get().forEach(consumer);
         }
+    }
+
+    @Override
+    public boolean isDependentOnResponseBody(ErrorPolicy policy) {
+        return policy != null && policy.getCodePolicy() != null && policy.getCodePolicy().isDependentOnResponseBody();
     }
 
     public Request<?> getLbRequest() {

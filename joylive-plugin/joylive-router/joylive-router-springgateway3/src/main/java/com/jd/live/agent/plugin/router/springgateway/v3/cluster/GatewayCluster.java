@@ -111,12 +111,13 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Set<ErrorPolicy> policies = request.getAttribute(Request.KEY_ERROR_POLICY);
-            ServerWebExchange exchange = policies != null && !policies.isEmpty()
-                    ? request.getExchange().mutate().response(new BodyResponseDecorator(request.getExchange(), policies)).build()
-                    : request.getExchange();
+            Set<ErrorPolicy> policies = request.removeAttribute(Request.KEY_ERROR_POLICY);
+            // decorate response to remove exception header and get body
+            BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);
+            ServerWebExchange exchange = request.getExchange().mutate().response(decorator).build();
             GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(),
-                    () -> (String) exchange.getAttributes().get(Request.KEY_RESPONSE_BODY));
+                    () -> (ServiceError) exchange.getAttributes().remove(Request.KEY_SERVER_ERROR),
+                    () -> (String) exchange.getAttributes().remove(Request.KEY_RESPONSE_BODY));
             GatewayFilterChain chain = request.getChain();
             if (chain instanceof LiveGatewayFilterChain) {
                 // for retry
@@ -217,18 +218,28 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         @NonNull
         @Override
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-            String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-            if (body instanceof Flux && policyMatch(contentType)) {
-                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
-                    DataBufferFactory bufferFactory = bufferFactory();
-                    DataBuffer join = bufferFactory.join(dataBuffers);
-                    byte[] content = new byte[join.readableByteCount()];
-                    join.read(content);
-                    DataBufferUtils.release(join);
-                    exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
-                    return bufferFactory.wrap(content);
-                }));
+            final HttpHeaders headers = exchange.getResponse().getHeaders();
+            ServiceError error = ServiceError.build(key -> {
+                List<String> values = headers.remove(key);
+                return values == null || values.isEmpty() ? null : values.get(0);
+            });
+            if (error != null) {
+                exchange.getAttributes().put(Request.KEY_SERVER_ERROR, error);
+            }
+            if (policies != null && !policies.isEmpty()) {
+                String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+                if (body instanceof Flux && policyMatch(contentType)) {
+                    Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                    return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
+                        DataBufferFactory bufferFactory = bufferFactory();
+                        DataBuffer join = bufferFactory.join(dataBuffers);
+                        byte[] content = new byte[join.readableByteCount()];
+                        join.read(content);
+                        DataBufferUtils.release(join);
+                        exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
+                        return bufferFactory.wrap(content);
+                    }));
+                }
             }
             return super.writeWith(body);
         }

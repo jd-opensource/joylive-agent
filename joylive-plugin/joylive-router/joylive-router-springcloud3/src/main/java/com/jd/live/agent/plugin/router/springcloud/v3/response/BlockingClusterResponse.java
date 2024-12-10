@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
@@ -73,10 +72,9 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
                 body = new byte[0];
             } else {
                 try {
-                    InputStream in = response.getBody();
-                    body = IOUtils.read(in);
+                    body = IOUtils.read(response.getBody());
+                    response.close();
                     response = new ClientHttpResponseAdapter(response, body);
-                    Close.instance().close(in);
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
                     body = new byte[0];

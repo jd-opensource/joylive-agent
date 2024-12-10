@@ -169,7 +169,7 @@ public interface ServiceRequest extends Request {
      * @param policy the error policy to check
      * @return true if the response body is required, false otherwise (default implementation always returns false)
      */
-    default boolean requireResponseBody(ErrorPolicy policy) {
+    default boolean isDependentOnResponseBody(ErrorPolicy policy) {
         return false;
     }
 

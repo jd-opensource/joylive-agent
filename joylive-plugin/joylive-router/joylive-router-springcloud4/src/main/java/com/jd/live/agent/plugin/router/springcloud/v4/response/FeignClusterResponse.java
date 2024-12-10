@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v4.response;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
@@ -79,6 +78,8 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
                 try {
                     InputStream in = bodied.asInputStream();
                     body = IOUtils.read(in);
+                    response.close();
+                    // create new
                     response = Response.builder()
                             .body(body)
                             .headers(response.headers())
@@ -87,7 +88,6 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
                             .request(response.request())
                             .status(response.status())
                             .build();
-                    Close.instance().close(in);
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
                     body = new byte[0];

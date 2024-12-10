@@ -82,7 +82,7 @@ public class CodePolicy implements Cloneable {
      *
      * @return true if the body of the code should be parsed, false otherwise.
      */
-    public boolean isBodyRequest() {
+    public boolean isDependentOnResponseBody() {
         return parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
     }
 

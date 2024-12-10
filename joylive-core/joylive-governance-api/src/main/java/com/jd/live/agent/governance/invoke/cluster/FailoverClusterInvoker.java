@@ -74,7 +74,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
         R request = invocation.getRequest();
-        if (retryPolicy != null && request.requireResponseBody(retryPolicy)) {
+        if (retryPolicy != null && request.isDependentOnResponseBody(retryPolicy)) {
             request.getAttributeIfAbsent(Request.KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(retryPolicy);
         }
         RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);

@@ -15,11 +15,8 @@
  */
 package com.jd.live.agent.governance.exception;
 
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -108,16 +105,5 @@ public interface ErrorPolicy {
             }
         }
         return false;
-    }
-
-    /**
-     * Resolves Exception names of string type to set type
-     * @param source Exception names of string type
-     * @param separator separator
-     * @return Exception names of set type
-     */
-    static Set<String> parseExceptionNames(String source, String separator) {
-        String[] split = StringUtils.split(source, separator);
-        return new HashSet<>(Arrays.asList(split));
     }
 }

@@ -98,7 +98,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             CircuitBreaker breaker;
             T request = invocation.getRequest();
             for (CircuitBreakPolicy policy : policies) {
-                if (request.requireResponseBody(policy)) {
+                if (request.isDependentOnResponseBody(policy)) {
                     request.getAttributeIfAbsent(Request.KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(policy);
                 }
                 switch (policy.getLevel()) {

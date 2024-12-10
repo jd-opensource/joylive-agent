@@ -17,7 +17,17 @@ package com.jd.live.agent.governance.exception;
 
 import lombok.Getter;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Function;
+
+import static com.jd.live.agent.core.Constants.EXCEPTION_MESSAGE_LABEL;
+import static com.jd.live.agent.core.Constants.EXCEPTION_NAMES_LABEL;
+import static com.jd.live.agent.core.util.StringUtils.split;
+import static java.util.Arrays.asList;
 
 @Getter
 public class ServiceError {
@@ -53,4 +63,28 @@ public class ServiceError {
         // ignore exception names
         return throwable != null;
     }
+
+    /**
+     * Builds a ServiceError object from the given function.
+     *
+     * @param func a function that provides the error message and exception names
+     * @return a ServiceError object if the error message or exception names are not empty, otherwise null
+     */
+    public static ServiceError build(Function<String, String> func) {
+        // get message and exception names from header
+        String message = func == null ? null : func.apply(EXCEPTION_MESSAGE_LABEL);
+        String names = func == null ? null : func.apply(EXCEPTION_NAMES_LABEL);
+        try {
+            message = message == null || message.isEmpty()
+                    ? message
+                    : URLDecoder.decode(message, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException ignored) {
+        }
+        Set<String> exceptionNames = names == null || names.isEmpty() ? null : new LinkedHashSet<>(asList(split(names)));
+        if (message != null && !message.isEmpty() || exceptionNames != null && !exceptionNames.isEmpty()) {
+            return new ServiceError(message, exceptionNames, true);
+        }
+        return null;
+    }
+
 }
