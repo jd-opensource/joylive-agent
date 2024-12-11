@@ -1,6 +1,6 @@
 version=1.5.0-$(shell git rev-parse --short HEAD)
 #version=1.0.0
-repo ?= ghcr.io/jd-opensource
+repo ?= hub.jdcloud.com/jmsf
 
 clean:
 	mvn clean -f ../pom.xml
@@ -79,3 +79,27 @@ push-joylive-demo-rocketmq:
 	  ${repo}/joylive-demo-rocketmq:${version}-amd64 \
 	  ${repo}/joylive-demo-rocketmq:${version}-arm64
 	docker manifest push ${repo}/joylive-demo-rocketmq:${version}
+
+image-joylive-demo-grpc-consumer:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-grpc-consumer:${version}-amd64 ./joylive-demo-grpc/joylive-demo-grpc-consumer
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-grpc-consumer:${version}-arm64 ./joylive-demo-grpc/joylive-demo-grpc-consumer
+
+push-joylive-demo-grpc-consumer:
+	docker push ${repo}/joylive-demo-grpc-consumer:${version}-amd64
+	docker push ${repo}/joylive-demo-grpc-consumer:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-grpc-consumer:${version} \
+	  ${repo}/joylive-demo-grpc-consumer:${version}-amd64 \
+	  ${repo}/joylive-demo-grpc-consumer:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-grpc-consumer:${version}
+
+image-joylive-demo-grpc-provider:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-grpc-provider:${version}-amd64 ./joylive-demo-grpc/joylive-demo-grpc-provider
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-grpc-provider:${version}-arm64 ./joylive-demo-grpc/joylive-demo-grpc-provider
+
+push-joylive-demo-grpc-provider:
+	docker push ${repo}/joylive-demo-grpc-provider:${version}-amd64
+	docker push ${repo}/joylive-demo-grpc-provider:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-grpc-provider:${version} \
+	  ${repo}/joylive-demo-grpc-provider:${version}-amd64 \
+	  ${repo}/joylive-demo-grpc-provider:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-grpc-provider:${version}
