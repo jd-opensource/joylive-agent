@@ -17,32 +17,44 @@ package com.jd.live.agent.governance.policy.service.auth;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.jd.live.agent.governance.invoke.auth.Authenticate.KEY_AUTH;
+import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN;
+import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN_KEY;
+
 /**
  * Auth policy
  *
  * @since 1.2.0
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithId<AuthPolicy>, Serializable {
 
     /**
      * The type of the auth policy.
      */
+    @Getter
+    @Setter
     private String type;
 
+    @Getter
+    @Setter
     private Map<String, String> params;
+
+    private volatile transient TokenPolicy tokenPolicy;
+
+    public AuthPolicy() {
+    }
+
+    public AuthPolicy(String type, Map<String, String> params) {
+        this.type = type;
+        this.params = params;
+    }
 
     @Override
     public void supplement(AuthPolicy source) {
@@ -67,5 +79,18 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
         }
         String value = params.get(key);
         return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    public TokenPolicy getTokenPolicy() {
+        if (tokenPolicy == null) {
+            synchronized (this) {
+                if (tokenPolicy == null) {
+                    String key = getParameter(KEY_TOKEN_KEY, KEY_AUTH);
+                    String token = getParameter(KEY_TOKEN);
+                    tokenPolicy = new TokenPolicy(key, token);
+                }
+            }
+        }
+        return tokenPolicy;
     }
 }
