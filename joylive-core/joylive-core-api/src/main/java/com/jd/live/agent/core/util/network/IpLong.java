@@ -213,10 +213,20 @@ public class IpLong implements Comparable<IpLong> {
      * @return Segmented IP
      */
     public static IpPart parseIp(final String ip) {
+        return parseIp(ip, null);
+    }
+
+    /**
+     * Parses the given IP address and returns its segmented parts.
+     *
+     * @param ip       the IP address to parse
+     * @param ipType   the type of IP address (IPv4 or IPv6)
+     * @return the segmented IP address parts
+     */
+    public static IpPart parseIp(final String ip, IpType ipType) {
         if (ip == null || ip.isEmpty()) {
             return null;
         }
-        IpType ipType = null;
         int[] parts = new int[8];
         int index = 0;
         int start = -1;

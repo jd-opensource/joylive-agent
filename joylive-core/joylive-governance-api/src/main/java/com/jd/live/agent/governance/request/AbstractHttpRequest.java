@@ -16,11 +16,12 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.network.IpLong;
+import com.jd.live.agent.core.util.network.IpType;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Provides an abstract base class for HTTP requests, implementing the {@link HttpRequest} interface.
@@ -42,8 +43,6 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * Key for the "serviceGroup" header in HTTP requests.
      */
     protected static final String HEAD_GROUP_KEY = "serviceGroup";
-
-    protected static final Pattern IPV4_PATTERN = Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$");
 
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
@@ -208,7 +207,15 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * @return true if the host string is a domain name, false otherwise
      */
     protected boolean isDomain(String host) {
-        return host != null && host.charAt(0) != '[' && !IPV4_PATTERN.matcher(host).matches();
+        if (host == null || host.isEmpty()) {
+            return false;
+        } else if (host.charAt(0) == '[') {
+            // IPv6
+            return false;
+        } else {
+            // Not IPv4
+            return IpLong.parseIp(host, IpType.IPV4) == null;
+        }
     }
 
     /**
