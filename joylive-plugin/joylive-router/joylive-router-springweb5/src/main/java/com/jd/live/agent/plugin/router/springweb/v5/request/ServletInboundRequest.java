@@ -119,26 +119,26 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     }
 
     @Override
-    protected int parsePort() {
-        int result = super.parsePort();
-        return result >= 0 ? result : request.getServerPort();
-    }
-
-    @Override
-    protected String parseHost() {
-        String result = uri.getHost();
-        if (result == null || !isDomain(result)) {
-            String candidate = parseHostByHeader();
-            if (candidate != null && isDomain(candidate)) {
-                result = candidate;
-            } else {
-                candidate = request.getServerName();
-                if (candidate != null && isDomain(candidate)) {
-                    result = candidate;
-                }
-            }
+    protected Address parseAddress() {
+        Address result = super.parseAddress();
+        if (result == null) {
+            result = parseAddressByRequest();
         }
         return result;
+    }
+
+    /**
+     * Parses the address from the HTTP request.
+     *
+     * @return the parsed address, or null if the server name is invalid
+     */
+    protected Address parseAddressByRequest() {
+        String serverName = request.getServerName();
+        if (validateHost(serverName)) {
+            int serverPort = request.getServerPort();
+            return new Address(serverName, serverPort < 0 ? null : serverPort);
+        }
+        return null;
     }
 
     /**

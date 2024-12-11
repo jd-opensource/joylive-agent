@@ -50,7 +50,7 @@ public interface HttpRequest extends ServiceRequest {
      *
      * @return The port number.
      */
-    int getPort();
+    Integer getPort();
 
     /**
      * Returns the host name of the request.

@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.request;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.network.IpLong;
 import com.jd.live.agent.core.util.network.IpType;
+import lombok.Getter;
 
 import java.net.URI;
 import java.util.List;
@@ -65,14 +66,9 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     protected URI uri;
 
     /**
-     * Lazily evaluated port number of the request URI.
-     */
-    protected UnsafeLazyObject<Integer> port;
-
-    /**
      * Lazily evaluated host of the request URI.
      */
-    protected UnsafeLazyObject<String> host;
+    protected UnsafeLazyObject<Address> address;
 
     /**
      * Lazily evaluated scheme of the request URI.
@@ -86,8 +82,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      */
     public AbstractHttpRequest(T request) {
         super(request);
-        port = new UnsafeLazyObject<>(this::parsePort);
-        host = new UnsafeLazyObject<>(this::parseHost);
+        address = new UnsafeLazyObject<>(this::parseAddress);
         schema = new UnsafeLazyObject<>(this::parseScheme);
     }
 
@@ -103,14 +98,15 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     }
 
     @Override
-    public int getPort() {
-        return port.get();
+    public Integer getPort() {
+        Address addr = address.get();
+        return addr == null ? null : addr.getPort();
     }
 
     @Override
     public String getHost() {
-        String result = host.get();
-        return result == null || result.isEmpty() ? null : result;
+        Address addr = address.get();
+        return addr == null ? null : addr.getHost();
     }
 
     @Override
@@ -149,98 +145,67 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     }
 
     /**
-     * Parses the port number from the request URI.
+     * Parses the address from the URI and header.
      *
-     * @return The port number, or a default value if it cannot be parsed from the URI.
+     * @return the parsed address, or null if the host is invalid
      */
-    protected int parsePort() {
-        int result = uri.getPort();
-        if (result < 0) {
-            result = parsePortByHeader();
-        }
-        return result;
-    }
-
-    /**
-     * Parses the port number from the "Host" header when it is not directly available from the URI.
-     *
-     * @return The port number parsed from the header, or -1 if it cannot be determined.
-     */
-    protected int parsePortByHeader() {
-        int result = -1;
-        String header = getHeader(HEAD_HOST_KEY);
-        if (header != null) {
-            char ch;
-            for (int i = header.length() - 1; i > 0; i--) {
-                ch = header.charAt(i);
-                if (ch == ':') {
-                    try {
-                        result = Integer.parseInt(header.substring(i + 1));
-                    } catch (NumberFormatException ignore) {
-                    }
-                    break;
-                } else if (!Character.isDigit(ch)) {
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Parses the host from the request URI.
-     *
-     * @return The host, or a default value if it cannot be parsed from the URI.
-     */
-    protected String parseHost() {
-        String result = uri.getHost();
+    protected Address parseAddress() {
+        Address result = parseAddressByUrl();
         if (result == null) {
-            result = parseHostByHeader();
+            result = parseAddressByHeader();
         }
         return result;
     }
 
     /**
-     * Checks if the given host string represents a domain name rather than an IP address.
+     * Parses the address from the URL.
      *
-     * @param host The host string to check
-     * @return true if the host string is a domain name, false otherwise
+     * @return the parsed address, or null if the host is invalid
      */
-    protected boolean isDomain(String host) {
-        if (host == null || host.isEmpty()) {
-            return false;
-        } else if (host.charAt(0) == '[') {
-            // IPv6
-            return false;
-        } else {
-            // Not IPv4
-            return IpLong.parseIp(host, IpType.IPV4) == null;
-        }
+    protected Address parseAddressByUrl() {
+        String host = uri.getHost();
+        int port = uri.getPort();
+        return validateHost(host) ? new Address(host, port < 0 ? null : port) : null;
     }
 
     /**
-     * Parses the host from the "Host" header when it is not directly available from the URI.
+     * Parses the address from the HTTP header.
      *
-     * @return The host parsed from the header, or null if it cannot be determined.
+     * @return the parsed address, or null if the host is invalid
      */
-    protected String parseHostByHeader() {
-        String result = null;
+    protected Address parseAddressByHeader() {
         String header = getHeader(HEAD_HOST_KEY);
-        if (header != null) {
-            char ch;
-            for (int i = header.length() - 1; i > 0; i--) {
-                ch = header.charAt(i);
-                if (ch == ':') {
-                    // port
-                    result = header.substring(0, i);
-                    break;
-                } else if (!Character.isDigit(ch)) {
-                    result = header;
-                    break;
+        if (header == null) {
+            return null;
+        }
+        String host = header;
+        int port = -1;
+        char ch;
+        for (int i = header.length() - 1; i > 0; i--) {
+            ch = header.charAt(i);
+            if (ch == ':') {
+                host = header.substring(0, i);
+                // port
+                try {
+                    port = Integer.parseInt(header.substring(i + 1));
+                } catch (NumberFormatException ignore) {
                 }
+                break;
+            } else if (!Character.isDigit(ch)) {
+                break;
             }
         }
-        return result;
+        return validateHost(host) ? new Address(host, port < 0 ? null : port) : null;
+    }
+
+    /**
+     * Validates the given host.
+     *
+     * @param host the host to validate
+     * @return true if the host is valid, false otherwise
+     */
+    protected boolean validateHost(String host) {
+        return host != null && !host.isEmpty();
     }
 
     /**
@@ -250,6 +215,19 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      */
     protected String parseScheme() {
         return uri.getScheme();
+    }
+
+    @Getter
+    protected static class Address {
+
+        private final String host;
+
+        private final Integer port;
+
+        public Address(String host, Integer port) {
+            this.host = host;
+            this.port = port;
+        }
     }
 
     /**
@@ -270,18 +248,17 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
         }
 
         @Override
-        protected String parseHost() {
-            String result = uri.getHost();
-            if (result == null || !isDomain(result)) {
-                String candidate = parseHostByHeader();
-                if (candidate != null && isDomain(candidate)) {
-                    result = candidate;
-                }
+        protected boolean validateHost(String host) {
+            if (host == null || host.isEmpty()) {
+                return false;
+            } else if (host.charAt(0) == '[') {
+                // IPv6
+                return false;
+            } else {
+                // Not IPv4
+                return IpLong.parseIp(host, IpType.IPV4) == null;
             }
-            return result;
         }
-
-
     }
 
     /**
