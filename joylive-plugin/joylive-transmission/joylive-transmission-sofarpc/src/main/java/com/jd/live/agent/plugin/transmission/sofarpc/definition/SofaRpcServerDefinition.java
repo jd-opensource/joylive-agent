@@ -29,8 +29,6 @@ import com.jd.live.agent.plugin.transmission.sofarpc.interceptor.SofaRpcServerIn
 
 import java.util.List;
 
-import static com.jd.live.agent.plugin.transmission.sofarpc.definition.SofaRpcClientDefinition.ARGUMENT_INVOKE;
-
 @Injectable
 @Extension(value = "SofaRpcServerDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnProperties(value = {
@@ -44,6 +42,11 @@ public class SofaRpcServerDefinition extends PluginDefinitionAdapter {
     public static final String TYPE_PROVIDER_BAGGAGE_FILTER = "com.alipay.sofa.rpc.filter.ProviderBaggageFilter";
 
     private static final String METHOD_INVOKE = "invoke";
+
+    protected static final String[] ARGUMENT_INVOKE = new String[]{
+            "com.alipay.sofa.rpc.filter.FilterInvoker",
+            "com.alipay.sofa.rpc.core.request.SofaRequest"
+    };
 
     @Inject
     private List<CargoRequire> requires;

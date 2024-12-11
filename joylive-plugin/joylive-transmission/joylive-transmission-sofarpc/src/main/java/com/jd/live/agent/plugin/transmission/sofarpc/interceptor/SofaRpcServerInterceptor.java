@@ -35,7 +35,7 @@ public class SofaRpcServerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        restoreTag((SofaRequest) ctx.getArguments()[0]);
+        restoreTag((SofaRequest) ctx.getArguments()[1]);
     }
 
     private void restoreTag(SofaRequest request) {
