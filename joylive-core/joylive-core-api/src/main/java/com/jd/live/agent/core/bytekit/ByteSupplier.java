@@ -17,6 +17,10 @@ package com.jd.live.agent.core.bytekit;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
+import java.lang.instrument.Instrumentation;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Defines a contract for supplying {@link ByteBuilder} instances. This interface is aimed
  * at providing a way to create new instances of {@link ByteBuilder}, which can be used for
@@ -40,4 +44,13 @@ public interface ByteSupplier {
      * @return A new instance of {@link ByteBuilder} ready for byte manipulation tasks.
      */
     ByteBuilder create();
+
+    /**
+     * Exports packages from source modules to target modules.
+     *
+     * @param instrumentation the instrumentation object
+     * @param targets         a map of target modules and their corresponding source types
+     * @param loaders         the class loaders
+     */
+    void export(Instrumentation instrumentation, Map<String, Set<String>> targets, ClassLoader... loaders);
 }
