@@ -129,6 +129,9 @@ agent:
         type: Resilience4j
         cleanInterval: 30000
         expireTime: 60000
+      monitor:
+        forwardEnabled: ${CONFIG_MONITOR_FORWARD_TRAFFIC_ENABLED:}
+        rejectEnabled: true
     live:
       topics: ${CONFIG_LIVE_TOPICS}
       modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:true}
