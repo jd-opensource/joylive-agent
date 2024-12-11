@@ -24,7 +24,7 @@ public class GrpcEndpoint extends AbstractEndpoint {
 
     public GrpcEndpoint(Subchannel subchannel) {
         this.subchannel = subchannel;
-        this.address = getInetSocketAddress();
+        this.address = getInetSocketAddress(subchannel);
     }
 
     @Override
@@ -57,7 +57,8 @@ public class GrpcEndpoint extends AbstractEndpoint {
         return subchannel;
     }
 
-    private InetSocketAddress getInetSocketAddress() {
+    private static InetSocketAddress getInetSocketAddress(Subchannel subchannel) {
+
         List<SocketAddress> addresses = subchannel.getAllAddresses().get(0).getAddresses();
         for (SocketAddress addr : addresses) {
             if (addr instanceof InetSocketAddress) {

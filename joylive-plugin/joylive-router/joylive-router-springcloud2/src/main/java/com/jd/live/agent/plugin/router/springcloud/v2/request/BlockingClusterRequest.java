@@ -58,7 +58,7 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
         this.uri = request.getURI();
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(request.getHeaders()).get(HttpHeaders.COOKIE)));
+        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getHeaders().get(HttpHeaders.COOKIE)));
         this.body = body;
         this.execution = execution;
     }
@@ -75,6 +75,13 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
     @Override
     public String getHeader(String key) {
         return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+    }
+
+    @Override
+    public void setHeader(String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+        }
     }
 
     public byte[] getBody() {

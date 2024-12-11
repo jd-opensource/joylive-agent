@@ -75,6 +75,13 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
         return key == null || key.isEmpty() ? null : request.headers().getFirst(key);
     }
 
+    @Override
+    public void setHeader(String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            HttpHeaders.writableHttpHeaders(request.headers()).set(key, value);
+        }
+    }
+
     public ExchangeFunction getNext() {
         return next;
     }

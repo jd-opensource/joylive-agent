@@ -41,7 +41,7 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
         this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
         this.cookies = new UnsafeLazyObject<>(() -> request instanceof ServerHttpRequest
                 ? HttpUtils.parseCookie(((ServerHttpRequest) request).getCookies(), HttpCookie::getValue)
-                : HttpUtils.parseCookie(HttpHeaders.writableHttpHeaders(request.getHeaders()).get(HttpHeaders.COOKIE)));
+                : HttpUtils.parseCookie(request.getHeaders().get(HttpHeaders.COOKIE)));
     }
 
     @Override
@@ -62,6 +62,13 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
     @Override
     public String getHeader(String key) {
         return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+    }
+
+    @Override
+    public void setHeader(String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+        }
     }
 
     @Override

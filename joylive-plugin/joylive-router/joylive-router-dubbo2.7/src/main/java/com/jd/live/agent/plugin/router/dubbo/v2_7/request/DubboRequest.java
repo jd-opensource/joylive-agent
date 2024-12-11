@@ -150,6 +150,13 @@ public interface DubboRequest {
         }
 
         @Override
+        public void setHeader(String key, String value) {
+            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+                request.setAttachment(key, value);
+            }
+        }
+
+        @Override
         public Function<Throwable, ErrorName> getErrorFunction() {
             return DUBBO_ERROR_FUNCTION;
         }

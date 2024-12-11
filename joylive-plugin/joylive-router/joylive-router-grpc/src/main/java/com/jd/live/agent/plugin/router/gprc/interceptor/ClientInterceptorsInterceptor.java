@@ -24,10 +24,11 @@ import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LivePickerAdvice;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.request.invoke.GrpcInvocation.GrpcOutboundInvocation;
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.MethodDescriptor;
+import io.grpc.*;
+import io.grpc.LoadBalancer.Subchannel;
+
+import java.util.List;
+import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.CollectionUtils.convert;
 
@@ -64,21 +65,44 @@ public class ClientInterceptorsInterceptor extends InterceptorAdaptor {
 
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> newCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions) {
-            String serviceName = LiveDiscovery.getService(method.getServiceName());
-            GrpcOutboundRequest request = new GrpcOutboundRequest(null, serviceName, method);
-            GrpcOutboundInvocation invocation = new GrpcOutboundInvocation(request, context);
-            LivePickerAdvice advice = new LivePickerAdvice(channels -> {
-                // lazy route.
-                GrpcEndpoint endpoint = context.route(invocation, convert(channels, GrpcEndpoint::new));
-                return endpoint.getSubchannel();
-            });
+            LiveRoute<ReqT, RespT> route = new LiveRoute<>(context, method);
+            LivePickerAdvice advice = new LivePickerAdvice(route);
             callOptions = callOptions.withOption(LivePickerAdvice.KEY_PICKER_ADVICE, advice);
-            return channel.newCall(method, callOptions);
+            return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(channel.newCall(method, callOptions)) {
+                @Override
+                public void start(Listener<RespT> responseListener, Metadata headers) {
+                    route.headers = headers;
+                    super.start(responseListener, headers);
+                }
+            };
         }
 
         @Override
         public String authority() {
             return channel.authority();
+        }
+    }
+
+    private static class LiveRoute<ReqT, RespT> implements Function<List<Subchannel>, Subchannel> {
+
+        private final InvocationContext context;
+
+        private final MethodDescriptor<ReqT, RespT> method;
+
+        private Metadata headers;
+
+        LiveRoute(InvocationContext context, MethodDescriptor<ReqT, RespT> method) {
+            this.context = context;
+            this.method = method;
+        }
+
+        @Override
+        public Subchannel apply(List<Subchannel> subchannels) {
+            String serviceName = LiveDiscovery.getService(method.getServiceName());
+            GrpcOutboundRequest request = new GrpcOutboundRequest(headers, serviceName, method);
+            GrpcOutboundInvocation invocation = new GrpcOutboundInvocation(request, context);
+            GrpcEndpoint endpoint = context.route(invocation, convert(subchannels, GrpcEndpoint::new));
+            return endpoint.getSubchannel();
         }
     }
 }

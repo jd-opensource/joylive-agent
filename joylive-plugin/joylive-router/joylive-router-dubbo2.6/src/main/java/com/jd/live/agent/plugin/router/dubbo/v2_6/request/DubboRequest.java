@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
@@ -127,6 +128,20 @@ public interface DubboRequest {
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        @Override
+        public void setHeader(String key, String value) {
+            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+                if (request instanceof RpcInvocation) {
+                    ((RpcInvocation) request).setAttachment(key, value);
+                } else {
+                    Map<String, String> map = request.getAttachments();
+                    if (map != null) {
+                        map.put(key, value);
+                    }
+                }
+            }
         }
 
         @Override

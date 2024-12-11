@@ -31,9 +31,7 @@ public class TypeScanner {
                     && !t.isEnum()
                     && !t.isInterface()
                     && !t.isArray()
-                    && !t.equals(Object.class)
-                    && !t.getName().startsWith("java.")
-                    && !t.getName().startsWith("javax.");
+                    && !t.equals(Object.class);
 
     private final Class<?> type;
 

@@ -245,6 +245,8 @@ public interface ServiceRequest extends Request {
                         ? null
                         : new ErrorName(throwable.getClass().getName(), null);
 
+        void setHeader(String key, String value);
+
         /**
          * Retrieves a set of identifiers that represent the attempts made for this request.
          *

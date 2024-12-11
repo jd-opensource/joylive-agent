@@ -17,7 +17,10 @@ package com.jd.live.agent.plugin.router.gprc.request;
 
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
-import io.grpc.*;
+import io.grpc.Grpc;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
+import io.grpc.ServerCall;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -57,13 +60,20 @@ public interface GrpcRequest {
     /**
      * A nested class representing an outbound gRPC request.
      */
-    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<ClientCall<?, ?>> implements GrpcRequest {
+    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<Metadata> implements GrpcRequest {
 
-        public GrpcOutboundRequest(ClientCall<?, ?> request, String serviceName, MethodDescriptor<?, ?> method) {
+        public GrpcOutboundRequest(Metadata request, String serviceName, MethodDescriptor<?, ?> method) {
             super(request);
             this.service = serviceName;
             this.path = method.getServiceName();
             this.method = method.getBareMethodName();
+        }
+
+        @Override
+        public void setHeader(String key, String value) {
+            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+                request.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
+            }
         }
 
     }

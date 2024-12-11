@@ -65,4 +65,11 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
     public String getHeader(String key) {
         return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
     }
+
+    @Override
+    public void setHeader(String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+        }
+    }
 }

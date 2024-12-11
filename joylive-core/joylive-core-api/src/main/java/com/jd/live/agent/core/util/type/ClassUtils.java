@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +62,26 @@ public class ClassUtils {
      */
     public static ClassDesc describe(final Class<?> type) {
         return type == null ? null : classDescs.computeIfAbsent(type, ClassDesc::new);
+    }
+
+    /**
+     * Gets the value of a static field with the given name from the specified class.
+     *
+     * @param type the class to retrieve the field value from
+     * @param fieldName the name of the field to retrieve
+     * @return the value of the field, or null if the field does not exist or is not static
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getValue(Class<?> type, String fieldName) {
+        if (type == null || fieldName == null) {
+            return null;
+        }
+        ClassDesc classDesc = describe(type);
+        FieldDesc fieldDesc = classDesc.getFieldList().getField(fieldName);
+        if (fieldDesc == null || !Modifier.isStatic(fieldDesc.getModifiers())) {
+            return null;
+        }
+        return (T) fieldDesc.get(null);
     }
 
     /**

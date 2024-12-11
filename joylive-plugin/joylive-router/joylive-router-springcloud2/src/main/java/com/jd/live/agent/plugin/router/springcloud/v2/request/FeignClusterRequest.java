@@ -27,8 +27,12 @@ import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.http.HttpHeaders;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 
 /**
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractClusterRequest}
@@ -43,6 +47,8 @@ import java.util.List;
 public class FeignClusterRequest extends AbstractClusterRequest<Request> {
 
     private final Request.Options options;
+
+    private final UnsafeLazyObject<Map<String, Collection<String>>> writeableHeaders;
 
     /**
      * Constructs a new {@code FeignOutboundRequest} with the specified Feign request, load balancer client factory,
@@ -61,6 +67,7 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.requestTemplate().queryLine()));
         this.headers = new UnsafeLazyObject<>(() -> new MultiLinkedMap<>(request.headers(), CaseInsensitiveLinkedMap::new));
         this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.headers().get(HttpHeaders.COOKIE)));
+        this.writeableHeaders = new UnsafeLazyObject<>(() -> modifiedMap(request.headers()));
     }
 
     @Override
@@ -85,6 +92,13 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
             return ((List<String>) values).get(0);
         }
         return values.iterator().next();
+    }
+
+    @Override
+    public void setHeader(String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            writeableHeaders.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+        }
     }
 
     public Request.Options getOptions() {

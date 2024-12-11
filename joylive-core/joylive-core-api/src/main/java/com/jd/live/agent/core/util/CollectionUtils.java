@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.core.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
+import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.core.util.type.FieldDesc;
+
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -31,6 +31,10 @@ public class CollectionUtils {
      * Default load factor for {@link HashMap}/{@link LinkedHashMap} variants.
      */
     public static final float DEFAULT_LOAD_FACTOR = 0.75f;
+
+    private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
+
+    private static final FieldDesc MAP_FIELD = ClassUtils.describe(UNMODIFIED_MAP_CLASS).getFieldList().getField("m");
 
     /**
      * Filters the provided list of objects based on the given predicate.
@@ -80,6 +84,23 @@ public class CollectionUtils {
             result.add(converter.apply(instance));
         }
         return result;
+    }
+
+    /**
+     * Returns a modified version of the given map, if necessary.
+     *
+     * @param sources the original map
+     * @return the modified map, or the original map if no modification is needed
+     */
+    @SuppressWarnings("unchecked")
+    public static <K, V> Map<K, V> modifiedMap(Map<K, V> sources) {
+        if (sources == null) {
+            return null;
+        }
+        if (sources.getClass() == UNMODIFIED_MAP_CLASS) {
+            sources = (Map<K, V>) MAP_FIELD.get(sources);
+        }
+        return sources;
     }
 
     /**

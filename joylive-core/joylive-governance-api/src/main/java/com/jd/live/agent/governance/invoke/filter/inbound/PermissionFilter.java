@@ -45,7 +45,7 @@ public class PermissionFilter implements InboundFilter {
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<PermissionPolicy> policies = servicePolicy == null ? null : servicePolicy.getPermissionPolicies();
-        if (null != policies && !policies.isEmpty()) {
+        if (null != policies) {
             pass(invocation, policies);
         }
         return chain.filter(invocation);

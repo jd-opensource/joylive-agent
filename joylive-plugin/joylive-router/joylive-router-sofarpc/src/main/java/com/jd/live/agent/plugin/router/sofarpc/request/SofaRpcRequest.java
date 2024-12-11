@@ -175,6 +175,13 @@ public interface SofaRpcRequest {
         }
 
         @Override
+        public void setHeader(String key, String value) {
+            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+                request.getRequestProps().put(key, value);
+            }
+        }
+
+        @Override
         public String getStickyId() {
             return stickyRequest == null ? null : stickyRequest.getStickyId();
         }

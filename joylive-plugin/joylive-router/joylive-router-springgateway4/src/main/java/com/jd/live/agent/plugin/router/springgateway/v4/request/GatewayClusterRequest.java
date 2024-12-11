@@ -99,6 +99,13 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     }
 
     @Override
+    public void setHeader(String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+        }
+    }
+
+    @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
     }

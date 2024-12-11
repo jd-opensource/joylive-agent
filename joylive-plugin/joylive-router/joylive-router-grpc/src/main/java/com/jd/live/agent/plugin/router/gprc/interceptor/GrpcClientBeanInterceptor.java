@@ -17,14 +17,13 @@ package com.jd.live.agent.plugin.router.gprc.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * GrpcClientBeanInterceptor
@@ -40,9 +39,7 @@ public class GrpcClientBeanInterceptor extends InterceptorAdaptor {
         GrpcClient grpcClient = ctx.getArgument(2);
         if (member instanceof Field) {
             String service = grpcClient.value();
-            ClassDesc classDesc = ClassUtils.describe(type.getDeclaringClass());
-            FieldDesc fieldDesc = classDesc.getFieldList().getField(FIELD_SERVICE_NAME);
-            String interfaceName = (String) fieldDesc.get(null);
+            String interfaceName = getValue(type.getDeclaringClass(), FIELD_SERVICE_NAME);
             LiveDiscovery.putService(interfaceName, service);
         }
     }
