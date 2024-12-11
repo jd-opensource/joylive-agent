@@ -21,8 +21,12 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.implement.bytekit.bytebuddy.util.ModuleUtil;
 
+import java.lang.instrument.Instrumentation;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * BuddySupplier
@@ -43,6 +47,11 @@ public class BuddySupplier implements ByteSupplier {
     @Override
     public ByteBuilder create() {
         return new BuddyBuilder(handlers, conditionMatcher);
+    }
+
+    @Override
+    public void export(Instrumentation instrumentation, Map<String, Set<String>> targets, ClassLoader... loaders) {
+        ModuleUtil.export(instrumentation, targets, null, loaders);
     }
 }
 
