@@ -19,8 +19,6 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
@@ -118,7 +116,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
      * Handles the forwarding of an invocation, publishing a forward traffic event and notifying listeners.
      */
     public void onForward() {
-        publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+        onForwardEvent();
         if (listeners != null) {
             listeners.forEach(listener -> listener.onForward(this));
         }

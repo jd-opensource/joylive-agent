@@ -23,7 +23,8 @@ public class CharSequence2ByteConverter extends ByteConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Byte.parseByte(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Byte.parseByte(value);
     }
 
     @Override

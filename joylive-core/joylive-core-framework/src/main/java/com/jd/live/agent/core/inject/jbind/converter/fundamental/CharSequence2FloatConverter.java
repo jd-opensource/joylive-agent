@@ -23,7 +23,8 @@ public class CharSequence2FloatConverter extends FloatConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Float.parseFloat(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Float.parseFloat(value);
     }
 
     @Override

@@ -23,7 +23,8 @@ public class CharSequence2ShortConverter extends ShortConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Short.parseShort(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Short.parseShort(value);
     }
 
     @Override

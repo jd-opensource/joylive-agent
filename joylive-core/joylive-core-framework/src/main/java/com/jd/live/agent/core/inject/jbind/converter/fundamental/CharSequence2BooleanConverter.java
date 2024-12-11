@@ -24,7 +24,8 @@ public class CharSequence2BooleanConverter extends BooleanConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Boolean.parseBoolean(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Boolean.parseBoolean(value);
     }
 
     @Override

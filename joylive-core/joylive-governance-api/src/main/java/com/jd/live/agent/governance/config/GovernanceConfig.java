@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.config;
 
 import com.jd.live.agent.core.inject.annotation.Config;
+import com.jd.live.agent.core.instance.Application;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -116,5 +117,15 @@ public class GovernanceConfig {
 
     public GovernanceConfig(LiveConfig liveConfig) {
         this.liveConfig = liveConfig;
+    }
+
+    public void initialize(Application application) {
+        MonitorConfig monitorConfig = serviceConfig.getMonitor();
+        if (monitorConfig == null) {
+            monitorConfig = new MonitorConfig(application.getService().isFrontGateway(), true);
+            serviceConfig.setMonitor(monitorConfig);
+        } else if (monitorConfig.getForwardEnabled() == null) {
+            monitorConfig.setForwardEnabled(application.getService().isFrontGateway());
+        }
     }
 }

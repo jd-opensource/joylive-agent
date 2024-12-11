@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
@@ -132,13 +131,6 @@ public interface InvocationContext {
     Timer getTimer();
 
     CounterManager getCounterManager();
-
-    /**
-     * Retrieves a {@link Publisher} that emits {@link TrafficEvent} instances.
-     *
-     * @return A {@link Publisher} that provides a stream of {@link TrafficEvent} objects.
-     */
-    Publisher<TrafficEvent> getTrafficPublisher();
 
     /**
      * Retrieves the policy supplier associated with this invocation context.
@@ -546,6 +538,13 @@ public interface InvocationContext {
     }
 
     /**
+     * Publishes the specified traffic event.
+     *
+     * @param event the traffic event to publish
+     */
+    void publish(TrafficEvent event);
+
+    /**
      * A delegate class for {@link InvocationContext} that forwards all its operations to another {@link InvocationContext} instance.
      * This class acts as a wrapper or intermediary, allowing for additional behaviors to be inserted before or after
      * the delegation of method calls. It implements the {@link InvocationContext} interface and can be used
@@ -606,11 +605,6 @@ public interface InvocationContext {
         @Override
         public CounterManager getCounterManager() {
             return delegate.getCounterManager();
-        }
-
-        @Override
-        public Publisher<TrafficEvent> getTrafficPublisher() {
-            return delegate.getTrafficPublisher();
         }
 
         @Override
@@ -694,6 +688,11 @@ public interface InvocationContext {
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
             return delegate.route(invocation, instances, filters);
+        }
+
+        @Override
+        public void publish(TrafficEvent event) {
+            delegate.publish(event);
         }
 
         @Override

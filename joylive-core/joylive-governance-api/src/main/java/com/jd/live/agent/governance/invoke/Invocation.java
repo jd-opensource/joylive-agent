@@ -17,12 +17,13 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.event.TrafficEvent;
+import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
+import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
@@ -257,37 +258,52 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      */
     public void onReject(RejectException exception) {
         if (exception instanceof RejectUnreadyException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNREADY).requests(1));
+            onRejectEvent(RejectType.REJECT_UNREADY);
         } else if (exception instanceof RejectUnitException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNIT_UNAVAILABLE).requests(1));
+            onRejectEvent(RejectType.REJECT_UNIT_UNAVAILABLE);
         } else if (exception instanceof RejectCellException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_CELL_UNAVAILABLE).requests(1));
+            onRejectEvent(RejectType.REJECT_CELL_UNAVAILABLE);
         } else if (exception instanceof RejectEscapeException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_ESCAPE).requests(1));
+            onRejectEvent(RejectType.REJECT_ESCAPE);
         } else if (exception instanceof RejectLimitException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_LIMIT).requests(1));
+            onRejectEvent(RejectType.REJECT_LIMIT);
         } else if (exception instanceof RejectPermissionException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_PERMISSION_DENIED).requests(1));
+            onRejectEvent(RejectType.REJECT_PERMISSION_DENIED);
         } else if (exception instanceof RejectAuthException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_UNAUTHORIZED).requests(1));
+            onRejectEvent(RejectType.REJECT_UNAUTHORIZED);
         } else if (exception instanceof RejectCircuitBreakException) {
-            publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(TrafficEvent.ActionType.REJECT).rejectType(TrafficEvent.RejectType.REJECT_CIRCUIT_BREAK).requests(1));
+            onRejectEvent(RejectType.REJECT_CIRCUIT_BREAK);
         }
     }
 
     /**
      * Publishes a live event to a specified publisher using a configured live event builder.
      *
-     * @param publisher The publisher to which the live event will be offered.
      * @param builder   The live event builder used to configure and build the live event.
      */
-    public void publish(Publisher<TrafficEvent> publisher, TrafficEventBuilder builder) {
-        if (publisher != null && builder != null) {
+    protected void publish(TrafficEventBuilder builder) {
+        if (builder != null) {
             TrafficEvent event = configure(builder).build();
             if (event != null) {
-                publisher.tryOffer(event);
+                context.publish(event);
             }
         }
+    }
+
+    /**
+     * Handles a forward event.
+     */
+    protected void onForwardEvent() {
+        publish(TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+    }
+
+    /**
+     * Handles a reject event.
+     *
+     * @param type the type of reject
+     */
+    protected void onRejectEvent(RejectType type) {
+        publish(TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(type).requests(1));
     }
 
     /**

@@ -23,7 +23,8 @@ public class CharSequence2LongConverter extends LongConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Long.parseLong(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Long.parseLong(value);
     }
 
     @Override

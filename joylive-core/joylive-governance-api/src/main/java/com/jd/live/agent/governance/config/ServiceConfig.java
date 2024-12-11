@@ -99,6 +99,10 @@ public class ServiceConfig {
     @Setter
     private LoadLimiterConfig loadLimiter;
 
+    @Getter
+    @Setter
+    private MonitorConfig monitor;
+
     /**
      * The config of system http inbound paths
      */

@@ -23,7 +23,8 @@ public class CharSequence2DoubleConverter extends DoubleConverter {
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : Double.parseDouble(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : Double.parseDouble(value);
     }
 
     @Override

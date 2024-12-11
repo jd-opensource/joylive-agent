@@ -16,8 +16,6 @@
 package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.instance.GatewayRole;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
@@ -149,7 +147,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         if (endpoint != null) {
             request.addAttempt(endpoint.getId());
         }
-        publish(context.getTrafficPublisher(), TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+        onForwardEvent();
         if (listeners != null) {
             listeners.forEach(listener -> listener.onForward(endpoint, this));
         }

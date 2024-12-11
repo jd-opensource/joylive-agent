@@ -35,9 +35,11 @@ import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.MonitorConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
+import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
@@ -220,9 +222,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR, this);
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
-            source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
-            source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig == null ? null : governanceConfig.getServiceConfig());
-            source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig == null ? null : governanceConfig.getRegistryConfig());
+            if (governanceConfig != null) {
+                source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
+                source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
+                source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig.getRegistryConfig());
+            }
         }
     }
 
@@ -267,7 +271,20 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     }
 
     @Override
+    public void publish(TrafficEvent event) {
+        if (event != null) {
+            MonitorConfig monitorConfig = governanceConfig.getServiceConfig().getMonitor();
+            if (event.getActionType() == ActionType.FORWARD && monitorConfig.isForward()
+                    || event.getActionType() == ActionType.REJECT && monitorConfig.isReject()) {
+                trafficPublisher.offer(event);
+            }
+        }
+    }
+
+    @Override
     public void initialize() {
+        governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
+        governanceConfig.initialize(application);
         counterManager = new CounterManager(timer);
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {
@@ -310,7 +327,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      */
     private void warmup() {
         if (warmup.compareAndSet(false, true)) {
-            ServiceConfig serviceConfig = governanceConfig == null ? null : governanceConfig.getServiceConfig();
+            ServiceConfig serviceConfig = governanceConfig.getServiceConfig();
             Set<String> warmups = serviceConfig == null ? null : serviceConfig.getWarmups();
             warmups = warmups == null ? new HashSet<>() : warmups;
             AppService service = application.getService();

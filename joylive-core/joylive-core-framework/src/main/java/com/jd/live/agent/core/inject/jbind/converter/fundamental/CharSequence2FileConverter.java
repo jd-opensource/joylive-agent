@@ -26,7 +26,8 @@ public class CharSequence2FileConverter implements Converter.FundamentalConverte
     @Override
     public Object convert(Conversion conversion) {
         Object source = conversion.getSource();
-        return source == null ? null : new File(source.toString());
+        String value = source == null ? null : source.toString();
+        return value == null || value.isEmpty() ? null : new File(value);
     }
 
     @Override
