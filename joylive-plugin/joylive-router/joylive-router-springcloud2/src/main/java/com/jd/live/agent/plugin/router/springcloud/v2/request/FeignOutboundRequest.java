@@ -25,6 +25,8 @@ import feign.Request;
 import org.springframework.http.HttpHeaders;
 
 import java.net.URI;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * FeignOutboundRequest
@@ -57,5 +59,19 @@ public class FeignOutboundRequest extends AbstractHttpOutboundRequest<Request> {
         } catch (IllegalArgumentException ignore) {
             return null;
         }
+    }
+
+    @Override
+    public String getHeader(String key) {
+        if (key == null || key.isEmpty()) {
+            return null;
+        }
+        Collection<String> values = request.headers().get(key);
+        if (values == null || values.isEmpty()) {
+            return null;
+        } else if (values instanceof List) {
+            return ((List<String>) values).get(0);
+        }
+        return values.iterator().next();
     }
 }

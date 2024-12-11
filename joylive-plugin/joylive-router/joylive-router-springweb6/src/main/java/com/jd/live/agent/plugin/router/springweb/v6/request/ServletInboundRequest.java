@@ -110,7 +110,12 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     public String getHeader(String key) {
-        return request.getHeader(key);
+        return key == null || key.isEmpty() ? null : request.getHeader(key);
+    }
+
+    @Override
+    public String getQuery(String key) {
+        return key == null || key.isEmpty() ? null : request.getParameter(key);
     }
 
     @Override

@@ -80,6 +80,11 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
     }
 
     @Override
+    public String getHeader(String key) {
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+    }
+
+    @Override
     protected RequestData buildRequestData() {
         return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
                 new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());

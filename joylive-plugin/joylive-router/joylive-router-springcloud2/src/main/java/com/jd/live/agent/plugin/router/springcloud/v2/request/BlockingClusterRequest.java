@@ -72,6 +72,11 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
         }
     }
 
+    @Override
+    public String getHeader(String key) {
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+    }
+
     public byte[] getBody() {
         return body;
     }

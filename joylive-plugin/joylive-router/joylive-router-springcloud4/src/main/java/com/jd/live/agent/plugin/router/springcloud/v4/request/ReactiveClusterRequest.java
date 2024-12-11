@@ -63,6 +63,16 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
         }
     }
 
+    @Override
+    public String getCookie(String key) {
+        return key == null || key.isEmpty() ? null : request.cookies().getFirst(key);
+    }
+
+    @Override
+    public String getHeader(String key) {
+        return key == null || key.isEmpty() ? null : request.headers().getFirst(key);
+    }
+
     public ExchangeFunction getNext() {
         return next;
     }

@@ -55,4 +55,14 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
             return null;
         }
     }
+
+    @Override
+    public String getCookie(String key) {
+        return key == null || key.isEmpty() ? null : request.getCookies().getFirst(key);
+    }
+
+    @Override
+    public String getHeader(String key) {
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+    }
 }

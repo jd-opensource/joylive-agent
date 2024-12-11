@@ -60,6 +60,11 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
     }
 
     @Override
+    public String getHeader(String key) {
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+    }
+
+    @Override
     public String getCookie(String key) {
         if (key == null || key.isEmpty()) {
             return null;
