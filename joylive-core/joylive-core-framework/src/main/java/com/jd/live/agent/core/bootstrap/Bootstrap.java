@@ -80,10 +80,7 @@ import java.io.Reader;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.security.CodeSource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -612,7 +609,15 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     private ByteSupplier createByteSupplier() {
-        return extensionManager.getOrLoadExtension(ByteSupplier.class, classLoaderManager.getCoreImplLoader());
+        ByteSupplier result = extensionManager.getOrLoadExtension(ByteSupplier.class, classLoaderManager.getCoreImplLoader());
+
+        // export & open "java.uti" to core module.
+        Map<String, Set<String>> mapping = new HashMap<>();
+        Set<String> targets = mapping.computeIfAbsent("com.jd.live.agent.governance.invoke.Invocation", key -> new HashSet<>());
+        targets.add("java.util.Map");
+        result.export(instrumentation, mapping, classLoaderManager.getCoreImplLoader());
+
+        return result;
     }
 
     private void createSourceSuppliers() {

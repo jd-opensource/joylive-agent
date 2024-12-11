@@ -31,13 +31,12 @@ import com.jd.live.agent.implement.bytekit.bytebuddy.advice.MemberMethodAdvice;
 import com.jd.live.agent.implement.bytekit.bytebuddy.advice.StaticMethodAdvice;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyMethodDesc;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc;
+import com.jd.live.agent.implement.bytekit.bytebuddy.util.ModuleUtil;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.description.type.PackageDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.dynamic.loading.ClassInjector;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 import net.bytebuddy.utility.nullability.MaybeNull;
@@ -48,7 +47,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
 
@@ -63,8 +61,6 @@ import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND
 public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.Transformer {
 
     private static final Logger logger = LoggerFactory.getLogger(PluginTransformer.class);
-
-    private static final Map<JavaModule, Map<JavaModule, Set<String>>> MODULE_EXPORTS = new ConcurrentHashMap<>();
 
     private final Map<String, Boolean> definitionEnabled = new ConcurrentHashMap<>();
 
@@ -155,27 +151,8 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
             return;
         }
         JavaModule definitionModule = JavaModule.ofType(definition.getClass());
-        for (Map.Entry<String, Set<String>> entry : targets.entrySet()) {
-            JavaModule targetModule = entry.getKey() == null || entry.getKey().isEmpty()
-                    ? definitionModule
-                    : getModule(loader, module, entry.getKey());
-            if (targetModule != null) {
-                for (String sourceType : entry.getValue()) {
-                    JavaModule sourceModule = getModule(loader, module, sourceType);
-                    if (sourceModule != null) {
-                        Set<String> exported = MODULE_EXPORTS.computeIfAbsent(sourceModule, m -> new ConcurrentHashMap<>()).
-                                computeIfAbsent(targetModule, m -> new CopyOnWriteArraySet<>());
-                        int index = sourceType.lastIndexOf('.');
-                        if (index > 0) {
-                            String sourcePackage = sourceType.substring(0, index);
-                            if (!isExportedAndOpen(sourceModule, sourcePackage, targetModule) && exported.add(sourcePackage)) {
-                                addExportOrOpen(sourceModule, sourcePackage, targetModule);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        ClassLoader candidate = this.getClass().getClassLoader();
+        ModuleUtil.export(instrumentation, targets, definitionModule, loader, loader == candidate ? null : candidate);
     }
 
     /**
@@ -200,66 +177,6 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      */
     private String getUniqueName(@NeverNull Class<?> type, @MaybeNull ClassLoader loader) {
         return loader == null ? type.getName() : (type.getName() + "@" + loader);
-    }
-
-    /**
-     * Retrieves the {@link JavaModule} associated with a given class name, attempting to resolve
-     * the class via the specified class loader. This method is used to find the module of a class
-     * that needs to have packages exported or opened to another module.
-     *
-     * @param loader The class loader to use for class resolution.
-     * @param module The default module to return in case the class cannot be resolved.
-     * @param type   The fully qualified name of the class whose module is to be retrieved.
-     * @return The {@link JavaModule} associated with the class, or the specified default module
-     * if the class cannot be resolved.
-     */
-    private JavaModule getModule(ClassLoader loader, JavaModule module, String type) {
-        type = type == null ? null : type.trim();
-        if (type != null && !type.isEmpty()) {
-            try {
-                Class<?> exportType = Class.forName(type, false, loader);
-                return JavaModule.ofType(exportType);
-            } catch (ClassNotFoundException e) {
-                return null;
-            } catch (Throwable e) {
-                return module;
-            }
-        }
-        return module;
-    }
-
-    /**
-     * Checks if a package is already exported and opened from one module to another. This is used
-     * to avoid unnecessary module modifications if the access is already available.
-     *
-     * @param source      The module from which the package is to be exported or opened.
-     * @param packageName The name of the package.
-     * @param target      The module to which the package should be exported or opened.
-     * @return {@code true} if the package is already exported or opened to the target module,
-     * {@code false} otherwise.
-     */
-    private boolean isExportedAndOpen(JavaModule source, String packageName, JavaModule target) {
-        PackageDescription.Simple packageDescription = new PackageDescription.Simple(packageName);
-        return source.isExported(packageDescription, target) && source.isOpened(packageDescription, target);
-    }
-
-    /**
-     * Dynamically exports or opens a package from one module to another. This method uses the
-     * {@link ClassInjector.UsingInstrumentation} to modify the module declarations at runtime,
-     * allowing for increased flexibility in accessing internal APIs or injecting behavior.
-     *
-     * @param source      The module from which the package is to be exported or opened.
-     * @param packageName The name of the package to export or open.
-     * @param target      The module to which the package should be exported or opened.
-     */
-    private void addExportOrOpen(JavaModule source, String packageName, JavaModule target) {
-        ClassInjector.UsingInstrumentation.redefineModule(instrumentation,
-                source,
-                Collections.singleton(target),
-                Collections.emptyMap(),
-                Collections.singletonMap(packageName, Collections.singleton(target)),
-                Collections.emptySet(),
-                Collections.emptyMap());
     }
 
     @Override
