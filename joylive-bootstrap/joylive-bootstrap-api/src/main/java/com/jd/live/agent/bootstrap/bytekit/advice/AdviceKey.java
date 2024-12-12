@@ -27,7 +27,7 @@ public class AdviceKey {
 
     private static final Map<ClassLoader, Map<String, String>> ADVICE_KEYS = new ConcurrentHashMap<>();
 
-    private static void update(CRC32 crc32, byte[] b) {
+    private static void update(final CRC32 crc32, byte[] b) {
         crc32.update(b, 0, b.length);
     }
 
@@ -38,7 +38,7 @@ public class AdviceKey {
      * @param classLoader the class loader used to load the method's class
      * @return a unique string representing the method key
      */
-    public static String getMethodKey(String methodDesc, ClassLoader classLoader) {
+    public static String getMethodKey(final String methodDesc, final ClassLoader classLoader) {
         ClassLoader key = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
         return ADVICE_KEYS.computeIfAbsent(key, c -> new ConcurrentHashMap<>())
                 .computeIfAbsent(methodDesc, m -> {

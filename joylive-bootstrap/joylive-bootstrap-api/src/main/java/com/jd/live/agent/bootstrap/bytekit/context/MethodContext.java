@@ -32,6 +32,9 @@ public class MethodContext extends ExecutableContext {
     @Getter
     private final Method method;
 
+    @Getter
+    private final boolean origin;
+
     /**
      * The result of the method execution.
      */
@@ -52,11 +55,14 @@ public class MethodContext extends ExecutableContext {
      * @param method      The method to be executed.
      * @param arguments   The arguments to be passed to the method.
      * @param description A description of the execution context.
+     * @param origin      A flag to indicate that it will invoke origin method.
      */
-    public MethodContext(Class<?> type, Object target, Method method, Object[] arguments, String description) {
+    public MethodContext(final Class<?> type, final Object target, final Method method,
+                         final Object[] arguments, final String description, final boolean origin) {
         super(type, arguments, description);
         super.setTarget(target);
         this.method = method;
+        this.origin = origin;
     }
 
     /**
@@ -73,12 +79,12 @@ public class MethodContext extends ExecutableContext {
         setSkip(true);
     }
 
-    public void skipWithResult(Object result) {
+    public void skipWithResult(final Object result) {
         setResult(result);
         skip();
     }
 
-    public void skipWithThrowable(Throwable throwable) {
+    public void skipWithThrowable(final Throwable throwable) {
         setThrowable(throwable);
         skip();
     }
@@ -93,7 +99,7 @@ public class MethodContext extends ExecutableContext {
      *
      * @param result The result of the successful execution.
      */
-    public void success(Object result) {
+    public void success(final Object result) {
         setResult(result);
         setThrowable(null);
     }
@@ -115,20 +121,20 @@ public class MethodContext extends ExecutableContext {
      * @return the result of the method invocation.
      * @throws Exception if any exception occurs during the method invocation.
      */
-    public Object invokeOrigin(Object target) throws Exception {
+    public Object invokeOrigin(final Object target) throws Exception {
         try {
-            markOrigin();
+            OriginStack.push(target, method);
             // method is always a copy object
             // java.lang.Class.getMethods
             method.setAccessible(true);
             return method.invoke(target, arguments);
         } catch (InvocationTargetException e) {
-            if (e.getCause() != null) {
-                return e.getCause();
+            if (e.getCause() != null && e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
             }
-            return e;
+            throw e;
         } finally {
-            getAndRemoveOrigin();
+            OriginStack.tryPop(target, method);
         }
     }
 
@@ -136,5 +142,7 @@ public class MethodContext extends ExecutableContext {
     public String toString() {
         return description;
     }
+
+
 }
 
