@@ -19,12 +19,15 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- * FieldScanner
+ * A utility class for scanning the class hierarchy of a given type.
  *
  * @since 1.0.0
  */
 public class TypeScanner {
 
+    /**
+     * A predicate that checks if a class is not a primitive, annotation, enum, interface, array, or Object.
+     */
     public static final Predicate<Class<?>> UNTIL_OBJECT = t ->
             !t.isPrimitive()
                     && !t.isAnnotation()
@@ -33,6 +36,9 @@ public class TypeScanner {
                     && !t.isArray()
                     && !t.equals(Object.class);
 
+    /**
+     * A predicate that checks if a class is not a primitive, annotation, enum, interface, array, Object, or part of the java or javax packages.
+     */
     public static final Predicate<Class<?>> ENTITY_PREDICATE = t ->
             !t.isPrimitive()
                     && !t.isAnnotation()
@@ -47,15 +53,31 @@ public class TypeScanner {
 
     private final Predicate<Class<?>> predicate;
 
-    public TypeScanner(Class<?> type) {
+    /**
+     * Creates a new TypeScanner instance for the specified type.
+     *
+     * @param type the type to scan
+     */
+    private TypeScanner(Class<?> type) {
         this(type, null);
     }
 
-    public TypeScanner(Class<?> type, Predicate<Class<?>> predicate) {
+    /**
+     * Creates a new TypeScanner instance for the specified type and predicate.
+     *
+     * @param type     the type to scan
+     * @param predicate the predicate to use for filtering classes
+     */
+    private TypeScanner(Class<?> type, Predicate<Class<?>> predicate) {
         this.type = type;
         this.predicate = predicate == null ? UNTIL_OBJECT : predicate;
     }
 
+    /**
+     * Scans the class hierarchy of the specified type and applies the provided consumer to each class that passes the predicate test.
+     *
+     * @param consumer the consumer to apply to each class
+     */
     public void scan(Consumer<Class<?>> consumer) {
         if (type == null || consumer == null)
             return;
@@ -66,11 +88,24 @@ public class TypeScanner {
         }
     }
 
-    public static TypeScanner build(Class<?> type) {
+    /**
+     * Creates a new TypeScanner instance for the specified type.
+     *
+     * @param type the type to scan
+     * @return a new TypeScanner instance
+     */
+    public static TypeScanner scanner(Class<?> type) {
         return new TypeScanner(type);
     }
 
-    public static TypeScanner build(Class<?> type, Predicate<Class<?>> predicate) {
+    /**
+     * Creates a new TypeScanner instance for the specified type and predicate.
+     *
+     * @param type     the type to scan
+     * @param predicate the predicate to use for filtering classes
+     * @return a new TypeScanner instance
+     */
+    public static TypeScanner scanner(Class<?> type, Predicate<Class<?>> predicate) {
         return new TypeScanner(type, predicate);
     }
 }

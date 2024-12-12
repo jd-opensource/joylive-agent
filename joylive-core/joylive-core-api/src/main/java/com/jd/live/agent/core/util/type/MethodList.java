@@ -22,6 +22,8 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.type.TypeScanner.scanner;
+
 /**
  * A utility class for storing and retrieving information about methods within a Java class.
  *
@@ -57,7 +59,7 @@ public class MethodList {
         this.type = type;
         if (!type.isPrimitive() && !type.isArray()) {
             methods = new ArrayList<>();
-            TypeScanner.build(type).scan(cls -> Collections.addAll(methods, cls.getDeclaredMethods()));
+            scanner(type).scan(cls -> Collections.addAll(methods, cls.getDeclaredMethods()));
             int size = methods.size();
             setter = new HashMap<>(size / 2);
             getter = new HashMap<>(size / 2);

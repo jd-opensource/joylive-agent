@@ -18,6 +18,8 @@ package com.jd.live.agent.core.util.type;
 import java.lang.reflect.Field;
 import java.util.function.Consumer;
 
+import static com.jd.live.agent.core.util.type.TypeScanner.scanner;
+
 /**
  * Scans the fields of a specified class, allowing custom operations to be performed on each field.
  * This can be used for reflective field analysis, modification, or annotation processing.
@@ -50,7 +52,7 @@ public class FieldScanner {
         if (type == null || consumer == null)
             return;
         // The actual scanning logic, potentially recursive if `declared` is false.
-        TypeScanner.build(type, declared ? t -> t.equals(type) : null).scan(type -> scan(type, consumer));
+        scanner(type, declared ? t -> t.equals(type) : null).scan(type -> scan(type, consumer));
     }
 
     /**

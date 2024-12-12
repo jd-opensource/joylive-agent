@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.type.TypeScanner.scanner;
+
 /**
  * A utility class for storing and retrieving information about fields within a Java class.
  *
@@ -55,7 +57,7 @@ public class FieldList {
     public FieldList(Class<?> type, FieldSupplier supplier) {
         this.type = type;
         if (!type.isPrimitive() && !type.isArray() && !type.isInterface()) {
-            TypeScanner.build(type).scan(cls -> {
+            scanner(type).scan(cls -> {
                 for (Field field : cls.getDeclaredFields()) {
                     fields.add(new FieldDesc(type, field, supplier));
                 }
