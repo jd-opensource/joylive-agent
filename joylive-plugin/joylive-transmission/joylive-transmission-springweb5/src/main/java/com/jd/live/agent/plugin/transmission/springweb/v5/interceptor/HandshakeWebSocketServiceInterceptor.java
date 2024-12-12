@@ -19,8 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.reactive.socket.WebSocketHandler;
-import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -33,19 +31,11 @@ public class HandshakeWebSocketServiceInterceptor extends InterceptorAdaptor {
     public HandshakeWebSocketServiceInterceptor() {
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * @param ctx ExecutableContext
-     * @see HandshakeWebSocketService#handleRequest(ServerWebExchange, WebSocketHandler)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // for outbound traffic
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        attachTag(exchange.getRequest().getHeaders());
-    }
-
-    private void attachTag(HttpHeaders headers) {
+        HttpHeaders headers = exchange.getRequest().getHeaders();
         RequestContext.cargos(tag -> headers.addAll(tag.getKey(), tag.getValues()));
     }
 

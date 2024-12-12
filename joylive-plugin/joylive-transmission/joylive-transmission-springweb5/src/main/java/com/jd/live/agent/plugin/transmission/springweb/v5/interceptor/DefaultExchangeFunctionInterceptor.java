@@ -31,11 +31,8 @@ public class DefaultExchangeFunctionInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // for outbound traffic
         ClientRequest request = (ClientRequest) ctx.getArguments()[0];
-        attachTag(request);
-    }
-
-    private void attachTag(ClientRequest request) {
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.headers());
         RequestContext.cargos(cargo -> headers.add(cargo.getKey(), cargo.getValue()));
     }

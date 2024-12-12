@@ -42,27 +42,22 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         this.require = new CargoRequires(requires);
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * @param ctx ExecutableContext
-     * @see org.springframework.web.server.handler.WebHandlerDecorator#handle(ServerWebExchange)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // for inbound traffic
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
         HttpHeaders headers = exchange.getRequest().getHeaders();
         Carrier carrier = RequestContext.create();
-        carrier.addCargo(require, HttpHeaders.writableHttpHeaders(headers));
+        carrier.addCargo(require, headers);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // for outbound traffic
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
         HttpHeaders headers = exchange.getResponse().getHeaders();
-        Mono<Void> mono = (Mono<Void>) mc.getResult();
+        Mono<Void> mono = mc.getResult();
         mono = mono.doFirst(() -> RequestContext.cargos(tag -> headers.addAll(tag.getKey(), tag.getValues())));
         mc.setResult(mono);
     }

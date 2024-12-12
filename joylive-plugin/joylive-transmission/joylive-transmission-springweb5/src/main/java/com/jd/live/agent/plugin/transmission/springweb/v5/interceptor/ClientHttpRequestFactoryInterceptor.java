@@ -19,10 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequest;
-
-import java.net.URI;
 
 /**
  * ClientHttpRequestFactoryInterceptor
@@ -35,18 +32,11 @@ public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
     public ClientHttpRequestFactoryInterceptor() {
     }
 
-    /**
-     * Enhanced logic after method successfully executes. This method is called
-     * after the target method completes successfully without throwing any exceptions.
-     *
-     * @param ctx ExecutableContext
-     * @see org.springframework.http.client.ClientHttpRequestFactory#createRequest(URI, HttpMethod)
-     */
-    @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // for outbound traffic
         MethodContext mc = (MethodContext) ctx;
-        ClientHttpRequest request = (ClientHttpRequest) mc.getResult();
+        ClientHttpRequest request = mc.getResult();
         RequestContext.cargos(tag -> request.getHeaders().addAll(tag.getKey(), tag.getValues()));
         mc.setResult(request);
     }
