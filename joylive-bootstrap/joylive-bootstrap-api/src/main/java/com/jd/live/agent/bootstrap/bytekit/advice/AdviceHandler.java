@@ -52,7 +52,7 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onEnter(T context, String adviceKey) throws Throwable {
+    public static <T extends ExecutableContext> void onEnter(final T context, final String adviceKey) throws Throwable {
         if (context == null || adviceKey == null) {
             return;
         }
@@ -71,8 +71,8 @@ public class AdviceHandler {
      * @param interceptors the list of interceptors to be executed
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onEnter(T context, List<Interceptor> interceptors) throws Throwable {
-        if (context == null || interceptors == null || context.getAndRemoveOrigin()) {
+    public static <T extends ExecutableContext> void onEnter(final T context, final List<Interceptor> interceptors) throws Throwable {
+        if (context == null || interceptors == null) {
             return;
         }
         for (Interceptor interceptor : interceptors) {
@@ -96,7 +96,7 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onExit(T context, String adviceKey) throws Throwable {
+    public static <T extends ExecutableContext> void onExit(final T context, final String adviceKey) throws Throwable {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
         if (interceptors != null) {
@@ -112,8 +112,8 @@ public class AdviceHandler {
      * @param interceptors the list of interceptors to be executed
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onExit(T context,
-                                                            List<Interceptor> interceptors) throws Throwable {
+    public static <T extends ExecutableContext> void onExit(final T context,
+                                                            final List<Interceptor> interceptors) throws Throwable {
         if (context == null || interceptors == null)
             return;
         // reverse order
@@ -143,10 +143,10 @@ public class AdviceHandler {
      * @param action      the name of the action being performed
      * @throws Throwable if any exception occurs during interception
      */
-    private static <T extends ExecutableContext> void handle(T context,
-                                                             Interceptor interceptor,
-                                                             BiConsumer<Interceptor, T> consumer,
-                                                             String action) throws Throwable {
+    private static <T extends ExecutableContext> void handle(final T context,
+                                                             final Interceptor interceptor,
+                                                             final BiConsumer<Interceptor, T> consumer,
+                                                             final String action) throws Throwable {
         try {
             consumer.accept(interceptor, context);
         } catch (Throwable t) {
@@ -161,7 +161,7 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @return the AdviceDesc instance
      */
-    public static AdviceDesc getOrCreate(String adviceKey) {
+    public static AdviceDesc getOrCreate(final String adviceKey) {
         return advices.computeIfAbsent(adviceKey, AdviceDesc::new);
     }
 
@@ -170,7 +170,7 @@ public class AdviceHandler {
      *
      * @param adviceKey the unique key of the advice to be removed
      */
-    public static void remove(String adviceKey) {
+    public static void remove(final String adviceKey) {
         advices.remove(adviceKey);
     }
 

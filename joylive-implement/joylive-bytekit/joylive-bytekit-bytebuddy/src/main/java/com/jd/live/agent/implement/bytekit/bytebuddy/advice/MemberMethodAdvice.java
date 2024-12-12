@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.advice;
 
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.bytekit.context.OriginStack;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
@@ -43,12 +44,16 @@ public class MemberMethodAdvice {
                                   @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
                                   @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        adviceKey = getMethodKey(methodDesc, type.getClassLoader());
-        MethodContext mc = new MethodContext(type, target, method, arguments, methodDesc);
+        boolean origin = OriginStack.tryPop(target, method);
+        MethodContext mc = new MethodContext(type, target, method, arguments, methodDesc, origin);
+        adviceKey = origin ? null : getMethodKey(methodDesc, type.getClassLoader());
         context = mc;
-        AdviceHandler.onEnter(mc, adviceKey);
-        arguments = mc.getArguments();
-        return mc.isSkip();
+        if (!origin) {
+            AdviceHandler.onEnter(mc, adviceKey);
+            arguments = mc.getArguments();
+            return mc.isSkip();
+        }
+        return false;
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
@@ -58,14 +63,19 @@ public class MemberMethodAdvice {
                               @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         MethodContext mc = (MethodContext) context;
+        if (mc.isOrigin()) {
+            return;
+        }
         if (!mc.isSkip()) {
             mc.setResult(result);
             mc.setThrowable(throwable);
         }
         AdviceHandler.onExit(mc, adviceKey);
-        if (result != mc.getResult())
+        if (result != mc.getResult()) {
             result = mc.getResult();
-        if (throwable != mc.getThrowable())
+        }
+        if (throwable != mc.getThrowable()) {
             throwable = mc.getThrowable();
+        }
     }
 }

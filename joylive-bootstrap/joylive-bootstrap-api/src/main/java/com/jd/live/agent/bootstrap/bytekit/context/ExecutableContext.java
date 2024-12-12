@@ -28,8 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @Getter
 public abstract class ExecutableContext extends AbstractAttributes {
 
-    protected static ThreadLocal<Boolean> INVOKE_ORIGIN_METHOD;
-
     private static final AtomicLong COUNTER = new AtomicLong(0);
 
     /**
@@ -71,7 +69,7 @@ public abstract class ExecutableContext extends AbstractAttributes {
      * @param arguments   the arguments passed to the executable
      * @param description a description of the executable context
      */
-    public ExecutableContext(Class<?> type, Object[] arguments, String description) {
+    public ExecutableContext(final Class<?> type, final Object[] arguments, final String description) {
         this.type = type;
         this.arguments = arguments;
         this.description = description;
@@ -97,47 +95,8 @@ public abstract class ExecutableContext extends AbstractAttributes {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getArgument(int index) {
+    public <T> T getArgument(final int index) {
         return arguments == null || index < 0 || index >= arguments.length ? null : (T) arguments[index];
-    }
-
-    /**
-     * Marks the origin of the current invocation.
-     */
-    protected void markOrigin() {
-        if (INVOKE_ORIGIN_METHOD == null) {
-            INVOKE_ORIGIN_METHOD = new ThreadLocal<>();
-        }
-        INVOKE_ORIGIN_METHOD.set(Boolean.TRUE);
-    }
-
-    /**
-     * Gets and removes the origin flag for the current thread.
-     *
-     * @return true if the current thread has marked the origin of the invocation, false otherwise.
-     */
-    public boolean getAndRemoveOrigin() {
-        if (INVOKE_ORIGIN_METHOD == null) {
-            return false;
-        } else {
-            Boolean result = INVOKE_ORIGIN_METHOD.get();
-            INVOKE_ORIGIN_METHOD.set(Boolean.FALSE);
-            return result != null && result;
-        }
-    }
-
-    /**
-     * Gets the origin flag for the current thread.
-     *
-     * @return true if the current thread has marked the origin of the invocation, false otherwise.
-     */
-    public boolean isOrigin() {
-        if (INVOKE_ORIGIN_METHOD == null) {
-            return false;
-        } else {
-            Boolean result = INVOKE_ORIGIN_METHOD.get();
-            return result != null && result;
-        }
     }
 
 }
