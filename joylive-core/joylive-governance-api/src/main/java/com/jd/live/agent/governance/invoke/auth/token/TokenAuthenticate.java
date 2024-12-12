@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.invoke.auth.token;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.invoke.auth.AuthResult;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
@@ -51,9 +50,9 @@ public class TokenAuthenticate implements Authenticate {
             String token = tokenPolicy.getToken();
             if (request.getHeader(key) == null) {
                 token = encode(request, key, token);
-                // TODO request.setHeader(key, token);
                 // add token by transmission
-                RequestContext.getOrCreate().addCargo(key, token);
+                // RequestContext.getOrCreate().addCargo(key, token);
+                request.setHeader(key, token);
             }
         }
     }
