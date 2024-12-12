@@ -19,12 +19,12 @@ import com.jd.live.agent.core.inject.Injection;
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
-import com.jd.live.agent.core.util.type.TypeScanner;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.describe;
+import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
  * AbstractAnnotationSupplier
@@ -35,7 +35,7 @@ public abstract class AbstractAnnotationSupplier implements InjectionSupplier {
 
     @Override
     public Injection build(Class<?> type, InjectionContext context) {
-        if (!TypeScanner.UNTIL_OBJECT.test(type)) {
+        if (!ENTITY_PREDICATE.test(type)) {
             return null;
         }
         Map<Class<?>, CacheObject<Injection>> injections = getCache(type, context);

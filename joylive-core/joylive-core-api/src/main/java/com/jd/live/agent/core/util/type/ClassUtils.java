@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
+
 /**
  * Utility class providing a collection of helper methods for class manipulation and metadata access.
  */
@@ -153,7 +155,7 @@ public class ClassUtils {
      * @return True if the class is considered an entity, false otherwise.
      */
     public static boolean isEntity(Class<?> type) {
-        return TypeScanner.UNTIL_OBJECT.test(type);
+        return ENTITY_PREDICATE.test(type);
     }
 
     /**

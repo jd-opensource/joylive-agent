@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import static com.jd.live.agent.core.util.type.TypeScanner.UNTIL_OBJECT;
+import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
  * A utility class that resolves the value of an object's property based on a given path expression.
@@ -167,7 +167,7 @@ public class ValuePath implements ObjectGetter {
             return ((Map<?, ?>) target).get(property);
         }
         Class<?> type = target.getClass();
-        if (UNTIL_OBJECT.test(type)) {
+        if (ENTITY_PREDICATE.test(type)) {
             FieldDesc fieldDesc = ClassUtils.describe(type).getFieldList().getField(property);
             if (fieldDesc != null) {
                 return fieldDesc.get(target);

@@ -32,13 +32,13 @@ import com.jd.live.agent.core.util.type.ClassUtils;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.inbox;
+import static com.jd.live.agent.core.util.type.ClassUtils.*;
 
 /**
  * handler of @config
  */
 public class JConfigAnnotationInjection extends AbstractInjection {
-    private final InjectionContext.EmbedInjectionContext context;
+    private final JEmbedInjectionContext context;
     private final String configPrefix;
 
     public JConfigAnnotationInjection(InjectType injectType, InjectionContext context, InjectionSupplier injectionSupplier) {
@@ -65,7 +65,10 @@ public class JConfigAnnotationInjection extends AbstractInjection {
             if (value == null) {
                 Config configAnnotation = (Config) field.getAnnotation();
                 if (configAnnotation != null && !configAnnotation.nullable()) {
-                    throw new InjectException("config is not allowed empty. path=" + fieldSrc.getPath());
+                    Object defaultValue = field.get(target);
+                    if (defaultValue == null) {
+                        throw new InjectException("config is not allowed empty. path=" + fieldSrc.getPath());
+                    }
                 }
             } else if (fieldSrc.isUpdated()) {
                 if (!typeSrc.isUpdated()) {
@@ -103,8 +106,8 @@ public class JConfigAnnotationInjection extends AbstractInjection {
 
     private Object createAndInject(JSource source, InjectField field) {
         Class<?> fieldCls = field.getType();
-        if (ClassUtils.isEntity(fieldCls)) {
-            ClassDesc classDesc = ClassUtils.describe(fieldCls);
+        if (isEntity(fieldCls)) {
+            ClassDesc classDesc = describe(fieldCls);
             if (!classDesc.getFieldList().isEmpty()) {
                 Object obj = null;
                 Constructor<?> constructor = classDesc.getConstructorList().getDefaultConstructor();
@@ -116,6 +119,9 @@ public class JConfigAnnotationInjection extends AbstractInjection {
                     }
                 }
                 Injection injection = context.build(fieldCls);
+                if (injection == null) {
+                    throw new InjectException("The injection is not found for " + field.getField().toString());
+                }
                 injection.inject(source, obj);
                 return obj;
             }
