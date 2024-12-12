@@ -118,9 +118,9 @@ public class MethodContext extends ExecutableContext {
     public Object invokeOrigin(Object target) throws Exception {
         try {
             markOrigin();
-            if (!method.isAccessible()) {
-                method.setAccessible(true);
-            }
+            // method is always a copy object
+            // java.lang.Class.getMethods
+            method.setAccessible(true);
             return method.invoke(target, arguments);
         } catch (InvocationTargetException e) {
             if (e.getCause() != null) {
