@@ -24,7 +24,7 @@ agent:
   publisher:
     configs:
       traffic:
-        capacity: 20000
+        capacity: ${CONFIG_TRAFFIC_BUFFER_SIZE:40000}
   plugin:
     systems:
       - system
