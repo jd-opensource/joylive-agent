@@ -27,7 +27,6 @@ import com.jd.live.agent.core.inject.jbind.supplier.JInjectionContext.JEmbedInje
 import com.jd.live.agent.core.util.option.CascadeOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
 
 import java.lang.reflect.Constructor;
 import java.util.Map;
