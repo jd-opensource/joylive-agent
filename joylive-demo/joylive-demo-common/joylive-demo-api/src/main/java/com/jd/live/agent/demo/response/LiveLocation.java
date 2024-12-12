@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.response;
 
+import com.jd.live.agent.core.util.network.Ipv4;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,6 +30,7 @@ public class LiveLocation implements Serializable {
     private String ruleId;
     private String laneSpaceId;
     private String lane;
+    private String ip;
 
     public LiveLocation() {
 
@@ -41,6 +43,7 @@ public class LiveLocation implements Serializable {
         this.ruleId = ruleId;
         this.laneSpaceId = laneSpaceId;
         this.lane = lane;
+        this.ip = Ipv4.getLocalIp();
     }
 
     public static LiveLocation build() {
@@ -63,6 +66,7 @@ public class LiveLocation implements Serializable {
                 ", ruleId=" + (ruleId == null ? "null" : ('\'' + ruleId + '\'')) +
                 ", lane-space-id=" + (laneSpaceId == null ? "null" : ('\'' + laneSpaceId + '\'')) +
                 ", lane=" + (lane == null ? "null" : ('\'' + lane + '\'')) +
+                ", ip=" + (ip == null ? "null" : ('\'' + ip + '\'')) +
                 '}';
     }
 }

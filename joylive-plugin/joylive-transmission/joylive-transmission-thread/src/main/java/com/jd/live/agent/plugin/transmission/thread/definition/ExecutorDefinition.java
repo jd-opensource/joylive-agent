@@ -46,6 +46,7 @@ public class ExecutorDefinition extends PluginDefinitionAdapter implements Plugi
     private static final String METHOD_EXECUTE = "execute";
 
     private static final String METHOD_SUBMIT = "submit";
+
     private static final String[] METHODS = {METHOD_EXECUTE, METHOD_SUBMIT};
 
     @Inject
