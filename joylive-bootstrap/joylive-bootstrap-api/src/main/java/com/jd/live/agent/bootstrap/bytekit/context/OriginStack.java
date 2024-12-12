@@ -29,7 +29,7 @@ public class OriginStack {
     /**
      * A thread-local stack of origin methods.
      */
-    protected static ThreadLocal<LinkedList<OriginMethod>> INVOKE_ORIGIN_METHOD_STACK;
+    protected static final ThreadLocal<LinkedList<OriginMethod>> INVOKE_ORIGIN_METHOD_STACK = new ThreadLocal<>();
 
     /**
      * Pushes a new origin method onto the stack.
@@ -38,10 +38,11 @@ public class OriginStack {
      * @param method the method itself
      */
     public static void push(Object target, Method method) {
-        if (INVOKE_ORIGIN_METHOD_STACK == null) {
-            INVOKE_ORIGIN_METHOD_STACK = ThreadLocal.withInitial(LinkedList::new);
-        }
         LinkedList<OriginMethod> stack = INVOKE_ORIGIN_METHOD_STACK.get();
+        if (stack == null) {
+            stack = new LinkedList<>();
+            INVOKE_ORIGIN_METHOD_STACK.set(stack);
+        }
         stack.push(new OriginMethod(target, method));
     }
 
@@ -53,11 +54,8 @@ public class OriginStack {
      * @return true if the method was successfully popped, false otherwise
      */
     public static boolean tryPop(Object target, Method method) {
-        if (INVOKE_ORIGIN_METHOD_STACK == null) {
-            return false;
-        }
         LinkedList<OriginMethod> stack = INVOKE_ORIGIN_METHOD_STACK.get();
-        OriginMethod result = stack.peek();
+        OriginMethod result = stack == null ? null : stack.peek();
         if (result != null && result.getTarget() == target && result.getMethod().equals(method)) {
             stack.pop();
             return true;
