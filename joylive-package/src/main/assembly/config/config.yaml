@@ -135,7 +135,7 @@ agent:
       phevos: true
       rocketmq: true
     lane:
-      enabled: ${CONFIG_LANE_ENABLED:false}
+      enabled: ${CONFIG_LANE_ENABLED:true}
     transmission:
       enabled: ${CONFIG_TRANSMISSION_ENABLED:true}
       threadpool: ${CONFIG_TRANSMISSION_THREADPOOL_ENABLED:true}

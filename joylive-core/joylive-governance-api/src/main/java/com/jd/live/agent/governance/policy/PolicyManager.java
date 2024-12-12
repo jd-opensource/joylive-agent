@@ -101,11 +101,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Getter
     @Config(GovernanceConfig.CONFIG_LIVE_ENABLED)
-    private boolean liveEnabled = true;
+    private boolean liveEnabled;
 
     @Getter
     @Config(GovernanceConfig.CONFIG_LANE_ENABLED)
-    private boolean laneEnabled = true;
+    private boolean laneEnabled;
 
     @Getter
     @Config(GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED)
