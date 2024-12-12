@@ -129,7 +129,7 @@ public class ServiceConfig {
     @Setter
     private boolean responseException = true;
 
-    private final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
+    private transient final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
         List<PrefixPath> result = new ArrayList<>();
         if (systemPaths != null) {
             systemPaths.forEach(path -> result.add(new PrefixPath(path)));
