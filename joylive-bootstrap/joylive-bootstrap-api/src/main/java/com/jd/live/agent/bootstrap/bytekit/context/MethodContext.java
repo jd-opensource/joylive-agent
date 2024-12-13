@@ -47,8 +47,6 @@ public class MethodContext extends ExecutableContext {
     @Setter
     private boolean skip;
 
-    private LockContext lock;
-
     /**
      * Constructs a new MethodContext with specified details of the method execution.
      *
@@ -138,34 +136,6 @@ public class MethodContext extends ExecutableContext {
         } finally {
             OriginStack.tryPop(target, method);
         }
-    }
-
-    /**
-     * Attempts to acquire a lock using the provided lock context.
-     *
-     * @param lock the lock context to use
-     * @return true if the lock was successfully acquired, false otherwise
-     */
-    public boolean lock(LockContext lock) {
-        if (lock.tryLock(id)) {
-            this.lock = lock;
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Releases the lock previously acquired using the lock method.
-     */
-    public boolean unlock() {
-        boolean result = false;
-        if (lock != null) {
-            if (lock.unlock(id)) {
-                result = true;
-            }
-            lock = null;
-        }
-        return result;
     }
 
     @Override

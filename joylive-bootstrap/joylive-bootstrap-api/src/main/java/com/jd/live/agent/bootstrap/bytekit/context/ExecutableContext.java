@@ -62,6 +62,8 @@ public abstract class ExecutableContext extends AbstractAttributes {
     @Setter
     protected Throwable throwable;
 
+    private LockContext lock;
+
     /**
      * Creates a new instance of ExecutableContext.
      *
@@ -97,6 +99,43 @@ public abstract class ExecutableContext extends AbstractAttributes {
     @SuppressWarnings("unchecked")
     public <T> T getArgument(final int index) {
         return arguments == null || index < 0 || index >= arguments.length ? null : (T) arguments[index];
+    }
+
+    /**
+     * Attempts to acquire a lock using the provided lock context.
+     *
+     * @param lock the lock context to use
+     * @return true if the lock was successfully acquired, false otherwise
+     */
+    public boolean tryLock(LockContext lock) {
+        if (lock.tryLock(id)) {
+            this.lock = lock;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the lock with the specified ID is currently held.
+     *
+     * @return true if the lock is currently held, false otherwise
+     */
+    public boolean isLocked() {
+        return lock != null && lock.isLocked(id);
+    }
+
+    /**
+     * Releases the lock previously acquired using the lock method.
+     */
+    public boolean unlock() {
+        boolean result = false;
+        if (lock != null) {
+            if (lock.unlock(id)) {
+                result = true;
+            }
+            lock = null;
+        }
+        return result;
     }
 
 }

@@ -38,6 +38,14 @@ public interface LockContext {
     boolean unlock(long id);
 
     /**
+     * Checks if a lock with the specified ID is currently held.
+     *
+     * @param id the ID of the lock to check
+     * @return true if the lock is currently held, false otherwise
+     */
+    boolean isLocked(long id);
+
+    /**
      * A default implementation of the LockContext interface.
      */
     class DefaultLockContext implements LockContext {
@@ -58,11 +66,17 @@ public interface LockContext {
 
         @Override
         public boolean unlock(long id) {
-            if (local.get() == id) {
+            if (isLocked(id)) {
                 local.remove();
                 return true;
             }
             return false;
+        }
+
+        @Override
+        public boolean isLocked(long id) {
+            Long value = local.get();
+            return value != null && value == id;
         }
     }
 

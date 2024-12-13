@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.transmission.okhttp.v1.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.squareup.okhttp.Request.Builder;
@@ -27,30 +28,18 @@ import com.squareup.okhttp.Request.Builder;
  */
 public class OkHttpClientInterceptor extends InterceptorAdaptor {
 
-    private static final ThreadLocal<Long> LOCK = new ThreadLocal<>();
+    private static final LockContext lock = new LockContext.DefaultLockContext();
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (LOCK.get() == null) {
-            LOCK.set(ctx.getId());
+        if (ctx.tryLock(lock)) {
             Builder builder = (Builder) ctx.getTarget();
-            attachTag(builder);
+            RequestContext.cargos(builder::addHeader);
         }
-    }
-
-    /**
-     * Attaches tags to the {@link Builder} by adding headers from the RequestContext.
-     *
-     * @param builder The request builder to which the tags are to be attached.
-     */
-    private void attachTag(Builder builder) {
-        RequestContext.cargos(builder::addHeader);
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        if (LOCK.get() == ctx.getId()) {
-            LOCK.remove();
-        }
+        ctx.unlock();
     }
 }

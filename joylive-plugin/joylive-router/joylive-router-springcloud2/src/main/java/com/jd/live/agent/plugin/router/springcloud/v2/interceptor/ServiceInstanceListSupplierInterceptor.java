@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -55,7 +56,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceInstanceListSupplierInterceptor.class);
 
-    private static final ThreadLocal<Long> LOCK = new ThreadLocal<>();
+    private static final LockContext lock = new LockContext.DefaultLockContext();
 
     private final InvocationContext context;
 
@@ -84,23 +85,23 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             // disable
             DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
             mc.skipWithResult(delegating.getDelegate().get());
-        } else if (!context.isFlowControlEnabled() && LOCK.get() == null) {
+        } else if (!context.isFlowControlEnabled()) {
             // Prevent duplicate calls
-            LOCK.set(ctx.getId());
+            ctx.tryLock(lock);
         }
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        if (!context.isFlowControlEnabled() && LOCK.get() == ctx.getId()) {
-            LOCK.remove();
+        if (!context.isFlowControlEnabled()) {
+            ctx.unlock();
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        if (!context.isFlowControlEnabled() && LOCK.get() == ctx.getId()) {
+        if (!context.isFlowControlEnabled() && ctx.isLocked()) {
             MethodContext mc = (MethodContext) ctx;
             Object result = mc.getResult();
             Flux<List<ServiceInstance>> flux = (Flux<List<ServiceInstance>>) result;
