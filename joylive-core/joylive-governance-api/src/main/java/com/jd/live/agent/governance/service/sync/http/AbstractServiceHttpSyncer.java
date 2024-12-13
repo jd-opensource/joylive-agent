@@ -58,8 +58,10 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        SyncAddress.ServiceAddress hssc = (SyncAddress.ServiceAddress) getSyncConfig();
-        template = new Template(hssc.getServiceUrl());
+        Object syncConfig = getSyncConfig();
+        if (syncConfig instanceof SyncAddress.ServiceAddress) {
+            template = new Template(((SyncAddress.ServiceAddress) getSyncConfig()).getServiceUrl());
+        }
         return super.doStart();
     }
 
