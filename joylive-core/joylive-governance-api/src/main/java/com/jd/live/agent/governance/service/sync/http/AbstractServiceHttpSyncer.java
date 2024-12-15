@@ -25,6 +25,7 @@ import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.*;
+import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 
@@ -58,9 +59,9 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        Object syncConfig = getSyncConfig();
-        if (syncConfig instanceof SyncAddress.ServiceAddress) {
-            template = new Template(((SyncAddress.ServiceAddress) getSyncConfig()).getServiceUrl());
+        SyncConfig syncConfig = getSyncConfig();
+        if (syncConfig instanceof ServiceAddress) {
+            template = new Template(((ServiceAddress) syncConfig).getServiceUrl());
         }
         return super.doStart();
     }
