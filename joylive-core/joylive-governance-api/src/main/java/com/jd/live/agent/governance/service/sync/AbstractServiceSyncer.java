@@ -90,7 +90,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
                         syncAndUpdate(subscriber);
                     } else {
                         try {
-                            waiter.await(5000, TimeUnit.MILLISECONDS);
+                            waiter.await(1000, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException ignore) {
                         }
                     }
