@@ -46,3 +46,55 @@ This software includes code from Apache dubbo:
 Please visit this web site for more information of this project:
   * https://github.com/apache/dubbo
 ================================================================
+
+Repackage library to avoid conflict
+
+joylive-bytekit-bytebuddy
+    net.bytebuddy -> com.jd.live.agent.shaded.net.bytebuddy
+joylive-logger-slf4j
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j
+    ch.qos.logback -> com.jd.live.agent.shaded.ch.qos.logback
+    org.apache.commons.logging -> com.jd.live.agent.shaded.org.apache.commons.logging
+joylive-eventbus-disruptor
+    com.lmax.disruptor -> com.jd.live.agent.shaded.com.lmax.disruptor
+joylive-expression-jexl
+    org.apache.commons.jexl3 -> com.jd.live.agent.shaded.org.apache.commons.jexl3
+    org.apache.commons.logging -> com.jd.live.agent.shaded.org.apache.commons.logging depend on joylive-logger-slf4j
+joylive-parser-fastjson2
+    com.alibaba.fastjson2 -> com.jd.live.agent.shaded.com.alibaba.fastjson2
+joylive-parser-jackson
+    com.fasterxml -> com.jd.live.agent.shaded.com.fasterxml
+    org.yaml -> com.jd.live.agent.shaded.org.yaml
+    com.jayway.jsonpath -> com.jd.live.agent.shaded.com.jayway.jsonpath
+    net.minidev -> com.jd.live.agent.shaded.net.minidev
+    org.objectweb.asm -> com.jd.live.agent.shaded.org.objectweb.asm
+joylive-event-opentelemetry
+    io.opentelemetry -> com.jd.live.agent.shaded.io.opentelemetry
+    io.prometheus.metrics -> com.jd.live.agent.shaded.io.prometheus.metrics
+    io.grpc -> com.jd.live.agent.shaded.io.grpc
+    io.perfmark -> com.jd.live.agent.shaded.io.perfmark
+    com.google -> com.jd.live.agent.shaded.com.google
+    google -> com.jd.live.agent.shaded.google
+    android -> com.jd.live.agent.shaded.android
+    javax.annotation -> com.jd.live.agent.shaded.javax.annotation
+    org.codehaus -> com.jd.live.agent.shaded.org.codehaus
+    org.checkerframework -> com.jd.live.agent.shaded.org.checkerframework
+    # com.squareup.okhttp3
+    # com.squareup.okio
+    com.squareup -> com.jd.live.agent.shaded.com.squareup
+    org.jetbrains.kotlin -> com.jd.live.agent.shaded.org.jetbrains.kotlin
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+joylive-flowcontrol-resilience4j
+    io.github.resilience4j -> com.jd.live.agent.shaded.io.github.resilience4j
+    io.vavr -> com.jd.live.agent.shaded.io.vavr
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+joylive-service-nacos
+    com.alibaba.nacos -> com.jd.live.agent.shaded.com.alibaba.nacos
+    org.codehaus -> com.jd.live.agent.shaded.org.codehaus depend on joylive-event-opentelemetry
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+    com.fasterxml -> com.jd.live.agent.shaded.com.fasterxml depend on joylive-parser-jackson
+    org.yaml -> com.jd.live.agent.shaded.org.yaml depend on joylive-parser-jackson
+    org.apache.http -> com.jd.live.agent.shaded.org.apache.http
+    org.apache.commons.codec -> com.jd.live.agent.shaded.org.apache.commons.codec
+    org.apache.commons.io -> com.jd.live.agent.shaded.org.apache.commons.io
+    io.prometheus.client -> com.jd.live.agent.shaded.io.prometheus.client

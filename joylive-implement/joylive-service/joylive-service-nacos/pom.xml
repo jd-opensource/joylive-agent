@@ -75,20 +75,15 @@
                                     <shadedPattern>com.jd.live.agent.shaded.org.yaml</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.http</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.http</shadedPattern>
+                                    <!--org.apache.http-->
+                                    <!--org.apache.commons.codec-->
+                                    <!--org.apache.commons.io-->
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.commons.codec</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.commons.codec</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.commons.io</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.commons.io</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>io.prometheus</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.io.prometheus</shadedPattern>
+                                    <pattern>io.prometheus.client</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.prometheus.client</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

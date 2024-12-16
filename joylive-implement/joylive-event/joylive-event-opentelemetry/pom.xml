@@ -314,7 +314,6 @@
                                     <include>com.google.guava:*</include>
                                     <include>com.google.j2objc:*</include>
                                     <include>com.google.code.gson:*</include>
-                                    <include>com.google.code.findbugs:*</include>
                                     <include>com.google.android:*</include>
                                     <include>com.google.protobuf:*</include>
                                     <include>org.codehaus.mojo:*</include>
@@ -335,8 +334,8 @@
                                     <shadedPattern>com.jd.live.agent.shaded.io.opentelemetry</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>io.prometheus</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.io.prometheus</shadedPattern>
+                                    <pattern>io.prometheus.metrics</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.prometheus.metrics</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>io.grpc</pattern>
@@ -347,6 +346,13 @@
                                     <shadedPattern>com.jd.live.agent.shaded.io.perfmark</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <!--com.google.errorprone-->
+                                    <!--com.google.api.grpc-->
+                                    <!--com.google.guava-->
+                                    <!--com.google.j2objc-->
+                                    <!--com.google.code.gson-->
+                                    <!--com.google.android-->
+                                    <!--com.google.protobuf-->
                                     <pattern>com.google</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.com.google</shadedPattern>
                                 </relocation>
@@ -371,12 +377,10 @@
                                     <shadedPattern>com.jd.live.agent.shaded.org.checkerframework</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.squareup.okhttp3</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.com.squareup.okhttp3</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.squareup.okio</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.com.squareup.okio</shadedPattern>
+                                    <!--com.squareup.okhttp3-->
+                                    <!--com.squareup.okio-->
+                                    <pattern>com.squareup</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.com.squareup</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.jetbrains.kotlin</pattern>
