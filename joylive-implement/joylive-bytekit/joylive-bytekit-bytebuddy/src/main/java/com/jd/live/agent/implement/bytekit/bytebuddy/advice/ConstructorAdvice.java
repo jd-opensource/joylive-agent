@@ -41,8 +41,11 @@ public class ConstructorAdvice {
                                @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
                                @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        adviceKey = AdviceKey.getMethodKey(methodDesc, type.getClassLoader());
-        ConstructorContext cc = new ConstructorContext(type, arguments, constructor, methodDesc);
+        Class<?> localType = type;
+        Constructor<?> localConstructor = constructor;
+        String localMehotdDesc = methodDesc;
+        adviceKey = AdviceKey.getMethodKey(localMehotdDesc, localType.getClassLoader());
+        ConstructorContext cc = new ConstructorContext(localType, arguments, localConstructor, localMehotdDesc);
         context = cc;
         AdviceHandler.onEnter(cc, adviceKey);
         arguments = cc.getArguments();

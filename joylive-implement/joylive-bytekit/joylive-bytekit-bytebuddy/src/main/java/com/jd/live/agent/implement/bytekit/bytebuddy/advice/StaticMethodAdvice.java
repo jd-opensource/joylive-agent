@@ -43,9 +43,13 @@ public class StaticMethodAdvice {
                                   @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
                                   @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        boolean origin = OriginStack.tryPop(null, method);
-        MethodContext mc = new MethodContext(type, null, method, arguments, methodDesc, origin);
-        adviceKey = origin ? null : getMethodKey(methodDesc, type.getClassLoader());
+        Class<?> localType = type;
+        String localMehotdDesc = methodDesc;
+        // cache method to avoid reflection many times.
+        Method localMethod = method;
+        boolean origin = OriginStack.tryPop(null, localMethod);
+        MethodContext mc = new MethodContext(localType, null, localMethod, arguments, localMehotdDesc, origin);
+        adviceKey = origin ? null : getMethodKey(localMehotdDesc, localType.getClassLoader());
         context = mc;
         if (!origin) {
             // invoke enhanced method
