@@ -37,7 +37,7 @@ public class SyncResponse<T> {
     }
 
     public SyncResponse(Throwable throwable) {
-        this(SyncStatus.ERROR, null, throwable == null ? null : throwable.getMessage(), throwable);
+        this(SyncStatus.ERROR, null, getErrorMessage(throwable), throwable);
     }
 
     public SyncResponse(SyncStatus status, T data, String error, Throwable throwable) {
@@ -45,5 +45,15 @@ public class SyncResponse<T> {
         this.data = data;
         this.error = error;
         this.throwable = throwable;
+    }
+
+    private static String getErrorMessage(Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        } else if (throwable instanceof NoClassDefFoundError) {
+            return "Class is not found, " + throwable.getMessage();
+        } else {
+            return throwable.getMessage();
+        }
     }
 }
