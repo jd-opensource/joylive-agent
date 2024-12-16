@@ -30,10 +30,12 @@ import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Waiter;
+import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
 
 import java.io.StringReader;
 import java.util.List;
@@ -103,6 +105,15 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
         publisher.removeHandler(handler);
         waiter.wakeup();
         Close.instance().closeIfExists(executorService, ExecutorService::shutdownNow);
+    }
+
+    @Override
+    protected Template createTemplate() {
+        SyncConfig syncConfig = getSyncConfig();
+        if (syncConfig instanceof ServiceAddress) {
+            return new Template(((ServiceAddress) syncConfig).getServiceUrl());
+        }
+        return super.createTemplate();
     }
 
     /**

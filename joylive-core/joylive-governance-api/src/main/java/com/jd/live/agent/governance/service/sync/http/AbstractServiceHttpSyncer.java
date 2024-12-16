@@ -21,19 +21,19 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.service.sync.*;
-import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
+import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
+import com.jd.live.agent.governance.service.sync.Subscription;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
+import com.jd.live.agent.governance.service.sync.SyncResponse;
+import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -54,17 +54,6 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
 
     @Inject(ObjectParser.JSON)
     protected ObjectParser jsonParser;
-
-    protected Template template;
-
-    @Override
-    protected CompletableFuture<Void> doStart() {
-        SyncConfig syncConfig = getSyncConfig();
-        if (syncConfig instanceof ServiceAddress) {
-            template = new Template(((ServiceAddress) syncConfig).getServiceUrl());
-        }
-        return super.doStart();
-    }
 
     @Override
     protected Syncer<K, Service> createSyncer() {
