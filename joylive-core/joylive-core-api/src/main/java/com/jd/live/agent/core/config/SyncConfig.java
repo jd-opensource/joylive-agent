@@ -60,7 +60,7 @@ public class SyncConfig {
 
     private String type;
 
-    private long interval = 5000;
+    private long interval = 3000;
 
     private long timeout = 3000;
 

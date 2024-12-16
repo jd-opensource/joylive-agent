@@ -59,7 +59,7 @@ agent:
       type: ${CONFIG_LIVE_SPACE_API_TYPE:file} # [file,multilive,multilive-openapi,nacos]
       url: ${CONFIG_LIVE_SPACE_API_URL:http://api.live.local:9090/v1}
       service: true
-      interval: 5000
+      interval: 3000
       timeout: 3000
       initialTimeout: 20000
       delay: 0
@@ -86,9 +86,11 @@ agent:
     laneSpace:
       type: ${CONFIG_LANE_SPACE_API_TYPE:file} # [file,jmsf,nacos]
       url: ${CONFIG_LANE_SPACE_API_URL:http://api.jmsf.local:8080/v1}
-      interval: 5000
+      interval: 3000
       timeout: 3000
       initialTimeout: 20000
+      delay: 0
+      fault: 5000
       # for jmsf
       jmsf:
         spacesUrl: /laneSpaces
@@ -105,9 +107,11 @@ agent:
       type: ${CONFIG_SERVICE_API_TYPE:file} # [file,jmsf,nacos]
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
       headers: ${CONFIG_SERVICE_API_HEADERS}
-      interval: 5000
+      interval: 3000
       timeout: 3000
       initialTimeout: 20000
+      delay: 0
+      fault: 5000
       # for jmsf
       jmsf:
         serviceUrl: /space/${space}/service/${service_name}/version/${service_version}?application=${application}
