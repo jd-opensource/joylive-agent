@@ -16,11 +16,10 @@
 package com.jd.live.agent.bootstrap.vm;
 
 import com.sun.tools.attach.VirtualMachine;
-import sun.tools.attach.HotSpotVirtualMachine;
 
 /**
  * The {@code VirtualMachineFactory} class provides a factory method to obtain a {@link VirtualMachine} instance.
- * If the provided {@link VirtualMachine} is an instance of {@link HotSpotVirtualMachine}, it wraps it in a {@link LiveVirtualMachine}.
+ * If the provided {@link VirtualMachine} is an instance of HotSpot VM, it wraps it in a {@link LiveVirtualMachine}.
  */
 public class VirtualMachineFactory {
 
@@ -28,7 +27,7 @@ public class VirtualMachineFactory {
 
     /**
      * Returns a {@link VirtualMachine} instance. If the provided {@link VirtualMachine} is an instance of
-     * {@link HotSpotVirtualMachine}, it wraps it in a {@link LiveVirtualMachine}. Otherwise, it returns the provided instance.
+     * HotSpot VM, it wraps it in a {@link LiveVirtualMachine}. Otherwise, it returns the provided instance.
      *
      * @param machine the {@link VirtualMachine} instance to be checked and possibly wrapped
      * @return a {@link VirtualMachine} instance, either the provided one or a wrapped {@link LiveVirtualMachine}

@@ -18,7 +18,6 @@ package com.jd.live.agent.bootstrap.vm;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.VirtualMachine;
-import sun.tools.attach.HotSpotVirtualMachine;
 
 import java.io.IOException;
 import java.io.InputStream;
