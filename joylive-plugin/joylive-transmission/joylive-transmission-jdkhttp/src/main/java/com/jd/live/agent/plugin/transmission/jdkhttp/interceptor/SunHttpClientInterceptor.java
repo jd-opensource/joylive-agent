@@ -19,12 +19,19 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * An interceptor that attaches additional information (a tag) to the HTTP request headers
  * before the request is executed. This is typically used for tracing, logging, or modifying
  * the request context programmatically.
  */
 public class SunHttpClientInterceptor extends InterceptorAdaptor {
+
+    private static final Map<Class<?>, Optional<Method>> ADD_METHODS = new ConcurrentHashMap<>();
 
     /**
      * {@inheritDoc}
@@ -43,13 +50,22 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
      * @param header The {@link MessageHeader} to which the tag will be attached.
      */
     private void attachTag(Object header) {
-        RequestContext.cargos((key, value) -> {
+        Optional<Method> optional = ADD_METHODS.computeIfAbsent(header.getClass(), c -> {
             try {
-                header.getClass().getMethod("add", String.class, String.class)
-                      .invoke(header, key, value);
-            } catch (Exception ignored) {
+                Method result = c.getMethod("add", String.class, String.class);
+                result.setAccessible(true);
+                return Optional.of(result);
+            } catch (NoSuchMethodException ignored) {
+                return Optional.empty();
             }
         });
+        optional.ifPresent(method -> RequestContext.cargos((key, value) -> {
+            try {
+                method.invoke(header, key, value);
+            } catch (Exception ignored) {
+            }
+        }));
+
     }
 }
 
