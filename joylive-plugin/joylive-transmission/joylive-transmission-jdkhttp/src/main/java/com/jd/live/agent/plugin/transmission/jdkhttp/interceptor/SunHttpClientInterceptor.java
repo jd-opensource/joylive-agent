@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.transmission.jdkhttp.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import sun.net.www.MessageHeader;
 
 /**
  * An interceptor that attaches additional information (a tag) to the HTTP request headers
@@ -32,7 +31,8 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((MessageHeader) ctx.getArguments()[0]);
+        Object header = ctx.getArguments()[0];
+        attachTag(header);
     }
 
     /**
@@ -42,8 +42,14 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
      *
      * @param header The {@link MessageHeader} to which the tag will be attached.
      */
-    private void attachTag(MessageHeader header) {
-        RequestContext.cargos(header::add);
+    private void attachTag(Object header) {
+        RequestContext.cargos((key, value) -> {
+            try {
+                header.getClass().getMethod("add", String.class, String.class)
+                      .invoke(header, key, value);
+            } catch (Exception ignored) {
+            }
+        });
     }
 }
 

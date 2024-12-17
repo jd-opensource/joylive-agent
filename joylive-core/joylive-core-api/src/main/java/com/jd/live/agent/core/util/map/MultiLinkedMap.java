@@ -132,7 +132,7 @@ public class MultiLinkedMap<K, V> extends MultiMapAdapter<K, V>  // new public b
      * @return a new MultiMap with case-insensitive keys
      */
     public static MultiMap<String, String> caseInsensitive(Map<String, String> other) {
-        MultiMap<String, String> result = new MultiLinkedMap<>(
+        MultiMap<String, String> result = new MultiLinkedMap<String, String>(
                 () -> other == null
                         ? new CaseInsensitiveLinkedMap<>()
                         : new CaseInsensitiveLinkedMap<>(other.size()));
