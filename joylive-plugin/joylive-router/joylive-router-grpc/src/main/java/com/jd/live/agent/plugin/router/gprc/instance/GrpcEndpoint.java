@@ -2,12 +2,10 @@ package com.jd.live.agent.plugin.router.gprc.instance;
 
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveSubchannel;
 import io.grpc.Attributes.Key;
-import io.grpc.LoadBalancer.Subchannel;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,13 +16,13 @@ public class GrpcEndpoint extends AbstractEndpoint {
 
     public static final Map<String, Key<String>> KEYS = new ConcurrentHashMap<>();
 
-    private final Subchannel subchannel;
+    private final LiveSubchannel subchannel;
 
     private final InetSocketAddress address;
 
-    public GrpcEndpoint(Subchannel subchannel) {
+    public GrpcEndpoint(LiveSubchannel subchannel) {
         this.subchannel = subchannel;
-        this.address = getInetSocketAddress(subchannel);
+        this.address = subchannel.getAddress();
     }
 
     @Override
@@ -53,18 +51,8 @@ public class GrpcEndpoint extends AbstractEndpoint {
         return EndpointState.HEALTHY;
     }
 
-    public Subchannel getSubchannel() {
+    public LiveSubchannel getSubchannel() {
         return subchannel;
     }
 
-    private static InetSocketAddress getInetSocketAddress(Subchannel subchannel) {
-
-        List<SocketAddress> addresses = subchannel.getAllAddresses().get(0).getAddresses();
-        for (SocketAddress addr : addresses) {
-            if (addr instanceof InetSocketAddress) {
-                return (InetSocketAddress) addr;
-            }
-        }
-        return null;
-    }
 }

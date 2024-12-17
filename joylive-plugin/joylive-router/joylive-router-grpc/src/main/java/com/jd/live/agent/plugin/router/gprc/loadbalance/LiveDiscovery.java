@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import io.grpc.LoadBalancer.Subchannel;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +27,7 @@ public class LiveDiscovery {
     /**
      * A map of subchannels, where the key is the service name and the value is a list of subchannels for that service.
      */
-    private static final Map<String, List<Subchannel>> SUB_CHANNELS = new ConcurrentHashMap<>();
+    private static final Map<String, List<LiveSubchannel>> SUB_CHANNELS = new ConcurrentHashMap<>();
 
     private static final Map<String, String> SERVICES = new ConcurrentHashMap<>();
 
@@ -39,7 +37,7 @@ public class LiveDiscovery {
      * @param service The name of the service for which to retrieve the subchannels.
      * @return The list of subchannels for the specified service, or null if no subchannels are found.
      */
-    public static List<Subchannel> getSubchannel(String service) {
+    public static List<LiveSubchannel> getSubchannel(String service) {
         return SUB_CHANNELS.get(service);
     }
 
@@ -49,7 +47,7 @@ public class LiveDiscovery {
      * @param service     The name of the service for which to add or update the subchannels.
      * @param subchannels The list of subchannels to add or update for the specified service.
      */
-    public static void putSubchannel(String service, List<Subchannel> subchannels) {
+    public static void putSubchannel(String service, List<LiveSubchannel> subchannels) {
         SUB_CHANNELS.put(service, subchannels);
     }
 

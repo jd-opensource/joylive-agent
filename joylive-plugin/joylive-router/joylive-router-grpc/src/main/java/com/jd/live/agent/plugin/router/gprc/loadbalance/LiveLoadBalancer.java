@@ -40,7 +40,7 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     private final Timer timer;
 
-    private volatile Map<EquivalentAddressGroup, Subchannel> subchannels = new ConcurrentHashMap<>();
+    private volatile Map<EquivalentAddressGroup, LiveSubchannel> subchannels = new ConcurrentHashMap<>();
 
     private final AtomicLong versions = new AtomicLong(0);
 
@@ -58,13 +58,13 @@ public class LiveLoadBalancer extends LoadBalancer {
     public void handleResolvedAddresses(ResolvedAddresses resolvedAddresses) {
         Set<EquivalentAddressGroup> latestAddresses = deDup(resolvedAddresses);
 
-        List<Subchannel> removed = new ArrayList<>();
-        List<Subchannel> added = new ArrayList<>();
+        List<LiveSubchannel> removed = new ArrayList<>();
+        List<LiveSubchannel> added = new ArrayList<>();
 
-        Map<EquivalentAddressGroup, Subchannel> oldSubchannels = subchannels;
-        Map<EquivalentAddressGroup, Subchannel> newSubchannels = new ConcurrentHashMap<>();
+        Map<EquivalentAddressGroup, LiveSubchannel> oldSubchannels = subchannels;
+        Map<EquivalentAddressGroup, LiveSubchannel> newSubchannels = new ConcurrentHashMap<>();
         latestAddresses.forEach(addressGroup -> {
-            Subchannel subchannel = oldSubchannels.get(addressGroup);
+            LiveSubchannel subchannel = oldSubchannels.get(addressGroup);
             if (subchannel == null) {
                 // create new connection
                 subchannel = createSubchannel(addressGroup);
@@ -82,13 +82,13 @@ public class LiveLoadBalancer extends LoadBalancer {
         if (!removed.isEmpty()) {
             addTask();
             removed.forEach(subchannel -> {
-                setConnectivityState(subchannel, SHUTDOWN);
+                subchannel.setConnectivityState(SHUTDOWN);
                 subchannel.shutdown();
             });
         }
         // create new connection
         if (!added.isEmpty()) {
-            added.forEach(Subchannel::requestConnection);
+            added.forEach(LiveSubchannel::requestConnection);
         }
     }
 
@@ -99,7 +99,7 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     @Override
     public void shutdown() {
-        subchannels.values().forEach(Subchannel::shutdown);
+        subchannels.values().forEach(LiveSubchannel::shutdown);
     }
 
     /**
@@ -148,10 +148,10 @@ public class LiveLoadBalancer extends LoadBalancer {
      * @param addressGroup the EquivalentAddressGroup to create the Subchannel for
      * @return the newly created Subchannel
      */
-    private Subchannel createSubchannel(EquivalentAddressGroup addressGroup) {
+    private LiveSubchannel createSubchannel(EquivalentAddressGroup addressGroup) {
         Attributes attributes = addressGroup.getAttributes().toBuilder().set(LiveRef.KEY_STATE, new LiveRef<>(IDLE)).build();
         CreateSubchannelArgs args = CreateSubchannelArgs.newBuilder().setAddresses(addressGroup).setAttributes(attributes).build();
-        Subchannel subchannel = helper.createSubchannel(args);
+        LiveSubchannel subchannel = new LiveSubchannel(helper.createSubchannel(args));
         subchannel.start(new LiveSubchannelStateListener(subchannel));
         return subchannel;
     }
@@ -188,9 +188,9 @@ public class LiveLoadBalancer extends LoadBalancer {
      * Picks the ready Subchannels and updates the balancing state accordingly.
      */
     private void pickReady() {
-        List<Subchannel> readies = new ArrayList<>();
+        List<LiveSubchannel> readies = new ArrayList<>();
         subchannels.values().forEach(subchannel -> {
-            if (getConnectivityState(subchannel) == ConnectivityState.READY) {
+            if (subchannel.getConnectivityState() == ConnectivityState.READY) {
                 readies.add(subchannel);
             }
         });
@@ -202,43 +202,19 @@ public class LiveLoadBalancer extends LoadBalancer {
         }
     }
 
-    /**
-     * Gets the current ConnectivityState of the given Subchannel.
-     *
-     * @param subchannel the Subchannel to get the ConnectivityState for
-     * @return the current ConnectivityState, or IDLE if no state is set
-     */
-    private ConnectivityState getConnectivityState(Subchannel subchannel) {
-        LiveRef<ConnectivityState> ref = subchannel.getAttributes().get(LiveRef.KEY_STATE);
-        return ref == null ? IDLE : ref.getValue();
-    }
-
-    /**
-     * Sets the ConnectivityState of the given Subchannel to the specified newState.
-     *
-     * @param subchannel the Subchannel to set the ConnectivityState for
-     * @param newState the new ConnectivityState to set
-     */
-    private void setConnectivityState(Subchannel subchannel, ConnectivityState newState) {
-        LiveRef<ConnectivityState> ref = subchannel.getAttributes().get(LiveRef.KEY_STATE);
-        if (ref != null) {
-            ref.setValue(newState);
-        }
-    }
-
     private class LiveSubchannelStateListener implements SubchannelStateListener {
 
-        private final Subchannel subchannel;
+        private final LiveSubchannel subchannel;
 
-        LiveSubchannelStateListener(Subchannel subchannel) {
+        LiveSubchannelStateListener(LiveSubchannel subchannel) {
             this.subchannel = subchannel;
         }
 
         @Override
         public void onSubchannelState(ConnectivityStateInfo stateInfo) {
-            ConnectivityState currentState = getConnectivityState(subchannel);
+            ConnectivityState currentState = subchannel.getConnectivityState();
             ConnectivityState newState = stateInfo.getState();
-            setConnectivityState(subchannel, newState);
+            subchannel.setConnectivityState(newState);
             if (currentState == READY && newState != READY
                     || currentState != READY && newState == READY) {
                 if (initialized.compareAndSet(false, true)) {

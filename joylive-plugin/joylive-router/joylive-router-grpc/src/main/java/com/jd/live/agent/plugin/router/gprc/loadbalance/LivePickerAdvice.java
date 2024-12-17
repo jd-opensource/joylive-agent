@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
 import io.grpc.CallOptions;
-import io.grpc.LoadBalancer.Subchannel;
 
 import java.util.List;
 import java.util.function.Function;
@@ -25,28 +24,28 @@ public class LivePickerAdvice {
 
     public static final CallOptions.Key<LivePickerAdvice> KEY_PICKER_ADVICE = CallOptions.Key.create("x-picker-advice");
 
-    private final Subchannel subchannel;
+    private final LiveSubchannel subchannel;
 
-    private final Function<List<Subchannel>, Subchannel> election;
+    private final Function<List<LiveSubchannel>, LiveSubchannel> election;
 
-    public LivePickerAdvice(Subchannel subchannel) {
+    public LivePickerAdvice(LiveSubchannel subchannel) {
         this(subchannel, null);
     }
 
-    public LivePickerAdvice(Function<List<Subchannel>, Subchannel> election) {
+    public LivePickerAdvice(Function<List<LiveSubchannel>, LiveSubchannel> election) {
         this(null, election);
     }
 
-    public LivePickerAdvice(Subchannel subchannel, Function<List<Subchannel>, Subchannel> election) {
+    public LivePickerAdvice(LiveSubchannel subchannel, Function<List<LiveSubchannel>, LiveSubchannel> election) {
         this.subchannel = subchannel;
         this.election = election;
     }
 
-    public Subchannel getSubchannel() {
+    public LiveSubchannel getSubchannel() {
         return subchannel;
     }
 
-    public Function<List<Subchannel>, Subchannel> getElection() {
+    public Function<List<LiveSubchannel>, LiveSubchannel> getElection() {
         return election;
     }
 }

@@ -8,10 +8,10 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveSubchannel;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
 import io.grpc.ClientCall;
-import io.grpc.LoadBalancer;
 import io.grpc.Metadata;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     @Override
     public CompletionStage<List<GrpcEndpoint>> route(GrpcOutboundRequest request) {
-        List<LoadBalancer.Subchannel> subchannels = LiveDiscovery.getSubchannel(request.getService());
+        List<LiveSubchannel> subchannels = LiveDiscovery.getSubchannel(request.getService());
         return CompletableFuture.completedFuture(CollectionUtils.convert(subchannels, GrpcEndpoint::new));
     }
 

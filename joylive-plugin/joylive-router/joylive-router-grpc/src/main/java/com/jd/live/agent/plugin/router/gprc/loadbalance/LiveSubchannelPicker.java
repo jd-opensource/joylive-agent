@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
-import io.grpc.LoadBalancer.Subchannel;
 import io.grpc.LoadBalancer.SubchannelPicker;
 
 import java.util.List;
@@ -34,17 +33,22 @@ public class LiveSubchannelPicker extends SubchannelPicker {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveSubchannelPicker.class);
 
+    private final PickResult pickResult;
+
+    private final List<LiveSubchannel> subchannels;
+
     private final AtomicLong counter = new AtomicLong();
 
-    private List<Subchannel> subchannels;
-
-    private PickResult pickResult;
-
     public LiveSubchannelPicker(PickResult pickResult) {
-        this.pickResult = pickResult;
+        this(pickResult, null);
     }
 
-    public LiveSubchannelPicker(List<Subchannel> subchannels) {
+    public LiveSubchannelPicker(List<LiveSubchannel> subchannels) {
+        this(null, subchannels);
+    }
+
+    public LiveSubchannelPicker(PickResult pickResult, List<LiveSubchannel> subchannels) {
+        this.pickResult = pickResult;
         this.subchannels = subchannels;
     }
 
@@ -54,10 +58,10 @@ public class LiveSubchannelPicker extends SubchannelPicker {
             return pickResult;
         } else {
             LivePickerAdvice advice = args.getCallOptions().getOption(LivePickerAdvice.KEY_PICKER_ADVICE);
-            Subchannel subchannel = null;
+            LiveSubchannel subchannel = null;
             if (advice != null) {
                 subchannel = advice.getSubchannel();
-                Function<List<Subchannel>, Subchannel> election = advice.getElection();
+                Function<List<LiveSubchannel>, LiveSubchannel> election = advice.getElection();
                 if (subchannel == null && election != null) {
                     try {
                         subchannel = election.apply(subchannels);
@@ -68,11 +72,16 @@ public class LiveSubchannelPicker extends SubchannelPicker {
                 }
             }
             if (subchannel != null) {
-                return PickResult.withSubchannel(subchannel);
+                return PickResult.withSubchannel(subchannel.getSubchannel());
             } else {
-                int index = (int) (counter.getAndIncrement() % subchannels.size());
+                long v = counter.getAndIncrement();
+                if (v < 0) {
+                    counter.set(0);
+                    v = counter.getAndIncrement();
+                }
+                int index = (int) (v % subchannels.size());
                 subchannel = subchannels.get(index);
-                return PickResult.withSubchannel(subchannel);
+                return PickResult.withSubchannel(subchannel.getSubchannel());
             }
         }
     }

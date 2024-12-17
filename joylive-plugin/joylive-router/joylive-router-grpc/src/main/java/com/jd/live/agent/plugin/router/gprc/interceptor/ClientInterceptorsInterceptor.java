@@ -22,10 +22,10 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LivePickerAdvice;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveSubchannel;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.request.invoke.GrpcInvocation.GrpcOutboundInvocation;
 import io.grpc.*;
-import io.grpc.LoadBalancer.Subchannel;
 
 import java.util.List;
 import java.util.function.Function;
@@ -83,7 +83,7 @@ public class ClientInterceptorsInterceptor extends InterceptorAdaptor {
         }
     }
 
-    private static class LiveRoute<ReqT, RespT> implements Function<List<Subchannel>, Subchannel> {
+    private static class LiveRoute<ReqT, RespT> implements Function<List<LiveSubchannel>, LiveSubchannel> {
 
         private final InvocationContext context;
 
@@ -97,7 +97,7 @@ public class ClientInterceptorsInterceptor extends InterceptorAdaptor {
         }
 
         @Override
-        public Subchannel apply(List<Subchannel> subchannels) {
+        public LiveSubchannel apply(List<LiveSubchannel> subchannels) {
             String serviceName = LiveDiscovery.getService(method.getServiceName());
             GrpcOutboundRequest request = new GrpcOutboundRequest(headers, serviceName, method);
             GrpcOutboundInvocation invocation = new GrpcOutboundInvocation(request, context);
