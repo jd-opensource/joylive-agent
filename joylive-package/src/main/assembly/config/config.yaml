@@ -129,7 +129,7 @@ agent:
     timeout: 5000
   switch:
     live:
-      enabled: ${CONFIG_LIVE_ENABLED:true}
+      enabled: ${CONFIG_LIVE_ENABLED:false}
       mq: ${CONFIG_LIVE_MQ_ENABLED:false}
       dubbo: true
       grpc: true
@@ -139,14 +139,14 @@ agent:
       phevos: true
       rocketmq: true
     lane:
-      enabled: ${CONFIG_LANE_ENABLED:true}
+      enabled: ${CONFIG_LANE_ENABLED:${CONFIG_FLOW_CONTROL_ENABLED}}
     transmission:
       enabled: ${CONFIG_TRANSMISSION_ENABLED:true}
       threadpool: ${CONFIG_TRANSMISSION_THREADPOOL_ENABLED:true}
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:true}
     flowcontrol:
-      enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
+      enabled: ${CONFIG_FLOW_CONTROL_ENABLED:false}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
     protect:
