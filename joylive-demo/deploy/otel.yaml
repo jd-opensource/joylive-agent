@@ -29,18 +29,13 @@ data:
       prometheus:
         endpoint: 0.0.0.0:8889
         namespace: ''
-      logging: {}
     service:
       extensions: [zpages]
       pipelines:
-        traces:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [logging]
         metrics:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [logging, prometheus]
+          exporters: [prometheus]
 ---
 apiVersion: v1
 kind: Service
@@ -95,7 +90,7 @@ spec:
         - command:
             - "/otelcol"
             - "--config=/conf/otel-collector-config.yaml"
-          image: otel/opentelemetry-collector:0.100.0
+          image: otel/opentelemetry-collector:0.115.1
           name: otel-collector
           resources:
             limits:
