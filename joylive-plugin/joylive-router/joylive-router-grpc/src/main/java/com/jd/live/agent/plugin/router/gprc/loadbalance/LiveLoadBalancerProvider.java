@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.core.util.time.Timer;
 import io.grpc.LoadBalancer;
 import io.grpc.LoadBalancerProvider;
 
@@ -22,6 +23,12 @@ import io.grpc.LoadBalancerProvider;
  * A class that provides a live load balancer for distributing network traffic across multiple servers.
  */
 public class LiveLoadBalancerProvider extends LoadBalancerProvider {
+
+    private final Timer timer;
+
+    public LiveLoadBalancerProvider(Timer timer) {
+        this.timer = timer;
+    }
 
     @Override
     public boolean isAvailable() {
@@ -40,6 +47,6 @@ public class LiveLoadBalancerProvider extends LoadBalancerProvider {
 
     @Override
     public LoadBalancer newLoadBalancer(LoadBalancer.Helper helper) {
-        return new LiveLoadBalancer(helper);
+        return new LiveLoadBalancer(helper, timer);
     }
 }

@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.gprc.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveLoadBalancerProvider;
 
 /**
@@ -25,9 +26,15 @@ import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveLoadBalancerProvider
  */
 public class LoadbalancerInterceptor extends InterceptorAdaptor {
 
+    private final Timer timer;
+
+    public LoadbalancerInterceptor(Timer timer) {
+        this.timer = timer;
+    }
+
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        mc.skipWithResult(new LiveLoadBalancerProvider());
+        mc.skipWithResult(new LiveLoadBalancerProvider(timer));
     }
 }

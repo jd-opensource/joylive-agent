@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
@@ -29,6 +31,8 @@ import java.util.function.Function;
  * A class that extends the SubchannelPicker class to provide a live subchannel picking strategy.
  */
 public class LiveSubchannelPicker extends SubchannelPicker {
+
+    private static final Logger logger = LoggerFactory.getLogger(LiveSubchannelPicker.class);
 
     private final AtomicLong counter = new AtomicLong();
 
@@ -58,6 +62,7 @@ public class LiveSubchannelPicker extends SubchannelPicker {
                     try {
                         subchannel = election.apply(subchannels);
                     } catch (Throwable e) {
+                        logger.error(e.getMessage(), e);
                         return PickResult.withError(GrpcStatus.createException(e));
                     }
                 }
