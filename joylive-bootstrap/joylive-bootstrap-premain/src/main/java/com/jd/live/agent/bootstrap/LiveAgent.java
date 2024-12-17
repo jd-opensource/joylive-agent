@@ -133,8 +133,8 @@ public class LiveAgent {
             File libDir = new File(root, LivePath.DIR_LIB);
             File configDir = new File(root, LivePath.DIR_CONFIG);
             Map<String, Object> bootstrapConfig = createBootstrapConfig(configDir);
-            File[] systemLibs = getLibs(new File(libDir, LivePath.DIR_LIB_SYSTEM));
-            File[] coreLibs = getLibs(new File(libDir, LivePath.DIR_LIB_CORE));
+            File[] systemLibs = getLibs(new File(libDir, LivePath.DIR_LIB_SYSTEM), true);
+            File[] coreLibs = getLibs(new File(libDir, LivePath.DIR_LIB_CORE), false);
             URL[] coreLibUrls = getUrls(coreLibs);
             String command = (String) args.get(ARG_COMMAND);
 
@@ -269,9 +269,11 @@ public class LiveAgent {
     }
 
     private static void addSystemPath(Instrumentation instrumentation, File[] files) throws IOException {
-        for (File file : files) {
-            try (JarFile jarFile = new JarFile(file)) {
-                instrumentation.appendToBootstrapClassLoaderSearch(jarFile);
+        if (files != null) {
+            for (File file : files) {
+                try (JarFile jarFile = new JarFile(file)) {
+                    instrumentation.appendToBootstrapClassLoaderSearch(jarFile);
+                }
             }
         }
         logger.setUseParentHandlers(false);
@@ -376,15 +378,16 @@ public class LiveAgent {
      * Retrieves an array of JAR files located in a specified directory.
      *
      * @param dir The directory to search for JAR files.
+     * @param empty Whether the directory is allowed to be empty or not.
      * @return An array of File objects representing the JAR files found in the directory.
-     * @throws IOException If the directory does not exist, is not a directory, or is empty.
+     * @throws IOException If the directory does not exist, is not a directory, or is empty (and empty is false).
      */
-    private static File[] getLibs(File dir) throws IOException {
-        if (!dir.exists() && !dir.isDirectory()) {
+    private static File[] getLibs(File dir, boolean empty) throws IOException {
+        if (!empty && !dir.exists() && !dir.isDirectory()) {
             throw new IOException("Directory is not exists." + dir.getPath());
         }
         File[] files = dir.listFiles(pathname -> pathname.isFile() && pathname.getName().endsWith(".jar"));
-        if (files == null || files.length == 0) {
+        if (!empty && (files == null || files.length == 0)) {
             throw new IOException("Directory is empty. " + dir);
         }
         return files;

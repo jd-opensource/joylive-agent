@@ -62,6 +62,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.beust:jcommander</include>
+                                    <include>com.jd.live:joylive-bootstrap-api</include>
                                 </includes>
                             </artifactSet>
                             <transformers>

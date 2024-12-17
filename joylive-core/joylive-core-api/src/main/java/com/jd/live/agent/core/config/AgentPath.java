@@ -94,7 +94,7 @@ public class AgentPath {
         this.logPath = logPath != null ? createDir(logPath, true, false) :
                 createDir(root, DIR_LOG, true, false);
         this.libPath = createDir(root, DIR_LIB, false, true);
-        this.systemLibPath = createDir(libPath, DIR_LIB_SYSTEM, false, true);
+        this.systemLibPath = createDir(libPath, DIR_LIB_SYSTEM, true, true);
         this.coreLibPath = createDir(libPath, DIR_LIB_CORE, false, true);
         this.coreImplLibPath = createDir(libPath, DIR_LIB_CORE_IMPL, false, true);
         this.configPath = createDir(root, DIR_CONFIG, false, true);

@@ -28,14 +28,11 @@
             <outputFileNameMapping>live.jar</outputFileNameMapping>
         </dependencySet>
         <!-- lib/system -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>lib/system</outputDirectory>
-            <unpack>false</unpack>
-            <includes>
-                <include>com.jd.live:joylive-bootstrap-api</include>
-            </includes>
-        </dependencySet>
+        <!-- <dependencySet>-->
+            <!-- <useProjectArtifact>false</useProjectArtifact>-->
+            <!-- <outputDirectory>lib/system</outputDirectory>-->
+            <!-- <unpack>false</unpack>-->
+        <!-- </dependencySet>-->
         <!-- lib/core -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
