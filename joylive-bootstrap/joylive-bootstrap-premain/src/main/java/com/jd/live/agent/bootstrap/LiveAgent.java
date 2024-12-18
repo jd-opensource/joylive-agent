@@ -78,6 +78,10 @@ public class LiveAgent {
 
     private static final String FILE_MANIFEST_MF = "META-INF/MANIFEST.MF";
 
+    private static final String ENV_JAVA_TOOL_OPTIONS = "JAVA_TOOL_OPTIONS";
+
+    private static final String FILE_LIVE_AGENT = "live.jar";
+
     private static Object lifecycle;
 
     private static URLClassLoader classLoader;
@@ -130,15 +134,17 @@ public class LiveAgent {
         try {
             InstallContext ctx = InstallContext.parse(arguments, instrumentation, dynamic);
             shutdownOnError = ctx.shutdownOnError;
-            if (ctx.isExcludeApp()) {
-                logger.log(Level.INFO, "[LiveAgent] exit when excluding main class " + ctx.mainClass);
-                return;
-            } else {
-                logger.log(Level.INFO, "[LiveAgent] main class " + ctx.mainClass
-                        + "\nif you do not want to enhance this application, "
-                        + "\nyou can append this main class to \"agent.enhance.excludeApp\" in "
-                        + new File(ctx.configDir, "bootstrap.properties")
-                        + "\nor contact you administrator to update the default value.");
+            if (ctx.isInJavaToolOptions()) {
+                if (ctx.isExcludeApp()) {
+                    logger.log(Level.INFO, "[LiveAgent] exit when excluding main class " + ctx.mainClass);
+                    return;
+                } else {
+                    logger.log(Level.INFO, "[LiveAgent] main class " + ctx.mainClass
+                            + "\nif you do not want to enhance this application, "
+                            + "\nyou can append this main class to \"agent.enhance.excludeApp\" in "
+                            + new File(ctx.configDir, "bootstrap.properties")
+                            + "\nor contact you administrator to update the default value.");
+                }
             }
 
             // Load system libraries and set up the class loader.
@@ -300,6 +306,16 @@ public class LiveAgent {
          */
         public boolean isExcludeApp() {
             return mainClass != null && excludeApps.contains(mainClass);
+        }
+
+        /**
+         * Checks if the Java tool options environment variable contains the Live Agent file.
+         *
+         * @return true if the Java tool options contain the Live Agent file, false otherwise.
+         */
+        public boolean isInJavaToolOptions() {
+            String value = (String) env.get(ENV_JAVA_TOOL_OPTIONS);
+            return value != null && value.contains(FILE_LIVE_AGENT);
         }
 
         /**
