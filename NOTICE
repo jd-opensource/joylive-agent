@@ -79,10 +79,9 @@ joylive-event-opentelemetry
     javax.annotation -> com.jd.live.agent.shaded.javax.annotation
     org.codehaus -> com.jd.live.agent.shaded.org.codehaus
     org.checkerframework -> com.jd.live.agent.shaded.org.checkerframework
-    # com.squareup.okhttp3
-    # com.squareup.okio
-    com.squareup -> com.jd.live.agent.shaded.com.squareup
-    org.jetbrains.kotlin -> com.jd.live.agent.shaded.org.jetbrains.kotlin
+    okhttp3 -> com.jd.live.agent.shaded.okhttp3
+    okio -> com.jd.live.agent.shaded.okio
+    kotlin -> com.jd.live.agent.shaded.kotlin
     org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
 joylive-flowcontrol-resilience4j
     io.github.resilience4j -> com.jd.live.agent.shaded.io.github.resilience4j
