@@ -131,8 +131,13 @@ public class LiveAgent {
             InstallContext ctx = InstallContext.parse(arguments, instrumentation, dynamic);
             shutdownOnError = ctx.shutdownOnError;
             if (ctx.isExcludeApp()) {
-                logger.log(Level.INFO, "[LiveAgent] exit when excluding app " + ctx.mainClass);
+                logger.log(Level.INFO, "[LiveAgent] exit when excluding main class " + ctx.mainClass);
                 return;
+            } else {
+                logger.log(Level.INFO, "[LiveAgent] main class " + ctx.mainClass
+                        + "\nif you do not want to enhance this application,"
+                        + "you can append this main class to \"agent.enhance.excludeApp\" in "
+                        + new File(ctx.configDir + "/bootstrap.properties"));
             }
 
             // Load system libraries and set up the class loader.
