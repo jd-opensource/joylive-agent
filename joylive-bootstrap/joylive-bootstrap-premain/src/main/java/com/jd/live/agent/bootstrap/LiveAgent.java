@@ -136,10 +136,10 @@ public class LiveAgent {
             shutdownOnError = ctx.shutdownOnError;
             if (ctx.isInJavaToolOptions()) {
                 if (ctx.isExcludeApp()) {
-                    logger.log(Level.INFO, "[LiveAgent] exit when excluding main class " + ctx.mainClass);
+                    // logger.log(Level.INFO, "[LiveAgent] the agent will exit when excluding main class " + ctx.bootClass.name);
                     return;
-                } else {
-                    logger.log(Level.INFO, "[LiveAgent] main class " + ctx.mainClass
+                } else if (ctx.bootClass != null) {
+                    logger.log(Level.INFO, "[LiveAgent] main class " + ctx.bootClass.name
                             + "\nif you do not want to enhance this application, "
                             + "\nyou can append this main class to \"agent.enhance.excludeApp\" in "
                             + new File(ctx.configDir, "bootstrap.properties")
@@ -213,7 +213,7 @@ public class LiveAgent {
         private ConfigResolver configuration;
         private String command;
         private boolean shutdownOnError;
-        private String mainClass;
+        private BootClass bootClass;
         private Set<String> excludeApps;
 
         /**
@@ -232,7 +232,7 @@ public class LiveAgent {
             arg.args = createArgs(arguments);
             arg.env = createEnv();
             arg.command = (String) arg.args.get(ARG_COMMAND);
-            arg.mainClass = getMainClass();
+            arg.bootClass = getBootClass();
 
             arg.root = LivePath.getRootPath(arg.env, arg.args);
             if (arg.root != null) {
@@ -260,16 +260,18 @@ public class LiveAgent {
          *
          * @return The main class as a string.
          */
-        private static String getMainClass() {
+        private static BootClass getBootClass() {
             String command = System.getProperty(SUN_JAVA_COMMAND);
-            int index = command.indexOf(" ");
-            if (index != -1) {
-                command = command.substring(0, index);
+            if (command != null) {
+                int index = command.indexOf(" ");
+                if (index != -1) {
+                    command = command.substring(0, index);
+                }
+                if (command.endsWith(".jar")) {
+                    command = getMainClassByJar(command);
+                }
             }
-            if (command.endsWith(".jar")) {
-                return getMainClassByJar(command);
-            }
-            return command;
+            return command == null ? null : new BootClass(command);
         }
 
         /**
@@ -305,7 +307,9 @@ public class LiveAgent {
          * @return true if the main class is excluded, false otherwise.
          */
         public boolean isExcludeApp() {
-            return mainClass != null && excludeApps.contains(mainClass);
+            return bootClass != null && (bootClass.isJdkModule()
+                    || excludeApps.contains(bootClass.name)
+                    || excludeApps.contains(bootClass.className));
         }
 
         /**
@@ -586,6 +590,34 @@ public class LiveAgent {
             return excludeApps;
         }
 
+    }
+
+    /**
+     * Represents a boot class in the Java Virtual Machine.
+     */
+    private static class BootClass {
+        private final String name;
+        private final String module;
+        private final String className;
+
+        BootClass(String name) {
+            this.name = name;
+            // jdk.jcmd/sun.tools.jstack.JStack
+            // jdk.jcmd/sun.tools.jmap.JMap
+            // jdk.compiler/com.sun.tools.javac.Main
+            int pos = name.lastIndexOf('/');
+            this.module = pos > 0 ? name.substring(0, pos) : null;
+            this.className = pos > 0 ? name.substring(pos + 1) : name;
+        }
+
+        /**
+         * Checks if the boot class belongs to a JDK module.
+         *
+         * @return true if the boot class belongs to a JDK module, false otherwise.
+         */
+        public boolean isJdkModule() {
+            return module != null && module.startsWith("jdk.");
+        }
     }
 
     private static class LogHandler extends Handler {
