@@ -307,7 +307,7 @@ public class LiveAgent {
          * @return true if the main class is excluded, false otherwise.
          */
         public boolean isExcludeApp() {
-            return bootClass != null && (bootClass.isJdkModule()
+            return bootClass != null && (bootClass.isJdkTool()
                     || excludeApps.contains(bootClass.name)
                     || excludeApps.contains(bootClass.className));
         }
@@ -611,12 +611,16 @@ public class LiveAgent {
         }
 
         /**
-         * Checks if the boot class belongs to a JDK module.
+         * Checks if the boot class belongs to a JDK tool.
          *
-         * @return true if the boot class belongs to a JDK module, false otherwise.
+         * @return true if the boot class belongs to a JDK tool, false otherwise.
          */
-        public boolean isJdkModule() {
-            return module != null && module.startsWith("jdk.");
+        public boolean isJdkTool() {
+            return module != null && module.startsWith("jdk.")
+                    || className != null && (className.startsWith("sun.")
+                    || className.startsWith("com.sun.")
+                    || className.startsWith("jdk.")
+            );
         }
     }
 
