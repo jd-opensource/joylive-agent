@@ -29,10 +29,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.jar.JarFile;
+import java.util.jar.*;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -74,6 +75,8 @@ public class LiveAgent {
     private static final String EXCLUDE_APP = "agent.enhance.excludeApp";
 
     private static final String ARRAY_DELIMITER_PATTERN = "[;,]";
+
+    private static final String FILE_MANIFEST_MF = "META-INF/MANIFEST.MF";
 
     private static Object lifecycle;
 
@@ -217,7 +220,7 @@ public class LiveAgent {
             arg.args = createArgs(arguments);
             arg.env = createEnv();
             arg.command = (String) arg.args.get(ARG_COMMAND);
-            arg.mainClass = System.getProperty(SUN_JAVA_COMMAND);
+            arg.mainClass = getMainClass();
 
             arg.root = LivePath.getRootPath(arg.env, arg.args);
             if (arg.root != null) {
@@ -238,6 +241,50 @@ public class LiveAgent {
             // Exclude apps
             arg.excludeApps = getExcludeApps(arg.configuration);
             return arg;
+        }
+
+        /**
+         * Gets the main class of the current application.
+         *
+         * @return The main class as a string.
+         */
+        private static String getMainClass() {
+            String command = System.getProperty(SUN_JAVA_COMMAND);
+            int index = command.indexOf(" ");
+            if (index != -1) {
+                command = command.substring(0, index);
+            }
+            if (command.endsWith(".jar")) {
+                return getMainClassByJar(command);
+            }
+            return command;
+        }
+
+        /**
+         * Gets the main class from a JAR file.
+         *
+         * @param file The path to the JAR file.
+         * @return The main class as a string.
+         */
+        private static String getMainClassByJar(String file) {
+            File jar = new File(file);
+            if (jar.exists()) {
+                try (JarInputStream jarStream = new JarInputStream(Files.newInputStream(jar.toPath()))) {
+                    while (true) {
+                        JarEntry entry = jarStream.getNextJarEntry();
+                        if (entry == null) {
+                            break;
+                        }
+                        String entryName = entry.getName();
+                        if (entryName.equals(FILE_MANIFEST_MF)) {
+                            Manifest manifest = new Manifest(jarStream);
+                            return manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS.toString());
+                        }
+                    }
+                } catch (IOException ignore) {
+                }
+            }
+            return null;
         }
 
         /**
