@@ -137,7 +137,7 @@ public class LiveAgent {
                 logger.log(Level.INFO, "[LiveAgent] main class " + ctx.mainClass
                         + "\nif you do not want to enhance this application,"
                         + "you can append this main class to \"agent.enhance.excludeApp\" in "
-                        + new File(ctx.configDir + "/bootstrap.properties"));
+                        + new File(ctx.configDir, "bootstrap.properties"));
             }
 
             // Load system libraries and set up the class loader.
