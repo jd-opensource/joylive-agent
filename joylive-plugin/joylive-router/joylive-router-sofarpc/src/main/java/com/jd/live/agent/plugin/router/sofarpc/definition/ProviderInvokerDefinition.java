@@ -16,26 +16,20 @@
 package com.jd.live.agent.plugin.router.sofarpc.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.sofarpc.condition.ConditionalOnSofaRpcGovernanceEnabled;
 import com.jd.live.agent.plugin.router.sofarpc.interceptor.ProviderInvokerInterceptor;
 
 @Injectable
 @Extension(value = "ProviderInvokerDefinition")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED,
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SOFARPC_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.AND)
+@ConditionalOnSofaRpcGovernanceEnabled
 @ConditionalOnClass(ProviderInvokerDefinition.TYPE_PROVIDER_INVOKER)
 public class ProviderInvokerDefinition extends PluginDefinitionAdapter {
 

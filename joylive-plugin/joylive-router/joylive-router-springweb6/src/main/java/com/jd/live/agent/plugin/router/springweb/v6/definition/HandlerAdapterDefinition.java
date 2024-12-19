@@ -16,14 +16,15 @@
 package com.jd.live.agent.plugin.router.springweb.v6.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springweb.v6.condition.ConditionalOnSpringWeb6GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springweb.v6.interceptor.HandlerAdapterInterceptor;
 
 /**
@@ -33,16 +34,8 @@ import com.jd.live.agent.plugin.router.springweb.v6.interceptor.HandlerAdapterIn
  */
 @Injectable
 @Extension(value = "HandlerAdapterDefinition_v6")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED,
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.AND)
+@ConditionalOnSpringWeb6GovernanceEnabled
 @ConditionalOnClass(HandlerAdapterDefinition.TYPE_HANDLER_ADAPTER)
-@ConditionalOnClass(DispatcherHandlerDefinition.TYPE_ERROR_RESPONSE)
 public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_HANDLER_ADAPTER = "org.springframework.web.servlet.HandlerAdapter";
@@ -54,7 +47,6 @@ public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
             "jakarta.servlet.http.HttpServletResponse",
             "java.lang.Object"
     };
-
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;

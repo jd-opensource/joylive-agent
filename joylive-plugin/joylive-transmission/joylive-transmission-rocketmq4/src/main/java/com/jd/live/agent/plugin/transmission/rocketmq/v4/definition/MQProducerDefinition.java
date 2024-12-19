@@ -16,21 +16,17 @@
 package com.jd.live.agent.plugin.transmission.rocketmq.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.plugin.transmission.rocketmq.v4.contidion.ConditionalOnRocketmq4TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor.MQProducerInterceptor;
 
 @Extension(value = "MQProducerDefinition_v4", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnRocketmq4TransmissionEnabled
 @ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
-@ConditionalOnClass(MessageDefinition.TYPE_CLIENT_LOGGER)
 public class MQProducerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";

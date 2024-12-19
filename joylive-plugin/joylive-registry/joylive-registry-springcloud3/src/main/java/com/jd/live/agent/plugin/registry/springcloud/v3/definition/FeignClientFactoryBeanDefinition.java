@@ -16,14 +16,15 @@
 package com.jd.live.agent.plugin.registry.springcloud.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.FeignClientFactoryBeanInterceptor;
 
@@ -32,11 +33,7 @@ import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.FeignClientF
  */
 @Injectable
 @Extension(value = "FeignClientFactoryBeanDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnGovernanceEnabled
 @ConditionalOnClass(FeignClientFactoryBeanDefinition.TYPE_FEIGN_CLIENT_FACTORY_BEAN)
 public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
 

@@ -16,14 +16,13 @@
 package com.jd.live.agent.plugin.transmission.thread.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperties;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.core.thread.Camera;
+import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.transmission.thread.interceptor.ExecutorInterceptor;
 
@@ -34,11 +33,7 @@ import java.util.List;
  */
 @Injectable
 @Extension(value = "ExecutorDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnTransmissionEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_TRANSMISSION_THREADPOOL_ENABLED)
 public class ExecutorDefinition extends PluginDefinitionAdapter implements PluginImporter {
     private static final String TYPE_EXECUTOR = "java.util.concurrent.Executor";

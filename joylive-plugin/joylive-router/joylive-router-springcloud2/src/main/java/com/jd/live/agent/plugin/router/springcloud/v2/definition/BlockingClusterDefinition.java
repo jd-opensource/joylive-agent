@@ -16,14 +16,15 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v2.condition.ConditionalOnSpringCloud2GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2.interceptor.BlockingClusterInterceptor;
 
 /**
@@ -33,21 +34,11 @@ import com.jd.live.agent.plugin.router.springcloud.v2.interceptor.BlockingCluste
  */
 @Injectable
 @Extension(value = "BlockingClusterDefinition_v2")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED,
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.AND)
+@ConditionalOnSpringCloud2GovernanceEnabled
 @ConditionalOnClass(BlockingClusterDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
-@ConditionalOnMissingClass(BlockingClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
 public class BlockingClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor";
-
-    protected static final String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
 
     private static final String METHOD_INTERCEPT = "intercept";
 

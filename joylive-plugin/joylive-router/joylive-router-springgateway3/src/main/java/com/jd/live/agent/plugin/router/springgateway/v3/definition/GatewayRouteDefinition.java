@@ -17,14 +17,12 @@ package com.jd.live.agent.plugin.router.springgateway.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.plugin.router.springgateway.v3.condition.ConditionalOnSpringGateway3FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayRouteInterceptor;
 
 /**
@@ -32,13 +30,9 @@ import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayRoute
  *
  * @since 1.6.0
  */
-@Extension(value = "GatewayRouteDefinition_v4")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@Extension(value = "GatewayRouteDefinition_v3")
+@ConditionalOnSpringGateway3FlowControlEnabled
 @ConditionalOnClass(GatewayRouteDefinition.TYPE_REFRESH_ROUTES_EVENT)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_STICKY_SESSION_SUPPLIER)
-@ConditionalOnMissingClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
 @Injectable
 public class GatewayRouteDefinition extends PluginDefinitionAdapter {
 

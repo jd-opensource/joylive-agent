@@ -17,34 +17,30 @@ package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignClusterInterceptor;
 
 /**
- * FeignRetryableClientDefinition
+ * RetryableFeignClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
 @Extension(value = "FeignRetryableClientDefinition_v3")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnSpringCloud4FlowControlEnabled
+@ConditionalOnSpringRetry
 @ConditionalOnClass(RetryableFeignClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
-@ConditionalOnClass(RetryableFeignClusterDefinition.TYPE_RETRY_TEMPLATE)
-@ConditionalOnClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class RetryableFeignClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient";
-
-    protected static final String TYPE_RETRY_TEMPLATE = "org.springframework.retry.support.RetryTemplate";
 
     private static final String METHOD_EXECUTE = "execute";
 

@@ -18,12 +18,17 @@ package com.jd.live.agent.core.extension.condition;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Conditional;
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.extension.condition.Condition.CompositeCondition;
+import com.jd.live.agent.core.extension.condition.Condition.DelegateCondition;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -49,9 +54,9 @@ public class ConditionManager implements ConditionMatcher {
 
     private static final String CONDITION_PACKAGE = ConditionManager.class.getPackage().getName();
 
-    private static final Map<Class<?>, LazyObject<Condition>> CONDITIONS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Optional<Condition>> CONDITIONS = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, List<ConditionalDesc>> TYPE_CONDITIONS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, List<DelegateCondition>> TYPE_CONDITIONS = new ConcurrentHashMap<>();
 
     private final ClassLoader classLoader;
 
@@ -80,12 +85,13 @@ public class ConditionManager implements ConditionMatcher {
         if (type == null) {
             return false;
         }
-        List<ConditionalDesc> descs = TYPE_CONDITIONS.computeIfAbsent(type, this::getConditionals);
-        for (ConditionalDesc desc : descs) {
-            if (predicate == null || predicate.test(desc.annotation)) {
-                if (desc.condition == null || !desc.condition.match(
-                        new ConditionContext(type, desc.annotation,
-                                classLoader == null ? this.classLoader : classLoader, optional))) {
+        List<DelegateCondition> conditions = getConditions(type);
+        Annotation annotation;
+        for (DelegateCondition condition : conditions) {
+            annotation = condition.getAnnotation();
+            if (predicate == null || predicate.test(annotation)) {
+                if (annotation == null || !condition.match(new ConditionContext(
+                        type, annotation, classLoader == null ? this.classLoader : classLoader, optional))) {
                     return false;
                 }
             }
@@ -100,19 +106,77 @@ public class ConditionManager implements ConditionMatcher {
      * @param type The class type to retrieve conditions for.
      * @return A list of conditional descriptors.
      */
-    private List<ConditionalDesc> getConditionals(Class<?> type) {
-        List<ConditionalDesc> result = new ArrayList<>();
+    private List<DelegateCondition> getConditions(Class<?> type) {
+        return TYPE_CONDITIONS.computeIfAbsent(type, this::parseConditions);
+    }
+
+    /**
+     * Returns a list of delegate conditions for the given type.
+     *
+     * @param type the type to retrieve delegate conditions for
+     * @return a list of delegate conditions for the given type
+     */
+    private List<DelegateCondition> parseConditions(Class<?> type) {
+        List<DelegateCondition> result = new ArrayList<>();
         Annotation[] annotations = type.getAnnotations();
         for (Annotation annotation : annotations) {
-            Class<? extends Annotation> annotationType = annotation.annotationType();
-            Conditional conditional = annotationType.getAnnotation(Conditional.class);
-            if (conditional != null) {
-                LazyObject<Condition> lazyObject = CONDITIONS.computeIfAbsent(annotationType,
-                        t -> new LazyObject<>(newImplement(conditional.value(), t.getSimpleName())));
-                result.add(new ConditionalDesc(annotation, lazyObject.get()));
+            Condition condition = getCondition(annotation.annotationType(), this::parseAnnotation);
+            if (condition != null) {
+                result.add(new DelegateCondition(annotation, condition));
             }
         }
         return result;
+    }
+
+    /**
+     * Parses the given annotation type and returns a condition based on its conditional annotations.
+     *
+     * @param annotationType the annotation type to parse
+     * @return a condition based on the conditional annotations of the given annotation type, or null if the annotation
+     * type does not have a conditional annotation
+     */
+    private Condition parseAnnotation(Class<?> annotationType) {
+        Conditional conditional = annotationType.getAnnotation(Conditional.class);
+        Condition condition = null;
+        if (conditional != null) {
+            condition = newImplement(conditional.value(), annotationType.getSimpleName());
+        } else {
+            ConditionalComposite composite = annotationType.getAnnotation(ConditionalComposite.class);
+            if (composite != null) {
+                condition = new CompositeCondition(parseConditions(annotationType));
+            }
+        }
+        return condition;
+    }
+
+    /**
+     * Returns a condition for the given annotation type.
+     * <p>
+     * This method uses a cache to store conditions for annotation types. If the condition for the given annotation type
+     * is not in the cache, it creates a new condition using the provided function and stores it in the cache. The
+     * function takes the annotation type as input and returns a new condition.
+     *
+     * @param type     the annotation type to retrieve a condition for
+     * @param function a function that creates a new condition for the given annotation type
+     * @return a condition for the given annotation type, or null if the condition could not be created
+     */
+    private Condition getCondition(Class<?> type, Function<Class<?>, Condition> function) {
+        if (type == Conditional.class
+                || type == ConditionalComposite.class
+                || type == Extension.class
+                || type == Injectable.class
+                || type.getName().startsWith("java.")) {
+            return null;
+        }
+        Optional<Condition> optional = CONDITIONS.get(type);
+        if (optional == null) {
+            optional = Optional.ofNullable(function.apply(type));
+            Optional<Condition> old = CONDITIONS.putIfAbsent(type, optional);
+            if (old != null) {
+                optional = old;
+            }
+        }
+        return optional.orElse(null);
     }
 
     /**
@@ -141,26 +205,6 @@ public class ConditionManager implements ConditionMatcher {
             logger.error("failed to instantiate " + conditionalName);
         }
         return null;
-    }
-
-    /**
-     * A private static class that serves as a container for holding a conditional annotation and its associated
-     * condition implementation. Each instance of this class represents a single conditional that is to be checked
-     * against a class type.
-     *
-     * <p>This class is used internally by the {@link ConditionManager} to cache and manage the relationship between
-     * annotations and their corresponding conditions, enabling efficient conditional matching.</p>
-     */
-    private static class ConditionalDesc {
-
-        protected final Annotation annotation;
-
-        protected final Condition condition;
-
-        ConditionalDesc(Annotation annotation, Condition condition) {
-            this.annotation = annotation;
-            this.condition = condition;
-        }
     }
 
 }

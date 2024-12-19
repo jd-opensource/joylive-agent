@@ -18,14 +18,14 @@ package com.jd.live.agent.plugin.router.springcloud.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
  * ReactorLoadBalancerInterceptor
@@ -54,13 +54,6 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
      * an "empty" {@code LazyObject<String>} is returned.
      */
     private LazyObject<String> getServiceId(ReactorLoadBalancer<?> loadBalancer) {
-        FieldDesc fieldDesc = ClassUtils.describe(loadBalancer.getClass()).getFieldList().getField(FIELD_SERVICE_ID);
-        if (fieldDesc != null) {
-            try {
-                return LazyObject.of((String) fieldDesc.get(loadBalancer));
-            } catch (Throwable ignore) {
-            }
-        }
-        return LazyObject.empty();
+        return LazyObject.of(getValue(loadBalancer, FIELD_SERVICE_ID));
     }
 }

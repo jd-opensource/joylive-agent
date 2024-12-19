@@ -16,14 +16,15 @@
 package com.jd.live.agent.plugin.transmission.pulsar.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor.MessageInterceptor;
 
@@ -31,11 +32,7 @@ import java.util.List;
 
 @Injectable
 @Extension(value = "MessageDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnTransmissionEnabled
 @ConditionalOnClass(MessageDefinition.TYPE_MESSAGE)
 public class MessageDefinition extends PluginDefinitionAdapter {
 

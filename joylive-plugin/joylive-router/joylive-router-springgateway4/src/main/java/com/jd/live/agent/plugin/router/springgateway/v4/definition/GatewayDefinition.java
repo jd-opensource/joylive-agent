@@ -16,11 +16,12 @@
 package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.plugin.router.springgateway.v4.condition.ConditionalOnSpringGateway4OnlyRouteEnabled;
 import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayInterceptor;
 
 /**
@@ -29,18 +30,11 @@ import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayInter
  * @since 1.0.0
  */
 @Extension(value = "GatewayDefinition_v4")
-@ConditionalOnProperty(name = {GovernanceConfig.CONFIG_LIVE_ENABLED, GovernanceConfig.CONFIG_LANE_ENABLED}, matchIfMissing = true, relation = ConditionalRelation.OR)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnSpringGateway4OnlyRouteEnabled
 @ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
-@ConditionalOnClass(GatewayDefinition.REACTOR_MONO)
-@ConditionalOnMissingClass(GatewayDefinition.TYPE_HTTP_STATUS_CODE)
 public class GatewayDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
-
-    protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
 
     private static final String METHOD_HANDLE = "handle";
 

@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springgateway.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -25,8 +24,8 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springgateway.v4.condition.ConditionalOnSpringGateway4FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayClusterInterceptor;
 
@@ -36,26 +35,18 @@ import com.jd.live.agent.plugin.router.springgateway.v4.interceptor.GatewayClust
  * @since 1.0.0
  */
 @Extension(value = "GatewayClusterDefinition_v4")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnSpringGateway4FlowControlEnabled
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
-@ConditionalOnClass(GatewayClusterDefinition.REACTOR_MONO)
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_HTTP_STATUS_CODE)
 @Injectable
 public class GatewayClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
-    // spring gateway 4
-    protected static final String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
 
     private static final String METHOD_HANDLE = "handle";
 
     private static final String[] ARGUMENT_HANDLE = new String[]{
             "org.springframework.web.server.ServerWebExchange"
     };
-
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;

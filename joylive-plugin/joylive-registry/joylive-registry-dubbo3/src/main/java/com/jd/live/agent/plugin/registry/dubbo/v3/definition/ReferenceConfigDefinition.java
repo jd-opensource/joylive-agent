@@ -16,7 +16,8 @@
 package com.jd.live.agent.plugin.registry.dubbo.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
@@ -24,8 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.plugin.registry.dubbo.v3.condition.ConditionalOnDubbo3GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.ReferenceConfigInterceptor;
 
 /**
@@ -33,12 +34,7 @@ import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.ReferenceConfigInt
  */
 @Injectable
 @Extension(value = "ReferenceConfigDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
-@ConditionalOnClass(ServiceConfigDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnDubbo3GovernanceEnabled
 @ConditionalOnClass(ReferenceConfigDefinition.TYPE_REFERENCE_CONFIG)
 public class ReferenceConfigDefinition extends PluginDefinitionAdapter {
 

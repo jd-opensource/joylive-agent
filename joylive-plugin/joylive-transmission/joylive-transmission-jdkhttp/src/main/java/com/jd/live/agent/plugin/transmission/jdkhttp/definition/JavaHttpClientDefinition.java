@@ -16,38 +16,21 @@
 package com.jd.live.agent.plugin.transmission.jdkhttp.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientInterceptor;
 
 /**
  * Defines the instrumentation for the Java HTTP Client's HttpRequestBuilderImpl class.
  * This class specifies the conditions under which the {@link JavaHttpClientInterceptor}
  * is applied to modify or monitor HTTP requests during their construction.
- *
- * <p>Annotations used:</p>
- * <ul>
- *     <li>{@link Extension} - Marks this class as an extension with a specific purpose within the framework,
- *     allowing it to be automatically discovered and applied.</li>
- *     <li>{@link ConditionalOnProperty} - Controls whether this plugin is active based on the
- *     {@code CONFIG_TRANSMISSION_ENABLED} configuration property.</li>
- *     <li>{@link ConditionalOnClass} - Ensures that this plugin is only loaded if HttpRequestBuilderImpl
- *     class is available in the runtime environment, preventing class loading issues in environments
- *     with different Java versions or configurations.</li>
- * </ul>
- *
- * @see PluginDefinitionAdapter
- * @see JavaHttpClientInterceptor
  */
 @Extension(value = "JavaHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnTransmissionEnabled
 @ConditionalOnClass(JavaHttpClientDefinition.TYPE_HTTP_REQUEST_BUILDER_IMPL)
 public class JavaHttpClientDefinition extends PluginDefinitionAdapter {
 

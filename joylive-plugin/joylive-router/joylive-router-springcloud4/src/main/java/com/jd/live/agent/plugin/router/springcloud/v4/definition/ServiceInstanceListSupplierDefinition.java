@@ -16,7 +16,8 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -25,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ServiceInstanceListSupplierInterceptor;
 
 import java.util.Set;
@@ -36,17 +38,9 @@ import java.util.Set;
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ServiceInstanceListSupplierPluginDefinition_v3")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED,
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.AND)
+@Extension(value = "ServiceInstanceListSupplierPluginDefinition_v4")
+@ConditionalOnSpringCloud4GovernanceEnabled
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
-@ConditionalOnClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_SERVICE_INSTANCE_LIST_SUPPLIER = "org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier";

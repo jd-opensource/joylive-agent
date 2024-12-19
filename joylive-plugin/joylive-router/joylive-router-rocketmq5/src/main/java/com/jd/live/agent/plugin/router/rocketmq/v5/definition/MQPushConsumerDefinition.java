@@ -17,15 +17,14 @@ package com.jd.live.agent.plugin.router.rocketmq.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.rocketmq.v5.condition.ConditionalOnRocketmq5AnyRouteEnabled;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.GroupInterceptor;
 
 /**
@@ -35,14 +34,8 @@ import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.GroupInterceptor;
  */
 @Injectable
 @Extension(value = "MQPushConsumerDefinition_v5")
-@ConditionalOnProperty(name = {
-        GovernanceConfig.CONFIG_LIVE_ENABLED,
-        GovernanceConfig.CONFIG_LANE_ENABLED
-}, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_MQ_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
+@ConditionalOnRocketmq5AnyRouteEnabled
 @ConditionalOnClass(MQPushConsumerDefinition.TYPE_MQ_PUSH_CONSUMER)
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_ACK_CALLBACK)
 public class MQPushConsumerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.MQPushConsumer";

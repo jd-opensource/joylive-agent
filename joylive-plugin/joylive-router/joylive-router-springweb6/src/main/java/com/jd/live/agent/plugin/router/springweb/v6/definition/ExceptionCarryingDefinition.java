@@ -17,15 +17,14 @@ package com.jd.live.agent.plugin.router.springweb.v6.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.plugin.router.springweb.v6.condition.ConditionalOnSpringWeb6FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springweb.v6.interceptor.ExceptionCarryingInterceptor;
 
 /**
@@ -33,10 +32,8 @@ import com.jd.live.agent.plugin.router.springweb.v6.interceptor.ExceptionCarryin
  */
 @Injectable
 @Extension(value = "ExceptionCarryingDefinition_v6")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnSpringWeb6FlowControlEnabled
 @ConditionalOnClass(ExceptionCarryingDefinition.TYPE_DISPATCHER_SERVLET)
-@ConditionalOnClass(DispatcherHandlerDefinition.TYPE_ERROR_RESPONSE)
 public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
