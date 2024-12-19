@@ -111,11 +111,11 @@ public enum OpType {
                 return false;
             }
             for (String value : values) {
-                if (!args.contains(value)) {
-                    return false;
+                if (args.contains(value)) {
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
     },
 
@@ -202,7 +202,7 @@ public enum OpType {
      * for this operation type.
      *
      * @param values the list of values to match against
-     * @param args    the list of arguments to test for a match
+     * @param args   the list of arguments to test for a match
      * @return true if the argument matches the criteria, false otherwise
      */
     public boolean isMatch(List<String> values, List<String> args) {
