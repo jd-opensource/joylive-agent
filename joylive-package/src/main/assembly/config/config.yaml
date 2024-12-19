@@ -9,6 +9,7 @@ agent:
     excludeInterfaces: null
     excludeClassLoaders:
       - com.jd.jr.sgm.agent.loader.ClientLibClassLoader
+      - com.jd.jr.sgm.agent.loader.ClientAppClassLoader
       - com.jd.pfinder.profiler.load.InterceptorClassLoader
       - com.jd.pfinder.profiler.utils.ModuleClassLoader
       - com.jd.pfinder.profiler.load.ModuleInterceptorClassLoader
