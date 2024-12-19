@@ -25,7 +25,7 @@ import java.lang.annotation.*;
  *
  * @since 1.0.0
  */
-@Target({ElementType.TYPE})
+@Target({ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Conditional {

@@ -16,13 +16,14 @@
 package com.jd.live.agent.plugin.transmission.springweb.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.HandshakeWebSocketServiceInterceptor;
 
 /**
@@ -32,11 +33,7 @@ import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.HandshakeW
  */
 @Injectable
 @Extension(value = "HandshakeWebSocketServiceDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnTransmissionEnabled
 @ConditionalOnClass(HandshakeWebSocketServiceDefinition.TYPE_REACTOR_LOADBALANCER)
 public class HandshakeWebSocketServiceDefinition extends PluginDefinitionAdapter {
 

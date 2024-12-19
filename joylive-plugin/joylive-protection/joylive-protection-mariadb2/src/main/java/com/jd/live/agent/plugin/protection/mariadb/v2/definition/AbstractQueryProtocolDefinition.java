@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.protection.mariadb.v2.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -25,8 +24,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.plugin.protection.mariadb.v2.condition.ConditionalOnMariadbProtectEnabled;
 import com.jd.live.agent.plugin.protection.mariadb.v2.interceptor.ExecuteBatchStmtInterceptor;
 import com.jd.live.agent.plugin.protection.mariadb.v2.interceptor.ExecutePrepareInterceptor;
 import com.jd.live.agent.plugin.protection.mariadb.v2.interceptor.ExecuteQueryInterceptor;
@@ -34,9 +33,7 @@ import com.jd.live.agent.plugin.protection.mariadb.v2.interceptor.ExecuteServerI
 
 @Injectable
 @Extension(value = "StandardClientDefinition_v2", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MARIADB_ENABLED, matchIfMissing = true)
+@ConditionalOnMariadbProtectEnabled
 @ConditionalOnClass(AbstractQueryProtocolDefinition.TYPE_ABSTRACT_QUERY_PROTOCOL)
 public class AbstractQueryProtocolDefinition extends PluginDefinitionAdapter {
 

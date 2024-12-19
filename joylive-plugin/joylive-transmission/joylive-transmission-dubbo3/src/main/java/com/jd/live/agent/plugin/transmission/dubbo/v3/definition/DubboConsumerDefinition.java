@@ -16,33 +16,27 @@
 package com.jd.live.agent.plugin.transmission.dubbo.v3.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.plugin.transmission.dubbo.v3.contidion.ConditionalOnDubbo3TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.dubbo.v3.interceptor.DubboConsumerInterceptor;
 
 import java.util.List;
 
 @Extension(value = "DubboConsumerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @Injectable
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnDubbo3TransmissionEnabled
 @ConditionalOnClass(DubboConsumerDefinition.TYPE_ABSTRACT_CLUSTER_INVOKER)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CLASSLOADER_FILTER)
 public class DubboConsumerDefinition extends PluginDefinitionAdapter {
 
     public static final String TYPE_ABSTRACT_CLUSTER_INVOKER = "org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker";
-
-    protected static final String TYPE_CONSUMER_CLASSLOADER_FILTER = "org.apache.dubbo.rpc.cluster.filter.support.ConsumerClassLoaderFilter";
 
     private static final String METHOD_INVOKE = "invoke";
 

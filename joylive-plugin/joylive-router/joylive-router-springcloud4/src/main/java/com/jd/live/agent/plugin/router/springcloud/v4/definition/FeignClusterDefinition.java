@@ -17,15 +17,14 @@ package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignClusterInterceptor;
 
 /**
@@ -34,11 +33,9 @@ import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignClusterIn
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FeignClusterDefinition_v3")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@Extension(value = "FeignClusterDefinition_v4")
+@ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnClass(FeignClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
-@ConditionalOnClass(BlockingClusterDefinition.TYPE_HTTP_STATUS_CODE)
 public class FeignClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.FeignBlockingLoadBalancerClient";

@@ -16,12 +16,13 @@
 package com.jd.live.agent.plugin.transmission.jdkhttp.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginImporter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientInterceptor;
 
 /**
@@ -30,26 +31,9 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientIn
  * conditions under which the {@link SunHttpClientInterceptor} is applied, aiming
  * to monitor or modify HTTP request writing behavior.
  *
- * <p>Annotations used:</p>
- * <ul>
- *     <li>{@link Extension} - Marks this class as an extension with a defined purpose
- *     within the framework, allowing it to be automatically discovered and applied.</li>
- *     <li>{@link ConditionalOnProperty} - Ensures that this plugin is active based on the
- *     {@code CONFIG_TRANSMISSION_ENABLED} configuration property.</li>
- *     <li>{@link ConditionalOnClass} - Guarantees that this plugin is only loaded if the
- *     {@code HttpClient} class is available in the runtime environment, preventing class
- *     loading issues in environments with different Java versions or configurations.</li>
- * </ul>
- *
- * @see PluginDefinitionAdapter
- * @see SunHttpClientInterceptor
  */
 @Extension(value = "JdkHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
+@ConditionalOnTransmissionEnabled
 @ConditionalOnClass(SunHttpClientDefinition.TYPE_HTTP_CLIENT)
 public class SunHttpClientDefinition extends PluginDefinitionAdapter implements PluginImporter {
 

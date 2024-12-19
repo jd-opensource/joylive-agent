@@ -30,6 +30,7 @@ import java.lang.annotation.*;
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@Repeatable(ConditionalOnMissingClasses.class)
 @Documented
 @Conditional(dependOnLoader = true)
 public @interface ConditionalOnMissingClass {

@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.protection.mongodb.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -25,15 +24,13 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnMongodbProtectEnabled;
 import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.ExecuteCommandInterceptor;
 
 @Injectable
 @Extension(value = "CommandOperationHelperDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MONGODB_ENABLED, matchIfMissing = true)
+@ConditionalOnMongodbProtectEnabled
 @ConditionalOnClass(CommandOperationHelperDefinition.TYPE_COMMAND_OPERATION_HELPER)
 public class CommandOperationHelperDefinition extends PluginDefinitionAdapter {
 

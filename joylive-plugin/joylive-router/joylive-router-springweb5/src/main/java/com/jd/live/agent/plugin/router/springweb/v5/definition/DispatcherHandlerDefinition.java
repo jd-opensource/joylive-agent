@@ -16,14 +16,15 @@
 package com.jd.live.agent.plugin.router.springweb.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.annotation.*;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springweb.v5.condition.ConditionalOnSpringWeb5GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springweb.v5.interceptor.DispatcherHandlerInterceptor;
 
 /**
@@ -34,22 +35,14 @@ import com.jd.live.agent.plugin.router.springweb.v5.interceptor.DispatcherHandle
  */
 @Injectable
 @Extension(value = "DispatcherHandlerDefinition_v5")
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(name = {
-                GovernanceConfig.CONFIG_LIVE_ENABLED,
-                GovernanceConfig.CONFIG_LANE_ENABLED,
-                GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED
-        }, matchIfMissing = true, relation = ConditionalRelation.OR),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.AND)
+@ConditionalOnSpringWeb5GovernanceEnabled
 @ConditionalOnClass(DispatcherHandlerDefinition.TYPE_DISPATCHER_HANDLER)
-@ConditionalOnMissingClass(DispatcherHandlerDefinition.TYPE_ERROR_RESPONSE)
 @ConditionalOnClass(DispatcherHandlerDefinition.REACTOR_MONO)
 public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISPATCHER_HANDLER = "org.springframework.web.reactive.DispatcherHandler";
 
-    protected static final String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
+    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
     private static final String METHOD_INVOKE_HANDLER = "invokeHandler";
 
@@ -57,8 +50,6 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
             "org.springframework.web.server.ServerWebExchange",
             "java.lang.Object"
     };
-
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;

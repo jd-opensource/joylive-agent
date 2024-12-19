@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.protection.opengauss.v3_0.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -25,15 +24,13 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.plugin.protection.opengauss.v3_0.condition.ConditionalOnOpenGauss30ProtectEnabled;
 import com.jd.live.agent.plugin.protection.opengauss.v3_0.interceptor.QueryExecutorImplInterceptor;
 
 @Injectable
 @Extension(value = "QueryExecutorImplDefinition_v3.0", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ENABLED)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_OPENGAUSS_ENABLED, matchIfMissing = true)
+@ConditionalOnOpenGauss30ProtectEnabled
 @ConditionalOnClass(QueryExecutorImplDefinition.TYPE_QUERY_EXECUTOR_IMPL)
 public class QueryExecutorImplDefinition extends PluginDefinitionAdapter {
 
