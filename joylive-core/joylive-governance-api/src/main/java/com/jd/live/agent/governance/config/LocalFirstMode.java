@@ -28,5 +28,10 @@ public enum LocalFirstMode {
     /**
      * Local-first routing is applied at the cluster level.
      */
-    CLUSTER
+    CLUSTER,
+
+    /**
+     * Local-first routing is applied at the cloud level.
+     */
+    CLOUD
 }

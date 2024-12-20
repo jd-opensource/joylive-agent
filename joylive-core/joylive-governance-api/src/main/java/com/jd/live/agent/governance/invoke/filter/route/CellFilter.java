@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.instance.Location;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.LocalFirstMode;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.instance.CellGroup;
@@ -53,7 +52,7 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 @Extension(value = "CellFilter", order = RouteFilter.ORDER_LIVE_CELL)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnGovernanceEnabled
 public class CellFilter implements RouteFilter {
 
     @Override
@@ -183,11 +182,11 @@ public class CellFilter implements RouteFilter {
     /**
      * Routes an outbound invocation to suitable endpoints
      *
-     * @param invocation The outbound invocation containing metadata for the election.
-     * @param target The {@code RouteTarget} containing the endpoints to be filtered.
-     * @param localFirst Local first mode.
+     * @param invocation    The outbound invocation containing metadata for the election.
+     * @param target        The {@code RouteTarget} containing the endpoints to be filtered.
+     * @param localFirst    Local first mode.
      * @param thresholdFunc A function that returns a threshold value for the current cell. If the number of local endpoints exceeds this threshold,
-     * those endpoints are preferred.
+     *                      those endpoints are preferred.
      * @return true if the routing decision was successful, false otherwise.
      */
     private boolean routeAny(OutboundInvocation<?> invocation,
@@ -195,15 +194,14 @@ public class CellFilter implements RouteFilter {
                              LocalFirstMode localFirst,
                              Function<String, Integer> thresholdFunc) {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
-        LiveSpace targetSpace = liveMetadata.getTargetSpace();
-        if (targetSpace == null) {
-            return true;
-        }
-        Unit preferUnit = localFirst != null ? targetSpace.getLocalUnit() : null;
-        Unit centerUnit = targetSpace.getCenter();
-        Cell preferCell = localFirst != null ? targetSpace.getLocalCell() : null;
-        String preferCloud = localFirst != null ? invocation.getContext().getLocation().getCloud() : null;
-        String cluster = localFirst == LocalFirstMode.CLUSTER ? invocation.getContext().getLocation().getCluster() : null;
+        LiveSpace targetSpace = liveMetadata != null ? liveMetadata.getTargetSpace() : null;
+
+        String preferCluster = localFirst == LocalFirstMode.CLUSTER ? invocation.getContext().getLocation().getCluster() : null;
+        String preferCloud = localFirst == LocalFirstMode.CLOUD ? invocation.getContext().getLocation().getCloud() : null;
+        Unit preferUnit = localFirst != null && targetSpace != null ? targetSpace.getLocalUnit() : null;
+        Unit centerUnit = targetSpace != null ? targetSpace.getCenter() : null;
+        Cell preferCell = localFirst != null && targetSpace != null ? targetSpace.getLocalCell() : null;
+
         Set<String> unavailableCells = getUnavailableCells(invocation);
         if (!unavailableCells.isEmpty()) {
             target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
@@ -218,13 +216,7 @@ public class CellFilter implements RouteFilter {
         for (Endpoint endpoint : target.getEndpoints()) {
             if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
                 if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
-                    if (cluster != null && endpoint.isCluster(cluster)) {
-                        preferClusterEndpoints.add(endpoint);
-                    } else {
-                        preferCellEndpoints.add(endpoint);
-                    }
-                } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
-                    preferCloudEndpoints.add(endpoint);
+                    preferCellEndpoints.add(endpoint);
                 } else {
                     preferUnitEndpoints.add(endpoint);
                 }
@@ -232,6 +224,12 @@ public class CellFilter implements RouteFilter {
                 centerUnitEndpoints.add(endpoint);
             } else {
                 otherUnitEndpoints.add(endpoint);
+            }
+            if (preferCluster != null && endpoint.isCluster(preferCluster)) {
+                preferClusterEndpoints.add(endpoint);
+            }
+            if (preferCloud != null && endpoint.isCloud(preferCloud)) {
+                preferCloudEndpoints.add(endpoint);
             }
         }
         List<Endpoint>[] candidates = new List[]{
@@ -264,13 +262,13 @@ public class CellFilter implements RouteFilter {
     /**
      * Returns a set of cell codes that are not available.
      *
-     * @param invocation   The outbound invocation containing metadata for the election.
+     * @param invocation The outbound invocation containing metadata for the election.
      * @return A set of cell codes that are not accessible for the given invocation and live metadata.
      */
     private Set<String> getUnavailableCells(OutboundInvocation<?> invocation) {
         Set<String> unavailableCells = new HashSet<>();
         LiveMetadata metadata = invocation.getLiveMetadata();
-        List<Unit> units = metadata.getTargetSpace().getSpec().getUnits();
+        List<Unit> units = metadata != null ? metadata.getTargetSpace().getSpec().getUnits() : null;
 
         if (units != null) {
             UnitRule rule = metadata.getRule();
@@ -622,7 +620,7 @@ public class CellFilter implements RouteFilter {
          * @param weight    The weight of this candidate.
          * @param priority  The priority of this candidate.
          * @param threshold The threshold value for this candidate.
-         * @param cloud The cloud value for this candidate.
+         * @param cloud     The cloud value for this candidate.
          */
         Candidate(CellRoute cellRoute, int instance, int weight, int priority, int threshold, String cloud) {
             this.cellRoute = cellRoute;
