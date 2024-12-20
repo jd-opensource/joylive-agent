@@ -27,6 +27,8 @@ public class LiveTransmission implements Serializable {
     public static final String X_LIVE_SPACE_ID = "x-live-space-id";
     public static final String X_LIVE_UNIT = "x-live-unit";
     public static final String X_LIVE_CELL = "x-live-cell";
+    public static final String X_LIVE_CLUSTER = "x-live-cluster";
+    public static final String X_LIVE_CLOUD = "x-live-cloud";
     public static final String X_LIVE_RULE_ID = "x-live-rule-id";
     public static final String X_LIVE_UID = "x-live-uid";
     public static final String X_LANE_SPACE_ID = "x-lane-space-id";

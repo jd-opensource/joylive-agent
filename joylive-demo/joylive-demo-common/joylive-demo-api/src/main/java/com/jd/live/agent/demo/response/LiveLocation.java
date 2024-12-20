@@ -27,6 +27,8 @@ public class LiveLocation implements Serializable {
     private String liveSpaceId;
     private String unit;
     private String cell;
+    private String cluster;
+    private String cloud;
     private String ruleId;
     private String laneSpaceId;
     private String lane;
@@ -36,10 +38,12 @@ public class LiveLocation implements Serializable {
 
     }
 
-    public LiveLocation(String liveSpaceId, String unit, String cell, String ruleId, String laneSpaceId, String lane) {
+    public LiveLocation(String liveSpaceId, String unit, String cell, String cluster, String cloud, String ruleId, String laneSpaceId, String lane) {
         this.liveSpaceId = liveSpaceId;
         this.unit = unit;
         this.cell = cell;
+        this.cluster = cluster;
+        this.cloud = cloud;
         this.ruleId = ruleId;
         this.laneSpaceId = laneSpaceId;
         this.lane = lane;
@@ -51,6 +55,8 @@ public class LiveLocation implements Serializable {
                 System.getProperty(LiveTransmission.X_LIVE_SPACE_ID),
                 System.getProperty(LiveTransmission.X_LIVE_UNIT),
                 System.getProperty(LiveTransmission.X_LIVE_CELL),
+                System.getProperty(LiveTransmission.X_LIVE_CLUSTER),
+                System.getProperty(LiveTransmission.X_LIVE_CLOUD),
                 System.getProperty(LiveTransmission.X_LIVE_RULE_ID),
                 System.getProperty(LiveTransmission.X_LANE_SPACE_ID),
                 System.getProperty(LiveTransmission.X_LANE_CODE)
@@ -63,6 +69,8 @@ public class LiveLocation implements Serializable {
                 "live-space-id=" + (liveSpaceId == null ? "null" : ('\'' + liveSpaceId + '\'')) +
                 ", unit=" + (unit == null ? "null" : ('\'' + unit + '\'')) +
                 ", cell=" + (cell == null ? "null" : ('\'' + cell + '\'')) +
+                ", cluster=" + (cluster == null ? "null" : ('\'' + cluster + '\'')) +
+                ", cloud=" + (cloud == null ? "null" : ('\'' + cloud + '\'')) +
                 ", ruleId=" + (ruleId == null ? "null" : ('\'' + ruleId + '\'')) +
                 ", lane-space-id=" + (laneSpaceId == null ? "null" : ('\'' + laneSpaceId + '\'')) +
                 ", lane=" + (lane == null ? "null" : ('\'' + lane + '\'')) +
