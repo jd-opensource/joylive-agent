@@ -213,22 +213,29 @@ public class CellFilter implements RouteFilter {
         List<Endpoint> preferUnitEndpoints = new ArrayList<>();
         List<Endpoint> centerUnitEndpoints = new ArrayList<>();
         List<Endpoint> otherUnitEndpoints = new ArrayList<>();
+        boolean liveEnabled = invocation.getContext().isLiveEnabled();
         for (Endpoint endpoint : target.getEndpoints()) {
-            if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
-                if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
-                    preferCellEndpoints.add(endpoint);
+            if (liveEnabled) {
+                if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
+                    if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
+                        if (preferCluster != null && endpoint.isCluster(preferCluster)) {
+                            preferClusterEndpoints.add(endpoint);
+                        } else {
+                            preferCellEndpoints.add(endpoint);
+                        }
+                    } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
+                        preferCloudEndpoints.add(endpoint);
+                    } else {
+                        preferUnitEndpoints.add(endpoint);
+                    }
+                } else if (centerUnit != null && endpoint.isUnit(centerUnit.getCode())) {
+                    centerUnitEndpoints.add(endpoint);
                 } else {
-                    preferUnitEndpoints.add(endpoint);
+                    otherUnitEndpoints.add(endpoint);
                 }
-            } else if (centerUnit != null && endpoint.isUnit(centerUnit.getCode())) {
-                centerUnitEndpoints.add(endpoint);
-            } else {
-                otherUnitEndpoints.add(endpoint);
-            }
-            if (preferCluster != null && endpoint.isCluster(preferCluster)) {
+            } else if (preferCluster != null && endpoint.isCluster(preferCluster)) {
                 preferClusterEndpoints.add(endpoint);
-            }
-            if (preferCloud != null && endpoint.isCloud(preferCloud)) {
+            } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
                 preferCloudEndpoints.add(endpoint);
             }
         }
