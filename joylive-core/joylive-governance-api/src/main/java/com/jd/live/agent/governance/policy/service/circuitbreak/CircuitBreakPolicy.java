@@ -18,7 +18,7 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy {
 
-    public static final String DEFAULT_CIRCUIT_BREAKER_TYPE = "Resilience4j";
     public static final String SLIDING_WINDOW_TIME = "time";
     public static final String SLIDING_WINDOW_COUNT = "count";
     public static final int DEFAULT_FAILURE_RATE_THRESHOLD = 50;
@@ -80,12 +79,22 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     /**
      * Code policy
      */
-    private CodePolicy codePolicy;
+    private ErrorParserPolicy codePolicy;
 
     /**
      * Error code
      */
     private Set<String> errorCodes;
+
+    /**
+     * Error message policy
+     */
+    private ErrorParserPolicy messagePolicy;
+
+    /**
+     * Collection of error messages. This parameter specifies which status codes should be considered retryable.
+     */
+    private Set<String> errorMessages;
 
     /**
      * Exception full class names.
@@ -153,6 +162,10 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
             codePolicy = source.getCodePolicy() == null ? null : source.getCodePolicy().clone();
             if (errorCodes == null && source.getErrorCodes() != null) {
                 errorCodes = new HashSet<>(source.getErrorCodes());
+            }
+            messagePolicy = source.getMessagePolicy() == null ? null : source.getMessagePolicy().clone();
+            if (errorMessages == null && source.getErrorMessages() != null) {
+                errorMessages = new HashSet<>(source.getErrorMessages());
             }
             if (exceptions == null && source.getExceptions() != null) {
                 exceptions = new HashSet<>(source.getExceptions());

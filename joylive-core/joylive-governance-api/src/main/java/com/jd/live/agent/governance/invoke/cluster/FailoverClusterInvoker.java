@@ -23,7 +23,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.exception.ErrorCause;
-import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -33,12 +32,10 @@ import com.jd.live.agent.governance.invoke.filter.route.CircuitBreakerFilter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.policy.service.exception.CodeParser;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -61,7 +58,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
     private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
 
     @Inject
-    private Map<String, CodeParser> codeParsers;
+    private Map<String, ErrorParser> codeParsers;
 
     @Override
     public <R extends OutboundRequest,
@@ -74,9 +71,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
         R request = invocation.getRequest();
-        if (retryPolicy != null && request.isDependentOnResponseBody(retryPolicy)) {
-            request.getAttributeIfAbsent(Request.KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(retryPolicy);
-        }
+        request.addErrorPolicy(retryPolicy);
         RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
         cluster.onStart(request);
@@ -105,7 +100,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             O extends OutboundResponse,
             E extends Endpoint> {
 
-        private final Map<String, CodeParser> errorParsers;
+        private final Map<String, ErrorParser> errorParsers;
 
         /**
          * The retry policy defining the rules for retrying the operation.
@@ -133,7 +128,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * @param retryPolicy The {@link RetryPolicy} to govern retry behavior.
          * @param cluster     The {@link LiveCluster} managing the distribution and processing of the request
          */
-        RetryContext(Map<String, CodeParser> errorParsers, RetryPolicy retryPolicy, LiveCluster<R, O, E> cluster) {
+        RetryContext(Map<String, ErrorParser> errorParsers, RetryPolicy retryPolicy, LiveCluster<R, O, E> cluster) {
             this.errorParsers = errorParsers;
             this.retryPolicy = retryPolicy;
             this.cluster = cluster;

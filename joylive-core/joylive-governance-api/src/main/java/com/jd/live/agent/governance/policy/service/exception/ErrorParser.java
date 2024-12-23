@@ -20,8 +20,8 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
 /**
  * An interface for parsing code from service responses.
  */
-@Extensible("CodeParser")
-public interface CodeParser {
+@Extensible("ErrorParser")
+public interface ErrorParser {
 
     /**
      * Parses the error from a service response using the provided expression.
@@ -30,6 +30,6 @@ public interface CodeParser {
      * @param response   The service response to parse.
      * @return The extracted error information as a string.
      */
-    String getCode(String expression, Object response);
+    String getValue(String expression, Object response);
 
 }

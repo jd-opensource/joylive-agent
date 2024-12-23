@@ -18,11 +18,14 @@ package com.jd.live.agent.governance.request;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.network.IpLong;
 import com.jd.live.agent.core.util.network.IpType;
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import lombok.Getter;
 
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides an abstract base class for HTTP requests, implementing the {@link HttpRequest} interface.
@@ -277,6 +280,18 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
         public AbstractHttpOutboundRequest(T request) {
             super(request);
+        }
+
+        @Override
+        public void addErrorPolicy(ErrorPolicy policy) {
+            if (policy != null && policy.requireResponseBody()) {
+                getAttributeIfAbsent(KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(policy);
+            }
+        }
+
+        @Override
+        public Set<ErrorPolicy> removeErrorPolicies() {
+            return removeAttribute(KEY_ERROR_POLICY);
         }
     }
 }

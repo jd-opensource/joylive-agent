@@ -20,8 +20,8 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.policy.service.exception.CodeParser;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
 
@@ -77,7 +78,7 @@ public class Predicates {
                                   OutboundRequest request,
                                   ServiceResponse response,
                                   ErrorPredicate predicate,
-                                  Function<String, CodeParser> factory) {
+                                  Function<String, ErrorParser> factory) {
         if (policy.containsErrorCode(response.getCode())) {
             return true;
         }
@@ -91,8 +92,28 @@ public class Predicates {
             }
         }
         if (response.match(policy)) {
-            String code = parseCode(policy.getCodePolicy(), response.getResult(), factory);
-            return policy.containsErrorCode(code);
+            if (isError(policy.getCodePolicy(), response, factory, policy::containsErrorCode)) return true;
+            if (isError(policy.getMessagePolicy(), response, factory, policy::containsErrorMessage)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the given response matches the error condition specified by the error parser policy.
+     *
+     * @param policy    the error parser policy
+     * @param response  the service response
+     * @param factory   the error parser factory
+     * @param predicate the predicate to apply to the parsed value
+     * @return true if the response matches the error condition, false otherwise
+     */
+    private static boolean isError(ErrorParserPolicy policy,
+                                   ServiceResponse response,
+                                   Function<String, ErrorParser> factory,
+                                   Predicate<String> predicate) {
+        if (policy != null) {
+            String value = parseValue(policy, response.getResult(), factory);
+            return predicate.test(value);
         }
         return false;
     }
@@ -105,23 +126,25 @@ public class Predicates {
      * @param factory the code parser factory
      * @return the parsed error code, or null if no code could be parsed
      */
-    private static String parseCode(CodePolicy policy, Object result, Function<String, CodeParser> factory) {
-        String code = null;
+    private static String parseValue(ErrorParserPolicy policy,
+                                     Object result,
+                                     Function<String, ErrorParser> factory) {
+        String value = null;
         if (policy != null && result != null) {
             String errorParser = policy.getParser();
             String errorExpression = policy.getExpression();
             if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
-                CodeParser parser = factory.apply(errorParser);
+                ErrorParser parser = factory.apply(errorParser);
                 if (parser != null) {
                     try {
-                        code = parser.getCode(errorExpression, result);
+                        value = parser.getValue(errorExpression, result);
                     } catch (Throwable e) {
                         logger.error(e.getMessage(), e);
                     }
                 }
             }
         }
-        return code;
+        return value;
     }
 
 }

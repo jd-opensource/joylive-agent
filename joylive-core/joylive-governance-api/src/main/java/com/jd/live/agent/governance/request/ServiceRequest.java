@@ -164,16 +164,6 @@ public interface ServiceRequest extends Request {
     }
 
     /**
-     * Checks if the response body is required for the given error policy.
-     *
-     * @param policy the error policy to check
-     * @return true if the response body is required, false otherwise (default implementation always returns false)
-     */
-    default boolean isDependentOnResponseBody(ErrorPolicy policy) {
-        return false;
-    }
-
-    /**
      * Rejects the request with the given fault type and reason.
      *
      * @param type   The type of fault.
@@ -305,6 +295,23 @@ public interface ServiceRequest extends Request {
          */
         default boolean isInstanceSensitive() {
             return true;
+        }
+
+        /**
+         * Adds an error policy to the request if it requires the response body.
+         *
+         * @param policy the error policy to add
+         */
+        default void addErrorPolicy(ErrorPolicy policy) {
+        }
+
+        /**
+         * Removes all error policies from the request.
+         *
+         * @return a set of the removed error policies, or null if no policies were removed
+         */
+        default Set<ErrorPolicy> removeErrorPolicies() {
+            return null;
         }
 
         /**
