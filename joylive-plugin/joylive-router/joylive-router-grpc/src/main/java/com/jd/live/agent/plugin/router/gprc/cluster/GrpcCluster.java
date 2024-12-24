@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.plugin.router.gprc.exception.GrpcOutboundThrower.THROWER;
 
 public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOutboundResponse, GrpcEndpoint> {
 
@@ -63,16 +64,16 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     @Override
     public Throwable createException(Throwable throwable, GrpcOutboundRequest request) {
-        return null;
+        return THROWER.createException(throwable, request);
     }
 
     @Override
     public Throwable createException(Throwable throwable, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        return null;
+        return THROWER.createException(throwable, request, endpoint);
     }
 
     @Override
     public Throwable createException(Throwable throwable, OutboundInvocation<GrpcOutboundRequest> invocation) {
-        return null;
+        return THROWER.createException(throwable, invocation);
     }
 }

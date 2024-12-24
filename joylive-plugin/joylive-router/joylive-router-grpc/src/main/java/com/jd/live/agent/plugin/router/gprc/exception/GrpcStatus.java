@@ -15,9 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.gprc.exception;
 
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
+import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
+import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import io.grpc.Status;
 
 /**
@@ -48,6 +51,14 @@ public class GrpcStatus {
             return createCircuitBreakException((RejectCircuitBreakException) throwable);
         } else if (throwable instanceof RejectException) {
             return createRejectException((RejectException) throwable);
+        } else if (throwable instanceof FaultException) {
+            return createFaultException((FaultException) throwable);
+        } else if (throwable instanceof RejectNoProviderException) {
+            return createNoProviderException((RejectNoProviderException) throwable);
+        } else if (throwable instanceof RetryExhaustedException) {
+            return createRetryExhaustedException((RetryExhaustedException) throwable);
+        } else if (throwable instanceof RetryTimeoutException) {
+            return createRetryTimeoutException((RetryTimeoutException) throwable);
         } else if (throwable instanceof LiveException) {
             return createLiveException((LiveException) throwable);
         } else {
@@ -133,6 +144,47 @@ public class GrpcStatus {
      */
     protected static Status createRejectException(RejectException exception) {
         return Status.INTERNAL.withDescription(exception.getMessage());
+    }
+
+    /**
+     * Creates a gRPC Status object for a FaultException.
+     *
+     * @param exception The FaultException object to convert to a gRPC Status object.
+     * @return The gRPC Status object for the given FaultException object.
+     */
+    protected static Status createFaultException(FaultException exception) {
+        Status status = exception.getCode() == null ? Status.INTERNAL : Status.fromCodeValue(exception.getCode());
+        return status.withDescription(exception.getMessage());
+    }
+
+    /**
+     * Creates a gRPC Status object for a RejectNoProviderException.
+     *
+     * @param exception The RejectNoProviderException object to convert to a gRPC Status object.
+     * @return The gRPC Status object for the given RejectNoProviderException object.
+     */
+    protected static Status createNoProviderException(RejectNoProviderException exception) {
+        return Status.UNAVAILABLE.withDescription(exception.getMessage());
+    }
+
+    /**
+     * Creates a gRPC Status object for a RetryExhaustedException.
+     *
+     * @param exception The RetryExhaustedException object to convert to a gRPC Status object.
+     * @return The gRPC Status object for the given RetryExhaustedException object.
+     */
+    protected static Status createRetryExhaustedException(RetryExhaustedException exception) {
+        return Status.UNAVAILABLE.withDescription(exception.getMessage());
+    }
+
+    /**
+     * Creates a gRPC Status object for a RetryTimeoutException.
+     *
+     * @param exception The RetryTimeoutException object to convert to a gRPC Status object.
+     * @return The gRPC Status object for the given RetryTimeoutException object.
+     */
+    protected static Status createRetryTimeoutException(RetryTimeoutException exception) {
+        return Status.UNAVAILABLE.withDescription(exception.getMessage());
     }
 
     /**
