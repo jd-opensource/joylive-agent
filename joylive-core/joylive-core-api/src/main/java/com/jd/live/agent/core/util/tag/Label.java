@@ -18,6 +18,7 @@ package com.jd.live.agent.core.util.tag;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jd.live.agent.core.util.StringUtils.COMMA;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 /**
@@ -69,7 +70,7 @@ public interface Label {
             if (value.length() == 2) {
                 result = new ArrayList<>();
             } else {
-                result = splitList(value.substring(1, value.length() - 1), ',');
+                result = splitList(value.substring(1, value.length() - 1), COMMA);
             }
         } else {
             result = new ArrayList<>(1);

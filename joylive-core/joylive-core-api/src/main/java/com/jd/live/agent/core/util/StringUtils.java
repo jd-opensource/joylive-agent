@@ -30,6 +30,11 @@ import java.util.function.Predicate;
 public class StringUtils {
 
     /**
+     * A predicate that tests if a character is a comma.
+     */
+    public static final Predicate<Character> COMMA = o -> o == ',';
+
+    /**
      * A predicate that tests if a character is a comma or semicolon.
      */
     public static final Predicate<Character> SEMICOLON_COMMA = o -> {
@@ -369,7 +374,6 @@ public class StringUtils {
         char ch;
         int pos = -1;
         int length = source.length();
-        String part;
 
         // Iterate over characters
         for (int i = 0; i < length; i++) {
