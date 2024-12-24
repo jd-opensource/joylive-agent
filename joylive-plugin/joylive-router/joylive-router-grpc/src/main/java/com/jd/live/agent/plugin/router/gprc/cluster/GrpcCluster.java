@@ -8,11 +8,11 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LivePickerAdvice;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveSubchannel;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
 import io.grpc.ClientCall;
-import io.grpc.Metadata;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,8 +23,14 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     private ClientCall clientCall;
 
-    public GrpcCluster(ClientCall clientCall) {
+    private LivePickerAdvice advice;
+
+    private CompletionStage<GrpcOutboundResponse> stage;
+
+    public GrpcCluster(ClientCall clientCall, LivePickerAdvice advice, CompletionStage<GrpcOutboundResponse> stage) {
         this.clientCall = clientCall;
+        this.advice = advice;
+        this.stage = stage;
     }
 
     @Override
@@ -35,7 +41,7 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     @Override
     public CompletionStage<GrpcOutboundResponse> invoke(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        CompletionStage<GrpcOutboundResponse> stage = new CompletableFuture<>();
+        advice.setSubchannel(endpoint.getSubchannel());
         clientCall.sendMessage(request.getRequest());
         return stage;
     }
