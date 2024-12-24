@@ -40,12 +40,10 @@ public class ResponseUtils {
     /**
      * Converts a Set of Strings to a String, using the specified delimiter and truncating if the resulting String exceeds the maximum length.
      *
-     * @param names     the Set of Strings to convert
-     * @param delimiter the character to use as a delimiter between the Strings
-     * @param maxLength the maximum length of the resulting String; if 0 or negative, no truncation occurs
+     * @param names the Set of Strings to convert
      * @return a String representation of the Set, using the specified delimiter and truncation rules
      */
-    private static String asString(Set<String> names, char delimiter, int maxLength) {
+    private static String join(Set<String> names) {
         if (names == null) {
             return null;
         }
@@ -54,15 +52,13 @@ public class ResponseUtils {
         int size = 0;
         int len;
         for (String name : names) {
-            if (maxLength > 0) {
-                len = name.length() + (i > 0 ? 1 : 0);
-                size += len;
-                if (size > maxLength) {
-                    break;
-                }
+            len = name.length() + (i > 0 ? 1 : 0);
+            size += len;
+            if (size > HEADER_SIZE_LIMIT) {
+                break;
             }
             if (i++ > 0) {
-                builder.append(delimiter);
+                builder.append(',');
             }
             builder.append(name);
         }
@@ -74,15 +70,14 @@ public class ResponseUtils {
      *
      * @param e         the Throwable to describe
      * @param predicate a Predicate to filter the exception names
-     * @param maxLength the maximum length of the exception names and message; if 0 or negative, no truncation occurs
      * @param consumer  a BiConsumer to accept the exception names and message
      */
-    private static void describe(Throwable e, Predicate<Throwable> predicate, int maxLength, BiConsumer<String, String> consumer) {
+    private static void describe(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
         if (consumer != null && e != null) {
-            String name = asString(getExceptions(e, predicate), ',', maxLength);
+            String name = join(getExceptions(e, predicate));
             String message = e.getMessage();
-            if (message != null && message.length() > maxLength) {
-                message = message.substring(0, maxLength);
+            if (message != null && message.length() > HEADER_SIZE_LIMIT) {
+                message = message.substring(0, HEADER_SIZE_LIMIT);
             }
             if (name != null || message != null) {
                 consumer.accept(name, message);
@@ -108,7 +103,7 @@ public class ResponseUtils {
      * @param consumer  a BiConsumer to accept the generated headers
      */
     public static void labelHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
-        describe(e, predicate == null ? NONE_EXECUTION_PREDICATE : predicate, HEADER_SIZE_LIMIT, (name, message) -> {
+        describe(e, predicate == null ? NONE_EXECUTION_PREDICATE : predicate, (name, message) -> {
             if (name != null && !name.isEmpty()) {
                 consumer.accept(EXCEPTION_NAMES_LABEL, name);
             }
