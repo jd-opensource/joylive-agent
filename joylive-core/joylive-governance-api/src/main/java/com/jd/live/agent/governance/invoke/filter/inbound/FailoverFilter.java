@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.invoke.CellAction;
 import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -37,7 +36,7 @@ import java.util.concurrent.CompletionStage;
  * @since 1.0.0
  */
 @Extension(value = "FailoverFilter", order = InboundFilter.ORDER_LIVE_FAILOVER)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnLiveEnabled
 public class FailoverFilter implements InboundFilter {
 
     @Override

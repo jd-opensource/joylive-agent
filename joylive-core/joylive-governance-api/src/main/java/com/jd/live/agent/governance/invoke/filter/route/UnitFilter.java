@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.instance.EndpointGroup;
 import com.jd.live.agent.governance.instance.UnitGroup;
@@ -54,7 +53,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
  */
 @Injectable
 @Extension(value = "UnitFilter", order = RouteFilter.ORDER_LIVE_UNIT)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnLiveEnabled
 public class UnitFilter implements RouteFilter {
 
     @Override

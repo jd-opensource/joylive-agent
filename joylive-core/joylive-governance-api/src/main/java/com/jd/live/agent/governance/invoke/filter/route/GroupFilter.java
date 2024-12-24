@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -32,6 +33,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  */
 @Injectable
 @Extension(value = "GroupFilter", order = RouteFilter.ORDER_GROUP)
+@ConditionalOnFlowControlEnabled
 public class GroupFilter implements RouteFilter {
 
     @Override

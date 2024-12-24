@@ -16,14 +16,12 @@
 package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.exception.ErrorCause;
@@ -63,10 +61,8 @@ import static com.jd.live.agent.governance.util.Predicates.isError;
  */
 @Injectable
 @Extension(value = "CircuitBreakerFilter", order = RouteFilter.ORDER_CIRCUIT_BREAKER)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnFlowControlEnabled
 public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
-
-    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
 
     @Inject
     private Map<String, CircuitBreakerFactory> factories;

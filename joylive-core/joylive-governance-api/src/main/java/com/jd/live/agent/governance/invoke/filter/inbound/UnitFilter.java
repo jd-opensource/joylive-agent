@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.instance.GatewayRole;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -43,7 +42,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
  * @since 1.0.0
  */
 @Extension(value = "UnitFilter", order = InboundFilter.ORDER_LIVE_UNIT)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
+@ConditionalOnLiveEnabled
 public class UnitFilter implements InboundFilter {
 
     @Override

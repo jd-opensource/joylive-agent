@@ -16,10 +16,10 @@
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.ExtensionInitializer;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.concurrencylimit.ConcurrencyLimiter;
@@ -42,7 +42,7 @@ import java.util.concurrent.CompletionStage;
  */
 @Injectable
 @Extension(value = "ConcurrencyLimitFilter", order = InboundFilter.ORDER_CONCURRENCY_LIMITER)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnFlowControlEnabled
 public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializer {
 
     @Inject

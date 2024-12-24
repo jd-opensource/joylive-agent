@@ -17,12 +17,11 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.LoadLimiterConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -52,7 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Injectable
 @Extension(value = "LoadLimitFilter", order = InboundFilter.ORDER_LOAD_LIMITER)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnFlowControlEnabled
 public class LoadLimitFilter implements InboundFilter {
     private static final Logger logger = LoggerFactory.getLogger(LoadLimitFilter.class);
     public static final String LOAD_LIMITER_TIMER = "load-limiter";

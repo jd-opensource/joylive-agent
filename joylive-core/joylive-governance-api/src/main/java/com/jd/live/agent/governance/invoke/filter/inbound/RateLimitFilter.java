@@ -16,10 +16,10 @@
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.ExtensionInitializer;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -40,7 +40,7 @@ import java.util.concurrent.CompletionStage;
  */
 @Injectable
 @Extension(value = "RateLimitFilter", order = InboundFilter.ORDER_RATE_LIMITER)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnFlowControlEnabled
 public class RateLimitFilter implements InboundFilter, ExtensionInitializer {
 
     @Inject

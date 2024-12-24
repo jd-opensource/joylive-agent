@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.outbound;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.counter.Counter;
@@ -35,6 +36,7 @@ import java.util.concurrent.CompletionStage;
  * @see OutboundFilter
  */
 @Extension(value = "CounterFilter", order = OutboundFilter.ORDER_COUNTER)
+@ConditionalOnFlowControlEnabled
 public class CounterFilter implements OutboundFilter {
 
     @Override

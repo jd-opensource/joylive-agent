@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.invoke.filter.outbound;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
@@ -41,6 +42,7 @@ import java.util.concurrent.CompletionStage;
  */
 @Injectable
 @Extension(value = "AuthFilter", order = OutboundFilter.ORDER_AUTH)
+@ConditionalOnFlowControlEnabled
 public class AuthFilter implements OutboundFilter {
 
     @Inject

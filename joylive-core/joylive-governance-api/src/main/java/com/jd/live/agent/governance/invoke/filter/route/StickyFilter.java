@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -37,7 +36,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  * @since 1.0.0
  */
 @Extension(value = "StickyFilter", order = RouteFilter.ORDER_STICKY)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
+@ConditionalOnFlowControlEnabled
 public class StickyFilter implements RouteFilter {
 
     @Override

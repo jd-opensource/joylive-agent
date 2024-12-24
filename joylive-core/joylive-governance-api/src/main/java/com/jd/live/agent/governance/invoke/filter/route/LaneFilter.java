@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLaneEnabled;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
@@ -39,7 +38,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  */
 @Injectable
 @Extension(value = "LaneFilter", order = RouteFilter.ORDER_LANE)
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
+@ConditionalOnLaneEnabled
 public class LaneFilter implements RouteFilter {
 
     @Override

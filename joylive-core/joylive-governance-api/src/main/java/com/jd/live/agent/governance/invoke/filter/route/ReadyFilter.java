@@ -15,13 +15,12 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
@@ -35,13 +34,9 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  * @see GovernanceConfig
  * @see Application
  */
-@ConditionalOnProperty(name = {
-        GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED,
-        GovernanceConfig.CONFIG_LIVE_ENABLED,
-        GovernanceConfig.CONFIG_LANE_ENABLED
-}, matchIfMissing = true, relation = ConditionalRelation.OR)
 @Injectable
 @Extension(value = "ReadyFilter", order = RouteFilter.ORDER_READY)
+@ConditionalOnGovernanceEnabled
 public class ReadyFilter implements RouteFilter {
 
     @Inject(Application.COMPONENT_APPLICATION)
