@@ -20,11 +20,14 @@ import io.grpc.CallOptions;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Represents advice for live picker, which includes a subchannel and an election function to determine the active subchannel.
+ */
 public class LivePickerAdvice {
 
     public static final CallOptions.Key<LivePickerAdvice> KEY_PICKER_ADVICE = CallOptions.Key.create("x-picker-advice");
 
-    private final LiveSubchannel subchannel;
+    private LiveSubchannel subchannel;
 
     private final Function<List<LiveSubchannel>, LiveSubchannel> election;
 
@@ -43,6 +46,10 @@ public class LivePickerAdvice {
 
     public LiveSubchannel getSubchannel() {
         return subchannel;
+    }
+
+    public void setSubchannel(LiveSubchannel subchannel) {
+        this.subchannel = subchannel;
     }
 
     public Function<List<LiveSubchannel>, LiveSubchannel> getElection() {
