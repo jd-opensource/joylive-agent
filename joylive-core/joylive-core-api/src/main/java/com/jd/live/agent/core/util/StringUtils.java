@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.util;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -155,45 +155,13 @@ public class StringUtils {
     public static String[] split(final String source,
                                  final Predicate<Character> predicate,
                                  final Function<String, String> handler) {
-        if (source == null) {
+        List<String> targets = splitList(source, predicate, handler);
+        if (targets == null) {
             return null;
-        }
-        int start = -1;
-        int end = -1;
-        char ch;
-        LinkedList<String> parts = new LinkedList<>();
-        int length = source.length();
-        String part;
-
-        // Iterate over characters
-        for (int i = 0; i < length; i++) {
-            ch = source.charAt(i);
-            // Check if the character matches the predicate
-            if (predicate.test(ch)) {
-                // If there is a segment before this character
-                if (start >= 0) {
-                    part = source.substring(start, end + 1);
-                    parts.add(handler == null ? part : handler.apply(part));
-                    start = -1;
-                    end = -1;
-                }
-            } else {
-                if (start == -1) {
-                    start = i;
-                }
-                end = i;
-            }
-        }
-        // Handle the last segment
-        if (start >= 0) {
-            part = source.substring(start, length);
-            parts.add(handler == null ? part : handler.apply(part));
-        }
-        // Return the segments as an array
-        if (parts.isEmpty()) {
+        } else if (targets.isEmpty()) {
             return new String[0];
         }
-        return parts.toArray(new String[0]);
+        return targets.toArray(new String[0]);
     }
 
     /**
@@ -207,12 +175,109 @@ public class StringUtils {
      * @return An array of strings.
      */
     public static String[] split(final String value, final String delimiter) {
-        if (delimiter == null || delimiter.isEmpty()) {
-            return split(value, ',');
-        } else if (delimiter.length() == 1) {
-            return split(value, delimiter.charAt(0));
+        List<String> targets = splitList(value, delimiter);
+        if (targets == null) {
+            return null;
+        } else if (targets.isEmpty()) {
+            return new String[0];
         }
-        List<String> parts = new LinkedList<>();
+        return targets.toArray(new String[0]);
+    }
+
+    /**
+     * Splits the provided source string into a list of strings, using the provided character as the delimiter.
+     *
+     * @param source The string to be split.
+     * @param ch     The delimiter character.
+     * @return A list of strings.
+     */
+    public static List<String> splitList(final String source, final char ch) {
+        return splitList(source, o -> o == ch, null);
+    }
+
+    /**
+     * Splits the provided source string into a list of strings based on a predefined set of delimiters.
+     *
+     * @param source The string to be split.
+     * @return A list of strings.
+     */
+    public static List<String> splitList(final String source) {
+        return splitList(source, SEMICOLON_COMMA_WHITESPACE, null);
+    }
+
+    /**
+     * Splits the given source string based on a specified predicate logic.
+     *
+     * @param source    The source string to split.
+     * @param predicate A character predicate that determines whether a character should be considered a splitting point.
+     * @return A list of strings.
+     */
+    public static List<String> splitList(final String source, final Predicate<Character> predicate) {
+        return splitList(source, predicate, null);
+    }
+
+    /**
+     * Splits the given source string based on a specified predicate logic and applies a handler function to each resulting substring.
+     *
+     * @param source    The source string to split.
+     * @param predicate A character predicate that determines whether a character should be considered a splitting point.
+     * @param handler   A function that takes a substring as input and returns a processed substring.
+     * @return A list of processed strings.
+     */
+    public static List<String> splitList(final String source,
+                                         final Predicate<Character> predicate,
+                                         final Function<String, String> handler) {
+        if (source == null) {
+            return null;
+        }
+        int start = -1;
+        int end = -1;
+        char ch;
+        List<String> result = new ArrayList<>();
+        int length = source.length();
+        String part;
+
+        // Iterate over characters
+        for (int i = 0; i < length; i++) {
+            ch = source.charAt(i);
+            // Check if the character matches the predicate
+            if (predicate.test(ch)) {
+                // If there is a segment before this character
+                if (start >= 0) {
+                    part = source.substring(start, end + 1);
+                    result.add(handler == null ? part : handler.apply(part));
+                    start = -1;
+                    end = -1;
+                }
+            } else {
+                if (start == -1) {
+                    start = i;
+                }
+                end = i;
+            }
+        }
+        // Handle the last segment
+        if (start >= 0) {
+            part = source.substring(start, length);
+            result.add(handler == null ? part : handler.apply(part));
+        }
+        return result;
+    }
+
+    /**
+     * Splits the given input string into a list of substrings, using the specified delimiter.
+     *
+     * @param value     The input string to be split.
+     * @param delimiter The delimiter used to separate the substrings.
+     * @return A list of substrings.
+     */
+    public static List<String> splitList(final String value, final String delimiter) {
+        if (delimiter == null || delimiter.isEmpty()) {
+            return splitList(value, ',');
+        } else if (delimiter.length() == 1) {
+            return splitList(value, delimiter.charAt(0));
+        }
+        List<String> result = new ArrayList<>();
         int length = value.length();
         int maxPos = delimiter.length() - 1;
         int start = 0;
@@ -222,7 +287,7 @@ public class StringUtils {
             if (value.charAt(i) == delimiter.charAt(pos)) {
                 if (pos++ == maxPos) {
                     if (end > start) {
-                        parts.add(value.substring(start, end + 1));
+                        result.add(value.substring(start, end + 1));
                     }
                     pos = 0;
                     start = i + 1;
@@ -232,12 +297,9 @@ public class StringUtils {
             }
         }
         if (start < length) {
-            parts.add(value.substring(start, length));
+            result.add(value.substring(start, length));
         }
-        if (parts.isEmpty()) {
-            return new String[0];
-        }
-        return parts.toArray(new String[0]);
+        return result;
     }
 
     /**

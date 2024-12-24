@@ -18,8 +18,7 @@ package com.jd.live.agent.core.util.tag;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.StringUtils.split;
-import static java.util.Collections.addAll;
+import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 /**
  * The {@code Label} interface defines a contract for label handling. It provides constants
@@ -70,9 +69,7 @@ public interface Label {
             if (value.length() == 2) {
                 result = new ArrayList<>();
             } else {
-                String[] parts = split(value.substring(1, value.length() - 1), ',');
-                result = new ArrayList<>(parts.length);
-                addAll(result, parts);
+                result = splitList(value.substring(1, value.length() - 1), ',');
             }
         } else {
             result = new ArrayList<>(1);
