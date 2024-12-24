@@ -19,18 +19,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LivePickerAdvice;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveSubchannel;
-import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
-import com.jd.live.agent.plugin.router.gprc.request.invoke.GrpcInvocation.GrpcOutboundInvocation;
+import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
 import io.grpc.*;
+import io.grpc.MethodDescriptor.MethodType;
 
-import java.util.List;
-import java.util.function.Function;
-
-import static com.jd.live.agent.core.util.CollectionUtils.convert;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * ClientInterceptorsInterceptor
@@ -65,14 +59,29 @@ public class ClientInterceptorsInterceptor extends InterceptorAdaptor {
 
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> newCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions) {
-            LiveRoute<ReqT, RespT> route = new LiveRoute<>(context, method);
-            LivePickerAdvice advice = new LivePickerAdvice(route);
+            if (method.getType() != MethodType.UNARY) {
+                // This is not a Unary RPC method
+                return channel.newCall(method, callOptions);
+            }
+            LivePickerAdvice advice = new LivePickerAdvice(method, context);
             callOptions = callOptions.withOption(LivePickerAdvice.KEY_PICKER_ADVICE, advice);
-            return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(channel.newCall(method, callOptions)) {
+            ClientCall<ReqT, RespT> clientCall = channel.newCall(method, callOptions);
+            return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(clientCall) {
+
+                private CompletableFuture<GrpcOutboundResponse> future = new CompletableFuture<>();
+
                 @Override
                 public void start(Listener<RespT> responseListener, Metadata headers) {
-                    route.headers = headers;
+                    advice.setHeaders(headers);
+                    // TODO wrap response listener to handle response & error
                     super.start(responseListener, headers);
+                }
+
+                @Override
+                public void sendMessage(ReqT message) {
+                    advice.setMessage(message);
+                    // TODO wrap cluster to invoke & handle void response
+                    super.sendMessage(message);
                 }
             };
         }
@@ -80,29 +89,6 @@ public class ClientInterceptorsInterceptor extends InterceptorAdaptor {
         @Override
         public String authority() {
             return channel.authority();
-        }
-    }
-
-    private static class LiveRoute<ReqT, RespT> implements Function<List<LiveSubchannel>, LiveSubchannel> {
-
-        private final InvocationContext context;
-
-        private final MethodDescriptor<ReqT, RespT> method;
-
-        private Metadata headers;
-
-        LiveRoute(InvocationContext context, MethodDescriptor<ReqT, RespT> method) {
-            this.context = context;
-            this.method = method;
-        }
-
-        @Override
-        public LiveSubchannel apply(List<LiveSubchannel> subchannels) {
-            String serviceName = LiveDiscovery.getService(method.getServiceName());
-            GrpcOutboundRequest request = new GrpcOutboundRequest(headers, serviceName, method);
-            GrpcOutboundInvocation invocation = new GrpcOutboundInvocation(request, context);
-            GrpcEndpoint endpoint = context.route(invocation, convert(subchannels, GrpcEndpoint::new));
-            return endpoint.getSubchannel();
         }
     }
 }

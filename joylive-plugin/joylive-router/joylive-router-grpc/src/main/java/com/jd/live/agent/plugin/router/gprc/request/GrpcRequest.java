@@ -60,19 +60,25 @@ public interface GrpcRequest {
     /**
      * A nested class representing an outbound gRPC request.
      */
-    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<Metadata> implements GrpcRequest {
+    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<Object> implements GrpcRequest {
 
-        public GrpcOutboundRequest(Metadata request, String serviceName, MethodDescriptor<?, ?> method) {
-            super(request);
+        private final Metadata metadata;
+
+        private final MethodDescriptor<?, ?> methodDescriptor;
+
+        public GrpcOutboundRequest(Object message, Metadata metadata, MethodDescriptor<?, ?> methodDescriptor, String serviceName) {
+            super(message);
+            this.metadata = metadata;
+            this.methodDescriptor = methodDescriptor;
             this.service = serviceName;
-            this.path = method.getServiceName();
-            this.method = method.getBareMethodName();
+            this.path = methodDescriptor.getServiceName();
+            this.method = methodDescriptor.getBareMethodName();
         }
 
         @Override
         public void setHeader(String key, String value) {
             if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-                request.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
+                metadata.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
             }
         }
 

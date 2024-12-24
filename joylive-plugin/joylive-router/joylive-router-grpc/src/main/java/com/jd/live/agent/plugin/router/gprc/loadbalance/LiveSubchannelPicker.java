@@ -24,7 +24,6 @@ import io.grpc.LoadBalancer.SubchannelPicker;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 
 /**
  * A class that extends the SubchannelPicker class to provide a live subchannel picking strategy.
@@ -60,15 +59,11 @@ public class LiveSubchannelPicker extends SubchannelPicker {
             LivePickerAdvice advice = args.getCallOptions().getOption(LivePickerAdvice.KEY_PICKER_ADVICE);
             LiveSubchannel subchannel = null;
             if (advice != null) {
-                subchannel = advice.getSubchannel();
-                Function<List<LiveSubchannel>, LiveSubchannel> election = advice.getElection();
-                if (subchannel == null && election != null) {
-                    try {
-                        subchannel = election.apply(subchannels);
-                    } catch (Throwable e) {
-                        logger.error(e.getMessage(), e);
-                        return PickResult.withError(GrpcStatus.createException(e));
-                    }
+                try {
+                    subchannel = advice.elect(subchannels);
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                    return PickResult.withError(GrpcStatus.createException(e));
                 }
             }
             if (subchannel != null) {

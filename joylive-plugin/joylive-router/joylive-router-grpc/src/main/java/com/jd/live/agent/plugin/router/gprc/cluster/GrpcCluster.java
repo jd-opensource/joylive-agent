@@ -21,9 +21,9 @@ import java.util.concurrent.CompletionStage;
 
 public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOutboundResponse, GrpcEndpoint> {
 
-    private ClientCall<?, ?> clientCall;
+    private ClientCall clientCall;
 
-    public GrpcCluster(ClientCall<?, ?> clientCall) {
+    public GrpcCluster(ClientCall clientCall) {
         this.clientCall = clientCall;
     }
 
@@ -36,13 +36,7 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     @Override
     public CompletionStage<GrpcOutboundResponse> invoke(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
         CompletionStage<GrpcOutboundResponse> stage = new CompletableFuture<>();
-        clientCall.start(new ClientCall.Listener() {
-            @Override
-            public void onMessage(Object message) {
-                super.onMessage(message);
-            }
-
-        }, new Metadata());
+        clientCall.sendMessage(request.getRequest());
         return stage;
     }
 
