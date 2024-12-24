@@ -16,7 +16,11 @@
 package com.jd.live.agent.core.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -156,12 +160,7 @@ public class StringUtils {
                                  final Predicate<Character> predicate,
                                  final Function<String, String> handler) {
         List<String> targets = splitList(source, predicate, handler);
-        if (targets == null) {
-            return null;
-        } else if (targets.isEmpty()) {
-            return new String[0];
-        }
-        return targets.toArray(new String[0]);
+        return targets.isEmpty() ? new String[0] : targets.toArray(new String[0]);
     }
 
     /**
@@ -176,12 +175,7 @@ public class StringUtils {
      */
     public static String[] split(final String value, final String delimiter) {
         List<String> targets = splitList(value, delimiter);
-        if (targets == null) {
-            return null;
-        } else if (targets.isEmpty()) {
-            return new String[0];
-        }
-        return targets.toArray(new String[0]);
+        return targets.isEmpty() ? new String[0] : targets.toArray(new String[0]);
     }
 
     /**
@@ -227,15 +221,32 @@ public class StringUtils {
     public static List<String> splitList(final String source,
                                          final Predicate<Character> predicate,
                                          final Function<String, String> handler) {
-        if (source == null) {
-            return null;
+        List<String> result = new ArrayList<>();
+        splitList(source, predicate, handler, result::add);
+        return result;
+    }
+
+    /**
+     * Splits the given source string into a list of substrings, using the specified predicate logic to determine the substring separation,
+     * applies a handler function to each resulting substring, and then applies a consumer function to the processed substrings.
+     *
+     * @param source    The source string to be split.
+     * @param predicate A character predicate that determines whether a character should be considered a substring separator.
+     * @param handler   A function that takes a substring as input and returns a processed substring.
+     * @param consumer  A consumer function that takes a processed substring as input and performs an action.
+     */
+    public static void splitList(final String source,
+                                 final Predicate<Character> predicate,
+                                 final Function<String, String> handler,
+                                 final Consumer<String> consumer) {
+        if (source == null || source.isEmpty() || predicate == null || consumer == null) {
+            return;
         }
         int start = -1;
         int end = -1;
         char ch;
-        List<String> result = new ArrayList<>();
-        int length = source.length();
         String part;
+        int length = source.length();
 
         // Iterate over characters
         for (int i = 0; i < length; i++) {
@@ -245,7 +256,8 @@ public class StringUtils {
                 // If there is a segment before this character
                 if (start >= 0) {
                     part = source.substring(start, end + 1);
-                    result.add(handler == null ? part : handler.apply(part));
+                    part = handler == null ? part : handler.apply(part);
+                    consumer.accept(part);
                     start = -1;
                     end = -1;
                 }
@@ -259,9 +271,9 @@ public class StringUtils {
         // Handle the last segment
         if (start >= 0) {
             part = source.substring(start, length);
-            result.add(handler == null ? part : handler.apply(part));
+            part = handler == null ? part : handler.apply(part);
+            consumer.accept(part);
         }
-        return result;
     }
 
     /**
@@ -272,34 +284,123 @@ public class StringUtils {
      * @return A list of substrings.
      */
     public static List<String> splitList(final String value, final String delimiter) {
-        if (delimiter == null || delimiter.isEmpty()) {
-            return splitList(value, ',');
-        } else if (delimiter.length() == 1) {
-            return splitList(value, delimiter.charAt(0));
-        }
         List<String> result = new ArrayList<>();
-        int length = value.length();
-        int maxPos = delimiter.length() - 1;
-        int start = 0;
-        int pos = 0;
-        int end = 0;
-        for (int i = 0; i < length; i++) {
-            if (value.charAt(i) == delimiter.charAt(pos)) {
-                if (pos++ == maxPos) {
-                    if (end > start) {
-                        result.add(value.substring(start, end + 1));
+        splitList(value, delimiter, result::add);
+        return result;
+    }
+
+    /**
+     * Splits the given value string into a list of substrings, using the specified delimiter to determine the substring separation,
+     * and applies a consumer function to each resulting substring.
+     *
+     * @param value     The value string to be split.
+     * @param delimiter The delimiter string used to separate the substrings.
+     * @param consumer  A consumer function that takes a substring as input and performs an action.
+     */
+    public static void splitList(final String value, final String delimiter, final Consumer<String> consumer) {
+        if (value == null || value.isEmpty() || consumer == null) {
+            return;
+        } else if (delimiter == null || delimiter.isEmpty()) {
+            splitList(value, SEMICOLON_COMMA, null, consumer);
+        } else if (delimiter.length() == 1) {
+            char ch = delimiter.charAt(0);
+            splitList(value, c -> ch == c, null, consumer);
+        } else {
+            int length = value.length();
+            int maxPos = delimiter.length() - 1;
+            int start = 0;
+            int pos = 0;
+            int end = 0;
+            for (int i = 0; i < length; i++) {
+                if (value.charAt(i) == delimiter.charAt(pos)) {
+                    if (pos++ == maxPos) {
+                        if (end > start) {
+                            consumer.accept(value.substring(start, end + 1));
+                        }
+                        pos = 0;
+                        start = i + 1;
                     }
-                    pos = 0;
-                    start = i + 1;
+                } else {
+                    end = i;
+                }
+            }
+            if (start < length) {
+                consumer.accept(value.substring(start, length));
+            }
+        }
+    }
+
+    /**
+     * Splits the given source string into a map of key-value pairs, using a predefined set of delimiters to determine the key-value separation.
+     *
+     * @param source The source string to be split.
+     * @return A map of key-value pairs.
+     */
+    public static Map<String, String> splitMap(final String source) {
+        return splitMap(source, SEMICOLON_COMMA);
+    }
+
+    /**
+     * Splits the given source string into a map of key-value pairs, using the specified predicate logic to determine the key-value separation.
+     *
+     * @param source    The source string to be split.
+     * @param predicate A character predicate that determines whether a character should be considered a key-value separator.
+     * @return A map of key-value pairs.
+     */
+    public static Map<String, String> splitMap(final String source, final Predicate<Character> predicate) {
+        Map<String, String> result = new HashMap<>();
+        splitMap(source, predicate, result::put);
+        return result;
+    }
+
+    /**
+     * Splits the given source string into key-value pairs, using the specified predicate logic to determine the key-value separation, and applies a consumer function to each resulting pair.
+     *
+     * @param source    The source string to be split.
+     * @param predicate A character predicate that determines whether a character should be considered a key-value separator.
+     * @param consumer  A consumer function that takes a key-value pair as input and performs an action.
+     */
+    public static void splitMap(final String source, final Predicate<Character> predicate, BiConsumer<String, String> consumer) {
+        if (source == null || source.isEmpty() || consumer == null || predicate == null) {
+            return;
+        }
+        int start = -1;
+        int end = -1;
+        char ch;
+        int pos = -1;
+        int length = source.length();
+        String part;
+
+        // Iterate over characters
+        for (int i = 0; i < length; i++) {
+            ch = source.charAt(i);
+            if (ch == '=' && pos < 0) {
+                pos = i;
+            }
+            // Check if the character matches the predicate
+            if (predicate.test(ch)) {
+                // If there is a segment before this character
+                if (start >= 0) {
+                    if (pos > 0) {
+                        consumer.accept(source.substring(start, pos), source.substring(pos + 1, end + 1));
+                    }
+                    start = -1;
+                    end = -1;
+                    pos = -1;
                 }
             } else {
+                if (start == -1) {
+                    start = i;
+                }
                 end = i;
             }
         }
-        if (start < length) {
-            result.add(value.substring(start, length));
+        // Handle the last segment
+        if (start >= 0) {
+            if (pos > 0) {
+                consumer.accept(source.substring(start, pos), source.substring(pos + 1, length));
+            }
         }
-        return result;
     }
 
     /**
