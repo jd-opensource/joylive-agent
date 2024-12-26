@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.gprc.interceptor;
-
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveLoadBalancerProvider;
+package com.jd.live.agent.plugin.router.gprc.exception;
 
 /**
- * LoadbalancerInterceptor
+ * GrpcException
+ *
+ * @see GrpcException
  */
-public class LoadbalancerInterceptor extends InterceptorAdaptor {
+public class GrpcException extends RuntimeException {
 
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        mc.skipWithResult(new LiveLoadBalancerProvider());
+    public GrpcException(Throwable cause) {
+        super(cause.getMessage(), cause, false, false);
     }
+
 }

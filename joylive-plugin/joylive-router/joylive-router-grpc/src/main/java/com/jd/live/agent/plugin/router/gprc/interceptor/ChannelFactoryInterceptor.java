@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.gprc.interceptor;
 
-import com.google.common.base.MoreObjects;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -24,8 +23,6 @@ import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
 import io.grpc.*;
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall;
 import io.grpc.MethodDescriptor.MethodType;
-
-import javax.annotation.Nullable;
 
 /**
  * ClientInterceptorsInterceptor
@@ -67,7 +64,7 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
             LiveRequest request = new LiveRequest(method, context);
             CallOptions options = callOptions.withOption(LiveRequest.KEY_LIVE_REQUEST, request);
             request.setCallOptions(options);
-            request.setSupplier(() -> channel.newCall(method, options));
+            request.setClientCall(channel.newCall(method, options));
             return context.isFlowControlEnabled() ? new FlowControlClientCall<>(request) : new LiveClientCall<>(request);
         }
 
@@ -89,14 +86,13 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
         private final LiveRequest request;
 
         LiveClientCall(LiveRequest request) {
-            super(request.newClientCall());
+            super(request.getClientCall());
             this.request = request;
         }
 
         @Override
         public void start(Listener<RespT> responseListener, Metadata headers) {
             request.setHeaders(headers);
-            // pick subchannel and create stream
             super.start(responseListener, headers);
         }
 
@@ -120,53 +116,18 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
 
         FlowControlClientCall(LiveRequest request) {
             // delay create client call
-            super(null);
+            super(request.getClientCall());
             this.request = request;
         }
 
         @Override
         public void start(Listener<RespT> responseListener, Metadata headers) {
             request.start(responseListener, headers);
-            // delay calling super.start in cluster
-        }
-
-        @Override
-        public void request(int numMessages) {
-            request.request(numMessages);
-        }
-
-        @Override
-        public void halfClose() {
-            request.halfClose();
-        }
-
-        @Override
-        public void setMessageCompression(boolean enabled) {
-            request.setMessageCompression(enabled);
-        }
-
-        @Override
-        public boolean isReady() {
-            return request.isReady();
-        }
-
-        @Override
-        public Attributes getAttributes() {
-            return request.getAttributes();
-        }
-
-        @Override
-        public void cancel(@Nullable String message, @Nullable Throwable cause) {
-            request.cancel(message, cause);
         }
 
         @Override
         public void sendMessage(ReqT message) {
             request.sendMessage(message);
-        }
-
-        public String toString() {
-            return MoreObjects.toStringHelper(this).add("delegate", request.getClientCall()).toString();
         }
     }
 }

@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.gprc.loadbalance;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
-import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcException;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.request.invoke.GrpcInvocation.GrpcOutboundInvocation;
@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.CollectionUtils.convert;
 
@@ -53,21 +52,13 @@ public class LiveRequest extends PickSubchannelArgs {
 
     private CallOptions callOptions;
 
-    private Supplier<ClientCall> supplier;
-
     private Metadata headers;
-
-    private ClientCall.Listener responseListener;
 
     private Object message;
 
-    private Integer numMessages;
-
-    private Boolean messageCompression;
-
     private ClientCall clientCall;
 
-    private CompletableFuture<GrpcOutboundResponse> future;
+    private volatile CompletableFuture<GrpcOutboundResponse> future;
 
     private final GrpcOutboundRequest request;
 
@@ -82,16 +73,8 @@ public class LiveRequest extends PickSubchannelArgs {
         this.invocation = new GrpcOutboundInvocation(request, context);
     }
 
-    public Object getMessage() {
-        return message;
-    }
-
     public void setMessage(Object message) {
         this.message = message;
-    }
-
-    public CompletionStage<?> getFuture() {
-        return future;
     }
 
     public InvocationContext getContext() {
@@ -126,69 +109,12 @@ public class LiveRequest extends PickSubchannelArgs {
         return methodDescriptor.getServiceName();
     }
 
-    public void setSupplier(Supplier<ClientCall> supplier) {
-        this.supplier = supplier;
+    public ClientCall getClientCall() {
+        return clientCall;
     }
 
-    public void start(ClientCall.Listener responseListener, Metadata headers) {
-        this.headers = headers;
-        this.responseListener = responseListener;
-    }
-
-    public void request(int numMessages) {
-        this.numMessages = numMessages;
-    }
-
-    public void halfClose() {
-        if (clientCall != null) {
-            clientCall.halfClose();
-        }
-    }
-
-    public void setMessageCompression(boolean enabled) {
-        messageCompression = enabled;
-        if (clientCall != null) {
-            clientCall.setMessageCompression(enabled);
-        }
-    }
-
-    public boolean isReady() {
-        return clientCall != null && clientCall.isReady();
-    }
-
-    public Attributes getAttributes() {
-        return clientCall == null ? null : clientCall.getAttributes();
-    }
-
-    public void cancel(String message, Throwable throwable) {
-        if (clientCall != null) {
-            clientCall.cancel(message, throwable);
-        }
-    }
-
-    public void sendMessage(Object message) {
-        this.message = message;
-        // wrap cluster to invoke & handle void response
-        GrpcCluster cluster = GrpcCluster.INSTANCE;
-        GrpcOutboundResponse response = cluster.request(invocation);
-        ServiceError error = response.getError();
-        if (error != null && error.hasException()) {
-            if (error.getThrowable() instanceof RuntimeException) {
-                throw (RuntimeException) error.getThrowable();
-            } else {
-                throw GrpcStatus.createException(error.getThrowable()).asRuntimeException(new Metadata());
-            }
-        }
-    }
-
-    /**
-     * Sends a message using the client call and returns a CompletionStage for the response.
-     *
-     * @return A CompletionStage that will be completed with the GrpcOutboundResponse when the message is processed.
-     */
-    public CompletionStage<GrpcOutboundResponse> sendMessage() {
-        clientCall.sendMessage(message);
-        return future;
+    public void setClientCall(ClientCall clientCall) {
+        this.clientCall = clientCall;
     }
 
     public GrpcEndpoint getEndpoint() {
@@ -197,6 +123,62 @@ public class LiveRequest extends PickSubchannelArgs {
 
     public void setEndpoint(GrpcEndpoint endpoint) {
         this.endpoint = endpoint;
+    }
+
+    /**
+     * Starts the client call with the specified response listener and metadata headers.
+     *
+     * @param responseListener The listener for handling response messages and events.
+     * @param headers          The metadata headers to be sent with the client call.
+     */
+    public void start(ClientCall.Listener responseListener, Metadata headers) {
+        this.headers = headers;
+        clientCall.start(new SimpleForwardingClientCallListener(responseListener) {
+            @Override
+            public void onMessage(Object message) {
+                super.onMessage(message);
+                if (future != null) {
+                    future.complete(new GrpcOutboundResponse(message));
+                }
+            }
+
+            @Override
+            public void onClose(Status status, Metadata trailers) {
+                super.onClose(status, trailers);
+                if (!status.isOk() && future != null) {
+                    GrpcException exception = new GrpcException(status.asRuntimeException(trailers));
+                    GrpcOutboundResponse response = new GrpcOutboundResponse(new ServiceError(exception, true), null);
+                    future.complete(response);
+                }
+            }
+
+        }, headers);
+    }
+
+    /**
+     * Sends a message and handles the response or any exceptions that may occur.
+     *
+     * @param message The message to be sent.
+     */
+    public void sendMessage(Object message) {
+        this.message = message;
+        GrpcCluster.INSTANCE.invoke(invocation).whenComplete((response, throwable) -> {
+            if (clientCall != null && throwable != null && !(throwable instanceof GrpcException)) {
+                clientCall.cancel(throwable.getMessage(), throwable);
+            }
+        });
+    }
+
+    /**
+     * Sends a message using the client call and returns a CompletionStage for the response.
+     *
+     * @return A CompletionStage that will be completed with the GrpcOutboundResponse when the message is processed.
+     */
+    public CompletionStage<GrpcOutboundResponse> sendMessage() {
+        CompletableFuture<GrpcOutboundResponse> result = new CompletableFuture<>();
+        this.future = result;
+        clientCall.sendMessage(message);
+        return result;
     }
 
     public void setHeader(String key, String value) {
@@ -240,75 +222,13 @@ public class LiveRequest extends PickSubchannelArgs {
         return optional.orElse(null);
     }
 
-    public ClientCall getClientCall() {
-        return clientCall;
-    }
-
-    public ClientCall newClientCall() {
-        return supplier.get();
-    }
-
     /**
-     * Closes the half of the connection that sends data, indicating that no more messages will be sent.
-     * This method is called when the operation is discarded.
-     */
-    @SuppressWarnings("unchecked")
-    public void onStart() {
-        // called by GrpcCluster.route
-        future = new CompletableFuture<>();
-        clientCall = newClientCall();
-        // wrap response listener to handle response & error
-        clientCall.start(new SimpleForwardingClientCallListener(responseListener) {
-            @Override
-            public void onMessage(Object message) {
-                super.onMessage(message);
-                future.complete(new GrpcOutboundResponse(message));
-            }
-
-            @Override
-            public void onClose(Status status, Metadata trailers) {
-                super.onClose(status, trailers);
-                if (!status.isOk()) {
-                    future.completeExceptionally(status.asRuntimeException(trailers));
-                }
-            }
-
-        }, headers);
-        if (numMessages != null) {
-            clientCall.request(numMessages);
-        }
-        if (messageCompression != null) {
-            clientCall.setMessageCompression(messageCompression);
-        }
-    }
-
-    /**
-     * Closes the half of the connection that sends data, indicating that no more messages will be sent.
-     * This method is called when the operation is successful.
-     */
-    public void onSuccess() {
-        if (clientCall != null) {
-            clientCall.halfClose();
-        }
-    }
-
-    /**
-     * Cancels the client call with the specified error message and throwable.
-     * This method is called when an error occurs.
+     * Recovers from a degraded state by closing the client call.
      *
-     * @param throwable The throwable representing the error.
+     * If the client call is not null, this method will half-close the client call.
      */
-    public void onError(Throwable throwable) {
-        if (clientCall != null) {
-            clientCall.cancel(throwable.getMessage(), throwable);
-        }
-    }
-
-    /**
-     * Closes the half of the connection that sends data, indicating that no more messages will be sent.
-     * This method is called when the operation is discarded.
-     */
-    public void onDiscard() {
+    public void onRecover() {
+        // recover from degrade
         if (clientCall != null) {
             clientCall.halfClose();
         }

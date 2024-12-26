@@ -30,7 +30,6 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     @Override
     public CompletionStage<List<GrpcEndpoint>> route(GrpcOutboundRequest request) {
         // start channel
-        request.getRequest().onStart();
         if (request.getEndpoint() == null) {
             // the endpoint maybe null in initialization
             // wait for picker
@@ -57,23 +56,13 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     }
 
     @Override
-    public void onSuccess(GrpcOutboundResponse response, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        request.getRequest().onSuccess();
-    }
-
-    @Override
-    public void onError(Throwable throwable, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        request.getRequest().onError(throwable);
-    }
-
-    @Override
-    public void onDiscard(GrpcOutboundRequest request) {
-        request.getRequest().onDiscard();
+    public void onRecover(GrpcOutboundResponse response, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
+        request.getRequest().onRecover();
     }
 
     @Override
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request) {
-        return new GrpcOutboundResponse(null, null);
+        return new GrpcOutboundResponse(null);
     }
 
     @Override

@@ -194,8 +194,8 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         try {
             invocation.onFailure(endpoint, cause);
             if (error == null) {
-                // Request was handled successfully by degrade
-                cluster.onSuccess(response, request, endpoint);
+                // Request was recover successfully by degrade
+                cluster.onRecover(response, request, endpoint);
             } else if (cause instanceof LiveException) {
                 // Request did not go off box
                 cluster.onDiscard(request);

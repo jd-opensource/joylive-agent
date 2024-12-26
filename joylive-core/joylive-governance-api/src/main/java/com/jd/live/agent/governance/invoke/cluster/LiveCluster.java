@@ -236,5 +236,16 @@ public interface LiveCluster<R extends OutboundRequest,
 
     }
 
+    /**
+     * Handles the recovery of a request by delegating to the onSuccess method.
+     *
+     * @param response The response object.
+     * @param request The request object that was recovered.
+     * @param endpoint The endpoint associated with the request.
+     */
+    default void onRecover(O response, R request, E endpoint) {
+        onSuccess(response, request, endpoint);
+    }
+
 }
 

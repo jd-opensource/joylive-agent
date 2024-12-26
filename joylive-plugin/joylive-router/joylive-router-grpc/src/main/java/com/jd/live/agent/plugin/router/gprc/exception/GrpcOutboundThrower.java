@@ -40,6 +40,14 @@ public class GrpcOutboundThrower extends AbstractOutboundThrower<GrpcOutboundReq
     public static final GrpcOutboundThrower THROWER = new GrpcOutboundThrower();
 
     @Override
+    public Throwable createException(Throwable throwable, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
+        if (throwable instanceof GrpcException) {
+            return throwable.getCause();
+        }
+        return super.createException(throwable, request, endpoint);
+    }
+
+    @Override
     protected StatusRuntimeException createUnReadyException(RejectUnreadyException exception, GrpcOutboundRequest request) {
         return GrpcStatus.createUnReadyException(exception).asRuntimeException(new Metadata());
     }

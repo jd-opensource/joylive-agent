@@ -15,15 +15,11 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import com.jd.live.agent.core.util.time.Timer;
 import io.grpc.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static io.grpc.ConnectivityState.*;
 
@@ -38,19 +34,10 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     private final String serviceName;
 
-    private final Timer timer;
-
     private volatile Map<EquivalentAddressGroup, LiveSubchannel> subchannels = new ConcurrentHashMap<>();
 
-    private final AtomicLong versions = new AtomicLong(0);
-
-    private final AtomicBoolean taskAdded = new AtomicBoolean(false);
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-
-    public LiveLoadBalancer(Helper helper, Timer timer) {
+    public LiveLoadBalancer(Helper helper) {
         this.helper = helper;
-        this.timer = timer;
         this.serviceName = getServiceName(helper);
     }
 
@@ -80,7 +67,6 @@ public class LiveLoadBalancer extends LoadBalancer {
         });
         // close not exists
         if (!removed.isEmpty()) {
-            addTask();
             removed.forEach(subchannel -> {
                 subchannel.setConnectivityState(SHUTDOWN);
                 subchannel.shutdown();
@@ -157,34 +143,6 @@ public class LiveLoadBalancer extends LoadBalancer {
     }
 
     /**
-     * Adds a task to update the ready instances and schedules it for execution.
-     */
-    private void addTask() {
-        versions.incrementAndGet();
-        submitTask();
-    }
-
-    /**
-     * Submits a task to update the ready instances and schedules it for execution.
-     *
-     * @see #addTask()
-     */
-    private void submitTask() {
-        if (taskAdded.compareAndSet(false, true)) {
-            String name = "update-ready-instance-" + serviceName;
-            int interval = 1000 + ThreadLocalRandom.current().nextInt(2000);
-            timer.add(name, interval, () -> {
-                long version = versions.get();
-                pickReady();
-                taskAdded.set(false);
-                if (versions.get() != version) {
-                    submitTask();
-                }
-            });
-        }
-    }
-
-    /**
      * Picks the ready Subchannels and updates the balancing state accordingly.
      */
     private void pickReady() {
@@ -220,12 +178,9 @@ public class LiveLoadBalancer extends LoadBalancer {
             subchannel.setConnectivityState(newState);
             if (currentState == READY && newState != READY
                     || currentState != READY && newState == READY) {
-                if (initialized.compareAndSet(false, true)) {
-                    pickReady();
-                } else {
-                    // Asynchronous processing, preventing massive up and down
-                    addTask();
-                }
+                // call helper.updateBalancingState in this thread to avoid exception
+                // syncContext.throwIfNotInThisSynchronizationContext()
+                pickReady();
             }
         }
     }
