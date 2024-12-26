@@ -79,7 +79,7 @@ public class LiveDiscovery {
 
         private final String service;
 
-        private long updateTime;
+        private volatile long updateTime;
 
         private volatile SubchannelPicker picker;
 
@@ -95,9 +95,12 @@ public class LiveDiscovery {
 
         public void setPicker(SubchannelPicker picker) {
             this.picker = picker;
+            long lastUpdateTime = updateTime;
             this.updateTime = System.currentTimeMillis();
-            synchronized (mutex) {
-                mutex.notifyAll();
+            if (lastUpdateTime == 0) {
+                synchronized (mutex) {
+                    mutex.notifyAll();
+                }
             }
         }
 
