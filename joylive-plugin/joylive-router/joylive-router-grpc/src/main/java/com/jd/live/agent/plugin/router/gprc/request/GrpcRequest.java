@@ -15,8 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.gprc.request;
 
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
+import com.jd.live.agent.governance.request.RoutedRequest;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
 import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -60,27 +64,24 @@ public interface GrpcRequest {
     /**
      * A nested class representing an outbound gRPC request.
      */
-    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<Object> implements GrpcRequest {
+    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<LiveRequest> implements GrpcRequest, RoutedRequest {
 
-        private final Metadata metadata;
-
-        private final MethodDescriptor<?, ?> methodDescriptor;
-
-        public GrpcOutboundRequest(Object message, Metadata metadata, MethodDescriptor<?, ?> methodDescriptor, String serviceName) {
-            super(message);
-            this.metadata = metadata;
-            this.methodDescriptor = methodDescriptor;
-            this.service = serviceName;
-            this.path = methodDescriptor.getServiceName();
-            this.method = methodDescriptor.getBareMethodName();
+        public GrpcOutboundRequest(LiveRequest request) {
+            super(request);
+            this.service = LiveDiscovery.getService(request.getPath());
+            this.path = request.getPath();
+            this.method = request.getMethodName();
         }
 
         @Override
         public void setHeader(String key, String value) {
-            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-                metadata.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
-            }
+            request.setHeader(key, value);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <E extends Endpoint> E getEndpoint() {
+            return (E) request.getEndpoint();
+        }
     }
 }

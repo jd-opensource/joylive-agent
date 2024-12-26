@@ -194,11 +194,14 @@ public class LiveLoadBalancer extends LoadBalancer {
                 readies.add(subchannel);
             }
         });
-        LiveDiscovery.putSubchannel(serviceName, readies);
         if (readies.isEmpty()) {
-            helper.updateBalancingState(ConnectivityState.CONNECTING, new LiveSubchannelPicker(PickResult.withNoResult()));
+            LiveSubchannelPicker picker = new LiveSubchannelPicker(PickResult.withNoResult());
+            helper.updateBalancingState(ConnectivityState.CONNECTING, picker);
+            LiveDiscovery.setSubchannelPicker(serviceName, picker);
         } else {
-            helper.updateBalancingState(ConnectivityState.READY, new LiveSubchannelPicker(readies));
+            LiveSubchannelPicker picker = new LiveSubchannelPicker(readies);
+            helper.updateBalancingState(ConnectivityState.READY, picker);
+            LiveDiscovery.setSubchannelPicker(serviceName, picker);
         }
     }
 

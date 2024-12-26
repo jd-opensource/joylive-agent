@@ -1,6 +1,9 @@
 package com.jd.live.agent.plugin.router.gprc.cluster;
 
-import com.jd.live.agent.core.util.CollectionUtils;
+import com.google.protobuf.Message;
+import com.google.protobuf.util.JsonFormat;
+import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -8,12 +11,12 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LivePickerAdvice;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveSubchannel;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
-import io.grpc.ClientCall;
+import io.grpc.LoadBalancer.SubchannelPicker;
 
+import java.io.StringReader;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -22,44 +25,79 @@ import static com.jd.live.agent.plugin.router.gprc.exception.GrpcOutboundThrower
 
 public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOutboundResponse, GrpcEndpoint> {
 
-    private ClientCall clientCall;
-
-    private LivePickerAdvice advice;
-
-    private CompletionStage<GrpcOutboundResponse> stage;
-
-    public GrpcCluster(ClientCall clientCall, LivePickerAdvice advice, CompletionStage<GrpcOutboundResponse> stage) {
-        this.clientCall = clientCall;
-        this.advice = advice;
-        this.stage = stage;
-    }
+    public static final GrpcCluster INSTANCE = new GrpcCluster();
 
     @Override
     public CompletionStage<List<GrpcEndpoint>> route(GrpcOutboundRequest request) {
-        List<LiveSubchannel> subchannels = LiveDiscovery.getSubchannel(request.getService());
-        return CompletableFuture.completedFuture(CollectionUtils.convert(subchannels, GrpcEndpoint::new));
+        // start channel
+        request.getRequest().onStart();
+        if (request.getEndpoint() == null) {
+            // the endpoint maybe null in initialization
+            // wait for picker
+            SubchannelPicker picker = LiveDiscovery.getSubchannelPicker(request.getService());
+            if (picker != null) {
+                picker.pickSubchannel(request.getRequest());
+            }
+        }
+
+        // request is already routed
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletionStage<GrpcOutboundResponse> invoke(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        advice.setSubchannel(endpoint.getSubchannel());
-        clientCall.sendMessage(request.getRequest());
-        return stage;
+        return request.getRequest().sendMessage();
+    }
+
+    @Override
+    public void onStartRequest(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
+        if (endpoint == null) {
+            throw new RejectNoProviderException("grpc endpoint is null");
+        }
+    }
+
+    @Override
+    public void onSuccess(GrpcOutboundResponse response, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
+        request.getRequest().onSuccess();
+    }
+
+    @Override
+    public void onError(Throwable throwable, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
+        request.getRequest().onError(throwable);
+    }
+
+    @Override
+    public void onDiscard(GrpcOutboundRequest request) {
+        request.getRequest().onDiscard();
     }
 
     @Override
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request) {
-        return null;
+        return new GrpcOutboundResponse(null, null);
     }
 
     @Override
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request, DegradeConfig degradeConfig) {
-        return null;
+        Method method = request.getRequest().getNewBuilder();
+        if (method == null) {
+            Throwable throwable = createException(new LiveException("method newBuilder is not found"), request);
+            return createResponse(new ServiceError(throwable, false), getRetryPredicate());
+        } else if (method.getReturnType() == Void.class) {
+            return new GrpcOutboundResponse(null);
+        }
+        try {
+            Message.Builder builder = (Message.Builder) method.invoke(null);
+            JsonFormat.parser().merge(new StringReader(degradeConfig.getResponseBody()), builder);
+            Object response = builder.build();
+            return new GrpcOutboundResponse(response);
+        } catch (Throwable e) {
+            return createResponse(new ServiceError(createException(e, request), false), getRetryPredicate());
+        }
     }
 
     @Override
     protected GrpcOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
-        return null;
+        return new GrpcOutboundResponse(error, predicate);
     }
 
     @Override
@@ -76,4 +114,6 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     public Throwable createException(Throwable throwable, OutboundInvocation<GrpcOutboundRequest> invocation) {
         return THROWER.createException(throwable, invocation);
     }
+
+
 }

@@ -13,6 +13,7 @@
         <grpc.version>1.63.0</grpc.version>
         <spring.cloud.version>3.1.8</spring.cloud.version>
         <grpc-client-spring-boot.version>2.15.0.RELEASE</grpc-client-spring-boot.version>
+        <protobuf.version>4.29.2</protobuf.version>
     </properties>
 
     <dependencies>
@@ -26,6 +27,12 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-commons</artifactId>
             <version>${spring.cloud.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>${protobuf.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

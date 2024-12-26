@@ -15,49 +15,102 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import java.util.List;
+import io.grpc.LoadBalancer.SubchannelPicker;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A class that provides methods for discovering and managing subchannels for different services.
+ * A class that provides methods for discovering and managing picker for different services.
  */
 public class LiveDiscovery {
 
-    /**
-     * A map of subchannels, where the key is the service name and the value is a list of subchannels for that service.
-     */
-    private static final Map<String, List<LiveSubchannel>> SUB_CHANNELS = new ConcurrentHashMap<>();
+    private static final Map<String, Pikcer> PICKERS = new ConcurrentHashMap<>();
 
     private static final Map<String, String> SERVICES = new ConcurrentHashMap<>();
 
     /**
-     * Returns the list of subchannels for the specified service.
+     * Retrieves the SubchannelPicker for the specified service.
      *
-     * @param service The name of the service for which to retrieve the subchannels.
-     * @return The list of subchannels for the specified service, or null if no subchannels are found.
+     * @param service The name of the service.
+     * @return The SubchannelPicker associated with the specified service.
      */
-    public static List<LiveSubchannel> getSubchannel(String service) {
-        return SUB_CHANNELS.get(service);
+    public static SubchannelPicker getSubchannelPicker(String service) {
+        return getPicker(service).getPicker();
     }
 
     /**
-     * Adds or updates the list of subchannels for the specified service.
+     * Sets the SubchannelPicker for the specified service.
      *
-     * @param service     The name of the service for which to add or update the subchannels.
-     * @param subchannels The list of subchannels to add or update for the specified service.
+     * @param service The name of the service.
+     * @param picker The SubchannelPicker to be set for the specified service.
      */
-    public static void putSubchannel(String service, List<LiveSubchannel> subchannels) {
-        SUB_CHANNELS.put(service, subchannels);
+    public static void setSubchannelPicker(String service, SubchannelPicker picker) {
+        getPicker(service).setPicker(picker);
     }
 
+    /**
+     * Retrieves the service name associated with the given interface name.
+     *
+     * @param interfaceName The name of the interface.
+     * @return The service name associated with the interface name, or the interface name itself if no service is found.
+     */
     public static String getService(String interfaceName) {
         return interfaceName == null || interfaceName.isEmpty() ? null : SERVICES.getOrDefault(interfaceName, interfaceName);
     }
 
+    /**
+     * Associates a service name with the given interface name.
+     *
+     * @param interfaceName The name of the interface.
+     * @param service       The name of the service to be associated with the interface name.
+     */
     public static void putService(String interfaceName, String service) {
         if (interfaceName != null && !interfaceName.isEmpty() && service != null && !service.isEmpty()) {
             SERVICES.put(interfaceName, service);
+        }
+    }
+
+    private static Pikcer getPicker(String service) {
+        return PICKERS.computeIfAbsent(service, Pikcer::new);
+    }
+
+    private static class Pikcer {
+
+        private final String service;
+
+        private long updateTime;
+
+        private volatile SubchannelPicker picker;
+
+        private final Object mutex = new Object();
+
+        Pikcer(String service) {
+            this.service = service;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        public void setPicker(SubchannelPicker picker) {
+            this.picker = picker;
+            this.updateTime = System.currentTimeMillis();
+            synchronized (mutex) {
+                mutex.notifyAll();
+            }
+        }
+
+        public SubchannelPicker getPicker() {
+            if (updateTime == 0) {
+                synchronized (mutex) {
+                    try {
+                        mutex.wait(10000);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }
+            return picker;
         }
     }
 

@@ -1,5 +1,5 @@
 com.jd.live.agent.plugin.router.gprc.definition.GrpcServerDefinition
 com.jd.live.agent.plugin.router.gprc.definition.LoadbalancerDefinition
 com.jd.live.agent.plugin.router.gprc.definition.NameResolverDefinition
-com.jd.live.agent.plugin.router.gprc.definition.ClientInterceptorsDefinition
+com.jd.live.agent.plugin.router.gprc.definition.ChannelFactoryDefinition
 com.jd.live.agent.plugin.router.gprc.definition.GrpcClientBeanDefinition
