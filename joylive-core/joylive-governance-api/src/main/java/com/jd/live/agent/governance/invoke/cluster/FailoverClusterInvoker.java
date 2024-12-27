@@ -179,7 +179,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             cluster.onRetry(count);
             CompletionStage<O> stage = supplier.get();
             stage.whenComplete((v, e) -> {
-                ServiceError se = v.getError();
+                ServiceError se = v == null ? null : v.getError();
                 Throwable throwable = se == null ? e : se.getThrowable();
                 switch (isRetryable(request, v, e, count)) {
                     case RETRY:

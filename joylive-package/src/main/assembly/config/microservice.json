@@ -626,7 +626,7 @@
             "matchType": "EQUAL",
             "methods": [
               {
-                "name": "status",
+                "name": "get",
                 "servicePolicy": {
                   "clusterPolicy": {
                     "type": "failover",

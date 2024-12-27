@@ -28,8 +28,7 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     @Override
     public CompletionStage<List<GrpcEndpoint>> route(GrpcOutboundRequest request) {
-        // start channel
-        if (request.getEndpoint() == null) {
+        if (!request.hasEndpoint()) {
             // the endpoint maybe null in initialization
             // wait for picker
             SubchannelPicker picker = LiveDiscovery.getSubchannelPicker(request.getService());

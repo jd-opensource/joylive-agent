@@ -95,5 +95,10 @@ public interface GrpcRequest {
                 throw new GrpcClientException(result.getThrowable());
             }
         }
+
+        public boolean hasEndpoint() {
+            LiveRouteResult result = request.getRouteResult();
+            return result != null && result.isSuccess();
+        }
     }
 }
