@@ -15,9 +15,13 @@
  */
 package com.jd.live.agent.core.util;
 
+import com.jd.live.agent.core.exception.WrappedException;
+
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
 /**
@@ -79,6 +83,16 @@ public class ExceptionUtils {
             }
         }
         return names;
+    }
+
+    /**
+     * Checks if the given throwable is not a wrapped exception.
+     *
+     * @param e The throwable to check.
+     * @return {@code true} if the throwable is not a wrapped exception, {@code false} otherwise.
+     */
+    public static boolean isNoneWrapped(Throwable e) {
+        return !(e instanceof WrappedException || e instanceof InvocationTargetException || e instanceof ExecutionException);
     }
 
 }

@@ -13,19 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.gprc.exception;
+package com.jd.live.agent.core.exception;
 
-import com.jd.live.agent.core.exception.WrappedException;
-
-/**
- * GrpcException
- *
- * @see GrpcException
- */
-public class GrpcException extends RuntimeException implements WrappedException {
-
-    public GrpcException(Throwable cause) {
-        super(cause.getMessage(), cause, false, false);
-    }
-
+public interface WrappedException {
 }

@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.governance.util;
 
+import com.jd.live.agent.core.util.ExceptionUtils;
+
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -34,8 +34,6 @@ import static com.jd.live.agent.core.util.ExceptionUtils.getExceptions;
 public class ResponseUtils {
 
     public static final int HEADER_SIZE_LIMIT = 1024 * 2;
-
-    public static final Predicate<Throwable> NONE_EXECUTION_PREDICATE = e -> !(e instanceof ExecutionException) && !(e instanceof InvocationTargetException);
 
     /**
      * Converts a Set of Strings to a String, using the specified delimiter and truncating if the resulting String exceeds the maximum length.
@@ -103,7 +101,7 @@ public class ResponseUtils {
      * @param consumer  a BiConsumer to accept the generated headers
      */
     public static void labelHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
-        describe(e, predicate == null ? NONE_EXECUTION_PREDICATE : predicate, (name, message) -> {
+        describe(e, predicate == null ? ExceptionUtils::isNoneWrapped : predicate, (name, message) -> {
             if (name != null && !name.isEmpty()) {
                 consumer.accept(EXCEPTION_NAMES_LABEL, name);
             }
