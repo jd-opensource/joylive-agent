@@ -17,8 +17,6 @@ package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.bootstrap.exception.Unretryable;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -29,7 +27,6 @@ import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutExcepti
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.filter.route.CircuitBreakerFilter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
@@ -57,8 +54,6 @@ import static com.jd.live.agent.governance.util.Predicates.isError;
 @Injectable
 @Extension(value = ClusterInvoker.TYPE_FAILOVER, order = ClusterInvoker.ORDER_FAILOVER)
 public class FailoverClusterInvoker extends AbstractClusterInvoker {
-
-    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
 
     @Inject
     private Map<String, CodeParser> codeParsers;
