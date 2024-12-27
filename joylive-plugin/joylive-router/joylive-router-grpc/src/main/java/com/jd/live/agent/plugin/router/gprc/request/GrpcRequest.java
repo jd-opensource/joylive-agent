@@ -15,12 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.gprc.request;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.governance.request.RoutedRequest;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcClientException;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRouteResult;
 import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -81,7 +84,16 @@ public interface GrpcRequest {
         @SuppressWarnings("unchecked")
         @Override
         public <E extends Endpoint> E getEndpoint() {
-            return (E) request.getEndpoint();
+            LiveRouteResult result = request.getRouteResult();
+            if (result == null) {
+                throw new RejectNoProviderException("There is no provider for invocation " + service);
+            } else if (result.isSuccess()) {
+                return (E) result.getEndpoint();
+            } else if (result.getThrowable() instanceof RuntimeException) {
+                throw (RuntimeException) result.getThrowable();
+            } else {
+                throw new GrpcClientException(result.getThrowable());
+            }
         }
     }
 }

@@ -15,17 +15,20 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
-import com.jd.live.agent.plugin.router.gprc.exception.GrpcException;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcServerException;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.request.invoke.GrpcInvocation.GrpcOutboundInvocation;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
 import io.grpc.*;
 import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener;
+import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
+import io.grpc.LoadBalancer.Subchannel;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -64,7 +67,7 @@ public class LiveRequest extends PickSubchannelArgs {
 
     private final GrpcOutboundInvocation invocation;
 
-    private GrpcEndpoint endpoint;
+    private LiveRouteResult routeResult;
 
     public LiveRequest(MethodDescriptor<?, ?> methodDescriptor, InvocationContext context) {
         this.methodDescriptor = methodDescriptor;
@@ -117,12 +120,8 @@ public class LiveRequest extends PickSubchannelArgs {
         this.clientCall = clientCall;
     }
 
-    public GrpcEndpoint getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(GrpcEndpoint endpoint) {
-        this.endpoint = endpoint;
+    public LiveRouteResult getRouteResult() {
+        return routeResult;
     }
 
     /**
@@ -146,7 +145,7 @@ public class LiveRequest extends PickSubchannelArgs {
             public void onClose(Status status, Metadata trailers) {
                 super.onClose(status, trailers);
                 if (!status.isOk() && future != null) {
-                    GrpcException exception = new GrpcException(status.asRuntimeException(trailers));
+                    GrpcServerException exception = new GrpcServerException(status.asRuntimeException(trailers));
                     GrpcOutboundResponse response = new GrpcOutboundResponse(new ServiceError(exception, true), null);
                     future.complete(response);
                 }
@@ -163,7 +162,7 @@ public class LiveRequest extends PickSubchannelArgs {
     public void sendMessage(Object message) {
         this.message = message;
         GrpcCluster.INSTANCE.invoke(invocation).whenComplete((response, throwable) -> {
-            if (clientCall != null && throwable != null && !(throwable instanceof GrpcException)) {
+            if (clientCall != null && throwable != null && !(throwable instanceof GrpcServerException)) {
                 clientCall.cancel(throwable.getMessage(), throwable);
             }
         });
@@ -191,11 +190,33 @@ public class LiveRequest extends PickSubchannelArgs {
      * Routes the request to an appropriate subchannel from the provided list of subchannels.
      *
      * @param subchannels The list of available subchannels.
-     * @return The selected subchannel for routing the request.
      */
-    public GrpcEndpoint route(List<LiveSubchannel> subchannels) {
-        endpoint = context.route(invocation, convert(subchannels, GrpcEndpoint::new));
-        return endpoint;
+    public void route(List<LiveSubchannel> subchannels) {
+        try {
+            GrpcEndpoint endpoint = context.route(invocation, convert(subchannels, GrpcEndpoint::new));
+            routeResult = new LiveRouteResult(endpoint);
+        } catch (Throwable e) {
+            routeResult = new LiveRouteResult(e);
+        }
+    }
+
+    /**
+     * Routes the request based on the provided pick result.
+     *
+     * @param pickResult The pick result containing the status and subchannel information.
+     */
+    public void route(PickResult pickResult) {
+        Status status = pickResult.getStatus();
+        if (status.isOk()) {
+            Subchannel subchannel = pickResult.getSubchannel();
+            if (subchannel != null) {
+                routeResult = new LiveRouteResult(new GrpcEndpoint(new LiveSubchannel(subchannel)));
+            } else {
+                routeResult = new LiveRouteResult(new RejectNoProviderException("There is no provider for invocation " + request.getService()));
+            }
+        } else {
+            routeResult = new LiveRouteResult(status.asRuntimeException());
+        }
     }
 
     /**

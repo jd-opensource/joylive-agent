@@ -62,7 +62,7 @@ public class GrpcServerInterceptor extends InterceptorAdaptor {
 
         private final InvocationContext context;
 
-        public LiveServerInterceptor(InvocationContext context) {
+        LiveServerInterceptor(InvocationContext context) {
             this.context = context;
         }
 

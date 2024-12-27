@@ -41,7 +41,7 @@ public class GrpcOutboundThrower extends AbstractOutboundThrower<GrpcOutboundReq
 
     @Override
     public Throwable createException(Throwable throwable, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        if (throwable instanceof GrpcException) {
+        if (throwable instanceof GrpcException.GrpcServerException) {
             return throwable.getCause();
         }
         return super.createException(throwable, request, endpoint);

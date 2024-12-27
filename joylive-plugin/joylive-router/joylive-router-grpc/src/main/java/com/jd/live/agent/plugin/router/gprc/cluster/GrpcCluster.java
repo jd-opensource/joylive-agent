@@ -3,7 +3,6 @@ package com.jd.live.agent.plugin.router.gprc.cluster;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.jd.live.agent.bootstrap.exception.LiveException;
-import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -46,13 +45,6 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     @Override
     public CompletionStage<GrpcOutboundResponse> invoke(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
         return request.getRequest().sendMessage();
-    }
-
-    @Override
-    public void onStartRequest(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        if (endpoint == null) {
-            throw new RejectNoProviderException("grpc endpoint is null");
-        }
     }
 
     @Override

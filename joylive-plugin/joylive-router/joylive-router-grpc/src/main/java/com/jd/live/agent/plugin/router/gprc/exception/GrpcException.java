@@ -22,10 +22,33 @@ import com.jd.live.agent.core.exception.WrappedException;
  *
  * @see GrpcException
  */
-public class GrpcException extends RuntimeException implements WrappedException {
+public abstract class GrpcException extends RuntimeException implements WrappedException {
 
     public GrpcException(Throwable cause) {
         super(cause.getMessage(), cause, false, false);
     }
 
+    /**
+     * GrpcClientException
+     */
+    public static class GrpcClientException extends GrpcException {
+
+        public GrpcClientException(Throwable cause) {
+            super(cause);
+        }
+
+    }
+
+    /**
+     * GrpcException
+     *
+     * @see GrpcServerException
+     */
+    public static class GrpcServerException extends GrpcException {
+
+        public GrpcServerException(Throwable cause) {
+            super(cause);
+        }
+
+    }
 }

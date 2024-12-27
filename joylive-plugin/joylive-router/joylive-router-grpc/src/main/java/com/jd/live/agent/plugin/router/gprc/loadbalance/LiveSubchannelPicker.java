@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.LoadBalancer.PickResult;
@@ -30,8 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * A class that extends the SubchannelPicker class to provide a live subchannel picking strategy.
  */
 public class LiveSubchannelPicker extends SubchannelPicker {
-
-    private static final Logger logger = LoggerFactory.getLogger(LiveSubchannelPicker.class);
 
     private final PickResult pickResult;
 
@@ -56,21 +52,20 @@ public class LiveSubchannelPicker extends SubchannelPicker {
     public PickResult pickSubchannel(PickSubchannelArgs args) {
         LiveRequest request = args.getCallOptions().getOption(LiveRequest.KEY_LIVE_REQUEST);
         if (pickResult != null && request != null) {
-            request.setEndpoint(pickResult.getSubchannel() == null
-                    ? null
-                    : new GrpcEndpoint(new LiveSubchannel(pickResult.getSubchannel())));
+            request.route(pickResult);
             return pickResult;
         } else if (pickResult != null) {
             return pickResult;
         } else if (request != null) {
-            try {
-                GrpcEndpoint endpoint = request.route(subchannels);
+            request.route(subchannels);
+            LiveRouteResult result = request.getRouteResult();
+            if (result.isSuccess()) {
+                GrpcEndpoint endpoint = result.getEndpoint();
                 return endpoint == null
                         ? PickResult.withNoResult()
                         : PickResult.withSubchannel(endpoint.getSubchannel().getSubchannel());
-            } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
-                return PickResult.withError(GrpcStatus.createException(e));
+            } else {
+                return PickResult.withError(GrpcStatus.createException(result.getThrowable()));
             }
         } else {
             long v = counter.getAndIncrement();
