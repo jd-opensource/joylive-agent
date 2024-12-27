@@ -68,7 +68,7 @@ public class ServiceListener extends AbstractListener<Service> {
                 loadedServices.add(item.getName());
                 newVersions.put(item.getName(), item.getVersion());
                 long oldVersion = oldVersions.getOrDefault(item.getName(), -1L);
-                if (item.getVersion() > oldVersion) {
+                if (item.getVersion() != oldVersion) {
                     updates.add(item);
                 }
             }

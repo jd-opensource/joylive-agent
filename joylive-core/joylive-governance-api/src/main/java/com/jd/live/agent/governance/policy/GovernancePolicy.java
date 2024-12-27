@@ -315,7 +315,7 @@ public class GovernancePolicy {
                             result.add(old);
                         }
                     }
-                } else if (old.getVersion() < update.getVersion()) {
+                } else if (old.getVersion() != update.getVersion()) {
                     // Update
                     ServiceOp.onUpdate(old, update, merger, owner);
                     result.add(old);
