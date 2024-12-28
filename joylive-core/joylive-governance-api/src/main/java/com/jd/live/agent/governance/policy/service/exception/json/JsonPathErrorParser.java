@@ -19,19 +19,19 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.JsonPathParser;
-import com.jd.live.agent.governance.policy.service.exception.CodeParser;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
 
 import java.io.InputStream;
 
 @Injectable
 @Extension("JsonPath")
-public class JsonPathCodeParser implements CodeParser {
+public class JsonPathErrorParser implements ErrorParser {
 
     @Inject
     private JsonPathParser parser;
 
     @Override
-    public String getCode(String expression, Object response) {
+    public String getValue(String expression, Object response) {
         if (expression == null || expression.isEmpty() || response == null) {
             return null;
         }

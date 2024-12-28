@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.exception;
 
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 
 import java.util.Set;
 
@@ -27,9 +27,9 @@ public interface ErrorPolicy {
     /**
      * Returns the code policy associated with this component.
      *
-     * @return the code policy
+     * @return the error code parse policy
      */
-    CodePolicy getCodePolicy();
+    ErrorParserPolicy getCodePolicy();
 
     /**
      * Returns a set of error codes that are considered critical by this component.
@@ -37,6 +37,20 @@ public interface ErrorPolicy {
      * @return a set of critical error codes
      */
     Set<String> getErrorCodes();
+
+    /**
+     * Returns the error message policy associated with this component.
+     *
+     * @return the error message parse policy
+     */
+    ErrorParserPolicy getMessagePolicy();
+
+    /**
+     * Returns a set of error messages that are considered critical by this component.
+     *
+     * @return a set of critical error messages
+     */
+    Set<String> getErrorMessages();
 
     /**
      * Returns a set of exceptions that are considered critical by this component.
@@ -67,6 +81,16 @@ public interface ErrorPolicy {
      * @return true if the error message is found, false otherwise
      */
     default boolean containsErrorMessage(String errorMessage) {
+        if (errorMessage != null && !errorMessage.isEmpty()) {
+            Set<String> messages = getErrorMessages();
+            if (messages != null && !messages.isEmpty()) {
+                for (String message : messages) {
+                    if (message.contains(errorMessage)) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
@@ -85,6 +109,33 @@ public interface ErrorPolicy {
      * @return true if any of the class names are found in the list of exceptions, false otherwise.
      */
     boolean containsException(Set<String> classNames);
+
+    /**
+     * Checks if the response body is required for error parsing.
+     *
+     * @return true if the response body is required for error parsing, false otherwise
+     * @see ErrorParserPolicy#requireResponseBody()
+     */
+    default boolean requireResponseBody() {
+        ErrorParserPolicy codePolicy = getCodePolicy();
+        ErrorParserPolicy messagePolicy = getMessagePolicy();
+        return codePolicy != null && codePolicy.requireResponseBody() || messagePolicy != null && messagePolicy.requireResponseBody();
+    }
+
+    /**
+     * Checks if the given status code and content type match the configured values.
+     *
+     * @param status      the status code to check
+     * @param contentType the content type to check
+     * @param okStatus    the OK status code to consider as a match
+     * @return true if the status code and content type match, false otherwise
+     */
+    default boolean match(Integer status, String contentType, Integer okStatus) {
+        ErrorParserPolicy codePolicy = getCodePolicy();
+        ErrorParserPolicy messagePolicy = getMessagePolicy();
+        return codePolicy != null && codePolicy.match(status, contentType, okStatus)
+                || messagePolicy != null && messagePolicy.match(status, contentType, okStatus);
+    }
 
     /**
      * Checks if any of the exception sources are present in the set of target exceptions.

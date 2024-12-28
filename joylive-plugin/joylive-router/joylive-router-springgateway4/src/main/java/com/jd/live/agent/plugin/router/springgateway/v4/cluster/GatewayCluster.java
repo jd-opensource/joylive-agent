@@ -23,7 +23,6 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
@@ -112,7 +111,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Set<ErrorPolicy> policies = request.removeAttribute(Request.KEY_ERROR_POLICY);
+            Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate response to remove exception header and get body
             BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);
             ServerWebExchange exchange = request.getExchange().mutate().response(decorator).build();
@@ -252,12 +251,11 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
          */
         private boolean policyMatch(String contentType) {
             contentType = contentType == null ? null : contentType.toLowerCase();
-            CodePolicy codePolicy;
             HttpStatusCode statusCode = getStatusCode();
             Integer status = statusCode == null ? null : statusCode.value();
+            int ok = HttpStatus.OK.value();
             for (ErrorPolicy policy : policies) {
-                codePolicy = policy.getCodePolicy();
-                if (codePolicy != null && codePolicy.match(status, contentType, HttpStatus.OK.value())) {
+                if (policy.match(status, contentType, ok)) {
                     return true;
                 }
             }

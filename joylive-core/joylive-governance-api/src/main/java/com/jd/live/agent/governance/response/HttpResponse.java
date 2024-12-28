@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.response;
 
 import com.jd.live.agent.governance.exception.ErrorPolicy;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 
 import java.net.URI;
 import java.util.List;
@@ -113,7 +113,7 @@ public interface HttpResponse extends ServiceResponse {
 
     @Override
     default boolean match(ErrorPolicy errorPolicy) {
-        CodePolicy codePolicy = errorPolicy == null ? null : errorPolicy.getCodePolicy();
+        ErrorParserPolicy codePolicy = errorPolicy == null ? null : errorPolicy.getCodePolicy();
         return codePolicy != null && codePolicy.match(getCode(), getHeader(CONTENT_TYPE), String.valueOf(OK.value()));
     }
 

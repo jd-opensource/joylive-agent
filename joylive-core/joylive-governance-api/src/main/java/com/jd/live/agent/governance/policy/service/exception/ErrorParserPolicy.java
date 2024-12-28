@@ -24,13 +24,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A class representing a code policy.
+ * A class representing a error parser policy.
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CodePolicy implements Cloneable {
+public class ErrorParserPolicy implements Cloneable {
 
     /**
      * Code parser
@@ -82,16 +82,16 @@ public class CodePolicy implements Cloneable {
      *
      * @return true if the body of the code should be parsed, false otherwise.
      */
-    public boolean isDependentOnResponseBody() {
+    public boolean requireResponseBody() {
         return parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
     }
 
     @Override
-    public CodePolicy clone() {
+    public ErrorParserPolicy clone() {
         try {
-            return (CodePolicy) super.clone();
+            return (ErrorParserPolicy) super.clone();
         } catch (CloneNotSupportedException e) {
-            return new CodePolicy(parser, expression, statuses, contentTypes);
+            return new ErrorParserPolicy(parser, expression, statuses, contentTypes);
         }
     }
 

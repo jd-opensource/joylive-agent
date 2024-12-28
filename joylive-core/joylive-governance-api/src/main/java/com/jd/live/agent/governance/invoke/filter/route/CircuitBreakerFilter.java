@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.exception.ErrorCause;
-import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundListener;
@@ -40,13 +39,11 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.exception.CodeParser;
-import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -68,7 +65,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
     private Map<String, CircuitBreakerFactory> factories;
 
     @Inject
-    private Map<String, CodeParser> errorParsers;
+    private Map<String, ErrorParser> errorParsers;
 
     @Inject(nullable = true)
     private CircuitBreakerFactory defaultFactory;
@@ -94,9 +91,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             CircuitBreaker breaker;
             T request = invocation.getRequest();
             for (CircuitBreakPolicy policy : policies) {
-                if (request.isDependentOnResponseBody(policy)) {
-                    request.getAttributeIfAbsent(Request.KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(policy);
-                }
+                request.addErrorPolicy(policy);
                 switch (policy.getLevel()) {
                     case SERVICE:
                         breaker = getCircuitBreaker(policy, policy.getUri());
@@ -209,7 +204,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
         private final CircuitBreakerFactory factory;
 
-        private final Map<String, CodeParser> errorParsers;
+        private final Map<String, ErrorParser> errorParsers;
 
         private List<CircuitBreaker> circuitBreakers;
 
@@ -219,7 +214,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
 
         CircuitBreakerListener(CircuitBreakerFactory factory,
-                               Map<String, CodeParser> errorParsers,
+                               Map<String, ErrorParser> errorParsers,
                                List<CircuitBreaker> circuitBreakers,
                                List<CircuitBreakPolicy> instancePolicies) {
             this.factory = factory;

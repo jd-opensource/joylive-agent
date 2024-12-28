@@ -19,10 +19,11 @@ import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Consumer;
-import com.jd.live.agent.governance.policy.service.exception.CodePolicy;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -59,14 +60,24 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     private Long timeout;
 
     /**
-     * Code policy
+     * Error code policy
      */
-    private CodePolicy codePolicy;
+    private ErrorParserPolicy codePolicy;
 
     /**
      * Collection of retry error codes. This parameter specifies which status codes should be considered retryable.
      */
     private Set<String> errorCodes;
+
+    /**
+     * Error message policy
+     */
+    private ErrorParserPolicy messagePolicy;
+
+    /**
+     * Collection of retry error messages. This parameter specifies which status codes should be considered retryable.
+     */
+    private Set<String> errorMessages;
 
     /**
      * A collection of retryable exception class names.
@@ -101,16 +112,22 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
             codePolicy = source.codePolicy == null ? null : source.codePolicy.clone();
         }
         if ((errorCodes == null || errorCodes.isEmpty()) && source.errorCodes != null) {
-            errorCodes = source.errorCodes;
+            errorCodes = new HashSet<>(source.errorCodes);
+        }
+        if (messagePolicy == null) {
+            messagePolicy = source.messagePolicy == null ? null : source.messagePolicy.clone();
+        }
+        if ((errorMessages == null || errorMessages.isEmpty()) && source.errorMessages != null) {
+            errorMessages = new HashSet<>(source.errorMessages);
         }
         if ((exceptions == null || exceptions.isEmpty()) && source.exceptions != null) {
-            exceptions = source.exceptions;
+            exceptions = new HashSet<>(source.exceptions);
         }
         if ((methods == null || methods.isEmpty()) && source.methods != null) {
-            methods = source.methods;
+            methods = new HashSet<>(source.methods);
         }
         if ((methodPrefixes == null || methodPrefixes.isEmpty()) && source.methodPrefixes != null) {
-            methodPrefixes = source.methodPrefixes;
+            methodPrefixes = new HashSet<>(source.methodPrefixes);
         }
     }
 
