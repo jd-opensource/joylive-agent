@@ -31,7 +31,7 @@ public class LiveSubchannelPicker extends SubchannelPicker {
 
     private final PickResult pickResult;
 
-    private final List<LiveSubchannel> subchannels;
+    private final List<GrpcEndpoint> endpoints;
 
     private final AtomicLong counter = new AtomicLong();
 
@@ -39,13 +39,13 @@ public class LiveSubchannelPicker extends SubchannelPicker {
         this(pickResult, null);
     }
 
-    public LiveSubchannelPicker(List<LiveSubchannel> subchannels) {
-        this(null, subchannels);
+    public LiveSubchannelPicker(List<GrpcEndpoint> endpoints) {
+        this(null, endpoints);
     }
 
-    public LiveSubchannelPicker(PickResult pickResult, List<LiveSubchannel> subchannels) {
+    public LiveSubchannelPicker(PickResult pickResult, List<GrpcEndpoint> endpoints) {
         this.pickResult = pickResult;
-        this.subchannels = subchannels;
+        this.endpoints = endpoints;
     }
 
     @Override
@@ -57,13 +57,13 @@ public class LiveSubchannelPicker extends SubchannelPicker {
         } else if (pickResult != null) {
             return pickResult;
         } else if (request != null) {
-            request.route(subchannels);
+            request.route(endpoints);
             LiveRouteResult result = request.getRouteResult();
             if (result.isSuccess()) {
                 GrpcEndpoint endpoint = result.getEndpoint();
                 return endpoint == null
                         ? PickResult.withNoResult()
-                        : PickResult.withSubchannel(endpoint.getSubchannel().getSubchannel());
+                        : PickResult.withSubchannel(endpoint.getSubchannel());
             } else {
                 return PickResult.withError(GrpcStatus.createException(result.getThrowable()));
             }
@@ -73,8 +73,8 @@ public class LiveSubchannelPicker extends SubchannelPicker {
                 counter.set(0);
                 v = counter.getAndIncrement();
             }
-            int index = (int) (v % subchannels.size());
-            return PickResult.withSubchannel(subchannels.get(index).getSubchannel());
+            int index = (int) (v % endpoints.size());
+            return PickResult.withSubchannel(endpoints.get(index).getSubchannel());
         }
 
     }

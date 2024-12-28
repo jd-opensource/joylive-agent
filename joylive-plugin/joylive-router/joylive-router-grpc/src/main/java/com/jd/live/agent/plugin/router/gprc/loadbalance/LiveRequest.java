@@ -43,8 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import static com.jd.live.agent.core.util.CollectionUtils.convert;
-
 /**
  * Live request.
  */
@@ -251,13 +249,13 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
     }
 
     /**
-     * Routes the request to an appropriate subchannel from the provided list of subchannels.
+     * Routes the request to an appropriate endpoint from the provided list of endpoints.
      *
-     * @param subchannels The list of available subchannels.
+     * @param endpoints The list of available endpoint.
      */
-    public void route(List<LiveSubchannel> subchannels) {
+    public void route(List<GrpcEndpoint> endpoints) {
         try {
-            GrpcEndpoint endpoint = context.route(invocation, convert(subchannels, GrpcEndpoint::new));
+            GrpcEndpoint endpoint = context.route(invocation, endpoints);
             routeResult = new LiveRouteResult(endpoint);
         } catch (Throwable e) {
             routeResult = new LiveRouteResult(e);
@@ -274,7 +272,8 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
         if (status.isOk()) {
             Subchannel subchannel = pickResult.getSubchannel();
             if (subchannel != null) {
-                routeResult = new LiveRouteResult(new GrpcEndpoint(new LiveSubchannel(subchannel)));
+                LiveRef ref = subchannel.getAttributes().get(LiveRef.KEY_STATE);
+                routeResult = new LiveRouteResult(ref != null ? ref.getEndpoint() : new GrpcEndpoint(subchannel));
             } else {
                 routeResult = new LiveRouteResult(new RejectNoProviderException("There is no provider for invocation " + request.getService()));
             }
