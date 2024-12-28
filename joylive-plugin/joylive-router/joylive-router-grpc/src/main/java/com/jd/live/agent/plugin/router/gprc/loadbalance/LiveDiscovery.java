@@ -25,9 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LiveDiscovery {
 
-    private static final Map<String, Pikcer> PICKERS = new ConcurrentHashMap<>();
+    private static final Map<String, Picker> PICKERS = new ConcurrentHashMap<>();
 
     private static final Map<String, String> SERVICES = new ConcurrentHashMap<>();
+
+    private static final int INITIALIZE_TIMEOUT_MILLIS = 10000;
 
     /**
      * Retrieves the SubchannelPicker for the specified service.
@@ -71,11 +73,17 @@ public class LiveDiscovery {
         }
     }
 
-    private static Pikcer getPicker(String service) {
-        return PICKERS.computeIfAbsent(service, Pikcer::new);
+    private static Picker getPicker(String service) {
+        return PICKERS.computeIfAbsent(service, Picker::new);
     }
 
-    private static class Pikcer {
+    /**
+     * A class that manages a gRPC SubchannelPicker with thread-safe updates and retrieval.
+     * <p>
+     * This class is responsible for maintaining a service identifier, an update time, and a SubchannelPicker.
+     * It provides methods to set and get the SubchannelPicker, ensuring thread safety and proper initialization.
+     */
+    private static class Picker {
 
         private final String service;
 
@@ -85,7 +93,7 @@ public class LiveDiscovery {
 
         private final Object mutex = new Object();
 
-        Pikcer(String service) {
+        Picker(String service) {
             this.service = service;
         }
 
@@ -106,10 +114,13 @@ public class LiveDiscovery {
 
         public SubchannelPicker getPicker() {
             if (updateTime == 0) {
+                // wait for initialization
                 synchronized (mutex) {
-                    try {
-                        mutex.wait(10000);
-                    } catch (InterruptedException ignored) {
+                    if (updateTime == 0) {
+                        try {
+                            mutex.wait(INITIALIZE_TIMEOUT_MILLIS);
+                        } catch (InterruptedException ignored) {
+                        }
                     }
                 }
             }
