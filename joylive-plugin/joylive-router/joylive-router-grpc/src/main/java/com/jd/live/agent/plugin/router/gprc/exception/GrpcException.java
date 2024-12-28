@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.gprc.exception;
 
 import com.jd.live.agent.core.exception.WrappedException;
+import io.grpc.Metadata;
+import io.grpc.Status;
 
 /**
  * GrpcException
@@ -46,9 +48,22 @@ public abstract class GrpcException extends RuntimeException implements WrappedE
      */
     public static class GrpcServerException extends GrpcException {
 
-        public GrpcServerException(Throwable cause) {
+        private final Status status;
+
+        private final Metadata trailers;
+
+        public GrpcServerException(Throwable cause, Status status, Metadata trailers) {
             super(cause);
+            this.status = status;
+            this.trailers = trailers;
         }
 
+        public Status getStatus() {
+            return status;
+        }
+
+        public Metadata getTrailers() {
+            return trailers;
+        }
     }
 }

@@ -67,9 +67,9 @@ public interface GrpcRequest {
     /**
      * A nested class representing an outbound gRPC request.
      */
-    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<LiveRequest> implements GrpcRequest, RoutedRequest {
+    class GrpcOutboundRequest extends AbstractRpcOutboundRequest<LiveRequest<?, ?>> implements GrpcRequest, RoutedRequest {
 
-        public GrpcOutboundRequest(LiveRequest request) {
+        public GrpcOutboundRequest(LiveRequest<?, ?> request) {
             super(request);
             this.service = LiveDiscovery.getService(request.getPath());
             this.path = request.getPath();

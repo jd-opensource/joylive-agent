@@ -99,7 +99,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     @Override
-    public void reset() {
+    public void resetOnRetry() {
         listeners = null;
         routeTarget = null;
     }

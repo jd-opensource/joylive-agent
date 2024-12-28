@@ -73,9 +73,6 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         InvocationContext context = invocation.getContext();
         R request = invocation.getRequest();
         List<? extends Endpoint> instances = invocation.getInstances();
-        if (counter > 0) {
-            invocation.reset();
-        }
         CompletionStage<List<E>> discoveryStage = instances == null || instances.isEmpty() || counter > 0
                 ? cluster.route(request)
                 : CompletableFuture.completedFuture((List<E>) instances);

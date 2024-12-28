@@ -1,8 +1,5 @@
 package com.jd.live.agent.plugin.router.gprc.cluster;
 
-import com.google.protobuf.Message;
-import com.google.protobuf.util.JsonFormat;
-import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -10,12 +7,11 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
+import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
 import io.grpc.LoadBalancer.SubchannelPicker;
 
-import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -43,7 +39,15 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     @Override
     public CompletionStage<GrpcOutboundResponse> invoke(GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        return request.getRequest().sendMessage();
+        LiveRequest<?, ?> req = request.getRequest();
+        return req.sendMessage();
+    }
+
+    @Override
+    public void onRetry(GrpcOutboundRequest request, int retries) {
+        if (retries > 0) {
+            request.getRequest().onRetry();
+        }
     }
 
     @Override
@@ -58,17 +62,8 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
 
     @Override
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request, DegradeConfig degradeConfig) {
-        Method method = request.getRequest().getNewBuilder();
-        if (method == null) {
-            Throwable throwable = createException(new LiveException("method newBuilder is not found"), request);
-            return createResponse(new ServiceError(throwable, false), getRetryPredicate());
-        } else if (method.getReturnType() == Void.class) {
-            return new GrpcOutboundResponse(null);
-        }
         try {
-            Message.Builder builder = (Message.Builder) method.invoke(null);
-            JsonFormat.parser().merge(new StringReader(degradeConfig.getResponseBody()), builder);
-            Object response = builder.build();
+            Object response = request.getRequest().parse(degradeConfig.getResponseBody());
             return new GrpcOutboundResponse(response);
         } catch (Throwable e) {
             return createResponse(new ServiceError(createException(e, request), false), getRetryPredicate());

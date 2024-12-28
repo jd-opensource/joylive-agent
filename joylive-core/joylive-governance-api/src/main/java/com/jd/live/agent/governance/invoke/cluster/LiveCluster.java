@@ -193,10 +193,11 @@ public interface LiveCluster<R extends OutboundRequest,
     /**
      * Handles retry logic for a process or operation, providing a hook for custom actions on each retry attempt.
      *
+     * @param request The request object that is about to be sent
      * @param retries The number of retry attempts that have occurred so far. This count is 1-based, meaning that
      *                the first retry attempt will pass a value of 1.
      */
-    default void onRetry(int retries) {
+    default void onRetry(R request, int retries) {
 
     }
 

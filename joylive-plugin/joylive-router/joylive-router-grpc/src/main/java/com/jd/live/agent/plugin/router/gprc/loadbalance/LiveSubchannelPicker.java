@@ -50,7 +50,7 @@ public class LiveSubchannelPicker extends SubchannelPicker {
 
     @Override
     public PickResult pickSubchannel(PickSubchannelArgs args) {
-        LiveRequest request = args.getCallOptions().getOption(LiveRequest.KEY_LIVE_REQUEST);
+        LiveRequest<?, ?> request = args.getCallOptions().getOption(LiveRequest.KEY_LIVE_REQUEST);
         if (pickResult != null && request != null) {
             request.route(pickResult);
             return pickResult;

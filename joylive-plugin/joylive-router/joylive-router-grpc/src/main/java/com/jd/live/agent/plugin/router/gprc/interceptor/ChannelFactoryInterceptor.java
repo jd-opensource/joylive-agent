@@ -61,10 +61,11 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
                 // This is not a Unary RPC method
                 return channel.newCall(method, callOptions);
             }
-            LiveRequest request = new LiveRequest(method, context);
+            LiveRequest<ReqT, RespT> request = new LiveRequest<>(method, context);
             CallOptions options = callOptions.withOption(LiveRequest.KEY_LIVE_REQUEST, request);
             request.setCallOptions(options);
             request.setClientCall(channel.newCall(method, options));
+            request.setCallSupplier(() -> channel.newCall(method, options));
             return context.isFlowControlEnabled() ? new FlowControlClientCall<>(request) : new LiveClientCall<>(request);
         }
 
@@ -83,9 +84,9 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
      */
     private static class LiveClientCall<ReqT, RespT> extends SimpleForwardingClientCall<ReqT, RespT> {
 
-        private final LiveRequest request;
+        private final LiveRequest<ReqT, RespT> request;
 
-        LiveClientCall(LiveRequest request) {
+        LiveClientCall(LiveRequest<ReqT, RespT> request) {
             super(request.getClientCall());
             this.request = request;
         }
@@ -112,17 +113,30 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
      */
     private static class FlowControlClientCall<ReqT, RespT> extends SimpleForwardingClientCall<ReqT, RespT> {
 
-        private final LiveRequest request;
+        private final LiveRequest<ReqT, RespT> request;
 
-        FlowControlClientCall(LiveRequest request) {
-            // delay create client call
+        FlowControlClientCall(LiveRequest<ReqT, RespT> request) {
             super(request.getClientCall());
             this.request = request;
         }
 
         @Override
         public void start(Listener<RespT> responseListener, Metadata headers) {
-            request.start(responseListener, headers);
+            request.setResponseListener(responseListener);
+            request.setHeaders(headers);
+            request.start();
+        }
+
+        @Override
+        public void setMessageCompression(boolean enabled) {
+            request.setMessageCompression(enabled);
+            super.setMessageCompression(enabled);
+        }
+
+        @Override
+        public void request(int numMessages) {
+            request.setNumMessages(numMessages);
+            super.request(numMessages);
         }
 
         @Override
