@@ -172,7 +172,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * Resets the state of the instance.
      * This method is typically used to restore the instance to its initial state.
      */
-    public void reset() {
+    public void resetOnRetry() {
 
     }
 

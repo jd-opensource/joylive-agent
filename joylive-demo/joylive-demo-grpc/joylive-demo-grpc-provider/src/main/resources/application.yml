@@ -10,6 +10,6 @@ spring:
         password: ${NACOS_PASSWORD:nacos}
 grpc:
   server:
-    port: 9898
+    port: ${GRPC_SERVER_PORT:${random.int[20000,21000]}}
 server:
-  port: ${SERVER_PORT:9899}
+  port: ${SERVER_PORT:${random.int[20000,21000]}}

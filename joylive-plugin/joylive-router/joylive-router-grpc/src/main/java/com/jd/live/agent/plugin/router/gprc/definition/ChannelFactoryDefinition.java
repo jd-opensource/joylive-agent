@@ -26,32 +26,33 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.condition.ConditionalOnGrpcGovernanceEnabled;
-import com.jd.live.agent.plugin.router.gprc.interceptor.ClientInterceptorsInterceptor;
+import com.jd.live.agent.plugin.router.gprc.interceptor.ChannelFactoryInterceptor;
 
 @Injectable
-@Extension(value = "ClientInterceptorsDefinition", order = PluginDefinition.ORDER_ROUTER)
+@Extension(value = "ChannelFactoryDefinition", order = PluginDefinition.ORDER_ROUTER)
 @ConditionalOnGrpcGovernanceEnabled
-@ConditionalOnClass(ClientInterceptorsDefinition.TYPE)
-public class ClientInterceptorsDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ChannelFactoryDefinition.TYPE)
+public class ChannelFactoryDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE = "io.grpc.ClientInterceptors";
+    public static final String TYPE = "net.devh.boot.grpc.client.channelfactory.AbstractChannelFactory";
 
-    private static final String METHOD = "intercept";
+    private static final String METHOD = "createChannel";
 
     private static final String[] ARGUMENTS = new String[]{
-            "io.grpc.Channel",
-            "java.util.List"
+            "java.lang.String",
+            "java.util.List",
+            "boolean"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public ClientInterceptorsDefinition() {
+    public ChannelFactoryDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new ClientInterceptorsInterceptor(context))
+                        () -> new ChannelFactoryInterceptor(context))
         };
 
     }

@@ -15,24 +15,37 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.Attributes.Key;
 import io.grpc.ConnectivityState;
 
-final class LiveRef<T> {
+/**
+ * Represents a live reference to a gRPC endpoint with its connectivity state.
+ *
+ * This class contains a gRPC endpoint and its current connectivity state, providing methods to get and set these values.
+ */
+public final class LiveRef {
 
-    public static final Key<LiveRef<ConnectivityState>> KEY_STATE = Key.create("x-state");
+    public static final Key<LiveRef> KEY_STATE = Key.create("x-state");
 
-    T value;
+    private GrpcEndpoint endpoint;
 
-    LiveRef(T value) {
-        this.value = value;
+    private ConnectivityState state;
+
+    public GrpcEndpoint getEndpoint() {
+        return endpoint;
     }
 
-    public void setValue(T value) {
-        this.value = value;
+    public void setEndpoint(GrpcEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
-    public T getValue() {
-        return value;
+    public ConnectivityState getState() {
+        return state;
     }
+
+    public void setState(ConnectivityState state) {
+        this.state = state;
+    }
+
 }

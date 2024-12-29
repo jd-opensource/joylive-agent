@@ -604,5 +604,48 @@
         ]
       }
     ]
+  },
+  {
+    "name": "grpc-provider",
+    "serviceType": "RPC_APP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        },
+        "paths": [
+          {
+            "path": "com.jd.live.agent.demo.grpc.service.api.UserService",
+            "matchType": "EQUAL",
+            "methods": [
+              {
+                "name": "get",
+                "servicePolicy": {
+                  "clusterPolicy": {
+                    "type": "failover",
+                    "retryPolicy": {
+                      "retry": 2,
+                      "interval": 1000,
+                      "timeout": 5000,
+                      "exceptions": [
+                        "java.lang.RuntimeException"
+                      ],
+                      "version": 1704038400000
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]

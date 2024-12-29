@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
+import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
 import io.grpc.LoadBalancer.SubchannelPicker;
@@ -30,11 +29,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class LiveSubchannelPicker extends SubchannelPicker {
 
-    private static final Logger logger = LoggerFactory.getLogger(LiveSubchannelPicker.class);
-
     private final PickResult pickResult;
 
-    private final List<LiveSubchannel> subchannels;
+    private final List<GrpcEndpoint> endpoints;
 
     private final AtomicLong counter = new AtomicLong();
 
@@ -42,42 +39,43 @@ public class LiveSubchannelPicker extends SubchannelPicker {
         this(pickResult, null);
     }
 
-    public LiveSubchannelPicker(List<LiveSubchannel> subchannels) {
-        this(null, subchannels);
+    public LiveSubchannelPicker(List<GrpcEndpoint> endpoints) {
+        this(null, endpoints);
     }
 
-    public LiveSubchannelPicker(PickResult pickResult, List<LiveSubchannel> subchannels) {
+    public LiveSubchannelPicker(PickResult pickResult, List<GrpcEndpoint> endpoints) {
         this.pickResult = pickResult;
-        this.subchannels = subchannels;
+        this.endpoints = endpoints;
     }
 
     @Override
     public PickResult pickSubchannel(PickSubchannelArgs args) {
-        if (pickResult != null) {
+        LiveRequest<?, ?> request = args.getCallOptions().getOption(LiveRequest.KEY_LIVE_REQUEST);
+        if (pickResult != null && request != null) {
+            request.route(pickResult);
             return pickResult;
-        } else {
-            LivePickerAdvice advice = args.getCallOptions().getOption(LivePickerAdvice.KEY_PICKER_ADVICE);
-            LiveSubchannel subchannel = null;
-            if (advice != null) {
-                try {
-                    subchannel = advice.elect(subchannels);
-                } catch (Throwable e) {
-                    logger.error(e.getMessage(), e);
-                    return PickResult.withError(GrpcStatus.createException(e));
-                }
-            }
-            if (subchannel != null) {
-                return PickResult.withSubchannel(subchannel.getSubchannel());
+        } else if (pickResult != null) {
+            return pickResult;
+        } else if (request != null) {
+            request.route(endpoints);
+            LiveRouteResult result = request.getRouteResult();
+            if (result.isSuccess()) {
+                GrpcEndpoint endpoint = result.getEndpoint();
+                return endpoint == null
+                        ? PickResult.withNoResult()
+                        : PickResult.withSubchannel(endpoint.getSubchannel());
             } else {
-                long v = counter.getAndIncrement();
-                if (v < 0) {
-                    counter.set(0);
-                    v = counter.getAndIncrement();
-                }
-                int index = (int) (v % subchannels.size());
-                subchannel = subchannels.get(index);
-                return PickResult.withSubchannel(subchannel.getSubchannel());
+                return PickResult.withError(GrpcStatus.createException(result.getThrowable()));
             }
+        } else {
+            long v = counter.getAndIncrement();
+            if (v < 0) {
+                counter.set(0);
+                v = counter.getAndIncrement();
+            }
+            int index = (int) (v % endpoints.size());
+            return PickResult.withSubchannel(endpoints.get(index).getSubchannel());
         }
+
     }
 }

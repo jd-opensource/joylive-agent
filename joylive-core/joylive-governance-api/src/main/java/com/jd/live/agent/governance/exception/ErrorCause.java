@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.ExceptionUtils.isNoneWrapped;
 import static com.jd.live.agent.governance.exception.ErrorPolicy.containsException;
 
 @AllArgsConstructor
@@ -109,7 +110,7 @@ public class ErrorCause {
         Set<String> exceptions = new LinkedHashSet<>(8);
         Throwable cause = null;
         Throwable candiate = null;
-        Throwable t = throwable;
+        Throwable t = isNoneWrapped(throwable) ? throwable : throwable.getCause();
         ErrorName errorName;
         Predicate<Throwable> test = predicate == null ? null : predicate.getPredicate();
         while (t != null) {

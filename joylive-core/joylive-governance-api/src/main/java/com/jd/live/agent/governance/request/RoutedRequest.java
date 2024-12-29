@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.gprc.interceptor;
+package com.jd.live.agent.governance.request;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveLoadBalancerProvider;
+import com.jd.live.agent.governance.instance.Endpoint;
 
 /**
- * LoadbalancerInterceptor
+ * An interface representing a request that has already been routed to an appropriate endpoint.
+ * Extends the {@link Request} interface.
  */
-public class LoadbalancerInterceptor extends InterceptorAdaptor {
+public interface RoutedRequest extends Request {
 
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        mc.skipWithResult(new LiveLoadBalancerProvider());
-    }
+    /**
+     * Retrieves the endpoint to which the request has been routed.
+     *
+     * @param <E> The type of the endpoint.
+     * @return The selected endpoint for routing the request.
+     */
+    <E extends Endpoint> E getEndpoint();
 }
+

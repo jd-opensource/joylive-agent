@@ -31,6 +31,8 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -38,8 +40,6 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcOutboundThrower;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.GenericType;
@@ -193,7 +193,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     }
 
     @Override
-    public void onRetry(int retries) {
+    public void onRetry(SofaRpcOutboundRequest request, int retries) {
         if (RpcInternalContext.isAttachmentEnable()) {
             RpcInternalContext.getContext().setAttachment(RpcConstants.INTERNAL_KEY_INVOKE_TIMES, retries + 1);
         }

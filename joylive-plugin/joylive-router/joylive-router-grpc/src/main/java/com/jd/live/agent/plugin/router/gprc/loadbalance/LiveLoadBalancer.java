@@ -15,15 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
-import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static io.grpc.ConnectivityState.*;
 
@@ -38,19 +35,10 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     private final String serviceName;
 
-    private final Timer timer;
+    private volatile Map<EquivalentAddressGroup, GrpcEndpoint> endpoints = new ConcurrentHashMap<>();
 
-    private volatile Map<EquivalentAddressGroup, LiveSubchannel> subchannels = new ConcurrentHashMap<>();
-
-    private final AtomicLong versions = new AtomicLong(0);
-
-    private final AtomicBoolean taskAdded = new AtomicBoolean(false);
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-
-    public LiveLoadBalancer(Helper helper, Timer timer) {
+    public LiveLoadBalancer(Helper helper) {
         this.helper = helper;
-        this.timer = timer;
         this.serviceName = getServiceName(helper);
     }
 
@@ -58,37 +46,36 @@ public class LiveLoadBalancer extends LoadBalancer {
     public void handleResolvedAddresses(ResolvedAddresses resolvedAddresses) {
         Set<EquivalentAddressGroup> latestAddresses = deDup(resolvedAddresses);
 
-        List<LiveSubchannel> removed = new ArrayList<>();
-        List<LiveSubchannel> added = new ArrayList<>();
+        List<GrpcEndpoint> removed = new ArrayList<>();
+        List<GrpcEndpoint> added = new ArrayList<>();
 
-        Map<EquivalentAddressGroup, LiveSubchannel> oldSubchannels = subchannels;
-        Map<EquivalentAddressGroup, LiveSubchannel> newSubchannels = new ConcurrentHashMap<>();
+        Map<EquivalentAddressGroup, GrpcEndpoint> olds = endpoints;
+        Map<EquivalentAddressGroup, GrpcEndpoint> news = new ConcurrentHashMap<>();
         latestAddresses.forEach(addressGroup -> {
-            LiveSubchannel subchannel = oldSubchannels.get(addressGroup);
-            if (subchannel == null) {
+            GrpcEndpoint endpoint = olds.get(addressGroup);
+            if (endpoint == null) {
                 // create new connection
-                subchannel = createSubchannel(addressGroup);
-                added.add(subchannel);
+                endpoint = createEndpoint(addressGroup);
+                added.add(endpoint);
             }
-            newSubchannels.put(addressGroup, subchannel);
+            news.put(addressGroup, endpoint);
         });
-        subchannels = newSubchannels;
-        oldSubchannels.forEach((addressGroup, subchannel) -> {
+        endpoints = news;
+        olds.forEach((addressGroup, endpoint) -> {
             if (!latestAddresses.contains(addressGroup)) {
-                removed.remove(subchannel);
+                removed.remove(endpoint);
             }
         });
         // close not exists
         if (!removed.isEmpty()) {
-            addTask();
-            removed.forEach(subchannel -> {
-                subchannel.setConnectivityState(SHUTDOWN);
-                subchannel.shutdown();
+            removed.forEach(endpoint -> {
+                endpoint.setConnectivityState(SHUTDOWN);
+                endpoint.shutdown();
             });
         }
         // create new connection
         if (!added.isEmpty()) {
-            added.forEach(LiveSubchannel::requestConnection);
+            added.forEach(GrpcEndpoint::requestConnection);
         }
     }
 
@@ -99,7 +86,7 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     @Override
     public void shutdown() {
-        subchannels.values().forEach(LiveSubchannel::shutdown);
+        endpoints.values().forEach(GrpcEndpoint::shutdown);
     }
 
     /**
@@ -143,86 +130,61 @@ public class LiveLoadBalancer extends LoadBalancer {
     }
 
     /**
-     * Creates a new Subchannel for the given EquivalentAddressGroup.
+     * Creates a new GrpcEndpoint for the given EquivalentAddressGroup.
      *
-     * @param addressGroup the EquivalentAddressGroup to create the Subchannel for
-     * @return the newly created Subchannel
+     * @param addressGroup the EquivalentAddressGroup to create the GrpcEndpoint for
+     * @return the newly created GrpcEndpoint
      */
-    private LiveSubchannel createSubchannel(EquivalentAddressGroup addressGroup) {
-        Attributes attributes = addressGroup.getAttributes().toBuilder().set(LiveRef.KEY_STATE, new LiveRef<>(IDLE)).build();
+    private GrpcEndpoint createEndpoint(EquivalentAddressGroup addressGroup) {
+        LiveRef ref = new LiveRef();
+        Attributes attributes = addressGroup.getAttributes().toBuilder().set(LiveRef.KEY_STATE, ref).build();
         CreateSubchannelArgs args = CreateSubchannelArgs.newBuilder().setAddresses(addressGroup).setAttributes(attributes).build();
-        LiveSubchannel subchannel = new LiveSubchannel(helper.createSubchannel(args));
-        subchannel.start(new LiveSubchannelStateListener(subchannel));
-        return subchannel;
+        GrpcEndpoint endpoint = new GrpcEndpoint(helper.createSubchannel(args));
+        ref.setState(IDLE);
+        ref.setEndpoint(endpoint);
+        endpoint.start(new LiveStateListener(endpoint));
+        return endpoint;
     }
 
     /**
-     * Adds a task to update the ready instances and schedules it for execution.
-     */
-    private void addTask() {
-        versions.incrementAndGet();
-        submitTask();
-    }
-
-    /**
-     * Submits a task to update the ready instances and schedules it for execution.
-     *
-     * @see #addTask()
-     */
-    private void submitTask() {
-        if (taskAdded.compareAndSet(false, true)) {
-            String name = "update-ready-instance-" + serviceName;
-            int interval = 1000 + ThreadLocalRandom.current().nextInt(2000);
-            timer.add(name, interval, () -> {
-                long version = versions.get();
-                pickReady();
-                taskAdded.set(false);
-                if (versions.get() != version) {
-                    submitTask();
-                }
-            });
-        }
-    }
-
-    /**
-     * Picks the ready Subchannels and updates the balancing state accordingly.
+     * Picks the ready GrpcEndpoints and updates the balancing state accordingly.
      */
     private void pickReady() {
-        List<LiveSubchannel> readies = new ArrayList<>();
-        subchannels.values().forEach(subchannel -> {
-            if (subchannel.getConnectivityState() == ConnectivityState.READY) {
-                readies.add(subchannel);
+        List<GrpcEndpoint> readies = new ArrayList<>();
+        endpoints.values().forEach(endpoint -> {
+            if (endpoint.getConnectivityState() == ConnectivityState.READY) {
+                readies.add(endpoint);
             }
         });
-        LiveDiscovery.putSubchannel(serviceName, readies);
         if (readies.isEmpty()) {
-            helper.updateBalancingState(ConnectivityState.CONNECTING, new LiveSubchannelPicker(PickResult.withNoResult()));
+            LiveSubchannelPicker picker = new LiveSubchannelPicker(PickResult.withNoResult());
+            helper.updateBalancingState(ConnectivityState.CONNECTING, picker);
+            LiveDiscovery.setSubchannelPicker(serviceName, picker);
         } else {
-            helper.updateBalancingState(ConnectivityState.READY, new LiveSubchannelPicker(readies));
+            LiveSubchannelPicker picker = new LiveSubchannelPicker(readies);
+            helper.updateBalancingState(ConnectivityState.READY, picker);
+            LiveDiscovery.setSubchannelPicker(serviceName, picker);
         }
     }
 
-    private class LiveSubchannelStateListener implements SubchannelStateListener {
+    private class LiveStateListener implements SubchannelStateListener {
 
-        private final LiveSubchannel subchannel;
+        private final GrpcEndpoint endpoint;
 
-        LiveSubchannelStateListener(LiveSubchannel subchannel) {
-            this.subchannel = subchannel;
+        LiveStateListener(GrpcEndpoint endpoint) {
+            this.endpoint = endpoint;
         }
 
         @Override
         public void onSubchannelState(ConnectivityStateInfo stateInfo) {
-            ConnectivityState currentState = subchannel.getConnectivityState();
+            ConnectivityState currentState = endpoint.getConnectivityState();
             ConnectivityState newState = stateInfo.getState();
-            subchannel.setConnectivityState(newState);
+            endpoint.setConnectivityState(newState);
             if (currentState == READY && newState != READY
                     || currentState != READY && newState == READY) {
-                if (initialized.compareAndSet(false, true)) {
-                    pickReady();
-                } else {
-                    // Asynchronous processing, preventing massive up and down
-                    addTask();
-                }
+                // call helper.updateBalancingState in this thread to avoid exception
+                // syncContext.throwIfNotInThisSynchronizationContext()
+                pickReady();
             }
         }
     }

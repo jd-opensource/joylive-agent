@@ -18,13 +18,11 @@ package com.jd.live.agent.plugin.router.gprc.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.plugin.router.gprc.condition.ConditionalOnGrpcGovernanceEnabled;
 import com.jd.live.agent.plugin.router.gprc.interceptor.LoadbalancerInterceptor;
 
@@ -42,15 +40,12 @@ public class LoadbalancerDefinition extends PluginDefinitionAdapter {
             "java.lang.String"
     };
 
-    @Inject(Timer.COMPONENT_TIMER)
-    private Timer timer;
-
     public LoadbalancerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new LoadbalancerInterceptor(timer))
+                        LoadbalancerInterceptor::new)
         };
 
     }

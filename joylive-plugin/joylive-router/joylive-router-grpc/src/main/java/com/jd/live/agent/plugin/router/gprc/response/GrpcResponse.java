@@ -26,14 +26,14 @@ import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutb
  */
 public interface GrpcResponse {
 
-    class GrpcOutboundResponse<T> extends AbstractRpcOutboundResponse<T> implements GrpcResponse {
+    class GrpcOutboundResponse extends AbstractRpcOutboundResponse<Object> implements GrpcResponse {
 
-        public GrpcOutboundResponse(T response, ServiceError error) {
-            super(response, error);
+        public GrpcOutboundResponse(Object response) {
+            super(response, null);
         }
 
-        public GrpcOutboundResponse(T response, ServiceError error, ErrorPredicate retryPredicate) {
-            super(response, error, retryPredicate);
+        public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
+            super(null, error, retryPredicate);
         }
     }
 }

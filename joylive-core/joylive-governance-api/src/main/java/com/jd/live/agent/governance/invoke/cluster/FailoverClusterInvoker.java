@@ -17,8 +17,6 @@ package com.jd.live.agent.governance.invoke.cluster;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectUnreadyException;
 import com.jd.live.agent.bootstrap.exception.Unretryable;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -28,7 +26,6 @@ import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutExcepti
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.filter.route.CircuitBreakerFilter;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
@@ -55,8 +52,6 @@ import static com.jd.live.agent.governance.util.Predicates.isError;
 @Extension(value = ClusterInvoker.TYPE_FAILOVER, order = ClusterInvoker.ORDER_FAILOVER)
 public class FailoverClusterInvoker extends AbstractClusterInvoker {
 
-    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
-
     @Inject
     private Map<String, ErrorParser> codeParsers;
 
@@ -73,9 +68,9 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         R request = invocation.getRequest();
         request.addErrorPolicy(retryPolicy);
         RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
-        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getCount());
+        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getAndIncrement());
         cluster.onStart(request);
-        return retryContext.execute(request, supplier).exceptionally(e ->
+        return retryContext.execute(invocation, supplier).exceptionally(e ->
                 cluster.createResponse(
                         cluster.createException(e, invocation),
                         request,
@@ -144,14 +139,14 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * retried until the policy's conditions are no longer met.
          * </p>
          *
-         * @param request  The request that was being processed.
-         * @param supplier A supplier providing the operation to be executed as a {@link CompletionStage}.
+         * @param invocation  The {@link OutboundInvocation} representing the specific request and its routing information.
+         * @param supplier    A supplier providing the operation to be executed as a {@link CompletionStage}.
          * @return A {@link CompletionStage} representing the eventual completion of the operation,
          * either successfully or with an error.
          */
-        public CompletionStage<O> execute(R request, Supplier<CompletionStage<O>> supplier) {
+        public CompletionStage<O> execute(OutboundInvocation<R> invocation, Supplier<CompletionStage<O>> supplier) {
             CompletableFuture<O> result = new CompletableFuture<>();
-            doExecute(request, supplier, result);
+            doExecute(invocation, supplier, result);
             return result;
 
         }
@@ -159,22 +154,21 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         /**
          * Recursively executes the operation, applying retry logic and completing the future
          * based on the outcome of each attempt.
-         * <p>
-         * This method is called internally to handle the actual execution and retry logic.
-         * It uses the {@link RetryPolicy} to determine whether an operation should be retried
-         * in case of failure or certain response conditions.
-         * </p>
          *
-         * @param request  The request that was being processed.
-         * @param supplier A supplier providing the operation to be executed.
-         * @param future   The {@link CompletableFuture} to be completed with the operation's result.
+         * @param invocation  The {@link OutboundInvocation} representing the specific request and its routing information.
+         * @param supplier    A supplier providing the operation to be executed.
+         * @param future     The {@link CompletableFuture} to be completed with the operation's result.
          */
-        private void doExecute(R request, Supplier<CompletionStage<O>> supplier, CompletableFuture<O> future) {
-            int count = counter.getAndIncrement();
-            cluster.onRetry(count);
+        private void doExecute(OutboundInvocation<R> invocation, Supplier<CompletionStage<O>> supplier, CompletableFuture<O> future) {
+            int count = counter.get();
+            R request = invocation.getRequest();
+            if (count > 0) {
+                invocation.resetOnRetry();
+            }
+            cluster.onRetry(request, count);
             CompletionStage<O> stage = supplier.get();
             stage.whenComplete((v, e) -> {
-                ServiceError se = v.getError();
+                ServiceError se = v == null ? null : v.getError();
                 Throwable throwable = se == null ? e : se.getThrowable();
                 switch (isRetryable(request, v, e, count)) {
                     case RETRY:
@@ -182,7 +176,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                         if (unreadyException != null) {
                             future.completeExceptionally(unreadyException);
                         } else {
-                            doExecute(request, supplier, future);
+                            doExecute(invocation, supplier, future);
                         }
                         break;
                     case EXHAUSTED:
@@ -201,8 +195,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             });
         }
 
-        private int getCount() {
-            return counter.get();
+        private int getAndIncrement() {
+            return counter.getAndIncrement();
         }
 
         /**

@@ -19,11 +19,17 @@ import com.jd.live.agent.demo.grpc.service.api.*;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 @GrpcService
 public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
     @Override
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
+        if (ThreadLocalRandom.current().nextBoolean()) {
+            responseObserver.onError(new RuntimeException("error"));
+            return;
+        }
         UserGetResponse.Builder builder = UserGetResponse.newBuilder();
         builder.setId(request.getId())
                 .setName("index ：" + request.getId() + " time : " + System.currentTimeMillis())
