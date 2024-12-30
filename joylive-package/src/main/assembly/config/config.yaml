@@ -260,7 +260,6 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls.ThreadlessExecutor
           - com.alibaba.nacos.shaded.io.grpc.SynchronizationContext
           - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
-          - io.opentelemetry.sdk.internal.DaemonThreadFactory
         excludeTasks:
           - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve
           - com.alibaba.nacos.client.naming.backups.FailoverReactor$DiskFileWriter
@@ -272,6 +271,7 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
           - com.jd.live.agent.core.thread.NamedThreadFactory
           - com.jd.jr.sgm.client.disruptor.LogEventFactory
+          - io.opentelemetry.sdk.internal.DaemonThreadFactory
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
