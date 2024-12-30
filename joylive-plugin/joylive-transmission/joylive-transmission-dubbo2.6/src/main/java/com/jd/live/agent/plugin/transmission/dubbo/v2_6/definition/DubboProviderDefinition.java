@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.dubbo.v2_6.interceptor.DubboProviderInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "DubboProviderDefinition_v2.6", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -45,8 +43,8 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
             "com.alibaba.dubbo.rpc.Invocation"
     };
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
 
     public DubboProviderDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONTEXT_FILTER);
@@ -54,6 +52,6 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new DubboProviderInterceptor(requires))};
+                        () -> new DubboProviderInterceptor(propagation))};
     }
 }

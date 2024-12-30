@@ -19,31 +19,27 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcInvocation;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
-
-import java.util.List;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.header.HeaderParser;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public DubboConsumerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public DubboConsumerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((RpcInvocation) ctx.getArguments()[0]);
-    }
-
-    private void attachTag(RpcInvocation invocation) {
+        RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[0];
         Carrier carrier = RequestContext.getOrCreate();
-        carrier.addCargo(require, RpcContext.getContext().getAttachments(), Label::parseValue);
+        RpcContext context = RpcContext.getContext();
+        propagation.read(carrier, new HeaderParser.StringHeaderParser(context.getAttachments(), context::setAttachment));
         carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
+        propagation.write(carrier, new HeaderParser.StringHeaderParser(invocation.getAttachments(), invocation::setAttachment));
     }
 
 }

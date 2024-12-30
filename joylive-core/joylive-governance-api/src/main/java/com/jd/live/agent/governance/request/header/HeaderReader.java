@@ -49,7 +49,7 @@ public interface HeaderReader {
      */
     default String getHeader(String key) {
         List<String> values = getHeaders(key);
-        return values.isEmpty() ? null : values.get(0);
+        return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     /**
