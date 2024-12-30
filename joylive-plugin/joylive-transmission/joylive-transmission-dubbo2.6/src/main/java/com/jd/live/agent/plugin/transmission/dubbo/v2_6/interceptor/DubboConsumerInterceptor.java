@@ -41,7 +41,6 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         RpcContext context = RpcContext.getContext();
         // read from rpc context by live propagation
         LIVE_PROPAGATION.read(carrier, new StringHeaderParser(context.getAttachments(), context::setAttachment));
-        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
         propagation.write(carrier, new StringHeaderParser(invocation.getAttachments(), invocation::setAttachment));
     }
 
