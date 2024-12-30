@@ -32,13 +32,14 @@ public class LiveLocation implements Serializable {
     private String ruleId;
     private String laneSpaceId;
     private String lane;
+    private String group;
     private String ip;
 
     public LiveLocation() {
 
     }
 
-    public LiveLocation(String liveSpaceId, String unit, String cell, String cluster, String cloud, String ruleId, String laneSpaceId, String lane) {
+    public LiveLocation(String liveSpaceId, String unit, String cell, String cluster, String cloud, String ruleId, String laneSpaceId, String lane, String group) {
         this.liveSpaceId = liveSpaceId;
         this.unit = unit;
         this.cell = cell;
@@ -47,6 +48,7 @@ public class LiveLocation implements Serializable {
         this.ruleId = ruleId;
         this.laneSpaceId = laneSpaceId;
         this.lane = lane;
+        this.group = group;
         this.ip = Ipv4.getLocalIp();
     }
 
@@ -59,7 +61,8 @@ public class LiveLocation implements Serializable {
                 System.getProperty(LiveTransmission.X_LIVE_CLOUD),
                 System.getProperty(LiveTransmission.X_LIVE_RULE_ID),
                 System.getProperty(LiveTransmission.X_LANE_SPACE_ID),
-                System.getProperty(LiveTransmission.X_LANE_CODE)
+                System.getProperty(LiveTransmission.X_LANE_CODE),
+                System.getProperty(LiveTransmission.X_SERVICE_GROUP)
         );
     }
 
@@ -74,6 +77,7 @@ public class LiveLocation implements Serializable {
                 ", ruleId=" + (ruleId == null ? "null" : ('\'' + ruleId + '\'')) +
                 ", lane-space-id=" + (laneSpaceId == null ? "null" : ('\'' + laneSpaceId + '\'')) +
                 ", lane=" + (lane == null ? "null" : ('\'' + lane + '\'')) +
+                ", group=" + (group == null ? "null" : ('\'' + group + '\'')) +
                 ", ip=" + (ip == null ? "null" : ('\'' + ip + '\'')) +
                 '}';
     }
