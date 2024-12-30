@@ -271,7 +271,15 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
           - com.jd.live.agent.core.thread.NamedThreadFactory
           - com.jd.jr.sgm.client.disruptor.LogEventFactory
+          - com.jd.pfinder.profiler.common.util.NamedThreadFactory
           - io.opentelemetry.sdk.internal.DaemonThreadFactory
+          - io.sermant.dubbo.registry.factory.RegistryNotifyThreadFactory
+          - io.sermant.dynamic.config.init.DynamicConfigThreadFactory
+          - io.sermant.flowcontrol.common.factory.FlowControlThreadFactory
+          - io.sermant.loadbalancer.factory.LoadbalancerThreadFactory
+          - io.sermant.core.utils.ThreadFactoryUtils
+          - io.sermant.implement.service.xds.handler.XdsHandler.NamedThreadFactory
+          - io.sermant.discovery.factory.RealmServiceThreadFactory
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
