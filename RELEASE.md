@@ -1,5 +1,23 @@
 # Release History
 
+## 1.6.0
+
+1. Support for Spring Cloud 2024
+2. Full outbound traffic management support for Spring Cloud gRPC, including retries and circuit breakers
+3. Support for Spring Cloud clients to receive service-side exceptions, facilitating retries and circuit breakers
+4. Cache Spring Cloud Gateway route filters to improve performance
+5. Enhanced conditional matching extension, supporting aggregated conditions and simplifying related configurations
+6. Improved label matching logic in flow control
+7. Performance optimization
+9. Provide lock for context, facilitating interceptor usage
+10. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration
+11. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications
+12. Fixed OpenJDK compatibility issues
+13. Fixed issues with conflicts with other Agents, packaging Bootstrap together
+14. Fixed the issue that calling the original method would also trigger OnExit/OnSuccess/OnError interceptors
+15. Fixed Sofarpc injection problem
+16. Fixed other issues
+
 ## 1.5.2
 
 1. Hot fix for policy timed update
