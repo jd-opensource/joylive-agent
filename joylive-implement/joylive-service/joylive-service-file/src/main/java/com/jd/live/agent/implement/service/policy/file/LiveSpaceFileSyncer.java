@@ -52,7 +52,7 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
     private SyncConfig syncConfig = new SyncConfig();
 
     public LiveSpaceFileSyncer() {
-        name = "live-space-file-syncer";
+        name = "LiveAgent-space-file-syncer";
     }
 
     @Override

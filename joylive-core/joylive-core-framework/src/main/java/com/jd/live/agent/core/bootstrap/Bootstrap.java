@@ -599,7 +599,7 @@ public class Bootstrap implements AgentLifecycle {
 
     private TimeScheduler createTimer() {
         TimerConfig config = agentConfig.getTimerConfig();
-        return new TimeScheduler("LiveTimer", config.getTickTime(), config.getTicks(), config.getWorkerThreads(), config.getMaxTasks());
+        return new TimeScheduler("LiveAgent-timer", config.getTickTime(), config.getTicks(), config.getWorkerThreads(), config.getMaxTasks());
     }
 
     private EventBus createEventBus() {

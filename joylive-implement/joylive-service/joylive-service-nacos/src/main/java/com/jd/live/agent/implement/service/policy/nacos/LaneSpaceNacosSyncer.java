@@ -57,7 +57,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
     private NacosClientApi client;
 
     public LaneSpaceNacosSyncer() {
-        name = "lane-space-nacos-syncer";
+        name = "LiveAgent-lane-space-nacos-syncer";
     }
 
     @Override

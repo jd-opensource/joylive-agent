@@ -47,7 +47,7 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
     private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
     public LiveSpaceHttpSyncer() {
-        name = "live-space-multilive-syncer";
+        name = "LiveAgent-space-multilive-syncer";
     }
 
     @Override

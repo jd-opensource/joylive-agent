@@ -54,7 +54,7 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
     private NacosClientApi client;
 
     public ServiceNacosSyncer() {
-        name = "service-nacos-syncer";
+        name = "LiveAgent-service-nacos-syncer";
     }
 
     @Override

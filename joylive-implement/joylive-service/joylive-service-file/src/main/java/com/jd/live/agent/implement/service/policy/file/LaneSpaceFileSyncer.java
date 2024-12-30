@@ -52,7 +52,7 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
     private SyncConfig syncConfig = new SyncConfig();
 
     public LaneSpaceFileSyncer() {
-        name = "lane-space-file-syncer";
+        name = "LiveAgent-space-file-syncer";
     }
 
     @Override

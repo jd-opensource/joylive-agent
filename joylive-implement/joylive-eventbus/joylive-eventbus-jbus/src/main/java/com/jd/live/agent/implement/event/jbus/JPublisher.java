@@ -61,7 +61,7 @@ public class JPublisher<E> implements Publisher<E> {
         this.config = config;
         this.started = new AtomicBoolean(autoStart);
         this.queue = new LinkedBlockingQueue<>(config.getCapacity() > 0 ? config.getCapacity() : PublisherConfig.DEFAULT_CAPACITY);
-        this.thread = new Thread(this::run, "bus-" + topic);
+        this.thread = new Thread(this::run, "LiveAgent-publisher-" + topic);
         if (autoStart) {
             thread.start();
         }

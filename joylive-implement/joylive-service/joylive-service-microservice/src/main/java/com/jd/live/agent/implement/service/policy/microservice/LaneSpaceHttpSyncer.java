@@ -37,7 +37,7 @@ public class LaneSpaceHttpSyncer extends AbstractLaneSpaceHttpSyncer {
     private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     public LaneSpaceHttpSyncer() {
-        name = "lane-space-jmsf-syncer";
+        name = "LiveAgent-space-jmsf-syncer";
     }
 
     @Override

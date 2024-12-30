@@ -57,7 +57,7 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
     private NacosClientApi client;
 
     public LiveSpaceNacosSyncer() {
-        name = "live-space-nacos-syncer";
+        name = "LiveAgent-live-space-nacos-syncer";
     }
 
     @Override

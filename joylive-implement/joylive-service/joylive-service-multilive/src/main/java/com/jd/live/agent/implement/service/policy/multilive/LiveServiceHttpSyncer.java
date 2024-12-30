@@ -51,7 +51,7 @@ public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey>
     private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
     public LiveServiceHttpSyncer() {
-        name = "live-service-multilive-syncer";
+        name = "LiveAgent-service-multilive-syncer";
     }
 
     @Override

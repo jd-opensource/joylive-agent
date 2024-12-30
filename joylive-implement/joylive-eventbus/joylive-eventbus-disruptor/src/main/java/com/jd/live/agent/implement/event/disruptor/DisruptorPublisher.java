@@ -83,7 +83,7 @@ public class DisruptorPublisher<E> implements Publisher<E> {
         this.config = config;
         this.started = new AtomicBoolean(autoStart);
         this.disruptor = new Disruptor<>(Event::new, nearestPowerOfTwo(config.getCapacity()),
-                new NamedThreadFactory("publisher-" + topic), ProducerType.MULTI,
+                new NamedThreadFactory("LiveAgent-publisher-" + topic), ProducerType.MULTI,
                 new BlockingWaitStrategy());
         this.disruptor.handleEventsWith(new MyEventHandler());
         this.ringBuffer = autoStart ? disruptor.start() : null;

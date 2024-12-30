@@ -41,7 +41,7 @@ public class ServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
     private MicroServiceSyncConfig syncConfig = new MicroServiceSyncConfig();
 
     public ServiceHttpSyncer() {
-        name = "service-jmsf-syncer";
+        name = "LiveAgent-service-jmsf-syncer";
     }
 
     @Override

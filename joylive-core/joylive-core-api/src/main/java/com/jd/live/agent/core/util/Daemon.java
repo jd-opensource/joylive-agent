@@ -116,7 +116,7 @@ public class Daemon implements AutoCloseable {
         } else if (callable == null) {
             throw new IllegalArgumentException("callable can not be null");
         }
-        this.name = name;
+        this.name = name.startsWith("LiveAgent-") ? name : "LiveAgent-" + name;
         this.prepare = prepare;
         this.callable = callable;
         this.error = error;

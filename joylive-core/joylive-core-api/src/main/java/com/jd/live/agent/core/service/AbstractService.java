@@ -170,7 +170,7 @@ public abstract class AbstractService implements AgentService {
     public String getName() {
         if (name == null) {
             String className = this.getClass().getSimpleName();
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder("LiveAgent-");
             int index = 0;
             for (char c : className.toCharArray()) {
                 if (Character.isUpperCase(c)) {
