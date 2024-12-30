@@ -14,6 +14,7 @@ agent:
       - com.jd.pfinder.profiler.utils.ModuleClassLoader
       - com.jd.pfinder.profiler.load.ModuleInterceptorClassLoader
       - io.opentelemetry.javaagent.bootstrap.AgentClassLoader
+      - io.opentelemetry.javaagent.tooling.ExtensionClassLoader
       - org.apache.skywalking.apm.agent.core.plugin.loader.AgentClassLoader
       - org.apache.skywalking.apm.agent.core.plugin.loader.PluginClassLoader
       - com.navercorp.pinpoint.bootstrap.classloader.AgentClassLoader
