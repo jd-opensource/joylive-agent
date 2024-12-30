@@ -72,9 +72,10 @@ public class GrpcServerInterceptor extends InterceptorAdaptor {
                 ServerCall<ReqT, RespT> call,
                 Metadata headers,
                 ServerCallHandler<ReqT, RespT> next) {
-
-            Callable<Object> callable = () -> new LiveServerCallListener<ReqT>(next.startCall(call, headers));
-
+            if (!call.getMethodDescriptor().getType().clientSendsOneMessage()) {
+                return next.startCall(call, headers);
+            }
+            Callable<Object> callable = () -> new LiveServerCallListener<>(next.startCall(call, headers));
             GrpcInboundRequest request = new GrpcInboundRequest(call, headers);
             try {
                 Object result = !request.isSystem()
