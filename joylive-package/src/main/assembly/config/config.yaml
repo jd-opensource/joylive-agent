@@ -280,6 +280,7 @@ agent:
           - io.sermant.core.utils.ThreadFactoryUtils
           - io.sermant.implement.service.xds.handler.XdsHandler.NamedThreadFactory
           - io.sermant.discovery.factory.RealmServiceThreadFactory
+          - org.apache.skywalking.apm.agent.core.boot.DefaultNamedThreadFactory
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
