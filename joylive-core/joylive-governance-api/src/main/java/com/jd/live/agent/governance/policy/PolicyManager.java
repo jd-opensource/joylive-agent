@@ -34,10 +34,8 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.MonitorConfig;
-import com.jd.live.agent.governance.config.RegistryConfig;
-import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.governance.config.*;
+import com.jd.live.agent.governance.context.Propagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -168,6 +166,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private List<String> serviceSyncers;
 
+    @Getter
+    @Inject
+    private Map<String, Propagation> propagations;
+
     private final AtomicBoolean warmup = new AtomicBoolean(false);
 
     @Override
@@ -223,6 +225,16 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             if (governanceConfig != null) {
+                switch (governanceConfig.getTransmitConfig().getType()) {
+                    case "W3cBaggage":
+                        source.add(TransmitConfig.DEFAULT_PROPAGATION, propagations.get("W3cBaggagePropagation"));
+                        break;
+                    case "Live":
+                        source.add(TransmitConfig.DEFAULT_PROPAGATION, propagations.get("LivePropagation"));
+                        break;
+                    default:
+                        break;
+                }
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
                 source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig.getRegistryConfig());

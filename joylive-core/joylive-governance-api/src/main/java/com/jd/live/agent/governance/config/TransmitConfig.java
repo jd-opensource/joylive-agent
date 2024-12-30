@@ -26,6 +26,8 @@ import java.util.Set;
 @Setter
 public class TransmitConfig {
 
+    public static final String DEFAULT_PROPAGATION = "defaultPropagation";
+
     /**
      * A collection of keys that need to be transmitted.
      */
@@ -40,6 +42,11 @@ public class TransmitConfig {
      * A collection of key suffixes that need to be transmitted.
      */
     private Set<String> suffixes;
+
+    /**
+     * Transmit type, W3cBaggage as the default selection
+     */
+    private String type = "W3cBaggage";
 
     /**
      * Thread transmit config
