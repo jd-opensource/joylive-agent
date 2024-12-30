@@ -271,6 +271,7 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
           - com.jd.live.agent.core.thread.NamedThreadFactory
           - com.jd.jr.sgm.client.disruptor.LogEventFactory
+          - com.jd.jr.sgm.client.util.AgentThreadFactory
           - com.jd.pfinder.profiler.common.util.NamedThreadFactory
           - io.opentelemetry.sdk.internal.DaemonThreadFactory
           - io.sermant.dubbo.registry.factory.RegistryNotifyThreadFactory
