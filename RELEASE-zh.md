@@ -3,7 +3,7 @@
 ## 1.6.0
 
 1. 新增支持 Spring cloud 2024，当前已经支持Spring cloud Hoxton/2020/2021/2022/2023/2024
-2. 新增支持 Spring cloud grpc 出流量的重试和熔断
+2. 新增支持 Spring cloud grpc 出流量的重试和熔断，当前已经完整支持grpc unary模式的治理
 3. 新增支持 Spring cloud 客户端获取到服务端的异常，便于重试和熔断 
 4. 完善扩展的条件匹配，支持自定义组合条件，简化了相关配置 
 5. 完善流控中的标签匹配逻辑 

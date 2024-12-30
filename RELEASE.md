@@ -3,7 +3,7 @@
 ## 1.6.0
 
 1. Added support for Spring Cloud 2024, now supports Spring Cloud Hoxton, 2020, 2021, 2022, 2023, and 2024
-2. Added support for retry and circuit breaking for outbound traffic of Spring Cloud gRPC.
+2. Added support for retry and circuit breaking for outbound traffic of Spring Cloud gRPC, now support for full governance of gRPC unary mode
 3. Added support for Spring Cloud clients to retrieve exceptions from the server, facilitating retry and circuit breaking.
 4. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
 5. Improved label matching logic in flow control 
