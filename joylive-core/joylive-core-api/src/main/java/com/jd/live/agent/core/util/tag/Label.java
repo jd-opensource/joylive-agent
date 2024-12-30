@@ -15,7 +15,10 @@
  */
 package com.jd.live.agent.core.util.tag;
 
+import com.jd.live.agent.core.util.StringUtils;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.StringUtils.COMMA;
@@ -77,6 +80,19 @@ public interface Label {
             result.add(value);
         }
         return result;
+    }
+
+    /**
+     * Joins a collection of strings into a single string with a specified separator,
+     * enclosed by a specified prefix and suffix.
+     *
+     * @param values The collection of strings to join.
+     * @return A string that is the concatenation of the strings in the collection,
+     * separated by commas and enclosed in square brackets. If the collection
+     * is null or empty, an empty string is returned.
+     */
+    static String join(Collection<String> values) {
+        return StringUtils.join(values, ",", "[", "]", false);
     }
 
 }

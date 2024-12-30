@@ -15,10 +15,7 @@
  */
 package com.jd.live.agent.core.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -408,25 +405,60 @@ public class StringUtils {
     }
 
     /**
-     * Joins an array of strings into a single string with a specified separator.
-     * This method will skip any blank strings (as determined by the isNotBlank function).
-     * It assumes isNotBlank and StringUtils.EMPTY are defined elsewhere in your codebase.
+     * Joins an array of values into a single string with a specified separator.
+     * This method will skip any empty values.
      *
-     * @param strings   The array of strings to join.
+     * @param values   The array of values to join.
      * @param separator The separator to use between each string.
-     * @return A string that consists of the input strings separated by the specified separator.
+     * @return A string that consists of the input values separated by the specified separator.
      */
-    public static String join(String[] strings, String separator) {
-        if (strings == null || strings.length == 0) {
+    public static String join(String[] values, String separator) {
+        if (values == null || values.length == 0) {
             return EMPTY;
         }
-        StringBuilder sb = new StringBuilder();
-        for (String string : strings) {
-            if (isNotBlank(string)) {
-                sb.append(string).append(separator);
+        return join(Arrays.asList(values), separator, null, null, false);
+    }
+
+    /**
+     * Joins a collection of values into a single string with a specified separator.
+     * This method will skip any empty values.
+     *
+     * @param values            The collection of values to join.
+     * @param separator         The separator to use between each string.
+     * @param prefix            The prefix to add at the beginning of the resulting string.
+     * @param suffix            The suffix to add at the end of the resulting string.
+     * @param singleSurrounding A flag to determine whether to include the prefix and suffix
+     *                          when there is only one non-empty value. If true, the prefix and
+     *                          suffix are included; if false, they are not.
+     * @return A string that consists of the input values separated by the specified separator,
+     * enclosed by the specified prefix and suffix. If all values are empty or the collection
+     * is null or empty, an empty string is returned.
+     */
+    public static String join(Collection<String> values, String separator, String prefix, String suffix, boolean singleSurrounding) {
+        if (values == null || values.isEmpty()) {
+            return EMPTY;
+        }
+        int left = prefix == null ? 0 : prefix.length();
+        int right = suffix == null ? 0 : suffix.length();
+        int counter = 0;
+        StringBuilder sb = new StringBuilder(left == 0 ? "" : prefix);
+        for (String string : values) {
+            if (!isEmpty(string)) {
+                if (counter++ > 0) {
+                    sb.append(separator);
+                }
+                sb.append(string);
             }
         }
-        return sb.length() > 0 ? sb.substring(0, sb.length() - separator.length()) : StringUtils.EMPTY;
+        sb.append(right == 0 ? "" : suffix);
+        switch (counter) {
+            case 0:
+                return EMPTY;
+            case 1:
+                return singleSurrounding ? sb.toString() : sb.substring(left, sb.length() - right);
+            default:
+                return sb.toString();
+        }
     }
 
     /**

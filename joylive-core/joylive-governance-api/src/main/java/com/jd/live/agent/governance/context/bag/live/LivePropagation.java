@@ -1,27 +1,20 @@
-package com.jd.live.agent.governance.context;
+package com.jd.live.agent.governance.context.bag.live;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.context.bag.Cargo;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
-import com.jd.live.agent.governance.context.bag.Carrier;
-import com.jd.live.agent.governance.request.HeaderReader;
-import com.jd.live.agent.governance.request.HeaderWriter;
+import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.governance.context.bag.*;
+import com.jd.live.agent.governance.request.header.HeaderReader;
+import com.jd.live.agent.governance.request.header.HeaderWriter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 @Injectable
-@Extension("LivePropagation")
-public class LivePropagation implements Propagation {
-    private final CargoRequires require;
-    @Inject
-    private List<CargoRequire> requires;
-
-    {
-        this.require = new CargoRequires(requires);
-    }
+@Extension(value = "live", order = Propagation.ORDER_LIVE)
+public class LivePropagation extends AbstractPropagation {
 
     @Override
     public void write(Carrier carrier, HeaderWriter writer) {
@@ -39,23 +32,27 @@ public class LivePropagation implements Propagation {
                         writer.setHeader(cargo.getKey(), values.get(0));
                         break;
                     default:
-                        for (String value : values) {
-                            writer.setHeader(cargo.getKey(), value);
-                        }
+                        writer.setHeader(cargo.getKey(), Label.join(values));
                 }
             }
         }
     }
 
     @Override
-    public void read(Carrier carrier, HeaderReader reader) {
+    public boolean read(Carrier carrier, HeaderReader reader) {
+        CargoRequire require = getRequire();
         Iterator<String> headerNames = reader.getHeaderNames();
+        int counter = 0;
         while (headerNames.hasNext()) {
             String headerName = headerNames.next();
             List<String> headerValues = reader.getHeaders(headerName);
-            if (require.match(headerName) && headerValues != null && !headerValues.isEmpty()) {
-                carrier.addCargo(new Cargo(headerName, new ArrayList<>(headerValues)));
+            if (require.match(headerName)) {
+                counter++;
+                if (headerValues != null) {
+                    carrier.addCargo(new Cargo(headerName, new ArrayList<>(headerValues)));
+                }
             }
         }
+        return counter > 0;
     }
 }

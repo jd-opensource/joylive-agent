@@ -59,6 +59,17 @@ public class Cargo extends Tag {
     }
 
     /**
+     * Constructs a cargo with a specified key and a collection of values.
+     *
+     * @param key      The key associated with the cargo.
+     * @param values   The collection of values associated with the key.
+     * @param zeroCopy A flag indicating whether to perform a zero-copy operation.
+     */
+    public Cargo(String key, Collection<String> values, boolean zeroCopy) {
+        super(key, values, zeroCopy);
+    }
+
+    /**
      * Constructs a cargo with a specified key and an enumeration of values.
      *
      * @param key    The key associated with the cargo.

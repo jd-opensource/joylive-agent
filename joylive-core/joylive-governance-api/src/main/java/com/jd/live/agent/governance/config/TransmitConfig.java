@@ -26,8 +26,6 @@ import java.util.Set;
 @Setter
 public class TransmitConfig {
 
-    public static final String DEFAULT_PROPAGATION = "defaultPropagation";
-
     /**
      * A collection of keys that need to be transmitted.
      */
@@ -46,7 +44,12 @@ public class TransmitConfig {
     /**
      * Transmit type, W3cBaggage as the default selection
      */
-    private String type = "W3cBaggage";
+    private String type = "w3c";
+
+    /**
+     * Auto detect transmit type when reading.
+     */
+    private boolean autoDetect = false;
 
     /**
      * Thread transmit config

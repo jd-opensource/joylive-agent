@@ -73,6 +73,18 @@ public class Tag implements Label, Serializable {
     }
 
     /**
+     * Constructs a {@code Tag} with the specified key and a collection of values.
+     *
+     * @param key      The key of the tag.
+     * @param values   The collection of values associated with the tag key.
+     * @param zeroCopy A flag indicating whether to perform a zero-copy operation.
+     */
+    public Tag(String key, Collection<String> values, boolean zeroCopy) {
+        this.key = key;
+        add(values, zeroCopy);
+    }
+
+    /**
      * Constructs a {@code Tag} with the specified key and an enumeration of values.
      *
      * @param key    The key of the tag.
@@ -153,20 +165,36 @@ public class Tag implements Label, Serializable {
      * @param items The collection of values to be added.
      */
     protected void add(Collection<String> items) {
+        add(items, false);
+    }
+
+    /**
+     * Adds a collection of values to the list of values associated with the tag.
+     * This method ensures that only unique, non-null values are added. If the input collection is the same as the existing values list,
+     * the method returns immediately to avoid infinite recursion. If the values list does not exist, it is initialized.
+     *
+     * @param items    The collection of values to be added.
+     * @param zeroCopy A flag indicating whether to perform a zero-copy operation.
+     */
+    protected void add(Collection<String> items, boolean zeroCopy) {
         // call multi times in one thread.
         if (values == items) {
             return;
         }
-        int size = items == null ? 0 : items.size();
-        if (values == null) {
-            values = new ArrayList<>(size);
-            if (size > 0) {
-                values.addAll(items);
-            }
-        } else if (size > 0) {
-            for (String v : items) {
-                if (v != null && !values.contains(v)) {
-                    values.add(v);
+        if (zeroCopy && items instanceof ArrayList) {
+            this.values = (ArrayList<String>) items;
+        } else {
+            int size = items == null ? 0 : items.size();
+            if (values == null) {
+                values = new ArrayList<>(size);
+                if (size > 0) {
+                    values.addAll(items);
+                }
+            } else if (size > 0) {
+                for (String v : items) {
+                    if (v != null && !values.contains(v)) {
+                        values.add(v);
+                    }
                 }
             }
         }
