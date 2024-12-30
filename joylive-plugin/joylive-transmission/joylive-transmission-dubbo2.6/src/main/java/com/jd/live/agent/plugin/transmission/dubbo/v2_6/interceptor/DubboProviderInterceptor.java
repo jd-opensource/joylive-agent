@@ -21,7 +21,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.reader;
 
 public class DubboProviderInterceptor extends InterceptorAdaptor {
 
@@ -35,7 +36,7 @@ public class DubboProviderInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[1];
         Carrier carrier = RequestContext.create();
-        propagation.read(carrier, new StringHeaderParser(invocation.getAttachments(), invocation::setAttachment));
+        propagation.read(carrier, reader(invocation.getAttachments()));
     }
 
     @Override

@@ -61,7 +61,9 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
 
     @Override
     public void setHeader(String key, String value) {
-        consumer.accept(key, value);
+        if (consumer != null) {
+            consumer.accept(key, value);
+        }
     }
 
     /**
@@ -70,8 +72,22 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
      */
     public static class MultiHeaderParser extends HeaderParser<List<String>> {
 
+        private static final Function<List<String>, List<String>> LIST_LIST_FUNCTION = value -> value;
+
+        public MultiHeaderParser(Map<String, List<String>> map) {
+            super(map, LIST_LIST_FUNCTION, null);
+        }
+
         public MultiHeaderParser(Map<String, List<String>> map, BiConsumer<String, String> consumer) {
-            super(map, value -> value, consumer);
+            super(map, LIST_LIST_FUNCTION, consumer);
+        }
+
+        public static HeaderReader reader(Map<String, List<String>> map) {
+            return new MultiHeaderParser(map);
+        }
+
+        public static HeaderWriter writer(Map<String, List<String>> map, BiConsumer<String, String> consumer) {
+            return new MultiHeaderParser(map, consumer);
         }
     }
 
@@ -81,8 +97,22 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
      */
     public static class ObjectHeaderParser extends HeaderParser<Object> {
 
+        private static final Function<Object, List<String>> OBJECT_LIST_FUNCTION = value -> Label.parseValue(value.toString());
+
+        public ObjectHeaderParser(Map<String, Object> map) {
+            super(map, OBJECT_LIST_FUNCTION, null);
+        }
+
         public ObjectHeaderParser(Map<String, Object> map, BiConsumer<String, String> consumer) {
-            super(map, value -> Label.parseValue(value.toString()), consumer);
+            super(map, OBJECT_LIST_FUNCTION, consumer);
+        }
+
+        public static HeaderReader reader(Map<String, Object> map) {
+            return new ObjectHeaderParser(map);
+        }
+
+        public static HeaderWriter writer(Map<String, Object> map, BiConsumer<String, String> consumer) {
+            return new ObjectHeaderParser(map, consumer);
         }
     }
 
@@ -92,8 +122,22 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
      */
     public static class StringHeaderParser extends HeaderParser<String> {
 
+        private static final Function<String, List<String>> STRING_LIST_FUNCTION = Label::parseValue;
+
+        public StringHeaderParser(Map<String, String> map) {
+            super(map, STRING_LIST_FUNCTION, null);
+        }
+
         public StringHeaderParser(Map<String, String> map, BiConsumer<String, String> consumer) {
-            super(map, Label::parseValue, consumer);
+            super(map, STRING_LIST_FUNCTION, consumer);
+        }
+
+        public static HeaderReader reader(Map<String, String> map) {
+            return new StringHeaderParser(map);
+        }
+
+        public static HeaderWriter writer(Map<String, String> map, BiConsumer<String, String> consumer) {
+            return new StringHeaderParser(map, consumer);
         }
     }
 }
