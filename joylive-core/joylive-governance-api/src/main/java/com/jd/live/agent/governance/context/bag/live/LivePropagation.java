@@ -16,6 +16,8 @@ import java.util.List;
 @Extension(value = "live", order = Propagation.ORDER_LIVE)
 public class LivePropagation extends AbstractPropagation {
 
+    public static final Propagation LIVE_PROPAGATION = new LivePropagation();
+
     @Override
     public void write(Carrier carrier, HeaderWriter writer) {
         Collection<Cargo> cargos = carrier.getCargos();

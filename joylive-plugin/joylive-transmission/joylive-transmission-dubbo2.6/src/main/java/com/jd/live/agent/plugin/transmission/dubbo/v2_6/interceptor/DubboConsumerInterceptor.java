@@ -22,7 +22,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.governance.request.header.HeaderParser;
+import com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser;
+
+import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
@@ -37,9 +39,10 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[0];
         Carrier carrier = RequestContext.getOrCreate();
         RpcContext context = RpcContext.getContext();
-        propagation.read(carrier, new HeaderParser.StringHeaderParser(context.getAttachments(), context::setAttachment));
+        // read from rpc context by live propagation
+        LIVE_PROPAGATION.read(carrier, new StringHeaderParser(context.getAttachments(), context::setAttachment));
         carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
-        propagation.write(carrier, new HeaderParser.StringHeaderParser(invocation.getAttachments(), invocation::setAttachment));
+        propagation.write(carrier, new StringHeaderParser(invocation.getAttachments(), invocation::setAttachment));
     }
 
 }
