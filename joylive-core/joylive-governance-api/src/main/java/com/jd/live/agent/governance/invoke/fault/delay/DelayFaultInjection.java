@@ -35,9 +35,8 @@ public class DelayFaultInjection implements FaultInjection {
 
     @Override
     public void acquire(FaultInjectionPolicy policy) {
-        if (policy.getDelayTimeMs() != null && policy.getDelayTimeMs() > 0 &&
-                (policy.getPercent() == null
-                        || policy.getPercent() <= 0
+        if (policy.getDelayTimeMs() > 0 &&
+                (policy.getPercent() <= 0
                         || ThreadLocalRandom.current().nextInt(100) < policy.getPercent())) {
             try {
                 if (logger.isDebugEnabled()) {

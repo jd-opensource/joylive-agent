@@ -44,11 +44,11 @@ public class FaultInjectionPolicy extends PolicyId implements PolicyInheritWithI
 
     private RelationType relationType;
 
-    private Integer percent;
+    private int percent;
 
-    private Long delayTimeMs;
+    private long delayTimeMs;
 
-    private Integer errorCode;
+    private int errorCode;
 
     private String errorMsg;
 

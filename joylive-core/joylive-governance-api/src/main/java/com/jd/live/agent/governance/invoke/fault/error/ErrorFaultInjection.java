@@ -32,8 +32,7 @@ public class ErrorFaultInjection implements FaultInjection {
 
     @Override
     public void acquire(FaultInjectionPolicy policy) {
-        if (policy.getPercent() == null
-                || policy.getPercent() <= 0
+        if (policy.getPercent() <= 0
                 || ThreadLocalRandom.current().nextInt(100) < policy.getPercent()) {
             String errorMsg = policy.getErrorMsg() == null ? "Error by fault injection" : policy.getErrorMsg();
             throw new FaultException(policy.getErrorCode(), errorMsg);
