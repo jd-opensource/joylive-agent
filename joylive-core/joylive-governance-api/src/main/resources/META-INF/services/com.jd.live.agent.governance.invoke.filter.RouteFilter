@@ -11,3 +11,4 @@ com.jd.live.agent.governance.invoke.filter.route.StickyFilter
 com.jd.live.agent.governance.invoke.filter.route.VirtualFilter
 com.jd.live.agent.governance.invoke.filter.route.CircuitBreakerFilter
 com.jd.live.agent.governance.invoke.filter.route.GroupFilter
+com.jd.live.agent.governance.invoke.filter.route.PortFilter

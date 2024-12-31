@@ -437,6 +437,16 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Checks if the specified port matches the current port.
+     *
+     * @param port The port to check against the current port.
+     * @return {@code true} if the specified port matches the current port, {@code false} otherwise.
+     */
+    default boolean isPort(int port) {
+        return getPort() == port;
+    }
+
+    /**
      * Evaluates the predicate associated with this endpoint, if any, to determine
      * if this endpoint satisfies the conditions defined by the predicate.
      * <p>

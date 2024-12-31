@@ -29,7 +29,7 @@ import java.util.Map;
  * inbound and outbound requests.
  * </p>
  */
-public interface HttpRequest extends ServiceRequest {
+public interface HttpRequest extends ServiceRequest, Portable {
 
     /**
      * Returns the URI of the request.
@@ -44,13 +44,6 @@ public interface HttpRequest extends ServiceRequest {
      * @return The schema as a string.
      */
     String getSchema();
-
-    /**
-     * Returns the port number of the request.
-     *
-     * @return The port number.
-     */
-    Integer getPort();
 
     /**
      * Returns the host name of the request.
