@@ -45,7 +45,9 @@ public interface RouteFilter {
 
     int ORDER_LOCALHOST = ORDER_STICKY + 100;
 
-    int ORDER_HEALTH = ORDER_LOCALHOST + 100;
+    int ORDER_PORT = ORDER_LOCALHOST + 100;
+
+    int ORDER_HEALTH = ORDER_PORT + 100;
 
     int ORDER_VIRTUAL = ORDER_HEALTH + 100;
 
