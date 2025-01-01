@@ -128,7 +128,7 @@ public class Tag implements Label, Serializable {
                 return values.get(0);
             default:
                 // array
-                StringBuilder builder = new StringBuilder('[');
+                StringBuilder builder = new StringBuilder("[");
                 for (int i = 0; i < size; i++) {
                     if (i > 0) {
                         builder.append(',');
@@ -177,24 +177,19 @@ public class Tag implements Label, Serializable {
      * @param zeroCopy A flag indicating whether to perform a zero-copy operation.
      */
     protected void add(Collection<String> items, boolean zeroCopy) {
+        int size = items == null ? 0 : items.size();
         // call multi times in one thread.
-        if (values == items) {
+        if (size == 0 || values == items) {
             return;
         }
-        if (zeroCopy && items instanceof ArrayList) {
-            this.values = (ArrayList<String>) items;
+        if (values == null) {
+            values = zeroCopy && items instanceof ArrayList
+                    ? (ArrayList<String>) items
+                    : new ArrayList<>(items);
         } else {
-            int size = items == null ? 0 : items.size();
-            if (values == null) {
-                values = new ArrayList<>(size);
-                if (size > 0) {
-                    values.addAll(items);
-                }
-            } else if (size > 0) {
-                for (String v : items) {
-                    if (v != null && !values.contains(v)) {
-                        values.add(v);
-                    }
+            for (String v : items) {
+                if (v != null && !values.contains(v)) {
+                    values.add(v);
                 }
             }
         }
@@ -228,4 +223,5 @@ public class Tag implements Label, Serializable {
                 ", values='" + values + '\'' +
                 '}';
     }
+
 }
