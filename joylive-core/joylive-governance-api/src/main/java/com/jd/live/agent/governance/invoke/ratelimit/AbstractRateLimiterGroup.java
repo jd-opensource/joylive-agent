@@ -42,7 +42,7 @@ public abstract class AbstractRateLimiterGroup extends AbstractRateLimiter {
      * @param policy The rate limit policy to be applied to the limiters in the group.
      */
     public AbstractRateLimiterGroup(RateLimitPolicy policy) {
-        super(policy);
+        super(policy, TimeUnit.NANOSECONDS);
         int i = 0;
         for (SlidingWindow window : policy.getSlidingWindows()) {
             limiters.add(create(window, policy.getName() + "-" + i++));
@@ -61,14 +61,15 @@ public abstract class AbstractRateLimiterGroup extends AbstractRateLimiter {
     protected abstract RateLimiter create(SlidingWindow window, String name);
 
     @Override
-    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
-        if (permits <= 0) {
-            return false;
-        }
+    protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
+        // Convert to nanoseconds to avoid losing precision.
         long startTime = System.nanoTime();
-        timeout = Long.max(0, timeout);
+        timeout = timeout <= 0 ? 0 : timeUnit.toNanos(timeout);
+        long expire;
         for (RateLimiter limiter : limiters) {
-            if (!limiter.acquire(permits, timeout - (System.nanoTime() - startTime), timeUnit)) {
+            expire = timeout - (System.nanoTime() - startTime);
+            expire = Long.max(0, expire);
+            if (!limiter.acquire(permits, expire, TimeUnit.NANOSECONDS)) {
                 return false;
             }
         }
