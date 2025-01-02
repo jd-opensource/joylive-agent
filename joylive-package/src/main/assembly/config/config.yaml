@@ -218,29 +218,15 @@ agent:
         - x-service-
       thread:
         excludeExecutors:
-          - org.apache.dubbo.common.threadpool.ThreadlessExecutor
-          - org.apache.tomcat.util.threads.ThreadPoolExecutor
-          - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
-          - org.apache.tomcat.util.threads.InlineExecutorService
-          - javax.management.NotificationBroadcasterSupport$1
-          - io.grpc.stub.ClientCalls.ThreadlessExecutor
-          - io.grpc.SynchronizationContext
           - io.netty.channel.MultithreadEventLoopGroup
           - io.netty.channel.nio.NioEventLoop
           - io.netty.channel.SingleThreadEventLoop
           - io.netty.channel.kqueue.KQueueEventLoopGroup
           - io.netty.channel.kqueue.KQueueEventLoop
-          - io.netty.util.concurrent.MultithreadEventExecutorGroup
-          - io.netty.util.concurrent.AbstractEventExecutorGroup
-          - io.netty.util.concurrent.ThreadPerTaskExecutor
-          - io.netty.util.concurrent.GlobalEventExecutor
-          - io.netty.util.concurrent.AbstractScheduledEventExecutor
-          - io.netty.util.concurrent.AbstractEventExecutor
-          - io.netty.util.concurrent.DefaultEventExecutor
-          - io.netty.util.concurrent.SingleThreadEventExecutor
-          - io.netty.util.internal.ThreadExecutorMap$1
-          - reactor.core.scheduler.BoundedElasticScheduler$BoundedScheduledExecutorService
-          - reactor.netty.resources.ColocatedEventLoopGroup
+          - org.apache.tomcat.util.threads.ThreadPoolExecutor
+          - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
+          - org.apache.tomcat.util.threads.InlineExecutorService
+          - javax.management.NotificationBroadcasterSupport$1
           - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup
           - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup
           - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup
@@ -261,6 +247,7 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.SynchronizationContext
           - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
         excludeTasks:
+          - com.alibaba.nacos.common.executor.NameThreadFactory
           - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve
           - com.alibaba.nacos.client.naming.backups.FailoverReactor$DiskFileWriter
           - com.alibaba.nacos.client.naming.backups.FailoverReactor.SwitchRefresher
@@ -269,6 +256,7 @@ agent:
           - com.alibaba.nacos.shaded.io.grpc.internal.DelayedClientTransport$5
           - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
           - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
+          - com.alibaba.nacos.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder$1
           - com.jd.live.agent.core.thread.NamedThreadFactory
           - com.jd.jr.sgm.client.disruptor.LogEventFactory
           - com.jd.jr.sgm.client.util.AgentThreadFactory
@@ -282,6 +270,11 @@ agent:
           - io.sermant.implement.service.xds.handler.XdsHandler.NamedThreadFactory
           - io.sermant.discovery.factory.RealmServiceThreadFactory
           - org.apache.skywalking.apm.agent.core.boot.DefaultNamedThreadFactory
+          - sun.rmi.runtime.RuntimeUtil$1
+          - sun.rmi.transport.tcp.TCPTransport$1
+          - sun.rmi.transport.DGCImpl$1
+          - sun.rmi.transport.DGCAckHandler$1
+          - org.apache.tomcat.util.threads.TaskThreadFactory
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
@@ -290,9 +283,8 @@ agent:
           - com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate$$Lambda$
           - com.alibaba.nacos.common.remote.client.RpcClient$$Lambda$
           - com.alibaba.nacos.common.utils.ThreadFactoryBuilder$$Lambda$
-          - sun.rmi.transport.tcp.TCPTransport$
-          - sun.rmi.transport.DGCImpl$
-          - sun.rmi.transport.DGCAckHandler$
+          - org.apache.catalina.core.ContainerBase$
+          - org.apache.catalina.core.StandardServer$$Lambda$
   counter:
     gateway: true
     service: true
