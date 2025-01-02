@@ -11,6 +11,12 @@ message UserGetResponse {
   int32 id = 1;
   string name = 2;
   int32 gender = 3;
+  string unit = 4;
+  string cell = 5;
+  string cluster = 6;
+  string cloud = 7;
+  string group = 8;
+  string ip = 9;
 }
 
 message UserCreateRequest {

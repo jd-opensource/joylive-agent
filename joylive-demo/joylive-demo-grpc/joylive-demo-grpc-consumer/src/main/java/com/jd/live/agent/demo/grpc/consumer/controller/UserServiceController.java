@@ -31,18 +31,18 @@ public class UserServiceController {
     public String get(@RequestParam("id") Integer id) {
         UserGetRequest request = UserGetRequest.newBuilder().setId(id).build();
         UserGetResponse response = userServiceGrpc.get(request);
-        return response.getName();
+        return response.toString();
     }
 
     @GetMapping("/create")
-    public Integer create(@RequestParam("name") String name,
+    public String create(@RequestParam("name") String name,
                           @RequestParam("gender") Integer gender) {
         UserCreateRequest request = UserCreateRequest.newBuilder()
                 .setName(name)
                 .setGender(gender)
                 .build();
         UserCreateResponse response = userServiceGrpc.create(request);
-        return response.getId();
+        return response.toString();
     }
 
 }
