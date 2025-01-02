@@ -17,7 +17,6 @@ import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.TokenBucketLimi
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -29,6 +28,8 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
 
     private static final String KEY_CAPACITY = "capacity";
 
+    private static final String KEY_FLOW_WINDOW_SECONDS = "flowWindowSeconds";
+
     private final long capacity;
 
     private final AtomicLong requests = new AtomicLong(0);
@@ -39,8 +40,14 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
     }
 
     @Override
-    protected double getMaxPermits() {
-        return TimeUnit.SECONDS.toMicros(1L) / stableIntervalMicros;
+    protected double getMaxStoredPermits() {
+        // Keep a constant rate and prevent excessive token accumulation.
+        return getPermits(option.getPositive(KEY_FLOW_WINDOW_SECONDS, 1));
+    }
+
+    @Override
+    protected long adjustRequiredPermitsWaitTime(long startTime, long timeoutMicros, long nowMicros, long waitTime) {
+        return nowMicros + waitTime - startTime > timeoutMicros ? TIMEOUT : waitTime;
     }
 
     @Override
@@ -56,6 +63,5 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
         } finally {
             requests.decrementAndGet();
         }
-
     }
 }

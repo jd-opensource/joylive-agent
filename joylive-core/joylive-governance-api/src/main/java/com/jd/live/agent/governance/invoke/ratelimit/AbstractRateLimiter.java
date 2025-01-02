@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractRateLimiter implements RateLimiter {
 
+    protected static final Long MICROSECOND_OF_ONE_SECOND = 1000 * 1000L;
+
     /**
      * The rate limit policy that defines the limits for the rate limiter.
      */
