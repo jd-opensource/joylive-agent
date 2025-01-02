@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.registry.dubbo.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnDubboEnabled;
 
 import java.lang.annotation.*;
@@ -25,7 +25,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnDubboEnabled
-@ConditionalOnMissingClass(ConditionalOnDubbo3Enabled.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnClass(ConditionalOnDubbo3Enabled.TYPE_CONSUMER_CONTEXT_FILTER)
 @ConditionalComposite
 public @interface ConditionalOnDubbo3Enabled {
 

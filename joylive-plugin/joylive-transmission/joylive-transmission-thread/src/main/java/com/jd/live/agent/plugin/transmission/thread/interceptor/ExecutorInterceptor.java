@@ -16,10 +16,12 @@
 package com.jd.live.agent.plugin.transmission.thread.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.thread.Camera;
 import com.jd.live.agent.core.thread.Snapshot;
-import com.jd.live.agent.governance.config.TransmitConfig;
+import com.jd.live.agent.governance.config.TransmitConfig.ThreadConfig;
 import com.jd.live.agent.plugin.transmission.thread.adapter.AbstractThreadAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.CallableAdapter;
 import com.jd.live.agent.plugin.transmission.thread.adapter.RunnableAdapter;
@@ -28,15 +30,14 @@ import com.jd.live.agent.plugin.transmission.thread.adapter.RunnableAndCallableA
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * ExecutorInterceptor
  */
 public class ExecutorInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExecutorInterceptor.class);
 
     private static final String FIELD_CALLABLE = "callable";
 
@@ -44,28 +45,14 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
 
     private final Camera[] cameras;
 
-    private final TransmitConfig.ThreadConfig threadConfig;
+    private final ThreadConfig threadConfig;
 
-    private final Map<Class<?>, Boolean> excludes = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Boolean> excludes = new ConcurrentHashMap<>(128);
 
-    public ExecutorInterceptor(List<Camera> cameras, TransmitConfig.ThreadConfig threadConfig) {
+    public ExecutorInterceptor(List<Camera> cameras, ThreadConfig threadConfig) {
         this.cameras = cameras == null ? new Camera[0] : cameras.toArray(new Camera[0]);
         this.threadConfig = threadConfig;
         this.callableField = getCallableField();
-    }
-
-    private Field getCallableField() {
-        Field result = null;
-        try {
-            result = FutureTask.class.getDeclaredField(FIELD_CALLABLE);
-            result.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-        return result;
-    }
-
-    private boolean isExcluded(Object task) {
-        return task != null && excludes.computeIfAbsent(task.getClass(), c -> threadConfig.isExcludedTask(c.getName()));
     }
 
     @Override
@@ -73,11 +60,12 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         Object target = ctx.getTarget();
         String name = target.getClass().getSimpleName();
         Object[] arguments = ctx.getArguments();
-        if (arguments == null || arguments.length == 0 || cameras.length == 0) {
-            return;
-        } else if (target instanceof ThreadPoolExecutor
-                && isExcluded(((ThreadPoolExecutor) target).getThreadFactory())) {
-            // filter sgm thread pool before unwrap
+        if (arguments == null
+                || arguments.length == 0
+                || cameras.length == 0
+                || isExcludedExecutor(target)
+                || target instanceof ThreadPoolExecutor
+                && isExcludedThreadFactory(((ThreadPoolExecutor) target).getThreadFactory())) {
             return;
         }
         Object argument = arguments[0];
@@ -86,7 +74,7 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
             return;
         } else if (unwrapped instanceof AbstractThreadAdapter) {
             return;
-        } else if (isExcluded(unwrapped)) {
+        } else if (isExcludedTask(unwrapped)) {
             return;
         }
 
@@ -101,6 +89,88 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         } else if (argument instanceof Callable) {
             arguments[0] = new CallableAdapter<>(name, (Callable<?>) argument, snapshots);
         }
+    }
+
+    /**
+     * Checks if the given thread factory is excluded by its class type.
+     * The result is cached in the {@code excludes} map to avoid repeated computations.
+     *
+     * @param factory The thread factory object to check.
+     * @return {@code true} if the thread factory is excluded, {@code false} otherwise.
+     */
+    private boolean isExcludedThreadFactory(ThreadFactory factory) {
+        return factory != null && excludes.computeIfAbsent(factory.getClass(), this::isExcludedThreadFactoryType);
+    }
+
+    /**
+     * Checks if the given thread factory type is excluded.
+     * If the thread factory is excluded, logs an informational message.
+     *
+     * @param type The class type of the thread factory to check.
+     * @return {@code true} if the thread factory type is excluded, {@code false} otherwise.
+     */
+    private boolean isExcludedThreadFactoryType(Class<?> type) {
+        if (threadConfig.isExcludedTask(type)) {
+            logger.info("Disable transmission in threads of factory " + type.getName());
+            return true;
+        }
+        logger.info("Enable transmission in threads of factory " + type.getName());
+        return false;
+    }
+
+
+    /**
+     * Checks if the given task is excluded by its class type.
+     * The result is cached in the {@code excludes} map to avoid repeated computations.
+     *
+     * @param task The task object to check.
+     * @return {@code true} if the task is excluded, {@code false} otherwise.
+     */
+    private boolean isExcludedTask(Object task) {
+        return task != null && excludes.computeIfAbsent(task.getClass(), this::isExcludeTaskType);
+    }
+
+    /**
+     * Checks if the given task type is excluded.
+     * If the task is excluded, logs an informational message.
+     *
+     * @param type The class type of the task to check.
+     * @return {@code true} if the task type is excluded, {@code false} otherwise.
+     */
+    private boolean isExcludeTaskType(Class<?> type) {
+        if (threadConfig.isExcludedTask(type)) {
+            logger.info("Disable transmission in task " + type.getName());
+            return true;
+        }
+        logger.info("Enable transmission in task " + type.getName());
+        return false;
+    }
+
+    /**
+     * Checks if the given executor is excluded by its class type.
+     * The result is cached in the {@code excludes} map to avoid repeated computations.
+     *
+     * @param executor The executor object to check.
+     * @return {@code true} if the executor is excluded, {@code false} otherwise.
+     */
+    private boolean isExcludedExecutor(Object executor) {
+        return executor != null && excludes.computeIfAbsent(executor.getClass(), this::isExcludeExecutorType);
+    }
+
+    /**
+     * Checks if the given executor type is excluded.
+     * If the executor is excluded, logs an informational message.
+     *
+     * @param type The class type of the executor to check.
+     * @return {@code true} if the executor type is excluded, {@code false} otherwise.
+     */
+    private boolean isExcludeExecutorType(Class<?> type) {
+        if (threadConfig.isExcludedExecutor(type)) {
+            logger.info("Disable transmission in executor " + type.getName());
+            return true;
+        }
+        logger.info("Enable transmission in executor " + type.getName());
+        return false;
     }
 
     /**
@@ -125,6 +195,22 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
             }
         }
         return argument;
+    }
+
+    /**
+     * Retrieves the {@link Field} object representing the {@code callable} field in the {@link FutureTask} class.
+     * This method uses reflection to access the private field and makes it accessible.
+     *
+     * @return The {@link Field} object representing the {@code callable} field, or {@code null} if the field is not found.
+     */
+    private static Field getCallableField() {
+        Field result = null;
+        try {
+            result = FutureTask.class.getDeclaredField(FIELD_CALLABLE);
+            result.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
+        return result;
     }
 
 }
