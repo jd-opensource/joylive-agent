@@ -16,8 +16,6 @@ package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
-import java.util.concurrent.TimeUnit;
-
 import static java.lang.Math.min;
 
 /**
@@ -53,42 +51,42 @@ public class SmoothWarmupLimiter extends TokenBucketLimiter {
 
     @Override
     protected void initialize() {
-        this.warmupMicros = TimeUnit.SECONDS.toMicros(option.getPositive(KEY_WARMUP_SECONDS, DEFAULT_WARMUP_SECONDS));
-        this.thresholdPermits = 0.5 * warmupMicros / stableIntervalMicros;
-        this.coldIntervalMicros = stableIntervalMicros * option.getPositive(KEY_COLD_FACTOR, DEFAULT_COLD_FACTOR);
+        this.warmupMicros = option.getPositive(KEY_WARMUP_SECONDS, DEFAULT_WARMUP_SECONDS) * MICROSECOND_OF_ONE_SECOND;
+        this.thresholdPermits = 0.5 * warmupMicros / permitIntervalMicros;
+        this.coldIntervalMicros = permitIntervalMicros * option.getPositive(KEY_COLD_FACTOR, DEFAULT_COLD_FACTOR);
         super.initialize();
-        this.slope = (coldIntervalMicros - stableIntervalMicros) / (maxPermits - thresholdPermits);
+        this.slope = (coldIntervalMicros - permitIntervalMicros) / (maxStoredPermits - thresholdPermits);
     }
 
     @Override
-    protected double getMaxPermits() {
-        return thresholdPermits + 2.0 * warmupMicros / (stableIntervalMicros + coldIntervalMicros);
+    protected double getMaxStoredPermits() {
+        return thresholdPermits + 2.0 * warmupMicros / (permitIntervalMicros + coldIntervalMicros);
     }
 
     @Override
-    protected long waitForStoredPermits(double storedPermits, double takePermits) {
+    protected long estimateStorePermitsWaitTime(double storedPermits, double targetPermits) {
         double availablePermitsAboveThreshold = storedPermits - thresholdPermits;
         long micros = 0;
         // measuring the integral on the right part of the function (the climbing line)
         if (availablePermitsAboveThreshold > 0.0) {
-            double permitsAboveThresholdToTake = min(availablePermitsAboveThreshold, takePermits);
+            double permitsAboveThresholdToTake = min(availablePermitsAboveThreshold, targetPermits);
             double length =
                     permitsToTime(availablePermitsAboveThreshold)
                             + permitsToTime(availablePermitsAboveThreshold - permitsAboveThresholdToTake);
             micros = (long) (permitsAboveThresholdToTake * length / 2.0);
-            takePermits -= permitsAboveThresholdToTake;
+            targetPermits -= permitsAboveThresholdToTake;
         }
         // measuring the integral on the left part of the function (the horizontal line)
-        micros += (long) (stableIntervalMicros * takePermits);
+        micros += (long) (permitIntervalMicros * targetPermits);
         return micros;
     }
 
     @Override
     protected double coolDownIntervalMicros() {
-        return warmupMicros / maxPermits;
+        return warmupMicros / maxStoredPermits;
     }
 
     private double permitsToTime(double permits) {
-        return stableIntervalMicros + permits * slope;
+        return permitIntervalMicros + permits * slope;
     }
 }

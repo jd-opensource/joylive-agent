@@ -32,24 +32,33 @@ import java.io.Serializable;
  *
  * @since 1.0.0
  */
-@Getter
-@Setter
 public class SlidingWindow implements Serializable {
+
+    private static final int DEFAULT_PERMITS = 1000;
+
+    private static final long DEFAULT_TIME_WINDOW = 1000L;
 
     /**
      * The maximum number of allowed actions within the time window.
      */
+    @Getter
+    @Setter
     private int threshold;
 
     /**
      * The duration of the time window in milliseconds.
      */
+    @Getter
+    @Setter
     private long timeWindowInMs;
+
+    private volatile transient Double permitIntervalMicros;
 
     /**
      * Default constructor for creating an instance without initializing fields.
      */
     public SlidingWindow() {
+        this(DEFAULT_PERMITS, DEFAULT_TIME_WINDOW);
     }
 
     /**
@@ -59,20 +68,26 @@ public class SlidingWindow implements Serializable {
      * @param timeWindowInMs the duration of the time window in milliseconds
      */
     public SlidingWindow(int threshold, long timeWindowInMs) {
-        this.threshold = threshold;
-        this.timeWindowInMs = timeWindowInMs;
+        this.threshold = threshold <= 0 ? DEFAULT_PERMITS : threshold;
+        this.timeWindowInMs = timeWindowInMs <= 0 ? DEFAULT_TIME_WINDOW : timeWindowInMs;
     }
 
     /**
-     * Calculates and returns the allowed actions per second based on the current threshold
-     * and time window duration. This can be used to understand the rate of allowed actions
-     * in a more commonly used time unit.
+     * Returns the time interval (in microseconds) between each permit.
      *
-     * @return the number of allowed actions per second. If the time window duration is not
-     * positive, returns 0 to indicate an invalid configuration.
+     * @return The time interval (in microseconds) between each permit.
      */
-    public double getSecondPermits() {
-        return timeWindowInMs <= 0 ? 0 : (double) threshold / ((double) timeWindowInMs / 1000);
+    public double getPermitIntervalMicros() {
+        if (permitIntervalMicros == null) {
+            synchronized (this) {
+                if (permitIntervalMicros == null) {
+                    double timeWindowMicros = (timeWindowInMs <= 0 ? DEFAULT_TIME_WINDOW : timeWindowInMs) * 1000D;
+                    long maxRequests = threshold <= 0 ? DEFAULT_PERMITS : threshold;
+                    permitIntervalMicros = timeWindowMicros / maxRequests;
+                }
+            }
+        }
+        return permitIntervalMicros;
     }
 }
 
