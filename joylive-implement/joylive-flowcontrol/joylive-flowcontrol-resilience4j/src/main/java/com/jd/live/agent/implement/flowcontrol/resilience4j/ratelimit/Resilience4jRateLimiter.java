@@ -37,17 +37,17 @@ public class Resilience4jRateLimiter extends AbstractRateLimiter {
     }
 
     public Resilience4jRateLimiter(RateLimitPolicy policy, SlidingWindow window, String name) {
-        super(policy);
+        super(policy, TimeUnit.NANOSECONDS);
         // Create a RateLimiter
         this.limiter = new AtomicRateLimiter(name, RateLimiterConfig.custom()
-                .timeoutDuration(timeout)
+                .timeoutDuration(Duration.ofNanos(timeout)) // the timeout is nanoseconds
                 .limitRefreshPeriod(Duration.ofMillis(window.getTimeWindowInMs()))
                 .limitForPeriod(window.getThreshold())
                 .build());
     }
 
     @Override
-    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
-        return permits > 0 && limiter.acquirePermission(permits, timeout, timeUnit);
+    protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
+        return limiter.acquirePermission(permits, timeout, timeUnit);
     }
 }

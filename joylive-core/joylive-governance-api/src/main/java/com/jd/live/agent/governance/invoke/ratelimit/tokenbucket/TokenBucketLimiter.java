@@ -48,7 +48,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
 
     protected long nextFreeTicketMicros;
 
-    protected volatile Object mutex;
+    protected final Object mutex = new Object();
 
     /**
      * The currently stored permits.
@@ -56,7 +56,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     private double storedPermits;
 
     public TokenBucketLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
-        super(limitPolicy);
+        super(limitPolicy, TimeUnit.MILLISECONDS);
         this.stopwatch = SleepingStopwatch.createFromSystemTimer();
         double secondPermits = slidingWindow.getSecondPermits();
         this.stableIntervalMicros = secondPermits <= 0 ? DEFAULT_SECOND_PERMITS : TimeUnit.SECONDS.toMicros(1L) / secondPermits;
@@ -65,32 +65,34 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     }
 
     @Override
-    public boolean acquire() {
-        return acquire(1, timeout.toMillis(), TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean acquire(int permits) {
-        return acquire(permits, timeout.toMillis(), TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
-        if (permits <= 0) {
-            throw new IllegalArgumentException("Permits must be greater than 0");
-        }
-        long timeoutMicros = timeUnit.toMicros(timeout < 0 ? 0 : timeout);
+    protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
+        long timeoutMicros = timeout <= 0 ? 0 : timeUnit.toMicros(timeout);
         long nowMicros = stopwatch.readMicros();
-        if (isTimeout(nowMicros, timeoutMicros)) {
+        if (isTimeout(nowMicros, timeoutMicros) && isFull()) {
             return false;
         }
-        synchronized (mutex()) {
+        return doAcquire(permits, nowMicros, timeoutMicros);
+    }
+
+    /**
+     * Attempts to acquire the specified number of permits,
+     * waiting if necessary until the permits become available or the specified timeout expires.
+     *
+     * @param permits       the number of permits to acquire
+     * @param nowMicros     the current time in microseconds
+     * @param timeoutMicros the maximum time to wait in microseconds
+     * @return true if the permits were acquired, false if the timeout expired
+     */
+    protected boolean doAcquire(int permits, long nowMicros, long timeoutMicros) {
+        long microsToWait;
+        synchronized (mutex) {
             // double check in lock
             if (isTimeout(nowMicros, timeoutMicros)) {
                 return false;
             }
-            doAcquire(permits, nowMicros);
+            microsToWait = computeWaitFor(permits, nowMicros);
         }
+        stopwatch.sleepMicrosUninterruptibly(microsToWait);
         return true;
     }
 
@@ -120,14 +122,12 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     }
 
     /**
-     * Acquires the specified number of permits, blocking until they become available.
+     * Checks if the current state is full.
      *
-     * @param permits   the number of permits to acquire
-     * @param nowMicros the current time in microseconds
+     * @return {@code true} if the state is full, {@code false} otherwise.
      */
-    protected void doAcquire(int permits, long nowMicros) {
-        // always pay in advance
-        stopwatch.sleepMicrosUninterruptibly(waitFor(permits, nowMicros));
+    protected boolean isFull() {
+        return false;
     }
 
     /**
@@ -137,7 +137,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      * @param nowMicros the current time in microseconds
      * @return the time waited in microseconds, or 0 if no wait was necessary
      */
-    protected long waitFor(long permits, long nowMicros) {
+    protected long computeWaitFor(long permits, long nowMicros) {
         long momentAvailable = waitForEarliestAvailable(permits, nowMicros);
         return max(momentAvailable - nowMicros, 0);
     }
@@ -192,24 +192,6 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
             storedPermits = min(maxPermits, storedPermits + newPermits);
             nextFreeTicketMicros = nowMicros;
         }
-    }
-
-    /**
-     * Returns the mutex object used for synchronization.
-     *
-     * @return the mutex object
-     */
-    private Object mutex() {
-        Object mutex = this.mutex;
-        if (mutex == null) {
-            synchronized (this) {
-                mutex = this.mutex;
-                if (mutex == null) {
-                    this.mutex = mutex = new Object();
-                }
-            }
-        }
-        return mutex;
     }
 
     /**
