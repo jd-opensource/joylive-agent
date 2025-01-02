@@ -26,7 +26,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
     @Override
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
-        if (ThreadLocalRandom.current().nextBoolean()) {
+        if (ThreadLocalRandom.current().nextInt(5) == 0) {
             responseObserver.onError(new RuntimeException("error"));
             return;
         }
