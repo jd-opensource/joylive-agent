@@ -21,12 +21,18 @@ import com.jd.live.agent.core.util.option.Option;
 
 import java.util.Objects;
 
+import static com.jd.live.agent.core.util.StringUtils.join;
+import static com.jd.live.agent.core.util.StringUtils.split;
+
 /**
  * Configuration class for Redis settings.
  */
 public class RedisConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
+
+    private static final String SCHEMA_REDISS = "rediss://";
+    private static final String SCHEMA_REDIS = "redis://";
 
     private static final String KEY_TYPE = "type";
     private static final String KEY_ADDRESS = "address";
@@ -92,13 +98,13 @@ public class RedisConfig {
 
     public RedisConfig(long id, Option option) {
         this.id = id;
-        type = option.getString(KEY_TYPE);
-        address = option.getString(KEY_ADDRESS);
-        user = option.getString(KEY_USER);
-        password = option.getString(KEY_PASSWORD);
+        type = option.getTrimmed(KEY_TYPE, RedisType.CLUSTER.name()).toUpperCase();
+        address = join(resolveAddress(split(option.getTrimmed(KEY_ADDRESS, "").toLowerCase())), ",");
+        user = option.getTrimmed(KEY_USER);
+        password = option.getTrimmed(KEY_PASSWORD);
         database = option.getNatural(KEY_DATABASE, 0);
-        sentinelUser = option.getString(KEY_SENTINEL_USER);
-        sentinelPassword = option.getString(KEY_SENTINEL_PASSWORD);
+        sentinelUser = option.getTrimmed(KEY_SENTINEL_USER);
+        sentinelPassword = option.getTrimmed(KEY_SENTINEL_PASSWORD);
         timeout = option.getPositive(KEY_TIMEOUT, 5000);
         keepAlive = option.getBoolean(KEY_RETRY_ATTEMPTS, false);
         connectTimeout = option.getPositive(KEY_CONNECT_TIMEOUT, 10000);
@@ -167,6 +173,46 @@ public class RedisConfig {
                 slaveConnectionPoolSize, slaveConnectionMinimumIdleSize,
                 connectTimeout, idleConnectionTimeout, pingConnectionInterval, keepAlive,
                 retryAttempts, retryInterval, sentinelUser, sentinelPassword);
+    }
+
+    /**
+     * Resolves a single address by ensuring it has the correct Redis schema.
+     * If the address is null or empty, it returns the address as is.
+     * If the address already starts with "rediss://" or "redis://", it returns the address unchanged.
+     * Otherwise, it prepends "redis://" to the address.
+     *
+     * @param address the address to resolve
+     * @return the resolved address with the correct schema
+     */
+    protected String resolveAddress(String address) {
+        if (address == null || address.isEmpty()) {
+            return address;
+        } else if (address.startsWith(SCHEMA_REDISS)) {
+            return address;
+        } else if (address.startsWith(SCHEMA_REDIS)) {
+            return address;
+        } else {
+            return SCHEMA_REDIS + address;
+        }
+    }
+
+    /**
+     * Resolves an array of addresses by ensuring each address has the correct Redis schema.
+     * It uses the {@link #resolveAddress(String)} method for each individual address.
+     *
+     * @param addresses the array of addresses to resolve
+     * @return an array of resolved addresses with the correct schema
+     */
+    protected String[] resolveAddress(String[] addresses) {
+        String[] result = null;
+        if (addresses != null) {
+            result = new String[addresses.length];
+            for (int i = 0; i < addresses.length; i++) {
+                result[i] = resolveAddress(addresses[i]);
+            }
+        }
+
+        return result;
     }
 
 

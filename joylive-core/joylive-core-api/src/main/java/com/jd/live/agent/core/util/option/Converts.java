@@ -99,7 +99,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return new Date(((Number) value).longValue());
         } else if (value instanceof CharSequence) {
-            String text = value.toString();
+            String text = value.toString().trim();
             try {
                 return new Date((Long.parseLong(text)));
             } catch (NumberFormatException e) {
@@ -138,7 +138,7 @@ public abstract class Converts {
         } else if (format == null) {
             return def;
         } else if (value instanceof CharSequence) {
-            String text = value.toString();
+            String text = value.toString().trim();
             try {
                 Date result = format.parse(text);
                 return result == null ? def : result;
@@ -172,7 +172,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return ((Number) value).floatValue();
         } else if (value instanceof CharSequence || value instanceof Character) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if (text.isEmpty()) {
                 return def;
             }
@@ -208,7 +208,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return ((Number) value).doubleValue();
         } else if (value instanceof CharSequence || value instanceof Character) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if (text.isEmpty()) {
                 return def;
             }
@@ -244,7 +244,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return ((Number) value).longValue();
         } else if (value instanceof CharSequence || value instanceof Character) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if (text.isEmpty()) {
                 return def;
             }
@@ -280,7 +280,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return ((Number) value).intValue();
         } else if (value instanceof CharSequence || value instanceof Character) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if (text.isEmpty()) {
                 return def;
             }
@@ -316,7 +316,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return ((Number) value).shortValue();
         } else if (value instanceof CharSequence || value instanceof Character) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if (text.isEmpty()) {
                 return def;
             }
@@ -352,7 +352,7 @@ public abstract class Converts {
         } else if (value instanceof Number) {
             return ((Number) value).byteValue();
         } else if (value instanceof CharSequence || value instanceof Character) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if (text.isEmpty()) {
                 return def;
             }
@@ -392,7 +392,7 @@ public abstract class Converts {
         } else if (value instanceof Character) {
             return ((Character) value) != '0';
         } else if (value instanceof CharSequence) {
-            String text = value.toString();
+            String text = value.toString().trim();
             if ("true".equalsIgnoreCase(text)) {
                 return true;
             } else if ("false".equalsIgnoreCase(text)) {

@@ -24,10 +24,6 @@ import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 public interface RedisConfigurator<T> {
 
-    String SCHEMA_REDISS = "rediss://";
-
-    String SCHEMA_REDIS = "redis://";
-
     /**
      * Configures the given configuration object using settings from the provided {@link RedisConfig}.
      *
@@ -54,46 +50,6 @@ public interface RedisConfigurator<T> {
             config.setConnectTimeout(redisConfig.connectTimeout);
             config.setIdleConnectionTimeout(redisConfig.idleConnectionTimeout);
             config.setPingConnectionInterval(redisConfig.pingConnectionInterval);
-        }
-
-        /**
-         * Resolves a single address by ensuring it has the correct Redis schema.
-         * If the address is null or empty, it returns the address as is.
-         * If the address already starts with "rediss://" or "redis://", it returns the address unchanged.
-         * Otherwise, it prepends "redis://" to the address.
-         *
-         * @param address the address to resolve
-         * @return the resolved address with the correct schema
-         */
-        protected String resolveAddress(String address) {
-            if (address == null || address.isEmpty()) {
-                return address;
-            } else if (address.startsWith(SCHEMA_REDISS)) {
-                return address;
-            } else if (address.startsWith(SCHEMA_REDIS)) {
-                return address;
-            } else {
-                return SCHEMA_REDIS + address;
-            }
-        }
-
-        /**
-         * Resolves an array of addresses by ensuring each address has the correct Redis schema.
-         * It uses the {@link #resolveAddress(String)} method for each individual address.
-         *
-         * @param addresses the array of addresses to resolve
-         * @return an array of resolved addresses with the correct schema
-         */
-        protected String[] resolveAddress(String[] addresses) {
-            String[] result = null;
-            if (addresses != null) {
-                result = new String[addresses.length];
-                for (int i = 0; i < addresses.length; i++) {
-                    result[i] = resolveAddress(addresses[i]);
-                }
-            }
-
-            return result;
         }
 
     }
@@ -145,7 +101,7 @@ public interface RedisConfigurator<T> {
         @Override
         public void configure(SentinelServersConfig config, RedisConfig redisConfig) {
             super.configure(config, redisConfig);
-            config.addSentinelAddress(resolveAddress(split(redisConfig.address)))
+            config.addSentinelAddress(split(redisConfig.address))
                     .setDatabase(config.getDatabase())
                     .setSentinelUsername(redisConfig.sentinelUser)
                     .setSentinelPassword(redisConfig.sentinelPassword);
@@ -162,7 +118,7 @@ public interface RedisConfigurator<T> {
         @Override
         public void configure(ClusterServersConfig config, RedisConfig redisConfig) {
             super.configure(config, redisConfig);
-            config.addNodeAddress(resolveAddress(split(redisConfig.address)));
+            config.addNodeAddress(split(redisConfig.address));
         }
     }
 
@@ -176,7 +132,7 @@ public interface RedisConfigurator<T> {
         @Override
         public void configure(ReplicatedServersConfig config, RedisConfig redisConfig) {
             super.configure(config, redisConfig);
-            config.addNodeAddress(resolveAddress(split(redisConfig.address))).setDatabase(config.getDatabase());
+            config.addNodeAddress(split(redisConfig.address)).setDatabase(config.getDatabase());
         }
     }
 
@@ -190,7 +146,7 @@ public interface RedisConfigurator<T> {
         @Override
         public void configure(SingleServerConfig config, RedisConfig redisConfig) {
             super.configure(config, redisConfig);
-            config.setAddress(resolveAddress(redisConfig.address))
+            config.setAddress(redisConfig.address)
                     .setDatabase(redisConfig.database)
                     .setConnectionPoolSize(redisConfig.connectionPoolSize)
                     .setConnectionMinimumIdleSize(redisConfig.connectionMinimumIdleSize);
