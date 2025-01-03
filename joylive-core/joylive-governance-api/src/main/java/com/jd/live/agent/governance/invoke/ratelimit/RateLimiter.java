@@ -77,4 +77,12 @@ public interface RateLimiter {
      * @return policy
      */
     RateLimitPolicy getPolicy();
+
+    default boolean isExpired(long expireTime) {
+        return System.currentTimeMillis() - getLastAcquireTime() > expireTime;
+    }
+
+    default void recycle() {
+
+    }
 }

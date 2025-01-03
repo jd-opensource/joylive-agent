@@ -17,7 +17,7 @@ package com.jd.live.agent.implement.ratelimit.resilience4j.test;
 
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
-import com.jd.live.agent.implement.flowcontrol.resilience4j.ratelimit.Resilience4jRateLimiter;
+import com.jd.live.agent.implement.flowcontrol.ratelimit.resilience4j.Resilience4jRateLimiter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

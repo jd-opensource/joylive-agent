@@ -1,1 +1,1 @@
-com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak.Resilience4jCircuitBreakerFactory
+com.jd.live.agent.implement.flowcontrol.circuitbreak.resilience4j.Resilience4jCircuitBreakerFactory

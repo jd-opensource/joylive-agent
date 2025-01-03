@@ -16,7 +16,7 @@
  *
  *
  */
-package com.jd.live.agent.implement.flowcontrol.resilience4j.ratelimit;
+package com.jd.live.agent.implement.flowcontrol.ratelimit.resilience4j;
 
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
