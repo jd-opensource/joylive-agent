@@ -33,7 +33,7 @@ import java.util.List;
  * @since 1.6.0
  */
 @Injectable
-@Extension(value = "RedissonCluster")
+@Extension(value = "Redis")
 public class RedissonRateLimiterFactory extends AbstractRateLimiterFactory {
 
     @Inject(Timer.COMPONENT_TIMER)

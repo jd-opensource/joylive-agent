@@ -445,7 +445,7 @@
             {
               "name": "limit-rule-1",
               "version": 1704038400000,
-              "realizeType": "RedissonCluster",
+              "realizeType": "Redis",
               "slidingWindows": [
                 {
                   "threshold": 100,
