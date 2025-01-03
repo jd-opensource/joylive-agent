@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.resilience4j.ratelimit;
+package com.jd.live.agent.implement.flowcontrol.ratelimit.resilience4j;
 
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;

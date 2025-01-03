@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.resilience4j.concurrencylimit;
+package com.jd.live.agent.implement.flowcontrol.concurrencylimit.resilience4j;
 
 import com.jd.live.agent.governance.invoke.concurrencylimit.AbstractConcurrencyLimiter;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;

@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -99,19 +100,20 @@ public abstract class AbstractRateLimiterFactory implements RateLimiterFactory {
      */
     private void recycle() {
         long expireTime = governanceConfig.getServiceConfig().getRateLimiter().getExpireTime();
-        for (Map.Entry<Long, AtomicReference<RateLimiter>> entry : limiters.entrySet()) {
-            AtomicReference<RateLimiter> reference = entry.getValue();
-            RateLimiter limiter = reference.get();
-            if (limiter != null && (System.currentTimeMillis() - limiter.getLastAcquireTime()) > expireTime) {
-                reference = limiters.remove(entry.getKey());
-                if (reference != null) {
-                    limiter = reference.get();
-                    if (limiter != null && (System.currentTimeMillis() - limiter.getLastAcquireTime()) <= expireTime) {
-                        limiters.putIfAbsent(entry.getKey(), reference);
+        List<RateLimiter> recycles = new ArrayList<>();
+        limiters.forEach((key, reference) -> {
+            limiters.compute(key, (k, ref) -> {
+                if (ref != null) {
+                    RateLimiter limiter = ref.get();
+                    if (limiter != null && limiter.isExpired(expireTime)) {
+                        recycles.add(limiter);
+                        return null;
                     }
                 }
-            }
-        }
+                return ref;
+            });
+        });
+        recycles.forEach(RateLimiter::recycle);
     }
 
     /**

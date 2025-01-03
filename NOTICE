@@ -87,6 +87,19 @@ joylive-flowcontrol-resilience4j
     io.github.resilience4j -> com.jd.live.agent.shaded.io.github.resilience4j
     io.vavr -> com.jd.live.agent.shaded.io.vavr
     org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+joylive-flowcontrol-redisson
+    org.redisson -> com.jd.live.agent.shaded.org.redisson
+    io.netty -> com.jd.live.agent.shaded.io.netty
+    javax.cache -> com.jd.live.agent.shaded.javax.cache
+    rx -> com.jd.live.agent.shaded.rx
+    reactor -> com.jd.live.agent.shaded.reactor
+    org.reactivestreams -> com.jd.live.agent.shaded.org.reactivestreams
+    org.objenesis -> com.jd.live.agent.shaded.org.objenesis
+    com.esotericsoftware -> com.jd.live.agent.shaded.com.esotericsoftware
+    com.fasterxml -> com.jd.live.agent.shaded.com.fasterxml depend on joylive-parser-jackson
+    org.yaml -> com.jd.live.agent.shaded.org.yaml depend on joylive-parser-jackson
+    net.bytebuddy -> com.jd.live.agent.shaded.net.bytebuddy depend on joylive-bytekit-bytebuddy
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
 joylive-service-nacos
     com.alibaba.nacos -> com.jd.live.agent.shaded.com.alibaba.nacos
     org.codehaus -> com.jd.live.agent.shaded.org.codehaus depend on joylive-event-opentelemetry

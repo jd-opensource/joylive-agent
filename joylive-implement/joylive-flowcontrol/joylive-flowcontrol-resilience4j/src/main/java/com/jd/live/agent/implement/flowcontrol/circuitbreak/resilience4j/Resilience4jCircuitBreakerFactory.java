@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.resilience4j.circuitbreak;
+package com.jd.live.agent.implement.flowcontrol.circuitbreak.resilience4j;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;

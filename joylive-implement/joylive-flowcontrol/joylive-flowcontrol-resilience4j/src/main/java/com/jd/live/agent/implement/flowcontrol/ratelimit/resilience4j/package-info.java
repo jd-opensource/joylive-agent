@@ -19,4 +19,4 @@
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
-package com.jd.live.agent.implement.flowcontrol.resilience4j.ratelimit;
+package com.jd.live.agent.implement.flowcontrol.ratelimit.resilience4j;

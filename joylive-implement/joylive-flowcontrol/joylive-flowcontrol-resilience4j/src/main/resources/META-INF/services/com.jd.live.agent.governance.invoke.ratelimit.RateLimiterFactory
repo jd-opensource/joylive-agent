@@ -1,1 +1,1 @@
-com.jd.live.agent.implement.flowcontrol.resilience4j.ratelimit.Resilience4jRateLimiterFactory
+com.jd.live.agent.implement.flowcontrol.ratelimit.resilience4j.Resilience4jRateLimiterFactory

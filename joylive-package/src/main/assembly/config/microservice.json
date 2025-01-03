@@ -408,6 +408,73 @@
     ]
   },
   {
+    "name": "service-provider-reactive",
+    "serviceType": "HTTP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "PREFER_LOCAL_UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "clusterPolicy": {
+            "type": "failover",
+            "retryPolicy": {
+              "retry": 10,
+              "interval": 1000,
+              "timeout": 5000,
+              "errorCodes": [
+                500,
+                502
+              ],
+              "methods": [
+                "GET"
+              ],
+              "exceptions": [
+                "java.lang.NullPointException"
+              ],
+              "version": 1704038400000
+            }
+          },
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "realizeType": "RedissonCluster",
+              "slidingWindows": [
+                {
+                  "threshold": 100,
+                  "timeWindowInMs": 1000
+                }
+              ],
+              "maxWaitMs": 100,
+              "actionParameters": {
+                "type": "Single",
+                "address": "127.0.0.1:6379"
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "dubbo3-provider",
     "serviceType": "RPC_APP",
     "version": 0,
