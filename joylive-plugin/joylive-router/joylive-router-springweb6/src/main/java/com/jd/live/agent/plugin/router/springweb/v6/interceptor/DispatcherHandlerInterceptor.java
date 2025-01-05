@@ -62,7 +62,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                 mono = mono.doOnError(ex -> {
                     Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
                     if (handled == null || !handled) {
-                        HttpHeaders headers = exchange.getResponse().getHeaders();
+                        HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
                         labelHeaders(ex, headers::set);
                     }
                 });

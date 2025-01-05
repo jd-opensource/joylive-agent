@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.PolicyVersion;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,7 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Setter
 @Getter
-public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy {
+public class CircuitBreakPolicy extends PolicyId
+        implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy, PolicyVersion {
 
     public static final String SLIDING_WINDOW_TIME = "time";
     public static final String SLIDING_WINDOW_COUNT = "count";
@@ -45,6 +47,8 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     public static final int DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE = 10;
     public static final int DEFAULT_SLIDING_WINDOW_SIZE = 100;
     public static final int DEFAULT_MIN_CALLS_THRESHOLD = 10;
+    public static final int DEFAULT_INSTANCE_RECOVER_DURATION = 1000 * 15;
+    public static final int DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE = 0;
 
     /**
      * Name of this policy
@@ -59,7 +63,7 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     /**
      * Level of circuit breaker policy
      */
-    private CircuitLevel level = CircuitLevel.INSTANCE;
+    private CircuitBreakLevel level = CircuitBreakLevel.INSTANCE;
 
     /**
      * Sliding window type (statistical window type): count, time
@@ -126,10 +130,17 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
      */
     private int allowedCallsInHalfOpenState = DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE;
 
+    private int maxWaitDurationInHalfOpenState = DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE;
+
     /**
      * Whether to force the circuit breaker to be turned on
      */
     private boolean forceOpen = false;
+
+    /**
+     * The gradual recovery period after the instance-level circuit breaker is opened.
+     */
+    private int recoveryDuration = DEFAULT_INSTANCE_RECOVER_DURATION;
 
     /**
      * Downgrade configuration
@@ -142,9 +153,9 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     private long version;
 
     /**
-     * Map of temporarily blocked endpoints, key is endpoint id and value is the end time of block
+     * Map of temporarily blocked endpoints
      */
-    private Map<String, Long> broken = new ConcurrentHashMap<>();
+    private transient Map<String, CircuitBreakEndpoint> endpoints = new ConcurrentHashMap<>();
 
     @Override
     public void supplement(CircuitBreakPolicy source) {
@@ -183,7 +194,7 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
             uri = source.getUri();
         }
         if (source.getVersion() == version) {
-            broken = source.broken;
+            endpoints = source.endpoints;
         }
     }
 
@@ -208,44 +219,61 @@ public class CircuitBreakPolicy extends PolicyId implements PolicyInherit.Policy
     }
 
     /**
-     * Checks if the circuit for the given ID is currently broken.
+     * Retrieves the circuit break endpoint by its ID.
      *
-     * @param id  the identifier of the circuit.
-     * @param now the current time in milliseconds.
-     * @return {@code true} if the circuit is broken, {@code false} otherwise.
+     * @param id the identifier of the circuit break endpoint
+     * @return the circuit break endpoint, or null if not found or ID is null
      */
-    public boolean isBroken(String id, long now) {
-        Long endTime = id == null ? null : broken.get(id);
-        if (endTime == null) {
-            return false;
-        }
-        if (endTime <= now) {
-            broken.remove(id);
-            return false;
-        }
-        return true;
+    public CircuitBreakEndpoint getEndpoint(String id) {
+        return id == null ? null : endpoints.get(id);
     }
 
     /**
-     * Adds an entry to the broken circuits with the specified ID and timestamp.
+     * Adds an endpoint to the circuit breaker's list of broken endpoints.
      *
-     * @param id  the identifier of the circuit.
-     * @param now the current time in milliseconds when the circuit was broken.
+     * @param endpoint The endpoint to add. If the endpoint is null, it will not be added.
      */
-    public void addBroken(String id, long now) {
-        if (id != null) {
-            broken.put(id, now);
+    public void addEndpoint(CircuitBreakEndpoint endpoint) {
+        if (endpoint != null) {
+            endpoints.put(endpoint.getId(), endpoint);
         }
     }
 
     /**
-     * Removes the entry of the broken circuit with the specified ID.
+     * Updates the state of the specified endpoint.
      *
-     * @param id the identifier of the circuit to remove.
+     * @param id    The unique identifier of the endpoint to update.
+     * @param state The new state to set for the endpoint.
      */
-    public void removeBroken(String id) {
+    public void updateEndpoint(String id, CircuitBreakEndpointState state) {
+        CircuitBreakEndpoint endpoint = getEndpoint(id);
+        if (endpoint != null) {
+            endpoint = endpoint.clone();
+            endpoint.setState(state);
+            endpoint.setLastUpdateTime(System.currentTimeMillis());
+            endpoints.put(id, endpoint);
+        }
+    }
+
+    /**
+     * Removes the endpoint with the specified ID from the collection if it exists.
+     *
+     * @param id The ID of the endpoint to be removed.
+     */
+    public void removeEndpoint(String id) {
         if (id != null) {
-            broken.remove(id);
+            endpoints.remove(id);
+        }
+    }
+
+    /**
+     * Removes the specified endpoint if it exists.
+     *
+     * @param endpoint The endpoint to be removed.
+     */
+    public void removeEndpoint(CircuitBreakEndpoint endpoint) {
+        if (endpoint != null) {
+            endpoints.computeIfPresent(endpoint.getId(), (k, v) -> v == endpoint ? null : v);
         }
     }
 

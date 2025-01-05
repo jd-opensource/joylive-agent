@@ -71,7 +71,7 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     }
 
     @Override
-    public Integer getOriginWeight(ServiceRequest request) {
+    public Integer getWeight(ServiceRequest request) {
         String weight = url.getMethodParameter(request.getMethod(), Constants.LABEL_WEIGHT, null);
         if (weight == null || weight.isEmpty()) {
             weight = url.getParameter(Constants.LABEL_WEIGHT);

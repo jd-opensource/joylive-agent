@@ -15,18 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.ratelimit;
 
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.RecyclerConfig;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicenseeFactory;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AbstractLimiterFactory provides a base implementation for factories that create and manage rate limiters.
@@ -36,84 +27,18 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @since 1.0.0
  */
-public abstract class AbstractRateLimiterFactory implements RateLimiterFactory {
-
-    private final Map<Long, AtomicReference<RateLimiter>> limiters = new ConcurrentHashMap<>();
-
-    @Inject(Timer.COMPONENT_TIMER)
-    private Timer timer;
-
-    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
-    private GovernanceConfig governanceConfig;
-
-    private final AtomicBoolean recycled = new AtomicBoolean(false);
+public abstract class AbstractRateLimiterFactory
+        extends AbstractLicenseeFactory<RateLimitPolicy, Long, RateLimiter>
+        implements RateLimiterFactory {
 
     @Override
     public RateLimiter get(RateLimitPolicy policy) {
-        if (policy == null) {
-            return null;
-        }
-        List<SlidingWindow> windows = policy.getSlidingWindows();
-        if (windows == null || windows.isEmpty()) {
-            return null;
-        }
-        AtomicReference<RateLimiter> reference = limiters.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
-        RateLimiter rateLimiter = reference.get();
-        if (rateLimiter != null && rateLimiter.getPolicy().getVersion() == policy.getVersion()) {
-            return rateLimiter;
-        }
-        RateLimiter newLimiter = create(policy);
-        while (true) {
-            rateLimiter = reference.get();
-            if (rateLimiter == null || rateLimiter.getPolicy().getVersion() < policy.getVersion()) {
-                if (reference.compareAndSet(rateLimiter, newLimiter)) {
-                    rateLimiter = newLimiter;
-                    if (recycled.compareAndSet(false, true)) {
-                        addRecycler();
-                    }
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        return rateLimiter;
+        return get(policy, policy == null ? null : policy.getId(), p -> p.getSlidingWindowSize() > 0, () -> create(policy));
     }
 
-    /**
-     * Schedules a recurring task to recycle rate limiters based on their expiration time.
-     * This method retrieves the clean interval from the configuration and sets up a delayed task
-     * that calls the {@link #recycle()} method and reschedules itself.
-     */
-    private void addRecycler() {
-        long cleanInterval = governanceConfig.getServiceConfig().getRateLimiter().getCleanInterval();
-        timer.delay("recycle-rate-limiter", cleanInterval, () -> {
-            recycle();
-            addRecycler();
-        });
-    }
-
-    /**
-     * Recycles expired rate limiters. This method checks each concurrency limiter to see if it has
-     * expired based on the current time and the configured expiration time. If a rate limiter
-     * has exceeded its expiration time, it is removed from the collection.
-     */
-    private void recycle() {
-        long expireTime = governanceConfig.getServiceConfig().getRateLimiter().getExpireTime();
-        List<RateLimiter> recycles = new ArrayList<>();
-        limiters.forEach((key, reference) -> {
-            limiters.compute(key, (k, ref) -> {
-                if (ref != null) {
-                    RateLimiter limiter = ref.get();
-                    if (limiter != null && limiter.isExpired(expireTime)) {
-                        recycles.add(limiter);
-                        return null;
-                    }
-                }
-                return ref;
-            });
-        });
-        recycles.forEach(RateLimiter::recycle);
+    @Override
+    protected RecyclerConfig getConfig() {
+        return governanceConfig.getServiceConfig().getRateLimiter();
     }
 
     /**

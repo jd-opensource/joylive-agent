@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.ratelimit;
 
+import com.jd.live.agent.governance.invoke.permission.Licensee;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 
 import java.util.concurrent.TimeUnit;
@@ -24,23 +25,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0.0
  */
-public interface RateLimiter {
+public interface RateLimiter extends Licensee<RateLimitPolicy> {
 
-    /**
-     * Try to get a permit return the result
-     *
-     * @return result
-     */
+    @Override
     default boolean acquire() {
-        return acquire(1);
+        return acquire(1, 0, TimeUnit.MILLISECONDS);
     }
-
-    /**
-     * Retrieves the timestamp of the last successful acquisition.
-     *
-     * @return the timestamp of the last acquisition in milliseconds.
-     */
-    long getLastAcquireTime();
 
     /**
      * Try to get a permit within a duration and return the result
@@ -59,7 +49,9 @@ public interface RateLimiter {
      * @param permits Permits
      * @return result
      */
-    boolean acquire(int permits);
+    default boolean acquire(int permits) {
+        return acquire(permits, 0, TimeUnit.MILLISECONDS);
+    }
 
     /**
      * Try to get some permits within a duration and return the result
@@ -71,18 +63,4 @@ public interface RateLimiter {
      */
     boolean acquire(int permits, long timeout, TimeUnit timeUnit);
 
-    /**
-     * Get rate-limit policy
-     *
-     * @return policy
-     */
-    RateLimitPolicy getPolicy();
-
-    default boolean isExpired(long expireTime) {
-        return System.currentTimeMillis() - getLastAcquireTime() > expireTime;
-    }
-
-    default void recycle() {
-
-    }
 }

@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.invoke.permission.Licensee;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 
 /**
@@ -23,30 +24,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPoli
  *
  * @since 1.1.0
  */
-public interface CircuitBreaker {
-
-    /**
-     * Attempts to acquire a permit and returns the result.
-     *
-     * @return true if the permit is acquired successfully, false otherwise.
-     */
-    default boolean acquire() {
-        return true;
-    }
-
-    /**
-     * Retrieves the timestamp of the last successful acquisition.
-     *
-     * @return the timestamp of the last acquisition in milliseconds.
-     */
-    long getLastAcquireTime();
-
-    /**
-     * Checks if the circuit breaker is currently open.
-     *
-     * @return true if the circuit breaker is open, false otherwise.
-     */
-    boolean isOpen();
+public interface CircuitBreaker extends Licensee<CircuitBreakPolicy> {
 
     /**
      * Releases the acquired permit.
@@ -77,12 +55,6 @@ public interface CircuitBreaker {
      */
     void addListener(CircuitBreakerStateListener listener);
 
-    /**
-     * Retrieves the policy that governs the behavior of the circuit breaker.
-     *
-     * @return the circuit breaker policy.
-     */
-    CircuitBreakPolicy getPolicy();
 
     /**
      * Obtains the URI related to the circuit breaker.

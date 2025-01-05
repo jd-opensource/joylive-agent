@@ -19,7 +19,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * CircuitBreakerStateEvent
+ * Represents an event that captures the state transition of a circuit breaker.
  *
  * @since 1.1.0
  */
@@ -27,10 +27,19 @@ import lombok.Setter;
 @Getter
 public class CircuitBreakerStateEvent {
 
+    /**
+     * The URI associated with the circuit breaker.
+     */
     private String uri;
 
+    /**
+     * The previous state of the circuit breaker before the transition.
+     */
     private CircuitBreakerState from;
 
+    /**
+     * The new state of the circuit breaker after the transition.
+     */
     private CircuitBreakerState to;
 
 }

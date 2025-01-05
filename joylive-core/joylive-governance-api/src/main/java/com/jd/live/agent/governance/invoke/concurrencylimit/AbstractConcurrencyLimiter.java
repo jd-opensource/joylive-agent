@@ -3,17 +3,22 @@ package com.jd.live.agent.governance.invoke.concurrencylimit;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 import lombok.Getter;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * AbstractConcurrencyLimiter
  *
  * @since 1.0.0
  */
-@Getter
 public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
 
-    private final ConcurrencyLimitPolicy policy;
+    @Getter
+    protected final ConcurrencyLimitPolicy policy;
 
-    private long lastAcquireTime;
+    @Getter
+    protected long lastAccessTime;
+
+    protected final AtomicBoolean started = new AtomicBoolean(true);
 
     public AbstractConcurrencyLimiter(ConcurrencyLimitPolicy policy) {
         this.policy = policy;
@@ -21,8 +26,18 @@ public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
 
     @Override
     public boolean acquire() {
-        lastAcquireTime = System.currentTimeMillis();
+        if (!started.get()) {
+            return true;
+        }
+        lastAccessTime = System.currentTimeMillis();
         return doAcquire();
+    }
+
+    @Override
+    public void close() {
+        if (started.compareAndSet(true, false)) {
+            doClose();
+        }
     }
 
     /**
@@ -32,4 +47,11 @@ public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
      * @return true if the acquisition is successful, false otherwise.
      */
     protected abstract boolean doAcquire();
+
+    /**
+     * Closes the limiter.
+     */
+    protected void doClose() {
+
+    }
 }

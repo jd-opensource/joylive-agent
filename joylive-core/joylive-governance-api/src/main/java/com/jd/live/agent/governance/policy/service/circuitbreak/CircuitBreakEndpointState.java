@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.config;
-
-import lombok.Getter;
-import lombok.Setter;
+package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 /**
- * Configuration class for concurrency limiter settings.
+ * Represents the different states of a circuit breaker endpoint.
  */
-@Getter
-@Setter
-public class ConcurrencyLimiterConfig extends RecyclerConfig {
+public enum CircuitBreakEndpointState {
 
     /**
-     * The type of the concurrency limiter. Default is "Resilience4j".
+     * The circuit breaker endpoint is in the closed state, allowing requests to pass through.
      */
-    private String type = "Resilience4j";
+    CLOSED,
 
+    /**
+     * The circuit breaker endpoint is in the open state, blocking requests and returning a failure response.
+     */
+    OPEN,
+
+    /**
+     * The circuit breaker endpoint is in the half-open state, allowing a limited number of test requests to determine if the system has recovered.
+     */
+    HALF_OPEN
 }
 

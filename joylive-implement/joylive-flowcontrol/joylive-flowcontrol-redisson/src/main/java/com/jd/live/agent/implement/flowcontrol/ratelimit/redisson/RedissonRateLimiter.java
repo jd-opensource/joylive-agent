@@ -69,9 +69,9 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
     }
 
     @Override
-    public void recycle() {
+    protected void doClose() {
         if (client != null) {
-            client.decReference();
+            client.stop();
         }
     }
 }

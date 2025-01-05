@@ -37,7 +37,7 @@ public class RedisClient {
 
     private final Consumer<RedisClient> consumer;
 
-    private final RedissonClient delegate;
+    private volatile RedissonClient delegate;
 
     private long lastAccessTime;
 
@@ -46,7 +46,6 @@ public class RedisClient {
     public RedisClient(RedisConfig config, Consumer<RedisClient> consumer) {
         this.config = config;
         this.consumer = consumer;
-        this.delegate = createClient();
     }
 
     public long getId() {
@@ -82,17 +81,24 @@ public class RedisClient {
     }
 
     /**
-     * Increments the reference count of the Redis client.
+     * Start the redis client.
      */
-    public void incReference() {
+    public void start() {
+        if (delegate == null) {
+            synchronized (this) {
+                if (delegate == null) {
+                    delegate = createClient();
+                }
+            }
+        }
         counter.incrementAndGet();
     }
 
     /**
-     * Decrements the reference count of the Redis client.
+     * Stop the redis client.
      * If the reference count reaches zero, the client is removed by the consumer.
      */
-    public void decReference() {
+    public void stop() {
         if (counter.decrementAndGet() == 0) {
             consumer.accept(this);
         }

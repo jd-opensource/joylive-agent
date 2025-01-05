@@ -20,9 +20,29 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
  *
  * @since 1.1.0
  */
+
+/**
+ * Represents the different states of a circuit breaker.
+ */
 public enum CircuitBreakerState {
+
+    /**
+     * The circuit breaker is in the open state, blocking requests and returning a failure response.
+     */
     OPEN,
+
+    /**
+     * The circuit breaker is in the half-open state, allowing a limited number of test requests to determine if the system has recovered.
+     */
     HALF_OPEN,
+
+    /**
+     * The circuit breaker is in the closed state, allowing requests to pass through.
+     */
     CLOSED,
-    DISABLED;
+
+    /**
+     * The circuit breaker is in the disabled state, where it does not perform any circuit breaker functionality and allows all requests to pass through.
+     */
+    DISABLED
 }

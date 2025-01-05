@@ -15,91 +15,33 @@
  */
 package com.jd.live.agent.governance.invoke.concurrencylimit;
 
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.RecyclerConfig;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicenseeFactory;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AbstractConcurrencyLimiterFactory
  */
-public abstract class AbstractConcurrencyLimiterFactory implements ConcurrencyLimiterFactory {
-
-    @Inject(Timer.COMPONENT_TIMER)
-    private Timer timer;
-
-    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
-    private GovernanceConfig governanceConfig;
-
-    private final AtomicBoolean recycled = new AtomicBoolean(false);
-
-    private final Map<Long, AtomicReference<ConcurrencyLimiter>> limiters = new ConcurrentHashMap<>();
+public abstract class AbstractConcurrencyLimiterFactory
+        extends AbstractLicenseeFactory<ConcurrencyLimitPolicy, Long, ConcurrencyLimiter>
+        implements ConcurrencyLimiterFactory {
 
     @Override
     public ConcurrencyLimiter get(ConcurrencyLimitPolicy policy) {
-        if (policy == null) {
-            return null;
-        }
-        AtomicReference<ConcurrencyLimiter> reference = limiters.computeIfAbsent(policy.getId(), n -> new AtomicReference<>());
-        ConcurrencyLimiter concurrencyLimiter = reference.get();
-        if (concurrencyLimiter != null && concurrencyLimiter.getPolicy().getVersion() == policy.getVersion()) {
-            return concurrencyLimiter;
-        }
-        ConcurrencyLimiter newLimiter = create(policy);
-        while (true) {
-            concurrencyLimiter = reference.get();
-            if (concurrencyLimiter == null || concurrencyLimiter.getPolicy().getVersion() < policy.getVersion()) {
-                if (reference.compareAndSet(concurrencyLimiter, newLimiter)) {
-                    concurrencyLimiter = newLimiter;
-                    if (recycled.compareAndSet(false, true)) {
-                        addRecycler();
-                    }
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        return concurrencyLimiter;
+        return get(policy, policy == null ? null : policy.getId(), null, () -> create(policy));
+    }
+
+    @Override
+    protected RecyclerConfig getConfig() {
+        return governanceConfig.getServiceConfig().getConcurrencyLimiter();
     }
 
     /**
-     * Schedules a recurring task to recycle concurrency limiters based on their expiration time.
-     * This method retrieves the clean interval from the configuration and sets up a delayed task
-     * that calls the {@link #recycle()} method and reschedules itself.
+     * Retrieves a new instance of a {@link ConcurrencyLimiter} based on the provided
+     * concurrency limit policy.
+     *
+     * @param policy the policy that defines the concurrency limiting rules.
+     * @return a new instance of a concurrency limiter configured according to the policy.
      */
-    private void addRecycler() {
-        long cleanInterval = governanceConfig.getServiceConfig().getConcurrencyLimiter().getCleanInterval();
-        timer.delay("recycle-concurrency-limiter", cleanInterval, () -> {
-            recycle();
-            addRecycler();
-        });
-    }
-
-    /**
-     * Recycles expired concurrency limiters. This method checks each concurrency limiter to see if it has
-     * expired based on the current time and the configured expiration time. If a concurrency limiter
-     * has exceeded its expiration time, it is removed from the collection.
-     */
-    private void recycle() {
-        long expireTime = governanceConfig.getServiceConfig().getConcurrencyLimiter().getExpireTime();
-        for (Map.Entry<Long, AtomicReference<ConcurrencyLimiter>> entry : limiters.entrySet()) {
-            AtomicReference<ConcurrencyLimiter> reference = entry.getValue();
-            ConcurrencyLimiter limiter = reference.get();
-            if (limiter != null && (System.currentTimeMillis() - limiter.getLastAcquireTime()) > expireTime) {
-                reference = limiters.remove(entry.getKey());
-                if (reference != null) {
-                    limiter = reference.get();
-                    if (limiter != null && (System.currentTimeMillis() - limiter.getLastAcquireTime()) <= expireTime) {
-                        limiters.putIfAbsent(entry.getKey(), reference);
-                    }
-                }
-            }
-        }
-    }
+    protected abstract ConcurrencyLimiter create(ConcurrencyLimitPolicy policy);
 }

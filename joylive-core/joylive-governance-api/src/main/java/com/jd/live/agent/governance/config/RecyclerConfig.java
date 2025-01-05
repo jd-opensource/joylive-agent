@@ -18,17 +18,18 @@ package com.jd.live.agent.governance.config;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * Configuration class for concurrency limiter settings.
- */
 @Getter
 @Setter
-public class ConcurrencyLimiterConfig extends RecyclerConfig {
+public abstract class RecyclerConfig {
+    /**
+     * The interval in milliseconds at which the concurrency limiter should clean up expired entries.
+     * Default is 30,000 milliseconds (30 seconds).
+     */
+    protected long cleanInterval = 30000;
 
     /**
-     * The type of the concurrency limiter. Default is "Resilience4j".
+     * The time in milliseconds after which the concurrency limiter entries expire.
+     * Default is 60,000 milliseconds (60 seconds).
      */
-    private String type = "Resilience4j";
-
+    protected long expireTime = 60000;
 }
-

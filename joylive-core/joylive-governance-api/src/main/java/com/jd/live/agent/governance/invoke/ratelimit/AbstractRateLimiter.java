@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import lombok.Getter;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * AbstractRateLimiter is an abstract implementation of the RateLimiter interface,
@@ -56,7 +57,9 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     protected final Option option;
 
     @Getter
-    protected long lastAcquireTime;
+    protected long lastAccessTime;
+
+    protected final AtomicBoolean started = new AtomicBoolean(false);
 
     /**
      * Constructs an instance of the AbstractRateLimiter class with the given rate limit policy and time unit.
@@ -72,27 +75,38 @@ public abstract class AbstractRateLimiter implements RateLimiter {
 
     @Override
     public boolean acquire() {
-        this.lastAcquireTime = System.currentTimeMillis();
+        if (!started.get()) {
+            return true;
+        }
+        this.lastAccessTime = System.currentTimeMillis();
         return doAcquire(1, timeout, timeUnit);
     }
 
     @Override
     public boolean acquire(int permits) {
-        if (permits <= 0) {
-            return false;
+        if (!started.get()) {
+            return true;
         }
-        this.lastAcquireTime = System.currentTimeMillis();
-        return doAcquire(permits, timeout, timeUnit);
+        this.lastAccessTime = System.currentTimeMillis();
+        return permits <= 0 || doAcquire(permits, timeout, timeUnit);
     }
 
     @Override
     public boolean acquire(int permits, long timeout, TimeUnit timeUnit) {
-        if (permits <= 0) {
-            return false;
+        if (!started.get()) {
+            return true;
         }
-        this.lastAcquireTime = System.currentTimeMillis();
-        return doAcquire(permits, timeout, timeUnit);
+        this.lastAccessTime = System.currentTimeMillis();
+        return permits <= 0 || doAcquire(permits, timeout, timeUnit);
     }
+
+    @Override
+    public void close() {
+        if (started.compareAndSet(false, true)) {
+            doClose();
+        }
+    }
+
     /**
      * Try to get some permits within a duration and return the result
      *
@@ -102,6 +116,13 @@ public abstract class AbstractRateLimiter implements RateLimiter {
      * @return result
      */
     protected abstract boolean doAcquire(int permits, long timeout, TimeUnit timeUnit);
+
+    /**
+     * Closes the limiter.
+     */
+    protected void doClose() {
+
+    }
 
 }
 

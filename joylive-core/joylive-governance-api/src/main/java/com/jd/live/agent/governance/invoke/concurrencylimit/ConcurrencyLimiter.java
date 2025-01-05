@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.concurrencylimit;
 
+import com.jd.live.agent.governance.invoke.permission.Licensee;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 
 /**
@@ -22,26 +23,7 @@ import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
  *
  * @since 1.0.0
  */
-public interface ConcurrencyLimiter {
+public interface ConcurrencyLimiter extends Licensee<ConcurrencyLimitPolicy> {
 
-    /**
-     * Try to get a permit return the result
-     *
-     * @return result
-     */
-    boolean acquire();
 
-    /**
-     * Retrieves the timestamp of the last successful acquisition.
-     *
-     * @return the timestamp of the last acquisition in milliseconds.
-     */
-    long getLastAcquireTime();
-
-    /**
-     * Get concurrency-limit policy
-     *
-     * @return policy
-     */
-    ConcurrencyLimitPolicy getPolicy();
 }
