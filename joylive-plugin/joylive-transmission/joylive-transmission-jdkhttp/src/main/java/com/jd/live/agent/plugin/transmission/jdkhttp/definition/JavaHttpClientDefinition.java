@@ -18,10 +18,14 @@ package com.jd.live.agent.plugin.transmission.jdkhttp.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientInterceptor;
 
 /**
@@ -29,6 +33,7 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientI
  * This class specifies the conditions under which the {@link JavaHttpClientInterceptor}
  * is applied to modify or monitor HTTP requests during their construction.
  */
+@Injectable
 @Extension(value = "JavaHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(JavaHttpClientDefinition.TYPE_HTTP_REQUEST_BUILDER_IMPL)
@@ -40,10 +45,14 @@ public class JavaHttpClientDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_BUILD_FOR_WEBSOCKET = "buildForWebSocket";
 
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
+
     public JavaHttpClientDefinition() {
-        super(MatcherBuilder.named(TYPE_HTTP_REQUEST_BUILDER_IMPL),
+        this.matcher = () -> MatcherBuilder.named(TYPE_HTTP_REQUEST_BUILDER_IMPL);
+        this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_BUILD, METHOD_BUILD_FOR_WEBSOCKET),
-                        new JavaHttpClientInterceptor()));
+                        () -> new JavaHttpClientInterceptor(propagation))};
     }
 }

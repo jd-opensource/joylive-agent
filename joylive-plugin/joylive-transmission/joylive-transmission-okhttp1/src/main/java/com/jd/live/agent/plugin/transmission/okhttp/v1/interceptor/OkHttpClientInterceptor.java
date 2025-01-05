@@ -19,7 +19,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.squareup.okhttp.Request.Builder;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 
 /**
  * An interceptor that attaches additional metadata to each request.
@@ -30,11 +33,17 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
 
     private static final LockContext lock = new LockContext.DefaultLockContext();
 
+    private final Propagation propagation;
+
+    public OkHttpClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
+
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
             Builder builder = (Builder) ctx.getTarget();
-            RequestContext.cargos(builder::addHeader);
+            propagation.write(RequestContext.getOrCreate(), writer(builder::addHeader));
         }
     }
 

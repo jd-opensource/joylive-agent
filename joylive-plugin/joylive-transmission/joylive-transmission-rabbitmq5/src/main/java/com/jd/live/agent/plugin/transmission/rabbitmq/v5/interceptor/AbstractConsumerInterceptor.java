@@ -16,23 +16,22 @@
 package com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor;
 
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.Message;
 import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.Envelope;
 
-import java.util.List;
 import java.util.Map;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.reader;
 
 public class AbstractConsumerInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public AbstractConsumerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public AbstractConsumerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     protected void restore(BasicProperties props, Envelope envelope) {
@@ -43,8 +42,7 @@ public class AbstractConsumerInterceptor extends InterceptorAdaptor {
             messageId = messageId == null && headers != null ? (String) headers.get(Message.LABEL_MESSAGE_ID) : messageId;
             messageId = messageId == null ? String.valueOf(envelope.getDeliveryTag()) : messageId;
             String id = "Rabbitmq5@" + envelope.getExchange() + "@" + messageId;
-            RequestContext.restore(() -> id,
-                    carrier -> carrier.addCargo(require, headers, Label::parseValue));
+            propagation.read(RequestContext.getOrCreate(), reader(headers, () -> id));
         }
     }
 

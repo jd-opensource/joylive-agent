@@ -24,11 +24,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.rocketmq.v5.contidion.ConditionalOnRocketmq5TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor.MessageInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "Message_v5", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -40,8 +38,8 @@ public class MessageDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_GET_BODY = "getBody";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
 
     public MessageDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE);
@@ -49,6 +47,6 @@ public class MessageDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET_BODY).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new MessageInterceptor(requires))};
+                        () -> new MessageInterceptor(propagation))};
     }
 }

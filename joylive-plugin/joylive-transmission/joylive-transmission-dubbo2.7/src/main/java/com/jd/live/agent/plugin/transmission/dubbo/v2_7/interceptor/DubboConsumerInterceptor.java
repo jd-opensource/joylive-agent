@@ -17,38 +17,37 @@ package com.jd.live.agent.plugin.transmission.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcInvocation;
 
-import java.util.List;
-
+import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.reader;
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
 import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_TYPE;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public DubboConsumerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public DubboConsumerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((RpcInvocation) ctx.getArguments()[0]);
-    }
-
-    private void attachTag(RpcInvocation invocation) {
+        RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[0];
         Carrier carrier = RequestContext.getOrCreate();
-        carrier.addCargo(require, RpcContext.getContext().getObjectAttachments(), Label::parseValue);
-        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
+        RpcContext context = RpcContext.getContext();
+        // read from rpc context by live propagation
+        LIVE_PROPAGATION.read(carrier, reader(context.getAttachments()));
+        // write to invocation with live attachments in rpc context
+        propagation.write(carrier, writer(invocation.getAttachments(), invocation::setAttachment));
         Invoker<?> invoker = invocation.getInvoker();
         if (invoker != null) {
             URL url = invoker.getUrl();
@@ -57,5 +56,4 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
             }
         }
     }
-
 }

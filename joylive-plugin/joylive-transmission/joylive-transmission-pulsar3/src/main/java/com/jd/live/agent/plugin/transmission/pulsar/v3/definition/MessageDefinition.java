@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor.MessageInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "MessageDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -42,15 +40,15 @@ public class MessageDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_GET_VALUE = "getValue";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
 
     public MessageDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_MESSAGE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_GET_DATA, METHOD_GET_VALUE),
-                        () -> new MessageInterceptor(requires)
+                        () -> new MessageInterceptor(propagation)
                 )
         };
     }

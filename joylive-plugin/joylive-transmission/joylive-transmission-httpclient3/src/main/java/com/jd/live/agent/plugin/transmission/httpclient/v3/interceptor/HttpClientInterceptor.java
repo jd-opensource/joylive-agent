@@ -18,16 +18,24 @@ package com.jd.live.agent.plugin.transmission.httpclient.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import org.apache.commons.httpclient.HttpMethod;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 
 public class HttpClientInterceptor extends InterceptorAdaptor {
 
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        attachTag((HttpMethod) ctx.getArguments()[1]);
+    private final Propagation propagation;
+
+    public HttpClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
-    private void attachTag(HttpMethod method) {
-        RequestContext.cargos(tag -> method.setRequestHeader(tag.getKey(), tag.getValue()));
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        HttpMethod method = (HttpMethod) ctx.getArguments()[1];
+        Carrier carrier = RequestContext.getOrCreate();
+        propagation.write(carrier, writer(method::setRequestHeader));
     }
 }

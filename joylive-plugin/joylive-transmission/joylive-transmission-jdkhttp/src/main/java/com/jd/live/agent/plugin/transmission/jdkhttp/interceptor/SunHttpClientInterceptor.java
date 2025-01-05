@@ -18,11 +18,14 @@ package com.jd.live.agent.plugin.transmission.jdkhttp.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 
 /**
  * An interceptor that attaches additional information (a tag) to the HTTP request headers
@@ -31,7 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SunHttpClientInterceptor extends InterceptorAdaptor {
 
+    private final Propagation propagation;
+
     private static final Map<Class<?>, Optional<Method>> ADD_METHODS = new ConcurrentHashMap<>();
+
+    public SunHttpClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
 
     /**
      * {@inheritDoc}
@@ -59,13 +68,15 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
                 return Optional.empty();
             }
         });
-        optional.ifPresent(method -> RequestContext.cargos((key, value) -> {
-            try {
-                method.invoke(header, key, value);
-            } catch (Exception ignored) {
-            }
-        }));
 
+        optional.ifPresent(method -> {
+            propagation.write(RequestContext.getOrCreate(), writer((key, value) -> {
+                try {
+                    method.invoke(header, key, value);
+                } catch (Exception ignored) {
+                }
+            }));
+        });
     }
 }
 

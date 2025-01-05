@@ -60,6 +60,9 @@ public class W3cPropagation extends AbstractPropagation {
 
     @Override
     public boolean read(Carrier carrier, HeaderReader reader) {
+        if (reader.getAttributes() != null && !reader.getAttributes().isEmpty()) {
+            reader.getAttributes().forEach(carrier::setAttribute);
+        }
         String baggage = reader.getHeader(KEY_BAGGAGE);
         if (baggage == null || baggage.isEmpty()) {
             return false;

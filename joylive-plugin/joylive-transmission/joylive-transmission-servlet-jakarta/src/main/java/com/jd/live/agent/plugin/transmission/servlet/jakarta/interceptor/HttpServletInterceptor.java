@@ -19,11 +19,16 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.header.HeaderParser;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.reader;
 
 /**
  * An interceptor for HttpServlet requests to capture and restore context (cargo) from the request headers.
@@ -33,10 +38,10 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
 
     private static final LockContext lock = new LockContext.DefaultLockContext();
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public HttpServletInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public HttpServletInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     /**
@@ -48,7 +53,32 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
             HttpServletRequest request = (HttpServletRequest) ctx.getArguments()[0];
-            RequestContext.create().addCargo(require, request.getHeaderNames(), request::getHeaders);
+            propagation.read(
+                    RequestContext.getOrCreate(),
+                    reader(
+                            new HeaderParser.WrappedMap<List<String>>() {
+                                @Override
+                                public Iterator<String> keyIterator() {
+                                    Enumeration<String> headerNames = request.getHeaderNames();
+                                    ArrayList<String> keys = new ArrayList<>();
+                                    while (headerNames.hasMoreElements()) {
+                                        keys.add(headerNames.nextElement());
+                                    }
+                                    return keys.iterator();
+                                }
+
+                                @Override
+                                public List<String> get(String key) {
+                                    Enumeration<String> headers = request.getHeaders(key);
+                                    ArrayList<String> list = new ArrayList<>();
+                                    while (headers.hasMoreElements()) {
+                                        list.add(headers.nextElement());
+                                    }
+                                    return list;
+                                }
+                            }
+                    )
+            );
         }
     }
 

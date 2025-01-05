@@ -18,15 +18,21 @@ package com.jd.live.agent.plugin.transmission.springweb.v5.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.writer;
 
 /**
  * DefaultExchangeFunctionInterceptor
  */
 public class DefaultExchangeFunctionInterceptor extends InterceptorAdaptor {
 
-    public DefaultExchangeFunctionInterceptor() {
+    private final Propagation propagation;
+
+    public DefaultExchangeFunctionInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
@@ -34,7 +40,6 @@ public class DefaultExchangeFunctionInterceptor extends InterceptorAdaptor {
         // for outbound traffic
         ClientRequest request = (ClientRequest) ctx.getArguments()[0];
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.headers());
-        RequestContext.cargos(cargo -> headers.add(cargo.getKey(), cargo.getValue()));
+        propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add));
     }
-
 }

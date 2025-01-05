@@ -19,18 +19,21 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.header.HeaderParser;
 import io.grpc.*;
 
+import java.util.Iterator;
 import java.util.List;
+
+import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.reader;
 
 public class GrpcServerInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public GrpcServerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public GrpcServerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
@@ -41,8 +44,22 @@ public class GrpcServerInterceptor extends InterceptorAdaptor {
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
                     ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
                 if (headers != null) {
-                    RequestContext.create().addCargo(require, headers.keys(),
-                            name -> Label.parseValue(headers.get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER))));
+                    propagation.read(
+                            RequestContext.getOrCreate(),
+                            reader(
+                                    new HeaderParser.WrappedMap<List<String>>() {
+                                        @Override
+                                        public Iterator<String> keyIterator() {
+                                            return headers.keys().iterator();
+                                        }
+
+                                        @Override
+                                        public List<String> get(String key) {
+                                            return Label.parseValue(headers.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
+                                        }
+                                    }
+                            )
+                    );
                 }
                 return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
                     @Override

@@ -18,11 +18,11 @@ package com.jd.live.agent.plugin.transmission.jdkhttp.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
-import com.jd.live.agent.core.plugin.definition.PluginDefinition;
-import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.core.plugin.definition.PluginImporter;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientInterceptor;
 
 /**
@@ -32,6 +32,7 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.SunHttpClientIn
  * to monitor or modify HTTP request writing behavior.
  *
  */
+@Injectable
 @Extension(value = "JdkHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(SunHttpClientDefinition.TYPE_HTTP_CLIENT)
@@ -46,12 +47,16 @@ public class SunHttpClientDefinition extends PluginDefinitionAdapter implements 
             "sun.net.www.http.PosterOutputStream"
     };
 
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
+
     public SunHttpClientDefinition() {
-        super(MatcherBuilder.named(TYPE_HTTP_CLIENT),
+        this.matcher = () -> MatcherBuilder.named(TYPE_HTTP_CLIENT);
+        this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_WRITE_REQUESTS).
                                 and(MatcherBuilder.arguments(ARGUMENT_WRITE_REQUESTS)),
-                        new SunHttpClientInterceptor()));
+                        () -> new SunHttpClientInterceptor(propagation))};
     }
 
     @Override
