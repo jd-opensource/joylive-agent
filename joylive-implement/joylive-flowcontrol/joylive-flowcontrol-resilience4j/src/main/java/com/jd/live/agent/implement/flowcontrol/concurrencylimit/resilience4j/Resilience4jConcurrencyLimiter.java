@@ -31,6 +31,8 @@ import java.time.Duration;
  */
 public class Resilience4jConcurrencyLimiter extends AbstractConcurrencyLimiter {
 
+    private static final BulkheadRegistry REGISTRY = BulkheadRegistry.ofDefaults();
+
     private final Bulkhead bulkhead;
 
     public Resilience4jConcurrencyLimiter(ConcurrencyLimitPolicy policy) {
@@ -39,8 +41,7 @@ public class Resilience4jConcurrencyLimiter extends AbstractConcurrencyLimiter {
                 .maxConcurrentCalls(policy.getMaxConcurrency() == null ? 0 : policy.getMaxConcurrency())
                 .maxWaitDuration(Duration.ofMillis(policy.getMaxWaitMs() == null || policy.getMaxWaitMs() < 0 ? 0 : policy.getMaxWaitMs()))
                 .build();
-        BulkheadRegistry registry = BulkheadRegistry.of(config);
-        bulkhead = registry.bulkhead(policy.getName());
+        bulkhead = REGISTRY.bulkhead(policy.getName(), config);
     }
 
     @Override
