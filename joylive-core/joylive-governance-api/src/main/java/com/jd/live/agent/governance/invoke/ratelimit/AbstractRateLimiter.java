@@ -102,7 +102,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
 
     @Override
     public void close() {
-        if (started.compareAndSet(false, true)) {
+        if (started.compareAndSet(true, false)) {
             doClose();
         }
     }
