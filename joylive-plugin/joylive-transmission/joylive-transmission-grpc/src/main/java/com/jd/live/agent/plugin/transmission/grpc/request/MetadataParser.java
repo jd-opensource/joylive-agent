@@ -19,9 +19,16 @@ import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 import io.grpc.Metadata;
+import io.grpc.Metadata.Key;
 
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import static io.grpc.Metadata.ASCII_STRING_MARSHALLER;
 
 public class MetadataParser implements HeaderReader, HeaderWriter {
 
@@ -38,7 +45,12 @@ public class MetadataParser implements HeaderReader, HeaderWriter {
 
     @Override
     public List<String> getHeaders(String key) {
-        return Label.parseValue(metadata.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
+        try {
+            String value = metadata.get(Key.of(key, ASCII_STRING_MARSHALLER));
+            return Label.parseValue(value);
+        } catch (Throwable e) {
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -48,6 +60,94 @@ public class MetadataParser implements HeaderReader, HeaderWriter {
 
     @Override
     public void setHeader(String key, String value) {
-        metadata.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
+        if (value == null) {
+            return;
+        }
+        Key<String> metaKey = Key.of(key, ASCII_STRING_MARSHALLER);
+        byte[] bytes = FieldGetter.INSTANCE.getNameBytes(metaKey);
+
+        // update kv
+        Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
+        for (int i = 0; i < namesAndValues.length; i += 2) {
+            if (Arrays.equals((byte[]) namesAndValues[i], bytes)) {
+                namesAndValues[i + 1] = ASCII_STRING_MARSHALLER.toAsciiString(value).getBytes(StandardCharsets.US_ASCII);
+                return;
+            }
+        }
+
+        // always add
+        metadata.put(metaKey, value);
+    }
+
+    /**
+     * A utility class to access private fields of the {@link Metadata} class.
+     */
+    private static class FieldGetter {
+
+        /**
+         * The singleton instance of FieldGetter.
+         */
+        public static final FieldGetter INSTANCE = new FieldGetter();
+
+        /**
+         * The private field 'namesAndValues' in the {@link Metadata} class.
+         */
+        private Field headersField;
+
+        /**
+         * The private field 'nameBytes' in the {@link Key} class.
+         */
+        private Field namesField;
+
+        /**
+         * Constructs a new FieldGetter instance and initializes the private fields.
+         * If any field is not found or an exception occurs, it catches the exception and ignores it.
+         */
+        FieldGetter() {
+            try {
+                headersField = Metadata.class.getDeclaredField("namesAndValues");
+                headersField.setAccessible(true);
+                namesField = Key.class.getDeclaredField("nameBytes");
+                namesField.setAccessible(true);
+            } catch (Throwable ignored) {
+                // Ignore the exception if the field is not found or an error occurs
+            }
+        }
+
+        /**
+         * Retrieves the array of names and values from the given {@link Metadata} instance.
+         * If the metadata is null or an exception occurs, it returns an empty array.
+         *
+         * @param metadata the Metadata instance from which to retrieve the names and values
+         * @return the array of names and values, or an empty array if an error occurs
+         */
+        public Object[] getNamesAndValues(Metadata metadata) {
+            if (metadata == null || headersField == null) {
+                return new Object[0];
+            }
+            try {
+                return (Object[]) headersField.get(metadata);
+            } catch (Throwable e) {
+                return new Object[0];
+            }
+        }
+
+        /**
+         * Retrieves the byte array representing the name from the given key.
+         * If the key is null or an exception occurs, it returns an empty byte array.
+         *
+         * @param key the key from which to retrieve the name bytes
+         * @return the byte array representing the name, or an empty byte array if an error occurs
+         */
+        public byte[] getNameBytes(Key<?> key) {
+            if (key == null || namesField == null) {
+                return new byte[0];
+            }
+            try {
+                return (byte[]) namesField.get(key);
+            } catch (Throwable e) {
+                return new byte[0];
+            }
+        }
     }
 }
