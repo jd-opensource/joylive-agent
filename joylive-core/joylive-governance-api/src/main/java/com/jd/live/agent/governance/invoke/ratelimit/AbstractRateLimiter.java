@@ -59,7 +59,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     @Getter
     protected long lastAccessTime;
 
-    protected final AtomicBoolean started = new AtomicBoolean(false);
+    protected final AtomicBoolean started = new AtomicBoolean(true);
 
     /**
      * Constructs an instance of the AbstractRateLimiter class with the given rate limit policy and time unit.
