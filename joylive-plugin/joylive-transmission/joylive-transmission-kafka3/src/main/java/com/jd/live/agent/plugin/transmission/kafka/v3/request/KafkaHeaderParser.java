@@ -54,6 +54,13 @@ public class KafkaHeaderParser implements HeaderReader, HeaderWriter {
 
     @Override
     public void setHeader(String key, String value) {
+        Iterator<Header> iterator = headers.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().key().equals(key)) {
+                iterator.remove();
+                break;
+            }
+        }
         headers.add(key, value == null ? new byte[0] : value.getBytes(StandardCharsets.UTF_8));
     }
 
