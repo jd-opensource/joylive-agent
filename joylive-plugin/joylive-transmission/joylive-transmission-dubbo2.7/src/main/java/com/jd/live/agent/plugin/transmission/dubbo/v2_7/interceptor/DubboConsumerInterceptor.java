@@ -26,8 +26,8 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcInvocation;
 
 import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.reader;
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
+import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.reader;
+import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.writer;
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
 import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_TYPE;
 
@@ -43,11 +43,10 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[0];
         Carrier carrier = RequestContext.getOrCreate();
-        RpcContext context = RpcContext.getContext();
         // read from rpc context by live propagation
-        LIVE_PROPAGATION.read(carrier, reader(context.getAttachments()));
+        LIVE_PROPAGATION.read(carrier, reader(RpcContext.getContext().getObjectAttachments()));
         // write to invocation with live attachments in rpc context
-        propagation.write(carrier, writer(invocation.getAttachments(), invocation::setAttachment));
+        propagation.write(carrier, writer(invocation.getObjectAttachments(), invocation::setAttachment));
         Invoker<?> invoker = invocation.getInvoker();
         if (invoker != null) {
             URL url = invoker.getUrl();

@@ -19,13 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
+import com.jd.live.agent.plugin.transmission.jdkhttp.request.MessageHeaderParser;
+import sun.net.www.MessageHeader;
 
 /**
  * An interceptor that attaches additional information (a tag) to the HTTP request headers
@@ -36,8 +31,6 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
 
     private final Propagation propagation;
 
-    private static final Map<Class<?>, Optional<Method>> ADD_METHODS = new ConcurrentHashMap<>();
-
     public SunHttpClientInterceptor(Propagation propagation) {
         this.propagation = propagation;
     }
@@ -47,36 +40,8 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
      */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object header = ctx.getArguments()[0];
-        attachTag(header);
-    }
-
-    /**
-     * Attaches a tag to the provided {@link MessageHeader} object. The actual tag is retrieved
-     * from a {@link RequestContext} that presumably holds contextual information relevant to the
-     * request being processed.
-     *
-     * @param header The {@link MessageHeader} to which the tag will be attached.
-     */
-    private void attachTag(Object header) {
-        Optional<Method> optional = ADD_METHODS.computeIfAbsent(header.getClass(), c -> {
-            try {
-                Method result = c.getMethod("add", String.class, String.class);
-                result.setAccessible(true);
-                return Optional.of(result);
-            } catch (NoSuchMethodException ignored) {
-                return Optional.empty();
-            }
-        });
-
-        optional.ifPresent(method -> {
-            propagation.write(RequestContext.getOrCreate(), writer((key, value) -> {
-                try {
-                    method.invoke(header, key, value);
-                } catch (Exception ignored) {
-                }
-            }));
-        });
+        MessageHeader header = ctx.getArgument(0);
+        propagation.write(RequestContext.getOrCreate(), new MessageHeaderParser(header));
     }
 }
 

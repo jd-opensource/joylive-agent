@@ -37,14 +37,10 @@ public class MessageInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
         if (isProducer == null || !isProducer) {
-            restoreCargo((Message) ctx.getTarget());
+            Message message = (Message) ctx.getTarget();
+            String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
+            String id = "Rocketmq5@" + message.getTopic() + "@" + messageId;
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, reader(message.getProperties())));
         }
     }
-
-    private void restoreCargo(Message message) {
-        String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
-        String id = "Rocketmq5@" + message.getTopic() + "@" + messageId;
-        propagation.read(RequestContext.getOrCreate(), reader(message.getProperties(), () -> id));
-    }
-
 }

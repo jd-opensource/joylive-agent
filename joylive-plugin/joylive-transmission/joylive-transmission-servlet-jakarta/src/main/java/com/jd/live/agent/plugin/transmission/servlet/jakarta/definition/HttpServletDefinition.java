@@ -25,11 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.servlet.jakarta.interceptor.HttpServletInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "HttpServletDefinition_jakarta", order = PluginDefinition.ORDER_TRANSMISSION)

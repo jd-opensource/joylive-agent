@@ -40,20 +40,14 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
         Object argument = ctx.getArguments()[0];
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         if (argument instanceof Message) {
-            attachCargo((Message) argument);
+            Message message = (Message) argument;
+            propagation.write(RequestContext.getOrCreate(), writer(message.getProperties(), message::putUserProperty));
         } else if (argument instanceof Collection) {
-            attachCargo((Collection<Message>) argument);
+            Collection<Message> messages = (Collection<Message>) argument;
+            Carrier carrier = RequestContext.getOrCreate();
+            for (Message message : messages) {
+                propagation.write(carrier, writer(message.getProperties(), message::putUserProperty));
+            }
         }
-    }
-
-    private void attachCargo(Collection<Message> messages) {
-        messages.forEach(message -> {
-            propagation.write(RequestContext.getOrCreate(), writer(message::putUserProperty));
-        });
-    }
-
-    private void attachCargo(Message message) {
-        propagation.write(RequestContext.getOrCreate(), writer(message::putUserProperty));
-        RequestContext.cargos(cargo -> message.putUserProperty(cargo.getKey(), cargo.getValue()));
     }
 }

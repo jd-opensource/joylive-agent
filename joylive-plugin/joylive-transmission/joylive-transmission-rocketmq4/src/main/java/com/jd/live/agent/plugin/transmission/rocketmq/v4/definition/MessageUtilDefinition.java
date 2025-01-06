@@ -24,11 +24,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.rocketmq.v4.contidion.ConditionalOnRocketmq4TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor.MessageUtilInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "MessageUtilDefinition_v4", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -40,14 +38,14 @@ public class MessageUtilDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_CREATE_REPLY_MESSAGE = "createReplyMessage";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
 
     public MessageUtilDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE_UTIL);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_CREATE_REPLY_MESSAGE), () -> new MessageUtilInterceptor(requires))
+                        MatcherBuilder.named(METHOD_CREATE_REPLY_MESSAGE), () -> new MessageUtilInterceptor(propagation))
         };
     }
 }

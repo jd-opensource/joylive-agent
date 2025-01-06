@@ -168,6 +168,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     private List<Propagation> propagationList;
 
+    @Getter
     private Propagation propagation;
 
     @Getter

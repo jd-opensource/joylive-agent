@@ -17,10 +17,7 @@ package com.jd.live.agent.governance.context.bag.w3c;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.context.bag.AbstractPropagation;
-import com.jd.live.agent.governance.context.bag.Cargo;
-import com.jd.live.agent.governance.context.bag.Carrier;
-import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.context.bag.*;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 
@@ -39,6 +36,9 @@ public class W3cPropagation extends AbstractPropagation {
 
     @Override
     public void write(Carrier carrier, HeaderWriter writer) {
+        if (carrier == null || writer == null) {
+            return;
+        }
         Collection<Cargo> cargos = carrier.getCargos();
         if (cargos == null || cargos.isEmpty()) {
             return;
@@ -59,9 +59,26 @@ public class W3cPropagation extends AbstractPropagation {
     }
 
     @Override
+    public void write(HeaderReader reader, HeaderWriter writer) {
+        if (reader == null || writer == null) {
+            return;
+        }
+        String baggage = reader.getHeader(KEY_BAGGAGE);
+        if (baggage != null && !baggage.isEmpty()) {
+            CargoRequire require = getRequire();
+            Map<String, String> map = splitMap(baggage);
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                if (require.match(entry.getKey())) {
+                    writer.setHeader(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+    }
+
+    @Override
     public boolean read(Carrier carrier, HeaderReader reader) {
-        if (reader.getAttributes() != null && !reader.getAttributes().isEmpty()) {
-            reader.getAttributes().forEach(carrier::setAttribute);
+        if (carrier == null || reader == null) {
+            return false;
         }
         String baggage = reader.getHeader(KEY_BAGGAGE);
         if (baggage == null || baggage.isEmpty()) {

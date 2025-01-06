@@ -20,9 +20,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.okhttp.v1.request.BuilderParser;
 import com.squareup.okhttp.Request.Builder;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 
 /**
  * An interceptor that attaches additional metadata to each request.
@@ -43,7 +42,7 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
             Builder builder = (Builder) ctx.getTarget();
-            propagation.write(RequestContext.getOrCreate(), writer(builder::addHeader));
+            propagation.write(RequestContext.getOrCreate(), BuilderParser.of(builder));
         }
     }
 

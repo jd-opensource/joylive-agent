@@ -27,7 +27,6 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.grpc.interceptor.ClientCallImplInterceptor;
-import org.checkerframework.checker.units.qual.A;
 
 @Injectable
 @Extension(value = "ClientCallImplDefinition", order = PluginDefinition.ORDER_TRANSMISSION)

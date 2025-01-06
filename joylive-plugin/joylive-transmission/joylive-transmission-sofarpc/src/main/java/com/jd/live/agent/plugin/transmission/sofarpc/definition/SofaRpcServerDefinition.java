@@ -25,11 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.sofarpc.interceptor.SofaRpcServerInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "SofaRpcServerDefinition", order = PluginDefinition.ORDER_TRANSMISSION)

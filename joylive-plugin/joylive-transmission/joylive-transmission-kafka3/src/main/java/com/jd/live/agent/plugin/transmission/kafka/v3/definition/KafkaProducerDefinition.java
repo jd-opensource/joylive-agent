@@ -26,7 +26,6 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaConsumerRecordInterceptor;
 import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaProducerInterceptor;
 
 @Injectable

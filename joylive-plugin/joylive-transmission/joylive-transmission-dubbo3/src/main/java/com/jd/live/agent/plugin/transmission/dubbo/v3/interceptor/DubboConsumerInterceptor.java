@@ -44,7 +44,7 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         // read from rpc context by live propagation
         LIVE_PROPAGATION.read(carrier, reader(RpcContext.getClientAttachment().getObjectAttachments()));
         // write to invocation with live attachments in rpc context
-        propagation.write(carrier, writer(RpcContext.getClientAttachment().getObjectAttachments(), invocation::setAttachment));
+        propagation.write(carrier, writer(invocation.getObjectAttachments(), invocation::setAttachment));
         ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();
         String provider = (String) serviceMetadata.getAttachments().get(PROVIDED_BY);
         if (provider != null && !provider.isEmpty()) {

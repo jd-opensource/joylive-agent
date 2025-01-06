@@ -37,6 +37,117 @@ public class CollectionUtils {
     private static final FieldDesc MAP_FIELD = ClassUtils.describe(UNMODIFIED_MAP_CLASS).getFieldList().getField("m");
 
     /**
+     * Converts an Iterator to a List.
+     *
+     * @param <T>      the type of elements in the iterator
+     * @param iterator the iterator to convert
+     * @return a List containing all the elements from the iterator, or null if the iterator is null
+     */
+    public static <T> List<T> toList(Iterator<T> iterator) {
+        List<T> result = null;
+        if (iterator != null) {
+            result = new ArrayList<>();
+            while (iterator.hasNext()) {
+                result.add(iterator.next());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Converts an Iterator to a List by applying a transformation function to each element.
+     *
+     * @param <T>      the type of elements in the iterator
+     * @param <V>      the type of elements in the resulting list
+     * @param iterator the iterator to convert
+     * @param function the function to apply to each element of the iterator
+     * @return a List containing the transformed elements from the iterator, or null if the iterator or function is null
+     */
+    public static <T, V> List<V> toList(Iterator<T> iterator, Function<T, V> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function is null");
+        } else if (iterator == null) {
+            return null;
+        }
+        List<V> result = new ArrayList<>();
+        while (iterator.hasNext()) {
+            result.add(function.apply(iterator.next()));
+        }
+        return result;
+    }
+
+    /**
+     * Converts an iterable to a List by applying a transformation function to each element.
+     *
+     * @param <T>      the type of elements in the iterable
+     * @param <V>      the type of elements in the resulting list
+     * @param iterable the iterable to convert
+     * @param function the function to apply to each element of the iterable
+     * @return a List containing the transformed elements from the iterable, or null if the iterable or function is null
+     */
+    public static <T, V> List<V> toList(Iterable<T> iterable, Function<T, V> function) {
+        List<V> result = null;
+        if (iterable != null && function != null) {
+            result = new ArrayList<>();
+            for (T t : iterable) {
+                result.add(function.apply(t));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Converts an Enumeration to an Iterator.
+     *
+     * @param <T>         the type of elements in the enumeration
+     * @param enumeration the enumeration to convert
+     * @return an Iterator containing all the elements from the enumeration, or null if the enumeration is null
+     */
+    public static <T> Iterator<T> toIterator(Enumeration<T> enumeration) {
+        if (enumeration == null) {
+            return null;
+        }
+        return new EnumerationIterator<>(enumeration);
+    }
+
+    /**
+     * Converts an Iterator of type {@code V} to an Iterator of type {@code T} by applying a transformation function.
+     *
+     * @param <V>      the type of elements in the original iterator
+     * @param <T>      the type of elements in the resulting iterator
+     * @param iterator the original iterator
+     * @param function the function to apply to each element of the original iterator
+     * @return an Iterator of type {@code T} with elements transformed by the given function
+     * @throws IllegalArgumentException if the function is null
+     */
+    public static <V, T> Iterator<T> toIterator(Iterator<V> iterator, Function<V, T> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function is null");
+        } else if (iterator == null) {
+            return null;
+        }
+        return new ConverterIterator<>(iterator, function);
+    }
+
+    /**
+     * Converts an Enumeration to a List.
+     *
+     * @param <T>         the type of elements in the enumeration
+     * @param enumeration the enumeration to convert
+     * @return a List containing all the elements from the enumeration, or null if the enumeration is null
+     */
+    public static <T> List<T> toList(Enumeration<T> enumeration) {
+        List<T> result = null;
+        if (enumeration != null) {
+            result = new ArrayList<>();
+            while (enumeration.hasMoreElements()) {
+                result.add(enumeration.nextElement());
+            }
+        }
+        return result;
+    }
+
+    /**
      * Filters the provided list of objects based on the given predicate.
      *
      * @param <T>       the type of objects in the list.
@@ -132,5 +243,57 @@ public class CollectionUtils {
 
     private static int computeMapInitialCapacity(int expectedSize) {
         return (int) Math.ceil(expectedSize / (double) DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * An Iterator that applies a transformation function to each element of another Iterator.
+     *
+     * @param <T> the type of elements returned by this iterator
+     * @param <V> the type of elements in the original iterator
+     */
+    private static class ConverterIterator<T, V> implements Iterator<T> {
+
+        private final Iterator<V> iterator;
+
+        private final Function<V, T> function;
+
+        ConverterIterator(Iterator<V> iterator, Function<V, T> function) {
+            this.iterator = iterator;
+            this.function = function;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        @Override
+        public T next() {
+            return function.apply(iterator.next());
+        }
+    }
+
+    /**
+     * An Iterator that wraps an Enumeration to provide Iterator functionality.
+     *
+     * @param <T> the type of elements in the enumeration
+     */
+    private static class EnumerationIterator<T> implements Iterator<T> {
+
+        private final Enumeration<T> enumeration;
+
+        EnumerationIterator(Enumeration<T> enumeration) {
+            this.enumeration = enumeration;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return enumeration.hasMoreElements();
+        }
+
+        @Override
+        public T next() {
+            return enumeration.nextElement();
+        }
     }
 }

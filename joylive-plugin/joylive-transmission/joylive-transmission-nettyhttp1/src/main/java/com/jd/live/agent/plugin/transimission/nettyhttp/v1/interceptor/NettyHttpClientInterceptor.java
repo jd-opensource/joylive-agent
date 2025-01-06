@@ -20,10 +20,9 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transimission.nettyhttp.v1.request.HttpHeadersParser;
 import io.netty.handler.codec.http.HttpMethod;
 import reactor.netty.http.client.HttpClient;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 
 /**
  * NettyHttpClientInterceptor
@@ -49,7 +48,8 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         HttpClient client = mc.getResult();
         if (RequestContext.hasCargo()) {
-            HttpClient newClient = client.headers(headers -> propagation.write(RequestContext.getOrCreate(), writer(headers::set)));
+            HttpClient newClient = client.headers(headers ->
+                    propagation.write(RequestContext.getOrCreate(), new HttpHeadersParser(headers)));
             if (client.getClass().isAssignableFrom(newClient.getClass())) {
                 // fix netty reactor 0.9.20.RELEASE
                 mc.setResult(newClient);

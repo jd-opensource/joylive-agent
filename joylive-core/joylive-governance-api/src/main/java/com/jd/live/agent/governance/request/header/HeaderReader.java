@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.request.header;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -32,7 +31,7 @@ public interface HeaderReader {
      *
      * @return An iterator over the header names.
      */
-    Iterator<String> getHeaderNames();
+    Iterator<String> getNames();
 
     /**
      * Returns a list of all values for the specified header key.
@@ -41,8 +40,6 @@ public interface HeaderReader {
      * @return A list of values for the specified header key.
      */
     List<String> getHeaders(String key);
-
-    Map<String, Object> getAttributes();
 
     /**
      * Returns the first value for the specified header key.

@@ -19,12 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-
-import java.lang.reflect.Method;
-import java.util.List;
-
-import static com.jd.live.agent.core.util.type.ClassUtils.describe;
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
+import com.jd.live.agent.plugin.transmission.jdkhttp.request.BuilderParser;
 
 /**
  * Interceptor for the Java HTTP Client's request builder implementation.
@@ -40,39 +35,14 @@ import static com.jd.live.agent.governance.request.header.HeaderParser.StringHea
  */
 public class JavaHttpClientInterceptor extends InterceptorAdaptor {
 
-    private static final String TYPE_HTTP_REQUEST_BUILDER_IMPL = "jdk.internal.net.http.HttpRequestBuilderImpl";
-
-    private static final String METHOD_SET_HEADER = "setHeader";
-
-    private final Method method;
-
     private final Propagation propagation;
 
     public JavaHttpClientInterceptor(Propagation propagation) {
-        // use reflect to avoid module error in java 17.
-        Method method = null;
-        try {
-            // Use reflection to get the setHeader method from HttpRequestBuilderImpl
-            List<Method> methods = describe(Class.forName(TYPE_HTTP_REQUEST_BUILDER_IMPL))
-                    .getMethodList()
-                    .getMethods(METHOD_SET_HEADER);
-            method = methods == null || methods.isEmpty() ? null : methods.get(0);
-        } catch (ClassNotFoundException ignore) {
-        }
-        this.method = method;
         this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (method != null) {
-            Object header = ctx.getTarget();
-            propagation.write(RequestContext.getOrCreate(), writer((key, value) -> {
-                try {
-                    method.invoke(header, key, value);
-                } catch (Throwable ignore) {
-                }
-            }));
-        }
+        propagation.write(RequestContext.getOrCreate(), BuilderParser.of(ctx.getTarget()));
     }
 }

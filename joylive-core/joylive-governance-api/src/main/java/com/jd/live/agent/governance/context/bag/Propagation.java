@@ -45,6 +45,14 @@ public interface Propagation {
     void write(Carrier carrier, HeaderWriter writer);
 
     /**
+     * Writes headers from the carrier to the writer.
+     *
+     * @param reader The reader to use for reading the headers.
+     * @param writer The writer to which the headers should be written.
+     */
+    void write(HeaderReader reader, HeaderWriter writer);
+
+    /**
      * Reads headers from the carrier using the specified reader.
      *
      * @param carrier The carrier from which to read the headers.
@@ -73,6 +81,13 @@ public interface Propagation {
         @Override
         public void write(Carrier carrier, HeaderWriter writer) {
             this.writer.write(carrier, writer);
+        }
+
+        @Override
+        public void write(HeaderReader reader, HeaderWriter writer) {
+            for (Propagation propagation : readers) {
+                propagation.write(reader, writer);
+            }
         }
 
         @Override

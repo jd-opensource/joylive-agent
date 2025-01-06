@@ -39,7 +39,7 @@ public class MessageInterceptor extends InterceptorAdaptor {
             Message<?> message = (Message<?>) ctx.getTarget();
             String messageId = message.getMessageId().toString();
             String id = "Pulsar3@" + message.getTopicName() + "@" + messageId;
-            propagation.read(RequestContext.getOrCreate(), reader(message.getProperties(), () -> id));
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, reader(message.getProperties())));
         }
     }
 

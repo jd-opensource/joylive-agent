@@ -42,7 +42,7 @@ public class AbstractConsumerInterceptor extends InterceptorAdaptor {
             messageId = messageId == null && headers != null ? (String) headers.get(Message.LABEL_MESSAGE_ID) : messageId;
             messageId = messageId == null ? String.valueOf(envelope.getDeliveryTag()) : messageId;
             String id = "Rabbitmq5@" + envelope.getExchange() + "@" + messageId;
-            propagation.read(RequestContext.getOrCreate(), reader(headers, () -> id));
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, reader(headers)));
         }
     }
 

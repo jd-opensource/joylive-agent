@@ -18,12 +18,9 @@ package com.jd.live.agent.plugin.transmission.httpclient.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import org.apache.http.HttpRequest;
-import org.apache.http.client.methods.HttpRequestBase;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
+import com.jd.live.agent.plugin.transmission.httpclient.v4.request.HttpMessageParser;
+import org.apache.http.HttpMessage;
 
 public class HttpClientInterceptor extends InterceptorAdaptor {
 
@@ -35,14 +32,7 @@ public class HttpClientInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object request = ctx.getArguments()[1];
-        Carrier carrier = RequestContext.getOrCreate();
-        if (request instanceof HttpRequestBase) {
-            HttpRequestBase httpRequestBase = (HttpRequestBase) request;
-            propagation.write(carrier, writer(httpRequestBase::addHeader));
-        } else if (request instanceof HttpRequest) {
-            HttpRequest httpRequest = (HttpRequest) request;
-            propagation.write(carrier, writer(httpRequest::addHeader));
-        }
+        HttpMessage request = ctx.getArgument(1);
+        propagation.write(RequestContext.getOrCreate(), new HttpMessageParser(request));
     }
 }

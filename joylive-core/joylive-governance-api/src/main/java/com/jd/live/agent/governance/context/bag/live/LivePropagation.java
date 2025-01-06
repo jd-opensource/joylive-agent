@@ -2,7 +2,6 @@ package com.jd.live.agent.governance.context.bag.live;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.bag.*;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
@@ -20,21 +19,30 @@ public class LivePropagation extends AbstractPropagation {
 
     @Override
     public void write(Carrier carrier, HeaderWriter writer) {
+        if (carrier == null || writer == null) {
+            return;
+        }
         Collection<Cargo> cargos = carrier.getCargos();
         if (cargos != null) {
-            List<String> values;
             for (Cargo cargo : cargos) {
-                values = cargo.getValues();
-                int size = values == null ? 0 : values.size();
-                switch (size) {
-                    case 0:
-                        writer.setHeader(cargo.getKey(), null);
-                        break;
-                    case 1:
-                        writer.setHeader(cargo.getKey(), values.get(0));
-                        break;
-                    default:
-                        writer.setHeader(cargo.getKey(), Label.join(values));
+                writer.setHeaders(cargo.getKey(), cargo.getValues());
+            }
+        }
+    }
+
+    @Override
+    public void write(HeaderReader reader, HeaderWriter writer) {
+        if (reader == null || writer == null) {
+            return;
+        }
+        CargoRequire require = getRequire();
+        Iterator<String> names = reader.getNames();
+        if (names != null) {
+            String name;
+            while (names.hasNext()) {
+                name = names.next();
+                if (require.match(name)) {
+                    writer.setHeaders(name, reader.getHeaders(name));
                 }
             }
         }
@@ -42,22 +50,27 @@ public class LivePropagation extends AbstractPropagation {
 
     @Override
     public boolean read(Carrier carrier, HeaderReader reader) {
-        if (reader.getAttributes() != null && !reader.getAttributes().isEmpty()) {
-            reader.getAttributes().forEach(carrier::setAttribute);
+        if (carrier == null || reader == null) {
+            return false;
         }
-        CargoRequire require = getRequire();
-        Iterator<String> headerNames = reader.getHeaderNames();
         int counter = 0;
-        while (headerNames.hasNext()) {
-            String headerName = headerNames.next();
-            List<String> headerValues = reader.getHeaders(headerName);
-            if (require.match(headerName)) {
-                counter++;
-                if (headerValues != null) {
-                    carrier.addCargo(new Cargo(headerName, new ArrayList<>(headerValues)));
+        CargoRequire require = getRequire();
+        Iterator<String> names = reader.getNames();
+        if (names != null) {
+            String name;
+            List<String> values;
+            while (names.hasNext()) {
+                name = names.next();
+                if (require.match(name)) {
+                    counter++;
+                    values = reader.getHeaders(name);
+                    if (values != null) {
+                        carrier.addCargo(new Cargo(name, new ArrayList<>(values)));
+                    }
                 }
             }
         }
+
         return counter > 0;
     }
 }
