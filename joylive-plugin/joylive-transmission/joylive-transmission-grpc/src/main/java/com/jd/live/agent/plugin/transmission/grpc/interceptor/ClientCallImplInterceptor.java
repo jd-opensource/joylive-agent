@@ -28,7 +28,21 @@ public class ClientCallImplInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(Metadata metadata) {
-        RequestContext.cargos(tag -> metadata.put(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER), tag.getValue()));
+        RequestContext.cargos(tag -> {
+                    // If the tag key and value already exists in the metadata, do not add it again.
+                    if (metadata.containsKey(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER))) {
+                        Iterable<String> iterable = metadata.getAll(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER));
+                        if (iterable != null) {
+                            for (String value : iterable) {
+                                if (value.equals(tag.getValue())) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    metadata.put(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER), tag.getValue());
+                }
+        );
     }
 
 }
