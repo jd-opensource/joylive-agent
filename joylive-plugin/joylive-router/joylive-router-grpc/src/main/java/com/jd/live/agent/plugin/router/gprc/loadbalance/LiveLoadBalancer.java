@@ -186,6 +186,9 @@ public class LiveLoadBalancer extends LoadBalancer {
                 // syncContext.throwIfNotInThisSynchronizationContext()
                 pickReady();
             }
+            if (newState == TRANSIENT_FAILURE) {
+                helper.refreshNameResolution();
+            }
         }
     }
 }
