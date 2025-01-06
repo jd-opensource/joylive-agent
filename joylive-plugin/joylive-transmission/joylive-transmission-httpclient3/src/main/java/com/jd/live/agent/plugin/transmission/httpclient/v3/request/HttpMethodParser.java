@@ -20,10 +20,11 @@ import com.jd.live.agent.governance.request.header.HeaderWriter;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethod;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 public class HttpMethodParser implements HeaderReader, HeaderWriter {
 
@@ -35,25 +36,12 @@ public class HttpMethodParser implements HeaderReader, HeaderWriter {
 
     @Override
     public Iterator<String> getNames() {
-        Header[] headers = method.getRequestHeaders();
-        String[] names = new String[headers.length];
-        for (int i = 0; i < headers.length; i++) {
-            names[i] = headers[i].getName();
-        }
-        return Arrays.asList(names).iterator();
+        return toIterator(method.getRequestHeaders(), Header::getName);
     }
 
     @Override
     public List<String> getHeaders(String key) {
-        Header[] headers = method.getRequestHeaders(key);
-        List<String> result = null;
-        if (headers != null) {
-            result = new ArrayList<>(headers.length);
-            for (Header header : headers) {
-                result.add(header.getValue());
-            }
-        }
-        return result;
+        return toList(method.getRequestHeaders(key), Header::getValue);
     }
 
     @Override

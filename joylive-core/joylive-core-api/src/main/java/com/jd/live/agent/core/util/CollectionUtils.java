@@ -86,11 +86,53 @@ public class CollectionUtils {
      * @return a List containing the transformed elements from the iterable, or null if the iterable or function is null
      */
     public static <T, V> List<V> toList(Iterable<T> iterable, Function<T, V> function) {
-        List<V> result = null;
-        if (iterable != null && function != null) {
+        if (function == null) {
+            throw new IllegalArgumentException("function is null");
+        } else if (iterable == null) {
+            return null;
+        }
+        List<V> result = iterable instanceof Collection ? new ArrayList<>(((Collection<T>) iterable).size()) : new ArrayList<>();
+        for (T t : iterable) {
+            result.add(function.apply(t));
+        }
+        return result;
+    }
+
+    /**
+     * Converts an iterable to a List by applying a transformation function to each element.
+     *
+     * @param <T>      the type of elements in the iterable
+     * @param <V>      the type of elements in the resulting list
+     * @param arrays   the array to convert
+     * @param function the function to apply to each element of the iterable
+     * @return a List containing the transformed elements from the iterable, or null if the iterable or function is null
+     */
+    public static <T, V> List<V> toList(T[] arrays, Function<T, V> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function is null");
+        } else if (arrays == null) {
+            return null;
+        }
+        List<V> result = new ArrayList<>(arrays.length);
+        for (T t : arrays) {
+            result.add(function.apply(t));
+        }
+        return result;
+    }
+
+    /**
+     * Converts an Enumeration to a List.
+     *
+     * @param <T>         the type of elements in the enumeration
+     * @param enumeration the enumeration to convert
+     * @return a List containing all the elements from the enumeration, or null if the enumeration is null
+     */
+    public static <T> List<T> toList(Enumeration<T> enumeration) {
+        List<T> result = null;
+        if (enumeration != null) {
             result = new ArrayList<>();
-            for (T t : iterable) {
-                result.add(function.apply(t));
+            while (enumeration.hasMoreElements()) {
+                result.add(enumeration.nextElement());
             }
         }
         return result;
@@ -130,21 +172,22 @@ public class CollectionUtils {
     }
 
     /**
-     * Converts an Enumeration to a List.
+     * Converts an Iterator of type {@code V} to an Iterator of type {@code T} by applying a transformation function.
      *
-     * @param <T>         the type of elements in the enumeration
-     * @param enumeration the enumeration to convert
-     * @return a List containing all the elements from the enumeration, or null if the enumeration is null
+     * @param <V>      the type of elements in the original iterator
+     * @param <T>      the type of elements in the resulting iterator
+     * @param arrays   the original array
+     * @param function the function to apply to each element of the original iterator
+     * @return an Iterator of type {@code T} with elements transformed by the given function
+     * @throws IllegalArgumentException if the function is null
      */
-    public static <T> List<T> toList(Enumeration<T> enumeration) {
-        List<T> result = null;
-        if (enumeration != null) {
-            result = new ArrayList<>();
-            while (enumeration.hasMoreElements()) {
-                result.add(enumeration.nextElement());
-            }
+    public static <V, T> Iterator<T> toIterator(V[] arrays, Function<V, T> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function is null");
+        } else if (arrays == null) {
+            return null;
         }
-        return result;
+        return new ArrayIterator<>(arrays, function);
     }
 
     /**
@@ -175,26 +218,6 @@ public class CollectionUtils {
         if (writeIndex < size) {
             objects.subList(writeIndex, size).clear();
         }
-    }
-
-    /**
-     * Converts a list of source objects into a list of target objects using the provided converter function.
-     *
-     * @param <S>       The type of source objects.
-     * @param <T>       The type of target objects.
-     * @param sources   The list of source objects to convert.
-     * @param converter The function to convert each source object into a target object.
-     * @return A list of target objects.
-     */
-    public static <S, T> List<T> convert(List<S> sources, Function<S, T> converter) {
-        if (sources == null || converter == null) {
-            return new ArrayList<>();
-        }
-        List<T> result = new ArrayList<>(sources.size());
-        for (S instance : sources) {
-            result.add(converter.apply(instance));
-        }
-        return result;
     }
 
     /**
@@ -294,6 +317,52 @@ public class CollectionUtils {
         @Override
         public T next() {
             return enumeration.nextElement();
+        }
+    }
+
+    /**
+     * An iterator that converts elements of an array from type {@code V} to type {@code T} using a provided function.
+     *
+     * @param <V> the type of elements in the input array
+     * @param <T> the type of elements to be returned by the iterator
+     */
+    private static class ArrayIterator<V, T> implements Iterator<T> {
+
+        /**
+         * The array of elements to be iterated over.
+         */
+        private final V[] arrays;
+
+        /**
+         * The function used to convert elements from type {@code V} to type {@code T}.
+         */
+        private final Function<V, T> function;
+
+        /**
+         * The current index of the iterator.
+         */
+        private int index = 0;
+
+        /**
+         * Constructs a new ArrayConvertIterator with the specified array and conversion function.
+         *
+         * @param arrays   the array of elements to be iterated over
+         * @param function the function to convert elements from type {@code V} to type {@code T}
+         */
+        ArrayIterator(V[] arrays, Function<V, T> function) {
+            this.arrays = arrays;
+            this.function = function;
+        }
+
+        @Override
+        public boolean hasNext() {
+            int length = arrays == null ? 0 : arrays.length;
+            return index < length;
+        }
+
+        @Override
+        public T next() {
+            return function.apply(arrays[index++]);
         }
     }
 }

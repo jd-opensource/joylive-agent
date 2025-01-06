@@ -48,6 +48,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+
 /**
  * ServiceInstanceListSupplierInterceptor
  *
@@ -129,7 +131,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
      */
     private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> instances) {
         try {
-            invocation.setInstances(CollectionUtils.convert(instances, SpringEndpoint::new));
+            invocation.setInstances(toList(instances, SpringEndpoint::new));
             SpringEndpoint endpoint = context.route(invocation);
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {
