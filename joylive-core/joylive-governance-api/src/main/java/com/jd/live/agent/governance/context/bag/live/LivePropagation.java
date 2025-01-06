@@ -42,6 +42,9 @@ public class LivePropagation extends AbstractPropagation {
 
     @Override
     public boolean read(Carrier carrier, HeaderReader reader) {
+        if (reader.getAttributes() != null && !reader.getAttributes().isEmpty()) {
+            reader.getAttributes().forEach(carrier::setAttribute);
+        }
         CargoRequire require = getRequire();
         Iterator<String> headerNames = reader.getHeaderNames();
         int counter = 0;

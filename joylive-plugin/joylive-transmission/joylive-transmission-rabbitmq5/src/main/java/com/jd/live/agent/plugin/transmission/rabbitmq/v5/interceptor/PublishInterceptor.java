@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.Message;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BasicProperties;
@@ -27,7 +28,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.writer;
+
 public class PublishInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public PublishInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
@@ -59,7 +68,7 @@ public class PublishInterceptor extends InterceptorAdaptor {
             messageId = timestamp + "-" + randomInt;
             headers.put(Message.LABEL_MESSAGE_ID, messageId);
         }
-        RequestContext.cargos(headers::put);
+        propagation.write(RequestContext.getOrCreate(), writer(headers, headers::put));
     }
 
 }

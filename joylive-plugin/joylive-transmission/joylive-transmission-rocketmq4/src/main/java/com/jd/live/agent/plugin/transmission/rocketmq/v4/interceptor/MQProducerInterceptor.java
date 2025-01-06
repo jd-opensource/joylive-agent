@@ -19,11 +19,20 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.Collection;
 
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
+
 public class MQProducerInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public MQProducerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -38,12 +47,13 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
     }
 
     private void attachCargo(Collection<Message> messages) {
-        RequestContext.cargos(cargo ->
-                messages.forEach(
-                        message -> message.putUserProperty(cargo.getKey(), cargo.getValue())));
+        messages.forEach(message -> {
+            propagation.write(RequestContext.getOrCreate(), writer(message::putUserProperty));
+        });
     }
 
     private void attachCargo(Message message) {
+        propagation.write(RequestContext.getOrCreate(), writer(message::putUserProperty));
         RequestContext.cargos(cargo -> message.putUserProperty(cargo.getKey(), cargo.getValue()));
     }
 }

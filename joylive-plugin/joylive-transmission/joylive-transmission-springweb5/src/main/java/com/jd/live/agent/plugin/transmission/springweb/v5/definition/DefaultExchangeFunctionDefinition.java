@@ -18,10 +18,14 @@ package com.jd.live.agent.plugin.transmission.springweb.v5.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.DefaultExchangeFunctionInterceptor;
 
 /**
@@ -29,6 +33,7 @@ import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.DefaultExc
  *
  * @since 1.0.0
  */
+@Injectable
 @Extension(value = "DefaultExchangeFunctionDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(DefaultExchangeFunctionDefinition.TYPE_DEFAULT_EXCHANGE_FUNCTION)
@@ -42,11 +47,16 @@ public class DefaultExchangeFunctionDefinition extends PluginDefinitionAdapter {
             "org.springframework.web.reactive.function.client.ClientRequest"
     };
 
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
+
     public DefaultExchangeFunctionDefinition() {
-        super(MatcherBuilder.isImplement(TYPE_DEFAULT_EXCHANGE_FUNCTION),
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_DEFAULT_EXCHANGE_FUNCTION);
+        this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXCHANGE).
                                 and(MatcherBuilder.arguments(ARGUMENT_EXCHANGE)),
-                        new DefaultExchangeFunctionInterceptor()));
+                        () -> new DefaultExchangeFunctionInterceptor(propagation))
+        };
     }
 }

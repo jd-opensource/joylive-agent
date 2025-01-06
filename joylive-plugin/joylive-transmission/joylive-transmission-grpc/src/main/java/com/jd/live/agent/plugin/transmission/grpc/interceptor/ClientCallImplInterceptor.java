@@ -18,9 +18,18 @@ package com.jd.live.agent.plugin.transmission.grpc.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import io.grpc.Metadata;
 
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
+
 public class ClientCallImplInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public ClientCallImplInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
@@ -28,7 +37,7 @@ public class ClientCallImplInterceptor extends InterceptorAdaptor {
     }
 
     private void attachTag(Metadata metadata) {
-        RequestContext.cargos(tag -> metadata.put(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER), tag.getValue()));
+        propagation.write(RequestContext.getOrCreate(), writer((k, v) -> metadata.put(Metadata.Key.of(k, Metadata.ASCII_STRING_MARSHALLER), v)));
     }
 
 }

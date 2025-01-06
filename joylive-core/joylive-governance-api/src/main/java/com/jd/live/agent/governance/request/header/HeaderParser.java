@@ -16,12 +16,12 @@
 package com.jd.live.agent.governance.request.header;
 
 import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.governance.context.bag.Carrier;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A class that implements the {@link HeaderReader} and {@link HeaderWriter} interfaces.
@@ -31,27 +31,39 @@ import java.util.function.Function;
  */
 public class HeaderParser<T> implements HeaderReader, HeaderWriter {
 
-    protected final Map<String, T> map;
+    protected final WrappedMap<T> map;
 
     protected final Function<T, List<String>> converter;
 
     protected final BiConsumer<String, String> consumer;
 
-    public HeaderParser(Map<String, T> map, Function<T, List<String>> converter, BiConsumer<String, String> consumer) {
+    protected final Supplier<String> idSupplier;
+
+    public HeaderParser(WrappedMap<T> map, Function<T, List<String>> converter, BiConsumer<String, String> consumer, Supplier<String> idSupplier) {
         this.map = map;
         this.converter = converter;
         this.consumer = consumer;
+        this.idSupplier = idSupplier;
     }
 
     @Override
     public Iterator<String> getHeaderNames() {
-        return map == null ? null : map.keySet().iterator();
+        return map == null ? null : map.keyIterator();
     }
 
     @Override
     public List<String> getHeaders(String key) {
         T value = map == null ? null : map.get(key);
         return value == null || converter == null ? null : converter.apply(value);
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        if (idSupplier == null || idSupplier.get() == null)
+            return null;
+        HashMap<String, Object> attributes = new HashMap<>();
+        attributes.put(Carrier.ATTRIBUTE_RESTORE_BY, idSupplier.get());
+        return attributes;
     }
 
     @Override
@@ -74,20 +86,40 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
 
         private static final Function<List<String>, List<String>> LIST_LIST_FUNCTION = value -> value;
 
-        public MultiHeaderParser(Map<String, List<String>> map) {
-            super(map, LIST_LIST_FUNCTION, null);
+        public MultiHeaderParser(WrappedMap<List<String>> map) {
+            super(map, LIST_LIST_FUNCTION, null, null);
         }
 
-        public MultiHeaderParser(Map<String, List<String>> map, BiConsumer<String, String> consumer) {
-            super(map, LIST_LIST_FUNCTION, consumer);
+        public MultiHeaderParser(WrappedMap<List<String>> map, Supplier<String> idSupplier) {
+            super(map, LIST_LIST_FUNCTION, null, idSupplier);
+        }
+
+        public MultiHeaderParser(WrappedMap<List<String>> map, BiConsumer<String, String> consumer) {
+            super(map, LIST_LIST_FUNCTION, consumer, null);
         }
 
         public static HeaderReader reader(Map<String, List<String>> map) {
-            return new MultiHeaderParser(map);
+            return new MultiHeaderParser(WrappedMap.ofMap(map));
+        }
+
+        public static HeaderReader reader(WrappedMap<List<String>> wrappedMap) {
+            return new MultiHeaderParser(wrappedMap);
+        }
+
+        public static HeaderReader reader(Map<String, List<String>> map, Supplier<String> idSupplier) {
+            return new MultiHeaderParser(WrappedMap.ofMap(map), idSupplier);
+        }
+
+        public static HeaderReader reader(WrappedMap<List<String>> wrappedMap, Supplier<String> idSupplier) {
+            return new MultiHeaderParser(wrappedMap, idSupplier);
+        }
+
+        public static HeaderWriter writer(BiConsumer<String, String> consumer) {
+            return new MultiHeaderParser(WrappedMap.ofMap(new HashMap<>()), consumer);
         }
 
         public static HeaderWriter writer(Map<String, List<String>> map, BiConsumer<String, String> consumer) {
-            return new MultiHeaderParser(map, consumer);
+            return new MultiHeaderParser(WrappedMap.ofMap(map), consumer);
         }
     }
 
@@ -97,22 +129,42 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
      */
     public static class ObjectHeaderParser extends HeaderParser<Object> {
 
-        private static final Function<Object, List<String>> OBJECT_LIST_FUNCTION = value -> Label.parseValue(value.toString());
+        private static final Function<Object, List<String>> LIST_LIST_FUNCTION = value -> Label.parseValue(value.toString());
 
-        public ObjectHeaderParser(Map<String, Object> map) {
-            super(map, OBJECT_LIST_FUNCTION, null);
+        public ObjectHeaderParser(WrappedMap<Object> map) {
+            super(map, LIST_LIST_FUNCTION, null, null);
         }
 
-        public ObjectHeaderParser(Map<String, Object> map, BiConsumer<String, String> consumer) {
-            super(map, OBJECT_LIST_FUNCTION, consumer);
+        public ObjectHeaderParser(WrappedMap<Object> map, Supplier<String> idSupplier) {
+            super(map, LIST_LIST_FUNCTION, null, idSupplier);
+        }
+
+        public ObjectHeaderParser(WrappedMap<Object> map, BiConsumer<String, String> consumer) {
+            super(map, LIST_LIST_FUNCTION, consumer, null);
         }
 
         public static HeaderReader reader(Map<String, Object> map) {
-            return new ObjectHeaderParser(map);
+            return new ObjectHeaderParser(WrappedMap.ofMap(map));
+        }
+
+        public static HeaderReader reader(WrappedMap<Object> wrappedMap) {
+            return new ObjectHeaderParser(wrappedMap);
+        }
+
+        public static HeaderReader reader(Map<String, Object> map, Supplier<String> idSupplier) {
+            return new ObjectHeaderParser(WrappedMap.ofMap(map), idSupplier);
+        }
+
+        public static HeaderReader reader(WrappedMap<Object> wrappedMap, Supplier<String> idSupplier) {
+            return new ObjectHeaderParser(wrappedMap, idSupplier);
+        }
+
+        public static HeaderWriter writer(BiConsumer<String, String> consumer) {
+            return new ObjectHeaderParser(WrappedMap.ofMap(new HashMap<>()), consumer);
         }
 
         public static HeaderWriter writer(Map<String, Object> map, BiConsumer<String, String> consumer) {
-            return new ObjectHeaderParser(map, consumer);
+            return new ObjectHeaderParser(WrappedMap.ofMap(map), consumer);
         }
     }
 
@@ -124,20 +176,64 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
 
         private static final Function<String, List<String>> STRING_LIST_FUNCTION = Label::parseValue;
 
-        public StringHeaderParser(Map<String, String> map) {
-            super(map, STRING_LIST_FUNCTION, null);
+
+        public StringHeaderParser(WrappedMap<String> map) {
+            super(map, STRING_LIST_FUNCTION, null, null);
         }
 
-        public StringHeaderParser(Map<String, String> map, BiConsumer<String, String> consumer) {
-            super(map, STRING_LIST_FUNCTION, consumer);
+        public StringHeaderParser(WrappedMap<String> map, Supplier<String> idSupplier) {
+            super(map, STRING_LIST_FUNCTION, null, idSupplier);
+        }
+
+        public StringHeaderParser(WrappedMap<String> map, BiConsumer<String, String> consumer) {
+            super(map, STRING_LIST_FUNCTION, consumer, null);
         }
 
         public static HeaderReader reader(Map<String, String> map) {
-            return new StringHeaderParser(map);
+            return new StringHeaderParser(WrappedMap.ofMap(map));
+        }
+
+        public static HeaderReader reader(WrappedMap<String> wrappedMap) {
+            return new StringHeaderParser(wrappedMap);
+        }
+
+        public static HeaderReader reader(Map<String, String> map, Supplier<String> idSupplier) {
+            return new StringHeaderParser(WrappedMap.ofMap(map), idSupplier);
+        }
+
+        public static HeaderReader reader(WrappedMap<String> wrappedMap, Supplier<String> idSupplier) {
+            return new StringHeaderParser(wrappedMap, idSupplier);
+        }
+
+        public static HeaderWriter writer(BiConsumer<String, String> consumer) {
+            return new StringHeaderParser(WrappedMap.ofMap(new HashMap<>()), consumer);
         }
 
         public static HeaderWriter writer(Map<String, String> map, BiConsumer<String, String> consumer) {
-            return new StringHeaderParser(map, consumer);
+            return new StringHeaderParser(WrappedMap.ofMap(map), consumer);
+        }
+    }
+
+    public abstract static class WrappedMap<T> {
+
+        public abstract Iterator<String> keyIterator();
+
+        public abstract T get(String key);
+
+        // 将 ofMap 定义为静态方法
+        public static <T> WrappedMap<T> ofMap(Map<String, T> map) {
+            // 返回一个匿名子类实现
+            return new WrappedMap<T>() {
+                @Override
+                public Iterator<String> keyIterator() {
+                    return map.keySet().iterator();
+                }
+
+                @Override
+                public T get(String key) {
+                    return map.get(key);
+                }
+            };
         }
     }
 }

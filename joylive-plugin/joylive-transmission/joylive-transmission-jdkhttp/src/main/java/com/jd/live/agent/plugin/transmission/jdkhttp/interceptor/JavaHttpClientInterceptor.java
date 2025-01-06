@@ -18,11 +18,13 @@ package com.jd.live.agent.plugin.transmission.jdkhttp.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.describe;
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.writer;
 
 /**
  * Interceptor for the Java HTTP Client's request builder implementation.
@@ -44,7 +46,9 @@ public class JavaHttpClientInterceptor extends InterceptorAdaptor {
 
     private final Method method;
 
-    public JavaHttpClientInterceptor() {
+    private final Propagation propagation;
+
+    public JavaHttpClientInterceptor(Propagation propagation) {
         // use reflect to avoid module error in java 17.
         Method method = null;
         try {
@@ -56,36 +60,19 @@ public class JavaHttpClientInterceptor extends InterceptorAdaptor {
         } catch (ClassNotFoundException ignore) {
         }
         this.method = method;
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (method != null) {
-            attachTag(ctx.getTarget());
+            Object header = ctx.getTarget();
+            propagation.write(RequestContext.getOrCreate(), writer((key, value) -> {
+                try {
+                    method.invoke(header, key, value);
+                } catch (Throwable ignore) {
+                }
+            }));
         }
     }
-
-    /**
-     * Attaches tags to the HTTP header using the {@code setHeader} method.
-     *
-     * @param header The HTTP request header object to which the tags will be attached.
-     */
-    private void attachTag(Object header) {
-        RequestContext.cargos((key, value) -> addHeader(header, key, value));
-    }
-
-    /**
-     * Adds a single header to the HTTP request.
-     *
-     * @param header The HTTP request header object.
-     * @param key The header key.
-     * @param value The header value.
-     */
-    private void addHeader(Object header, String key, String value) {
-        try {
-            method.invoke(header, key, value);
-        } catch (Throwable ignore) {
-        }
-    }
-
 }

@@ -19,14 +19,13 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
-import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
+import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.reader;
+import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.writer;
 
 /**
  * WebHandlerDecoratorInterceptor
@@ -36,10 +35,10 @@ import java.util.List;
  */
 public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public WebHandlerDecoratorInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public WebHandlerDecoratorInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
@@ -47,8 +46,7 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         // for inbound traffic
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
         HttpHeaders headers = exchange.getRequest().getHeaders();
-        Carrier carrier = RequestContext.create();
-        carrier.addCargo(require, headers);
+        propagation.read(RequestContext.create(), reader(headers));
     }
 
     @Override
@@ -58,7 +56,7 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
         HttpHeaders headers = exchange.getResponse().getHeaders();
         Mono<Void> mono = mc.getResult();
-        mono = mono.doFirst(() -> RequestContext.cargos(tag -> headers.addAll(tag.getKey(), tag.getValues())));
+        mono = mono.doFirst(() -> propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add)));
         mc.setResult(mono);
     }
 }

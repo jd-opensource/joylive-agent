@@ -26,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor.HandleInterceptor;
 
 import java.util.List;
@@ -40,14 +41,14 @@ public class ConsumerDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_GET_BODY = "handleDelivery";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
 
     public ConsumerDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_CONSUMER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_GET_BODY), () -> new HandleInterceptor(requires))
+                        MatcherBuilder.in(METHOD_GET_BODY), () -> new HandleInterceptor(propagation))
         };
     }
 }

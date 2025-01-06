@@ -18,12 +18,14 @@ package com.jd.live.agent.plugin.transmission.springweb.v5.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.ClientHttpRequestFactoryInterceptor;
 
 /**
@@ -46,12 +48,15 @@ public class ClientHttpRequestFactoryDefinition extends PluginDefinitionAdapter 
             "java.net.URI", "org.springframework.http.HttpMethod"
     };
 
+    @Inject(Propagation.COMPONENT_PROPAGATION)
+    private Propagation propagation;
+
     public ClientHttpRequestFactoryDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_CLIENT_HTTP_REQUEST_FACTORY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_CREATE_REQUEST).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        new ClientHttpRequestFactoryInterceptor())};
+                        () -> new ClientHttpRequestFactoryInterceptor(propagation))};
     }
 }

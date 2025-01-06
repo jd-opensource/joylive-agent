@@ -17,29 +17,26 @@ package com.jd.live.agent.plugin.transmission.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import org.apache.dubbo.rpc.RpcInvocation;
 
-import java.util.List;
+import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.reader;
 
 public class DubboProviderInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public DubboProviderInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public DubboProviderInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        restoreTag((RpcInvocation) ctx.getArguments()[1]);
-    }
-
-    private void restoreTag(RpcInvocation invocation) {
-        RequestContext.create().addCargo(require, invocation.getObjectAttachments(), Label::parseValue);
+        RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[1];
+        Carrier carrier = RequestContext.create();
+        propagation.read(carrier, reader(invocation.getAttachments()));
     }
 
     @Override
