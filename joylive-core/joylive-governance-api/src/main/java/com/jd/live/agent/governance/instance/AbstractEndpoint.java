@@ -39,6 +39,10 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     // Endpoint is request level
     private Integer weight;
 
+    private Long recoverTime;
+
+    private Integer recoverDuration;
+
     @Override
     public String getLiveSpaceId() {
         if (liveSpaceId == null) {
@@ -95,9 +99,29 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     }
 
     @Override
-    public Integer getWeight(ServiceRequest request) {
+    public Long getRecoverTime() {
+        return recoverTime;
+    }
+
+    @Override
+    public void setRecoverTime(Long recoverTime) {
+        this.recoverTime = recoverTime;
+    }
+
+    @Override
+    public Integer getRecoverDuration() {
+        return recoverDuration;
+    }
+
+    @Override
+    public void setRecoverDuration(Integer duration) {
+        this.recoverDuration = duration;
+    }
+
+    @Override
+    public Integer reweight(ServiceRequest request) {
         if (weight == null) {
-            weight = Endpoint.super.getWeight(request);
+            weight = Endpoint.super.reweight(request);
         }
         return weight;
     }

@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 /**
  * Represents a Redis client managed by {@link RedisClientManager}.
  */
-public class RedisClient {
+public class RedisClient implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(RedissonRateLimiter.class);
 
@@ -37,7 +37,7 @@ public class RedisClient {
 
     private final Consumer<RedisClient> consumer;
 
-    private final RedissonClient delegate;
+    private volatile RedissonClient delegate;
 
     private long lastAccessTime;
 
@@ -46,7 +46,6 @@ public class RedisClient {
     public RedisClient(RedisConfig config, Consumer<RedisClient> consumer) {
         this.config = config;
         this.consumer = consumer;
-        this.delegate = createClient();
     }
 
     public long getId() {
@@ -78,33 +77,41 @@ public class RedisClient {
      * @return true if the client has expired, false otherwise
      */
     public boolean isExpired(long timeout) {
-        return System.currentTimeMillis() - lastAccessTime >= timeout;
+        return isUseless() && System.currentTimeMillis() - lastAccessTime >= timeout;
     }
 
     /**
-     * Increments the reference count of the Redis client.
+     * Start the redis client.
      */
-    public void incReference() {
+    public void start() {
+        if (delegate == null) {
+            synchronized (this) {
+                if (delegate == null) {
+                    delegate = createClient();
+                }
+            }
+        }
+        lastAccessTime = System.currentTimeMillis();
         counter.incrementAndGet();
     }
 
     /**
-     * Decrements the reference count of the Redis client.
+     * Close the redis client.
      * If the reference count reaches zero, the client is removed by the consumer.
      */
-    public void decReference() {
+    public void close() {
         if (counter.decrementAndGet() == 0) {
             consumer.accept(this);
         }
     }
 
     /**
-     * Returns the current reference count of the Redis client.
+     * Checks if the endpoint is considered useless based on the counter value.
      *
-     * @return the reference count
+     * @return true if the counter is zero, indicating the endpoint is useless; false otherwise
      */
-    public int getReference() {
-        return (int) counter.get();
+    public boolean isUseless() {
+        return counter.get() == 0;
     }
 
     protected RedisConfig getConfig() {

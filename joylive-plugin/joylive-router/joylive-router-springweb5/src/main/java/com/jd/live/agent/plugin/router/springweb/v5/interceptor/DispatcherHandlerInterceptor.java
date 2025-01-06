@@ -63,13 +63,13 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
             if (config.isResponseException()) {
                 mono = mono.doOnError(ex -> {
-                    HttpHeaders headers = exchange.getResponse().getHeaders();
+                    HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
                     labelHeaders(ex, headers::set);
                 }).doOnSuccess(result -> {
                     if (result != null) {
                         Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
                         result.setExceptionHandler(ex -> {
-                            HttpHeaders headers = exchange.getResponse().getHeaders();
+                            HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
                             labelHeaders(ex, headers::set);
                             return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
                         });

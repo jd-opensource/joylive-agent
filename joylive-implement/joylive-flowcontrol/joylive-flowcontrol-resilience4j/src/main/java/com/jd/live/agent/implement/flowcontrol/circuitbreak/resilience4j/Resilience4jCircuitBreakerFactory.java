@@ -20,9 +20,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
-import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitLevel;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.SlidingWindowType;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -40,12 +38,27 @@ import static com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBr
 @Extension(value = "Resilience4j")
 public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFactory {
 
-    /**
-     * {@inheritDoc}
-     */
+    private static final CircuitBreakerRegistry REGISTRY = CircuitBreakerRegistry.ofDefaults();
+
     @Override
     public CircuitBreaker create(CircuitBreakPolicy policy, URI uri) {
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+        CircuitBreakerConfig config = getBuilder(policy).build();
+        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = REGISTRY.circuitBreaker(uri.toString(), config);
+        if (policy.isForceOpen()) {
+            cb.transitionToForcedOpenState();
+        }
+        return new Resilience4jCircuitBreaker(policy, uri, cb);
+    }
+
+    /**
+     * Creates and configures a {@link CircuitBreakerConfig.Builder} based on the provided {@link CircuitBreakPolicy}.
+     *
+     * @param policy The {@link CircuitBreakPolicy} containing the configuration parameters.
+     * @return A configured {@link CircuitBreakerConfig.Builder}.
+     */
+    private CircuitBreakerConfig.Builder getBuilder(CircuitBreakPolicy policy) {
+        // TODO Uniform time unit. waitDurationInOpenState
+        CircuitBreakerConfig.Builder result = CircuitBreakerConfig.custom()
                 .slidingWindowType(SLIDING_WINDOW_COUNT.equals(policy.getSlidingWindowType()) ? SlidingWindowType.COUNT_BASED : SlidingWindowType.TIME_BASED)
                 .slidingWindowSize(policy.getSlidingWindowSize() <= 0 ? DEFAULT_SLIDING_WINDOW_SIZE : policy.getSlidingWindowSize())
                 .minimumNumberOfCalls(policy.getMinCallsThreshold() <= 0 ? DEFAULT_MIN_CALLS_THRESHOLD : policy.getMinCallsThreshold())
@@ -54,17 +67,11 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold() <= 0 ? DEFAULT_SLOW_CALL_DURATION_THRESHOLD : policy.getSlowCallDurationThreshold()))
                 .waitDurationInOpenState(Duration.ofSeconds(policy.getWaitDurationInOpenState() <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : policy.getWaitDurationInOpenState()))
                 .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState() <= 0 ? DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE : policy.getAllowedCallsInHalfOpenState())
-                .recordException(e -> true)
-                .build();
-        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = CircuitBreakerRegistry.of(circuitBreakerConfig).circuitBreaker(uri.toString());
-        if (policy.isForceOpen()) {
-            cb.transitionToForcedOpenState();
+                .recordException(e -> true);
+        if (policy.getMaxWaitDurationInHalfOpenState() > 0) {
+            result.maxWaitDurationInHalfOpenState(Duration.ofMillis(policy.getMaxWaitDurationInHalfOpenState()));
         }
-        CircuitBreaker circuitBreaker = new Resilience4jCircuitBreaker(policy, uri, cb);
-        if (policy.getLevel() == CircuitLevel.INSTANCE) {
-            circuitBreaker.addListener(new InstanceCircuitBreakerStateListener(policy, uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT)));
-        }
-        return circuitBreaker;
+        return result;
     }
 
 }

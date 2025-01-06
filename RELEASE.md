@@ -7,17 +7,19 @@
 3. Added support for Spring Cloud clients to retrieve exceptions from the server, facilitating retry and circuit breaking.
 4. Added support for Spring Cloud port-based routing.
 5. Added support for cluster-level rate limiting by Redis. 
-6. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
-7. Improved label matching logic in flow control 
-8. Performance optimization 
-9. Provide context lock to facilitate the use of interceptors 
-10. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration 
-11. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications 
-12. Fixed OpenJDK compatibility issues 
-13. Fixed issues with conflicts with other Agents, packaging Bootstrap together 
-14. Fixed the issue that calling the original method would also trigger OnExit/OnSuccess/OnError interceptors 
-15. Fixed Sofarpc injection problem 
-16. Fixed other issues
+6. Added support for W3c Baggage transparent transmission.
+7. Added support for gradual traffic recovery at the instance-level circuit breaking.
+8. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
+9. Improved label matching logic in flow control 
+10. Performance optimization 
+11. Provide context lock to facilitate the use of interceptors 
+12. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration 
+13. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications 
+14. Fixed OpenJDK compatibility issues 
+15. Fixed issues with conflicts with other Agents, packaging Bootstrap together 
+16. Fixed the issue that calling the original method would also trigger OnExit/OnSuccess/OnError interceptors 
+17. Fixed Sofarpc injection problem 
+18. Fixed other issues
 
 ## 1.5.2
 

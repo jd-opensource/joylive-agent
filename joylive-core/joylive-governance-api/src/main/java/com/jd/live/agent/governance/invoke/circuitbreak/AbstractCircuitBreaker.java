@@ -19,19 +19,25 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import lombok.Getter;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * AbstractCircuitBreaker
  *
  * @since 1.1.0
  */
-@Getter
 public abstract class AbstractCircuitBreaker implements CircuitBreaker {
 
-    private final CircuitBreakPolicy policy;
+    @Getter
+    protected final CircuitBreakPolicy policy;
 
-    private final URI uri;
+    @Getter
+    protected final URI uri;
 
-    private long lastAcquireTime;
+    @Getter
+    protected long lastAccessTime;
+
+    protected final AtomicBoolean started = new AtomicBoolean(true);
 
     public AbstractCircuitBreaker(CircuitBreakPolicy policy, URI uri) {
         this.policy = policy;
@@ -40,8 +46,47 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
 
     @Override
     public boolean acquire() {
-        lastAcquireTime = System.currentTimeMillis();
+        if (!started.get()) {
+            return true;
+        }
+        lastAccessTime = System.currentTimeMillis();
         return doAcquire();
+    }
+
+    @Override
+    public void release() {
+        if (started.get()) {
+            doRelease();
+        }
+    }
+
+    @Override
+    public void onError(long durationInMs, Throwable throwable) {
+        if (started.get()) {
+            doOnError(durationInMs, throwable);
+        }
+    }
+
+    @Override
+    public void onSuccess(long durationInMs) {
+        if (started.get()) {
+            doOnSuccess(durationInMs);
+        }
+    }
+
+    @Override
+    public void close() {
+        // When the circuit breaker is not accessed for a long time, it will be automatically garbage collected.
+        if (started.compareAndSet(true, false)) {
+            doClose();
+        }
+    }
+
+    /**
+     * Closes the circuit breaker.
+     */
+    protected void doClose() {
+
     }
 
     /**
@@ -51,5 +96,25 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
      * @return true if the acquisition is successful, false otherwise.
      */
     protected abstract boolean doAcquire();
+
+    /**
+     * Releases the acquired permit.
+     */
+    protected abstract void doRelease();
+
+    /**
+     * Records a failed call. This method should be invoked when a call fails.
+     *
+     * @param durationInMs The elapsed time duration of the call in milliseconds.
+     * @param throwable    The throwable that represents the failure.
+     */
+    protected abstract void doOnError(long durationInMs, Throwable throwable);
+
+    /**
+     * Records a successful call. This method should be invoked when a call is successful.
+     *
+     * @param durationInMs The elapsed time duration of the call in milliseconds.
+     */
+    protected abstract void doOnSuccess(long durationInMs);
 
 }

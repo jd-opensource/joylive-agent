@@ -16,12 +16,24 @@
 package com.jd.live.agent.governance.policy.service.circuitbreak;
 
 /**
- * CircuitLevel
+ * Represents different levels at which circuit breaking can be applied.
  *
  * @since 1.1.0
  */
-public enum CircuitLevel {
+public enum CircuitBreakLevel {
+
+    /**
+     * Circuit breaking at the service level.
+     */
     SERVICE,
+
+    /**
+     * Circuit breaking at the API level.
+     */
     API,
+
+    /**
+     * Circuit breaking at the instance level.
+     */
     INSTANCE;
 }

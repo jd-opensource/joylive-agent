@@ -48,7 +48,7 @@ public class HandleResultInterceptor extends InterceptorAdaptor {
                 Mono<Void> mono = mc.getResult();
                 mono = mono.onErrorResume(ex -> {
                     exchange.getAttributes().put(KEY_LIVE_EXCEPTION_HANDLED, Boolean.TRUE);
-                    HttpHeaders headers = exchange.getResponse().getHeaders();
+                    HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
                     labelHeaders(ex, headers::set);
                     return Mono.error(ex);
                 });

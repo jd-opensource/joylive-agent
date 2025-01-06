@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy.service.limit;
 
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
+import com.jd.live.agent.governance.policy.PolicyVersion;
 import com.jd.live.agent.governance.policy.service.annotation.Provider;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
@@ -39,7 +40,8 @@ import java.util.List;
 @Getter
 @Setter
 @Provider
-public class ConcurrencyLimitPolicy extends AbstractLimitPolicy implements PolicyInheritWithIdGen<ConcurrencyLimitPolicy> {
+public class ConcurrencyLimitPolicy extends AbstractLimitPolicy
+        implements PolicyInheritWithIdGen<ConcurrencyLimitPolicy>, PolicyVersion {
 
     /**
      * The maximum number of concurrent requests allowed.

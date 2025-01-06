@@ -111,29 +111,80 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
-     * Gets the weight for the specified service request, taking into account the origin weight and warm-up time.
+     * Returns the recover time.
+     *
+     * @return The recover time, or null if not set.
+     */
+    default Long getRecoverTime() {
+        return null;
+    }
+
+    /**
+     * Sets the recover time.
+     *
+     * @param recoverTime The recover time to set.
+     */
+    default void setRecoverTime(Long recoverTime) {
+    }
+
+    /**
+     * Returns the recover duration.
+     *
+     * @return The recover duration, or null if not set.
+     */
+    default Integer getRecoverDuration() {
+        return null;
+    }
+
+    /**
+     * Sets the recover duration.
+     *
+     * @param duration The recover duration to set.
+     */
+    default void setRecoverDuration(Integer duration) {
+    }
+
+    /**
+     * Gets the weight for the specified service request, taking into account the weight, warm-up time and recover time.
      *
      * @param request the service request for which to get the weight
-     * @return the weight for this endpoint, taking into account the origin weight and warm-up time
+     * @return the weight for this endpoint
      */
-    default Integer getWeight(ServiceRequest request) {
-        int weight = getOriginWeight(request);
+    default Integer reweight(ServiceRequest request) {
+        int weight = getWeight(request);
         if (weight > 0) {
-            Long timestamp = getTimestamp();
-            if (timestamp != null && timestamp > 0L) {
-                long uptime = System.currentTimeMillis() - timestamp;
-                if (uptime < 0) {
-                    weight = 1;
-                } else {
-                    int warmup = getWarmup();
-                    if (uptime > 0 && uptime < warmup) {
-                        int ww = (int) (uptime / ((float) warmup / weight));
-                        weight = ww < 1 ? 1 : Math.min(ww, weight);
-                    }
-                }
-            }
+            long now = System.currentTimeMillis();
+            weight = getWeight(weight, getTimestamp(), getWarmup(), now);
+            weight = getWeight(weight, getRecoverTime(), getRecoverDuration(), now);
+            return weight < 0 ? 0 : Math.max(1, weight);
         }
-        return Math.max(weight, 0);
+        return 0;
+    }
+
+    /**
+     * Calculates the effective weight of a resource based on its uptime and warmup period.
+     * <p>
+     * This method calculates the effective weight of a resource considering its initial weight,
+     * the timestamp of its start, a warmup period, and the current time. The weight is adjusted
+     * during the warmup period and returns the original weight once the warmup period is complete.
+     *
+     * @param weight    the initial weight of the resource
+     * @param timestamp the timestamp when the resource started
+     * @param duration  the time window in milliseconds
+     * @param now       the current timestamp
+     * @return the effective weight of the resource
+     */
+    static int getWeight(int weight, Long timestamp, Integer duration, long now) {
+        if (weight <= 0 || timestamp == null || timestamp <= 0 || duration == null || duration <= 0) {
+            return weight;
+        }
+        long span = now - timestamp;
+        if (span <= 0) {
+            return -1;
+        } else if (span < duration) {
+            return (int) (span / ((float) duration / weight));
+        }
+        return weight;
     }
 
     /**
@@ -142,7 +193,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @param request the service request for which to get the origin weight
      * @return the origin weight, or the default value if not specified
      */
-    default Integer getOriginWeight(ServiceRequest request) {
+    default Integer getWeight(ServiceRequest request) {
         return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), DEFAULT_WEIGHT);
     }
 

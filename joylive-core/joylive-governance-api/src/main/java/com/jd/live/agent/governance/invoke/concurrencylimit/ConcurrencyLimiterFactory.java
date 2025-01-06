@@ -29,20 +29,11 @@ public interface ConcurrencyLimiterFactory {
     /**
      * Retrieves a concurrency limiter for the given concurrency limit policy. If a concurrency limiter for the policy
      * already exists and its version is greater than or equal to the policy version, it is returned.
-     * Otherwise, a new concurrency limiter is created using the {@link #create(ConcurrencyLimitPolicy)} method.
+     * Otherwise, a new concurrency limiter is created.
      *
      * @param policy The concurrency limit policy for which to retrieve or create a concurrency limiter.
      * @return A concurrency limiter that corresponds to the given policy, or null if the policy is null.
      */
     ConcurrencyLimiter get(ConcurrencyLimitPolicy policy);
-
-    /**
-     * Retrieves a new instance of a {@link ConcurrencyLimiter} based on the provided
-     * concurrency limit policy.
-     *
-     * @param policy the policy that defines the concurrency limiting rules.
-     * @return a new instance of a concurrency limiter configured according to the policy.
-     */
-    ConcurrencyLimiter create(ConcurrencyLimitPolicy policy);
 
 }

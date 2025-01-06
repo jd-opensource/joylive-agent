@@ -42,8 +42,7 @@ public class RedisClientManager {
      */
     public RedisClient getOrCreateClient(RedisConfig config) {
         RedisClient client = clients.computeIfAbsent(config, c -> new RedisClient(c, this::removeClient));
-        client.incReference();
-        client.setLastAccessTime(System.currentTimeMillis());
+        client.start();
         return client;
     }
 
@@ -52,18 +51,14 @@ public class RedisClientManager {
      *
      * @param client the Redis client to be removed
      */
-    private void removeClient(RedisClient client) {
-        RedisClient newClient = clients.remove(client.getConfig());
-        if (newClient != null) {
-            if (newClient == client && newClient.getReference() == 0) {
-                addTask(newClient);
-            } else {
-                client = clients.putIfAbsent(newClient.getConfig(), newClient);
-                if (client != null) {
-                    addTask(newClient);
-                }
+    private void removeClient(final RedisClient client) {
+        clients.computeIfPresent(client.getConfig(), (c, v) -> {
+            if (v == client && v.isUseless()) {
+                addTask(v);
+                return null;
             }
-        }
+            return v;
+        });
     }
 
     /**
@@ -72,8 +67,8 @@ public class RedisClientManager {
      * @param client the Redis client to be recycled
      */
     private void addTask(RedisClient client) {
-        timer.add("recycle-redis-client-" + client.getId(), 5000, () -> {
-            if (client.getReference() == 0 && client.isExpired(10000)) {
+        timer.add("Recycle-RedisClient-" + client.getId(), 5000, () -> {
+            if (client.isExpired(10000)) {
                 client.shutdown();
             } else {
                 addTask(client);
