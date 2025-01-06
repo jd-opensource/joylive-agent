@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.transmission.kafka.v3.request;
 
-import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 import org.apache.kafka.common.header.Header;
@@ -24,6 +23,9 @@ import org.apache.kafka.common.header.Headers;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 public class KafkaHeaderParser implements HeaderReader, HeaderWriter {
 
@@ -35,23 +37,12 @@ public class KafkaHeaderParser implements HeaderReader, HeaderWriter {
 
     @Override
     public Iterator<String> getNames() {
-        Iterator<Header> delegate = headers.iterator();
-        return new Iterator<String>() {
-            @Override
-            public boolean hasNext() {
-                return delegate.hasNext();
-            }
-
-            @Override
-            public String next() {
-                return getValue(delegate.next());
-            }
-        };
+        return toIterator(headers.iterator(), this::getValue);
     }
 
     @Override
     public List<String> getHeaders(String key) {
-        return CollectionUtils.toList(headers.headers(key), this::getValue);
+        return toList(headers.headers(key), this::getValue);
     }
 
     @Override

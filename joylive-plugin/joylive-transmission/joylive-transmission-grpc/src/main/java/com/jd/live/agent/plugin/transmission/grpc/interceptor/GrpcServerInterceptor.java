@@ -37,20 +37,23 @@ public class GrpcServerInterceptor extends InterceptorAdaptor {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
                     ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
-                if (headers != null) {
-                    propagation.read(RequestContext.create(), new MetadataParser(headers));
-                }
-                return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
-                    @Override
-                    protected ServerCall<ReqT, RespT> delegate() {
-                        return call;
-                    }
+                try {
+                    propagation.read(RequestContext.create(), headers == null ? null : new MetadataParser(headers));
 
-                    @Override
-                    public MethodDescriptor<ReqT, RespT> getMethodDescriptor() {
-                        return call.getMethodDescriptor();
-                    }
-                }, headers);
+                    return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
+                        @Override
+                        protected ServerCall<ReqT, RespT> delegate() {
+                            return call;
+                        }
+
+                        @Override
+                        public MethodDescriptor<ReqT, RespT> getMethodDescriptor() {
+                            return call.getMethodDescriptor();
+                        }
+                    }, headers);
+                } finally {
+                    RequestContext.remove();
+                }
             }
         });
     }

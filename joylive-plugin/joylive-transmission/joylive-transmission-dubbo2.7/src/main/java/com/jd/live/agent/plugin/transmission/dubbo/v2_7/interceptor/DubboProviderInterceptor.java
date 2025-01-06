@@ -33,7 +33,7 @@ public class DubboProviderInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[1];
+        RpcInvocation invocation = ctx.getArgument(1);
         propagation.read(RequestContext.create(), reader(invocation.getObjectAttachments()));
     }
 

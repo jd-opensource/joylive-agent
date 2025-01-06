@@ -41,7 +41,7 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        RpcInvocation invocation = (RpcInvocation) ctx.getArguments()[0];
+        RpcInvocation invocation = ctx.getArgument(0);
         Carrier carrier = RequestContext.getOrCreate();
         // read from rpc context by live propagation
         LIVE_PROPAGATION.read(carrier, reader(RpcContext.getContext().getObjectAttachments()));

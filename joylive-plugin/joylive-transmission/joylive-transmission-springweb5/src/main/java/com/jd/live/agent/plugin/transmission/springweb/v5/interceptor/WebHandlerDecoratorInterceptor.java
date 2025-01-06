@@ -44,19 +44,23 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         // for inbound traffic
-        ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        HttpHeaders headers = exchange.getRequest().getHeaders();
-        propagation.read(RequestContext.create(), reader(headers));
+        ServerWebExchange exchange = ctx.getArgument(0);
+        propagation.read(RequestContext.create(), reader(exchange.getRequest().getHeaders()));
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
         // for outbound traffic
         MethodContext mc = (MethodContext) ctx;
-        ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
+        ServerWebExchange exchange = ctx.getArgument(0);
         HttpHeaders headers = exchange.getResponse().getHeaders();
         Mono<Void> mono = mc.getResult();
         mono = mono.doFirst(() -> propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add)));
         mc.setResult(mono);
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        RequestContext.remove();
     }
 }

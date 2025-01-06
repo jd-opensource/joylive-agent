@@ -45,13 +45,15 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
-            HttpServletRequest request = (HttpServletRequest) ctx.getArguments()[0];
+            HttpServletRequest request = ctx.getArgument(0);
             propagation.read(RequestContext.getOrCreate(), new HttpServletRequestParser(request));
         }
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        ctx.unlock();
+        if (ctx.unlock()) {
+            RequestContext.remove();
+        }
     }
 }

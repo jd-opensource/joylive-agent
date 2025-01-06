@@ -37,7 +37,7 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object argument = ctx.getArguments()[0];
+        Object argument = ctx.getArgument(0);
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         if (argument instanceof Message) {
             Message message = (Message) argument;
