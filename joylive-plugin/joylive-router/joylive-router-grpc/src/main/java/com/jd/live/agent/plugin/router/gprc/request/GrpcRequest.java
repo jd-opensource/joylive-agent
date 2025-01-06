@@ -65,6 +65,22 @@ public interface GrpcRequest {
         public boolean isNativeGroup() {
             return false;
         }
+
+        @Override
+        public String getHeader(String key) {
+            return headers.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
+        }
+
+        @Override
+        public List<String> getHeaders(String key) {
+            Iterable<String> iterable = headers.getAll(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
+            if (iterable == null) {
+                return null;
+            }
+            return StreamSupport.stream(iterable.spliterator(), false)
+                    .collect(Collectors.toList());
+        }
+
     }
 
     /**
