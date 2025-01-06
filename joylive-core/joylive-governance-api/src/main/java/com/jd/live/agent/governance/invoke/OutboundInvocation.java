@@ -196,8 +196,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         if (null == routeTarget) {
             if (instances == null) {
                 routeTarget = RouteTarget.forward(new ArrayList<>());
-            } else if (instances instanceof ArrayList) {
-                routeTarget = RouteTarget.forward(instances);
             } else {
                 // use array list to improve performance.
                 routeTarget = RouteTarget.forward(new ArrayList<>(instances));
