@@ -38,7 +38,7 @@ public class MessageUtilDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_CREATE_REPLY_MESSAGE = "createReplyMessage";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public MessageUtilDefinition() {

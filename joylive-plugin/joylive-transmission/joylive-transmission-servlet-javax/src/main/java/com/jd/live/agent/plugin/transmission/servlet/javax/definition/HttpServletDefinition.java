@@ -43,7 +43,7 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
             "javax.servlet.http.HttpServletResponse"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public HttpServletDefinition() {

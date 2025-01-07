@@ -42,7 +42,7 @@ public class SofaRpcClientDefinition extends PluginDefinitionAdapter {
             "com.alipay.sofa.rpc.core.request.SofaRequest"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public SofaRpcClientDefinition() {

@@ -48,7 +48,7 @@ public class HandshakeWebSocketServiceDefinition extends PluginDefinitionAdapter
             "org.springframework.web.reactive.socket.WebSocketHandler"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public HandshakeWebSocketServiceDefinition() {

@@ -43,7 +43,7 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
             "org.apache.dubbo.rpc.Invocation"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public DubboProviderDefinition() {

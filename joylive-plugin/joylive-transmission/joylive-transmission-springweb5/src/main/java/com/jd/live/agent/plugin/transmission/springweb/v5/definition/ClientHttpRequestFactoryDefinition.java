@@ -48,7 +48,7 @@ public class ClientHttpRequestFactoryDefinition extends PluginDefinitionAdapter 
             "java.net.URI", "org.springframework.http.HttpMethod"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public ClientHttpRequestFactoryDefinition() {

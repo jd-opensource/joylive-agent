@@ -44,7 +44,7 @@ public class HttpClientDefinition extends PluginDefinitionAdapter {
             "org.apache.commons.httpclient.HttpState"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public HttpClientDefinition() {

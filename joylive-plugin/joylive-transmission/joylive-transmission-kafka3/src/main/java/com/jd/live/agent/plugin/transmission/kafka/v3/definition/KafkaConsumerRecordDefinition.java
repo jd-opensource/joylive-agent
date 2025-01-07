@@ -37,7 +37,7 @@ public class KafkaConsumerRecordDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_VALUE = "value";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public KafkaConsumerRecordDefinition() {

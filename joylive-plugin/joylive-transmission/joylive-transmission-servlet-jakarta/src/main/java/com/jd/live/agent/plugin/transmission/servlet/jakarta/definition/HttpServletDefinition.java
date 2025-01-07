@@ -43,7 +43,7 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
             "jakarta.servlet.ServletResponse"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public HttpServletDefinition() {

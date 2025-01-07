@@ -47,7 +47,7 @@ public class DefaultExchangeFunctionDefinition extends PluginDefinitionAdapter {
             "org.springframework.web.reactive.function.client.ClientRequest"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public DefaultExchangeFunctionDefinition() {

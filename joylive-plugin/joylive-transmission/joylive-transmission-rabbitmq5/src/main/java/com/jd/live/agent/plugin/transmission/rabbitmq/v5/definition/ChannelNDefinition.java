@@ -38,7 +38,7 @@ public class ChannelNDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_BASIC_PUBLISH = "basicPublish";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public ChannelNDefinition() {

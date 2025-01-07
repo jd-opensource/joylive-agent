@@ -43,7 +43,7 @@ public class NettyHttpClientDefinition extends PluginDefinitionAdapter {
             "io.netty.handler.codec.http.HttpMethod",
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public NettyHttpClientDefinition() {

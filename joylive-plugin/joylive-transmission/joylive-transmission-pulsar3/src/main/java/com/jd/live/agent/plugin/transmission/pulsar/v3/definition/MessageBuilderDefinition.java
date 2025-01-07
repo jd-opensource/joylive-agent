@@ -40,7 +40,7 @@ public class MessageBuilderDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SEND_ASYNC = "sendAsync";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public MessageBuilderDefinition() {

@@ -40,7 +40,7 @@ public class MessageDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_GET_VALUE = "getValue";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public MessageDefinition() {

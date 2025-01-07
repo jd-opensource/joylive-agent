@@ -49,6 +49,13 @@ public @interface Inject {
     boolean nullable() default false;
 
     /**
+     * Indicates whether the field is a component. The default is false,
+     *
+     * @return {@code true} if the field is a component; {@code false} otherwise.
+     */
+    boolean component() default false;
+
+    /**
      * Specifies the type of resource or class implementation to be loaded for the annotated field.
      * The default is set to {@code ResourcerType.CORE_IMPL}, indicating a core implementation resource
      * type will be loaded.

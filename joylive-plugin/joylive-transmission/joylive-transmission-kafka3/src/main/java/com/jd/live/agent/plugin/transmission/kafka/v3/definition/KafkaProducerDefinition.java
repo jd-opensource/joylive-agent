@@ -42,7 +42,7 @@ public class KafkaProducerDefinition extends PluginDefinitionAdapter {
             "org.apache.kafka.clients.producer.Callback"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public KafkaProducerDefinition() {

@@ -38,7 +38,7 @@ public class DeliveryDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_GET_BODY = "getBody";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public DeliveryDefinition() {

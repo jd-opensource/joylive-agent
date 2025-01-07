@@ -53,7 +53,7 @@ public class HttpClientDefinition extends PluginDefinitionAdapter {
             "org.apache.http.protocol.HttpContext"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public HttpClientDefinition() {

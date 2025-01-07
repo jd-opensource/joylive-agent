@@ -44,7 +44,7 @@ public class MQProducerDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SEND_ONEWAY = "sendOneway";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public MQProducerDefinition() {

@@ -41,7 +41,7 @@ public class GrpcServerDefinition extends PluginDefinitionAdapter {
     // Interceptor is called in reverse order
     private static final String METHOD_BUILD = "build";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public GrpcServerDefinition() {

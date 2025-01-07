@@ -45,7 +45,7 @@ public class JavaHttpClientDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_BUILD_FOR_WEBSOCKET = "buildForWebSocket";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public JavaHttpClientDefinition() {

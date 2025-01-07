@@ -47,7 +47,7 @@ public class SunHttpClientDefinition extends PluginDefinitionAdapter implements 
             "sun.net.www.http.PosterOutputStream"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public SunHttpClientDefinition() {

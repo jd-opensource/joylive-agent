@@ -38,7 +38,7 @@ public class ClientCallImplDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_PREPARE_HEADERS = "prepareHeaders";
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public ClientCallImplDefinition() {

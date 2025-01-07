@@ -42,7 +42,7 @@ public class OkHttpClientDefinition extends PluginDefinitionAdapter {
             "okhttp3.Request"
     };
 
-    @Inject(Propagation.COMPONENT_PROPAGATION)
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
     public OkHttpClientDefinition() {
