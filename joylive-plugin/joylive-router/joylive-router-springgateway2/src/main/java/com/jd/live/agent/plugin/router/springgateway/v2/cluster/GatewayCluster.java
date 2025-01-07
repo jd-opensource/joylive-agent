@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springgateway.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -58,7 +59,6 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.reader;
 import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.writer;
 import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
@@ -111,7 +111,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
-            Consumer<ServerHttpRequest.Builder> header = b -> b.headers(headers -> propagation.write(reader(headers), writer(headers, headers::set)));
+            Consumer<ServerHttpRequest.Builder> header = b -> b.headers(headers -> propagation.write(RequestContext.get(), writer(headers, headers::set)));
             ServerWebExchange.Builder builder = request.getExchange().mutate().request(header);
             // decorate response to remove exception header and get body
             BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);
