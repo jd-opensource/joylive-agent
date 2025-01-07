@@ -37,7 +37,7 @@ public class SofaRpcServerInterceptor extends InterceptorAdaptor {
     }
 
     private void restoreTag(SofaRequest request) {
-        propagation.read(RequestContext.getOrCreate(), reader(request.getRequestProps()));
+        propagation.read(RequestContext.create(), reader(request.getRequestProps()));
     }
 
     @Override
