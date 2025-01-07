@@ -33,7 +33,7 @@ public class ClientCallImplInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Metadata metadata = (Metadata) ctx.getArguments()[0];
-        propagation.write(RequestContext.getOrCreate(), new MetadataParser(metadata));
+        propagation.write(RequestContext.get(), new MetadataParser(metadata));
     }
 
 }

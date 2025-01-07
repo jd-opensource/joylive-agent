@@ -33,6 +33,6 @@ public class HttpClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         HttpMethod method = (HttpMethod) ctx.getArguments()[1];
-        propagation.write(RequestContext.getOrCreate(), new HttpMethodParser(method));
+        propagation.write(RequestContext.get(), new HttpMethodParser(method));
     }
 }

@@ -35,7 +35,7 @@ public class SendInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         TypedMessageBuilder<?> builder = (TypedMessageBuilder<?>) ctx.getTarget();
-        propagation.write(RequestContext.getOrCreate(), MessageHeaderParser.of(builder));
+        propagation.write(RequestContext.get(), MessageHeaderParser.of(builder));
     }
 
 }

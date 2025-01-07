@@ -41,10 +41,10 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         if (argument instanceof Message) {
             Message message = (Message) argument;
-            propagation.write(RequestContext.getOrCreate(), writer(message.getProperties(), message::putUserProperty));
+            propagation.write(RequestContext.get(), writer(message.getProperties(), message::putUserProperty));
         } else if (argument instanceof Collection) {
             Collection<Message> messages = (Collection<Message>) argument;
-            Carrier carrier = RequestContext.getOrCreate();
+            Carrier carrier = RequestContext.get();
             for (Message message : messages) {
                 propagation.write(carrier, writer(message.getProperties(), message::putUserProperty));
             }

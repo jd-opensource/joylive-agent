@@ -40,6 +40,6 @@ public class DefaultExchangeFunctionInterceptor extends InterceptorAdaptor {
         // for outbound traffic
         ClientRequest request = (ClientRequest) ctx.getArguments()[0];
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.headers());
-        propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add));
+        propagation.write(RequestContext.get(), writer(headers, headers::add));
     }
 }

@@ -34,7 +34,7 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         Request.Builder builder = ((Request) arguments[0]).newBuilder();
-        propagation.write(RequestContext.getOrCreate(), BuilderParser.of(builder));
+        propagation.write(RequestContext.get(), BuilderParser.of(builder));
         arguments[0] = builder.build();
     }
 }

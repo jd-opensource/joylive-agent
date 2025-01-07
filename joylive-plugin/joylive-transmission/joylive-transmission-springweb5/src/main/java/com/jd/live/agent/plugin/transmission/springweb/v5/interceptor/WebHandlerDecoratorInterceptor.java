@@ -55,7 +55,7 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         ServerWebExchange exchange = ctx.getArgument(0);
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
         Mono<Void> mono = mc.getResult();
-        mono = mono.doFirst(() -> propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add)));
+        mono = mono.doFirst(() -> propagation.write(RequestContext.get(), writer(headers, headers::add)));
         mc.setResult(mono);
     }
 }

@@ -42,7 +42,7 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
             Builder builder = (Builder) ctx.getTarget();
-            propagation.write(RequestContext.getOrCreate(), BuilderParser.of(builder));
+            propagation.write(RequestContext.get(), BuilderParser.of(builder));
         }
     }
 

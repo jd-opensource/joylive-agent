@@ -68,7 +68,7 @@ public class PublishInterceptor extends InterceptorAdaptor {
             messageId = timestamp + "-" + randomInt;
             headers.put(Message.LABEL_MESSAGE_ID, messageId);
         }
-        propagation.write(RequestContext.getOrCreate(), writer(headers, headers::put));
+        propagation.write(RequestContext.get(), writer(headers, headers::put));
     }
 
 }

@@ -45,7 +45,7 @@ public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ClientHttpRequest request = mc.getResult();
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.getHeaders());
-        propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add));
+        propagation.write(RequestContext.get(), writer(headers, headers::add));
         mc.setResult(request);
     }
 }

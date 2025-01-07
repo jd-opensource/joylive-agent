@@ -41,7 +41,7 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MessageHeader header = ctx.getArgument(0);
-        propagation.write(RequestContext.getOrCreate(), new MessageHeaderParser(header));
+        propagation.write(RequestContext.get(), new MessageHeaderParser(header));
     }
 }
 

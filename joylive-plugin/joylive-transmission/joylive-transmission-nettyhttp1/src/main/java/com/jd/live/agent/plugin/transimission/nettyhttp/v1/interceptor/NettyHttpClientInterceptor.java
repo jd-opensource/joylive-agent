@@ -49,7 +49,7 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
         HttpClient client = mc.getResult();
         if (RequestContext.hasCargo()) {
             HttpClient newClient = client.headers(headers ->
-                    propagation.write(RequestContext.getOrCreate(), new HttpHeadersParser(headers)));
+                    propagation.write(RequestContext.get(), new HttpHeadersParser(headers)));
             if (client.getClass().isAssignableFrom(newClient.getClass())) {
                 // fix netty reactor 0.9.20.RELEASE
                 mc.setResult(newClient);

@@ -33,7 +33,7 @@ public class KafkaProducerInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         ProducerRecord<?, ?> record = (ProducerRecord<?, ?>) ctx.getArguments()[0];
-        propagation.write(RequestContext.getOrCreate(), new KafkaHeaderParser(record.headers()));
+        propagation.write(RequestContext.get(), new KafkaHeaderParser(record.headers()));
     }
 
 }
