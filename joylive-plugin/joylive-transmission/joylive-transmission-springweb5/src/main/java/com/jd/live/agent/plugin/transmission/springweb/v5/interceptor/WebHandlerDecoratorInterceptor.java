@@ -58,9 +58,4 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         mono = mono.doFirst(() -> propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add)));
         mc.setResult(mono);
     }
-
-    @Override
-    public void onExit(ExecutableContext ctx) {
-        RequestContext.remove();
-    }
 }

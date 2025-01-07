@@ -47,7 +47,7 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
             HttpServletRequest request = ctx.getArgument(0);
-            propagation.read(RequestContext.getOrCreate(), new HttpServletRequestParser(request));
+            propagation.read(RequestContext.create(), new HttpServletRequestParser(request));
         }
     }
 
