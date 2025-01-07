@@ -53,7 +53,7 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         // for outbound traffic
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = ctx.getArgument(0);
-        HttpHeaders headers = exchange.getResponse().getHeaders();
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
         Mono<Void> mono = mc.getResult();
         mono = mono.doFirst(() -> propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add)));
         mc.setResult(mono);

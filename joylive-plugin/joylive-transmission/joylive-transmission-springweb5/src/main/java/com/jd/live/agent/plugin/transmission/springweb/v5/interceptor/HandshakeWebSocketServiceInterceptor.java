@@ -41,7 +41,7 @@ public class HandshakeWebSocketServiceInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         // for outbound traffic
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        HttpHeaders headers = exchange.getRequest().getHeaders();
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getRequest().getHeaders());
         propagation.write(RequestContext.getOrCreate(), writer(headers, headers::add));
     }
 
