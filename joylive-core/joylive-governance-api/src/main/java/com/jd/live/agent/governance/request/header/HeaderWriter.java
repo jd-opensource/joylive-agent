@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.request.header;
 
-import java.util.List;
-
 /**
  * Interface for writing HTTP headers.
  * <p>
@@ -30,7 +28,7 @@ public interface HeaderWriter extends HeaderUpdater {
      * @param key The key of the header.
      * @return A list of values for the specified header key.
      */
-    List<String> getHeaders(String key);
+    Iterable<String> getHeaders(String key);
 
     /**
      * Returns the first value for the specified header key.

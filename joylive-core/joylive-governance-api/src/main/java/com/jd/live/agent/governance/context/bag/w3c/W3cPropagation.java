@@ -23,8 +23,6 @@ import com.jd.live.agent.governance.request.header.HeaderWriter;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.tag.Label.join;
@@ -59,14 +57,22 @@ public class W3cPropagation extends AbstractPropagation {
         if (reader == null || writer == null) {
             return;
         }
-        String baggage = reader.getHeader(KEY_BAGGAGE);
-        if (baggage != null && !baggage.isEmpty()) {
-            CargoRequire require = getRequire();
-            Map<String, String> map = splitMap(baggage);
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                if (require.match(entry.getKey())) {
-                    writer.setHeader(entry.getKey(), entry.getValue());
+        List<String> baggages = reader.getHeaders(KEY_BAGGAGE);
+        if (baggages == null || baggages.isEmpty()) {
+            return;
+        }
+        CargoRequire require = getRequire();
+        int counter;
+        for (String baggage : baggages) {
+            counter = splitMap(baggage, COMMA, true, (key, value) -> {
+                if (require.match(key)) {
+                    writer.setHeader(key, value);
+                    return true;
                 }
+                return false;
+            });
+            if (counter > 0) {
+                return;
             }
         }
     }
@@ -80,17 +86,21 @@ public class W3cPropagation extends AbstractPropagation {
         if (baggages == null || baggages.isEmpty()) {
             return false;
         }
-        AtomicBoolean result = new AtomicBoolean(false);
         CargoRequires require = getRequire();
+        int counter;
         for (String baggage : baggages) {
-            splitMap(baggage, COMMA, true, (key, value) -> {
+            counter = splitMap(baggage, COMMA, true, (key, value) -> {
                 if (require.match(key)) {
-                    result.set(true);
                     carrier.addCargo(new Cargo(key, parseValue(value), true));
+                    return true;
                 }
+                return false;
             });
+            if (counter > 0) {
+                return true;
+            }
         }
-        return result.get();
+        return false;
     }
 
     /**

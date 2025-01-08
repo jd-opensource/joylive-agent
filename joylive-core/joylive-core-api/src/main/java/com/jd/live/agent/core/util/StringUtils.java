@@ -16,7 +16,7 @@
 package com.jd.live.agent.core.util;
 
 import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -432,26 +432,33 @@ public class StringUtils {
      */
     public static Map<String, String> splitMap(final String source, final Predicate<Character> predicate) {
         Map<String, String> result = new HashMap<>();
-        splitMap(source, predicate, true, result::put);
+        splitMap(source, predicate, true, (key, value) -> {
+            result.put(key, value);
+            return true;
+        });
         return result;
     }
 
     /**
-     * Splits the given source string into key-value pairs using the specified predicate logic to determine the key-value separation,
-     * and applies a consumer function to each resulting pair. The method also provides an option to trim the keys and values.
+     * Splits a source string into key-value pairs based on a given separator predicate and applies a function to each pair.
+     * The method processes the source string, identifies key-value pairs separated by an '=' character, and uses the separator
+     * predicate to determine where each pair ends. If the trim flag is set to true, it trims whitespace from keys and values.
+     * The function is applied to each key-value pair, and the method returns the count of pairs for which the function returns true.
      *
-     * @param source    The source string to be split.
-     * @param separator A character predicate that determines whether a character should be considered a key-value separator.
-     * @param trim      A flag indicating whether to trim each key and value before applying the consumer function.
-     * @param consumer  A consumer function that takes a key-value pair as input and performs an action.
+     * @param source    the source string containing key-value pairs
+     * @param separator a predicate that determines the end of each key-value pair segment
+     * @param trim      a flag indicating whether to trim whitespace from keys and values
+     * @param function  a function to apply to each key-value pair, returning true if the pair should be counted
+     * @return the count of key-value pairs for which the function returns true
      */
-    public static void splitMap(final String source,
-                                final Predicate<Character> separator,
-                                final boolean trim,
-                                final BiConsumer<String, String> consumer) {
-        if (source == null || source.isEmpty() || consumer == null || separator == null) {
-            return;
+    public static int splitMap(final String source,
+                               final Predicate<Character> separator,
+                               final boolean trim,
+                               final BiFunction<String, String, Boolean> function) {
+        if (source == null || source.isEmpty() || function == null || separator == null) {
+            return 0;
         }
+        int counter = 0;
         int start = -1;
         int end = -1;
         char ch;
@@ -462,7 +469,7 @@ public class StringUtils {
         // Iterate over characters
         for (int i = 0; i < length; i++) {
             ch = source.charAt(i);
-            if (ch == '=' && pos < 0) {
+            if (ch == CHAR_EQUAL && pos < 0) {
                 pos = i;
             }
             // Check if the character matches the predicate
@@ -475,7 +482,7 @@ public class StringUtils {
                         value = source.substring(pos + 1, end + 1);
                         value = trim ? value.trim() : value;
                         if (!key.isEmpty()) {
-                            consumer.accept(key, value);
+                            counter += function.apply(key, value) ? 1 : 0;
                         }
                     }
                     start = -1;
@@ -497,10 +504,11 @@ public class StringUtils {
                 value = source.substring(pos + 1, length);
                 value = trim ? value.trim() : value;
                 if (!key.isEmpty()) {
-                    consumer.accept(key, value);
+                    counter += function.apply(key, value) ? 1 : 0;
                 }
             }
         }
+        return counter;
     }
 
     /**

@@ -39,7 +39,7 @@ public interface HeaderReader {
      * @param key The key of the header.
      * @return A list of values for the specified header key.
      */
-    List<String> getHeaders(String key);
+    Iterable<String> getHeaders(String key);
 
     /**
      * Returns the first value for the specified header key.
