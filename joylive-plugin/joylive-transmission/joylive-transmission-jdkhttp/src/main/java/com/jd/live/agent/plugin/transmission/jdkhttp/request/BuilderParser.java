@@ -15,16 +15,18 @@
  */
 package com.jd.live.agent.plugin.transmission.jdkhttp.request;
 
+import com.jd.live.agent.core.util.type.FieldPath;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 
 public class BuilderParser implements HeaderReader, HeaderWriter {
+
+    private static final FieldPath path = new FieldPath("jdk.internal.net.http.HttpRequestBuilderImpl", "headersBuilder.headersMap");
 
     private final TreeMap<String, List<String>> headers;
 
@@ -49,6 +51,16 @@ public class BuilderParser implements HeaderReader, HeaderWriter {
     }
 
     @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        headers.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+    }
+
+    @Override
     public void setHeader(String key, String value) {
         List<String> values = new ArrayList<>(1);
         values.add(value);
@@ -61,66 +73,9 @@ public class BuilderParser implements HeaderReader, HeaderWriter {
      * @param builder the builder object from which to extract the names and values
      * @return a new instance of BuilderParser initialized with the names and values
      */
+    @SuppressWarnings("unchecked")
     public static BuilderParser of(Object builder) {
-        return new BuilderParser(FieldGetter.INSTANCE.getNamesAndValues(builder));
-    }
-
-    /**
-     * A utility class to access private fields of the internal HTTP request and headers builder classes.
-     */
-    private static class FieldGetter {
-
-        /**
-         * The singleton instance of FieldGetter.
-         */
-        public static final FieldGetter INSTANCE = new FieldGetter();
-
-        /**
-         * The private field 'headersBuilder' in the internal HTTP request builder class.
-         */
-        private Field builderField;
-
-        /**
-         * The private field 'headersMap' in the internal headers builder class.
-         */
-        private Field headersField;
-
-        /**
-         * Constructs a new FieldGetter instance and initializes the private fields.
-         * If any field is not found or an exception occurs, it catches the exception and ignores it.
-         */
-        FieldGetter() {
-            try {
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> requestBuilderType = classLoader.loadClass("jdk.internal.net.http.HttpRequestBuilderImpl");
-                Class<?> headersBuilderType = classLoader.loadClass("jdk.internal.net.http.common.HttpHeadersBuilder");
-                builderField = requestBuilderType.getDeclaredField("headersBuilder");
-                builderField.setAccessible(true);
-                headersField = headersBuilderType.getDeclaredField("headersMap");
-                headersField.setAccessible(true);
-            } catch (Throwable ignored) {
-                // Ignore the exception if the field is not found or an error occurs
-            }
-        }
-
-        /**
-         * Retrieves the map of names and values from the given builder object.
-         * If the builder is null or an exception occurs, it returns an empty TreeMap.
-         *
-         * @param builder the builder object from which to retrieve the names and values
-         * @return the map of names and values, or an empty TreeMap if an error occurs
-         */
-        @SuppressWarnings("unchecked")
-        public TreeMap<String, List<String>> getNamesAndValues(Object builder) {
-            if (builder == null || builderField == null || headersField == null) {
-                return new TreeMap<>();
-            }
-            try {
-                return (TreeMap<String, List<String>>) headersField.get(builderField.get(builder));
-            } catch (Throwable e) {
-                return new TreeMap<>();
-            }
-        }
+        return new BuilderParser((TreeMap<String, List<String>>) path.get(builder, TreeMap::new));
     }
 
 }

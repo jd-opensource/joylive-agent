@@ -49,6 +49,16 @@ public class MessageHeaderParser implements HeaderReader, HeaderWriter {
     }
 
     @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        header.add(key, value);
+    }
+
+    @Override
     public void setHeader(String key, String value) {
         header.set(key, value);
     }

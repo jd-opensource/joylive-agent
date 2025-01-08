@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.grpc.request;
 
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
@@ -46,6 +47,7 @@ public class MetadataParser implements HeaderReader, HeaderWriter {
     @Override
     public List<String> getHeaders(String key) {
         try {
+            List<String> values = CollectionUtils.toList(metadata.getAll(Key.of(key, ASCII_STRING_MARSHALLER)));
             String value = metadata.get(Key.of(key, ASCII_STRING_MARSHALLER));
             return Label.parseValue(value);
         } catch (Throwable e) {
@@ -55,7 +57,21 @@ public class MetadataParser implements HeaderReader, HeaderWriter {
 
     @Override
     public String getHeader(String key) {
-        return HeaderReader.super.getHeader(key);
+        try {
+            return metadata.get(Key.of(key, ASCII_STRING_MARSHALLER));
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        metadata.put(Key.of(key, ASCII_STRING_MARSHALLER), value);
     }
 
     @Override

@@ -77,6 +77,24 @@ public class CollectionUtils {
     }
 
     /**
+     * Converts an iterable to a List.
+     *
+     * @param <T>      the type of elements in the iterable
+     * @param iterable the iterable to convert
+     * @return a List containing the elements from the iterable, or null if the iterable is null
+     */
+    public static <T> List<T> toList(Iterable<T> iterable) {
+        if (iterable == null) {
+            return null;
+        }
+        List<T> result = iterable instanceof Collection ? new ArrayList<>(((Collection<T>) iterable).size()) : new ArrayList<>();
+        for (T t : iterable) {
+            result.add(t);
+        }
+        return result;
+    }
+
+    /**
      * Converts an iterable to a List by applying a transformation function to each element.
      *
      * @param <T>      the type of elements in the iterable

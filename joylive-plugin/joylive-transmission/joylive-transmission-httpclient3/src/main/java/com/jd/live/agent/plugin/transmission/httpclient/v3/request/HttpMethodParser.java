@@ -51,6 +51,16 @@ public class HttpMethodParser implements HeaderReader, HeaderWriter {
     }
 
     @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        method.addRequestHeader(key, value);
+    }
+
+    @Override
     public void setHeader(String key, String value) {
         method.setRequestHeader(key, value);
     }

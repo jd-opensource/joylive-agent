@@ -47,10 +47,7 @@ public interface HeaderReader {
      * @param key The key of the header.
      * @return The first value for the specified header key, or null if the header is not present.
      */
-    default String getHeader(String key) {
-        List<String> values = getHeaders(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
-    }
+    String getHeader(String key);
 
     /**
      * Returns the processed value for the specified header key using the provided function.

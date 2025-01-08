@@ -42,6 +42,14 @@ public interface HeaderTraverse<T> {
     T get(String key);
 
     /**
+     * Checks if the header is duplicable.
+     * By default, this method returns {@code false}, indicating that the header is not duplicable.
+     *
+     * @return {@code true} if the header is duplicable, {@code false} otherwise
+     */
+    boolean isDuplicable();
+
+    /**
      * A concrete implementation of HeaderTraverse that delegates the iteration of keys
      * to a provided Iterator and the retrieval of values to a provided Function.
      *
@@ -53,9 +61,12 @@ public interface HeaderTraverse<T> {
 
         private final Function<String, T> function;
 
-        public DelegateHeaderTraverse(Iterator<String> iterator, Function<String, T> function) {
+        private final boolean duplicable;
+
+        public DelegateHeaderTraverse(Iterator<String> iterator, Function<String, T> function, boolean duplicable) {
             this.iterator = iterator;
             this.function = function;
+            this.duplicable = duplicable;
         }
 
         @Override
@@ -67,6 +78,11 @@ public interface HeaderTraverse<T> {
         public T get(String key) {
             return function == null ? null : function.apply(key);
         }
+
+        @Override
+        public boolean isDuplicable() {
+            return duplicable;
+        }
     }
 
     /**
@@ -76,8 +92,8 @@ public interface HeaderTraverse<T> {
      */
     class MapHeaderTraverse<T> extends DelegateHeaderTraverse<T> {
 
-        public MapHeaderTraverse(Map<String, T> map) {
-            super(map == null ? null : map.keySet().iterator(), map == null ? null : map::get);
+        public MapHeaderTraverse(Map<String, T> map, boolean duplicable) {
+            super(map == null ? null : map.keySet().iterator(), map == null ? null : map::get, duplicable);
         }
 
     }

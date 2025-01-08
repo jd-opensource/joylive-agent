@@ -21,14 +21,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.StringUtils.COMMA;
-import static com.jd.live.agent.core.util.StringUtils.splitList;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * The {@code Label} interface defines a contract for label handling. It provides constants
  * representing common label regions and methods for retrieving and parsing label values.
  */
 public interface Label {
+
+    char CHAR_LEFT_BRACKET = '[';
+
+    char CHAR_RIGHT_BRACKET = ']';
 
     /**
      * Gets the key of the label.
@@ -69,11 +72,12 @@ public interface Label {
         List<String> result;
         if (value == null || value.isEmpty()) {
             result = new ArrayList<>();
-        } else if (value.charAt(0) == '[' && value.charAt(value.length() - 1) == ']') {
+        } else if (value.charAt(0) == CHAR_LEFT_BRACKET && value.charAt(value.length() - 1) == CHAR_RIGHT_BRACKET) {
             if (value.length() == 2) {
                 result = new ArrayList<>();
             } else {
-                result = splitList(value.substring(1, value.length() - 1), COMMA);
+                // use ',' and '|' to be compatible with old version
+                result = splitList(value.substring(1, value.length() - 1), PIPE_COMMA);
             }
         } else {
             result = new ArrayList<>(1);
@@ -92,7 +96,9 @@ public interface Label {
      * is null or empty, an empty string is returned.
      */
     static String join(Collection<String> values) {
-        return StringUtils.join(values, ",", "[", "]", false);
+        // w3c baggage use ',' and ';' as separator.
+        // so we use '|' as separator.
+        return StringUtils.join(values, CHAR_AMPERSAND, CHAR_LEFT_BRACKET, CHAR_RIGHT_BRACKET, false);
     }
 
 }

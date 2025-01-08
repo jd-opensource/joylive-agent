@@ -21,7 +21,6 @@ import com.jd.live.agent.governance.request.header.HeaderTraverse.MapHeaderTrave
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -36,12 +35,12 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
 
     protected final Function<T, List<String>> converter;
 
-    protected final BiConsumer<String, String> consumer;
+    protected final HeaderUpdater updater;
 
-    public HeaderParser(HeaderTraverse<T> traverse, Function<T, List<String>> converter, BiConsumer<String, String> consumer) {
+    public HeaderParser(HeaderTraverse<T> traverse, Function<T, List<String>> converter, HeaderUpdater updater) {
         this.traverse = traverse;
         this.converter = converter;
-        this.consumer = consumer;
+        this.updater = updater;
     }
 
     @Override
@@ -57,13 +56,26 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
 
     @Override
     public String getHeader(String key) {
-        return HeaderReader.super.getHeader(key);
+        List<String> values = getHeaders(key);
+        return values == null || values.isEmpty() ? null : values.get(0);
+    }
+
+    @Override
+    public boolean isDuplicable() {
+        return traverse.isDuplicable();
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        if (updater != null) {
+            updater.addHeader(key, value);
+        }
     }
 
     @Override
     public void setHeader(String key, String value) {
-        if (consumer != null) {
-            consumer.accept(key, value);
+        if (updater != null) {
+            updater.setHeader(key, value);
         }
     }
 
@@ -79,8 +91,8 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
             super(traverse, LIST_LIST_FUNCTION, null);
         }
 
-        public MultiHeaderParser(HeaderTraverse<List<String>> traverse, BiConsumer<String, String> consumer) {
-            super(traverse, LIST_LIST_FUNCTION, consumer);
+        public MultiHeaderParser(HeaderTraverse<List<String>> traverse, HeaderUpdater updater) {
+            super(traverse, LIST_LIST_FUNCTION, updater);
         }
 
         public static HeaderReader reader(HeaderTraverse<List<String>> traverse) {
@@ -88,15 +100,15 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
         }
 
         public static HeaderReader reader(Map<String, List<String>> map) {
-            return new MultiHeaderParser(new MapHeaderTraverse<>(map));
+            return new MultiHeaderParser(new MapHeaderTraverse<>(map, true));
         }
 
-        public static HeaderWriter writer(HeaderTraverse<List<String>> traverse, BiConsumer<String, String> consumer) {
-            return new MultiHeaderParser(traverse, consumer);
+        public static HeaderWriter writer(HeaderTraverse<List<String>> traverse, HeaderUpdater updater) {
+            return new MultiHeaderParser(traverse, updater);
         }
 
-        public static HeaderWriter writer(Map<String, List<String>> map, BiConsumer<String, String> consumer) {
-            return new MultiHeaderParser(new MapHeaderTraverse<>(map), consumer);
+        public static HeaderWriter writer(Map<String, List<String>> map, HeaderUpdater updater) {
+            return new MultiHeaderParser(new MapHeaderTraverse<>(map, true), updater);
         }
     }
 
@@ -112,8 +124,8 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
             super(traverse, LIST_LIST_FUNCTION, null);
         }
 
-        public ObjectHeaderParser(HeaderTraverse<Object> traverse, BiConsumer<String, String> consumer) {
-            super(traverse, LIST_LIST_FUNCTION, consumer);
+        public ObjectHeaderParser(HeaderTraverse<Object> traverse, HeaderUpdater updater) {
+            super(traverse, LIST_LIST_FUNCTION, updater);
         }
 
         public static HeaderReader reader(HeaderTraverse<Object> traverse) {
@@ -121,15 +133,15 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
         }
 
         public static HeaderReader reader(Map<String, Object> map) {
-            return new ObjectHeaderParser(new MapHeaderTraverse<>(map));
+            return new ObjectHeaderParser(new MapHeaderTraverse<>(map, false));
         }
 
-        public static HeaderWriter writer(HeaderTraverse<Object> traverse, BiConsumer<String, String> consumer) {
-            return new ObjectHeaderParser(traverse, consumer);
+        public static HeaderWriter writer(HeaderTraverse<Object> traverse, HeaderUpdater updater) {
+            return new ObjectHeaderParser(traverse, updater);
         }
 
-        public static HeaderWriter writer(Map<String, Object> map, BiConsumer<String, String> consumer) {
-            return new ObjectHeaderParser(new MapHeaderTraverse<>(map), consumer);
+        public static HeaderWriter writer(Map<String, Object> map, HeaderUpdater updater) {
+            return new ObjectHeaderParser(new MapHeaderTraverse<>(map, false), updater);
         }
     }
 
@@ -145,8 +157,8 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
             super(traverse, STRING_LIST_FUNCTION, null);
         }
 
-        public StringHeaderParser(HeaderTraverse<String> traverse, BiConsumer<String, String> consumer) {
-            super(traverse, STRING_LIST_FUNCTION, consumer);
+        public StringHeaderParser(HeaderTraverse<String> traverse, HeaderUpdater updater) {
+            super(traverse, STRING_LIST_FUNCTION, updater);
         }
 
         public static HeaderReader reader(HeaderTraverse<String> traverse) {
@@ -154,15 +166,15 @@ public class HeaderParser<T> implements HeaderReader, HeaderWriter {
         }
 
         public static HeaderReader reader(Map<String, String> map) {
-            return new StringHeaderParser(new MapHeaderTraverse<>(map));
+            return new StringHeaderParser(new MapHeaderTraverse<>(map, false));
         }
 
-        public static HeaderWriter writer(HeaderTraverse<String> traverse, BiConsumer<String, String> consumer) {
-            return new StringHeaderParser(traverse, consumer);
+        public static HeaderWriter writer(HeaderTraverse<String> traverse, HeaderUpdater updater) {
+            return new StringHeaderParser(traverse, updater);
         }
 
-        public static HeaderWriter writer(Map<String, String> map, BiConsumer<String, String> consumer) {
-            return new StringHeaderParser(new MapHeaderTraverse<>(map), consumer);
+        public static HeaderWriter writer(Map<String, String> map, HeaderUpdater updater) {
+            return new StringHeaderParser(new MapHeaderTraverse<>(map, false), updater);
         }
     }
 }

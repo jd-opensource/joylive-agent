@@ -15,17 +15,18 @@
  */
 package com.jd.live.agent.plugin.transmission.okhttp.v1.request;
 
+import com.jd.live.agent.core.util.type.FieldPath;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
-import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.Request;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class BuilderParser implements HeaderReader, HeaderWriter {
+
+    private static final FieldPath path = new FieldPath(Request.Builder.class, "headers.namesAndValues");
 
     private final List<String> namesAndValues;
 
@@ -67,6 +68,17 @@ public class BuilderParser implements HeaderReader, HeaderWriter {
     }
 
     @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        namesAndValues.add(key);
+        namesAndValues.add(value);
+    }
+
+    @Override
     public void setHeader(String key, String value) {
         for (int i = namesAndValues.size() - 2; i >= 0; i -= 2) {
             if (namesAndValues.get(i).equalsIgnoreCase(key)) {
@@ -84,41 +96,9 @@ public class BuilderParser implements HeaderReader, HeaderWriter {
      * @param builder the Request.Builder from which to extract the names and values
      * @return a new instance of HeaderBuilderParser initialized with the names and values
      */
+    @SuppressWarnings("unchecked")
     public static BuilderParser of(Request.Builder builder) {
-        return new BuilderParser(FieldGetter.INSTANCE.getNamesAndValues(builder));
-    }
-
-    /**
-     * A utility class to access private fields of {@link Request.Builder} and {@link Headers.Builder}.
-     */
-    private static class FieldGetter {
-
-        public static FieldGetter INSTANCE = new FieldGetter();
-
-        private Field headersField;
-
-        private Field namesAndValuesField;
-
-        FieldGetter() {
-            try {
-                this.headersField = Request.Builder.class.getDeclaredField("headers");
-                this.namesAndValuesField = Headers.Builder.class.getDeclaredField("namesAndValues");
-            } catch (NoSuchFieldException ignored) {
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        public List<String> getNamesAndValues(Request.Builder builder) {
-            if (builder == null || headersField == null || namesAndValuesField == null) {
-                return new ArrayList<>();
-            }
-            try {
-                return (List<String>) namesAndValuesField.get(headersField.get(builder));
-            } catch (Throwable e) {
-                return new ArrayList<>();
-            }
-        }
-
+        return new BuilderParser((List<String>) path.get(builder, ArrayList::new));
     }
 
 }

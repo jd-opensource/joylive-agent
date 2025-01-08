@@ -27,9 +27,37 @@ import java.util.function.Predicate;
 public class StringUtils {
 
     /**
+     * A character is a comma.
+     */
+    public static final char CHAR_COMMA = ',';
+
+    /**
+     * A character is a equal.
+     */
+    public static final char CHAR_EQUAL = '=';
+
+    /**
+     * A character is a pipe.
+     */
+    public static final char CHAR_AMPERSAND = '|';
+
+    /**
      * A predicate that tests if a character is a comma.
      */
     public static final Predicate<Character> COMMA = o -> o == ',';
+
+    /**
+     * A predicate that tests if a character is a comma or pipe.
+     */
+    public static final Predicate<Character> PIPE_COMMA = o -> {
+        switch (o) {
+            case ',':
+            case '|':
+                return true;
+            default:
+                return false;
+        }
+    };
 
     /**
      * A predicate that tests if a character is a comma or semicolon.
@@ -114,6 +142,31 @@ public class StringUtils {
         } else {
             return cs2 == null || cs2.length() == 0;
         }
+    }
+
+    /**
+     * Appends a key-value pair to the provided StringBuilder with a specified separator.
+     * If the value is null or empty, the behavior depends on the nullable flag.
+     * If nullable is true, only the key is appended. Otherwise, nothing is appended.
+     *
+     * @param builder   the StringBuilder to which the key-value pair will be appended
+     * @param separator the character used to separate key-value pairs in the StringBuilder
+     * @param key       the key to be appended
+     * @param value     the value to be appended
+     * @param emptyable A flag indicating whether to append the key if the value is null or empty
+     */
+    public static void append(StringBuilder builder, char separator, String key, String value, boolean emptyable) {
+        if (builder.length() > 0) {
+            builder.append(separator);
+        }
+        if (value == null || value.isEmpty()) {
+            if (emptyable) {
+                builder.append(key);
+            }
+        } else {
+            builder.append(key).append(CHAR_EQUAL).append(value);
+        }
+
     }
 
     /**
@@ -216,32 +269,37 @@ public class StringUtils {
      * Splits the given source string based on a specified predicate logic and applies a handler function to each resulting substring.
      *
      * @param source    The source string to split.
-     * @param predicate A character predicate that determines whether a character should be considered a splitting point.
-     * @param handler   A function that takes a substring as input and returns a processed substring.
+     * @param separator A character predicate that determines whether a character should be considered a splitting point.
+     * @param converter A function that takes a substring as input and returns a processed substring.
      * @return A list of processed strings.
      */
     public static List<String> splitList(final String source,
-                                         final Predicate<Character> predicate,
-                                         final Function<String, String> handler) {
+                                         final Predicate<Character> separator,
+                                         final Function<String, String> converter) {
         List<String> result = new ArrayList<>();
-        splitList(source, predicate, handler, result::add);
+        splitList(source, separator, true, false, converter, result::add);
         return result;
     }
 
     /**
-     * Splits the given source string into a list of substrings, using the specified predicate logic to determine the substring separation,
-     * applies a handler function to each resulting substring, and then applies a consumer function to the processed substrings.
+     * Splits the given source string into substrings using the specified predicate logic to determine the substring separation.
+     * Each resulting substring can be trimmed, filtered based on emptiness, and optionally converted using a provided function
+     * before being passed to a consumer function.
      *
      * @param source    The source string to be split.
-     * @param predicate A character predicate that determines whether a character should be considered a substring separator.
-     * @param handler   A function that takes a substring as input and returns a processed substring.
-     * @param consumer  A consumer function that takes a processed substring as input and performs an action.
+     * @param separator A character predicate that determines whether a character should be considered a substring separator.
+     * @param trim      A flag indicating whether to trim each substring before applying the converter and consumer functions.
+     * @param emptyable A flag indicating whether to include empty substrings in the processing.
+     * @param converter A function that converts each substring before it is passed to the consumer. If null, no conversion is applied.
+     * @param consumer  A consumer function that takes a substring as input and performs an action.
      */
     public static void splitList(final String source,
-                                 final Predicate<Character> predicate,
-                                 final Function<String, String> handler,
+                                 final Predicate<Character> separator,
+                                 final boolean trim,
+                                 final boolean emptyable,
+                                 final Function<String, String> converter,
                                  final Consumer<String> consumer) {
-        if (source == null || source.isEmpty() || predicate == null || consumer == null) {
+        if (source == null || source.isEmpty() || separator == null || consumer == null) {
             return;
         }
         int start = -1;
@@ -254,12 +312,15 @@ public class StringUtils {
         for (int i = 0; i < length; i++) {
             ch = source.charAt(i);
             // Check if the character matches the predicate
-            if (predicate.test(ch)) {
+            if (separator.test(ch)) {
                 // If there is a segment before this character
                 if (start >= 0) {
                     part = source.substring(start, end + 1);
-                    part = handler == null ? part : handler.apply(part);
-                    consumer.accept(part);
+                    part = trim ? part.trim() : part;
+                    if (emptyable || !part.isEmpty()) {
+                        part = converter == null ? part : converter.apply(part);
+                        consumer.accept(part);
+                    }
                     start = -1;
                     end = -1;
                 }
@@ -273,8 +334,11 @@ public class StringUtils {
         // Handle the last segment
         if (start >= 0) {
             part = source.substring(start, length);
-            part = handler == null ? part : handler.apply(part);
-            consumer.accept(part);
+            part = trim ? part.trim() : part;
+            if (emptyable || !part.isEmpty()) {
+                part = converter == null ? part : converter.apply(part);
+                consumer.accept(part);
+            }
         }
     }
 
@@ -287,37 +351,50 @@ public class StringUtils {
      */
     public static List<String> splitList(final String value, final String delimiter) {
         List<String> result = new ArrayList<>();
-        splitList(value, delimiter, result::add);
+        splitList(value, delimiter, true, false, result::add);
         return result;
     }
 
     /**
-     * Splits the given value string into a list of substrings, using the specified delimiter to determine the substring separation,
-     * and applies a consumer function to each resulting substring.
+     * Splits the given value string into a list of substrings using the specified delimiter to determine the substring separation,
+     * and applies a consumer function to each resulting substring. The method also provides options to trim the substrings
+     * and skip empty substrings.
      *
      * @param value     The value string to be split.
-     * @param delimiter The delimiter string used to separate the substrings.
+     * @param delimiter The delimiter string used to separate the substrings. If null or empty, a default delimiter (SEMICOLON_COMMA)
+     *                  will be used.
+     * @param trim      A flag indicating whether to trim each substring before applying the consumer function.
+     * @param emptyable A flag indicating whether to include empty substrings in the processing.
      * @param consumer  A consumer function that takes a substring as input and performs an action.
      */
-    public static void splitList(final String value, final String delimiter, final Consumer<String> consumer) {
+    public static void splitList(final String value,
+                                 final String delimiter,
+                                 final boolean trim,
+                                 final boolean emptyable,
+                                 final Consumer<String> consumer) {
         if (value == null || value.isEmpty() || consumer == null) {
             return;
         } else if (delimiter == null || delimiter.isEmpty()) {
-            splitList(value, SEMICOLON_COMMA, null, consumer);
+            splitList(value, SEMICOLON_COMMA, trim, emptyable, null, consumer);
         } else if (delimiter.length() == 1) {
             char ch = delimiter.charAt(0);
-            splitList(value, c -> ch == c, null, consumer);
+            splitList(value, c -> ch == c, trim, emptyable, null, consumer);
         } else {
             int length = value.length();
             int maxPos = delimiter.length() - 1;
             int start = 0;
             int pos = 0;
             int end = 0;
+            String part;
             for (int i = 0; i < length; i++) {
                 if (value.charAt(i) == delimiter.charAt(pos)) {
                     if (pos++ == maxPos) {
                         if (end > start) {
-                            consumer.accept(value.substring(start, end + 1));
+                            part = value.substring(start, end + 1);
+                            part = trim ? part.trim() : part;
+                            if (emptyable || !part.isEmpty()) {
+                                consumer.accept(part);
+                            }
                         }
                         pos = 0;
                         start = i + 1;
@@ -327,7 +404,11 @@ public class StringUtils {
                 }
             }
             if (start < length) {
-                consumer.accept(value.substring(start, length));
+                part = value.substring(start, length);
+                part = trim ? part.trim() : part;
+                if (emptyable || !part.isEmpty()) {
+                    consumer.accept(part);
+                }
             }
         }
     }
@@ -351,19 +432,24 @@ public class StringUtils {
      */
     public static Map<String, String> splitMap(final String source, final Predicate<Character> predicate) {
         Map<String, String> result = new HashMap<>();
-        splitMap(source, predicate, result::put);
+        splitMap(source, predicate, true, result::put);
         return result;
     }
 
     /**
-     * Splits the given source string into key-value pairs, using the specified predicate logic to determine the key-value separation, and applies a consumer function to each resulting pair.
+     * Splits the given source string into key-value pairs using the specified predicate logic to determine the key-value separation,
+     * and applies a consumer function to each resulting pair. The method also provides an option to trim the keys and values.
      *
      * @param source    The source string to be split.
-     * @param predicate A character predicate that determines whether a character should be considered a key-value separator.
+     * @param separator A character predicate that determines whether a character should be considered a key-value separator.
+     * @param trim      A flag indicating whether to trim each key and value before applying the consumer function.
      * @param consumer  A consumer function that takes a key-value pair as input and performs an action.
      */
-    public static void splitMap(final String source, final Predicate<Character> predicate, BiConsumer<String, String> consumer) {
-        if (source == null || source.isEmpty() || consumer == null || predicate == null) {
+    public static void splitMap(final String source,
+                                final Predicate<Character> separator,
+                                final boolean trim,
+                                final BiConsumer<String, String> consumer) {
+        if (source == null || source.isEmpty() || consumer == null || separator == null) {
             return;
         }
         int start = -1;
@@ -371,7 +457,8 @@ public class StringUtils {
         char ch;
         int pos = -1;
         int length = source.length();
-
+        String key;
+        String value;
         // Iterate over characters
         for (int i = 0; i < length; i++) {
             ch = source.charAt(i);
@@ -379,11 +466,17 @@ public class StringUtils {
                 pos = i;
             }
             // Check if the character matches the predicate
-            if (predicate.test(ch)) {
+            if (separator.test(ch)) {
                 // If there is a segment before this character
                 if (start >= 0) {
                     if (pos > 0) {
-                        consumer.accept(source.substring(start, pos), source.substring(pos + 1, end + 1));
+                        key = source.substring(start, pos);
+                        key = trim ? key.trim() : key;
+                        value = source.substring(pos + 1, end + 1);
+                        value = trim ? value.trim() : value;
+                        if (!key.isEmpty()) {
+                            consumer.accept(key, value);
+                        }
                     }
                     start = -1;
                     end = -1;
@@ -399,7 +492,13 @@ public class StringUtils {
         // Handle the last segment
         if (start >= 0) {
             if (pos > 0) {
-                consumer.accept(source.substring(start, pos), source.substring(pos + 1, length));
+                key = source.substring(start, pos);
+                key = trim ? key.trim() : key;
+                value = source.substring(pos + 1, length);
+                value = trim ? value.trim() : value;
+                if (!key.isEmpty()) {
+                    consumer.accept(key, value);
+                }
             }
         }
     }
@@ -412,11 +511,11 @@ public class StringUtils {
      * @param separator The separator to use between each string.
      * @return A string that consists of the input values separated by the specified separator.
      */
-    public static String join(String[] values, String separator) {
+    public static String join(String[] values, char separator) {
         if (values == null || values.length == 0) {
             return EMPTY;
         }
-        return join(Arrays.asList(values), separator, null, null, false);
+        return join(Arrays.asList(values), separator, (char) 0, (char) 0, false);
     }
 
     /**
@@ -434,14 +533,15 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the collection
      * is null or empty, an empty string is returned.
      */
-    public static String join(Collection<String> values, String separator, String prefix, String suffix, boolean singleSurrounding) {
+    public static String join(Collection<String> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values == null || values.isEmpty()) {
             return EMPTY;
         }
-        int left = prefix == null ? 0 : prefix.length();
-        int right = suffix == null ? 0 : suffix.length();
+        int left = prefix == 0 ? 0 : 1;
+        int right = suffix == 0 ? 0 : 1;
         int counter = 0;
-        StringBuilder sb = new StringBuilder(left == 0 ? "" : prefix);
+        StringBuilder sb = new StringBuilder();
+        sb.append(left == 0 ? "" : prefix);
         for (String string : values) {
             if (!isEmpty(string)) {
                 if (counter++ > 0) {

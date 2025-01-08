@@ -65,7 +65,7 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
      *
      * @param fieldDesc the FieldDesc object containing information about the field
      * @param inject    the inject annotation
-     * @param name the name of the Sourcer
+     * @param name      the name of the Sourcer
      * @return the created Sourcer object
      */
     protected Sourcer createdSourcer(FieldDesc fieldDesc, Inject inject, String name) {
@@ -93,7 +93,7 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
      *
      * @param fieldDesc the field description
      * @param inject    the inject annotation
-     * @param name the name of the Sourcer
+     * @param name      the name of the Sourcer
      * @param extensible the extensible class type
      * @param factory the factory to create the Sourcer
      * @return a new Sourcer instance

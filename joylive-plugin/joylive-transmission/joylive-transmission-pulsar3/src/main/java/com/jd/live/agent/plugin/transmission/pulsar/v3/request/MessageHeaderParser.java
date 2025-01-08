@@ -54,7 +54,22 @@ public class MessageHeaderParser implements HeaderReader, HeaderWriter {
 
     @Override
     public String getHeader(String key) {
-        return HeaderReader.super.getHeader(key);
+        for (KeyValue kv : metadata.getPropertiesList()) {
+            if (kv.getKey().equals(key)) {
+                return kv.getValue();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isDuplicable() {
+        return false;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        metadata.addProperty().setValue(key).setValue(value);
     }
 
     @Override

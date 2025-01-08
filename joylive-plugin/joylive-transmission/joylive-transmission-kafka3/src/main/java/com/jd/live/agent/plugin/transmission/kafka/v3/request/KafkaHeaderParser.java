@@ -53,6 +53,16 @@ public class KafkaHeaderParser implements HeaderReader, HeaderWriter {
     }
 
     @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        headers.add(key, value == null ? new byte[0] : value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
     public void setHeader(String key, String value) {
         Iterator<Header> iterator = headers.iterator();
         while (iterator.hasNext()) {

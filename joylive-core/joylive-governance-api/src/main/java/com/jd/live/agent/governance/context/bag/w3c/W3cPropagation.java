@@ -22,11 +22,13 @@ import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jd.live.agent.core.util.StringUtils.splitMap;
+import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.tag.Label.join;
-import static java.util.Collections.singletonList;
+import static com.jd.live.agent.core.util.tag.Label.parseValue;
 
 @Injectable
 @Extension(value = "w3c", order = Propagation.ORDER_W3C)
@@ -43,19 +45,13 @@ public class W3cPropagation extends AbstractPropagation {
         if (cargos == null || cargos.isEmpty()) {
             return;
         }
-
-        String baggage = writer.getHeader(KEY_BAGGAGE);
-        StringBuilder builder = new StringBuilder(baggage == null ? "" : baggage);
-        for (Cargo cargo : cargos) {
-            String value = join(cargo.getValues());
-            if (value != null && !value.isEmpty()) {
-                if (builder.length() > 0) {
-                    builder.append(",");
-                }
-                builder.append(cargo.getKey()).append('=').append(value);
-            }
+        if (writer.isDuplicable()) {
+            writer.addHeader(KEY_BAGGAGE, appendCargo(cargos, new StringBuilder()));
+        } else {
+            String baggage = writer.getHeader(KEY_BAGGAGE);
+            StringBuilder builder = baggage == null || baggage.isEmpty() ? new StringBuilder() : new StringBuilder(baggage);
+            writer.setHeader(KEY_BAGGAGE, appendCargo(cargos, builder));
         }
-        writer.setHeader(KEY_BAGGAGE, builder.toString());
     }
 
     @Override
@@ -80,11 +76,38 @@ public class W3cPropagation extends AbstractPropagation {
         if (carrier == null || reader == null) {
             return false;
         }
-        String baggage = reader.getHeader(KEY_BAGGAGE);
-        if (baggage == null || baggage.isEmpty()) {
+        List<String> baggages = reader.getHeaders(KEY_BAGGAGE);
+        if (baggages == null || baggages.isEmpty()) {
             return false;
         }
-        Map<String, String> map = splitMap(baggage);
-        return carrier.addCargo(getRequire(), map, value -> singletonList(map.get(value)));
+        AtomicBoolean result = new AtomicBoolean(false);
+        CargoRequires require = getRequire();
+        for (String baggage : baggages) {
+            splitMap(baggage, COMMA, true, (key, value) -> {
+                if (require.match(key)) {
+                    result.set(true);
+                    carrier.addCargo(new Cargo(key, parseValue(value), true));
+                }
+            });
+        }
+        return result.get();
     }
+
+    /**
+     * Appends the key-value pairs of each Cargo in the collection to the provided StringBuilder.
+     * The values are joined into a single string using the join method, and the key-value pair
+     * is formatted as "key=value". Pairs are separated by commas.
+     *
+     * @param cargos  the collection of Cargo objects to be added
+     * @param builder the StringBuilder to which the key-value pairs will be appended
+     * @return the value with the appended key-value pairs
+     */
+    private String appendCargo(Collection<Cargo> cargos, StringBuilder builder) {
+        for (Cargo cargo : cargos) {
+            append(builder, CHAR_COMMA, cargo.getKey(), join(cargo.getValues()), true);
+        }
+        return builder.toString();
+    }
+
+
 }

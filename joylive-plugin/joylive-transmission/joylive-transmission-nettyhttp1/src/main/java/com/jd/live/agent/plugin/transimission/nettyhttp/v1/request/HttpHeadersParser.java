@@ -46,6 +46,16 @@ public class HttpHeadersParser implements HeaderReader, HeaderWriter {
     }
 
     @Override
+    public boolean isDuplicable() {
+        return true;
+    }
+
+    @Override
+    public void addHeader(String key, String value) {
+        headers.add(key, value);
+    }
+
+    @Override
     public void setHeader(String key, String value) {
         headers.set(key, value);
     }
