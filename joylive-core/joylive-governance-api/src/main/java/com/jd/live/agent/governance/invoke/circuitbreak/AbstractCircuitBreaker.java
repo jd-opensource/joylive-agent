@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class AbstractCircuitBreaker implements CircuitBreaker {
 
     @Getter
-    protected final CircuitBreakPolicy policy;
+    protected CircuitBreakPolicy policy;
 
     @Getter
     protected final URI uri;
@@ -119,6 +119,15 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
         // When the circuit breaker is not accessed for a long time, it will be automatically garbage collected.
         if (started.compareAndSet(true, false)) {
             doClose();
+        }
+    }
+
+    @Override
+    public void exchange(CircuitBreakPolicy policy) {
+        CircuitBreakPolicy old = this.policy;
+        if (policy != null && policy != old && policy.getVersion() == old.getVersion()) {
+            policy.exchange(old);
+            this.policy = policy;
         }
     }
 

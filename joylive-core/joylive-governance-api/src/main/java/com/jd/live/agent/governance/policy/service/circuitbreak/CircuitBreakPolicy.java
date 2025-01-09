@@ -34,8 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.1.0
  */
-@Setter
-@Getter
 public class CircuitBreakPolicy extends PolicyId
         implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy, PolicyVersion {
 
@@ -55,115 +53,158 @@ public class CircuitBreakPolicy extends PolicyId
     /**
      * Name of this policy
      */
+    @Setter
+    @Getter
     private String name;
 
     /**
      * Implementation types of circuit-breaker
      */
+    @Setter
+    @Getter
     private String realizeType;
 
     /**
      * Level of circuit breaker policy
      */
+    @Setter
+    @Getter
     private CircuitBreakLevel level = CircuitBreakLevel.INSTANCE;
 
     /**
      * Sliding window type (statistical window type): count, time
      */
+    @Setter
+    @Getter
     private String slidingWindowType = SLIDING_WINDOW_TIME;
 
     /**
      * Sliding window size (statistical window size)
      */
+    @Setter
+    @Getter
     private int slidingWindowSize = DEFAULT_SLIDING_WINDOW_SIZE;
 
     /**
      * Minimum request threshold
      */
+    @Setter
+    @Getter
     private int minCallsThreshold = DEFAULT_MIN_CALLS_THRESHOLD;
 
     /**
      * Code policy
      */
+    @Setter
+    @Getter
     private ErrorParserPolicy codePolicy;
 
     /**
      * Error code
      */
+    @Setter
+    @Getter
     private Set<String> errorCodes;
 
     /**
      * Error message policy
      */
+    @Setter
+    @Getter
     private ErrorParserPolicy messagePolicy;
 
     /**
      * Collection of error messages. This parameter specifies which status codes should be considered retryable.
      */
+    @Setter
+    @Getter
     private Set<String> errorMessages;
 
     /**
      * Exception full class names.
      */
+    @Setter
+    @Getter
     private Set<String> exceptions;
 
     /**
      * Failure rate threshold
      */
+    @Setter
+    @Getter
     private float failureRateThreshold = DEFAULT_FAILURE_RATE_THRESHOLD;
 
     /**
      * Threshold for slow call rate
      */
+    @Setter
+    @Getter
     private float slowCallRateThreshold = DEFAULT_SLOW_CALL_RATE_THRESHOLD;
 
     /**
      * Minimum duration for slow invocation (milliseconds)
      */
+    @Setter
+    @Getter
     private int slowCallDurationThreshold = DEFAULT_SLOW_CALL_DURATION_THRESHOLD;
 
     /**
      * Fuse time (seconds)
      */
+    @Setter
     private int waitDurationInOpenState = DEFAULT_WAIT_DURATION_IN_OPEN_STATE;
 
     /**
      * In the half-open state, callable numbers
      */
+    @Setter
+    @Getter
     private int allowedCallsInHalfOpenState = DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE;
 
+    @Setter
+    @Getter
     private int maxWaitDurationInHalfOpenState = DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE;
 
     /**
      * Whether to force the circuit breaker to be turned on
      */
+    @Setter
+    @Getter
     private boolean forceOpen = false;
 
     /**
      * Indicates whether the recovery mechanism is enabled.
      */
+    @Setter
+    @Getter
     private boolean recoveryEnabled;
 
     /**
      * The duration in milliseconds for which the recovery mechanism is active.
      * Defaults to {@link #DEFAULT_RECOVER_DURATION}.
      */
+    @Setter
     private int recoveryDuration = DEFAULT_RECOVER_DURATION;
 
     /**
      * The number of phases in the recovery mechanism.
      * Defaults to {@link #DEFAULT_RECOVER_PHASE}.
      */
+    @Setter
     private int recoveryPhase = DEFAULT_RECOVER_PHASE;
 
     /**
      * Downgrade configuration
      */
+    @Setter
+    @Getter
     private DegradeConfig degradeConfig;
 
     /**
      * The version of the policy
      */
+    @Setter
+    @Getter
     private long version;
 
     private transient RecoverRatio recoverRatio;
@@ -278,6 +319,18 @@ public class CircuitBreakPolicy extends PolicyId
     public void removeInspector(String id, CircuitBreakInspector inspector) {
         if (id != null) {
             inspectors.computeIfPresent(id, (k, v) -> v == inspector ? null : v);
+        }
+    }
+
+    /**
+     * Exchanges the current policy of the circuit breaker with the specified policy
+     * if the new policy is not null, not the same as the current policy, and has the same version.
+     *
+     * @param policy the new policy to be set for the circuit breaker
+     */
+    public void exchange(CircuitBreakPolicy policy) {
+        if (inspectors != policy.inspectors) {
+            inspectors = policy.inspectors;
         }
     }
 

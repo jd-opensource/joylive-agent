@@ -57,6 +57,13 @@ public interface Licensee<P extends PolicyVersion> extends PolicyVersion, AutoCl
      */
     P getPolicy();
 
+    /**
+     * Exchanges the current policy of the circuit breaker with the specified policy.
+     *
+     * @param policy the new policy to be set for the circuit breaker
+     */
+    void exchange(P policy);
+
     @Override
     default long getVersion() {
         return getPolicy().getVersion();
