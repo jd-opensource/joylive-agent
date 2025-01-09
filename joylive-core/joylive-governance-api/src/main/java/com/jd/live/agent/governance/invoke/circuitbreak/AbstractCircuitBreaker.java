@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import lombok.Getter;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -33,12 +32,7 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
     @Getter
     protected final URI uri;
 
-    @Getter
-    protected volatile long lastAccessTime;
-
     protected final AtomicReference<CircuitBreakerStateWindow> windowRef = new AtomicReference<>();
-
-    protected final AtomicBoolean started = new AtomicBoolean(true);
 
     public AbstractCircuitBreaker(CircuitBreakPolicy policy, URI uri) {
         this.policy = policy;
@@ -110,21 +104,6 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
         if (started.get()) {
             doOnSuccess(durationInMs);
         }
-    }
-
-    @Override
-    public void close() {
-        // When the circuit breaker is not accessed for a long time, it will be automatically garbage collected.
-        if (started.compareAndSet(true, false)) {
-            doClose();
-        }
-    }
-
-    /**
-     * Closes the circuit breaker.
-     */
-    protected void doClose() {
-
     }
 
     /**

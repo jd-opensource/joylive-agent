@@ -18,18 +18,25 @@ package com.jd.live.agent.governance.invoke.permission;
 import com.jd.live.agent.governance.policy.PolicyVersion;
 import lombok.Getter;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * An abstract class representing a licensee with a policy version.
  *
  * @param <P> the type of policy version
  */
-@Getter
 public abstract class AbstractLicensee<P extends PolicyVersion> implements Licensee<P> {
 
     /**
      * The policy associated with the licensee.
      */
+    @Getter
     protected P policy;
+
+    @Getter
+    protected volatile long lastAccessTime;
+
+    protected final AtomicBoolean started = new AtomicBoolean(true);
 
     @Override
     public void exchange(P policy) {
@@ -38,6 +45,20 @@ public abstract class AbstractLicensee<P extends PolicyVersion> implements Licen
             doExchange(old, policy);
             this.policy = policy;
         }
+    }
+
+    @Override
+    public void close() {
+        if (started.compareAndSet(true, false)) {
+            doClose();
+        }
+    }
+
+    /**
+     * Closes the limiter.
+     */
+    protected void doClose() {
+
     }
 
     /**
