@@ -768,34 +768,7 @@
           },
           "loadBalancePolicy": {
             "policyType": "ROUND_ROBIN"
-          },
-          "rateLimitPolicies": [
-            {
-              "name": "limit-rule-1",
-              "version": 1704038400000,
-              "realizeType": "Resilience4j",
-              "slidingWindows": [
-                {
-                  "threshold": 1,
-                  "timeWindowInMs": 1000
-                }
-              ],
-              "maxWaitMs": 100,
-              "actionParameters": {
-              },
-              "relationType": "AND",
-              "conditions": [
-                {
-                  "type": "header",
-                  "opType": "EQUAL",
-                  "key": "limiter",
-                  "values": [
-                    "true"
-                  ]
-                }
-              ]
-            }
-          ]
+          }
         },
         "paths": [
           {
@@ -1020,12 +993,12 @@
               "level": "SERVICE",
               "slidingWindowType": "time",
               "slidingWindowSize": 5,
-              "minCallsThreshold": 1,
+              "minCallsThreshold": 2,
               "errorCodes": [
                 "500",
                 "502"
               ],
-              "failureRateThreshold": 20,
+              "failureRateThreshold": 1,
               "slowCallRateThreshold": 20,
               "slowCallDurationThreshold": 1000,
               "waitDurationInOpenState": 50,

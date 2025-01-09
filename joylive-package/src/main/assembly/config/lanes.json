@@ -7,15 +7,19 @@
       {
         "code": "production",
         "name": "production lane",
-        "defaultLane": true
+        "defaultLane": true,
+        "fallbackType": "REJECT"
       },
       {
         "code": "beta",
-        "name": "beta lane"
+        "name": "beta lane",
+        "fallbackType": "DEFAULT"
       },
       {
         "code": "test",
-        "name": "test lane"
+        "name": "test lane",
+        "fallbackType": "CUSTOM",
+        "fallbackLane": "beta"
       }
     ],
     "rules": [

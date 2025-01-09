@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.service.lane;
 
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
+import com.jd.live.agent.governance.policy.lane.FallbackType;
 import com.jd.live.agent.governance.policy.service.annotation.Provider;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,6 +39,19 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
 
     private Map<String, String> lanes;
 
+    /**
+     * Types of fallback strategies for lane redirection
+     * <p>
+     */
+    private FallbackType fallbackType;
+
+    /**
+     * When the fallbackType type is CUSTOM, the lane request is redirected based on the lane specified in this field.
+     * If there is still no corresponding instance, the request is denied.
+     * <p>
+     */
+    private String fallbackLane;
+
     @Override
     public void supplement(LanePolicy source) {
         if (source == null) {
@@ -48,6 +62,12 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
         }
         if (lanes == null && source.getLanes() != null) {
             lanes = new HashMap<>(source.getLanes());
+        }
+        if (fallbackType == null) {
+            fallbackType = source.getFallbackType();
+        }
+        if (fallbackLane == null) {
+            fallbackLane = source.getFallbackLane();
         }
     }
 
