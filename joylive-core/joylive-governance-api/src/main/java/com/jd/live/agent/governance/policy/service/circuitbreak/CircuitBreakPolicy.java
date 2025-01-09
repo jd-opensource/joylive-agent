@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit;
 import com.jd.live.agent.governance.policy.PolicyVersion;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
+import com.jd.live.agent.governance.util.RecoverRatio;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,8 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.1.0
  */
-@Setter
-@Getter
 public class CircuitBreakPolicy extends PolicyId
         implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy, PolicyVersion {
 
@@ -47,115 +46,185 @@ public class CircuitBreakPolicy extends PolicyId
     public static final int DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE = 10;
     public static final int DEFAULT_SLIDING_WINDOW_SIZE = 100;
     public static final int DEFAULT_MIN_CALLS_THRESHOLD = 10;
-    public static final int DEFAULT_INSTANCE_RECOVER_DURATION = 1000 * 15;
+    public static final int DEFAULT_RECOVER_DURATION = 1000 * 15;
     public static final int DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE = 0;
+    public static final int DEFAULT_RECOVER_PHASE = 10;
 
     /**
      * Name of this policy
      */
+    @Setter
+    @Getter
     private String name;
 
     /**
      * Implementation types of circuit-breaker
      */
+    @Setter
+    @Getter
     private String realizeType;
 
     /**
      * Level of circuit breaker policy
      */
+    @Setter
+    @Getter
     private CircuitBreakLevel level = CircuitBreakLevel.INSTANCE;
 
     /**
      * Sliding window type (statistical window type): count, time
      */
+    @Setter
+    @Getter
     private String slidingWindowType = SLIDING_WINDOW_TIME;
 
     /**
      * Sliding window size (statistical window size)
      */
+    @Setter
+    @Getter
     private int slidingWindowSize = DEFAULT_SLIDING_WINDOW_SIZE;
 
     /**
      * Minimum request threshold
      */
+    @Setter
+    @Getter
     private int minCallsThreshold = DEFAULT_MIN_CALLS_THRESHOLD;
 
     /**
      * Code policy
      */
+    @Setter
+    @Getter
     private ErrorParserPolicy codePolicy;
 
     /**
      * Error code
      */
+    @Setter
+    @Getter
     private Set<String> errorCodes;
 
     /**
      * Error message policy
      */
+    @Setter
+    @Getter
     private ErrorParserPolicy messagePolicy;
 
     /**
      * Collection of error messages. This parameter specifies which status codes should be considered retryable.
      */
+    @Setter
+    @Getter
     private Set<String> errorMessages;
 
     /**
      * Exception full class names.
      */
+    @Setter
+    @Getter
     private Set<String> exceptions;
 
     /**
      * Failure rate threshold
      */
+    @Setter
+    @Getter
     private float failureRateThreshold = DEFAULT_FAILURE_RATE_THRESHOLD;
 
     /**
      * Threshold for slow call rate
      */
+    @Setter
+    @Getter
     private float slowCallRateThreshold = DEFAULT_SLOW_CALL_RATE_THRESHOLD;
 
     /**
      * Minimum duration for slow invocation (milliseconds)
      */
+    @Setter
+    @Getter
     private int slowCallDurationThreshold = DEFAULT_SLOW_CALL_DURATION_THRESHOLD;
 
     /**
      * Fuse time (seconds)
      */
+    @Setter
     private int waitDurationInOpenState = DEFAULT_WAIT_DURATION_IN_OPEN_STATE;
 
     /**
      * In the half-open state, callable numbers
      */
+    @Setter
+    @Getter
     private int allowedCallsInHalfOpenState = DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE;
 
+    @Setter
+    @Getter
     private int maxWaitDurationInHalfOpenState = DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE;
 
     /**
      * Whether to force the circuit breaker to be turned on
      */
+    @Setter
+    @Getter
     private boolean forceOpen = false;
 
     /**
-     * The gradual recovery period after the instance-level circuit breaker is opened.
+     * Indicates whether the recovery mechanism is enabled.
      */
-    private int recoveryDuration = DEFAULT_INSTANCE_RECOVER_DURATION;
+    @Setter
+    @Getter
+    private boolean recoveryEnabled;
+
+    /**
+     * The duration in milliseconds for which the recovery mechanism is active.
+     * Defaults to {@link #DEFAULT_RECOVER_DURATION}.
+     */
+    @Setter
+    private int recoveryDuration = DEFAULT_RECOVER_DURATION;
+
+    /**
+     * The number of phases in the recovery mechanism.
+     * Defaults to {@link #DEFAULT_RECOVER_PHASE}.
+     */
+    @Setter
+    private int recoveryPhase = DEFAULT_RECOVER_PHASE;
 
     /**
      * Downgrade configuration
      */
+    @Setter
+    @Getter
     private DegradeConfig degradeConfig;
 
     /**
      * The version of the policy
      */
+    @Setter
+    @Getter
     private long version;
+
+    private transient RecoverRatio recoverRatio;
 
     /**
      * Map of temporarily blocked endpoints
      */
-    private transient Map<String, CircuitBreakEndpoint> endpoints = new ConcurrentHashMap<>();
+    private transient Map<String, CircuitBreakInspector> inspectors = new ConcurrentHashMap<>();
+
+    public int getWaitDurationInOpenState() {
+        return waitDurationInOpenState <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : waitDurationInOpenState;
+    }
+
+    public int getRecoveryDuration() {
+        return recoveryDuration <= 0 ? DEFAULT_RECOVER_DURATION : recoveryDuration;
+    }
+
+    public int getRecoveryPhase() {
+        return recoveryPhase <= 0 ? DEFAULT_RECOVER_PHASE : recoveryPhase;
+    }
 
     @Override
     public void supplement(CircuitBreakPolicy source) {
@@ -194,7 +263,8 @@ public class CircuitBreakPolicy extends PolicyId
             uri = source.getUri();
         }
         if (source.getVersion() == version) {
-            endpoints = source.endpoints;
+            // disable assignment, because the supplement maybe called by inherit
+            // inspectors = source.inspectors;
         }
     }
 
@@ -219,68 +289,68 @@ public class CircuitBreakPolicy extends PolicyId
     }
 
     /**
-     * Retrieves the circuit break endpoint by its ID.
+     * Retrieves the circuit break inspector by its ID.
      *
-     * @param id the identifier of the circuit break endpoint
-     * @return the circuit break endpoint, or null if not found or ID is null
+     * @param id the identifier of the circuit break inspector
+     * @return the circuit break inspector, or null if not found or ID is null
      */
-    public CircuitBreakEndpoint getEndpoint(String id) {
-        return id == null ? null : endpoints.get(id);
+    public CircuitBreakInspector getInspector(String id) {
+        return id == null ? null : inspectors.get(id);
     }
 
     /**
-     * Adds an endpoint to the circuit breaker's list of broken endpoints.
+     * Adds a new inspector with the specified ID and state to the circuit breaker.
      *
-     * @param endpoint The endpoint to add. If the endpoint is null, it will not be added.
+     * @param id        the unique identifier of the inspector
+     * @param inspector the circuit breaker inspector
      */
-    public void addEndpoint(CircuitBreakEndpoint endpoint) {
-        if (endpoint != null) {
-            endpoints.put(endpoint.getId(), endpoint);
+    public void addInspector(String id, CircuitBreakInspector inspector) {
+        if (id != null && inspector != null) {
+            inspectors.put(id, inspector);
         }
     }
 
     /**
-     * Updates the state of the specified endpoint.
+     * Removes the specified inspector if it exists.
      *
-     * @param id    The unique identifier of the endpoint to update.
-     * @param state The new state to set for the endpoint.
+     * @param id        the ID of the inspector to be removed
+     * @param inspector the circuit breaker inspector to be removed
      */
-    public void updateEndpoint(String id, CircuitBreakEndpointState state) {
-        CircuitBreakEndpoint endpoint = getEndpoint(id);
-        if (endpoint != null) {
-            endpoint = endpoint.clone();
-            endpoint.setState(state);
-            endpoint.setLastUpdateTime(System.currentTimeMillis());
-            endpoints.put(id, endpoint);
-        }
-    }
-
-    /**
-     * Removes the endpoint with the specified ID from the collection if it exists.
-     *
-     * @param id The ID of the endpoint to be removed.
-     */
-    public void removeEndpoint(String id) {
+    public void removeInspector(String id, CircuitBreakInspector inspector) {
         if (id != null) {
-            endpoints.remove(id);
+            inspectors.computeIfPresent(id, (k, v) -> v == inspector ? null : v);
         }
     }
 
     /**
-     * Removes the specified endpoint if it exists.
+     * Exchanges the current policy of the circuit breaker with the specified policy
+     * if the new policy is not null, not the same as the current policy, and has the same version.
      *
-     * @param endpoint The endpoint to be removed.
+     * @param policy the new policy to be set for the circuit breaker
      */
-    public void removeEndpoint(CircuitBreakEndpoint endpoint) {
-        if (endpoint != null) {
-            endpoints.computeIfPresent(endpoint.getId(), (k, v) -> v == endpoint ? null : v);
+    public void exchange(CircuitBreakPolicy policy) {
+        if (inspectors != policy.inspectors) {
+            inspectors = policy.inspectors;
         }
+    }
+
+    /**
+     * Calculates the recovery ratio for a given duration.
+     *
+     * @param duration The duration in milliseconds for which the recovery ratio is calculated.
+     * @return The recovery ratio as a double value if the internal RecoverRatio instance is not null
+     * and the duration is less than the recovery period. Returns {@code null} if the internal
+     * RecoverRatio instance is null or if the duration is greater than or equal to the recovery period.
+     */
+    public Double getRecoveryRatio(long duration) {
+        return recoverRatio == null ? null : recoverRatio.getRatio(duration);
     }
 
     public void cache() {
         if (codePolicy != null) {
             codePolicy.cache();
         }
+        recoverRatio = recoveryEnabled ? new RecoverRatio(getRecoveryDuration(), getRecoveryPhase()) : null;
     }
 
 }

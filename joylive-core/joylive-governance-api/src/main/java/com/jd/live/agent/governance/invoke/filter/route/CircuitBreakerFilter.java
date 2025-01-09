@@ -21,8 +21,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.core.util.time.TimeWindow;
-import com.jd.live.agent.core.util.time.TimeWindowList;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
@@ -39,7 +37,7 @@ import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakEndpoint;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakInspector;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
@@ -49,6 +47,7 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
@@ -155,35 +154,30 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
      * @return True if the endpoint is healthy, false otherwise.
      */
     private boolean isHealthy(Endpoint endpoint, List<CircuitBreakPolicy> policies, long now) {
-        TimeWindowList windowList = null;
-        CircuitBreakEndpoint cbe;
+        CircuitBreakInspector inspector;
+        Double ratio;
+        Double minRatio = null;
         for (CircuitBreakPolicy policy : policies) {
-            cbe = policy.getEndpoint(endpoint.getId());
-            if (cbe == null) {
-                continue;
-            } else if (cbe.isOpen()) {
-                return false;
-            } else if (cbe.isHalfOpen()) {
-                continue;
-            } else if (cbe.isRecover(policy.getRecoveryDuration())) {
-                // in recover
-                if (windowList == null) {
-                    windowList = new TimeWindowList();
+            inspector = policy.getInspector(endpoint.getId());
+            if (inspector != null) {
+                if (inspector.isOpen(now)) {
+                    // in open
+                    return false;
+                } else if (inspector.isRecover(now)) {
+                    // in recover
+                    ratio = inspector.getRecoverRatio(now);
+                    if (ratio != null && (minRatio == null || ratio < minRatio)) {
+                        minRatio = ratio;
+                    }
+                } else if (!inspector.isHalfOpen(now)) {
+                    // Healthy nodes, delete.
+                    policy.removeInspector(endpoint.getId(), inspector);
                 }
-                windowList.add(new TimeWindow(cbe.getLastUpdateTime(), policy.getRecoveryDuration()));
-            } else {
-                // Healthy nodes, if not being concurrently updated, will be deleted.
-                policy.removeEndpoint(cbe);
             }
         }
-        if (windowList != null) {
-            TimeWindow window = windowList.max();
-            if (window != null) {
-                endpoint.setRecoverTime(window.getStartTime());
-                endpoint.setRecoverDuration((int) window.getDuration());
-            }
+        if (minRatio != null) {
+            endpoint.setWeightRatio(minRatio);
         }
-
         return true;
     }
 
@@ -245,26 +239,80 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
      * @return {@code true} if permits were successfully acquired from all circuit breakers, {@code false} otherwise
      */
     private static boolean acquire(List<CircuitBreaker> circuitBreakers, Consumer<CircuitBreaker> fallback) {
+        if (!recover(circuitBreakers, fallback)) {
+            // not acquire permits
+            return false;
+        }
         int acquires = 0;
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
             if (!circuitBreaker.acquire()) {
-                if (acquires > 0) {
-                    // rollback
-                    int rollbacks = 0;
-                    for (CircuitBreaker breaker : circuitBreakers) {
-                        if (rollbacks++ < acquires) {
-                            breaker.release();
-                        } else {
-                            break;
-                        }
-                    }
-                }
+                // failed to acquire permits
+                rollback(circuitBreakers, acquires);
                 if (fallback != null) {
                     fallback.accept(circuitBreaker);
                 }
                 return false;
             }
             acquires++;
+        }
+        return true;
+    }
+
+    /**
+     * Rolls back the specified number of acquires for the given list of circuit breakers.
+     *
+     * @param circuitBreakers the list of circuit breakers to roll back
+     * @param acquires        the number of acquires to roll back
+     */
+    private static void rollback(List<CircuitBreaker> circuitBreakers, int acquires) {
+        if (acquires <= 0) {
+            return;
+        }
+        // rollback
+        int rollbacks = 0;
+        for (CircuitBreaker breaker : circuitBreakers) {
+            if (rollbacks++ < acquires) {
+                breaker.release();
+            } else {
+                return;
+            }
+        }
+    }
+
+    /**
+     * Attempts to recover a circuit breaker from a list of circuit breakers.
+     * It selects the circuit breaker with the lowest recovery weight
+     * and applies a fallback action if the random condition is met.
+     *
+     * @param circuitBreakers A list of circuit breakers to evaluate for recovery.
+     * @param fallback        A consumer that defines the fallback action to be taken
+     *                        if a circuit breaker is selected for recovery.
+     * @return {@code true} if no circuit breaker is selected for recovery or
+     * if the random condition is not met; {@code false} if a circuit
+     * breaker is selected and the fallback action is applied.
+     */
+    private static boolean recover(List<CircuitBreaker> circuitBreakers, Consumer<CircuitBreaker> fallback) {
+        CircuitBreaker minBreaker = null;
+        Double ratio;
+        Double minRatio = null;
+        long now = System.currentTimeMillis();
+        for (CircuitBreaker breaker : circuitBreakers) {
+            if (breaker.isRecover(now)) {
+                ratio = breaker.getRecoverRatio(now);
+                if (ratio != null && (minRatio == null || ratio < minRatio)) {
+                    minRatio = ratio;
+                    minBreaker = breaker;
+                }
+            }
+        }
+        if (minBreaker != null) {
+            int threshold = (int) (minRatio * 10000);
+            if (ThreadLocalRandom.current().nextInt(10000) >= threshold) {
+                if (fallback != null) {
+                    fallback.accept(minBreaker);
+                }
+                return false;
+            }
         }
         return true;
     }
@@ -303,12 +351,15 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                     // The circuit breaker, if in a healthy state and not accessed for 1 minute, will be recycled.
                     CircuitBreaker breaker = factory.get(policy, uri);
                     if (breaker != null) {
+                        // append instance circuit breaker
                         circuitBreakers.add(breaker);
                     }
                 }
                 int size = circuitBreakers.size();
                 if (size > index) {
+                    // acquire from instance circuit breaker
                     if (!acquire(circuitBreakers.subList(index, size), null)) {
+                        // failed to acquire, rollback circuit breakers
                         circuitBreakers = circuitBreakers.subList(0, index);
                         return false;
                     }

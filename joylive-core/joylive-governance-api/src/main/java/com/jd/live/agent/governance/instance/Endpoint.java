@@ -111,37 +111,20 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
-     * Returns the recover time.
+     * Retrieves the weight ratio associated with the circuit breaker.
      *
-     * @return The recover time, or null if not set.
+     * @return the weight ratio as a double value, or null if not set
      */
-    default Long getRecoverTime() {
+    default Double getWeightRatio() {
         return null;
     }
 
     /**
-     * Sets the recover time.
+     * Sets the weight ratio for the circuit breaker.
      *
-     * @param recoverTime The recover time to set.
+     * @param weightRatio the weight ratio to be set
      */
-    default void setRecoverTime(Long recoverTime) {
-    }
-
-    /**
-     * Returns the recover duration.
-     *
-     * @return The recover duration, or null if not set.
-     */
-    default Integer getRecoverDuration() {
-        return null;
-    }
-
-    /**
-     * Sets the recover duration.
-     *
-     * @param duration The recover duration to set.
-     */
-    default void setRecoverDuration(Integer duration) {
+    default void setWeightRatio(Double weightRatio) {
     }
 
     /**
@@ -154,8 +137,9 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
         int weight = getWeight(request);
         if (weight > 0) {
             long now = System.currentTimeMillis();
+            Double ratio = getWeightRatio();
             weight = getWeight(weight, getTimestamp(), getWarmup(), now);
-            weight = getWeight(weight, getRecoverTime(), getRecoverDuration(), now);
+            weight = ratio != null ? (int) (weight * ratio) : weight;
             return weight < 0 ? 0 : Math.max(1, weight);
         }
         return 0;

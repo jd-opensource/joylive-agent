@@ -16,28 +16,23 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import lombok.Getter;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AbstractCircuitBreaker
  *
  * @since 1.1.0
  */
-public abstract class AbstractCircuitBreaker implements CircuitBreaker {
-
-    @Getter
-    protected final CircuitBreakPolicy policy;
+public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBreakPolicy> implements CircuitBreaker {
 
     @Getter
     protected final URI uri;
 
-    @Getter
-    protected long lastAccessTime;
-
-    protected final AtomicBoolean started = new AtomicBoolean(true);
+    protected final AtomicReference<CircuitBreakerStateWindow> windowRef = new AtomicReference<>();
 
     public AbstractCircuitBreaker(CircuitBreakPolicy policy, URI uri) {
         this.policy = policy;
@@ -61,6 +56,43 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
     }
 
     @Override
+    public boolean isOpen(long now) {
+        // The transition from Open state to half_open state will not be automatically triggered.
+        // A request is needed to trigger it.
+        // Therefore, it is necessary to add an expiration time check.
+        CircuitBreakerStateWindow state = windowRef.get();
+        return state != null && state.getState() == CircuitBreakerState.OPEN && now <= state.getEndTime();
+    }
+
+    @Override
+    public boolean isHalfOpen(long now) {
+        CircuitBreakerStateWindow state = windowRef.get();
+        return state != null && (state.getState() == CircuitBreakerState.HALF_OPEN
+                || state.getState() == CircuitBreakerState.OPEN && now > state.getEndTime());
+    }
+
+    @Override
+    public boolean isRecover(long now) {
+        if (!policy.isRecoveryEnabled()) {
+            return false;
+        }
+        CircuitBreakerStateWindow state = windowRef.get();
+        if (state == null || state.getState() != CircuitBreakerState.CLOSED) {
+            return false;
+        }
+        if (now > state.getEndTime()) {
+            windowRef.compareAndSet(state, null);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public Double getRecoverRatio(long now) {
+        return policy.getRecoveryRatio(now - lastAccessTime);
+    }
+
+    @Override
     public void onError(long durationInMs, Throwable throwable) {
         if (started.get()) {
             doOnError(durationInMs, throwable);
@@ -72,21 +104,6 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
         if (started.get()) {
             doOnSuccess(durationInMs);
         }
-    }
-
-    @Override
-    public void close() {
-        // When the circuit breaker is not accessed for a long time, it will be automatically garbage collected.
-        if (started.compareAndSet(true, false)) {
-            doClose();
-        }
-    }
-
-    /**
-     * Closes the circuit breaker.
-     */
-    protected void doClose() {
-
     }
 
     /**
@@ -116,5 +133,10 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
      * @param durationInMs The elapsed time duration of the call in milliseconds.
      */
     protected abstract void doOnSuccess(long durationInMs);
+
+    @Override
+    protected void doExchange(CircuitBreakPolicy older, CircuitBreakPolicy newer) {
+        newer.exchange(older);
+    }
 
 }

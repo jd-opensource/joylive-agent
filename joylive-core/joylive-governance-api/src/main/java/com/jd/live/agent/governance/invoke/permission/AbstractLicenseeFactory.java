@@ -87,7 +87,15 @@ public abstract class AbstractLicenseeFactory<P extends PolicyVersion, K, V exte
         if (policy == null || key == null || predicate != null && !predicate.test(policy)) {
             return null;
         }
-        return AtomicUtils.getOrUpdate(licensees, key, creator, policy::isOlderThan, this::onSuccess);
+        V result = AtomicUtils.getOrUpdate(licensees, key, creator, policy::isOlderThan, this::onSuccess);
+        if (result != null) {
+            P old = result.getPolicy();
+            if (old != policy && old.getVersion() == policy.getVersion()) {
+                // exchange the new policy.
+                result.exchange(policy);
+            }
+        }
+        return result;
     }
 
     /**

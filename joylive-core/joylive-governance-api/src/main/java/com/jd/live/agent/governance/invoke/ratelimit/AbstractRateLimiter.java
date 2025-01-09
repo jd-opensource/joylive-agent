@@ -17,11 +17,10 @@ package com.jd.live.agent.governance.invoke.ratelimit;
 
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import lombok.Getter;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * AbstractRateLimiter is an abstract implementation of the RateLimiter interface,
@@ -31,15 +30,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @since 1.0.0
  */
-public abstract class AbstractRateLimiter implements RateLimiter {
+public abstract class AbstractRateLimiter extends AbstractLicensee<RateLimitPolicy> implements RateLimiter {
 
     protected static final Long MICROSECOND_OF_ONE_SECOND = 1000 * 1000L;
-
-    /**
-     * The rate limit policy that defines the limits for the rate limiter.
-     */
-    @Getter
-    protected final RateLimitPolicy policy;
 
     /**
      * The default time unit.
@@ -55,11 +48,6 @@ public abstract class AbstractRateLimiter implements RateLimiter {
      * The option that contains additional settings that may affect the behavior of the rate limiter.
      */
     protected final Option option;
-
-    @Getter
-    protected long lastAccessTime;
-
-    protected final AtomicBoolean started = new AtomicBoolean(true);
 
     /**
      * Constructs an instance of the AbstractRateLimiter class with the given rate limit policy and time unit.
@@ -100,13 +88,6 @@ public abstract class AbstractRateLimiter implements RateLimiter {
         return permits <= 0 || doAcquire(permits, timeout, timeUnit);
     }
 
-    @Override
-    public void close() {
-        if (started.compareAndSet(true, false)) {
-            doClose();
-        }
-    }
-
     /**
      * Try to get some permits within a duration and return the result
      *
@@ -116,13 +97,6 @@ public abstract class AbstractRateLimiter implements RateLimiter {
      * @return result
      */
     protected abstract boolean doAcquire(int permits, long timeout, TimeUnit timeUnit);
-
-    /**
-     * Closes the limiter.
-     */
-    protected void doClose() {
-
-    }
 
 }
 

@@ -19,13 +19,8 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreaker;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerState;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateEvent;
-import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerStateListener;
+import com.jd.live.agent.governance.invoke.circuitbreak.*;
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakEndpoint;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakEndpointState;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakLevel;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -40,14 +35,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy.DEFAULT_WAIT_DURATION_IN_OPEN_STATE;
-
 /**
  * Resilience4jCircuitBreaker
  *
  * @since 1.1.0
  */
 public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
+
+    private static final Logger logger = LoggerFactory.getLogger(Resilience4jCircuitBreaker.class);
 
     private final io.github.resilience4j.circuitbreaker.CircuitBreaker delegate;
 
@@ -57,9 +52,8 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
         super(policy, uri);
         this.delegate = delegate;
         this.eventConsumer = policy.getLevel() != CircuitBreakLevel.INSTANCE
-                ? new LiveEventConsumer(this.started)
-                : new LiveEventConsumer(this.started, new LiveStateListener(
-                policy, uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT), this.started));
+                ? new LiveEventConsumer(this.started, new ServiceStateListener())
+                : new LiveEventConsumer(this.started, new InstanceStateListener(uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT)));
         this.delegate.getEventPublisher().onStateTransition(eventConsumer);
     }
 
@@ -174,54 +168,82 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
     }
 
     /**
-     * LiveStateListener
+     * ServiceStateListener
      *
      * @since 1.1.0
      */
-    private static class LiveStateListener implements CircuitBreakerStateListener, AutoCloseable {
+    private class ServiceStateListener implements CircuitBreakerStateListener {
 
-        private static final Logger logger = LoggerFactory.getLogger(LiveStateListener.class);
-
-        private final CircuitBreakPolicy policy;
-
-        private final String instanceId;
-
-        private final AtomicBoolean started;
-
-        LiveStateListener(CircuitBreakPolicy policy, String instanceId, AtomicBoolean started) {
-            this.policy = policy;
-            this.instanceId = instanceId;
-            this.started = started;
+        ServiceStateListener() {
         }
 
         @Override
         public void onStateChange(CircuitBreakerStateEvent event) {
-            if (!started.get()) {
-                // avoid another breaker conflict.
-                return;
-            }
             if (logger.isDebugEnabled()) {
-                logger.debug("[CircuitBreak]Instance state is transitioned from " + event.getFrom() + " to " + event.getTo() + ", uri=" + event.getUri());
+                logger.debug("[CircuitBreak]State is transitioned from " + event.getFrom() + " to " + event.getTo() + ", uri=" + event.getUri());
             }
+            long now = System.currentTimeMillis();
             switch (event.getTo()) {
                 case CLOSED:
-                    policy.updateEndpoint(instanceId, CircuitBreakEndpointState.CLOSED);
+                    onClose(now);
                     break;
                 case HALF_OPEN:
-                    policy.updateEndpoint(instanceId, CircuitBreakEndpointState.HALF_OPEN);
+                    onHalfOpen(now);
                     break;
                 case OPEN:
-                    int waitDurationInOpenState = policy.getWaitDurationInOpenState() <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : policy.getWaitDurationInOpenState();
-                    policy.addEndpoint(CircuitBreakEndpoint.open(instanceId, System.currentTimeMillis() + waitDurationInOpenState));
+                    onOpen(now);
                     break;
                 case DISABLED:
-                    policy.removeEndpoint(instanceId);
+                    onDisabled(now);
             }
+        }
+
+        protected void onDisabled(long now) {
+            // set end time to recovery end time.
+            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.DISABLED, now, now + policy.getRecoveryDuration()));
+        }
+
+        protected void onOpen(long now) {
+            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.OPEN, now, now + policy.getWaitDurationInOpenState()));
+        }
+
+        protected void onHalfOpen(long now) {
+            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.HALF_OPEN, now, null));
+        }
+
+        protected void onClose(long now) {
+            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.CLOSED, now, null));
+        }
+    }
+
+    /**
+     * InstanceStateListener
+     *
+     * @since 1.1.0
+     */
+    private class InstanceStateListener extends ServiceStateListener implements AutoCloseable {
+
+        private final String instanceId;
+
+        InstanceStateListener(String instanceId) {
+            this.instanceId = instanceId;
+        }
+
+        @Override
+        protected void onClose(long now) {
+            super.onClose(now);
+            policy.addInspector(instanceId, Resilience4jCircuitBreaker.this);
+        }
+
+        @Override
+        protected void onDisabled(long now) {
+            super.onDisabled(now);
+            policy.removeInspector(instanceId, Resilience4jCircuitBreaker.this);
         }
 
         @Override
         public void close() {
-            policy.removeEndpoint(instanceId);
+            onDisabled(System.currentTimeMillis());
         }
     }
 }
