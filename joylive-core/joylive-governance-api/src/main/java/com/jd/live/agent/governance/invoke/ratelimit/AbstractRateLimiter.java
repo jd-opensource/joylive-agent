@@ -39,7 +39,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
      * The rate limit policy that defines the limits for the rate limiter.
      */
     @Getter
-    protected final RateLimitPolicy policy;
+    protected RateLimitPolicy policy;
 
     /**
      * The default time unit.
@@ -104,6 +104,14 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     public void close() {
         if (started.compareAndSet(true, false)) {
             doClose();
+        }
+    }
+
+    @Override
+    public void exchange(RateLimitPolicy policy) {
+        RateLimitPolicy old = this.policy;
+        if (policy != null && policy != old && policy.getVersion() == old.getVersion()) {
+            this.policy = policy;
         }
     }
 

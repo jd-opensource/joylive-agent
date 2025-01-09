@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
 
     @Getter
-    protected final ConcurrencyLimitPolicy policy;
+    protected ConcurrencyLimitPolicy policy;
 
     @Getter
     protected long lastAccessTime;
@@ -37,6 +37,14 @@ public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
     public void close() {
         if (started.compareAndSet(true, false)) {
             doClose();
+        }
+    }
+
+    @Override
+    public void exchange(ConcurrencyLimitPolicy policy) {
+        ConcurrencyLimitPolicy old = this.policy;
+        if (policy != null && policy != old && policy.getVersion() == old.getVersion()) {
+            this.policy = policy;
         }
     }
 
