@@ -18,14 +18,19 @@ package com.jd.live.agent.demo.grpc.consumer.controller;
 import com.google.common.collect.Sets;
 import com.jd.live.agent.demo.grpc.service.api.*;
 import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.MetadataUtils;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Enumeration;
 import java.util.Set;
 
@@ -45,21 +50,40 @@ public class UserServiceController {
             "accept"
     );
 
+    @GetMapping("/echo/{str}")
+    public String echo(@PathVariable Integer str, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+        return get(str, servletRequest, servletResponse);
+    }
+
     @GetMapping("/get")
-    public String get(@RequestParam("id") Integer id,  HttpServletRequest servletRequest) {
+    public String get(@RequestParam("id") Integer id, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         UserGetRequest request = UserGetRequest.newBuilder().setId(id).build();
-
         Metadata metadata = getMetadata(servletRequest);
-        // 使用 stub.withInterceptors() 方法
-        UserGetResponse response = userServiceGrpc.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
-                .get(request);
-
-        return response.toString();
+        try {
+            // 使用 stub.withInterceptors() 方法
+            UserGetResponse response = userServiceGrpc.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
+                    .get(request);
+            return response.toString();
+        } catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            // 根据状态码进行对应处理
+            switch (status.getCode()) {
+                case RESOURCE_EXHAUSTED:
+                    servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                case PERMISSION_DENIED:
+                    servletResponse.setStatus(HttpStatus.FORBIDDEN.value());
+                case UNAUTHENTICATED:
+                    servletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+                default:
+                    servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            }
+            return status.getDescription();
+        }
     }
 
     @GetMapping("/create")
     public String create(@RequestParam("name") String name,
-                          @RequestParam("gender") Integer gender) {
+                         @RequestParam("gender") Integer gender) {
         UserCreateRequest request = UserCreateRequest.newBuilder()
                 .setName(name)
                 .setGender(gender)
@@ -103,4 +127,5 @@ public class UserServiceController {
         }
         return metadata;
     }
+
 }
