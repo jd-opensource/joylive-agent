@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPoli
 import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AbstractCircuitBreaker
@@ -35,7 +36,9 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
     protected final URI uri;
 
     @Getter
-    protected long lastAccessTime;
+    protected volatile long lastAccessTime;
+
+    protected final AtomicReference<CircuitBreakerStateWindow> windowRef = new AtomicReference<>();
 
     protected final AtomicBoolean started = new AtomicBoolean(true);
 
@@ -58,6 +61,43 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
         if (started.get()) {
             doRelease();
         }
+    }
+
+    @Override
+    public boolean isOpen(long now) {
+        // The transition from Open state to half_open state will not be automatically triggered.
+        // A request is needed to trigger it.
+        // Therefore, it is necessary to add an expiration time check.
+        CircuitBreakerStateWindow state = windowRef.get();
+        return state != null && state.getState() == CircuitBreakerState.OPEN && now <= state.getEndTime();
+    }
+
+    @Override
+    public boolean isHalfOpen(long now) {
+        CircuitBreakerStateWindow state = windowRef.get();
+        return state != null && (state.getState() == CircuitBreakerState.HALF_OPEN
+                || state.getState() == CircuitBreakerState.OPEN && now > state.getEndTime());
+    }
+
+    @Override
+    public boolean isRecover(long now) {
+        if (!policy.isRecoveryEnabled()) {
+            return false;
+        }
+        CircuitBreakerStateWindow state = windowRef.get();
+        if (state == null || state.getState() != CircuitBreakerState.CLOSED) {
+            return false;
+        }
+        if (now > state.getEndTime()) {
+            windowRef.compareAndSet(state, null);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public Double getRecoverRatio(long now) {
+        return policy.getRecoveryRatio(now - lastAccessTime);
     }
 
     @Override

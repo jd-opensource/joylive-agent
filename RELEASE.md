@@ -8,7 +8,7 @@
 4. Added support for Spring Cloud port-based routing.
 5. Added support for cluster-level rate limiting by Redis. 
 6. Added support for W3c Baggage transparent transmission.
-7. Added support for gradual traffic recovery at the instance-level circuit breaking.
+7. Added support for gradual traffic recovery at circuit breaking.
 8. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
 9. Improved label matching logic in flow control 
 10. Performance optimization 

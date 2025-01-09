@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.permission.Licensee;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakInspector;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 
 /**
@@ -24,7 +25,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPoli
  *
  * @since 1.1.0
  */
-public interface CircuitBreaker extends Licensee<CircuitBreakPolicy> {
+public interface CircuitBreaker extends Licensee<CircuitBreakPolicy>, CircuitBreakInspector {
 
     /**
      * Releases the acquired permit.
@@ -54,7 +55,6 @@ public interface CircuitBreaker extends Licensee<CircuitBreakPolicy> {
      * @param listener The state change listener to register.
      */
     void addListener(CircuitBreakerStateListener listener);
-
 
     /**
      * Obtains the URI related to the circuit breaker.
