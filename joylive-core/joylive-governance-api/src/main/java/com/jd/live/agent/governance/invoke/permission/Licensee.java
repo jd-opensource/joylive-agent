@@ -62,7 +62,9 @@ public interface Licensee<P extends PolicyVersion> extends PolicyVersion, AutoCl
      *
      * @param policy the new policy to be set for the circuit breaker
      */
-    void exchange(P policy);
+    default void exchange(P policy) {
+
+    }
 
     @Override
     default long getVersion() {
