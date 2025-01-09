@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.ratelimit;
 
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import lombok.Getter;
 
@@ -31,15 +32,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @since 1.0.0
  */
-public abstract class AbstractRateLimiter implements RateLimiter {
+public abstract class AbstractRateLimiter extends AbstractLicensee<RateLimitPolicy> implements RateLimiter {
 
     protected static final Long MICROSECOND_OF_ONE_SECOND = 1000 * 1000L;
-
-    /**
-     * The rate limit policy that defines the limits for the rate limiter.
-     */
-    @Getter
-    protected RateLimitPolicy policy;
 
     /**
      * The default time unit.
@@ -104,14 +99,6 @@ public abstract class AbstractRateLimiter implements RateLimiter {
     public void close() {
         if (started.compareAndSet(true, false)) {
             doClose();
-        }
-    }
-
-    @Override
-    public void exchange(RateLimitPolicy policy) {
-        RateLimitPolicy old = this.policy;
-        if (policy != null && policy != old && policy.getVersion() == old.getVersion()) {
-            this.policy = policy;
         }
     }
 

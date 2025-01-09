@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import lombok.Getter;
 
@@ -27,10 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @since 1.1.0
  */
-public abstract class AbstractCircuitBreaker implements CircuitBreaker {
-
-    @Getter
-    protected CircuitBreakPolicy policy;
+public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBreakPolicy> implements CircuitBreaker {
 
     @Getter
     protected final URI uri;
@@ -122,15 +120,6 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
         }
     }
 
-    @Override
-    public void exchange(CircuitBreakPolicy policy) {
-        CircuitBreakPolicy old = this.policy;
-        if (policy != null && policy != old && policy.getVersion() == old.getVersion()) {
-            policy.exchange(old);
-            this.policy = policy;
-        }
-    }
-
     /**
      * Closes the circuit breaker.
      */
@@ -165,5 +154,10 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
      * @param durationInMs The elapsed time duration of the call in milliseconds.
      */
     protected abstract void doOnSuccess(long durationInMs);
+
+    @Override
+    protected void doExchange(CircuitBreakPolicy older, CircuitBreakPolicy newer) {
+        newer.exchange(older);
+    }
 
 }
