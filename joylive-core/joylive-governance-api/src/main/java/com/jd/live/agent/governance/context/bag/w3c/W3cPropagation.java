@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 
 import java.util.Collection;
-import java.util.List;
 
 import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.tag.Label.join;
@@ -57,8 +56,8 @@ public class W3cPropagation extends AbstractPropagation {
         if (reader == null || writer == null) {
             return;
         }
-        List<String> baggages = reader.getHeaders(KEY_BAGGAGE);
-        if (baggages == null || baggages.isEmpty()) {
+        Iterable<String> baggages = reader.getHeaders(KEY_BAGGAGE);
+        if (baggages == null) {
             return;
         }
         CargoRequire require = getRequire();
@@ -82,8 +81,8 @@ public class W3cPropagation extends AbstractPropagation {
         if (carrier == null || reader == null) {
             return false;
         }
-        List<String> baggages = reader.getHeaders(KEY_BAGGAGE);
-        if (baggages == null || baggages.isEmpty()) {
+        Iterable<String> baggages = reader.getHeaders(KEY_BAGGAGE);
+        if (baggages == null) {
             return false;
         }
         CargoRequires require = getRequire();

@@ -6,10 +6,10 @@ import com.jd.live.agent.governance.context.bag.*;
 import com.jd.live.agent.governance.request.header.HeaderReader;
 import com.jd.live.agent.governance.request.header.HeaderWriter;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 @Injectable
 @Extension(value = "live", order = Propagation.ORDER_LIVE)
@@ -42,7 +42,7 @@ public class LivePropagation extends AbstractPropagation {
             while (names.hasNext()) {
                 name = names.next();
                 if (require.match(name)) {
-                    writer.setHeaders(name, reader.getHeaders(name));
+                    writer.setHeaders(name, toList(reader.getHeaders(name)));
                 }
             }
         }
@@ -58,14 +58,14 @@ public class LivePropagation extends AbstractPropagation {
         Iterator<String> names = reader.getNames();
         if (names != null) {
             String name;
-            List<String> values;
+            Iterable<String> values;
             while (names.hasNext()) {
                 name = names.next();
                 if (require.match(name)) {
                     counter++;
                     values = reader.getHeaders(name);
                     if (values != null) {
-                        carrier.addCargo(new Cargo(name, new ArrayList<>(values)));
+                        carrier.addCargo(new Cargo(name, toList(values)));
                     }
                 }
             }

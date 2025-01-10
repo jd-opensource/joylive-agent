@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2.cluster.AbstractClientClus
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2.request.HttpHeaderUpdater;
+import com.jd.live.agent.plugin.router.springgateway.v2.request.HttpHeadersUpdater;
 import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
@@ -113,7 +113,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
             Consumer<ServerHttpRequest.Builder> header = b -> b.headers(headers ->
-                    propagation.write(RequestContext.get(), writer(headers, new HttpHeaderUpdater(headers))));
+                    propagation.write(RequestContext.get(), writer(headers, new HttpHeadersUpdater(headers))));
             ServerWebExchange.Builder builder = request.getExchange().mutate().request(header);
             // decorate response to remove exception header and get body
             BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);

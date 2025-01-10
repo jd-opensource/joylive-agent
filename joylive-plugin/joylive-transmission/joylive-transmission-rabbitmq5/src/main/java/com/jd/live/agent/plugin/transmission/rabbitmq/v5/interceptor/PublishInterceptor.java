@@ -21,14 +21,13 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.Message;
+import com.jd.live.agent.plugin.transmission.rabbitmq.v5.request.EnvelopeParser;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BasicProperties;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.writer;
 
 public class PublishInterceptor extends InterceptorAdaptor {
 
@@ -68,7 +67,7 @@ public class PublishInterceptor extends InterceptorAdaptor {
             messageId = timestamp + "-" + randomInt;
             headers.put(Message.LABEL_MESSAGE_ID, messageId);
         }
-        propagation.write(RequestContext.get(), writer(headers, headers::put));
+        propagation.write(RequestContext.get(), new EnvelopeParser(properties));
     }
 
 }

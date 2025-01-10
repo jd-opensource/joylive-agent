@@ -20,6 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.rocketmq.v5.request.MessageParser;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.Collection;
@@ -41,12 +42,12 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         if (argument instanceof Message) {
             Message message = (Message) argument;
-            propagation.write(RequestContext.get(), writer(message.getProperties(), message::putUserProperty));
+            propagation.write(RequestContext.get(), writer(message.getProperties(), new MessageParser(message)));
         } else if (argument instanceof Collection) {
             Collection<Message> messages = (Collection<Message>) argument;
             Carrier carrier = RequestContext.get();
             for (Message message : messages) {
-                propagation.write(carrier, writer(message.getProperties(), message::putUserProperty));
+                propagation.write(carrier, writer(message.getProperties(), new MessageParser(message)));
             }
         }
     }

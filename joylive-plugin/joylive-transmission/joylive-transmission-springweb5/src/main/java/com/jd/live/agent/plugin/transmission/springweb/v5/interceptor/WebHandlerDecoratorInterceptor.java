@@ -20,12 +20,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.springweb.v5.request.HttpHeadersWriter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.reader;
-import static com.jd.live.agent.governance.request.header.HeaderParser.MultiHeaderParser.writer;
 
 /**
  * WebHandlerDecoratorInterceptor
@@ -55,7 +55,7 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         ServerWebExchange exchange = ctx.getArgument(0);
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
         Mono<Void> mono = mc.getResult();
-        mono = mono.doFirst(() -> propagation.write(RequestContext.get(), writer(headers, headers::add)));
+        mono = mono.doFirst(() -> propagation.write(RequestContext.get(), new HttpHeadersWriter(headers)));
         mc.setResult(mono);
     }
 }

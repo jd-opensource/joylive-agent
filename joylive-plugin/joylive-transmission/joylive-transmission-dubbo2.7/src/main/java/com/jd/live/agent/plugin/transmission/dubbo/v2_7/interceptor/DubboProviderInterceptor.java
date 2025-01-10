@@ -19,9 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.dubbo.v2_7.request.RpcInvocationParser;
 import org.apache.dubbo.rpc.RpcInvocation;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.reader;
 
 public class DubboProviderInterceptor extends InterceptorAdaptor {
 
@@ -34,7 +33,7 @@ public class DubboProviderInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         RpcInvocation invocation = ctx.getArgument(1);
-        propagation.read(RequestContext.create(), reader(invocation.getObjectAttachments()));
+        propagation.read(RequestContext.create(), new RpcInvocationParser(invocation));
     }
 
     @Override

@@ -19,12 +19,11 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.Message;
+import com.jd.live.agent.plugin.transmission.rabbitmq.v5.request.EnvelopeParser;
 import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.Envelope;
 
 import java.util.Map;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.reader;
 
 public class AbstractConsumerInterceptor extends InterceptorAdaptor {
 
@@ -42,7 +41,7 @@ public class AbstractConsumerInterceptor extends InterceptorAdaptor {
             messageId = messageId == null && headers != null ? (String) headers.get(Message.LABEL_MESSAGE_ID) : messageId;
             messageId = messageId == null ? String.valueOf(envelope.getDeliveryTag()) : messageId;
             String id = "Rabbitmq5@" + envelope.getExchange() + "@" + messageId;
-            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, reader(headers)));
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new EnvelopeParser(props)));
         }
     }
 

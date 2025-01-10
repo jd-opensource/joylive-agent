@@ -13,21 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2.request;
+package com.jd.live.agent.plugin.transmission.springweb.v5.request;
 
 import com.jd.live.agent.governance.request.header.HeaderUpdater;
+import com.jd.live.agent.governance.request.header.HeaderWriter;
 import org.springframework.http.HttpHeaders;
 
 /**
  * A class that implements the {@link HeaderUpdater} interface to update HTTP headers.
- * This class provides methods to add and set headers in the given {@link HttpHeaders} instance.
+ * It provides methods to add and set headers in an {@link HttpHeaders} object.
  */
-public class HttpHeaderUpdater implements HeaderUpdater {
+public class HttpHeadersWriter implements HeaderWriter {
 
     private final HttpHeaders headers;
 
-    public HttpHeaderUpdater(HttpHeaders headers) {
+    public HttpHeadersWriter(HttpHeaders headers) {
         this.headers = headers;
+    }
+
+    @Override
+    public Iterable<String> getHeaders(String key) {
+        return headers.get(key);
+    }
+
+    @Override
+    public String getHeader(String key) {
+        return headers.getFirst(key);
+    }
+
+    @Override
+    public boolean isDuplicable() {
+        return true;
     }
 
     @Override

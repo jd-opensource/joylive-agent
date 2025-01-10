@@ -22,9 +22,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.sofarpc.request.RequestParser;
 
 import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
-import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.writer;
 import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.reader;
 
 public class SofaRpcClientInterceptor extends InterceptorAdaptor {
@@ -38,14 +38,10 @@ public class SofaRpcClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         SofaRequest request = (SofaRequest) ctx.getArguments()[0];
-        attachTag(request);
-    }
-
-    private void attachTag(SofaRequest request) {
         Carrier carrier = RequestContext.getOrCreate();
         if (RpcInvokeContext.isBaggageEnable()) {
             LIVE_PROPAGATION.read(carrier, reader(RpcInvokeContext.getContext().getAllRequestBaggage()));
         }
-        propagation.write(carrier, writer(request.getRequestProps(), request::addRequestProp));
+        propagation.write(carrier, new RequestParser(request));
     }
 }
