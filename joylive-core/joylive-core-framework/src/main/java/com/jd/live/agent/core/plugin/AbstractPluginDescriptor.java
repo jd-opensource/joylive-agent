@@ -22,6 +22,7 @@ import com.jd.live.agent.core.bytekit.type.TypeDesc;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
+import com.jd.live.agent.core.util.Executors;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -230,7 +231,16 @@ public abstract class AbstractPluginDescriptor implements PluginDescriptor {
      * @return {@code true} if the plugin definition matches and is enabled, otherwise {@code false}
      */
     protected boolean match(TypeDesc typeDesc, PluginDefinition definition, ClassLoader classLoader) {
-        return definition.getMatcher().match(typeDesc) && isEnabled(definition, classLoader);
+        if (!isEnabled(definition, classLoader)) {
+            return false;
+        }
+        // The previous call has already ensured that the class exists.
+        // Set the class loader for the current thread.
+        try {
+            return Executors.execute(classLoader, () -> definition.getMatcher().match(typeDesc));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 
