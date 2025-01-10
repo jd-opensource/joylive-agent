@@ -89,12 +89,12 @@ public class PropagationTest {
         Assertions.assertEquals("unit1", cargo.getValue());
         cargo = carrier.getCargo("x-live-cell");
         Assertions.assertNotNull(cargo);
-        Assertions.assertEquals("[cell1,cell2]", cargo.getValue());
+        Assertions.assertEquals("[cell1|cell2]", cargo.getValue());
         livePropagation.write(carrier, new StringMapWriter(liveSingleWriter));
         livePropagation.write(carrier, new MultiValueMapWriter(liveMultiWriter));
         Assertions.assertEquals("unit1", liveSingleWriter.get("x-live-unit"));
         Assertions.assertEquals("[cell1|cell2]", liveSingleWriter.get("x-live-cell"));
-        Assertions.assertEquals("unit1", liveMultiWriter.get("x-live-unit"));
+        Assertions.assertEquals("unit1", Label.join(liveMultiWriter.get("x-live-unit")));
         Assertions.assertEquals("[cell1|cell2]", Label.join(liveMultiWriter.get("x-live-cell")));
     }
 
