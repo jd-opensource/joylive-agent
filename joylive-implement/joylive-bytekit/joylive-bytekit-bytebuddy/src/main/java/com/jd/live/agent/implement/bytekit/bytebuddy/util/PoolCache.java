@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class PoolCache extends ConcurrentHashMap<ClassLoader, TypePool.CacheProvider> {
 
-    private final ConcurrentMap<ClassLoader, Long> lastAccessMap = new ConcurrentHashMap<>(16);
+    private final ConcurrentMap<ClassLoader, Long> lastAccessMap = new ConcurrentHashMap<>(256);
 
     public PoolCache() {
     }

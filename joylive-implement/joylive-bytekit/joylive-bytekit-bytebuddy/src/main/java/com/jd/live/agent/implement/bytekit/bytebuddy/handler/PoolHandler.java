@@ -49,7 +49,7 @@ public class PoolHandler implements BuilderHandler, ExtensionInitializer {
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
-    private final PoolCache poolCache = new PoolCache(16);
+    private final PoolCache poolCache = new PoolCache(256);
 
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
