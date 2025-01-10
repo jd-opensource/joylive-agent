@@ -11,7 +11,7 @@
 7. Added support for gradual traffic recovery at circuit breaking.
 8. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
 9. Improved label matching logic in flow control 
-10. Performance optimization 
+10. Optimized performance and the startup speed
 11. Provide context lock to facilitate the use of interceptors 
 12. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration 
 13. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications 
