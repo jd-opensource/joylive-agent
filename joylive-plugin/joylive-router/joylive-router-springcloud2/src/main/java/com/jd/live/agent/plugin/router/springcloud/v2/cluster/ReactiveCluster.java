@@ -1,3 +1,18 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.jd.live.agent.plugin.router.springcloud.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
@@ -50,7 +65,6 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-
     private static final String FIELD_LOAD_BALANCER = "loadBalancerClient";
 
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
@@ -63,24 +77,21 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
     private final List<LoadBalancerClientRequestTransformer> transformers;
 
-
-
     public ReactiveCluster(ExchangeFilterFunction exchangeFilterFunction) {
         LoadBalancerClient client = getValue(exchangeFilterFunction, FIELD_LOAD_BALANCER);
         this.filterFunction = exchangeFilterFunction;
-        /**
-         * If client is not null, it indicates that the currently intercepted class is LoadBalancerExchangeFilterFunction;
-         * otherwise, the intercepted class is ReactorLoadBalancerExchangeFilterFunction.
+        /*
+          If client is not null, it indicates that the currently intercepted class is LoadBalancerExchangeFilterFunction;
+          otherwise, the intercepted class is ReactorLoadBalancerExchangeFilterFunction.
          */
         this.loadBalancerFactory = client != null ? LoadBalancerUtil.getFactory(client) : getValue(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
         this.transformers = getValue(filterFunction, FIELD_TRANSFORMERS);
     }
 
-
-
     public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
         return loadBalancerFactory;
     }
+
     @Override
     public ErrorPredicate getRetryPredicate() {
         return RETRY_PREDICATE;
@@ -88,14 +99,12 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
 
     @Override
     public CompletionStage<ReactiveClusterResponse> invoke(ReactiveClusterRequest request, SpringEndpoint endpoint) {
-
         try {
             ClientRequest newRequest = buildRequest(request, endpoint.getInstance());
             return request.getNext().exchange(newRequest).map(ReactiveClusterResponse::new).toFuture();
         } catch (Throwable e) {
             return Futures.future(e);
         }
-
     }
 
     /**
@@ -109,7 +118,6 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
      * potentially transformed by any configured {@link LoadBalancerClientRequestTransformer}s.
      */
     private ClientRequest buildRequest(ReactiveClusterRequest request, ServiceInstance serviceInstance) {
-
         ClientRequest clientRequest = request.getRequest();
         URI originalUrl = clientRequest.url();
         ClientRequest result = ClientRequest
