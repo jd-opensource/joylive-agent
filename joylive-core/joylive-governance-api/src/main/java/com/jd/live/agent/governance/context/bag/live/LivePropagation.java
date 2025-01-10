@@ -8,6 +8,7 @@ import com.jd.live.agent.governance.request.HeaderWriter;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -16,6 +17,13 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
 public class LivePropagation extends AbstractPropagation {
 
     public static final Propagation LIVE_PROPAGATION = new LivePropagation();
+
+    public LivePropagation() {
+    }
+
+    public LivePropagation(List<CargoRequire> requires) {
+        super(requires);
+    }
 
     @Override
     public void write(Carrier carrier, HeaderWriter writer) {

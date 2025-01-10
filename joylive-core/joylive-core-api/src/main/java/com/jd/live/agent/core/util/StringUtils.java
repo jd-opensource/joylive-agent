@@ -545,6 +545,10 @@ public class StringUtils {
         if (values == null || values.isEmpty()) {
             return EMPTY;
         }
+        if (values.size() == 1) {
+            String value = values instanceof ArrayList ? ((ArrayList<String>) values).get(0) : values.iterator().next();
+            return singleSurrounding ? prefix + value + suffix : value;
+        }
         int left = prefix == 0 ? 0 : 1;
         int right = suffix == 0 ? 0 : 1;
         int counter = 0;

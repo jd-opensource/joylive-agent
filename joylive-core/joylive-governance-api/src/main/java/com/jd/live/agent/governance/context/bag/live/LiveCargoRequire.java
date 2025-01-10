@@ -40,6 +40,13 @@ public class LiveCargoRequire implements CargoRequire {
 
     private static final String[] EMPTY_ARRAY = new String[0];
 
+    public LiveCargoRequire() {
+    }
+
+    public LiveCargoRequire(GovernanceConfig governanceConfig) {
+        this.governanceConfig = governanceConfig;
+    }
+
     @Override
     public String[] getNames() {
         Set<String> keys = governanceConfig.getTransmitConfig().getKeys();

@@ -18,6 +18,13 @@ public abstract class AbstractPropagation implements Propagation {
 
     private volatile CargoRequires require;
 
+    public AbstractPropagation() {
+    }
+
+    public AbstractPropagation(List<CargoRequire> requires) {
+        this.requires = requires;
+    }
+
     public CargoRequires getRequire() {
         if (require == null) {
             synchronized (this) {

@@ -120,24 +120,7 @@ public class Tag implements Label, Serializable {
 
     @Override
     public String getValue() {
-        int size = values == null ? 0 : values.size();
-        switch (size) {
-            case 0:
-                return "[]";
-            case 1:
-                return values.get(0);
-            default:
-                // array
-                StringBuilder builder = new StringBuilder("[");
-                for (int i = 0; i < size; i++) {
-                    if (i > 0) {
-                        builder.append(',');
-                    }
-                    builder.append(values.get(i));
-                }
-                builder.append(']');
-                return builder.toString();
-        }
+        return Label.join(values);
     }
 
     /**

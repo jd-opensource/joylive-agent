@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.request.HeaderReader;
 import com.jd.live.agent.governance.request.HeaderWriter;
 
 import java.util.Collection;
+import java.util.List;
 
 import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.tag.Label.join;
@@ -32,6 +33,13 @@ import static com.jd.live.agent.core.util.tag.Label.parseValue;
 public class W3cPropagation extends AbstractPropagation {
 
     private static final String KEY_BAGGAGE = "baggage";
+
+    public W3cPropagation() {
+    }
+
+    public W3cPropagation(List<CargoRequire> requires) {
+        super(requires);
+    }
 
     @Override
     public void write(Carrier carrier, HeaderWriter writer) {
