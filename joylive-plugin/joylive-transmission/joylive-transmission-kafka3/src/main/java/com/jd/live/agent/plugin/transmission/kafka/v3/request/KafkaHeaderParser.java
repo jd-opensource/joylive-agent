@@ -15,8 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.kafka.v3.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 
@@ -27,7 +26,7 @@ import java.util.List;
 import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
-public class KafkaHeaderParser implements HeaderReader, HeaderWriter {
+public class KafkaHeaderParser implements HeaderParser {
 
     private final Headers headers;
 

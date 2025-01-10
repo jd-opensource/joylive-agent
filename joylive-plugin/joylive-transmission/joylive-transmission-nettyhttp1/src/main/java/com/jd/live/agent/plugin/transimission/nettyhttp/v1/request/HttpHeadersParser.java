@@ -15,14 +15,13 @@
  */
 package com.jd.live.agent.plugin.transimission.nettyhttp.v1.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.util.Iterator;
 import java.util.List;
 
-public class HttpHeadersParser implements HeaderReader, HeaderWriter {
+public class HttpHeadersParser implements HeaderParser {
 
     private final HttpHeaders headers;
 

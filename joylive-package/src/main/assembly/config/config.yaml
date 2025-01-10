@@ -207,7 +207,7 @@ agent:
         groupExpression: ${unit}-${cell}-${group}
     transmission:
       type: ${CONFIG_TRANSMISSION_TYPE:live}
-      autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:false}
+      autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:NONE}
       keys:
         - x-live-space-id
         - x-live-rule-id

@@ -15,8 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.grpc.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import io.grpc.Metadata;
 import io.grpc.Metadata.Key;
 
@@ -26,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static io.grpc.Metadata.ASCII_STRING_MARSHALLER;
 
-public class MetadataParser implements HeaderReader, HeaderWriter {
+public class MetadataParser implements HeaderParser {
 
     private static final Map<String, Key<String>> KEYS = new ConcurrentHashMap<>();
 

@@ -35,6 +35,7 @@ import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
+import com.jd.live.agent.governance.context.bag.AutoDetect;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -322,22 +323,24 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         TransmitConfig config = governanceConfig.getTransmitConfig();
         Propagation defaultPropagation = propagationList.get(0);
         Propagation propagation = propagations.getOrDefault(config.getType(), defaultPropagation);
-        if (config.isAutoDetect()) {
-            if (propagation == defaultPropagation) {
-                propagation = new AutoPropagation(propagationList, propagation);
-            } else {
-                // Priority processing of the current configuration
-                List<Propagation> ordered = new ArrayList<>(propagationList.size());
-                ordered.add(propagation);
-                for (Propagation p : propagationList) {
-                    if (p != propagation) {
-                        ordered.add(propagation);
-                    }
+        AutoDetect autoDetect = config.getAutoDetect();
+        if (autoDetect == null || autoDetect == AutoDetect.NONE) {
+            return propagation;
+        } else if (autoDetect == AutoDetect.ALL) {
+            return new AutoPropagation(propagationList, propagation, autoDetect);
+        } else if (propagation == defaultPropagation) {
+            return new AutoPropagation(propagationList, propagation, autoDetect);
+        } else {
+            // Priority processing of the current configuration
+            List<Propagation> ordered = new ArrayList<>(propagationList.size());
+            ordered.add(propagation);
+            for (Propagation p : propagationList) {
+                if (p != propagation) {
+                    ordered.add(propagation);
                 }
-                propagation = new AutoPropagation(ordered, propagation);
             }
+            return new AutoPropagation(ordered, propagation, autoDetect);
         }
-        return propagation;
     }
 
     /**

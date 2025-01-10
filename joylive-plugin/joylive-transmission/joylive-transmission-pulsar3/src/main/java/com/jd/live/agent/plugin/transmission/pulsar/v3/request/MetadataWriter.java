@@ -15,30 +15,21 @@
  */
 package com.jd.live.agent.plugin.transmission.pulsar.v3.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderWriter;
 import org.apache.pulsar.client.api.TypedMessageBuilder;
 import org.apache.pulsar.client.impl.TypedMessageBuilderImpl;
 import org.apache.pulsar.common.api.proto.KeyValue;
 import org.apache.pulsar.common.api.proto.MessageMetadata;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
-
-public class MessageHeaderParser implements HeaderReader, HeaderWriter {
+public class MetadataWriter implements HeaderWriter {
 
     private final MessageMetadata metadata;
 
-    public MessageHeaderParser(MessageMetadata metadata) {
+    public MetadataWriter(MessageMetadata metadata) {
         this.metadata = metadata;
-    }
-
-    @Override
-    public Iterator<String> getNames() {
-        return toIterator(metadata.getPropertiesList().iterator(), KeyValue::getValue);
     }
 
     @Override
@@ -83,9 +74,9 @@ public class MessageHeaderParser implements HeaderReader, HeaderWriter {
         metadata.addProperty().setValue(key).setValue(value);
     }
 
-    public static MessageHeaderParser of(TypedMessageBuilder<?> builder) {
+    public static MetadataWriter of(TypedMessageBuilder<?> builder) {
         if (builder instanceof TypedMessageBuilderImpl) {
-            return new MessageHeaderParser(((TypedMessageBuilderImpl<?>) builder).getMetadataBuilder());
+            return new MetadataWriter(((TypedMessageBuilderImpl<?>) builder).getMetadataBuilder());
         } else {
             return null;
         }

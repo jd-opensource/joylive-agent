@@ -15,8 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.jdkhttp.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import sun.net.www.MessageHeader;
 
 import java.util.Iterator;
@@ -25,7 +24,7 @@ import java.util.List;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
 
-public class MessageHeaderParser implements HeaderReader, HeaderWriter {
+public class MessageHeaderParser implements HeaderParser {
 
     private final MessageHeader header;
 

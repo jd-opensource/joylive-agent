@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.transmission.sofarpc.request;
 
 import com.alipay.sofa.rpc.core.request.SofaRequest;
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
+import com.jd.live.agent.governance.request.HeaderWriter;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -27,7 +27,7 @@ import java.util.Map;
  * A class that implements the {@link HeaderWriter} interface to write and read headers in a {@link SofaRequest}.
  * It provides methods to add, set, and retrieve headers from the request properties.
  */
-public class RequestParser implements HeaderWriter, HeaderReader {
+public class RequestParser implements HeaderParser {
 
     private final SofaRequest request;
 

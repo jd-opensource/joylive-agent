@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.transmission.dubbo.v2_7.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderReader;
+import com.jd.live.agent.governance.request.HeaderWriter;
 import org.apache.dubbo.rpc.RpcInvocation;
 
 import java.util.Collections;

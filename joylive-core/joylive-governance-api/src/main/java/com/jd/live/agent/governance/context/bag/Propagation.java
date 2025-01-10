@@ -16,8 +16,8 @@
 package com.jd.live.agent.governance.context.bag;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderReader;
+import com.jd.live.agent.governance.request.HeaderWriter;
 
 import java.util.Collection;
 
@@ -73,9 +73,12 @@ public interface Propagation {
 
         private final Propagation writer;
 
-        public AutoPropagation(Collection<Propagation> readers, Propagation writer) {
+        private final AutoDetect autoDetect;
+
+        public AutoPropagation(Collection<Propagation> readers, Propagation writer, AutoDetect autoDetect) {
             this.readers = readers;
             this.writer = writer;
+            this.autoDetect = autoDetect;
         }
 
         @Override
@@ -92,12 +95,16 @@ public interface Propagation {
 
         @Override
         public boolean read(Carrier carrier, HeaderReader reader) {
+            boolean result = false;
             for (Propagation propagation : readers) {
                 if (propagation.read(carrier, reader)) {
-                    return true;
+                    result = true;
+                    if (autoDetect == AutoDetect.FIRST) {
+                        break;
+                    }
                 }
             }
-            return false;
+            return result;
         }
     }
 

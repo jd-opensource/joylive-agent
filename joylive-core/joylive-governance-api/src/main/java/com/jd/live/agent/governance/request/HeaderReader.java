@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.request.header;
+package com.jd.live.agent.governance.request;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -59,5 +61,62 @@ public interface HeaderReader {
     default List<String> getHeader(String key, Function<String, List<String>> func) {
         String value = getHeader(key);
         return value == null ? null : func.apply(value);
+    }
+
+    /**
+     * A class that implements the {@link HeaderReader} interface to read headers from a map of strings.
+     */
+    class StringMapReader implements HeaderReader {
+
+        private final Map<String, String> baggage;
+
+        public StringMapReader(Map<String, String> baggage) {
+            this.baggage = baggage;
+        }
+
+        @Override
+        public Iterator<String> getNames() {
+            return baggage == null ? null : baggage.keySet().iterator();
+        }
+
+        @Override
+        public Iterable<String> getHeaders(String key) {
+            String obj = baggage == null ? null : baggage.get(key);
+            return obj == null ? null : Collections.singletonList(obj);
+        }
+
+        @Override
+        public String getHeader(String key) {
+            return baggage == null ? null : baggage.get(key);
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderReader} interface to read headers from a map of objects.
+     */
+    class ObjectMapReader implements HeaderReader {
+
+        private final Map<String, Object> baggage;
+
+        public ObjectMapReader(Map<String, Object> baggage) {
+            this.baggage = baggage;
+        }
+
+        @Override
+        public Iterator<String> getNames() {
+            return baggage == null ? null : baggage.keySet().iterator();
+        }
+
+        @Override
+        public Iterable<String> getHeaders(String key) {
+            Object obj = baggage == null ? null : baggage.get(key);
+            return obj == null ? null : Collections.singletonList(obj.toString());
+        }
+
+        @Override
+        public String getHeader(String key) {
+            Object obj = baggage == null ? null : baggage.get(key);
+            return obj == null ? null : obj.toString();
+        }
     }
 }

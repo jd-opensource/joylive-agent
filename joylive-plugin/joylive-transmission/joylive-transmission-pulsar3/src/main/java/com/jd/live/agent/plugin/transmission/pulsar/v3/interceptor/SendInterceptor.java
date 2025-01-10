@@ -20,7 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.pulsar.v3.request.MessageHeaderParser;
+import com.jd.live.agent.plugin.transmission.pulsar.v3.request.MetadataWriter;
 import org.apache.pulsar.client.api.TypedMessageBuilder;
 
 public class SendInterceptor extends InterceptorAdaptor {
@@ -35,7 +35,7 @@ public class SendInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         TypedMessageBuilder<?> builder = (TypedMessageBuilder<?>) ctx.getTarget();
-        propagation.write(RequestContext.get(), MessageHeaderParser.of(builder));
+        propagation.write(RequestContext.get(), MetadataWriter.of(builder));
     }
 
 }

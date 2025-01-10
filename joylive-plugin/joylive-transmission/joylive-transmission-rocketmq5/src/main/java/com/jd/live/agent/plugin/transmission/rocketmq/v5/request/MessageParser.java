@@ -15,15 +15,14 @@
  */
 package com.jd.live.agent.plugin.transmission.rocketmq.v5.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-public class MessageParser implements HeaderWriter, HeaderReader {
+public class MessageParser implements HeaderParser {
 
     private final Message message;
 

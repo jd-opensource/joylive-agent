@@ -18,8 +18,8 @@ package com.jd.live.agent.governance.context.bag.w3c;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.context.bag.*;
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderReader;
+import com.jd.live.agent.governance.request.HeaderWriter;
 
 import java.util.Collection;
 

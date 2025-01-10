@@ -16,15 +16,14 @@
 package com.jd.live.agent.plugin.transmission.okhttp.v3.request;
 
 import com.jd.live.agent.core.util.type.FieldPath;
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import okhttp3.Request;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class BuilderParser implements HeaderReader, HeaderWriter {
+public class BuilderParser implements HeaderParser {
 
     private static final FieldPath path = new FieldPath(Request.Builder.class, "headers.namesAndValues");
 

@@ -15,8 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.httpclient.v4.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import org.apache.http.Header;
 import org.apache.http.HttpMessage;
 
@@ -26,7 +25,7 @@ import java.util.List;
 import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
-public class HttpMessageParser implements HeaderReader, HeaderWriter {
+public class HttpMessageParser implements HeaderParser {
 
     private final HttpMessage message;
 

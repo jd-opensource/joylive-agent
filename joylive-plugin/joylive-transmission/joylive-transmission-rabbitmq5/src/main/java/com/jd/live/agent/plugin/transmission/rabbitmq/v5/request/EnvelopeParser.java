@@ -15,15 +15,14 @@
  */
 package com.jd.live.agent.plugin.transmission.rabbitmq.v5.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 import com.rabbitmq.client.BasicProperties;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-public class EnvelopeParser implements HeaderWriter, HeaderReader {
+public class EnvelopeParser implements HeaderParser {
 
     private final BasicProperties props;
 

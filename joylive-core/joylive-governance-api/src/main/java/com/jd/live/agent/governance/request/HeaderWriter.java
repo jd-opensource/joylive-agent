@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.request.header;
+package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.tag.Label;
 
@@ -24,7 +24,31 @@ import java.util.List;
  * <p>
  * This interface defines a method to set a header with a specified key and value.
  */
-public interface HeaderUpdater {
+public interface HeaderWriter {
+
+    /**
+     * Returns a list of all values for the specified header key.
+     *
+     * @param key The key of the header.
+     * @return A list of values for the specified header key.
+     */
+    Iterable<String> getHeaders(String key);
+
+    /**
+     * Returns the first value for the specified header key.
+     *
+     * @param key The key of the header.
+     * @return The first value for the specified header key, or null if the header is not present.
+     */
+    String getHeader(String key);
+
+    /**
+     * Checks if the header is duplicable.
+     * By default, this method returns {@code false}, indicating that the header is not duplicable.
+     *
+     * @return {@code true} if the header is duplicable, {@code false} otherwise
+     */
+    boolean isDuplicable();
 
     /**
      * Add a header with the specified key and value.

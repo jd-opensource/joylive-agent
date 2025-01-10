@@ -16,15 +16,14 @@
 package com.jd.live.agent.plugin.transmission.jdkhttp.request;
 
 import com.jd.live.agent.core.util.type.FieldPath;
-import com.jd.live.agent.governance.request.header.HeaderReader;
-import com.jd.live.agent.governance.request.header.HeaderWriter;
+import com.jd.live.agent.governance.request.HeaderParser;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 
-public class BuilderParser implements HeaderReader, HeaderWriter {
+public class BuilderParser implements HeaderParser {
 
     private static final FieldPath path = new FieldPath("jdk.internal.net.http.HttpRequestBuilderImpl", "headersBuilder.headersMap");
 

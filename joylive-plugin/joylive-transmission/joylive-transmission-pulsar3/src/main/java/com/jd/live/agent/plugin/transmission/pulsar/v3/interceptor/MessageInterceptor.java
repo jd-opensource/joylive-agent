@@ -20,9 +20,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.pulsar.v3.request.MessageReader;
 import org.apache.pulsar.client.api.Message;
-
-import static com.jd.live.agent.governance.request.header.HeaderParser.StringHeaderParser.reader;
 
 public class MessageInterceptor extends InterceptorAdaptor {
 
@@ -39,7 +38,7 @@ public class MessageInterceptor extends InterceptorAdaptor {
             Message<?> message = (Message<?>) ctx.getTarget();
             String messageId = message.getMessageId().toString();
             String id = "Pulsar3@" + message.getTopicName() + "@" + messageId;
-            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, reader(message.getProperties())));
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new MessageReader(message)));
         }
     }
 

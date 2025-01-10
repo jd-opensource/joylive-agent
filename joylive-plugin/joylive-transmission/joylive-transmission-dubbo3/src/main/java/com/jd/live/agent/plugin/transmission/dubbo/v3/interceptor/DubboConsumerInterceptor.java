@@ -20,13 +20,13 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderReader.ObjectMapReader;
 import com.jd.live.agent.plugin.transmission.dubbo.v3.request.RpcInvocationParser;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcInvocation;
 import org.apache.dubbo.rpc.model.ServiceMetadata;
 
 import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
-import static com.jd.live.agent.governance.request.header.HeaderParser.ObjectHeaderParser.reader;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
@@ -42,7 +42,7 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         RpcInvocation invocation = ctx.getArgument(0);
         Carrier carrier = RequestContext.getOrCreate();
         // read from rpc context by live propagation
-        LIVE_PROPAGATION.read(carrier, reader(RpcContext.getClientAttachment().getObjectAttachments()));
+        LIVE_PROPAGATION.read(carrier, new ObjectMapReader(RpcContext.getClientAttachment().getObjectAttachments()));
         // write to invocation with live attachments in rpc context
         propagation.write(carrier, new RpcInvocationParser(invocation));
         ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();

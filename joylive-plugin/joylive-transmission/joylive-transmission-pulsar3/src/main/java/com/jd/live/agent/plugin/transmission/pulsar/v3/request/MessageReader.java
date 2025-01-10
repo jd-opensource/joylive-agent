@@ -13,37 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.servlet.javax.request;
+package com.jd.live.agent.plugin.transmission.pulsar.v3.request;
 
 import com.jd.live.agent.governance.request.HeaderReader;
+import org.apache.pulsar.client.api.Message;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
+public class MessageReader implements HeaderReader {
 
-public class HttpServletRequestParser implements HeaderReader {
+    private final Message<?> message;
 
-    private final HttpServletRequest request;
-
-    public HttpServletRequestParser(HttpServletRequest request) {
-        this.request = request;
+    public MessageReader(Message<?> message) {
+        this.message = message;
     }
 
     @Override
     public Iterator<String> getNames() {
-        return toIterator(request.getHeaderNames());
+        return message.getProperties().keySet().iterator();
     }
 
     @Override
     public List<String> getHeaders(String key) {
-        return toList(request.getHeaders(key));
+        String value = message.getProperty(key);
+        return value == null ? null : Collections.singletonList(value);
     }
 
     @Override
     public String getHeader(String key) {
-        return request.getHeader(key);
+        return message.getProperty(key);
     }
 }

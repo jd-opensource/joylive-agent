@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.servlet.jakarta.request;
 
-import com.jd.live.agent.governance.request.header.HeaderReader;
+import com.jd.live.agent.governance.request.HeaderReader;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Iterator;
