@@ -21,7 +21,6 @@ import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
-import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDeclare;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -48,8 +47,6 @@ import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
-
 /**
  * A transformer that modifies the bytecode of classes loaded by the JVM, based on plugins that
  * declare the need to import internal classes or modify method behavior. It implements both the
@@ -62,13 +59,9 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
 
     private static final Logger logger = LoggerFactory.getLogger(PluginTransformer.class);
 
-    private final Map<String, Boolean> definitionEnabled = new ConcurrentHashMap<>();
-
     private final Instrumentation instrumentation;
 
     private final PluginDeclare plugin;
-
-    private final ConditionMatcher conditionMatcher;
 
     private final Map<String, List<InterceptorDefinition>> types = new ConcurrentHashMap<>();
 
@@ -79,15 +72,10 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * @param instrumentation  the {@link Instrumentation} object provided by the Java agent mechanism.
      * @param plugin           the plugin declaration that contains the definitions for class and method
      *                         transformations.
-     * @param conditionMatcher the condition matcher used to determine if a plugin definition should be
-     *                         applied based on the current execution context.
      */
-    public PluginTransformer(Instrumentation instrumentation,
-                             PluginDeclare plugin,
-                             ConditionMatcher conditionMatcher) {
+    public PluginTransformer(Instrumentation instrumentation, PluginDeclare plugin) {
         this.instrumentation = instrumentation;
         this.plugin = plugin;
-        this.conditionMatcher = conditionMatcher;
     }
 
     @Override
@@ -95,7 +83,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
                            @MaybeNull ClassLoader loader,
                            @MaybeNull JavaModule module,
                            @MaybeNull Class<?> type,
-                           @NeverNull ProtectionDomain domain) {
+                           @MaybeNull ProtectionDomain domain) {
         if (plugin == null || plugin.isEmpty()) {
             return false;
         }
@@ -106,20 +94,14 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         }
 
         BuddyTypeDesc typeDesc = new BuddyTypeDesc(description);
-        List<InterceptorDefinition> matched = new ArrayList<>();
-        for (PluginDefinition definition : plugin.getDefinitions()) {
-            // match the type
-            if (definition.getMatcher().match(typeDesc)) {
-                // determine whether the plugin is enabled in this classloader.
-                if (definitionEnabled.computeIfAbsent(getUniqueName(definition.getClass(), loader),
-                        n -> conditionMatcher.match(definition.getClass(), loader, DEPEND_ON_LOADER))) {
-                    Collections.addAll(matched, definition.getInterceptors());
-                    // export internal java module packages to plugin
-                    export(loader, module, definition);
-                }
-            }
+        List<InterceptorDefinition> interceptors = new ArrayList<>();
+        List<PluginDefinition> definitions = plugin.match(typeDesc, loader);
+        for (PluginDefinition definition : definitions) {
+            interceptors.addAll(Arrays.asList(definition.getInterceptors()));
+            // export internal java module packages to plugin
+            export(loader, module, definition);
         }
-        return !matched.isEmpty() && types.putIfAbsent(uniqueName, matched) == null;
+        return !interceptors.isEmpty() && types.putIfAbsent(uniqueName, interceptors) == null;
     }
 
     /**
@@ -167,24 +149,12 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         return loader == null ? description.getActualName() : (description.getActualName() + "@" + loader);
     }
 
-    /**
-     * Overloaded version of {@code getUniqueName} that generates a unique name for a class based on
-     * its {@link Class} object and class loader.
-     *
-     * @param type   The class for which to generate a unique name.
-     * @param loader The class loader loading the class; may be {@code null} for the bootstrap class loader.
-     * @return A unique name for the class, combining its full name and class loader.
-     */
-    private String getUniqueName(@NeverNull Class<?> type, @MaybeNull ClassLoader loader) {
-        return loader == null ? type.getName() : (type.getName() + "@" + loader);
-    }
-
     @Override
     public DynamicType.Builder<?> transform(@NeverNull DynamicType.Builder<?> builder,
                                             @NeverNull TypeDescription description,
                                             @MaybeNull ClassLoader loader,
                                             @MaybeNull JavaModule module,
-                                            @NeverNull ProtectionDomain domain) {
+                                            @MaybeNull ProtectionDomain domain) {
         List<InterceptorDefinition> interceptorDefinitions = types.get(getUniqueName(description, loader));
         if (interceptorDefinitions == null || interceptorDefinitions.isEmpty()) {
             return builder;

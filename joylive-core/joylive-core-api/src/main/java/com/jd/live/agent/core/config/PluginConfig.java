@@ -44,14 +44,20 @@ public class PluginConfig {
 
     private String profile;
 
-    public boolean isActive(String name, boolean dynamicMode) {
-        if (isDisable(name)) {
-            return false;
-        } else if (isSystem(name)) {
-            return true;
-        } else if (!dynamicMode && !isStatic(name)) {
-            return false;
-        } else if (profile == null || profile.isEmpty() || profiles == null) {
+    public boolean isSystemActive(String name) {
+        return isEnabled(name) && isSystem(name);
+    }
+
+    public boolean isStaticActive(String name) {
+        return isEnabled(name) && isStatic(name) && isProfileActive(name);
+    }
+
+    public boolean isDynamicActive(String name) {
+        return isEnabled(name) && isDynamic(name) && isProfileActive(name);
+    }
+
+    public boolean isProfileActive(String name) {
+        if (profile == null || profile.isEmpty() || profiles == null) {
             return true;
         } else {
             Set<String> profileSet = profiles.get(profile);
@@ -67,8 +73,8 @@ public class PluginConfig {
         return statics != null && statics.contains(name);
     }
 
-    public boolean isDisable(String name) {
-        return disables != null && disables.contains(name);
+    public boolean isEnabled(String name) {
+        return disables == null || !disables.contains(name);
     }
 
     public boolean isDynamic(String name) {

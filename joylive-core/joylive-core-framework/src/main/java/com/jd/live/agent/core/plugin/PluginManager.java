@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.plugin;
 
 import com.jd.live.agent.bootstrap.classloader.ClassLoaderSupervisor;
+import com.jd.live.agent.bootstrap.classloader.URLResourcer;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.plugin.PluginEvent;
@@ -26,21 +27,18 @@ import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.bytekit.transformer.Resetter;
 import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.config.PluginConfig;
+import com.jd.live.agent.core.extension.ExtensibleLoader;
 import com.jd.live.agent.core.extension.ExtensionManager;
-import com.jd.live.agent.core.plugin.Plugin.PluginType;
-import com.jd.live.agent.core.plugin.Plugin.Status;
+import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.util.Close;
-import lombok.Getter;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +49,8 @@ import java.util.stream.Collectors;
  */
 public class PluginManager implements PluginSupervisor {
     private static final Logger logger = LoggerFactory.getLogger(PluginManager.class);
+    private static final String SYSTEM_PLUGIN = "system";
+    private static final String STATIC_PLUGIN = "static";
 
     private final Instrumentation instrumentation;
 
@@ -73,10 +73,12 @@ public class PluginManager implements PluginSupervisor {
      */
     private final ByteSupplier byteSupplier;
 
+    private final ConditionMatcher conditionMatcher;
+
     /**
      * A map storing installed plugins.
      */
-    private final Map<String, InstallPlugin> installed = new ConcurrentHashMap<>();
+    private final Map<String, PluginDescriptor> installed = new ConcurrentHashMap<>();
 
     /**
      * Listens to plugin events and handles them accordingly by logging and managing plugin states.
@@ -99,7 +101,8 @@ public class PluginManager implements PluginSupervisor {
                          AgentPath agentPath,
                          ExtensionManager extensionManager,
                          ClassLoaderSupervisor supervisor,
-                         ByteSupplier byteSupplier) {
+                         ByteSupplier byteSupplier,
+                         ConditionMatcher conditionMatcher) {
 
         this.instrumentation = instrumentation;
         this.pluginConfig = pluginConfig == null ? new PluginConfig() : pluginConfig;
@@ -107,57 +110,168 @@ public class PluginManager implements PluginSupervisor {
         this.extensionManager = extensionManager;
         this.supervisor = supervisor;
         this.byteSupplier = byteSupplier;
+        this.conditionMatcher = conditionMatcher;
     }
 
     @Override
     public synchronized boolean install(boolean dynamic) {
-        InstallMode mode = dynamic ? InstallMode.DYNAMIC : InstallMode.STATIC;
-        // system plugin install first
-        List<Plugin> statics = install(pluginConfig.getSystems(), mode);
-        // Automatically install any static plugins that are not installed.
-        statics.addAll(install(pluginConfig.getStatics(), mode));
-        if (enhanceStatic(statics, mode)) {
-            if (dynamic) {
-                return enhanceDynamic(install(pluginConfig.getDynamics(), mode));
-            }
-            return true;
-        } else {
+        if (!enhanceSystem(install(pluginConfig.getSystems(), PluginType.SYSTEM))) {
+            // install system plugins.
             return false;
+        } else if (!enhanceStatic(install(pluginConfig.getStatics(), PluginType.STATIC))) {
+            // install static plugins.
+            return false;
+        } else if (dynamic) {
+            return enhanceDynamic(install(pluginConfig.getDynamics(), PluginType.DYNAMIC));
         }
+        return true;
 
     }
 
     @Override
     public synchronized boolean install(Set<String> names) {
-        return enhanceDynamic(install(names, InstallMode.DYNAMIC));
+        return enhanceDynamic(install(names, PluginType.DYNAMIC));
+    }
+
+    @Override
+    public synchronized void uninstall() {
+        for (PluginDescriptor plugin : installed.values()) {
+            uninstall(plugin);
+        }
+    }
+
+    @Override
+    public synchronized void uninstall(Set<String> names) {
+        if (names != null) {
+            for (String name : names) {
+                if (name != null && !name.isEmpty()) {
+                    uninstall(installed.get(name));
+                }
+            }
+        }
     }
 
     /**
      * Installs plugins based on the given set of plugin names and the dynamic flag.
      *
      * @param names   the set of plugin names to install
-     * @param mode    the installing mode
      * @return a list of plugins to install
      */
-    private List<Plugin> install(Set<String> names, InstallMode mode) {
-        List<Plugin> result = new LinkedList<>();
-        if (names != null) {
-            Map<String, File> files = agentPath.getPlugins();
-            for (String name : names) {
-                File file = files.get(name);
-                if (file != null && pluginConfig.isActive(name, mode == InstallMode.DYNAMIC)) {
-                    InstallPlugin plugin = installed.computeIfAbsent(name, n -> new InstallPlugin(createPlugin(file), mode));
-                    switch (plugin.getStatus()) {
-                        case CREATED:
-                        case FAILED:
-                        case LOADED:
-                            result.add(plugin.plugin);
-                            break;
-                    }
-                }
+    private List<PluginDescriptor> install(Set<String> names, PluginType type) {
+        List<PluginDescriptor> result = new LinkedList<>();
+        if (names == null || names.isEmpty()) {
+            return result;
+        }
+        PluginDescriptor plugin;
+        List<File> actives = getActives(names, type);
+        if (type == PluginType.SYSTEM) {
+            plugin = installed.computeIfAbsent(SYSTEM_PLUGIN, n ->
+                    new CompositePlugin(SYSTEM_PLUGIN, type, createPlugins(actives, type), conditionMatcher, pluginListener));
+            addPlugin(plugin, result);
+        } else if (type == PluginType.STATIC) {
+            plugin = installed.computeIfAbsent(STATIC_PLUGIN, n ->
+                    new CompositePlugin(STATIC_PLUGIN, type, createPlugins(actives, type), conditionMatcher, pluginListener));
+            addPlugin(plugin, result);
+        } else if (type == PluginType.DYNAMIC) {
+            for (File file : actives) {
+                plugin = installed.computeIfAbsent(file.getName(), n -> createPlugin(file, type, pluginListener));
+                addPlugin(plugin, result);
             }
         }
         return result;
+    }
+
+    /**
+     * Adds a plugin to the result list if its status is CREATED, FAILED, or LOADED.
+     *
+     * @param plugin the plugin descriptor to add
+     * @param result the list to which the plugin will be added if conditions are met
+     */
+    private void addPlugin(PluginDescriptor plugin, List<PluginDescriptor> result) {
+        switch (plugin.getStatus()) {
+            case CREATED:
+            case FAILED:
+            case LOADED:
+                result.add(plugin);
+                break;
+        }
+    }
+
+    /**
+     * Retrieves a list of active plugin files based on the given names and plugin type.
+     *
+     * @param names the set of plugin names to check
+     * @param type  the type of the plugins
+     * @return a list of active plugin files
+     */
+    private List<File> getActives(Set<String> names, PluginType type) {
+        List<File> actives = new ArrayList<>(names.size());
+        Map<String, File> files = agentPath.getPlugins();
+        for (String name : names) {
+            File file = files.get(name);
+            if (file != null && isActive(name, type)) {
+                actives.add(file);
+            }
+        }
+        return actives;
+    }
+
+    /**
+     * Checks if a plugin is active based on its name and type.
+     *
+     * @param name the name of the plugin
+     * @param type the type of the plugin
+     * @return {@code true} if the plugin is active, otherwise {@code false}
+     */
+    private boolean isActive(String name, PluginType type) {
+        switch (type) {
+            case SYSTEM:
+                return pluginConfig.isSystemActive(name);
+            case STATIC:
+                return pluginConfig.isStaticActive(name);
+            case DYNAMIC:
+                return pluginConfig.isDynamicActive(name);
+        }
+        return false;
+    }
+
+    /**
+     * Creates a list of plugins from the given list of active files and plugin type.
+     *
+     * @param actives the list of active plugin files
+     * @param type    the type of the plugins
+     * @return a list of created plugins
+     */
+    private List<Plugin> createPlugins(List<File> actives, PluginType type) {
+        List<Plugin> result = new LinkedList<>();
+        actives.forEach(plugin -> result.add(createPlugin(plugin, type, null)));
+        return result;
+    }
+
+    /**
+     * Enhances the given list of plugins.
+     *
+     * @param plugins the list of plugins to enhance
+     * @return true if the enhancement is successful, false otherwise
+     */
+    private boolean enhance(List<PluginDescriptor> plugins, Function<List<PluginDescriptor>, Boolean> enhancer) {
+        if (plugins == null || plugins.isEmpty()) {
+            return true;
+        }
+        // a transaction
+        boolean success = loadPlugins(plugins);
+        List<PluginDescriptor> enhances = plugins;
+        if (success) {
+            enhances = plugins.stream().filter(p -> p.getStatus() == PluginStatus.LOADED && !p.isEmpty()).collect(Collectors.toList());
+            success = enhancer.apply(enhances);
+        }
+        if (!success) {
+            logger.info("Start uninstalling plugins when an exception occurs");
+            enhances.forEach(PluginDescriptor::uninstall);
+        } else {
+            enhances.forEach(PluginDescriptor::success);
+        }
+        return success;
     }
 
     /**
@@ -166,16 +280,9 @@ public class PluginManager implements PluginSupervisor {
      * @param plugins the list of plugins to enhance
      * @return true if the enhancement is successful, false otherwise
      */
-    private boolean enhanceDynamic(List<Plugin> plugins) {
-        if (plugins == null || plugins.isEmpty()) {
-            return true;
-        }
-        // a transaction
-        boolean success = loadPlugins(plugins);
-        List<Plugin> enhances = plugins;
-        if (success) {
-            enhances = plugins.stream().filter(p -> p.getStatus() == Status.LOADED && !p.isEmpty()).collect(Collectors.toList());
-            for (Plugin plugin : enhances) {
+    private boolean enhanceDynamic(List<PluginDescriptor> plugins) {
+        return enhance(plugins, loads -> {
+            for (PluginDescriptor plugin : loads) {
                 try {
                     Resetter resetter = byteSupplier.create().append(plugin).install(instrumentation);
                     plugin.addListener(p -> {
@@ -185,63 +292,69 @@ public class PluginManager implements PluginSupervisor {
                     });
                 } catch (Throwable e) {
                     plugin.fail("Failed to enhance plugin " + plugin.getName(), e);
-                    success = false;
-                    break;
+                    return false;
                 }
             }
-        }
-        if (!success) {
-            logger.info("Start uninstalling plugins when an exception occurs");
-            enhances.forEach(Plugin::uninstall);
-        } else {
-            enhances.forEach(Plugin::success);
-        }
-        return success;
+            return true;
+        });
+    }
+
+    /**
+     * Enhances system plugins by loading and installing them if they meet certain conditions.
+     *
+     * @param plugins the list of plugins to be enhanced.
+     * @return true if the enhancement process was successful, false otherwise.
+     */
+    private boolean enhanceSystem(List<PluginDescriptor> plugins) {
+        return enhanceStatic(plugins);
     }
 
     /**
      * Enhances static plugins by loading and installing them if they meet certain conditions.
      *
      * @param plugins the list of plugins to be enhanced.
-     * @param mode the installing mode.
      * @return true if the enhancement process was successful, false otherwise.
      */
-    private boolean enhanceStatic(List<Plugin> plugins, InstallMode mode) {
-        if (plugins == null || plugins.isEmpty()) {
-            return true;
-        }
-        // a transaction
-        boolean success = loadPlugins(plugins);
-        List<Plugin> enhances = plugins;
-        if (success) {
-            enhances = plugins.stream().filter(p -> p.getStatus() == Status.LOADED && !p.isEmpty()).collect(Collectors.toList());
-            if (!enhances.isEmpty()) {
-                ByteBuilder builder = byteSupplier.create();
-                for (Plugin plugin : enhances) {
-                    builder = builder.append(plugin);
-                }
-                try {
-                    Resetter resetter = builder.install(instrumentation);
-                    if (mode == InstallMode.DYNAMIC) {
-                        enhances.get(0).addListener(p -> {
-                            if (p.getType() == EventType.UNINSTALL) {
-                                resetter.reset();
-                            }
-                        });
-                    }
-                } catch (Throwable e) {
-                    logger.error("Failed to enhance static plugins", e);
-                    success = false;
-                }
+    private boolean enhanceStatic(List<PluginDescriptor> plugins) {
+        return enhance(plugins, loads -> {
+            ByteBuilder builder = byteSupplier.create();
+            for (PluginDescriptor plugin : loads) {
+                builder = builder.append(plugin);
             }
+            try {
+                builder.install(instrumentation);
+            } catch (Throwable e) {
+                logger.error("Failed to enhance plugins", e);
+                return false;
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Creates a new Plugin instance from a given file.
+     *
+     * @param file    The file from which the plugin is created.
+     * @param type    The plugin type.
+     * @return The created Plugin instance.
+     */
+    private Plugin createPlugin(File file, PluginType type, PluginListener listener) {
+        String name = file.getName();
+        URL[] urls = agentPath.getLibUrls(file);
+        ClassLoader classLoader = supervisor.create(name, urls);
+        ExtensibleLoader<PluginDefinition> loader = extensionManager.build(PluginDefinition.class, classLoader);
+        Plugin plugin = Plugin.builder()
+                .path(file)
+                .name(name)
+                .type(type)
+                .urls(urls)
+                .loader(loader)
+                .conditionMatcher(conditionMatcher)
+                .build();
+        if (listener != null) {
+            plugin.addListener(listener);
         }
-        if (!success) {
-            logger.info("Start uninstalling plugins when an exception occurs");
-            enhances.forEach(Plugin::uninstall);
-        } else {
-            enhances.forEach(Plugin::success);
-        }
-        return success;
+        return plugin;
     }
 
     /**
@@ -251,49 +364,14 @@ public class PluginManager implements PluginSupervisor {
      * @param plugins The list of plugins to be loaded.
      * @return true if all plugins are loaded successfully, false if any plugin fails to load.
      */
-    private boolean loadPlugins(List<Plugin> plugins) {
-        for (Plugin plugin : plugins) {
+    private boolean loadPlugins(List<PluginDescriptor> plugins) {
+        for (PluginDescriptor plugin : plugins) {
             plugin.load();
-            if (plugin.getStatus() == Status.FAILED) {
+            if (plugin.getStatus() == PluginStatus.FAILED) {
                 return false;
             }
         }
         return true;
-    }
-
-    /**
-     * Creates a new Plugin instance from a given file.
-     *
-     * @param file    The file from which the plugin is created.
-     * @return The created Plugin instance.
-     */
-    private Plugin createPlugin(File file) {
-        String name = file.getName();
-        URL[] urls = agentPath.getLibUrls(file);
-        ClassLoader classLoader = supervisor.create(name, urls);
-        Plugin plugin = new Plugin(file, getPluginType(name), urls, extensionManager.build(PluginDefinition.class, classLoader));
-        plugin.addListener(pluginListener);
-        return plugin;
-    }
-
-    /**
-     * Determines the {@link PluginType} based on the plugin name.
-     *
-     * @param name the name of the plugin
-     * @return the {@link PluginType} corresponding to the plugin name, or {@code null} if the name is {@code null}
-     * or does not match any known plugin type
-     */
-    private PluginType getPluginType(String name) {
-        if (name == null) {
-            return null;
-        } else if (pluginConfig.isSystem(name)) {
-            return PluginType.SYSTEM;
-        } else if (pluginConfig.isStatic(name)) {
-            return PluginType.STATIC;
-        } else if (pluginConfig.isDynamic(name)) {
-            return PluginType.DYNAMIC;
-        }
-        return null;
     }
 
     /**
@@ -306,12 +384,13 @@ public class PluginManager implements PluginSupervisor {
      */
     private void onUninstall(PluginEvent event) {
         logger.info(event.getMessage());
-        Plugin plugin = event.getOwner();
+        PluginDescriptor plugin = event.getOwner();
         remove(plugin);
-        ClassLoader loader = plugin.getClassLoader();
-        supervisor.remove(plugin.getName());
-        extensionManager.remove(loader);
-        Close.instance().close(loader instanceof AutoCloseable ? (AutoCloseable) loader : null);
+        plugin.release(loader -> {
+            supervisor.remove(loader instanceof URLResourcer ? ((URLResourcer) loader).getId() : null);
+            extensionManager.remove(loader);
+            Close.instance().close(loader instanceof AutoCloseable ? (AutoCloseable) loader : null);
+        });
     }
 
     /**
@@ -340,82 +419,16 @@ public class PluginManager implements PluginSupervisor {
      *
      * @param plugin The plugin to be removed.
      */
-    private void remove(Plugin plugin) {
+    private void remove(PluginDescriptor plugin) {
         installed.remove(plugin.getName());
     }
 
-    @Override
-    public synchronized void uninstall() {
-        for (InstallPlugin plugin : installed.values()) {
-            if (plugin.getMode() == InstallMode.DYNAMIC) {
-                remove(plugin.plugin);
-                plugin.uninstall();
-            }
-        }
-    }
-
-    @Override
-    public synchronized void uninstall(Set<String> names) {
-        if (names != null) {
-            for (String name : names) {
-                if (name != null && !name.isEmpty()) {
-                    InstallPlugin plugin = installed.get(name);
-                    // Only dynamic plugins with the specified name can be deleted
-                    if (plugin != null && plugin.getType() == PluginType.DYNAMIC) {
-                        installed.remove(name);
-                        plugin.uninstall();
-                    }
-                }
-            }
-        }
-    }
-
-    private static class InstallPlugin {
-
-        private final Plugin plugin;
-
-        @Getter
-        private final InstallMode mode;
-
-        InstallPlugin(Plugin plugin, InstallMode mode) {
-            this.plugin = plugin;
-            this.mode = mode;
-        }
-
-        public String getName() {
-            return plugin.getName();
-        }
-
-        public PluginType getType() {
-            return plugin.getType();
-        }
-
-        public void uninstall() {
+    private void uninstall(PluginDescriptor plugin) {
+        // Only dynamic plugins with the specified name can be deleted
+        if (plugin != null && plugin.getType() == PluginType.DYNAMIC) {
+            remove(plugin);
             plugin.uninstall();
         }
-
-        public Status getStatus() {
-            return plugin.getStatus();
-        }
-
-        public boolean isEmpty() {
-            return plugin.isEmpty();
-        }
-    }
-
-    /**
-     * The {@code InstallMode} enum represents the installation mode of a plugin.
-     */
-    private enum InstallMode {
-        /**
-         * Static installation mode.
-         */
-        STATIC,
-
-        /**
-         * Dynamic installation mode.
-         */
-        DYNAMIC
     }
 
 }
