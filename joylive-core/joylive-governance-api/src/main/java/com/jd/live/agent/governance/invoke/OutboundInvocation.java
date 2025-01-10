@@ -179,6 +179,21 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     /**
+     * Returns the size of the endpoint collection based on the current state of instances and routeTarget.
+     *
+     * @return the size of the endpoint collection
+     */
+    public int getEndpointSize() {
+        if (instances == null) {
+            return 0;
+        } else if (routeTarget == null) {
+            return instances.size();
+        } else {
+            return routeTarget.getEndpoints().size();
+        }
+    }
+
+    /**
      * Retrieves the endpoints targeted by this outbound invocation.
      *
      * @return a list of endpoints, or an empty list if no route target is set.

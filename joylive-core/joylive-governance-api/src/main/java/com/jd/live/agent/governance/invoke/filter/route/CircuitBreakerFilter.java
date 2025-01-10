@@ -16,8 +16,6 @@
 package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -64,8 +62,6 @@ import static com.jd.live.agent.governance.util.Predicates.isError;
 @Extension(value = "CircuitBreakerFilter", order = RouteFilter.ORDER_CIRCUIT_BREAKER)
 @ConditionalOnFlowControlEnabled
 public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
-
-    private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerFilter.class);
 
     @Inject
     private Map<String, CircuitBreakerFactory> factories;
@@ -115,9 +111,6 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             acquire(invocation, breakers);
             // filter broken instance
             filterHealthy(invocation, instancePolicies);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Cell filter applied to route target instance size: {}", invocation.getRouteTarget().size());
         }
         chain.filter(invocation);
     }

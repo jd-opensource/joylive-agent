@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
@@ -58,17 +56,12 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 @ConditionalOnLiveEnabled
 public class UnitFilter implements RouteFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(UnitFilter.class);
-
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = route(invocation);
         invocation.setRouteTarget(target);
         UnitAction action = target.getUnitAction();
         if (action.getType() == UnitActionType.FORWARD) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Unit filter applied to route target instance size: {}", target.size());
-            }
             chain.filter(invocation);
         } else {
             invocation.reject(FaultType.UNIT, action.getMessage());

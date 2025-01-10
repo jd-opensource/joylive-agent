@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnLaneEnabled;
@@ -43,8 +41,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @ConditionalOnLaneEnabled
 public class LaneFilter implements RouteFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(LaneFilter.class);
-
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         // Retrieve the current route target
@@ -56,10 +52,6 @@ public class LaneFilter implements RouteFilter {
         String defaultSpaceId = metadata.getDefaultSpaceId();
         String defaultLaneId = metadata.getDefaultLaneId();
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Lane filter, targetSpaceId: {}, targetLaneId:{}, defaultSpaceId:{}, defaultLaneId:{}, targetSpace:{}",
-                    targetSpaceId, targetLaneId, defaultSpaceId, defaultLaneId, targetSpace);
-        }
         // Check if a target lane is specified
         if (targetSpace != null) {
             // redirect according to the service policy
@@ -69,38 +61,22 @@ public class LaneFilter implements RouteFilter {
             Lane targetLane = redirect == null || redirect.isEmpty()
                     ? metadata.getTargetLaneOrDefault(targetSpace.getDefaultLane())
                     : targetSpace.getOrDefault(redirect);
-
             if (targetLane != null) {
                 Lane defaultLane = targetSpace.getDefaultLane();
                 boolean redirectDefaultLane = defaultLane != null && targetLane != defaultLane;
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Lane filter, targetSpaceId: {}, targetLane:{}, defaultSpaceId:{}, defaultLaneId:{}",
-                            targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId);
-                }
                 // Filter the route target based on the lane space ID and route lane code
                 int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, !redirectDefaultLane);
                 // If no matches and a default lane exists, use the default lane
                 if (count <= 0 && redirectDefaultLane) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Lane filter, count is 0, redirect to defaultLane, targetSpaceId: {}, code:{}, defaultSpaceId:{}, defaultLaneId:{}",
-                                targetSpaceId, defaultLane.getCode(), defaultSpaceId, defaultLaneId);
-                    }
                     target.filter(e -> e.isLane(targetSpaceId, defaultLane.getCode(), defaultSpaceId, defaultLaneId), -1, true);
                 }
             } else {
                 String code = redirect == null || redirect.isEmpty() ? targetLaneId : redirect;
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Lane filter, target lane is null, targetSpaceId: {}, code:{}, defaultSpaceId:{}, defaultLaneId:{}",
-                            targetSpaceId, code, defaultSpaceId, defaultLaneId);
-                }
                 target.filter(e -> e.isLane(targetSpaceId, code, defaultSpaceId, defaultLaneId), -1, true);
             }
         } else {
             // target space is not exists. or empty target space id and without default lane space.
             target.filter(e -> e.isLane(targetSpaceId, targetLaneId, defaultSpaceId, defaultLaneId), -1, true);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Lane filter applied to route target instance size: {}", target.size());
         }
         // Proceed with the next filter in the chain
         chain.filter(invocation);

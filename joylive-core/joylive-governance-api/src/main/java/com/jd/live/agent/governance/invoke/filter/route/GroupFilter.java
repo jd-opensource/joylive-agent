@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
@@ -38,8 +36,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @ConditionalOnFlowControlEnabled
 public class GroupFilter implements RouteFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(GroupFilter.class);
-
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         if (!invocation.getRequest().isNativeGroup()) {
@@ -53,9 +49,6 @@ public class GroupFilter implements RouteFilter {
             } else if (serviceConfig != null && !serviceConfig.isServiceGroupOpen()) {
                 // default group
                 target.filter(endpoint -> endpoint.isGroup(null));
-            }
-            if (logger.isDebugEnabled()) {
-                logger.debug("Group filter applied to route target instance size: {}", target.size());
             }
         }
         chain.filter(invocation);

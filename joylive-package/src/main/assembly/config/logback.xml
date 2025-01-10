@@ -20,6 +20,7 @@
     <property scope="context" name="logger.application" value="${LIVE_APP_NAME}"/>
     <property scope="context" name="logger.level" value="${LIVE_LOG_LEVEL:-info}"/>
     <property scope="context" name="logger.advice.level" value="${LIVE_LOG_ADVICE_LEVEL:-${logger.level}}"/>
+    <property scope="context" name="logger.route.level" value="${LIVE_LOG_ROUTE_LEVEL:-${logger.level}}"/>
     <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-10GB}"/>
     <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-30}"/>
     <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-1GB}"/>
@@ -50,6 +51,8 @@
     </appender>
 
     <logger name="com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler" level="${logger.advice.level}"/>
+
+    <logger name="com.jd.live.agent.governance.invoke.filter.RouteFilterChain" level="${logger.route.level}"/>
 
     <root level="${logger.level}">
         <appender-ref ref="${LIVE_LOG_APPENDER:-ROLLING_APPENDER}"/>
