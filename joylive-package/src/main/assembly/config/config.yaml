@@ -2,6 +2,7 @@ agent:
   enhance:
     javaVersion: '[,1.8);[1.8.0_60,]'
     retransformEnabled: true
+    poolEnabled: true
     loggerEnabled: true
     exporterEnabled: false
     excludePrefixes: null
