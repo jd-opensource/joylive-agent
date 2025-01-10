@@ -13,29 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.bytekit.matcher;
-
-import com.jd.live.agent.core.bytekit.type.NamedElement;
-import lombok.Getter;
+package com.jd.live.agent.core.plugin;
 
 /**
- * NameMatcher
- *
- * @param <T> Match target type
- * @since 1.0.0
+ * Represents the various statuses a plugin can be in during its lifecycle.
  */
-@Getter
-public class NameMatcher<T extends NamedElement> extends AbstractJunction<T> {
+public enum PluginStatus {
 
-    private final ElementMatcher<String> matcher;
+    /**
+     * The plugin has been created but not yet loaded
+     */
+    CREATED,
 
-    public NameMatcher(ElementMatcher<String> matcher) {
-        this.matcher = matcher;
-    }
+    /**
+     * The plugin's definitions have been loaded
+     */
+    LOADED,
 
-    @Override
-    public boolean match(T target) {
-        return target != null && matcher.match(target.getActualName());
-    }
+    /**
+     * The plugin has been successfully installed and is operational
+     */
+    SUCCESS,
 
+    /**
+     * The plugin has failed to load properly
+     */
+    FAILED
 }

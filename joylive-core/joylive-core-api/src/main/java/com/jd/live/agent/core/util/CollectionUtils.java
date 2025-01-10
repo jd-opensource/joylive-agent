@@ -37,6 +37,27 @@ public class CollectionUtils {
     private static final FieldDesc MAP_FIELD = ClassUtils.describe(UNMODIFIED_MAP_CLASS).getFieldList().getField("m");
 
     /**
+     * Adds all elements from the source collection to the target collection that satisfy the given predicate.
+     * If the predicate is null, all elements from the source collection are added to the target collection.
+     * If either the source or target collection is null, this method does nothing.
+     *
+     * @param <T>       the type of elements in the collections
+     * @param source    the source collection from which elements are to be added
+     * @param target    the target collection to which elements are to be added
+     * @param predicate the predicate to test elements before adding them to the target collection (can be null)
+     */
+    public static <T> void add(Collection<T> source, Collection<T> target, Predicate<T> predicate) {
+        if (source == null || target == null) {
+            return;
+        }
+        for (T t : source) {
+            if (predicate == null || predicate.test(t)) {
+                target.add(t);
+            }
+        }
+    }
+
+    /**
      * Filters the provided list of objects based on the given predicate.
      *
      * @param <T>       the type of objects in the list.

@@ -580,7 +580,7 @@ public class Bootstrap implements AgentLifecycle {
 
     private PluginSupervisor createPluginManager() {
         return new PluginManager(instrumentation, agentConfig.getPluginConfig(), agentPath, extensionManager,
-                classLoaderManager.getPluginLoaders(), byteSupplier);
+                classLoaderManager.getPluginLoaders(), byteSupplier, conditionMatcher);
     }
 
     private ClassLoaderManager createClassLoaderManager() {

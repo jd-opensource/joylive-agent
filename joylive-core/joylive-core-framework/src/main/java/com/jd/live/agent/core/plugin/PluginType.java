@@ -13,29 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.bytekit.matcher;
-
-import com.jd.live.agent.core.bytekit.type.NamedElement;
-import lombok.Getter;
+package com.jd.live.agent.core.plugin;
 
 /**
- * NameMatcher
- *
- * @param <T> Match target type
- * @since 1.0.0
+ * The {@code PluginType} enum represents the type of a plugin.
  */
-@Getter
-public class NameMatcher<T extends NamedElement> extends AbstractJunction<T> {
+public enum PluginType {
+    /**
+     * System plugin.
+     */
+    SYSTEM,
 
-    private final ElementMatcher<String> matcher;
+    /**
+     * Static plugin.
+     */
+    STATIC,
 
-    public NameMatcher(ElementMatcher<String> matcher) {
-        this.matcher = matcher;
+    /**
+     * Dynamic plugin.
+     */
+    DYNAMIC {
+        @Override
+        public boolean isStatic() {
+            return false;
+        }
+    };
+
+    public boolean isStatic() {
+        return true;
     }
-
-    @Override
-    public boolean match(T target) {
-        return target != null && matcher.match(target.getActualName());
-    }
-
 }

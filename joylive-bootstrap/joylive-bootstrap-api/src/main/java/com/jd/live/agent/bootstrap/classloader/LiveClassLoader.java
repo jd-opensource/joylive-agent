@@ -93,6 +93,11 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         this.name = (name == null || name.isEmpty()) && type != null ? type.getName() : name;
     }
 
+    @Override
+    public String getId() {
+        return name;
+    }
+
     /**
      * Attempts to find a class in the cache, loading and caching it if not already present.
      *

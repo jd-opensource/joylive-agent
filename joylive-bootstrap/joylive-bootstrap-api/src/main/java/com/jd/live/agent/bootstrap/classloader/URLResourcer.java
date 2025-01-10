@@ -29,5 +29,7 @@ public interface URLResourcer extends Resourcer {
      * @param urls An array of URLs to add.
      */
     void add(URL... urls);
+
+    String getId();
 }
 

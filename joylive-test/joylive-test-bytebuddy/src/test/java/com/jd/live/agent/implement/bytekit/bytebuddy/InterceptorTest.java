@@ -42,7 +42,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.Plugin;
-import com.jd.live.agent.core.plugin.Plugin.PluginType;
+import com.jd.live.agent.core.plugin.PluginType;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.util.option.CascadeOption;
 import com.jd.live.agent.core.util.option.Option;
@@ -177,7 +177,13 @@ public class InterceptorTest {
     public void testEnhanceClass() {
         // instrumentation.appendToSystemClassLoaderSearch(new JarFile(new File(agentPath.getRoot().getParent() + "/joylive-test-bytebuddy-1.0.0.jar")));
         // + "/joylive-test-bytebuddy-1.0.0.jar"
-        Plugin plugin = new Plugin(new File(agentPath.getRoot().getParent()), PluginType.DYNAMIC, urls, extensionManager.build(PluginDefinition.class, coreClassLoader));
+        Plugin plugin = Plugin.builder()
+                .path(new File(agentPath.getRoot().getParent()))
+                .type(PluginType.DYNAMIC)
+                .urls(urls)
+                .loader(extensionManager.build(PluginDefinition.class, coreClassLoader))
+                .conditionMatcher(conditionMatcher)
+                .build();
         plugin.load();
 
         ExtensibleDesc<ByteSupplier> byteSupplierExtensibleDesc = extensionManager.getOrLoadExtensible(ByteSupplier.class);

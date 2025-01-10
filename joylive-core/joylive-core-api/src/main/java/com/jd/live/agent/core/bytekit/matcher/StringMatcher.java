@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.bytekit.matcher;
 
+import lombok.Getter;
+
 /**
  * StringMatcher
  *
@@ -22,6 +24,7 @@ package com.jd.live.agent.core.bytekit.matcher;
  *
  * @since 1.0.0
  */
+@Getter
 public class StringMatcher extends AbstractJunction<String> {
 
     private final String value;
