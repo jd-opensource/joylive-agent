@@ -67,7 +67,7 @@ public class RedisClientManager {
      * @param client the Redis client to be recycled
      */
     private void addTask(RedisClient client) {
-        timer.add("Recycle-RedisClient-" + client.getId(), 5000, () -> {
+        timer.delay("Recycle-RedisClient-" + client.getId(), 5000, () -> {
             if (client.isExpired(10000)) {
                 client.shutdown();
             } else {
