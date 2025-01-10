@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.tag.Label;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Interface for writing HTTP headers.
@@ -86,6 +86,82 @@ public interface HeaderWriter {
                 break;
             default:
                 setHeader(key, Label.join(values));
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderWriter} interface to write headers to a map of strings.
+     */
+    class StringMapWriter implements HeaderWriter {
+
+        private final Map<String, String> map;
+
+        public StringMapWriter(Map<String, String> map) {
+            this.map = map;
+        }
+
+        @Override
+        public Iterable<String> getHeaders(String key) {
+            String obj = map == null ? null : map.get(key);
+            return obj == null ? null : Collections.singletonList(obj);
+        }
+
+        @Override
+        public String getHeader(String key) {
+            return map == null ? null : map.get(key);
+        }
+
+        @Override
+        public boolean isDuplicable() {
+            return false;
+        }
+
+        @Override
+        public void addHeader(String key, String value) {
+            map.put(key, value);
+        }
+
+        @Override
+        public void setHeader(String key, String value) {
+            map.put(key, value);
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderWriter} interface to write headers to a map of lists of strings.
+     */
+    class MultiValueMapWriter implements HeaderWriter {
+
+        private final Map<String, List<String>> map;
+
+        public MultiValueMapWriter(Map<String, List<String>> map) {
+            this.map = map;
+        }
+
+        @Override
+        public Iterable<String> getHeaders(String key) {
+            return map.get(key);
+        }
+
+        @Override
+        public String getHeader(String key) {
+            List<String> values = map.get(key);
+            return values == null || values.isEmpty() ? null : values.get(0);
+        }
+
+        @Override
+        public boolean isDuplicable() {
+            return true;
+        }
+
+        @Override
+        public void addHeader(String key, String value) {
+            map.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+        }
+
+        @Override
+        public void setHeader(String key, String value) {
+            map.put(key, Arrays.asList(value));
         }
     }
 }

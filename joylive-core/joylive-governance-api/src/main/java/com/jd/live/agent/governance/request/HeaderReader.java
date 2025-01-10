@@ -92,6 +92,35 @@ public interface HeaderReader {
     }
 
     /**
+     * A class that implements the {@link HeaderReader} interface to read headers from a map of lists of strings.
+     */
+    class MultiValueMapReader implements HeaderReader {
+
+        private final Map<String, List<String>> map;
+
+        public MultiValueMapReader(Map<String, List<String>> map) {
+            this.map = map;
+        }
+
+        @Override
+        public Iterator<String> getNames() {
+            return map.keySet().iterator();
+        }
+
+        @Override
+        public Iterable<String> getHeaders(String key) {
+            return map.get(key);
+        }
+
+        @Override
+        public String getHeader(String key) {
+            List<String> values = map.get(key);
+            return values == null || values.isEmpty() ? null : values.get(0);
+        }
+
+    }
+
+    /**
      * A class that implements the {@link HeaderReader} interface to read headers from a map of objects.
      */
     class ObjectMapReader implements HeaderReader {

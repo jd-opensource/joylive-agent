@@ -56,22 +56,18 @@ public class W3cPropagation extends AbstractPropagation {
         if (reader == null || writer == null) {
             return;
         }
-        Iterable<String> baggages = reader.getHeaders(KEY_BAGGAGE);
-        if (baggages == null) {
+        Iterable<String> headers = reader.getHeaders(KEY_BAGGAGE);
+        if (headers == null) {
             return;
         }
-        CargoRequire require = getRequire();
-        int counter;
-        for (String baggage : baggages) {
-            counter = splitMap(baggage, COMMA, true, (key, value) -> {
-                if (require.match(key)) {
-                    writer.setHeader(key, value);
-                    return true;
-                }
-                return false;
-            });
-            if (counter > 0) {
-                return;
+        if (writer.isDuplicable()) {
+            for (String header : headers) {
+                writer.addHeader(KEY_BAGGAGE, header);
+            }
+        } else {
+            String header = String.join(",", headers);
+            if (!header.isEmpty()) {
+                writer.setHeader(KEY_BAGGAGE, header);
             }
         }
     }
@@ -81,14 +77,14 @@ public class W3cPropagation extends AbstractPropagation {
         if (carrier == null || reader == null) {
             return false;
         }
-        Iterable<String> baggages = reader.getHeaders(KEY_BAGGAGE);
-        if (baggages == null) {
+        Iterable<String> headers = reader.getHeaders(KEY_BAGGAGE);
+        if (headers == null) {
             return false;
         }
         CargoRequires require = getRequire();
         int counter;
-        for (String baggage : baggages) {
-            counter = splitMap(baggage, COMMA, true, (key, value) -> {
+        for (String header : headers) {
+            counter = splitMap(header, COMMA, true, (key, value) -> {
                 if (require.match(key)) {
                     carrier.addCargo(new Cargo(key, parseValue(value), true));
                     return true;
