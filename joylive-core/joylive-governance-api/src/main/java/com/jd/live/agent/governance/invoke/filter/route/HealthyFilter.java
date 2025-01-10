@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
@@ -35,10 +37,15 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 @ConditionalOnFlowControlEnabled
 public class HealthyFilter implements RouteFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(HealthyFilter.class);
+
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         target.filter(Endpoint::isAccessible);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Healthy filter applied to route target instance size: {}", target.size());
+        }
         chain.filter(invocation);
     }
 }

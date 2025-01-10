@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.context.RequestContext;
@@ -46,6 +48,8 @@ import java.util.List;
 @ConditionalOnFlowControlEnabled
 public class LoadBalanceFilter implements RouteFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(LoadBalanceFilter.class);
+
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
@@ -72,7 +76,9 @@ public class LoadBalanceFilter implements RouteFilter {
                 });
             }
         }
-
+        if (logger.isDebugEnabled()) {
+            logger.debug("LB filter applied to route target instance size: {}", target.size());
+        }
         chain.filter(invocation);
     }
 

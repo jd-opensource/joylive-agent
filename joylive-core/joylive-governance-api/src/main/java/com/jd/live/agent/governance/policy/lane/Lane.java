@@ -17,12 +17,14 @@ package com.jd.live.agent.governance.policy.lane;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Represents a lane or pathway within a system, which is a logical division of the system.
  */
 @Getter
 @Setter
+@ToString
 public class Lane {
 
     /**

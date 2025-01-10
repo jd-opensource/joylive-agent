@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
@@ -44,6 +46,8 @@ import java.util.List;
 @ConditionalOnFlowControlEnabled
 public class TagRouteFilter implements RouteFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(TagRouteFilter.class);
+
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
@@ -57,6 +61,9 @@ public class TagRouteFilter implements RouteFilter {
                     }
                 }
             }
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Tag route filter applied to route target instance size: {}", target.size());
         }
         chain.filter(invocation);
     }

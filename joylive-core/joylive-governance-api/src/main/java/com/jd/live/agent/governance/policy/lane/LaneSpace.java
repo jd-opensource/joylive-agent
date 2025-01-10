@@ -21,10 +21,12 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Set;
 
+@ToString
 public class LaneSpace {
 
     @Getter
