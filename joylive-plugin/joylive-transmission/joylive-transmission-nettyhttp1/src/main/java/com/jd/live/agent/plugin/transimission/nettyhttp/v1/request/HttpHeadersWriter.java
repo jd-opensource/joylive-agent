@@ -13,38 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.jdkhttp.request;
+package com.jd.live.agent.plugin.transimission.nettyhttp.v1.request;
 
-import com.jd.live.agent.governance.request.HeaderParser;
-import sun.net.www.MessageHeader;
+import com.jd.live.agent.governance.request.HeaderWriter;
+import io.netty.handler.codec.http.HttpHeaders;
 
-import java.util.Iterator;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.splitList;
+public class HttpHeadersWriter implements HeaderWriter {
 
-public class MessageHeaderParser implements HeaderParser {
+    private final HttpHeaders headers;
 
-    private final MessageHeader header;
-
-    public MessageHeaderParser(MessageHeader header) {
-        this.header = header;
-    }
-
-    @Override
-    public Iterator<String> getNames() {
-        return splitList(header.getHeaderNamesInList()).iterator();
+    public HttpHeadersWriter(HttpHeaders headers) {
+        this.headers = headers;
     }
 
     @Override
     public List<String> getHeaders(String key) {
-        return toList(header.multiValueIterator(key));
+        return headers.getAll(key);
     }
 
     @Override
     public String getHeader(String key) {
-        return header.findValue(key);
+        return headers.get(key);
     }
 
     @Override
@@ -54,11 +45,11 @@ public class MessageHeaderParser implements HeaderParser {
 
     @Override
     public void addHeader(String key, String value) {
-        header.add(key, value);
+        headers.add(key, value);
     }
 
     @Override
     public void setHeader(String key, String value) {
-        header.set(key, value);
+        headers.set(key, value);
     }
 }

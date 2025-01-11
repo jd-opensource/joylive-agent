@@ -19,10 +19,9 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.rocketmq.v5.request.MessageParser;
+import com.jd.live.agent.governance.request.HeaderReader.StringMapReader;
+import com.jd.live.agent.governance.request.HeaderWriter.StringMapWriter;
 import org.apache.rocketmq.common.message.Message;
-
-import java.util.Map;
 
 public class MessageUtilInterceptor extends InterceptorAdaptor {
 
@@ -37,9 +36,7 @@ public class MessageUtilInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Message request = mc.getArgument(0);
         Message response = mc.getResult();
-        Map<String, String> properties = request.getProperties();
-        if (properties != null) {
-            propagation.write(new MessageParser(request), new MessageParser(response));
-        }
+        propagation.write(new StringMapReader(request.getProperties()),
+                new StringMapWriter(response.getProperties(), response::putUserProperty));
     }
 }

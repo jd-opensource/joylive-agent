@@ -20,8 +20,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderWriter.ObjectMapWriter;
 import com.jd.live.agent.governance.request.Message;
-import com.jd.live.agent.plugin.transmission.rabbitmq.v5.request.EnvelopeParser;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BasicProperties;
 
@@ -41,33 +41,69 @@ public class PublishInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         Object[] arguments = ctx.getArguments();
-        BasicProperties properties = (BasicProperties) arguments[arguments.length - 2];
-        if (properties == null) {
-            AMQP.BasicProperties p = new AMQP.BasicProperties().builder().headers(new HashMap<>()).build();
-            arguments[arguments.length - 2] = p;
-            properties = p;
+        int index = arguments.length - 2;
+        BasicProperties properties = (BasicProperties) arguments[index];
+        Map<String, Object> headers = writeTo(properties);
+        if (!headers.isEmpty()) {
+            arguments[index] = build(properties, headers);
         }
-        Map<String, Object> headers = properties.getHeaders();
-        String messageId = properties.getMessageId();
-        if (headers == null) {
-            headers = new HashMap<>();
-            AMQP.BasicProperties p = properties instanceof AMQP.BasicProperties ?
-                    ((AMQP.BasicProperties) properties).builder().headers(headers).build() :
-                    new AMQP.BasicProperties(
-                            properties.getContentType(), properties.getContentEncoding(), headers,
-                            properties.getDeliveryMode(), properties.getPriority(), properties.getCorrelationId(),
-                            properties.getReplyTo(), properties.getExpiration(), messageId,
-                            properties.getTimestamp(), properties.getType(), properties.getUserId(),
-                            properties.getAppId(), null);
-            arguments[arguments.length - 2] = p;
-        }
+    }
+
+    /**
+     * Writes headers to the given {@link BasicProperties} object and returns the updated headers.
+     *
+     * @param properties the properties object to which headers will be written
+     * @return the updated headers as a map
+     */
+    private Map<String, Object> writeTo(BasicProperties properties) {
+        // the properties is unmodified
+        Map<String, Object> headers = properties == null ? null : properties.getHeaders();
+        Map<String, Object> newHeaders = new HashMap<>();
+        String messageId = properties == null ? null : properties.getMessageId();
         if (messageId == null || messageId.isEmpty()) {
-            long timestamp = System.nanoTime();
-            int randomInt = ThreadLocalRandom.current().nextInt(1000000);
-            messageId = timestamp + "-" + randomInt;
-            headers.put(Message.LABEL_MESSAGE_ID, messageId);
+            messageId = headers == null ? null : (String) headers.get(Message.LABEL_MESSAGE_ID);
+            if (messageId == null) {
+                newHeaders.put(Message.LABEL_MESSAGE_ID, createMessageId());
+            }
         }
-        propagation.write(RequestContext.get(), new EnvelopeParser(properties));
+        // write to the carrier
+        propagation.write(RequestContext.get(), new ObjectMapWriter(headers, newHeaders::put));
+        if (!newHeaders.isEmpty() && headers != null) {
+            newHeaders.putAll(headers);
+        }
+        return newHeaders;
+    }
+
+    /**
+     * Builds a new {@link BasicProperties} object with the specified headers and message ID.
+     *
+     * @param properties the existing properties object, can be null
+     * @param headers    the headers to be included in the new properties object
+     * @return a new BasicProperties object with the specified headers and message ID
+     */
+    private BasicProperties build(BasicProperties properties, Map<String, Object> headers) {
+        if (properties == null) {
+            return new AMQP.BasicProperties().builder().headers(headers).build();
+        }
+        return properties instanceof AMQP.BasicProperties ?
+                ((AMQP.BasicProperties) properties).builder().headers(headers).build() :
+                new AMQP.BasicProperties(
+                        properties.getContentType(), properties.getContentEncoding(), headers,
+                        properties.getDeliveryMode(), properties.getPriority(), properties.getCorrelationId(),
+                        properties.getReplyTo(), properties.getExpiration(), properties.getMessageId(),
+                        properties.getTimestamp(), properties.getType(), properties.getUserId(),
+                        properties.getAppId(), null);
+    }
+
+    /**
+     * Creates a unique message ID.
+     *
+     * @return a unique message ID as a string
+     */
+    private String createMessageId() {
+        long timestamp = System.nanoTime();
+        int randomInt = ThreadLocalRandom.current().nextInt(1000000);
+        return timestamp + "-" + randomInt;
     }
 
 }

@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.httpclient.v3.request.HttpMethodParser;
+import com.jd.live.agent.plugin.transmission.httpclient.v3.request.HttpMethodWriter;
 import org.apache.commons.httpclient.HttpMethod;
 
 public class HttpClientInterceptor extends InterceptorAdaptor {
@@ -33,6 +33,6 @@ public class HttpClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         HttpMethod method = (HttpMethod) ctx.getArguments()[1];
-        propagation.write(RequestContext.get(), new HttpMethodParser(method));
+        propagation.write(RequestContext.get(), new HttpMethodWriter(method));
     }
 }

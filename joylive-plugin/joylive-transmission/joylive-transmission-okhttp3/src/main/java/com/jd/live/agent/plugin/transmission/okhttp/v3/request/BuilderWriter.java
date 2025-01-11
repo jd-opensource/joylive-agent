@@ -16,31 +16,20 @@
 package com.jd.live.agent.plugin.transmission.okhttp.v3.request;
 
 import com.jd.live.agent.core.util.type.FieldPath;
-import com.jd.live.agent.governance.request.HeaderParser;
+import com.jd.live.agent.governance.request.HeaderWriter;
 import okhttp3.Request;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-public class BuilderParser implements HeaderParser {
+public class BuilderWriter implements HeaderWriter {
 
     private static final FieldPath path = new FieldPath(Request.Builder.class, "headers.namesAndValues");
 
     private final List<String> namesAndValues;
 
-    public BuilderParser(List<String> namesAndValues) {
+    public BuilderWriter(List<String> namesAndValues) {
         this.namesAndValues = namesAndValues;
-    }
-
-    @Override
-    public Iterator<String> getNames() {
-        List<String> names = new ArrayList<>(namesAndValues.size() / 2);
-        int max = namesAndValues.size() - 2;
-        for (int i = 0; i <= max; i += 2) {
-            names.add(namesAndValues.get(i));
-        }
-        return names.iterator();
     }
 
     @Override
@@ -90,8 +79,8 @@ public class BuilderParser implements HeaderParser {
     }
 
     @SuppressWarnings("unchecked")
-    public static BuilderParser of(Request.Builder builder) {
-        return new BuilderParser((List<String>) path.get(builder));
+    public static BuilderWriter of(Request.Builder builder) {
+        return new BuilderWriter((List<String>) path.get(builder));
     }
 
 }

@@ -17,7 +17,11 @@ package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.tag.Label;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Interface for writing HTTP headers.
@@ -90,25 +94,33 @@ public interface HeaderWriter {
     }
 
     /**
-     * A class that implements the {@link HeaderWriter} interface to write headers to a map of strings.
+     * A class that implements the {@link HeaderWriter} interface to write headers to a map with single value.
      */
-    class StringMapWriter implements HeaderWriter {
+    abstract class SingleMapWriter<T> implements HeaderWriter {
 
-        private final Map<String, String> map;
+        protected final Map<String, T> map;
 
-        public StringMapWriter(Map<String, String> map) {
+        protected final BiConsumer<String, T> setter;
+
+        public SingleMapWriter(Map<String, T> map) {
+            this(map, null);
+        }
+
+        public SingleMapWriter(Map<String, T> map, BiConsumer<String, T> setter) {
             this.map = map;
+            this.setter = setter;
         }
 
         @Override
         public Iterable<String> getHeaders(String key) {
-            String obj = map == null ? null : map.get(key);
-            return obj == null ? null : Collections.singletonList(obj);
+            Object obj = map == null ? null : map.get(key);
+            return obj == null ? null : Collections.singletonList(obj.toString());
         }
 
         @Override
         public String getHeader(String key) {
-            return map == null ? null : map.get(key);
+            T obj = map == null ? null : map.get(key);
+            return obj == null ? null : obj.toString();
         }
 
         @Override
@@ -118,12 +130,46 @@ public interface HeaderWriter {
 
         @Override
         public void addHeader(String key, String value) {
-            map.put(key, value);
+            setHeader(key, value);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void setHeader(String key, String value) {
-            map.put(key, value);
+            if (setter != null) {
+                // maybe the map is not initialized
+                setter.accept(key, (T) value);
+            } else if (map != null) {
+                map.put(key, (T) value);
+            }
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderWriter} interface to write headers to a map of strings.
+     */
+    class StringMapWriter extends SingleMapWriter<String> {
+
+        public StringMapWriter(Map<String, String> map) {
+            super(map);
+        }
+
+        public StringMapWriter(Map<String, String> map, BiConsumer<String, String> setter) {
+            super(map, setter);
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderWriter} interface to write headers to a map of strings.
+     */
+    class ObjectMapWriter extends SingleMapWriter<Object> {
+
+        public ObjectMapWriter(Map<String, Object> map) {
+            super(map);
+        }
+
+        public ObjectMapWriter(Map<String, Object> map, BiConsumer<String, Object> setter) {
+            super(map, setter);
         }
     }
 
@@ -132,7 +178,7 @@ public interface HeaderWriter {
      */
     class MultiValueMapWriter implements HeaderWriter {
 
-        private final Map<String, List<String>> map;
+        protected final Map<String, List<String>> map;
 
         public MultiValueMapWriter(Map<String, List<String>> map) {
             this.map = map;
@@ -140,12 +186,12 @@ public interface HeaderWriter {
 
         @Override
         public Iterable<String> getHeaders(String key) {
-            return map.get(key);
+            return map == null ? null : map.get(key);
         }
 
         @Override
         public String getHeader(String key) {
-            List<String> values = map.get(key);
+            List<String> values = map == null ? null : map.get(key);
             return values == null || values.isEmpty() ? null : values.get(0);
         }
 
@@ -156,12 +202,18 @@ public interface HeaderWriter {
 
         @Override
         public void addHeader(String key, String value) {
-            map.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            if (map != null) {
+                map.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            }
         }
 
         @Override
         public void setHeader(String key, String value) {
-            map.put(key, Arrays.asList(value));
+            if (map != null) {
+                List<String> values = new ArrayList<>(1);
+                values.add(value);
+                map.put(key, values);
+            }
         }
     }
 }

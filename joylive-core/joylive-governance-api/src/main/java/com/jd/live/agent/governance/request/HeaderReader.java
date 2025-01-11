@@ -66,28 +66,49 @@ public interface HeaderReader {
     /**
      * A class that implements the {@link HeaderReader} interface to read headers from a map of strings.
      */
-    class StringMapReader implements HeaderReader {
+    class SingleMapReader<T> implements HeaderReader {
 
-        private final Map<String, String> baggage;
+        private final Map<String, T> map;
 
-        public StringMapReader(Map<String, String> baggage) {
-            this.baggage = baggage;
+        public SingleMapReader(Map<String, T> map) {
+            this.map = map;
         }
 
         @Override
         public Iterator<String> getNames() {
-            return baggage == null ? null : baggage.keySet().iterator();
+            return map == null ? null : map.keySet().iterator();
         }
 
         @Override
         public Iterable<String> getHeaders(String key) {
-            String obj = baggage == null ? null : baggage.get(key);
-            return obj == null ? null : Collections.singletonList(obj);
+            T obj = map == null ? null : map.get(key);
+            return obj == null ? null : Collections.singletonList(obj.toString());
         }
 
         @Override
         public String getHeader(String key) {
-            return baggage == null ? null : baggage.get(key);
+            T obj = map == null ? null : map.get(key);
+            return obj == null ? null : obj.toString();
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderReader} interface to read headers from a map of strings.
+     */
+    class StringMapReader extends SingleMapReader<String> {
+
+        public StringMapReader(Map<String, String> map) {
+            super(map);
+        }
+    }
+
+    /**
+     * A class that implements the {@link HeaderReader} interface to read headers from a map of objects.
+     */
+    class ObjectMapReader extends SingleMapReader<Object> {
+
+        public ObjectMapReader(Map<String, Object> map) {
+            super(map);
         }
     }
 
@@ -120,32 +141,4 @@ public interface HeaderReader {
 
     }
 
-    /**
-     * A class that implements the {@link HeaderReader} interface to read headers from a map of objects.
-     */
-    class ObjectMapReader implements HeaderReader {
-
-        private final Map<String, Object> baggage;
-
-        public ObjectMapReader(Map<String, Object> baggage) {
-            this.baggage = baggage;
-        }
-
-        @Override
-        public Iterator<String> getNames() {
-            return baggage == null ? null : baggage.keySet().iterator();
-        }
-
-        @Override
-        public Iterable<String> getHeaders(String key) {
-            Object obj = baggage == null ? null : baggage.get(key);
-            return obj == null ? null : Collections.singletonList(obj.toString());
-        }
-
-        @Override
-        public String getHeader(String key) {
-            Object obj = baggage == null ? null : baggage.get(key);
-            return obj == null ? null : obj.toString();
-        }
-    }
 }

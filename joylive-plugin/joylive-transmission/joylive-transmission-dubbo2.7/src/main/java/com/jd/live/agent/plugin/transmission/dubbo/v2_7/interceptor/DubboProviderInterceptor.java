@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.dubbo.v2_7.request.RpcInvocationParser;
+import com.jd.live.agent.governance.request.HeaderReader.ObjectMapReader;
 import org.apache.dubbo.rpc.RpcInvocation;
 
 public class DubboProviderInterceptor extends InterceptorAdaptor {
@@ -33,7 +33,7 @@ public class DubboProviderInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         RpcInvocation invocation = ctx.getArgument(1);
-        propagation.read(RequestContext.create(), new RpcInvocationParser(invocation));
+        propagation.read(RequestContext.create(), new ObjectMapReader(invocation.getObjectAttachments()));
     }
 
     @Override

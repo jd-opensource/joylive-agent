@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.okhttp.v3.request.BuilderParser;
+import com.jd.live.agent.plugin.transmission.okhttp.v3.request.BuilderWriter;
 import okhttp3.Request;
 
 public class OkHttpClientInterceptor extends InterceptorAdaptor {
@@ -34,7 +34,7 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         Request.Builder builder = ((Request) arguments[0]).newBuilder();
-        propagation.write(RequestContext.get(), BuilderParser.of(builder));
+        propagation.write(RequestContext.get(), BuilderWriter.of(builder));
         arguments[0] = builder.build();
     }
 }

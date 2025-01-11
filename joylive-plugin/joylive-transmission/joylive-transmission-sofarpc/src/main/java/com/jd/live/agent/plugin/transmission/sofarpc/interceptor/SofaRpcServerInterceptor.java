@@ -15,11 +15,12 @@
  */
 package com.jd.live.agent.plugin.transmission.sofarpc.interceptor;
 
+import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.sofarpc.request.RequestParser;
+import com.jd.live.agent.governance.request.HeaderReader.ObjectMapReader;
 
 public class SofaRpcServerInterceptor extends InterceptorAdaptor {
 
@@ -31,7 +32,8 @@ public class SofaRpcServerInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        propagation.read(RequestContext.create(), new RequestParser(ctx.getArgument(1)));
+        SofaRequest request = ctx.getArgument(1);
+        propagation.read(RequestContext.create(), new ObjectMapReader(request.getRequestProps()));
     }
 
     @Override

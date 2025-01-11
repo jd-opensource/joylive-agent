@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.jdkhttp.request.MessageHeaderParser;
+import com.jd.live.agent.plugin.transmission.jdkhttp.request.MessageHeaderWriter;
 import sun.net.www.MessageHeader;
 
 /**
@@ -41,7 +41,7 @@ public class SunHttpClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MessageHeader header = ctx.getArgument(0);
-        propagation.write(RequestContext.get(), new MessageHeaderParser(header));
+        propagation.write(RequestContext.get(), new MessageHeaderWriter(header));
     }
 }
 

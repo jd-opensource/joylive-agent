@@ -21,7 +21,7 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.HeaderReader.ObjectMapReader;
-import com.jd.live.agent.plugin.transmission.dubbo.v3.request.RpcInvocationParser;
+import com.jd.live.agent.governance.request.HeaderWriter.ObjectMapWriter;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcInvocation;
 import org.apache.dubbo.rpc.model.ServiceMetadata;
@@ -44,7 +44,7 @@ public class DubboConsumerInterceptor extends InterceptorAdaptor {
         // read from rpc context by live propagation
         LIVE_PROPAGATION.read(carrier, new ObjectMapReader(RpcContext.getClientAttachment().getObjectAttachments()));
         // write to invocation with live attachments in rpc context
-        propagation.write(carrier, new RpcInvocationParser(invocation));
+        propagation.write(carrier, new ObjectMapWriter(invocation.getObjectAttachments(), invocation::setAttachment));
         ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();
         String provider = (String) serviceMetadata.getAttachments().get(PROVIDED_BY);
         if (provider != null && !provider.isEmpty()) {

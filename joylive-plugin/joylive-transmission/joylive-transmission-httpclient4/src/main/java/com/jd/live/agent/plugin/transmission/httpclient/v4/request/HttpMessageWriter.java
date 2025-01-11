@@ -15,27 +15,20 @@
  */
 package com.jd.live.agent.plugin.transmission.httpclient.v4.request;
 
-import com.jd.live.agent.governance.request.HeaderParser;
+import com.jd.live.agent.governance.request.HeaderWriter;
 import org.apache.http.Header;
 import org.apache.http.HttpMessage;
 
-import java.util.Iterator;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
-public class HttpMessageParser implements HeaderParser {
+public class HttpMessageWriter implements HeaderWriter {
 
     private final HttpMessage message;
 
-    public HttpMessageParser(HttpMessage message) {
+    public HttpMessageWriter(HttpMessage message) {
         this.message = message;
-    }
-
-    @Override
-    public Iterator<String> getNames() {
-        return toIterator(message.getAllHeaders(), Header::getName);
     }
 
     @Override

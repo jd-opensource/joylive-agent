@@ -20,7 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.rocketmq.v4.request.MessageParser;
+import com.jd.live.agent.governance.request.HeaderReader.StringMapReader;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 
@@ -39,7 +39,7 @@ public class MessageInterceptor extends InterceptorAdaptor {
             Message message = (Message) ctx.getTarget();
             String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
             String id = "Rocketmq5@" + message.getTopic() + "@" + messageId;
-            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new MessageParser(message)));
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new StringMapReader(message.getProperties())));
         }
     }
 

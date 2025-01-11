@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.jdkhttp.request.BuilderParser;
+import com.jd.live.agent.plugin.transmission.jdkhttp.request.BuilderWriter;
 
 /**
  * Interceptor for the Java HTTP Client's request builder implementation.
@@ -43,6 +43,6 @@ public class JavaHttpClientInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        propagation.write(RequestContext.get(), BuilderParser.of(ctx.getTarget()));
+        propagation.write(RequestContext.get(), BuilderWriter.of(ctx.getTarget()));
     }
 }
