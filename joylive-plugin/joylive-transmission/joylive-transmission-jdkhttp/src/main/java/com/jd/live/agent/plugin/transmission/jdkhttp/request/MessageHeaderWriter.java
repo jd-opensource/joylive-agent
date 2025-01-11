@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.jdkhttp.request;
 
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderWriter;
 import sun.net.www.MessageHeader;
 
@@ -41,8 +42,8 @@ public class MessageHeaderWriter implements HeaderWriter {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
+    public HeaderFeature getFeature() {
+        return HeaderFeature.DUPLICABLE;
     }
 
     @Override

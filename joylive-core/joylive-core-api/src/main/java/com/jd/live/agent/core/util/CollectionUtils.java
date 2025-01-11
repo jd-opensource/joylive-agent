@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -35,6 +36,56 @@ public class CollectionUtils {
     private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
 
     private static final FieldDesc MAP_FIELD = ClassUtils.describe(UNMODIFIED_MAP_CLASS).getFieldList().getField("m");
+
+    /**
+     * Looks up indices in the list of values where the predicate evaluates to true.
+     * Iterates through the list with a specified step and adds the index to the result
+     * if the predicate is satisfied. The iteration stops when the index reaches the specified length.
+     *
+     * @param <T>       the type of elements in the list
+     * @param values    the list of values to search through
+     * @param length    the number of elements to consider in the list
+     * @param step      the step size for iterating through the list
+     * @param predicate the predicate to test each element
+     * @return a LookupIndex containing the indices where the predicate evaluates to true, or null if no indices are found
+     */
+    public static <T> LookupIndex lookup(List<T> values, int length, int step, Predicate<T> predicate) {
+        LookupIndex result = null;
+        for (int i = 0; i < length; i += step) {
+            if (predicate.test(values.get(i))) {
+                if (result == null) {
+                    result = new LookupIndex();
+                }
+                result.add(i);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Looks up indices in the array of values where the predicate evaluates to true.
+     * Iterates through the array with a specified step and adds the index to the result
+     * if the predicate is satisfied. The iteration stops when the index reaches the specified length.
+     *
+     * @param <T>       the type of elements in the array
+     * @param values    the list of values to search through
+     * @param length    the number of elements to consider in the array
+     * @param step      the step size for iterating through the array
+     * @param predicate the predicate to test each element
+     * @return a LookupIndex containing the indices where the predicate evaluates to true, or null if no indices are found
+     */
+    public static <T> LookupIndex lookup(T[] values, int length, int step, Predicate<T> predicate) {
+        LookupIndex result = null;
+        for (int i = 0; i < length; i += step) {
+            if (predicate.test(values[i])) {
+                if (result == null) {
+                    result = new LookupIndex();
+                }
+                result.add(i);
+            }
+        }
+        return result;
+    }
 
     /**
      * Converts an Iterator to a List.
@@ -206,6 +257,135 @@ public class CollectionUtils {
             return null;
         }
         return new ArrayIterator<>(arrays, function);
+    }
+
+    /**
+     * Converts an iterable of elements into a map using specified key and value functions.
+     * If the provided iterable is null, the method returns null.
+     *
+     * @param <T>           the type of elements in the iterable
+     * @param <K>           the type of keys in the resulting map
+     * @param <V>           the type of values in the resulting map
+     * @param iterator      the iterable of elements to convert
+     * @param keyFunction   the function to extract the key from each element
+     * @param valueFunction the function to extract the value from each element
+     * @return a map where each entry's key is the result of applying the keyFunction to an element,
+     * and each entry's value is the result of applying the valueFunction to the same element
+     */
+    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterator, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        return toMap(iterator, null, keyFunction, valueFunction);
+    }
+
+    /**
+     * Converts an iterable of elements into a map using specified key and value functions.
+     * If the provided iterable is null, the method returns null.
+     * The method applies a predicate to filter elements before converting them to map entries.
+     * Entries with a null key are not added to the map.
+     *
+     * @param <T>           the type of elements in the iterable
+     * @param <K>           the type of keys in the resulting map
+     * @param <V>           the type of values in the resulting map
+     * @param iterator      the iterable of elements to convert
+     * @param predicate     the predicate to test each element; if null, all elements are included
+     * @param keyFunction   the function to extract the key from each element
+     * @param valueFunction the function to extract the value from each element
+     * @return a map where each entry's key is the result of applying the keyFunction to an element,
+     * and each entry's value is the result of applying the valueFunction to the same element
+     */
+    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterator, Predicate<T> predicate, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        if (iterator == null) {
+            return null;
+        }
+        Map<K, V> result = new HashMap<>();
+        for (T t : iterator) {
+            if (predicate == null || predicate.test(t)) {
+                result.put(keyFunction.apply(t), valueFunction.apply(t));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Converts an iterator of elements into a map using specified key and value functions.
+     * If the provided iterator is null, the method returns null.
+     * The method applies a predicate to filter elements before converting them to map entries.
+     * Entries with a null key are not added to the map.
+     *
+     * @param <T>           the type of elements in the iterator
+     * @param <K>           the type of keys in the resulting map
+     * @param <V>           the type of values in the resulting map
+     * @param iterator      the iterable of elements to convert
+     * @param predicate     the predicate to test each element; if null, all elements are included
+     * @param keyFunction   the function to extract the key from each element
+     * @param valueFunction the function to extract the value from each element
+     * @return a map where each entry's key is the result of applying the keyFunction to an element,
+     * and each entry's value is the result of applying the valueFunction to the same element
+     */
+    public static <T, K, V> Map<K, V> toMap(Iterator<T> iterator, Predicate<T> predicate, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        if (iterator == null) {
+            return null;
+        }
+        Map<K, V> result = new HashMap<>();
+        T t;
+        while (iterator.hasNext()) {
+            t = iterator.next();
+            if (predicate == null || predicate.test(t)) {
+                result.put(keyFunction.apply(t), valueFunction.apply(t));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates over an iterable of elements, applying a predicate and a consumer to each element.
+     * If the iterable or consumer is null, the method does nothing.
+     * If the predicate is null, all elements are consumed.
+     *
+     * @param <T>       the type of elements in the iterable
+     * @param iterable  the iterable of elements to iterate over
+     * @param predicate the predicate to test each element; if null, all elements are consumed
+     * @param consumer  the consumer to apply to each element that satisfies the predicate
+     * @return the number of elements that satisfied the predicate and were consumed
+     */
+    public static <T> int iterate(Iterable<T> iterable, Predicate<T> predicate, Consumer<T> consumer) {
+        if (iterable == null || consumer == null) {
+            return 0;
+        }
+        int count = 0;
+        for (T t : iterable) {
+            if (predicate == null || predicate.test(t)) {
+                count++;
+                consumer.accept(t);
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Iterates over an iterator of elements, applying a predicate and a consumer to each element.
+     * If the iterator or consumer is null, the method does nothing and returns 0.
+     * If the predicate is null, all elements are consumed.
+     *
+     * @param <T>       the type of elements in the iterator
+     * @param iterable  the iterator of elements to iterate over
+     * @param predicate the predicate to test each element; if null, all elements are consumed
+     * @param consumer  the consumer to apply to each element that satisfies the predicate
+     * @return the number of elements that satisfied the predicate and were consumed
+     */
+    public static <T> int iterate(Iterator<T> iterable, Predicate<T> predicate, Consumer<T> consumer) {
+        if (iterable == null || consumer == null) {
+            return 0;
+        }
+        int count = 0;
+        T t;
+        while (iterable.hasNext()) {
+            t = iterable.next();
+            if (predicate == null || predicate.test(t)) {
+                count++;
+                consumer.accept(t);
+            }
+        }
+        return count;
     }
 
     /**

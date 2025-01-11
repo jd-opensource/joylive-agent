@@ -43,11 +43,6 @@ public class HttpMessageWriter implements HeaderWriter {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
-    }
-
-    @Override
     public void addHeader(String key, String value) {
         message.addHeader(key, value);
     }

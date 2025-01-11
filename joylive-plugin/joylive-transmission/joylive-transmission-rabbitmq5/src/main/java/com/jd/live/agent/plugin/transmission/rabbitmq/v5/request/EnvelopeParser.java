@@ -51,11 +51,6 @@ public class EnvelopeParser implements HeaderParser {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return false;
-    }
-
-    @Override
     public void addHeader(String key, String value) {
         Map<String, Object> headers = props.getHeaders();
         if (headers != null) {

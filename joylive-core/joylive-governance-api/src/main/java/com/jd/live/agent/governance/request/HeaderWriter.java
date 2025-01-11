@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.request;
 
-import com.jd.live.agent.core.util.tag.Label;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,12 +45,13 @@ public interface HeaderWriter {
     String getHeader(String key);
 
     /**
-     * Checks if the header is duplicable.
-     * By default, this method returns {@code false}, indicating that the header is not duplicable.
+     * Returns the {@link HeaderFeature} associated with this header.
      *
-     * @return {@code true} if the header is duplicable, {@code false} otherwise
+     * @return the HeaderFeature associated with this header
      */
-    boolean isDuplicable();
+    default HeaderFeature getFeature() {
+        return HeaderFeature.DEFAULT;
+    }
 
     /**
      * Add a header with the specified key and value.
@@ -71,25 +70,14 @@ public interface HeaderWriter {
     void setHeader(String key, String value);
 
     /**
-     * Sets the headers with the specified key and list of values.
-     * If the list of values is null or empty, the header is set to null.
-     * If the list contains one value, that value is set as the header.
-     * If the list contains multiple values, they are joined into a single string and set as the header.
+     * Sets the headers using the provided map of header names to lists of header values.
+     * If the provided map is not null, it iterates over the entries and sets each header.
      *
-     * @param key    the header key
-     * @param values the list of header values
+     * @param headers a map where the key is the header name and the value is a list of header values
      */
-    default void setHeaders(String key, List<String> values) {
-        int size = values == null ? 0 : values.size();
-        switch (size) {
-            case 0:
-                setHeader(key, null);
-                break;
-            case 1:
-                setHeader(key, values.get(0));
-                break;
-            default:
-                setHeader(key, Label.join(values));
+    default void setHeaders(Map<String, String> headers) {
+        if (headers != null) {
+            headers.forEach(this::setHeader);
         }
     }
 
@@ -121,11 +109,6 @@ public interface HeaderWriter {
         public String getHeader(String key) {
             T obj = map == null ? null : map.get(key);
             return obj == null ? null : obj.toString();
-        }
-
-        @Override
-        public boolean isDuplicable() {
-            return false;
         }
 
         @Override
@@ -196,8 +179,8 @@ public interface HeaderWriter {
         }
 
         @Override
-        public boolean isDuplicable() {
-            return true;
+        public HeaderFeature getFeature() {
+            return HeaderFeature.DUPLICABLE;
         }
 
         @Override

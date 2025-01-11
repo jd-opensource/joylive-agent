@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.springcloud.v2021.consumer.config;
+package com.jd.live.agent.core.util;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component
-@ConfigurationProperties(prefix = "okhttp")
+/**
+ * Represents a key-value pair.
+ *
+ * @param <K> the type of the key
+ * @param <V> the type of the value
+ */
 @Getter
-@Setter
-public class OkHttpConfig {
+@AllArgsConstructor
+public class KeyValue<K, V> {
 
-    private int readTimeout = 600;
+    /**
+     * The key in the key-value pair.
+     */
+    private K key;
 
-    private int connectTimeout = 600;
+    /**
+     * The value in the key-value pair.
+     */
+    private V value;
 
-    private int writeTimeout = 1200;
 }

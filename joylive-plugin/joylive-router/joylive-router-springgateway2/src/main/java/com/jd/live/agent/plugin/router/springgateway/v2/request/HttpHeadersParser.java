@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v2.request;
 
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderParser;
 import org.springframework.http.HttpHeaders;
 
@@ -44,8 +45,8 @@ public class HttpHeadersParser implements HeaderParser {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
+    public HeaderFeature getFeature() {
+        return HeaderFeature.DUPLICABLE;
     }
 
     @Override

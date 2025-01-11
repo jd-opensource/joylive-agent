@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.kafka.v3.request;
 
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderParser;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
@@ -52,8 +53,8 @@ public class KafkaHeaderParser implements HeaderParser {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
+    public HeaderFeature getFeature() {
+        return HeaderFeature.DUPLICABLE;
     }
 
     @Override
@@ -63,6 +64,7 @@ public class KafkaHeaderParser implements HeaderParser {
 
     @Override
     public void setHeader(String key, String value) {
+        // TODO optimize
         Iterator<Header> iterator = headers.iterator();
         while (iterator.hasNext()) {
             if (iterator.next().key().equals(key)) {

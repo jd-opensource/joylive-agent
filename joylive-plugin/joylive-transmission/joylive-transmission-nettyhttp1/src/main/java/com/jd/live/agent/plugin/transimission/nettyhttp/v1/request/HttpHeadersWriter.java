@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.transimission.nettyhttp.v1.request;
 
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderWriter;
 import io.netty.handler.codec.http.HttpHeaders;
 
@@ -39,8 +40,8 @@ public class HttpHeadersWriter implements HeaderWriter {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
+    public HeaderFeature getFeature() {
+        return HeaderFeature.DUPLICABLE;
     }
 
     @Override

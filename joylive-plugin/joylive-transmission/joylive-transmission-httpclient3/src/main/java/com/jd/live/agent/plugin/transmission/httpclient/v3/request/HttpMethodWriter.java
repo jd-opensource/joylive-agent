@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.httpclient.v3.request;
 
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderWriter;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethod;
@@ -43,8 +44,8 @@ public class HttpMethodWriter implements HeaderWriter {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
+    public HeaderFeature getFeature() {
+        return HeaderFeature.DUPLICABLE;
     }
 
     @Override

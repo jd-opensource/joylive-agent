@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.context.bag.w3c;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.context.bag.*;
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderReader;
 import com.jd.live.agent.governance.request.HeaderWriter;
 
@@ -50,7 +51,9 @@ public class W3cPropagation extends AbstractPropagation {
         if (cargos == null || cargos.isEmpty()) {
             return;
         }
-        if (writer.isDuplicable()) {
+
+        HeaderFeature feature = writer.getFeature();
+        if (feature.isDuplicable()) {
             writer.addHeader(KEY_BAGGAGE, appendCargo(cargos, new StringBuilder()));
         } else {
             String baggage = writer.getHeader(KEY_BAGGAGE);
@@ -68,7 +71,8 @@ public class W3cPropagation extends AbstractPropagation {
         if (headers == null) {
             return;
         }
-        if (writer.isDuplicable()) {
+        HeaderFeature feature = writer.getFeature();
+        if (feature.isDuplicable()) {
             for (String header : headers) {
                 writer.addHeader(KEY_BAGGAGE, header);
             }

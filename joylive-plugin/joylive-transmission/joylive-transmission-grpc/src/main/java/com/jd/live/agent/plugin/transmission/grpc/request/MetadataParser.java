@@ -15,17 +15,19 @@
  */
 package com.jd.live.agent.plugin.transmission.grpc.request;
 
+import com.jd.live.agent.core.util.KeyValue;
+import com.jd.live.agent.core.util.LookupIndex;
+import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderParser;
 import io.grpc.Metadata;
 import io.grpc.Metadata.Key;
 
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.jd.live.agent.core.util.CollectionUtils.lookup;
 import static io.grpc.Metadata.ASCII_STRING_MARSHALLER;
 
 public class MetadataParser implements HeaderParser {
@@ -54,8 +56,8 @@ public class MetadataParser implements HeaderParser {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return true;
+    public HeaderFeature getFeature() {
+        return HeaderFeature.DUPLICABLE_BATCHABLE;
     }
 
     @Override
@@ -68,38 +70,94 @@ public class MetadataParser implements HeaderParser {
         if (value == null) {
             return;
         }
-        Key<String> metaKey = getOrCreate(key);
 
-        byte[] bytes = FieldGetter.INSTANCE.getNameBytes(metaKey);
-
-        int last = -1;
-        int index;
-        int counter = 0;
-        // update kv
-        int size = FieldGetter.INSTANCE.getSize(metadata);
+        int length = 2 * FieldGetter.INSTANCE.getSize(metadata);
         Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
-        if (size > 0) {
-            for (int i = 0; i < size; i++) {
-                index = i * 2;
-                if (Arrays.equals((byte[]) namesAndValues[index], bytes)) {
-                    counter++;
-                    last = index;
-                }
-            }
-        }
-        if (counter == 0) {
-            // add
-            metadata.put(metaKey, value);
-        } else if (counter == 1) {
-            // most is only one
-            namesAndValues[last + 1] = ASCII_STRING_MARSHALLER.toAsciiString(value).getBytes(StandardCharsets.US_ASCII);
-        } else {
-            metadata.removeAll(metaKey);
-            // always add
-            metadata.put(metaKey, value);
+
+        Key<String> metaKey = getOrCreate(key);
+        // update single
+        if (!updateSingle(metaKey, value, namesAndValues, length)) {
+            // update multi
+            updateMulti(metaKey, value);
         }
     }
 
+    @Override
+    public void setHeaders(Map<String, String> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return;
+        }
+        int length = 2 * FieldGetter.INSTANCE.getSize(metadata);
+        Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
+
+        List<KeyValue<Key<String>, String>> multiKeys = null;
+        Key<String> metaKey;
+        String key;
+        String value;
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            key = entry.getKey();
+            value = entry.getValue();
+            metaKey = getOrCreate(key);
+            if (!updateSingle(metaKey, value, namesAndValues, length)) {
+                if (multiKeys == null) {
+                    multiKeys = new ArrayList<>();
+                }
+                multiKeys.add(new KeyValue<>(metaKey, value));
+            }
+        }
+        if (multiKeys != null) {
+            multiKeys.forEach(multiKey -> updateMulti(multiKey.getKey(), multiKey.getValue()));
+        }
+    }
+
+    /**
+     * Updates the value associated with a given key in the array of names and values.
+     * If the key is not found, it adds the key and value to the metadata map.
+     * If the key is found once, it updates the value in the array.
+     * If the key is found multiple times, it returns false.
+     *
+     * @param key       the key to update or add
+     * @param value     the value to associate with the key
+     * @param keyValues the array of names and values to search through
+     * @param length    the number of elements to consider in the array
+     * @return true if the update or addition was successful, false if the key was found multiple times
+     */
+    private boolean updateSingle(Key<String> key, String value, Object[] keyValues, int length) {
+
+        byte[] bytes = FieldGetter.INSTANCE.getNameBytes(key);
+
+        LookupIndex index = lookup(keyValues, length, 2, o -> Arrays.equals((byte[]) o, bytes));
+        int size = index == null ? 0 : index.size();
+        if (size == 0) {
+            // add
+            metadata.put(key, value);
+            return true;
+        } else if (size == 1) {
+            // most is only one
+            keyValues[index.getIndex() + 1] = ASCII_STRING_MARSHALLER.toAsciiString(value).getBytes(StandardCharsets.US_ASCII);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Updates the value associated with a given key in the metadata map.
+     * First, it removes all existing entries for the key, then adds the new key-value pair.
+     *
+     * @param key   the key to update
+     * @param value the new value to associate with the key
+     */
+    private void updateMulti(Key<String> key, String value) {
+        metadata.removeAll(key);
+        metadata.put(key, value);
+    }
+
+    /**
+     * Retrieves the Metadata.Key for the given key, creating it if it does not already exist.
+     *
+     * @param key the key to retrieve or create
+     * @return the Metadata.Key for the given key
+     */
     private static Metadata.Key<String> getOrCreate(String key) {
         return KEYS.computeIfAbsent(key, k -> Metadata.Key.of(k, ASCII_STRING_MARSHALLER));
     }

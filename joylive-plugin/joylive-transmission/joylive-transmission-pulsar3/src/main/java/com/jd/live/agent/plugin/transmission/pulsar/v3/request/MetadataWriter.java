@@ -54,17 +54,13 @@ public class MetadataWriter implements HeaderWriter {
     }
 
     @Override
-    public boolean isDuplicable() {
-        return false;
-    }
-
-    @Override
     public void addHeader(String key, String value) {
         metadata.addProperty().setValue(key).setValue(value);
     }
 
     @Override
     public void setHeader(String key, String value) {
+        // TODO optimize
         for (KeyValue kv : metadata.getPropertiesList()) {
             if (kv.getKey().equals(key)) {
                 kv.setValue(value);
