@@ -52,6 +52,7 @@ public class W3cPropagation extends AbstractPropagation {
             return;
         }
 
+        // TODO w3c baggage header maybe propagated by another agent, so we need to update the baggage header
         HeaderFeature feature = writer.getFeature();
         if (feature.isDuplicable()) {
             writer.addHeader(KEY_BAGGAGE, appendCargo(cargos, new StringBuilder()));
