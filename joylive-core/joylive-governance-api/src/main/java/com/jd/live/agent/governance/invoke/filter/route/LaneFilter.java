@@ -59,24 +59,24 @@ public class LaneFilter implements RouteFilter {
             ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
             LanePolicy lanePolicy = servicePolicy == null ? null : servicePolicy.getLanePolicy(targetSpaceId);
             String redirect = lanePolicy == null ? null : lanePolicy.getTarget(targetLaneId);
-            Lane targetLane = redirect == null || redirect.isEmpty()
-                    ? metadata.getTargetLaneOrDefault(targetSpace.getDefaultLane())
-                    : targetSpace.getOrDefault(redirect);
-            FallbackType fallbackType = lanePolicy == null ? null : lanePolicy.getFallbackType();
+            Lane targetLane = redirect == null || redirect.isEmpty() ? metadata.getTargetLane() : targetSpace.getLane(redirect);
+            // not null
+            FallbackType fallbackType = lanePolicy == null ? FallbackType.DEFAULT : lanePolicy.getFallbackType();
+            // fallbackLaneCode will not be null when the fallback type is custom
             String fallbackLaneCode = lanePolicy == null ? null : lanePolicy.getFallbackLane();
             if (targetLane != null) {
                 Lane defaultLane = targetSpace.getDefaultLane();
-                boolean redirectDefaultLane = defaultLane != null && targetLane != defaultLane && (fallbackType == null || FallbackType.DEFAULT.equals(fallbackType));
-                boolean redirectFallbackLane = fallbackLaneCode != null && FallbackType.CUSTOM.equals(fallbackType);
+                boolean redirectDefaultLane = defaultLane != null && targetLane != defaultLane && FallbackType.DEFAULT == fallbackType;
+                boolean redirectFallbackLane = fallbackType == FallbackType.CUSTOM;
                 // Filter the route target based on the lane space ID and route lane code
-                int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, !redirectDefaultLane || !redirectFallbackLane);
-                // If no matches and a fallback lane exists, use the fallbackLane
-                if (count <= 0 && redirectFallbackLane) {
-                    target.filter(e -> e.isLane(targetSpaceId, fallbackLaneCode, defaultSpaceId, defaultLaneId), -1, true);
-                }
-                // If no matches and a default lane exists, use the defaultLane
+                boolean nullable = !redirectDefaultLane && !redirectFallbackLane;
+                int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, nullable);
                 if (count <= 0 && redirectDefaultLane) {
+                    // If no matches and a default lane exists, use the defaultLane
                     target.filter(e -> e.isLane(targetSpaceId, defaultLane.getCode(), defaultSpaceId, defaultLaneId), -1, true);
+                } else if (count <= 0 && redirectFallbackLane) {
+                    // If no matches and a fallback lane exists, use the fallbackLane
+                    target.filter(e -> e.isLane(targetSpaceId, fallbackLaneCode, defaultSpaceId, defaultLaneId), -1, true);
                 }
             } else {
                 String code = redirect == null || redirect.isEmpty() ? targetLaneId : redirect;

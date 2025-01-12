@@ -71,6 +71,14 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
         }
     }
 
+    public FallbackType getFallbackType() {
+        if (fallbackType == null
+                || fallbackType == FallbackType.CUSTOM && (fallbackLane == null || fallbackLane.isEmpty())) {
+            return FallbackType.DEFAULT;
+        }
+        return fallbackType;
+    }
+
     public String getTarget(String lane) {
         return lane == null || lane.isEmpty() ? null : lanes.get(lane);
     }
