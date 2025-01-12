@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
+import com.jd.live.agent.governance.policy.lane.FallbackType;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
@@ -61,12 +62,19 @@ public class LaneFilter implements RouteFilter {
             Lane targetLane = redirect == null || redirect.isEmpty()
                     ? metadata.getTargetLaneOrDefault(targetSpace.getDefaultLane())
                     : targetSpace.getOrDefault(redirect);
+            FallbackType fallbackType = lanePolicy == null ? null : lanePolicy.getFallbackType();
+            String fallbackLaneCode = lanePolicy == null ? null : lanePolicy.getFallbackLane();
             if (targetLane != null) {
                 Lane defaultLane = targetSpace.getDefaultLane();
-                boolean redirectDefaultLane = defaultLane != null && targetLane != defaultLane;
+                boolean redirectDefaultLane = defaultLane != null && targetLane != defaultLane && (fallbackType == null || FallbackType.DEFAULT.equals(fallbackType));
+                boolean redirectFallbackLane = fallbackLaneCode != null && FallbackType.CUSTOM.equals(fallbackType);
                 // Filter the route target based on the lane space ID and route lane code
-                int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, !redirectDefaultLane);
-                // If no matches and a default lane exists, use the default lane
+                int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, !redirectDefaultLane || !redirectFallbackLane);
+                // If no matches and a fallback lane exists, use the fallbackLane
+                if (count <= 0 && redirectFallbackLane) {
+                    target.filter(e -> e.isLane(targetSpaceId, fallbackLaneCode, defaultSpaceId, defaultLaneId), -1, true);
+                }
+                // If no matches and a default lane exists, use the defaultLane
                 if (count <= 0 && redirectDefaultLane) {
                     target.filter(e -> e.isLane(targetSpaceId, defaultLane.getCode(), defaultSpaceId, defaultLaneId), -1, true);
                 }
