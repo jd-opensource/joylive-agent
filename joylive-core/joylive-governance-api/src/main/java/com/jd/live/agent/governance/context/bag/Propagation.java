@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.context.bag;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.request.HeaderReader;
 import com.jd.live.agent.governance.request.HeaderWriter;
 
@@ -35,6 +36,15 @@ public interface Propagation {
     int ORDER_W3C = 0;
 
     int ORDER_LIVE = 10;
+
+    /**
+     * Writes headers from the request context to the writer.
+     *
+     * @param writer The writer to which the headers should be written.
+     */
+    default void write(HeaderWriter writer) {
+        write(RequestContext.get(), writer);
+    }
 
     /**
      * Writes headers from the carrier to the writer.
