@@ -18,7 +18,7 @@ package com.jd.live.agent.core.config;
 /**
  * An interface for watching and managing configuration updates.
  */
-public interface ConfigWatcher {
+public interface PolicyWatcher {
 
     /**
      * A constant representing the type of configuration space for live space.
@@ -41,7 +41,7 @@ public interface ConfigWatcher {
      * @param type     The type of configuration space to listen for updates.
      * @param listener The listener to be notified of configuration updates.
      */
-    void addListener(String type, ConfigListener listener);
+    void addListener(String type, PolicyListener listener);
 
     /**
      * Removes a listener for configuration updates of the specified type.
@@ -49,6 +49,6 @@ public interface ConfigWatcher {
      * @param type     The type of configuration space to stop listening for updates.
      * @param listener The listener to be removed.
      */
-    void removeListener(String type, ConfigListener listener);
+    void removeListener(String type, PolicyListener listener);
 
 }

@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -57,7 +57,7 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 
     @Override
     public String getType() {
-        return ConfigWatcher.TYPE_LIVE_SPACE;
+        return PolicyWatcher.TYPE_LIVE_SPACE;
     }
 
     @Override

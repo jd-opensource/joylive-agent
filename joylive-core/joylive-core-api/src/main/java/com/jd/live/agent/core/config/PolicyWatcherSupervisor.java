@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Config supervisor
  */
-public interface ConfigSupervisor extends ConfigWatcher {
+public interface PolicyWatcherSupervisor extends PolicyWatcher {
 
     /**
      * A constant representing the component name for the configuration watcher.
@@ -17,7 +17,12 @@ public interface ConfigSupervisor extends ConfigWatcher {
      *
      * @param watcher The watcher to add.
      */
-    void addWatcher(ConfigWatcher watcher);
+    void addWatcher(PolicyWatcher watcher);
 
-    List<ConfigWatcher> getWatchers();
+    /**
+     * Returns a list of PolicyWatcher instances that are currently registered to watch for policy changes.
+     *
+     * @return A list of PolicyWatcher instances.
+     */
+    List<PolicyWatcher> getWatchers();
 }

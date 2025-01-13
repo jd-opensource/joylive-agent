@@ -16,22 +16,17 @@
 package com.jd.live.agent.core.config;
 
 /**
- * An interface for managing configurations.
- *
- * @since 1.0
+ * An interface for listening to configuration updates.
  */
-public interface ConfigCenter {
-
-    String COMPONENT_CONFIG_CENTER = "configCenter";
+public interface PolicyListener {
 
     /**
-     * Returns a Configurator instance for the specified configuration name.
+     * Handles the update of a configuration setting.
      *
-     * @param name The ConfigName object representing the namespace, name, and profile of the configuration.
-     * @return A Configurator instance for the specified configuration.
+     * @param event The updated configuration object.
+     * @return true if the update was successful, false otherwise.
      */
-    Configurator getConfigurator(ConfigName name);
+    boolean onUpdate(PolicyEvent event);
 
 }
-
 

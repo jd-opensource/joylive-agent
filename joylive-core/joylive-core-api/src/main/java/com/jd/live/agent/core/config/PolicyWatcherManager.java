@@ -5,47 +5,47 @@ import java.util.*;
 /**
  * Config watcher manager
  */
-public class ConfigWatcherManager implements ConfigSupervisor {
+public class PolicyWatcherManager implements PolicyWatcherSupervisor {
 
-    private final List<ConfigWatcher> watchers = new ArrayList<>();
+    private final List<PolicyWatcher> watchers = new ArrayList<>();
 
-    private final Map<String, List<ConfigListener>> listeners = new HashMap<>();
+    private final Map<String, List<PolicyListener>> listeners = new HashMap<>();
 
-    public ConfigWatcherManager() {
+    public PolicyWatcherManager() {
     }
 
-    public ConfigWatcherManager(List<ConfigWatcher> watchers) {
+    public PolicyWatcherManager(List<PolicyWatcher> watchers) {
         if (watchers != null) {
             this.watchers.addAll(watchers);
         }
     }
 
     @Override
-    public void addListener(String type, ConfigListener listener) {
+    public void addListener(String type, PolicyListener listener) {
         if (type != null && listener != null) {
             listeners.computeIfAbsent(type, k -> new ArrayList<>()).add(listener);
-            for (ConfigWatcher watcher : watchers) {
+            for (PolicyWatcher watcher : watchers) {
                 watcher.addListener(type, listener);
             }
         }
     }
 
     @Override
-    public void removeListener(String type, ConfigListener listener) {
+    public void removeListener(String type, PolicyListener listener) {
         if (type != null && listener != null) {
             listeners.computeIfAbsent(type, k -> new ArrayList<>()).remove(listener);
-            for (ConfigWatcher watcher : watchers) {
+            for (PolicyWatcher watcher : watchers) {
                 watcher.removeListener(type, listener);
             }
         }
     }
 
     @Override
-    public void addWatcher(ConfigWatcher watcher) {
+    public void addWatcher(PolicyWatcher watcher) {
         if (watcher != null) {
             watchers.add(watcher);
-            for (Map.Entry<String, List<ConfigListener>> entry : listeners.entrySet()) {
-                for (ConfigListener listener : entry.getValue()) {
+            for (Map.Entry<String, List<PolicyListener>> entry : listeners.entrySet()) {
+                for (PolicyListener listener : entry.getValue()) {
                     watcher.addListener(entry.getKey(), listener);
                 }
             }
@@ -53,7 +53,7 @@ public class ConfigWatcherManager implements ConfigSupervisor {
     }
 
     @Override
-    public List<ConfigWatcher> getWatchers() {
+    public List<PolicyWatcher> getWatchers() {
         return Collections.unmodifiableList(watchers);
     }
 }

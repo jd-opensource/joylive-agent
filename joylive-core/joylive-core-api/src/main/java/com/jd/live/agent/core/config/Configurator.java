@@ -22,6 +22,9 @@ package com.jd.live.agent.core.config;
  */
 public interface Configurator {
 
+    /**
+     * A constant representing the component name for the configurator.
+     */
     String COMPONENT_CONFIGURATOR = "configurator";
 
     /**
@@ -32,5 +35,20 @@ public interface Configurator {
      */
     String getProperty(String name);
 
+    /**
+     * Adds a listener to receive notifications when configuration properties change.
+     *
+     * @param listener The listener to add.
+     */
+    void addListener(ConfigListener listener);
+
+    /**
+     * Removes a listener that was previously added to receive notifications when configuration properties change.
+     *
+     * @param listener The listener to remove.
+     */
+    void removeListener(ConfigListener listener);
+
 }
+
 

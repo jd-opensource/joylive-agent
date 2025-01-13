@@ -35,6 +35,13 @@ public interface ApplicationListener {
     String COMPONENT_APPLICATION_LISTENER = "applicationListener";
 
     /**
+     * Invoked when a ClassLoader is about to load a class.
+     *
+     * @param classLoader The ClassLoader that is about to load a class.
+     */
+    void onLoading(ClassLoader classLoader);
+
+    /**
      * Called when the environment is prepared and ready for use.
      *
      * @param context     The application context.
@@ -71,6 +78,11 @@ public interface ApplicationListener {
     class ApplicationListenerAdapter implements ApplicationListener {
 
         @Override
+        public void onLoading(ClassLoader classLoader) {
+            // Do nothing
+        }
+
+        @Override
         public void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment) {
             // Do nothing
         }
@@ -102,6 +114,13 @@ public interface ApplicationListener {
 
         public ApplicationListenerWrapper(List<ApplicationListener> listeners) {
             this.listeners = listeners == null ? new ArrayList<>(0) : listeners;
+        }
+
+        @Override
+        public void onLoading(ClassLoader classLoader) {
+            for (ApplicationListener listener : listeners) {
+                listener.onLoading(classLoader);
+            }
         }
 
         @Override

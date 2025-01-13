@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.core.service;
+
+import com.jd.live.agent.core.config.PolicyWatcher;
 
 /**
- * An interface for managing configurations.
- *
- * @since 1.0
+ * An interface for a configuration service that extends the AgentService interface and implements the ConfigWatcher interface.
  */
-public interface ConfigCenter {
-
-    String COMPONENT_CONFIG_CENTER = "configCenter";
+public interface PolicyService extends AgentService, PolicyWatcher {
 
     /**
-     * Returns a Configurator instance for the specified configuration name.
+     * Returns the type of the configuration service.
      *
-     * @param name The ConfigName object representing the namespace, name, and profile of the configuration.
-     * @return A Configurator instance for the specified configuration.
+     * @return The type of the configuration service.
      */
-    Configurator getConfigurator(ConfigName name);
-
+    String getType();
 }
-
 

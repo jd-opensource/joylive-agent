@@ -1,7 +1,7 @@
 package com.jd.live.agent.core.service;
 
-import com.jd.live.agent.core.config.ConfigEvent;
-import com.jd.live.agent.core.config.ConfigListener;
+import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.core.config.PolicyListener;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -9,19 +9,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * AbstractConfigService is responsible for add/remove config listener.
  */
-public abstract class AbstractConfigService extends AbstractService implements ConfigService {
+public abstract class AbstractPolicyService extends AbstractService implements PolicyService {
 
-    protected final List<ConfigListener> listeners = new CopyOnWriteArrayList<>();
+    protected final List<PolicyListener> listeners = new CopyOnWriteArrayList<>();
 
     @Override
-    public void addListener(String type, ConfigListener listener) {
+    public void addListener(String type, PolicyListener listener) {
         if (getType().equals(type) && listener != null) {
             listeners.add(listener);
         }
     }
 
     @Override
-    public void removeListener(String type, ConfigListener listener) {
+    public void removeListener(String type, PolicyListener listener) {
         if (getType().equals(type) && listener != null) {
             listeners.remove(listener);
         }
@@ -32,7 +32,7 @@ public abstract class AbstractConfigService extends AbstractService implements C
      *
      * @param event The ConfigEvent to publish.
      */
-    protected void publish(ConfigEvent event) {
+    protected void publish(PolicyEvent event) {
         listeners.forEach(o -> o.onUpdate(event));
     }
 
