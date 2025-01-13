@@ -17,37 +17,29 @@ package com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderReader.StringMapReader;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 
-import java.util.List;
-
 public class MessageInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public MessageInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public MessageInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
         if (isProducer == null || !isProducer) {
-            restoreCargo((Message) ctx.getTarget());
+            Message message = (Message) ctx.getTarget();
+            String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
+            String id = "Rocketmq5@" + message.getTopic() + "@" + messageId;
+            RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new StringMapReader(message.getProperties())));
         }
     }
-
-    private void restoreCargo(Message message) {
-        String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
-        String id = "Rocketmq5@" + message.getTopic() + "@" + messageId;
-        RequestContext.restore(() -> id,
-                carrier -> carrier.addCargo(require, message.getProperties(), Label::parseValue));
-    }
-
 }

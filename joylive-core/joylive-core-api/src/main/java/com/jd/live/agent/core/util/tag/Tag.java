@@ -73,6 +73,18 @@ public class Tag implements Label, Serializable {
     }
 
     /**
+     * Constructs a {@code Tag} with the specified key and a collection of values.
+     *
+     * @param key      The key of the tag.
+     * @param values   The collection of values associated with the tag key.
+     * @param zeroCopy A flag indicating whether to perform a zero-copy operation.
+     */
+    public Tag(String key, Collection<String> values, boolean zeroCopy) {
+        this.key = key;
+        add(values, zeroCopy);
+    }
+
+    /**
      * Constructs a {@code Tag} with the specified key and an enumeration of values.
      *
      * @param key    The key of the tag.
@@ -108,24 +120,7 @@ public class Tag implements Label, Serializable {
 
     @Override
     public String getValue() {
-        int size = values == null ? 0 : values.size();
-        switch (size) {
-            case 0:
-                return "[]";
-            case 1:
-                return values.get(0);
-            default:
-                // array
-                StringBuilder builder = new StringBuilder('[');
-                for (int i = 0; i < size; i++) {
-                    if (i > 0) {
-                        builder.append(',');
-                    }
-                    builder.append(values.get(i));
-                }
-                builder.append(']');
-                return builder.toString();
-        }
+        return Label.join(values);
     }
 
     /**
@@ -153,17 +148,28 @@ public class Tag implements Label, Serializable {
      * @param items The collection of values to be added.
      */
     protected void add(Collection<String> items) {
+        add(items, false);
+    }
+
+    /**
+     * Adds a collection of values to the list of values associated with the tag.
+     * This method ensures that only unique, non-null values are added. If the input collection is the same as the existing values list,
+     * the method returns immediately to avoid infinite recursion. If the values list does not exist, it is initialized.
+     *
+     * @param items    The collection of values to be added.
+     * @param zeroCopy A flag indicating whether to perform a zero-copy operation.
+     */
+    protected void add(Collection<String> items, boolean zeroCopy) {
+        int size = items == null ? 0 : items.size();
         // call multi times in one thread.
-        if (values == items) {
+        if (size == 0 || values == items) {
             return;
         }
-        int size = items == null ? 0 : items.size();
         if (values == null) {
-            values = new ArrayList<>(size);
-            if (size > 0) {
-                values.addAll(items);
-            }
-        } else if (size > 0) {
+            values = zeroCopy && items instanceof ArrayList
+                    ? (ArrayList<String>) items
+                    : new ArrayList<>(items);
+        } else {
             for (String v : items) {
                 if (v != null && !values.contains(v)) {
                     values.add(v);
@@ -200,4 +206,5 @@ public class Tag implements Label, Serializable {
                 ", values='" + values + '\'' +
                 '}';
     }
+
 }

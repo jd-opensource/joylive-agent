@@ -18,12 +18,17 @@ package com.jd.live.agent.plugin.transimission.nettyhttp.v1.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transimission.nettyhttp.v1.interceptor.NettyHttpClientInterceptor;
 
+@Injectable
 @Extension(value = "NettyHttpClientDefinition_v1", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(NettyHttpClientDefinition.TYPE_HTTP_CLIENT)
@@ -38,11 +43,15 @@ public class NettyHttpClientDefinition extends PluginDefinitionAdapter {
             "io.netty.handler.codec.http.HttpMethod",
     };
 
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
+
     public NettyHttpClientDefinition() {
-        super(MatcherBuilder.named(TYPE_HTTP_CLIENT),
+        this.matcher = () -> MatcherBuilder.named(TYPE_HTTP_CLIENT);
+        this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REQUEST).
                                 and(MatcherBuilder.arguments(ARGUMENTS_REQUEST)),
-                        new NettyHttpClientInterceptor()));
+                        () -> new NettyHttpClientInterceptor(propagation))};
     }
 }

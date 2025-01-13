@@ -19,31 +19,34 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderWriter.StringMapWriter;
 import org.apache.rocketmq.common.message.Message;
 
 import java.util.Collection;
 
 public class MQProducerInterceptor extends InterceptorAdaptor {
 
+    private final Propagation propagation;
+
+    public MQProducerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object argument = ctx.getArguments()[0];
+        Object argument = ctx.getArgument(0);
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         if (argument instanceof Message) {
-            attachCargo((Message) argument);
+            Message message = (Message) argument;
+            propagation.write(RequestContext.get(), new StringMapWriter(message.getProperties(), message::putUserProperty));
         } else if (argument instanceof Collection) {
-            attachCargo((Collection<Message>) argument);
+            Collection<Message> messages = (Collection<Message>) argument;
+            Carrier carrier = RequestContext.get();
+            for (Message message : messages) {
+                propagation.write(carrier, new StringMapWriter(message.getProperties(), message::putUserProperty));
+            }
         }
-    }
-
-    private void attachCargo(Collection<Message> messages) {
-        RequestContext.cargos(cargo ->
-                messages.forEach(
-                        message -> message.putUserProperty(cargo.getKey(), cargo.getValue())));
-    }
-
-    private void attachCargo(Message message) {
-        RequestContext.cargos(cargo -> message.putUserProperty(cargo.getKey(), cargo.getValue()));
     }
 }

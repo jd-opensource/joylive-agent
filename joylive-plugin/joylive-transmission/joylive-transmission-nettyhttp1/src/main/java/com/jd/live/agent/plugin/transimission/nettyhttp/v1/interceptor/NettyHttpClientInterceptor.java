@@ -19,6 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transimission.nettyhttp.v1.request.HttpHeadersWriter;
 import io.netty.handler.codec.http.HttpMethod;
 import reactor.netty.http.client.HttpClient;
 
@@ -27,6 +29,12 @@ import reactor.netty.http.client.HttpClient;
  */
 @Deprecated
 public class NettyHttpClientInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public NettyHttpClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
 
 
     /**
@@ -40,7 +48,8 @@ public class NettyHttpClientInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         HttpClient client = mc.getResult();
         if (RequestContext.hasCargo()) {
-            HttpClient newClient = client.headers(headers -> RequestContext.cargos(cargo -> headers.set(cargo.getKey(), cargo.getValue())));
+            HttpClient newClient = client.headers(headers ->
+                    propagation.write(RequestContext.get(), new HttpHeadersWriter(headers)));
             if (client.getClass().isAssignableFrom(newClient.getClass())) {
                 // fix netty reactor 0.9.20.RELEASE
                 mc.setResult(newClient);

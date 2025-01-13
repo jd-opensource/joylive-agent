@@ -19,6 +19,9 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderWriter.MultiValueMapWriter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.ClientHttpRequest;
 
 /**
@@ -29,7 +32,10 @@ import org.springframework.http.client.ClientHttpRequest;
  */
 public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
 
-    public ClientHttpRequestFactoryInterceptor() {
+    private final Propagation propagation;
+
+    public ClientHttpRequestFactoryInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
@@ -37,7 +43,8 @@ public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
         // for outbound traffic
         MethodContext mc = (MethodContext) ctx;
         ClientHttpRequest request = mc.getResult();
-        RequestContext.cargos(tag -> request.getHeaders().addAll(tag.getKey(), tag.getValues()));
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.getHeaders());
+        propagation.write(RequestContext.get(), new MultiValueMapWriter(headers));
         mc.setResult(request);
     }
 }

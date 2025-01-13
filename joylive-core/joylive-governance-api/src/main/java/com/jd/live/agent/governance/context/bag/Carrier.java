@@ -98,16 +98,20 @@ public interface Carrier extends Attributes {
      * Adds cargos based on a requirement and a map of potential cargos.
      *
      * @param require The requirement that must be met for a cargo to be added.
-     * @param map     A map of potential cargos to add.
+     * @param map     A map where the key is the cargo identifier and the value is a collection of cargo details.
+     * @return A boolean indicating whether any cargos were successfully added.
      */
-    default void addCargo(CargoRequire require, Map<String, ? extends Collection<String>> map) {
+    default boolean addCargo(CargoRequire require, Map<String, ? extends Collection<String>> map) {
+        int counter = 0;
         if (require != null && map != null) {
             for (Map.Entry<String, ? extends Collection<String>> entry : map.entrySet()) {
                 if (require.match(entry.getKey())) {
-                    addCargo(new Cargo(entry.getKey(), new ArrayList<>(entry.getValue())));
+                    counter++;
+                    addCargo(new Cargo(entry.getKey(), entry.getValue()));
                 }
             }
         }
+        return counter > 0;
     }
 
     /**
@@ -117,23 +121,27 @@ public interface Carrier extends Attributes {
      * @param map     A map of potential cargos to add.
      * @param func    A function to transform the map values.
      * @param <T>     The type of the map values.
-     *  @param <M>    The type of the map extending from {@link Map} with keys as {@link String} and values of type {@code T}.
+     * @param <M>    The type of the map extending from {@link Map} with keys as {@link String} and values of type {@code T}.
+     * @return A boolean indicating whether any cargos were successfully added.
      */
-    default <T, M extends Map<String, T>> void addCargo(CargoRequire require, M map, Function<String, Collection<String>> func) {
+    default <T, M extends Map<String, T>> boolean addCargo(CargoRequire require, M map, Function<String, Collection<String>> func) {
+        int counter = 0;
         if (require != null && map != null) {
             Object value;
             for (Map.Entry<String, T> entry : map.entrySet()) {
                 if (require.match(entry.getKey())) {
+                    counter++;
                     value = entry.getValue();
                     if (value == null) {
-                        addCargo(new Cargo(entry.getKey(), new ArrayList<>(0)));
+                        addCargo(new Cargo(entry.getKey(), new ArrayList<>(0), true));
                     } else {
                         addCargo(func == null ? new Cargo(entry.getKey(), value.toString()) :
-                                new Cargo(entry.getKey(), func.apply(value.toString())));
+                                new Cargo(entry.getKey(), func.apply(value.toString()), true));
                     }
                 }
             }
         }
+        return counter > 0;
     }
 
     /**
@@ -142,8 +150,10 @@ public interface Carrier extends Attributes {
      * @param require The requirement that must be met for a cargo to be added.
      * @param names   An enumeration of names to consider for adding as cargos.
      * @param func    A function to obtain values for the names.
+     * @return A boolean indicating whether any cargos were successfully added.
      */
-    default void addCargo(CargoRequire require, Enumeration<String> names, Function<String, Enumeration<String>> func) {
+    default boolean addCargo(CargoRequire require, Enumeration<String> names, Function<String, Enumeration<String>> func) {
+        int counter = 0;
         if (require != null && names != null) {
             String name;
             List<String> values;
@@ -151,15 +161,17 @@ public interface Carrier extends Attributes {
             while (names.hasMoreElements()) {
                 name = names.nextElement();
                 if (require.match(name)) {
+                    counter++;
                     values = null;
                     if (func != null) {
                         venum = func.apply(name);
                         values = venum == null ? null : Collections.list(venum);
                     }
-                    addCargo(new Cargo(name, values));
+                    addCargo(new Cargo(name, values, true));
                 }
             }
         }
+        return counter > 0;
     }
 
     /**
@@ -168,20 +180,24 @@ public interface Carrier extends Attributes {
      * @param require The requirement that must be met for a cargo to be added.
      * @param names   An iterable of names to consider for adding as cargos.
      * @param func    A function to obtain values for the names.
+     * @return A boolean indicating whether any cargos were successfully added.
      */
-    default void addCargo(CargoRequire require, Iterable<String> names, Function<String, List<String>> func) {
+    default boolean addCargo(CargoRequire require, Iterable<String> names, Function<String, List<String>> func) {
+        int counter = 0;
         if (require != null && names != null) {
             List<String> values;
             for (String name : names) {
                 if (require.match(name)) {
+                    counter++;
                     values = null;
                     if (func != null) {
                         values = func.apply(name);
                     }
-                    addCargo(new Cargo(name, values));
+                    addCargo(new Cargo(name, values, true));
                 }
             }
         }
+        return counter > 0;
     }
 
     /**
@@ -196,8 +212,10 @@ public interface Carrier extends Attributes {
      * @param targets   An iterable of target objects to process.
      * @param keyFunc   A function that generates a key for a cargo based on a target object.
      * @param valueFunc A function that generates a value for a cargo based on a target object (may be null).
+     * @return A boolean indicating whether any cargos were successfully added.
      */
-    default <T> void addCargo(CargoRequire require, Iterable<T> targets, Function<T, String> keyFunc, Function<T, String> valueFunc) {
+    default <T> boolean addCargo(CargoRequire require, Iterable<T> targets, Function<T, String> keyFunc, Function<T, String> valueFunc) {
+        int counter = 0;
         if (require != null && targets != null && keyFunc != null) {
             Map<String, List<String>> tags = new HashMap<>();
             for (T target : targets) {
@@ -212,10 +230,12 @@ public interface Carrier extends Attributes {
             }
             for (Map.Entry<String, ? extends Collection<String>> entry : tags.entrySet()) {
                 if (require.match(entry.getKey())) {
-                    addCargo(new Cargo(entry.getKey(), entry.getValue()));
+                    counter++;
+                    addCargo(new Cargo(entry.getKey(), entry.getValue(), true));
                 }
             }
         }
+        return counter > 0;
     }
 
     /**

@@ -34,10 +34,10 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.MonitorConfig;
-import com.jd.live.agent.governance.config.RegistryConfig;
-import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.governance.config.*;
+import com.jd.live.agent.governance.context.bag.AutoDetect;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -163,6 +163,15 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     private Timer timer;
 
+    @Inject
+    private Map<String, Propagation> propagations;
+
+    @Inject
+    private List<Propagation> propagationList;
+
+    @Getter
+    private Propagation propagation;
+
     @Getter
     private CounterManager counterManager;
 
@@ -223,6 +232,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             if (governanceConfig != null) {
+                source.add(Propagation.COMPONENT_PROPAGATION, propagation);
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
                 source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig.getRegistryConfig());
@@ -286,6 +296,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);
         counterManager = new CounterManager(timer);
+        propagation = buildPropagation();
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {
                 if (event.getData().getType() == EventType.AGENT_SERVICE_READY) {
@@ -298,6 +309,38 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         configSupervisor.addListener(TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
         configSupervisor.addListener(TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
         configSupervisor.addListener(TYPE_SERVICE_SPACE, new ServiceListener(this, objectParser, policyPublisher));
+    }
+
+    /**
+     * Builds a {@link Propagation} instance based on the configuration settings.
+     * It retrieves the {@link TransmitConfig} from the governance configuration and selects a {@link Propagation}
+     * instance from the available propagations. If auto-detection is enabled, it constructs an {@link AutoPropagation}
+     * instance.
+     *
+     * @return A {@link Propagation} instance configured based on the settings.
+     */
+    private Propagation buildPropagation() {
+        TransmitConfig config = governanceConfig.getTransmitConfig();
+        Propagation defaultPropagation = propagationList.get(0);
+        Propagation propagation = propagations.getOrDefault(config.getType(), defaultPropagation);
+        AutoDetect autoDetect = config.getAutoDetect();
+        if (autoDetect == null || autoDetect == AutoDetect.NONE) {
+            return propagation;
+        } else if (autoDetect == AutoDetect.ALL) {
+            return new AutoPropagation(propagationList, propagation, autoDetect);
+        } else if (propagation == defaultPropagation) {
+            return new AutoPropagation(propagationList, propagation, autoDetect);
+        } else {
+            // Priority processing of the current configuration
+            List<Propagation> ordered = new ArrayList<>(propagationList.size());
+            ordered.add(propagation);
+            for (Propagation p : propagationList) {
+                if (p != propagation) {
+                    ordered.add(propagation);
+                }
+            }
+            return new AutoPropagation(ordered, propagation, autoDetect);
+        }
     }
 
     /**

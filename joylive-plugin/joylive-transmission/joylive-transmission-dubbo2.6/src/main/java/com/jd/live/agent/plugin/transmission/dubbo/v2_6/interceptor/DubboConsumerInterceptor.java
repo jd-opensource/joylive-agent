@@ -19,31 +19,30 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcInvocation;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderReader.StringMapReader;
+import com.jd.live.agent.governance.request.HeaderWriter.StringMapWriter;
 
-import java.util.List;
+import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
 
 public class DubboConsumerInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public DubboConsumerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public DubboConsumerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        attachTag((RpcInvocation) ctx.getArguments()[0]);
-    }
-
-    private void attachTag(RpcInvocation invocation) {
+        RpcInvocation invocation = ctx.getArgument(0);
         Carrier carrier = RequestContext.getOrCreate();
-        carrier.addCargo(require, RpcContext.getContext().getAttachments(), Label::parseValue);
-        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
+        // read from rpc context by live propagation
+        LIVE_PROPAGATION.read(carrier, new StringMapReader(RpcContext.getContext().getAttachments()));
+        // write to invocation with live attachments in rpc context
+        propagation.write(carrier, new StringMapWriter(invocation.getAttachments(), invocation::setAttachment));
     }
 
 }

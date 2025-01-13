@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaConsumerRecordInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "KafkaConsumerRecordDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -39,8 +37,8 @@ public class KafkaConsumerRecordDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_VALUE = "value";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public KafkaConsumerRecordDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_RECORD);
@@ -48,7 +46,7 @@ public class KafkaConsumerRecordDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_VALUE).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new KafkaConsumerRecordInterceptor(requires))};
+                        () -> new KafkaConsumerRecordInterceptor(propagation))};
     }
 
 }

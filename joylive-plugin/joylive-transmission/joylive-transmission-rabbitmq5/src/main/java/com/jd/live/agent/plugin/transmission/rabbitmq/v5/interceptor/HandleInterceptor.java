@@ -16,16 +16,14 @@
 package com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.Envelope;
 
-import java.util.List;
-
 public class HandleInterceptor extends AbstractConsumerInterceptor {
 
-    public HandleInterceptor(List<CargoRequire> requires) {
-        super(requires);
+    public HandleInterceptor(Propagation propagation) {
+        super(propagation);
     }
 
     @Override

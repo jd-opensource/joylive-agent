@@ -15,14 +15,11 @@
  */
 package com.jd.live.agent.demo.springcloud.v2021.consumer.config;
 
-import okhttp3.ConnectionPool;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class ConsumerConfig {
@@ -31,17 +28,6 @@ public class ConsumerConfig {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
-    }
-
-    @Bean
-    public okhttp3.OkHttpClient okHttpClient(OkHttpConfig config) {
-        return new okhttp3.OkHttpClient.Builder()
-                .readTimeout(config.getReadTimeout(), TimeUnit.SECONDS)
-                .connectTimeout(config.getConnectTimeout(), TimeUnit.SECONDS)
-                .writeTimeout(config.getWriteTimeout(), TimeUnit.SECONDS)
-                .retryOnConnectionFailure(true)
-                .connectionPool(new ConnectionPool())
-                .build();
     }
 
     @Bean

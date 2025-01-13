@@ -19,34 +19,29 @@ import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderReader.StringMapReader;
+import com.jd.live.agent.governance.request.HeaderWriter.ObjectMapWriter;
 
-import java.util.List;
+import static com.jd.live.agent.governance.context.bag.live.LivePropagation.LIVE_PROPAGATION;
 
 public class SofaRpcClientInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public SofaRpcClientInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public SofaRpcClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         SofaRequest request = (SofaRequest) ctx.getArguments()[0];
-        attachTag(request);
-    }
-
-    private void attachTag(SofaRequest request) {
         Carrier carrier = RequestContext.getOrCreate();
         if (RpcInvokeContext.isBaggageEnable()) {
-            carrier.addCargo(require, RpcInvokeContext.getContext().getAllRequestBaggage(), Label::parseValue);
+            LIVE_PROPAGATION.read(carrier, new StringMapReader(RpcInvokeContext.getContext().getAllRequestBaggage()));
         }
-        carrier.cargos(tag -> request.addRequestProp(tag.getKey(), tag.getValue()));
+        propagation.write(carrier, new ObjectMapWriter(request.getRequestProps(), request::addRequestProp));
     }
-
 }

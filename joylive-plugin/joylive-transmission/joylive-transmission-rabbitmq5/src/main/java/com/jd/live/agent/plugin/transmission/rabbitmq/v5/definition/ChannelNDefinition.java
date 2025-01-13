@@ -18,12 +18,17 @@ package com.jd.live.agent.plugin.transmission.rabbitmq.v5.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor.PublishInterceptor;
 
+@Injectable
 @Extension(value = "ChannelNDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(ChannelNDefinition.TYPE_CHANNEL_N)
@@ -33,8 +38,14 @@ public class ChannelNDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_BASIC_PUBLISH = "basicPublish";
 
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
+
     public ChannelNDefinition() {
-        super(MatcherBuilder.named(TYPE_CHANNEL_N),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_BASIC_PUBLISH), new PublishInterceptor()));
+
+        this.matcher = () -> MatcherBuilder.named(TYPE_CHANNEL_N);
+        this.interceptors = new InterceptorDefinition[]{
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_BASIC_PUBLISH), () -> new PublishInterceptor(propagation))
+        };
     }
 }

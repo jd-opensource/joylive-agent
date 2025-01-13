@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -29,6 +30,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2.cluster.AbstractClientClus
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v2.request.HttpHeadersParser;
 import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
@@ -66,8 +68,11 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     private final ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
-    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
+    private final Propagation propagation;
+
+    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory, Propagation propagation) {
         this.clientFactory = clientFactory;
+        this.propagation = propagation;
     }
 
     @Override
@@ -106,7 +111,8 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
-            Consumer<ServerHttpRequest.Builder> header = b -> b.headers(headers -> RequestContext.cargos(headers::set));
+            Consumer<ServerHttpRequest.Builder> header = b -> b.headers(headers ->
+                    propagation.write(RequestContext.get(), new HttpHeadersParser(headers)));
             ServerWebExchange.Builder builder = request.getExchange().mutate().request(header);
             // decorate response to remove exception header and get body
             BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);

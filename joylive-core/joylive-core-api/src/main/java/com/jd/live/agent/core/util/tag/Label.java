@@ -15,17 +15,22 @@
  */
 package com.jd.live.agent.core.util.tag;
 
+import com.jd.live.agent.core.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.StringUtils.COMMA;
-import static com.jd.live.agent.core.util.StringUtils.splitList;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * The {@code Label} interface defines a contract for label handling. It provides constants
  * representing common label regions and methods for retrieving and parsing label values.
  */
 public interface Label {
+
+    char CHAR_LEFT_BRACKET = '[';
+
+    char CHAR_RIGHT_BRACKET = ']';
 
     /**
      * Gets the key of the label.
@@ -63,20 +68,62 @@ public interface Label {
      * @return a list of parsed label values
      */
     static List<String> parseValue(String value) {
-        List<String> result;
-        if (value == null || value.isEmpty()) {
-            result = new ArrayList<>();
-        } else if (value.charAt(0) == '[' && value.charAt(value.length() - 1) == ']') {
-            if (value.length() == 2) {
-                result = new ArrayList<>();
+        List<String> result = new ArrayList<>(1);
+        parseValue(value, result);
+        return result;
+    }
+
+    /**
+     * Parses a label value string and adds the parsed values to the provided list.
+     * The parsing logic handles special formatting where values are enclosed in square brackets
+     * and separated by commas.
+     *
+     * @param value  the label value string to parse
+     * @param values the list to which parsed values will be added
+     */
+    static void parseValue(String value, List<String> values) {
+        if (value != null && !value.isEmpty()) {
+            if (value.charAt(0) == CHAR_LEFT_BRACKET && value.charAt(value.length() - 1) == CHAR_RIGHT_BRACKET) {
+                if (value.length() > 2) {
+                    // use ',' and '|' to be compatible with old version
+                    splitList(value.substring(1, value.length() - 1), PIPE_COMMA, true, false, null, values::add);
+                }
             } else {
-                result = splitList(value.substring(1, value.length() - 1), COMMA);
+                values.add(value);
             }
-        } else {
-            result = new ArrayList<>(1);
-            result.add(value);
+        }
+    }
+
+    /**
+     * Parses a iterable of label value strings into a single list of strings. The parsing logic
+     * handles special formatting where values are enclosed in square brackets and separated by commas.
+     *
+     * @param values the iterable of label value strings to parse
+     * @return a list of parsed label values
+     */
+    static List<String> parseValue(Iterable<String> values) {
+        List<String> result = new ArrayList<>(1);
+        if (values != null) {
+            for (String value : values) {
+                parseValue(value, result);
+            }
         }
         return result;
+    }
+
+    /**
+     * Joins a collection of strings into a single string with a specified separator,
+     * enclosed by a specified prefix and suffix.
+     *
+     * @param values The collection of strings to join.
+     * @return A string that is the concatenation of the strings in the collection,
+     * separated by commas and enclosed in square brackets. If the collection
+     * is null or empty, an empty string is returned.
+     */
+    static String join(Iterable<String> values) {
+        // w3c baggage use ',' and ';' as separator.
+        // so we use '|' as separator.
+        return StringUtils.join(values, CHAR_AMPERSAND, CHAR_LEFT_BRACKET, CHAR_RIGHT_BRACKET, false);
     }
 
 }

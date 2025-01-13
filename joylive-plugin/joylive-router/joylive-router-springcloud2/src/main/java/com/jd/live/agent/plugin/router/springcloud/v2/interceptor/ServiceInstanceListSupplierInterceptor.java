@@ -21,7 +21,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -45,6 +44,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -121,7 +122,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
      */
     private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> instances) {
         try {
-            invocation.setInstances(CollectionUtils.convert(instances, SpringEndpoint::new));
+            invocation.setInstances(toList(instances, SpringEndpoint::new));
             SpringEndpoint endpoint = context.route(invocation);
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {

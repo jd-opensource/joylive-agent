@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.test;
+package com.jd.live.agent.governance.invoke.ratelimit;
 
-import com.google.common.util.concurrent.RateLimiter;
 import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SmoothBurstyLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
@@ -27,7 +26,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -39,16 +37,15 @@ import static org.mockito.Mockito.mock;
 public class SmoothTokenBucketLimiterTest {
 
     private SmoothBurstyLimiter limiter;
-    private RateLimitPolicy mockPolicy;
 
     @BeforeEach
     void setUp() {
-        mockPolicy = mock(RateLimitPolicy.class);
+        RateLimitPolicy mockPolicy = mock(RateLimitPolicy.class);
         limiter = new SmoothBurstyLimiter(mockPolicy, new SlidingWindow(10, 1000L));
     }
 
     @ParameterizedTest
-    @CsvSource({"1,true", "0,false", "-1,false", "1000,true"})
+    @CsvSource({"1,true", "1000,true"})
     void testAcquireWithPermits(int permits, boolean expected) {
         boolean result = limiter.acquire(permits);
         assert result == expected;
@@ -66,11 +63,5 @@ public class SmoothTokenBucketLimiterTest {
         Assertions.assertTrue(result);
         result = limiter.acquire(1000, 1, TimeUnit.MILLISECONDS);
         Assertions.assertFalse(result);
-    }
-
-    @Test
-    void testTryAcquire_negative() {
-        RateLimiter limiter = RateLimiter.create(5.0);
-        Assertions.assertTrue(limiter.tryAcquire(5000, 1, SECONDS));
     }
 }

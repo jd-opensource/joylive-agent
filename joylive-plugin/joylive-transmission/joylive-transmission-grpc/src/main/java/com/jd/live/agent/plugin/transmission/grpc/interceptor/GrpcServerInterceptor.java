@@ -17,20 +17,17 @@ package com.jd.live.agent.plugin.transmission.grpc.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.grpc.request.MetadataParser;
 import io.grpc.*;
-
-import java.util.List;
 
 public class GrpcServerInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public GrpcServerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public GrpcServerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
@@ -40,21 +37,23 @@ public class GrpcServerInterceptor extends InterceptorAdaptor {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
                     ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
-                if (headers != null) {
-                    RequestContext.create().addCargo(require, headers.keys(),
-                            name -> Label.parseValue(headers.get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER))));
-                }
-                return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
-                    @Override
-                    protected ServerCall<ReqT, RespT> delegate() {
-                        return call;
-                    }
+                try {
+                    propagation.read(RequestContext.create(), headers == null ? null : new MetadataParser(headers));
 
-                    @Override
-                    public MethodDescriptor<ReqT, RespT> getMethodDescriptor() {
-                        return call.getMethodDescriptor();
-                    }
-                }, headers);
+                    return next.startCall(new ForwardingServerCall<ReqT, RespT>() {
+                        @Override
+                        protected ServerCall<ReqT, RespT> delegate() {
+                            return call;
+                        }
+
+                        @Override
+                        public MethodDescriptor<ReqT, RespT> getMethodDescriptor() {
+                            return call.getMethodDescriptor();
+                        }
+                    }, headers);
+                } finally {
+                    RequestContext.remove();
+                }
             }
         });
     }

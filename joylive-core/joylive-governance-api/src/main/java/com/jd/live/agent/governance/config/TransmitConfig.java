@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.config;
 
 import com.jd.live.agent.core.inject.annotation.Config;
+import com.jd.live.agent.governance.context.bag.AutoDetect;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,6 +41,16 @@ public class TransmitConfig {
      * A collection of key suffixes that need to be transmitted.
      */
     private Set<String> suffixes;
+
+    /**
+     * Transmit type, W3cBaggage as the default selection
+     */
+    private String type = "w3c";
+
+    /**
+     * Auto detect transmit type when reading.
+     */
+    private AutoDetect autoDetect = AutoDetect.NONE;
 
     /**
      * Thread transmit config

@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.WebHandlerDecoratorInterceptor;
-
-import java.util.List;
 
 /**
  * WebHandlerDecoratorDefinition
@@ -53,8 +51,8 @@ public class WebHandlerDecoratorDefinition extends PluginDefinitionAdapter {
             "org.springframework.web.server.ServerWebExchange"
     };
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public WebHandlerDecoratorDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
@@ -62,6 +60,6 @@ public class WebHandlerDecoratorDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new WebHandlerDecoratorInterceptor(requires))};
+                        () -> new WebHandlerDecoratorInterceptor(propagation))};
     }
 }

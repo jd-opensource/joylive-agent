@@ -18,12 +18,14 @@ package com.jd.live.agent.plugin.transmission.springweb.v5.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.HandshakeWebSocketServiceInterceptor;
 
 /**
@@ -46,13 +48,16 @@ public class HandshakeWebSocketServiceDefinition extends PluginDefinitionAdapter
             "org.springframework.web.reactive.socket.WebSocketHandler"
     };
 
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
+
     public HandshakeWebSocketServiceDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_REACTOR_LOADBALANCER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE_REQUEST).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_REQUEST)),
-                        new HandshakeWebSocketServiceInterceptor())
+                        () -> new HandshakeWebSocketServiceInterceptor(propagation))
         };
     }
 }

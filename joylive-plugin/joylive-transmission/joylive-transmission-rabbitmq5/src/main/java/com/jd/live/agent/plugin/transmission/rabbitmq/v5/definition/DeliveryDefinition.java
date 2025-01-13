@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor.GetBodyInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "DeliveryDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -40,14 +38,14 @@ public class DeliveryDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_GET_BODY = "getBody";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public DeliveryDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.in(METHOD_GET_BODY), () -> new GetBodyInterceptor(requires))
+                        MatcherBuilder.in(METHOD_GET_BODY), () -> new GetBodyInterceptor(propagation))
         };
     }
 }

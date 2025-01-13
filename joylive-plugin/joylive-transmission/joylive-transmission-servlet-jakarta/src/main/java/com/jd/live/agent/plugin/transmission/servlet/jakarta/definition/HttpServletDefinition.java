@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.servlet.jakarta.interceptor.HttpServletInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "HttpServletDefinition_jakarta", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -45,8 +43,8 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
             "jakarta.servlet.ServletResponse"
     };
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public HttpServletDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_HTTP_SERVLET);
@@ -54,7 +52,7 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SERVICE).
                                 and(MatcherBuilder.arguments(ARGUMENT_SERVICE)),
-                        () -> new HttpServletInterceptor(requires))
+                        () -> new HttpServletInterceptor(propagation))
         };
     }
 }

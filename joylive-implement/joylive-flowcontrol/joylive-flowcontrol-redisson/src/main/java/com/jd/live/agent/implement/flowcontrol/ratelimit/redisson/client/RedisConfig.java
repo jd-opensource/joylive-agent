@@ -99,7 +99,7 @@ public class RedisConfig {
     public RedisConfig(long id, Option option) {
         this.id = id;
         type = option.getTrimmed(KEY_TYPE, RedisType.CLUSTER.name()).toUpperCase();
-        address = join(resolveAddress(split(option.getTrimmed(KEY_ADDRESS, "").toLowerCase())), ",");
+        address = join(resolveAddress(split(option.getTrimmed(KEY_ADDRESS, "").toLowerCase())), ',');
         user = option.getTrimmed(KEY_USER);
         password = option.getTrimmed(KEY_PASSWORD);
         database = option.getNatural(KEY_DATABASE, 0);

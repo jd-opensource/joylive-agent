@@ -18,31 +18,22 @@ package com.jd.live.agent.plugin.transmission.grpc.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.grpc.request.MetadataParser;
 import io.grpc.Metadata;
 
 public class ClientCallImplInterceptor extends InterceptorAdaptor {
 
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        attachTag((Metadata) ctx.getArguments()[0]);
+    private final Propagation propagation;
+
+    public ClientCallImplInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
-    private void attachTag(Metadata metadata) {
-        RequestContext.cargos(tag -> {
-                    // If the tag key and value already exists in the metadata, do not add it again.
-                    if (metadata.containsKey(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER))) {
-                        Iterable<String> iterable = metadata.getAll(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER));
-                        if (iterable != null) {
-                            for (String value : iterable) {
-                                if (value.equals(tag.getValue())) {
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                    metadata.put(Metadata.Key.of(tag.getKey(), Metadata.ASCII_STRING_MARSHALLER), tag.getValue());
-                }
-        );
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        Metadata metadata = (Metadata) ctx.getArguments()[0];
+        propagation.write(RequestContext.get(), new MetadataParser(metadata));
     }
 
 }

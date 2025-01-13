@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.sofarpc.interceptor.SofaRpcClientInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "SofaRpcClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -44,8 +42,8 @@ public class SofaRpcClientDefinition extends PluginDefinitionAdapter {
             "com.alipay.sofa.rpc.core.request.SofaRequest"
     };
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public SofaRpcClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_CLUSTER);
@@ -53,6 +51,6 @@ public class SofaRpcClientDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new SofaRpcClientInterceptor(requires))};
+                        () -> new SofaRpcClientInterceptor(propagation))};
     }
 }

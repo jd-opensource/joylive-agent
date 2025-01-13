@@ -18,12 +18,17 @@ package com.jd.live.agent.plugin.transmission.httpclient.v4.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.httpclient.v4.interceptor.HttpClientInterceptor;
 
+@Injectable
 @Extension(value = "HttpClientDefinition_v4", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(HttpClientDefinition.TYPE_ABSTRACT_HTTP_CLIENT)
@@ -48,11 +53,15 @@ public class HttpClientDefinition extends PluginDefinitionAdapter {
             "org.apache.http.protocol.HttpContext"
     };
 
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
+
     public HttpClientDefinition() {
-        super(MatcherBuilder.in(TYPE_CLIENTS),
+        this.matcher = () -> MatcherBuilder.in(TYPE_CLIENTS);
+        this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_EXECUTES).
                                 and(MatcherBuilder.arguments(ARGUMENTS_EXECUTE)),
-                        new HttpClientInterceptor()));
+                        () -> new HttpClientInterceptor(propagation))};
     }
 }

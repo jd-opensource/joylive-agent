@@ -18,20 +18,23 @@ package com.jd.live.agent.plugin.transmission.okhttp.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.okhttp.v3.request.BuilderWriter;
 import okhttp3.Request;
 
 public class OkHttpClientInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public OkHttpClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         Request.Builder builder = ((Request) arguments[0]).newBuilder();
-        attachTag(builder);
+        propagation.write(RequestContext.get(), BuilderWriter.of(builder));
         arguments[0] = builder.build();
     }
-
-    private void attachTag(Request.Builder builder) {
-        RequestContext.cargos(builder::addHeader);
-    }
-
 }

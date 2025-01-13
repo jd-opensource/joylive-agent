@@ -17,16 +17,14 @@ package com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.rabbitmq.client.Delivery;
-
-import java.util.List;
 
 public class GetBodyInterceptor extends AbstractConsumerInterceptor {
 
-    public GetBodyInterceptor(List<CargoRequire> requires) {
-        super(requires);
+    public GetBodyInterceptor(Propagation propagation) {
+        super(propagation);
     }
 
     @Override

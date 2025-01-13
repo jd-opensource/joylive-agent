@@ -19,11 +19,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
-import com.jd.live.agent.governance.context.bag.CargoRequires;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.servlet.javax.request.HttpServletRequestParser;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
  * An interceptor for HttpServlet requests to capture and restore context (cargo) from the request headers.
@@ -33,10 +32,10 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
 
     private static final LockContext lock = new LockContext.DefaultLockContext();
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public HttpServletInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public HttpServletInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     /**
@@ -47,13 +46,15 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
-            HttpServletRequest request = (HttpServletRequest) ctx.getArguments()[0];
-            RequestContext.create().addCargo(require, request.getHeaderNames(), request::getHeaders);
+            HttpServletRequest request = ctx.getArgument(0);
+            propagation.read(RequestContext.create(), new HttpServletRequestParser(request));
         }
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        ctx.unlock();
+        if (ctx.unlock()) {
+            RequestContext.remove();
+        }
     }
 }

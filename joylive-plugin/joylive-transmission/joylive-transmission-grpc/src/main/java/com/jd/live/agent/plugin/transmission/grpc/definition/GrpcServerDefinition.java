@@ -25,10 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.CargoRequire;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.grpc.interceptor.GrpcServerInterceptor;
-
-import java.util.List;
 
 @Injectable
 @Extension(value = "GrpcServerDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
@@ -43,14 +41,14 @@ public class GrpcServerDefinition extends PluginDefinitionAdapter {
     // Interceptor is called in reverse order
     private static final String METHOD_BUILD = "build";
 
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public GrpcServerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SERVER_IMPL_BUILDER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_BUILD).and(MatcherBuilder.arguments(0)),
-                        () -> new GrpcServerInterceptor(requires))};
+                        () -> new GrpcServerInterceptor(propagation))};
     }
 }

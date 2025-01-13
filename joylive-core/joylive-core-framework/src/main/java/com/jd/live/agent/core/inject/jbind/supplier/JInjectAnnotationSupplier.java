@@ -54,7 +54,7 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
         Inject inject = fieldDesc.getAnnotation(Inject.class);
         if (inject != null) {
             String key = inject.value();
-            Sourcer sourcer = createdSourcer(fieldDesc, key);
+            Sourcer sourcer = createdSourcer(fieldDesc, inject, key);
             return new InjectField(fieldDesc.getField(), key, fieldDesc, inject, fieldDesc.getGeneric(), sourcer);
         }
         return null;
@@ -64,23 +64,26 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
      * Creates a Sourcer based on the given FieldDesc and name.
      *
      * @param fieldDesc the FieldDesc object containing information about the field
-     * @param name the name of the Sourcer
+     * @param inject    the inject annotation
+     * @param name      the name of the Sourcer
      * @return the created Sourcer object
      */
-    protected Sourcer createdSourcer(FieldDesc fieldDesc, String name) {
+    protected Sourcer createdSourcer(FieldDesc fieldDesc, Inject inject, String name) {
         Class<?> fieldType = fieldDesc.getType();
-        if (fieldType.equals(Publisher.class)) {
-            return new JPublisherSourcer(name, fieldType);
-        } else if (fieldType.equals(ExtensibleDesc.class)) {
-            return build(getExtensibleByList(fieldDesc), name, fieldDesc, JExtensibleSourcer::new);
-        } else if (fieldType.equals(List.class)) {
-            return build(getExtensibleByList(fieldDesc), name, fieldDesc, JExtensionListSourcer::new);
-        } else if (fieldType.isArray()) {
-            return build(getExtensibleByArray(fieldDesc), name, fieldDesc, JExtensionArraySourcer::new);
-        } else if (fieldType.equals(Map.class)) {
-            return build(getExtensibleByMap(fieldDesc), name, fieldDesc, JExtensionMapSourcer::new);
-        } else if (fieldType.isInterface()) {
-            return build(fieldType, name, fieldDesc, JExtensionSourcer::new);
+        if (!inject.component()) {
+            if (fieldType.equals(Publisher.class)) {
+                return new JPublisherSourcer(name, fieldType);
+            } else if (fieldType.equals(ExtensibleDesc.class)) {
+                return build(fieldDesc, inject, name, getExtensibleByList(fieldDesc), JExtensibleSourcer::new);
+            } else if (fieldType.equals(List.class)) {
+                return build(fieldDesc, inject, name, getExtensibleByList(fieldDesc), JExtensionListSourcer::new);
+            } else if (fieldType.isArray()) {
+                return build(fieldDesc, inject, name, getExtensibleByArray(fieldDesc), JExtensionArraySourcer::new);
+            } else if (fieldType.equals(Map.class)) {
+                return build(fieldDesc, inject, name, getExtensibleByMap(fieldDesc), JExtensionMapSourcer::new);
+            } else if (fieldType.isInterface()) {
+                return build(fieldDesc, inject, name, fieldType, JExtensionSourcer::new);
+            }
         }
         return new JComponentSourcer(name, fieldType);
     }
@@ -88,16 +91,16 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
     /**
      * Builds a Sourcer based on the given extensible class, name, field description, and factory.
      *
-     * @param extensible the extensible class type
-     * @param name the name of the Sourcer
      * @param fieldDesc the field description
+     * @param inject    the inject annotation
+     * @param name      the name of the Sourcer
+     * @param extensible the extensible class type
      * @param factory the factory to create the Sourcer
      * @return a new Sourcer instance
      */
-    protected Sourcer build(Class<?> extensible, String name, FieldDesc fieldDesc, SourcerFactory factory) {
+    protected Sourcer build(FieldDesc fieldDesc, Inject inject, String name, Class<?> extensible, SourcerFactory factory) {
         if (extensible != null && extensible.isInterface() && extensible.isAnnotationPresent(Extensible.class)) {
-            Inject inject = fieldDesc.getAnnotation(Inject.class);
-            return factory.build(name, extensible, fieldDesc.getOwner(), inject == null ? null : inject.loader());
+            return factory.build(name, extensible, fieldDesc.getOwner(), inject.loader());
         }
         return new JComponentSourcer(name, fieldDesc.getType());
     }

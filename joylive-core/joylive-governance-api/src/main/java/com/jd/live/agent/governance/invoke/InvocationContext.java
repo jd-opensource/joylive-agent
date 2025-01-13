@@ -24,6 +24,7 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -130,7 +131,19 @@ public interface InvocationContext {
      */
     Timer getTimer();
 
+    /**
+     * Returns the CounterManager associated with this instance.
+     *
+     * @return the CounterManager instance
+     */
     CounterManager getCounterManager();
+
+    /**
+     * Returns the Propagation associated with this instance.
+     *
+     * @return the Propagation instance
+     */
+    Propagation getPropagation();
 
     /**
      * Retrieves the policy supplier associated with this invocation context.
@@ -605,6 +618,11 @@ public interface InvocationContext {
         @Override
         public CounterManager getCounterManager() {
             return delegate.getCounterManager();
+        }
+
+        @Override
+        public Propagation getPropagation() {
+            return delegate.getPropagation();
         }
 
         @Override

@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.demo.springcloud.v2021.consumer.config;
+package com.jd.live.agent.governance.context.bag;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+/**
+ * An enumeration representing different levels of automatic detection.
+ */
+public enum AutoDetect {
 
-@Component
-@ConfigurationProperties(prefix = "okhttp")
-@Getter
-@Setter
-public class OkHttpConfig {
+    /**
+     * No automatic detection is performed.
+     */
+    NONE,
 
-    private int readTimeout = 600;
+    /**
+     * Find the first one.
+     */
+    FIRST,
 
-    private int connectTimeout = 600;
-
-    private int writeTimeout = 1200;
+    /**
+     * Find all.
+     */
+    ALL,
 }
+

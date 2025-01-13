@@ -18,20 +18,22 @@ package com.jd.live.agent.plugin.transmission.kafka.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.kafka.v3.request.KafkaHeaderParser;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.header.Headers;
-
-import java.nio.charset.StandardCharsets;
 
 public class KafkaProducerInterceptor extends InterceptorAdaptor {
 
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        attachCargo((ProducerRecord<?, ?>) ctx.getArguments()[0]);
+    private final Propagation propagation;
+
+    public KafkaProducerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
-    private void attachCargo(ProducerRecord<?, ?> record) {
-        Headers headers = record.headers();
-        RequestContext.cargos((k, v) -> headers.add(k, v == null ? null : k.getBytes(StandardCharsets.UTF_8)));
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        ProducerRecord<?, ?> record = (ProducerRecord<?, ?>) ctx.getArguments()[0];
+        propagation.write(RequestContext.get(), new KafkaHeaderParser(record.headers()));
     }
+
 }

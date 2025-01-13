@@ -19,6 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.okhttp.v1.request.BuilderWriter;
 import com.squareup.okhttp.Request.Builder;
 
 /**
@@ -30,11 +32,17 @@ public class OkHttpClientInterceptor extends InterceptorAdaptor {
 
     private static final LockContext lock = new LockContext.DefaultLockContext();
 
+    private final Propagation propagation;
+
+    public OkHttpClientInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
+
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
             Builder builder = (Builder) ctx.getTarget();
-            RequestContext.cargos(builder::addHeader);
+            propagation.write(RequestContext.get(), BuilderWriter.of(builder));
         }
     }
 
