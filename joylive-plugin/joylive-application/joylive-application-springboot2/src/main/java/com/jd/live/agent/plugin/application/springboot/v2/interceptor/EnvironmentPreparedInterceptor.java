@@ -18,18 +18,25 @@ package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.ApplicationListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationContext;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationBootstrapContext;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationEnvironment;
 
-public class ContextStopInterceptor extends InterceptorAdaptor {
+/**
+ * An interceptor that adds a Configurator-based PropertySource to the ConfigurableEnvironment
+ * during the onEnter phase of the executable context.
+ *
+ * @since 1.6.0
+ */
+public class EnvironmentPreparedInterceptor extends InterceptorAdaptor {
 
     private final ApplicationListener listener;
 
-    public ContextStopInterceptor(ApplicationListener listener) {
+    public EnvironmentPreparedInterceptor(ApplicationListener listener) {
         this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onStop(new SpringApplicationContext());
+        listener.onEnvironmentPrepared(new SpringApplicationBootstrapContext(), new SpringApplicationEnvironment(ctx.getArgument(1)));
     }
 }

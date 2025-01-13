@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.definition;
 
+import com.jd.live.agent.core.bootstrap.ApplicationListener;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -27,9 +26,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.EnvironmentPreparedInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -47,19 +46,20 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
     // for spring 2.2.9
     private static final String METHOD_RUNNING = "running";
 
-    @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
-    private PolicySupervisor policySupervisor;
+    private static final String METHOD_ENVIRONMENT_PREPARED = "environmentPrepared";
 
-    @Inject(Publisher.SYSTEM)
-    private Publisher<AgentEvent> publisher;
+    @Inject(value = ApplicationListener.COMPONENT_APPLICATION_LISTENER, component = true)
+    private ApplicationListener listener;
 
     public SpringApplicationDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationStartedInterceptor(policySupervisor, publisher)),
+                        () -> new ApplicationStartedInterceptor(listener)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
-                        () -> new ApplicationReadyInterceptor(publisher))
+                        () -> new ApplicationReadyInterceptor(listener)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
+                        () -> new EnvironmentPreparedInterceptor(listener))
         };
     }
 }

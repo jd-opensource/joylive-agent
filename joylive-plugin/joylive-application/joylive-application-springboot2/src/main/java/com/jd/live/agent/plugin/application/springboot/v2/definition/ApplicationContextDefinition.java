@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.definition;
 
+import com.jd.live.agent.core.bootstrap.ApplicationListener;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -39,13 +38,13 @@ public class ApplicationContextDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_STOP = "stop";
 
-    @Inject(Publisher.SYSTEM)
-    private Publisher<AgentEvent> publisher;
+    @Inject(value = ApplicationListener.COMPONENT_APPLICATION_LISTENER, component = true)
+    private ApplicationListener listener;
 
     public ApplicationContextDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_APPLICATION_CONTEXT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ContextStopInterceptor(publisher))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ContextStopInterceptor(listener))
         };
     }
 }
