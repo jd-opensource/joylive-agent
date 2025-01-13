@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * ServiceRegistryInterceptor
+ * DiscoveryClientConstructorInterceptor
  */
 public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 

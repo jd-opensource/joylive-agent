@@ -32,7 +32,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInterceptor;
 
 /**
- * ServiceRegistryDefinition
+ * RegistryDefinition
  *
  * @author Zhiguo.Chen
  * @since 1.0.0

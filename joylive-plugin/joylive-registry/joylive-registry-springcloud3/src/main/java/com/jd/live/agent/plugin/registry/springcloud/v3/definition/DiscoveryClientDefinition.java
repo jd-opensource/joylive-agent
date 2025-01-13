@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryCli
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientGetInterceptor;
 
 /**
- * ServiceRegistryDefinition
+ * DiscoveryClientDefinition
  */
 @Injectable
 @Extension(value = "DiscoveryClientDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
