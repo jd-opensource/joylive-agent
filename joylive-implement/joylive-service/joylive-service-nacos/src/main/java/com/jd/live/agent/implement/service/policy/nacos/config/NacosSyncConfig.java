@@ -16,17 +16,21 @@
 package com.jd.live.agent.implement.service.policy.nacos.config;
 
 import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  *  NacosSyncConfig is responsible for Nacos settings.
  */
-
 @Getter
 @Setter
 public class NacosSyncConfig extends SyncConfig {
 
     private NacosConfig nacos = new NacosConfig();
+
+    public NacosProperties getProperties() {
+        return new NacosProperties(getUrl(), nacos.getUsername(), nacos.getPassword(), nacos.getNamespace(), getTimeout());
+    }
 
 }

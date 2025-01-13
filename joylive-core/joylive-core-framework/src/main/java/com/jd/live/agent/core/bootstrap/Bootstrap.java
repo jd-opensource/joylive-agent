@@ -25,6 +25,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
@@ -183,6 +184,8 @@ public class Bootstrap implements AgentLifecycle {
 
     private ConfigCenter configCenter;
 
+    private ApplicationListener applicationListener;
+
     private PolicyWatcherSupervisor policyWatcherSupervisor;
 
     /**
@@ -280,6 +283,7 @@ public class Bootstrap implements AgentLifecycle {
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
             addPolicyWatcher(); // depend on serviceManager & configSupervisor
             configCenter = createConfigCenter();
+            applicationListener = new ApplicationListenerWrapper(createApplicationListeners());
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
@@ -540,6 +544,7 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
                 ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, serviceManager);
+                ctx.add(ApplicationListener.COMPONENT_APPLICATION_LISTENER, applicationListener);
                 ctx.add(ConfigCenter.COMPONENT_CONFIG_CENTER, configCenter);
                 ctx.add(PolicyWatcherSupervisor.COMPONENT_CONFIG_SUPERVISOR, policyWatcherSupervisor);
                 ctx.add(Timer.COMPONENT_TIMER, timer);
@@ -581,6 +586,10 @@ public class Bootstrap implements AgentLifecycle {
                 policyWatcherSupervisor.addWatcher((PolicyService) service);
             }
         });
+    }
+
+    private List<ApplicationListener> createApplicationListeners() {
+        return extensionManager.getOrLoadExtensible(ApplicationListener.class, classLoaderManager.getCoreImplLoader()).getExtensions();
     }
 
     private ConfigCenter createConfigCenter() {

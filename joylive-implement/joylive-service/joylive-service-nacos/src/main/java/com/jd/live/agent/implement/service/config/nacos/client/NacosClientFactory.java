@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos.client;
+package com.jd.live.agent.implement.service.config.nacos.client;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -22,8 +22,6 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
-import com.jd.live.agent.implement.service.policy.nacos.config.NacosConfig;
-import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,17 +34,16 @@ public abstract class NacosClientFactory {
     private static final Map<String, SharedNacosClientApi> clients = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new instance of NacosClientApi based on the provided NacosSyncConfig.
+     * Creates a new instance of NacosClientApi using the provided configuration.
      *
-     * @param config The NacosSyncConfig object to use for creating the NacosClientApi instance.
-     * @return A new instance of NacosClientApi based on the provided NacosSyncConfig.
+     * @param config The NacosProperties object containing the configuration for the client.
+     * @return A new instance of NacosClientApi.
      */
-    public static NacosClientApi create(NacosSyncConfig config) {
-        NacosConfig nacos = config.getNacos();
+    public static NacosClientApi create(NacosProperties config) {
         URI uri = URI.parse(config.getUrl());
-        String namespace = StringUtils.isEmpty(nacos.getNamespace()) ? NacosClientApi.DEFAULT_NAMESPACE : nacos.getNamespace();
-        String username = StringUtils.isEmpty(nacos.getUsername()) ? "" : nacos.getUsername();
-        String password = StringUtils.isEmpty(nacos.getPassword()) ? "" : nacos.getPassword();
+        String namespace = StringUtils.isEmpty(config.getNamespace()) ? NacosClientApi.DEFAULT_NAMESPACE : config.getNamespace();
+        String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
+        String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();
         String name = username + ":" + password + "@" + uri.getAddress() + "/" + namespace;
         SharedNacosClientApi client = clients.computeIfAbsent(name, n -> new SharedNacosClientApi(new NacosClient(config)));
         client.reference.incrementAndGet();

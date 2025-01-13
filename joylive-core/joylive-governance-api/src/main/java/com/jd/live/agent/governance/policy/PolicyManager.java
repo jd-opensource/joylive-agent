@@ -15,11 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
-import com.jd.live.agent.core.bootstrap.ApplicationListener;
-import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerAdapter;
-import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerWrapper;
-import com.jd.live.agent.core.config.PolicyWatcherSupervisor;
 import com.jd.live.agent.core.config.PolicyWatcher;
+import com.jd.live.agent.core.config.PolicyWatcherSupervisor;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -98,9 +95,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Inject(PolicyWatcherSupervisor.COMPONENT_CONFIG_SUPERVISOR)
     private PolicyWatcherSupervisor configSupervisor;
-
-    @Inject
-    private List<ApplicationListener> applicationListeners;
 
     @Inject(ObjectParser.JSON)
     private ObjectParser objectParser;
@@ -183,8 +177,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private List<String> serviceSyncers;
 
-    private ApplicationListener applicationListener;
-
     private final AtomicBoolean warmup = new AtomicBoolean(false);
 
     @Override
@@ -239,7 +231,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR, this);
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
-            source.add(ApplicationListener.COMPONENT_APPLICATION_LISTENER, applicationListener);
             source.add(Propagation.COMPONENT_PROPAGATION, propagation);
             if (governanceConfig != null) {
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
@@ -304,7 +295,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     public void initialize() {
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);
-        applicationListener = applicationListeners == null ? new ApplicationListenerAdapter() : new ApplicationListenerWrapper(applicationListeners);
         counterManager = new CounterManager(timer);
         propagation = buildPropagation();
         systemPublisher.addHandler(events -> {

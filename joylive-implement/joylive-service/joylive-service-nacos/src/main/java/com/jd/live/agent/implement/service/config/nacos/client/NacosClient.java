@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos.client;
+package com.jd.live.agent.implement.service.config.nacos.client;
 
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
@@ -21,27 +21,26 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
-import com.jd.live.agent.implement.service.policy.nacos.config.NacosConfig;
-import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.util.Properties;
 import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * A client for interacting with the Nacos configuration service.
  */
 public class NacosClient implements NacosClientApi {
 
-    private final NacosSyncConfig config;
+    private final NacosProperties config;
 
     private ConfigService configService;
 
-    public NacosClient(NacosSyncConfig config) {
+    public NacosClient(NacosProperties config) {
         this.config = config;
     }
 
@@ -50,13 +49,12 @@ public class NacosClient implements NacosClientApi {
         Properties properties = new Properties();
         URI uri = URI.parse(config.getUrl());
         properties.put(PropertyKeyConst.SERVER_ADDR, uri.getAddress());
-        NacosConfig nacosConfig = config.getNacos();
-        if (!StringUtils.isEmpty(nacosConfig.getNamespace()) && !DEFAULT_NAMESPACE.equals(nacosConfig.getNamespace())) {
-            properties.put(PropertyKeyConst.NAMESPACE, nacosConfig.getNamespace());
+        if (!isEmpty(config.getNamespace()) && !DEFAULT_NAMESPACE.equals(config.getNamespace())) {
+            properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
         }
-        if (!StringUtils.isEmpty(nacosConfig.getUsername())) {
-            properties.put(PropertyKeyConst.USERNAME, nacosConfig.getUsername());
-            properties.put(PropertyKeyConst.PASSWORD, nacosConfig.getPassword());
+        if (!isEmpty(config.getUsername())) {
+            properties.put(PropertyKeyConst.USERNAME, config.getUsername());
+            properties.put(PropertyKeyConst.PASSWORD, config.getPassword());
         }
         configService = NacosFactory.createConfigService(properties);
     }

@@ -31,8 +31,8 @@ import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
 import com.jd.live.agent.governance.service.sync.Syncer;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientApi;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientFactory;
+import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
+import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 
 import java.util.HashMap;
@@ -60,7 +60,7 @@ public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
     @Override
     protected CompletableFuture<Void> doStart() {
         try {
-            client = NacosClientFactory.create(syncConfig);
+            client = NacosClientFactory.create(syncConfig.getProperties());
             client.connect();
         } catch (NacosException e) {
             return Futures.future(e);

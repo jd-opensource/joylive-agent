@@ -78,7 +78,6 @@ public class GovernanceConfig {
     public static final String CONFIG_REGISTRY_ENABLED = CONFIG_SWITCH_REGISTRY + ENABLED;
 
     public static final String CONFIG_FLOW_CONTROL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ENABLED;
-    public static final String CONFIG_CONFIG_CENTER_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".configcenter";
     public static final String CONFIG_LOCALHOST_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".localhost";
     public static final String CONFIG_VIRTUAL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtual";
 

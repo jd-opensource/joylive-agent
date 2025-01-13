@@ -13,31 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.config;
+package com.jd.live.agent.implement.service.config.nacos.client;
 
-import com.jd.live.agent.core.config.ConfigName;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
-
-import java.util.Map;
 
 @Getter
-@Setter
-public class ConfigCenterConfig {
+@AllArgsConstructor
+public class NacosProperties {
 
-    private String type;
-
-    private String address;
+    private String url;
 
     private String username;
 
     private String password;
 
-    private ConfigName name = new ConfigName();
+    public String namespace;
 
     private long timeout = 3000;
-
-    private Map<String, String> properties;
-
 }
-

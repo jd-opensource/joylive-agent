@@ -41,7 +41,7 @@ public class ConfigEvent {
     /**
      * The value of the configuration.
      */
-    protected String value;
+    protected Object value;
 
     /**
      * The version of the configuration.
@@ -63,7 +63,7 @@ public class ConfigEvent {
      * @param version The version of the configuration.
      */
     @Builder
-    public ConfigEvent(EventType type, String name, String value, long version) {
+    public ConfigEvent(EventType type, String name, Object value, long version) {
         this.type = type;
         this.name = name;
         this.value = value;

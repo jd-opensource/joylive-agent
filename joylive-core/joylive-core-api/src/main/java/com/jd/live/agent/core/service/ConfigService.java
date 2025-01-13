@@ -22,11 +22,5 @@ import com.jd.live.agent.core.config.ConfigCenter;
  */
 public interface ConfigService extends AgentService, ConfigCenter {
 
-    /**
-     * Returns the type of the configuration service.
-     *
-     * @return The type of the configuration service.
-     */
-    String getType();
 }
 

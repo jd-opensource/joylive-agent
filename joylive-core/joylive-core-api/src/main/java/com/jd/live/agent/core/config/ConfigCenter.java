@@ -32,6 +32,13 @@ public interface ConfigCenter {
      */
     Configurator getConfigurator(ConfigName name);
 
+    /**
+     * Returns a default Configurator instance.
+     *
+     * @return A default Configurator instance.
+     */
+    Configurator getConfigurator();
+
 }
 
 
