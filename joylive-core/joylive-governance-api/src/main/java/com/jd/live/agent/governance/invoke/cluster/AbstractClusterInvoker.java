@@ -86,7 +86,7 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                     CompletionStage<O> stage = context.outbound(invocation, endpoint, () -> cluster.invoke(request, instance));
                     stage.whenComplete((o, r) -> {
                         if (r != null) {
-                            logger.error("Exception occurred when invoke, caused by " + r.getMessage(), r);
+                            error("Exception occurred when invoke, caused by " + r.getMessage(), r);
                             onException(cluster, invocation, o, new ServiceError(r, false), instance, result);
                         } else {
                             ServiceError error = o.getError();
@@ -98,11 +98,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                         }
                     });
                 } catch (Throwable e) {
-                    logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
+                    error("Exception occurred when routing, caused by " + e.getMessage(), e);
                     onException(cluster, invocation, null, new ServiceError(e, false), endpoint, result);
                 }
             } else {
-                logger.error("Exception occurred when service discovery, caused by " + t.getMessage(), t);
+                error("Exception occurred when service discovery, caused by " + t.getMessage(), t);
                 onException(cluster, invocation, null, new ServiceError(t, false), null, result);
             }
         });
@@ -208,6 +208,21 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
             } else {
                 result.completeExceptionally(error.getThrowable());
             }
+        }
+    }
+
+    /**
+     * Logs an error message. If the provided exception is null or an instance of LiveException,
+     * it logs only the message. Otherwise, it logs both the message and the exception.
+     *
+     * @param msg the error message to log
+     * @param e   the throwable to log, which can be null
+     */
+    protected void error(String msg, Throwable e) {
+        if (e == null || e instanceof LiveException) {
+            logger.error(msg);
+        } else {
+            logger.error(msg, e);
         }
     }
 }

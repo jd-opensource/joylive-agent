@@ -68,18 +68,53 @@ public class TransmitConfig {
 
         private Set<String> excludeTaskPrefixes = new HashSet<>();
 
+        /**
+         * Checks if the given executor type is excluded.
+         *
+         * @param type The class type of the executor to check.
+         * @return {@code true} if the executor type is excluded, {@code false} otherwise.
+         */
+        public boolean isExcludedExecutor(Class<?> type) {
+            return type != null && isExcludedExecutor(type.getName());
+        }
+
+        /**
+         * Checks if the given executor name is excluded.
+         *
+         * @param name The name of the executor to check.
+         * @return {@code true} if the executor name is excluded, {@code false} otherwise.
+         */
         public boolean isExcludedExecutor(String name) {
-            return name == null || excludeExecutors.contains(name);
+            return name != null && excludeExecutors.contains(name);
         }
 
+        /**
+         * Checks if the given task type is excluded.
+         *
+         * @param type The class type of the task to check.
+         * @return {@code true} if the task type is excluded, {@code false} otherwise.
+         */
+        public boolean isExcludedTask(Class<?> type) {
+            return type != null && isExcludedTask(type.getName());
+        }
+
+        /**
+         * Checks if the given task name is excluded.
+         *
+         * @param name The name of the task to check.
+         * @return {@code true} if the task name is excluded or matches any excluded prefix, {@code false} otherwise.
+         */
         public boolean isExcludedTask(String name) {
-            return name == null || excludeTasks.contains(name) || isExcludedTaskPrefix(name);
+            return name != null && (excludeTasks.contains(name) || isExcludedTaskPrefix(name));
         }
 
-        protected boolean isExcludedTaskPrefix(String name) {
-            if (name == null) {
-                return false;
-            }
+        /**
+         * Checks if the given task name matches any excluded prefix.
+         *
+         * @param name The name of the task to check.
+         * @return {@code true} if the task name starts with any excluded prefix, {@code false} otherwise.
+         */
+        private boolean isExcludedTaskPrefix(String name) {
             for (String prefix : excludeTaskPrefixes) {
                 if (name.startsWith(prefix)) {
                     return true;
@@ -87,6 +122,7 @@ public class TransmitConfig {
             }
             return false;
         }
+
     }
 
 }

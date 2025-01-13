@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.plugin.definition;
 
 import com.jd.live.agent.bootstrap.plugin.PluginPublisher;
+import com.jd.live.agent.core.bytekit.type.TypeDesc;
 
 import java.util.List;
 
@@ -42,6 +43,15 @@ public interface PluginDeclare extends PluginPublisher {
     List<PluginDefinition> getDefinitions();
 
     /**
+     * Matches the plugin definitions with the given {@link TypeDesc}.
+     *
+     * @param typeDesc the type descriptor to match against the plugin definitions
+     * @return A list of {@link PluginDefinition} instances that match the given type descriptor,
+     * or an empty list if no matches are found.
+     */
+    List<PluginDefinition> match(TypeDesc typeDesc, ClassLoader classLoader);
+
+    /**
      * Determines whether the plugin does not contain any definitions.
      *
      * @return {@code true} if the plugin has no definitions, otherwise {@code false}.
@@ -50,12 +60,4 @@ public interface PluginDeclare extends PluginPublisher {
         List<PluginDefinition> definitions = getDefinitions();
         return definitions == null || definitions.isEmpty();
     }
-
-    /**
-     * Retrieves the class loader associated with the plugin. This class loader is used to load the plugin's
-     * classes and resources.
-     *
-     * @return The {@link ClassLoader} associated with the plugin.
-     */
-    ClassLoader getClassLoader();
 }

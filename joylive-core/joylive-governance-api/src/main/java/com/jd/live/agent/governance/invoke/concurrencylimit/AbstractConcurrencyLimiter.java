@@ -1,19 +1,14 @@
 package com.jd.live.agent.governance.invoke.concurrencylimit;
 
+import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
-import lombok.Getter;
 
 /**
  * AbstractConcurrencyLimiter
  *
  * @since 1.0.0
  */
-@Getter
-public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
-
-    private final ConcurrencyLimitPolicy policy;
-
-    private long lastAcquireTime;
+public abstract class AbstractConcurrencyLimiter extends AbstractLicensee<ConcurrencyLimitPolicy> implements ConcurrencyLimiter {
 
     public AbstractConcurrencyLimiter(ConcurrencyLimitPolicy policy) {
         this.policy = policy;
@@ -21,7 +16,10 @@ public abstract class AbstractConcurrencyLimiter implements ConcurrencyLimiter {
 
     @Override
     public boolean acquire() {
-        lastAcquireTime = System.currentTimeMillis();
+        if (!started.get()) {
+            return true;
+        }
+        lastAccessTime = System.currentTimeMillis();
         return doAcquire();
     }
 

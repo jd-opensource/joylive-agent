@@ -39,6 +39,8 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     // Endpoint is request level
     private Integer weight;
 
+    private Double weightRatio;
+
     @Override
     public String getLiveSpaceId() {
         if (liveSpaceId == null) {
@@ -95,9 +97,19 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     }
 
     @Override
-    public Integer getWeight(ServiceRequest request) {
+    public Double getWeightRatio() {
+        return weightRatio;
+    }
+
+    @Override
+    public void setWeightRatio(Double weightRatio) {
+        this.weightRatio = weightRatio;
+    }
+
+    @Override
+    public Integer reweight(ServiceRequest request) {
         if (weight == null) {
-            weight = Endpoint.super.getWeight(request);
+            weight = Endpoint.super.reweight(request);
         }
         return weight;
     }

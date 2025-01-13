@@ -23,24 +23,12 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class CircuitBreakerConfig {
+public class CircuitBreakerConfig extends RecyclerConfig {
 
     /**
      * The type of the circuit breaker. Default is "Resilience4j".
      */
     private String type = "Resilience4j";
-
-    /**
-     * The interval in milliseconds at which the circuit breaker should clean up expired entries.
-     * Default is 30,000 milliseconds (30 seconds).
-     */
-    private long cleanInterval = 30000;
-
-    /**
-     * The time in milliseconds after which the circuit breaker entries expire.
-     * Default is 60,000 milliseconds (60 seconds).
-     */
-    private long expireTime = 60000;
 
 }
 

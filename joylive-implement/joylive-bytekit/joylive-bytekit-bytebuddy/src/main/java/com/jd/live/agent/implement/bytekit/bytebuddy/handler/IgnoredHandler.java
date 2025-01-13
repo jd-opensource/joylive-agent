@@ -65,7 +65,7 @@ public class IgnoredHandler implements BuilderHandler {
                                @MaybeNull ClassLoader classLoader,
                                @MaybeNull JavaModule javaModule,
                                @MaybeNull Class<?> aClass,
-                               @NeverNull ProtectionDomain protectionDomain) {
+                               @MaybeNull ProtectionDomain protectionDomain) {
             return isArray(typeDescription) || isPrimitive(typeDescription) || isAgent(classLoader) || isExcluded(typeDescription);
         }
 

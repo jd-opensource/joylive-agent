@@ -261,6 +261,7 @@ public class Service extends PolicyOwner implements ServiceName {
                 }
             }
         }
+        version = service.getVersion();
         groups = targets;
         defaultGroup = null;
         groupCache.clear();

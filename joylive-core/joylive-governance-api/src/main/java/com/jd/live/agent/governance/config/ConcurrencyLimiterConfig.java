@@ -23,24 +23,12 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ConcurrencyLimiterConfig {
+public class ConcurrencyLimiterConfig extends RecyclerConfig {
 
     /**
      * The type of the concurrency limiter. Default is "Resilience4j".
      */
     private String type = "Resilience4j";
-
-    /**
-     * The interval in milliseconds at which the concurrency limiter should clean up expired entries.
-     * Default is 30,000 milliseconds (30 seconds).
-     */
-    private long cleanInterval = 30000;
-
-    /**
-     * The time in milliseconds after which the concurrency limiter entries expire.
-     * Default is 60,000 milliseconds (60 seconds).
-     */
-    private long expireTime = 60000;
 
 }
 

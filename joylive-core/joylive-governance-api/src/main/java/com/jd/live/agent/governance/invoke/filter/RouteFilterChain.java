@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.invoke.filter;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -48,6 +50,8 @@ public interface RouteFilterChain {
      * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of routing filters.
      */
     class Chain implements RouteFilterChain {
+
+        private static final Logger logger = LoggerFactory.getLogger(Chain.class);
 
         private int index; // Tracks the current position in the filter chain.
         private final RouteFilter[] filters; // Array of filters in the chain.
@@ -84,7 +88,21 @@ public interface RouteFilterChain {
         @Override
         public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation) {
             if (index < filters.length) {
-                filters[index++].filter(invocation, this);
+                log(index - 1, invocation);
+                RouteFilter filter = filters[index++];
+                filter.filter(invocation, this);
+            } else if (index == filters.length) {
+                log(index - 1, invocation);
+            }
+        }
+
+        private <T extends OutboundRequest> void log(int index, OutboundInvocation<T> invocation) {
+            if (logger.isDebugEnabled()) {
+                if (index < 0) {
+                    logger.debug("Before apply any filter, endpoint size: " + invocation.getEndpointSize());
+                } else {
+                    logger.debug("After apply " + filters[index].getClass().getSimpleName() + ", endpoint size: " + invocation.getEndpointSize());
+                }
             }
         }
     }

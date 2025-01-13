@@ -61,7 +61,7 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     }
 
     @Override
-    public Integer getOriginWeight(ServiceRequest request) {
+    public Integer getWeight(ServiceRequest request) {
         URL target = invoker instanceof ClusterInvoker ? ((ClusterInvoker<?>) invoker).getRegistryUrl() : url;
         String weight = target.getMethodParameter(request.getMethod(), Constants.LABEL_WEIGHT, null);
         if (weight == null || weight.isEmpty()) {

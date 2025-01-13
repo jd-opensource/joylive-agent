@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.demo.util;
 
+import com.jd.live.agent.core.util.network.Ipv4;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,6 +27,10 @@ public class LiveLocation {
     private String cell;
     private String laneSpaceId;
     private String lane;
+    private String cluster;
+    private String cloud;
+    private String group;
+    private String ip;
 
     public LiveLocation() {
         liveSpaceId = System.getProperty("x-live-space-id");
@@ -33,6 +38,10 @@ public class LiveLocation {
         cell = System.getProperty("x-live-cell");
         laneSpaceId = System.getProperty("x-lane-space-id");
         lane = System.getProperty("x-lane-code");
+        cluster = System.getProperty("x-live-cluster");
+        cloud = System.getProperty("x-live-cloud");
+        group = System.getProperty("x-service-group");
+        ip = Ipv4.getLocalIp();
     }
 
     @Override
@@ -43,6 +52,10 @@ public class LiveLocation {
                 ", cell=" + (cell == null ? "null" : ('\'' + cell + '\'')) +
                 ", lane-space-id=" + (laneSpaceId == null ? "null" : ('\'' + laneSpaceId + '\'')) +
                 ", lane=" + (lane == null ? "null" : ('\'' + lane + '\'')) +
+                ", cluster=" + (cluster == null ? "null" : ('\'' + cluster + '\'')) +
+                ", cloud=" + (cloud == null ? "null" : ('\'' + cloud + '\'')) +
+                ", group=" + (group == null ? "null" : ('\'' + group + '\'')) +
+                ", ip=" + (ip == null ? "null" : ('\'' + ip + '\'')) +
                 '}';
     }
 }

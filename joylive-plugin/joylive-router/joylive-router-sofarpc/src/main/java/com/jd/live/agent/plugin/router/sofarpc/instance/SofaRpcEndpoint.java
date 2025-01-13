@@ -64,7 +64,7 @@ public class SofaRpcEndpoint extends AbstractEndpoint {
     }
 
     @Override
-    public Integer getOriginWeight(ServiceRequest request) {
+    public Integer getWeight(ServiceRequest request) {
         return provider.getWeight();
     }
 

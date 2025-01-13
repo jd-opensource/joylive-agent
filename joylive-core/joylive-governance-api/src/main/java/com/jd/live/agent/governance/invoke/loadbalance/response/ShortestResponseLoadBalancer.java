@@ -79,7 +79,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
             // Calculate the estimated response time from the product of active connections and succeeded average
             // elapsed time.
             long estimateResponse = counter.getSnapshot().getEstimateResponse();
-            int weight = endpoint.getWeight(request);
+            int weight = endpoint.reweight(request);
             weights[i] = weight;
             // Same as LeastActiveLoadBalance
             if (estimateResponse < shortestResponse) {

@@ -34,7 +34,7 @@ public class OtlpGrpcExporterFactory implements ExporterFactory {
     public MetricReader create(CounterConfig config) {
         ExporterConfig exporterConfig = config.getExporter();
         MetricExporter exporter = OtlpGrpcMetricExporter.builder().setEndpoint(exporterConfig.getEndpoint()).
-                setAggregationTemporalitySelector(AggregationTemporalitySelector.deltaPreferred()).
+                setAggregationTemporalitySelector(AggregationTemporalitySelector.alwaysCumulative()).
                 setTimeout(Duration.ofMillis(exporterConfig.getTimeout())).build();
         return PeriodicMetricReader.builder(exporter).setInterval(Duration.ofMillis(config.getReaderInterval())).build();
     }

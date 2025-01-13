@@ -37,6 +37,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(null);
                 oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setLoadLimitPolicies(null);
                 oldPolicy.setCircuitBreakPolicies(null);
                 oldPolicy.setPermissionPolicies(null);
                 oldPolicy.setAuthPolicy(null);
@@ -54,6 +55,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
                 oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+                oldPolicy.setLoadLimitPolicies(newPolicy.getLoadLimitPolicies());
                 oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
                 oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
                 oldPolicy.setAuthPolicy(newPolicy.getAuthPolicy());
@@ -84,6 +86,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(null);
                 oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setLoadLimitPolicies(null);
                 oldPolicy.setCircuitBreakPolicies(null);
                 oldPolicy.setPermissionPolicies(null);
                 oldPolicy.setAuthPolicy(null);
@@ -100,6 +103,7 @@ public enum MergePolicy implements PolicyMerger {
                 oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
                 oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+                oldPolicy.setLoadLimitPolicies(newPolicy.getLoadLimitPolicies());
                 oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
                 oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
                 oldPolicy.setAuthPolicy(newPolicy.getAuthPolicy());
@@ -120,6 +124,7 @@ public enum MergePolicy implements PolicyMerger {
             newPolicy.setLoadBalancePolicy(null);
             newPolicy.setConcurrencyLimitPolicies(null);
             newPolicy.setRateLimitPolicies(null);
+            newPolicy.setLoadLimitPolicies(null);
             newPolicy.setCircuitBreakPolicies(null);
             newPolicy.setPermissionPolicies(null);
             newPolicy.setAuthPolicy(null);

@@ -4,6 +4,9 @@ spring:
   cloud:
     nacos:
       discovery:
+        heart-beat:
+          enabled: true
+        heart-beat-interval: 5000
         server-addr: ${NACOS_ADDR:${AP_SD_INTERNAL_ADDRESS}:${AP_SD_INTERNAL_HTTP_PORT}}
         namespace: ${NACOS_NAMESPACE:public}
         username: ${NACOS_USERNAME:nacos}

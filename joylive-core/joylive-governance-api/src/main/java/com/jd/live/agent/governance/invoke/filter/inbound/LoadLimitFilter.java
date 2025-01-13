@@ -133,7 +133,7 @@ public class LoadLimitFilter implements InboundFilter {
      * @param time the delay in milliseconds before the task is executed
      */
     private void addTask(long time) {
-        timer.add(LOAD_LIMITER_TIMER, time, this::compute);
+        timer.delay(LOAD_LIMITER_TIMER, time, this::compute);
     }
 
     /**

@@ -17,10 +17,9 @@ package com.jd.live.agent.governance.invoke.ratelimit;
 
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import lombok.Getter;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,54 +30,62 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0.0
  */
-public abstract class AbstractRateLimiter implements RateLimiter {
+public abstract class AbstractRateLimiter extends AbstractLicensee<RateLimitPolicy> implements RateLimiter {
+
+    protected static final Long MICROSECOND_OF_ONE_SECOND = 1000 * 1000L;
 
     /**
-     * The rate limit policy that defines the limits for the rate limiter.
+     * The default time unit.
      */
-    @Getter
-    protected final RateLimitPolicy policy;
+    protected final TimeUnit timeUnit;
 
     /**
      * The default timeout duration for permit acquisition.
      */
-    protected final Duration timeout;
+    protected final long timeout;
 
     /**
      * The option that contains additional settings that may affect the behavior of the rate limiter.
      */
     protected final Option option;
 
-    @Getter
-    private long lastAcquireTime;
-
     /**
-     * Constructs a new AbstractRateLimiter with the specified rate limit policy.
-     *
-     * @param policy The rate limit policy to be applied by this rate limiter.
+     * Constructs an instance of the AbstractRateLimiter class with the given rate limit policy and time unit.
+     * @param policy the rate limit policy to use
+     * @param timeUnit the time unit to use for rate limiting
      */
-    public AbstractRateLimiter(RateLimitPolicy policy) {
+    public AbstractRateLimiter(RateLimitPolicy policy, TimeUnit timeUnit) {
         this.policy = policy;
+        this.timeUnit = timeUnit;
+        this.timeout = timeUnit.convert(policy.getMaxWaitMs() == null || policy.getMaxWaitMs() < 0 ? 0 : policy.getMaxWaitMs(), TimeUnit.MILLISECONDS);
         this.option = MapOption.of(policy.getParameters());
-        this.timeout = Duration.ofMillis(policy.getMaxWaitMs() == null || policy.getMaxWaitMs() < 0 ? 0 : policy.getMaxWaitMs());
     }
 
     @Override
     public boolean acquire() {
-        this.lastAcquireTime = System.currentTimeMillis();
-        return acquire(1, timeout.toNanos(), TimeUnit.NANOSECONDS);
+        if (!started.get()) {
+            return true;
+        }
+        this.lastAccessTime = System.currentTimeMillis();
+        return doAcquire(1, timeout, timeUnit);
     }
 
     @Override
     public boolean acquire(int permits) {
-        this.lastAcquireTime = System.currentTimeMillis();
-        return doAcquire(permits, timeout.toNanos(), TimeUnit.NANOSECONDS);
+        if (!started.get()) {
+            return true;
+        }
+        this.lastAccessTime = System.currentTimeMillis();
+        return permits <= 0 || doAcquire(permits, timeout, timeUnit);
     }
 
     @Override
     public boolean acquire(int permits, long timeout, TimeUnit timeUnit) {
-        this.lastAcquireTime = System.currentTimeMillis();
-        return doAcquire(permits, timeout, timeUnit);
+        if (!started.get()) {
+            return true;
+        }
+        this.lastAccessTime = System.currentTimeMillis();
+        return permits <= 0 || doAcquire(permits, timeout, timeUnit);
     }
 
     /**
@@ -89,6 +96,7 @@ public abstract class AbstractRateLimiter implements RateLimiter {
      * @param timeUnit Time unit
      * @return result
      */
-    public abstract boolean doAcquire(int permits, long timeout, TimeUnit timeUnit);
+    protected abstract boolean doAcquire(int permits, long timeout, TimeUnit timeUnit);
+
 }
 

@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.demo.grpc.provider.service;
 
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.demo.grpc.service.api.*;
+import com.jd.live.agent.demo.response.LiveTransmission;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
@@ -26,14 +28,19 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
     @Override
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
-        if (ThreadLocalRandom.current().nextBoolean()) {
+        if (request.getId() < 0 && ThreadLocalRandom.current().nextInt(3) == 0) {
             responseObserver.onError(new RuntimeException("error"));
             return;
         }
         UserGetResponse.Builder builder = UserGetResponse.newBuilder();
         builder.setId(request.getId())
-                .setName("index ：" + request.getId() + " time : " + System.currentTimeMillis())
-                .setGender(request.getId() % 2 + 1);
+                .setName("index:" + request.getId() + ", time:" + System.currentTimeMillis())
+                .setGender(request.getId() % 2 + 1)
+                .setUnit(System.getProperty(LiveTransmission.X_LIVE_UNIT, ""))
+                .setCell(System.getProperty(LiveTransmission.X_LIVE_CELL, ""))
+                .setCluster(System.getProperty(LiveTransmission.X_LIVE_CLUSTER, ""))
+                .setCloud(System.getProperty(LiveTransmission.X_LIVE_CLOUD, ""))
+                .setIp(Ipv4.getLocalIp());
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
     }

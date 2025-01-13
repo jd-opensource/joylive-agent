@@ -72,7 +72,6 @@ public class LoadBalanceFilter implements RouteFilter {
                 });
             }
         }
-
         chain.filter(invocation);
     }
 

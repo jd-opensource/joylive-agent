@@ -113,6 +113,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-flowcontrol-redisson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-classloader-springboot2</artifactId>
         </dependency>
         <dependency>

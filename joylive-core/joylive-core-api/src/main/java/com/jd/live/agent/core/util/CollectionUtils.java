@@ -389,6 +389,27 @@ public class CollectionUtils {
     }
 
     /**
+     * Adds all elements from the source collection to the target collection that satisfy the given predicate.
+     * If the predicate is null, all elements from the source collection are added to the target collection.
+     * If either the source or target collection is null, this method does nothing.
+     *
+     * @param <T>       the type of elements in the collections
+     * @param source    the source collection from which elements are to be added
+     * @param target    the target collection to which elements are to be added
+     * @param predicate the predicate to test elements before adding them to the target collection (can be null)
+     */
+    public static <T> void add(Collection<T> source, Collection<T> target, Predicate<T> predicate) {
+        if (source == null || target == null) {
+            return;
+        }
+        for (T t : source) {
+            if (predicate == null || predicate.test(t)) {
+                target.add(t);
+            }
+        }
+    }
+
+    /**
      * Filters the provided list of objects based on the given predicate.
      *
      * @param <T>       the type of objects in the list.
@@ -416,6 +437,26 @@ public class CollectionUtils {
         if (writeIndex < size) {
             objects.subList(writeIndex, size).clear();
         }
+    }
+
+    /**
+     * Converts a list of source objects into a list of target objects using the provided converter function.
+     *
+     * @param <S>       The type of source objects.
+     * @param <T>       The type of target objects.
+     * @param sources   The list of source objects to convert.
+     * @param converter The function to convert each source object into a target object.
+     * @return A list of target objects.
+     */
+    public static <S, T> List<T> convert(List<S> sources, Function<S, T> converter) {
+        if (sources == null || converter == null) {
+            return new ArrayList<>();
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (S instance : sources) {
+            result.add(converter.apply(instance));
+        }
+        return result;
     }
 
     /**

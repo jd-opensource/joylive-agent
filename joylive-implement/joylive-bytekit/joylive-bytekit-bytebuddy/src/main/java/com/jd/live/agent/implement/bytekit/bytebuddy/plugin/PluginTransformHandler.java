@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy.plugin;
 
-import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.plugin.definition.PluginDeclare;
 import com.jd.live.agent.implement.bytekit.bytebuddy.BuilderHandler;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -31,16 +30,13 @@ public class PluginTransformHandler implements BuilderHandler {
 
     private final PluginDeclare declare;
 
-    private final ConditionMatcher conditionMatcher;
-
-    public PluginTransformHandler(PluginDeclare declare, ConditionMatcher conditionMatcher) {
+    public PluginTransformHandler(PluginDeclare declare) {
         this.declare = declare;
-        this.conditionMatcher = conditionMatcher;
     }
 
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
-        PluginTransformer transformer = new PluginTransformer(instrumentation, declare, conditionMatcher);
+        PluginTransformer transformer = new PluginTransformer(instrumentation, declare);
         return builder.type(transformer).transform(transformer);
     }
 }

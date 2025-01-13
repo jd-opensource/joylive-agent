@@ -43,6 +43,29 @@ public interface Option extends ValueSupplier {
     String getString(String key, String def);
 
     /**
+     * Retrieves the string parameter value for the specified key.
+     *
+     * @param key The name of the parameter.
+     * @return The value of the parameter as a string.
+     */
+    default String getTrimmed(String key) {
+        String value = getString(key);
+        return value == null ? null : value.trim();
+    }
+
+    /**
+     * Retrieves the string parameter value for the specified key, with a default value.
+     *
+     * @param key The name of the parameter.
+     * @param def The default value to return if the parameter is not found.
+     * @return The value of the parameter as a string, or the default value if not found.
+     */
+    default String getTrimmed(String key, String def) {
+        String value = getString(key, def);
+        return value == null ? null : value.trim();
+    }
+
+    /**
      * Retrieves the date parameter value represented as the number of milliseconds from the epoch.
      *
      * @param key The name of the parameter.

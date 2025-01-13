@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.bytekit.matcher;
 
 import com.jd.live.agent.core.bytekit.type.NamedElement;
+import lombok.Getter;
 
 /**
  * NameMatcher
@@ -23,6 +24,7 @@ import com.jd.live.agent.core.bytekit.type.NamedElement;
  * @param <T> Match target type
  * @since 1.0.0
  */
+@Getter
 public class NameMatcher<T extends NamedElement> extends AbstractJunction<T> {
 
     private final ElementMatcher<String> matcher;

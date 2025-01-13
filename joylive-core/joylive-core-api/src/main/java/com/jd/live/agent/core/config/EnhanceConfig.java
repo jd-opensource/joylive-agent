@@ -33,7 +33,13 @@ public class EnhanceConfig {
 
     public static final String COMPONENT_ENHANCE_CONFIG = "enhanceConfig";
 
+    private static final int DEFAULT_POOL_CLEAN_INTERVAL = 60 * 1000;
+
     private String javaVersion = SUPPORT_JAVA_VERSION;
+
+    private long poolExpireTime = 10 * 60 * 1000;
+
+    private long poolCleanInterval = DEFAULT_POOL_CLEAN_INTERVAL;
 
     /**
      * exclude class name prefix
@@ -86,5 +92,9 @@ public class EnhanceConfig {
             return excludeClassLoaders.contains(type.getClassLoader().getClass().getName());
         }
         return false;
+    }
+
+    public long getPoolCleanInterval() {
+        return poolCleanInterval <= 0 ? DEFAULT_POOL_CLEAN_INTERVAL : poolCleanInterval;
     }
 }

@@ -15,11 +15,10 @@
  */
 package com.jd.live.agent.core.bytekit.matcher;
 
-import com.jd.live.agent.core.bytekit.type.TypeDef;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 
 
 /**
@@ -29,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SubTypeMatcher.class);
 
     private final Class<?> type;
 
@@ -50,11 +51,11 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
 
     public static class SubNameMatcher<T extends TypeDesc> extends AbstractJunction<T> {
 
-        private static final Map<String, Set<String>> TYPES = new ConcurrentHashMap<>();
-
         private final String type;
 
         private final boolean implement;
+
+        private final UnsafeLazyObject<Class<?>> optional = new UnsafeLazyObject<>(this::getType);
 
         public SubNameMatcher(String type) {
             this(type, false);
@@ -70,39 +71,18 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
             if (target == null || type == null || type.isEmpty() || implement && target.isInterface()) {
                 return false;
             }
-            return TYPES.computeIfAbsent(target.getActualName(), k -> loadTypes(target)).contains(type);
+            Class<?> type = optional.get();
+            return type != null && target.isAssignableTo(type);
         }
 
-        /**
-         * Loads all the types that are part of the inheritance hierarchy of the given type definition.
-         *
-         * @param typeDef The type definition to start from.
-         * @return A set of strings representing the names of all the types in the inheritance hierarchy.
-         */
-        private Set<String> loadTypes(TypeDesc typeDef) {
-            Set<String> result = new HashSet<>();
-            Queue<TypeDesc> queue = new ArrayDeque<>();
-            result.add(typeDef.getActualName());
-            queue.add(typeDef);
-            TypeDef current;
-            TypeDesc desc;
-            while (!queue.isEmpty()) {
-                current = queue.poll();
-                for (TypeDesc.Generic generic : current.getInterfaces()) {
-                    desc = generic.asErasure();
-                    if (result.add(desc.getActualName())) {
-                        queue.add(desc);
-                    }
-                }
-                TypeDesc.Generic parent = current.getSuperClass();
-                if (parent != null) {
-                    desc = parent.asErasure();
-                    if (result.add(desc.getActualName())) {
-                        queue.add(desc);
-                    }
-                }
+        private Class<?> getType() {
+            try {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                return classLoader != null ? classLoader.loadClass(type) : Class.forName(type);
+            } catch (Throwable e) {
+                logger.error("class is not found in context class loader. " + type);
+                return null;
             }
-            return result;
         }
     }
 

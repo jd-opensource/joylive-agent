@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.policy.service.limit;
 
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
+import com.jd.live.agent.governance.policy.PolicyVersion;
 import com.jd.live.agent.governance.policy.service.annotation.Provider;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
@@ -47,7 +48,8 @@ import java.util.Map;
 @Getter
 @Setter
 @Provider
-public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheritWithIdGen<RateLimitPolicy> {
+public class RateLimitPolicy extends AbstractLimitPolicy
+        implements PolicyInheritWithIdGen<RateLimitPolicy>, PolicyVersion {
 
     /**
      * A list of sliding windows that define the rate limits. Each sliding window specifies
@@ -102,6 +104,15 @@ public class RateLimitPolicy extends AbstractLimitPolicy implements PolicyInheri
         super(name, conditions, version);
         this.realizeType = realizeType;
         this.slidingWindows = slidingWindows;
+    }
+
+    /**
+     * Returns the number of sliding windows.
+     *
+     * @return the number of sliding windows, or 0 if there are no sliding windows
+     */
+    public int getSlidingWindowSize() {
+        return slidingWindows == null ? 0 : slidingWindows.size();
     }
 
     /**

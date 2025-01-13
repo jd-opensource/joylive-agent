@@ -17,15 +17,40 @@ package com.jd.live.agent.governance.policy.lane;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
+/**
+ * Represents a lane or pathway within a system, which is a logical division of the system.
+ */
 @Getter
 @Setter
+@ToString
 public class Lane {
 
+    /**
+     * Lane code
+     */
     private String code;
 
+    /**
+     * Lane name
+     */
     private String name;
 
+    /**
+     * Whether it is the default lane
+     */
     private boolean defaultLane;
+
+    /**
+     * Types of fallback strategies for lane redirection
+     */
+    private FallbackType fallbackType;
+
+    /**
+     * When the fallbackType type is CUSTOM, the lane request is redirected based on the lane specified in this field.
+     * If there is still no corresponding instance, the request is denied.
+     */
+    private String fallbackLane;
 
 }

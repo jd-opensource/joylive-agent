@@ -32,65 +32,69 @@ import static java.lang.Math.min;
  */
 public abstract class TokenBucketLimiter extends AbstractRateLimiter {
 
-    private static final int DEFAULT_SECOND_PERMITS = 1000;
+    protected static final int TIMEOUT = Integer.MIN_VALUE;
 
     protected final SleepingStopwatch stopwatch;
 
     /**
      * The maximum number of stored permits.
      */
-    protected double maxPermits;
+    protected double maxStoredPermits;
+
     /**
-     * The interval between two unit requests, at our stable rate. E.g., a stable rate of 5 permits
-     * per second has a stable interval of 200ms.
+     * The time interval (in microseconds) between each permit
      */
-    protected double stableIntervalMicros;
-
-    protected long nextFreeTicketMicros;
-
-    protected volatile Object mutex;
+    protected double permitIntervalMicros;
 
     /**
      * The currently stored permits.
      */
-    private double storedPermits;
+    protected double storedPermits;
+
+    protected long nextPermitMicros;
+
+    protected final Object mutex = new Object();
 
     public TokenBucketLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
-        super(limitPolicy);
+        super(limitPolicy, TimeUnit.MILLISECONDS);
         this.stopwatch = SleepingStopwatch.createFromSystemTimer();
-        double secondPermits = slidingWindow.getSecondPermits();
-        this.stableIntervalMicros = secondPermits <= 0 ? DEFAULT_SECOND_PERMITS : TimeUnit.SECONDS.toMicros(1L) / secondPermits;
+        this.permitIntervalMicros = slidingWindow.getPermitIntervalMicros();
         initialize();
-        update(stopwatch.readMicros());
+        refresh(stopwatch.readMicros());
     }
 
     @Override
-    public boolean acquire() {
-        return acquire(1, timeout.toMillis(), TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean acquire(int permits) {
-        return acquire(permits, timeout.toMillis(), TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
-        if (permits <= 0) {
-            throw new IllegalArgumentException("Permits must be greater than 0");
-        }
-        long timeoutMicros = timeUnit.toMicros(timeout < 0 ? 0 : timeout);
+    protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
+        long timeoutMicros = timeout <= 0 ? 0 : timeUnit.toMicros(timeout);
         long nowMicros = stopwatch.readMicros();
-        if (isTimeout(nowMicros, timeoutMicros)) {
+        if (isTimeout(nowMicros, timeoutMicros) && isFull()) {
             return false;
         }
-        synchronized (mutex()) {
+        return doAcquire(permits, nowMicros, timeoutMicros);
+    }
+
+    /**
+     * Attempts to acquire the specified number of permits,
+     * waiting if necessary until the permits become available or the specified timeout expires.
+     *
+     * @param permits       the number of permits to acquire
+     * @param nowMicros     the current time in microseconds
+     * @param timeoutMicros the maximum time to wait in microseconds
+     * @return true if the permits were acquired, false if the timeout expired
+     */
+    protected boolean doAcquire(int permits, long nowMicros, long timeoutMicros) {
+        long microsToWait;
+        synchronized (mutex) {
             // double check in lock
             if (isTimeout(nowMicros, timeoutMicros)) {
                 return false;
             }
-            doAcquire(permits, nowMicros);
+            microsToWait = estimateRequiredPermitsWaitTime(permits, nowMicros, timeoutMicros);
         }
+        if (microsToWait == TIMEOUT) {
+            return false;
+        }
+        stopwatch.sleepMicrosUninterruptibly(microsToWait);
         return true;
     }
 
@@ -98,7 +102,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      * Initializes the rate limiter by setting the maximum number of permits.
      */
     protected void initialize() {
-        this.maxPermits = getMaxPermits();
+        this.maxStoredPermits = getMaxStoredPermits();
     }
 
     /**
@@ -106,7 +110,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      *
      * @return the maximum number of permits
      */
-    protected abstract double getMaxPermits();
+    protected abstract double getMaxStoredPermits();
 
     /**
      * Checks if the current time is before the timeout time for acquiring a free ticket.
@@ -116,60 +120,67 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      * @return true if the current time is before the timeout time, false otherwise
      */
     protected boolean isTimeout(long nowMicros, long timeoutMicros) {
-        return nextFreeTicketMicros > nowMicros + timeoutMicros;
+        return nextPermitMicros > nowMicros + timeoutMicros;
     }
 
     /**
-     * Acquires the specified number of permits, blocking until they become available.
+     * Checks if the current state is full.
      *
-     * @param permits   the number of permits to acquire
-     * @param nowMicros the current time in microseconds
+     * @return {@code true} if the state is full, {@code false} otherwise.
      */
-    protected void doAcquire(int permits, long nowMicros) {
-        // always pay in advance
-        stopwatch.sleepMicrosUninterruptibly(waitFor(permits, nowMicros));
+    protected boolean isFull() {
+        return false;
     }
 
     /**
-     * Waits for the specified number of permits to become available.
+     * Estimates the wait time required to acquire the specified number of permits.
      *
-     * @param permits   the number of permits to wait for
-     * @param nowMicros the current time in microseconds
-     * @return the time waited in microseconds, or 0 if no wait was necessary
+     * @param permits       The number of permits to acquire.
+     * @param startTime     The request start time in microseconds.
+     * @param timeoutMicros The timeout time in microseconds
+     * @return The estimated wait time in microseconds, or 0 if no wait is required.
      */
-    protected long waitFor(long permits, long nowMicros) {
-        long momentAvailable = waitForEarliestAvailable(permits, nowMicros);
-        return max(momentAvailable - nowMicros, 0);
-    }
-
-    /**
-     * Waits for the specified number of permits to become available, returning the time at which the earliest permit will be available.
-     *
-     * @param permits   the number of permits to wait for
-     * @param nowMicros the current time in microseconds
-     * @return the time at which the earliest permit will be available, in microseconds
-     */
-    protected long waitForEarliestAvailable(long permits, long nowMicros) {
-        update(nowMicros);
-        long returnValue = nextFreeTicketMicros;
-
+    protected long estimateRequiredPermitsWaitTime(long permits, long startTime, long timeoutMicros) {
+        // update stored permits according to the current time
+        long nowMicros = stopwatch.readMicros();
+        refresh(nowMicros);
+        // compute wait time
         double available = min(permits, storedPermits);
         double lack = permits - available;
-        long waitMicros = waitForStoredPermits(storedPermits, available) + (long) (lack * stableIntervalMicros);
-
-        nextFreeTicketMicros = saturatedAdd(nextFreeTicketMicros, waitMicros);
+        long waitTime = estimateStorePermitsWaitTime(storedPermits, available) + (long) (lack * permitIntervalMicros);
+        // adjust wait time to facilitate pre-fetching
+        long result = adjustRequiredPermitsWaitTime(startTime, timeoutMicros, nowMicros, waitTime);
+        if (result == TIMEOUT) {
+            // it's timeout.
+            return TIMEOUT;
+        }
+        // update next token time
+        nextPermitMicros = saturatedAdd(nextPermitMicros, waitTime);
         storedPermits -= available;
-        return returnValue;
+        return result;
+    }
+
+    /**
+     * Adjusts the required wait time for acquiring permits based on the current time and the next token time.
+     *
+     * @param startTime     The request start time in microseconds.
+     * @param waitTime      The original wait time (in microseconds). This parameter is not used in the calculation.
+     * @param nowMicros     The current time in microseconds
+     * @param timeoutMicros The timeout time in microseconds
+     * @return The adjusted wait time (in microseconds), which is guaranteed to be non-negative.
+     */
+    protected long adjustRequiredPermitsWaitTime(long startTime, long timeoutMicros, long nowMicros, long waitTime) {
+        return max(nextPermitMicros - startTime, 0);
     }
 
     /**
      * Waits for the specified number of stored permits to become available.
      *
      * @param storedPermits the current number of stored permits
-     * @param permitsToTake the number of permits to wait for
+     * @param targetPermits the number of permits to wait for
      * @return the time waited in microseconds
      */
-    protected long waitForStoredPermits(double storedPermits, double permitsToTake) {
+    protected long estimateStorePermitsWaitTime(double storedPermits, double targetPermits) {
         return 0L;
     }
 
@@ -177,39 +188,31 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      * Returns the number of microseconds during cool down that we have to wait to get a new permit.
      */
     protected double coolDownIntervalMicros() {
-        return stableIntervalMicros;
+        return permitIntervalMicros;
     }
 
     /**
-     * Updates the internal state of the rate limiter based on the current time.
-     *
-     * @param nowMicros the current time in microseconds
+     * Refresh permits based on the current time.
+     * @param nowMicros     the current time in microseconds
      */
-    protected void update(long nowMicros) {
-        if (nowMicros > nextFreeTicketMicros) {
-            // if nextFreeTicket is in the past.
-            double newPermits = (nowMicros - nextFreeTicketMicros) / coolDownIntervalMicros();
-            storedPermits = min(maxPermits, storedPermits + newPermits);
-            nextFreeTicketMicros = nowMicros;
+    protected void refresh(long nowMicros) {
+        if (nowMicros > nextPermitMicros) {
+            // if nextTokenMicros is in the past.
+            double permits = (nowMicros - nextPermitMicros) / coolDownIntervalMicros();
+            permits = storedPermits + permits;
+            storedPermits = maxStoredPermits <= 0 ? permits : min(maxStoredPermits, permits);
+            nextPermitMicros = nowMicros;
         }
     }
 
     /**
-     * Returns the mutex object used for synchronization.
+     * Converts the given time duration (in seconds) into the equivalent number of permits.
      *
-     * @return the mutex object
+     * @param seconds The time duration (in seconds) for which the permits are to be calculated. Must be a positive value.
+     * @return The number of permits that can be acquired within the specified time duration.
      */
-    private Object mutex() {
-        Object mutex = this.mutex;
-        if (mutex == null) {
-            synchronized (this) {
-                mutex = this.mutex;
-                if (mutex == null) {
-                    this.mutex = mutex = new Object();
-                }
-            }
-        }
-        return mutex;
+    protected double getPermits(long seconds) {
+        return seconds * MICROSECOND_OF_ONE_SECOND / permitIntervalMicros;
     }
 
     /**

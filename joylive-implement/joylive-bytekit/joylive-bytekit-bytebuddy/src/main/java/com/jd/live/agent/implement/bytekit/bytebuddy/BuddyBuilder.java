@@ -17,7 +17,6 @@ package com.jd.live.agent.implement.bytekit.bytebuddy;
 
 import com.jd.live.agent.core.bytekit.ByteBuilder;
 import com.jd.live.agent.core.bytekit.transformer.Resetter;
-import com.jd.live.agent.core.extension.condition.ConditionMatcher;
 import com.jd.live.agent.core.plugin.definition.PluginDeclare;
 import com.jd.live.agent.implement.bytekit.bytebuddy.plugin.PluginTransformHandler;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -36,11 +35,8 @@ public class BuddyBuilder implements ByteBuilder {
 
     private final List<BuilderHandler> handlers;
 
-    private final ConditionMatcher conditionMatcher;
-
-    public BuddyBuilder(List<BuilderHandler> handlers, ConditionMatcher conditionMatcher) {
+    public BuddyBuilder(List<BuilderHandler> handlers) {
         this.handlers = handlers == null ? new ArrayList<>() : new ArrayList<>(handlers);
-        this.conditionMatcher = conditionMatcher;
     }
 
     @Override
@@ -56,7 +52,7 @@ public class BuddyBuilder implements ByteBuilder {
     @Override
     public ByteBuilder append(PluginDeclare plugin) {
         if (plugin != null) {
-            handlers.add(new PluginTransformHandler(plugin, conditionMatcher));
+            handlers.add(new PluginTransformHandler(plugin));
         }
         return this;
     }

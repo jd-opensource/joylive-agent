@@ -31,6 +31,9 @@ import io.grpc.ServerCall;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * An interface representing a gRPC request.
@@ -62,6 +65,22 @@ public interface GrpcRequest {
         public boolean isNativeGroup() {
             return false;
         }
+
+        @Override
+        public String getHeader(String key) {
+            return headers.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
+        }
+
+        @Override
+        public List<String> getHeaders(String key) {
+            Iterable<String> iterable = headers.getAll(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
+            if (iterable == null) {
+                return null;
+            }
+            return StreamSupport.stream(iterable.spliterator(), false)
+                    .collect(Collectors.toList());
+        }
+
     }
 
     /**
@@ -79,6 +98,21 @@ public interface GrpcRequest {
         @Override
         public void setHeader(String key, String value) {
             request.setHeader(key, value);
+        }
+
+        @Override
+        public String getHeader(String key) {
+            return request.getHeaders().get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
+        }
+
+        @Override
+        public List<String> getHeaders(String key) {
+            Iterable<String> iterable = request.getHeaders().getAll(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
+            if (iterable == null) {
+                return null;
+            }
+            return StreamSupport.stream(iterable.spliterator(), false)
+                    .collect(Collectors.toList());
         }
 
         @SuppressWarnings("unchecked")
