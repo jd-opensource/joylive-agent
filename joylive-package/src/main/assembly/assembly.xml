@@ -207,6 +207,7 @@
             <includes>
                 <include>com.jd.live:joylive-transmission-grpc</include>
                 <include>com.jd.live:joylive-router-grpc</include>
+                <include>com.jd.live:joylive-registry-grpc</include>
             </includes>
         </dependencySet>
 

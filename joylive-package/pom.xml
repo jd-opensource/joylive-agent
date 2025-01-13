@@ -125,6 +125,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-registry-springcloud3</artifactId>
         </dependency>
         <dependency>
