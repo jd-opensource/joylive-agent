@@ -39,5 +39,13 @@ public class ConfigCenterConfig {
 
     private Map<String, String> properties;
 
+    public String getProperty(String key) {
+        return key == null || properties == null ? null : properties.get(key);
+    }
+
+    public String getOrDefault(String key, String defaultValue) {
+        return key == null || properties == null ? defaultValue : properties.getOrDefault(key, defaultValue);
+    }
+
 }
 

@@ -26,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.system.slf4j.interceptor.LoggerFactoryInterceptor;
 
 @Injectable
@@ -45,13 +46,16 @@ public class LoggerFactoryDefinition extends PluginDefinitionAdapter {
     @Inject(ConfigCenter.COMPONENT_CONFIG_CENTER)
     private ConfigCenter configCenter;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
     public LoggerFactoryDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).
                                 and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new LoggerFactoryInterceptor(configCenter))
+                        () -> new LoggerFactoryInterceptor(configCenter, governanceConfig))
         };
     }
 }

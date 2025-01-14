@@ -24,6 +24,8 @@ import com.jd.live.agent.core.config.ConfigEvent;
 import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.config.Configurator;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.ConfigCenterConfig;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.system.slf4j.logger.LevelUpdater;
 import com.jd.live.agent.plugin.system.slf4j.logger.LevelUpdaterFactory;
 
@@ -40,16 +42,24 @@ import static com.jd.live.agent.core.util.StringUtils.splitMap;
 public class LoggerFactoryInterceptor extends InterceptorAdaptor {
     private static final Logger logger = LoggerFactory.getLogger(LoggerFactoryInterceptor.class);
 
+    private static final String DEFAULT_LOGGER_KEY = "logger.level";
+
+    private static final String KEY_LOGGER = "logger.key";
+
     private final Configurator configurator;
+
+    private final ConfigCenterConfig config;
 
     private final Map<String, LoggerCache> loggerCaches = new ConcurrentHashMap<>();
 
     private Map<String, String> configs;
 
-    public LoggerFactoryInterceptor(ConfigCenter configCenter) {
+    public LoggerFactoryInterceptor(ConfigCenter configCenter, GovernanceConfig governanceConfig) {
+        this.config = governanceConfig.getConfigCenterConfig();
         this.configurator = configCenter.getConfigurator();
         if (configurator != null) {
-            configurator.addListener("logger.level", this::onUpdate);
+            String key = config.getOrDefault(KEY_LOGGER, DEFAULT_LOGGER_KEY);
+            configurator.addListener(key, this::onUpdate);
         }
     }
 
@@ -69,7 +79,11 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
     private boolean onUpdate(ConfigEvent event) {
         Object value = event.getValue();
         int counter = 0;
-        if (event.getType() == EventType.UPDATE && value != null) {
+        if (event.getType() == EventType.DELETE
+                || event.getType() == EventType.UPDATE && value == null) {
+            counter += onDelete(null, configs);
+            configs = null;
+        } else if (event.getType() == EventType.UPDATE) {
             Map<String, String> newConfigs = new HashMap<>();
             splitMap(value.toString(), SEMICOLON_COMMA_LINE, true, (k, v) -> {
                 if (v != null && !v.isEmpty()) {
@@ -80,9 +94,6 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
             counter += onUpdate(newConfigs, configs);
             counter += onDelete(newConfigs, configs);
             configs = newConfigs;
-        } else if (event.getType() == EventType.DELETE) {
-            counter += onDelete(null, configs);
-            configs = null;
         }
         return counter > 0;
     }
