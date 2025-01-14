@@ -17,8 +17,8 @@ package com.jd.live.agent.governance.service.sync.file;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.config.ConfigEvent;
-import com.jd.live.agent.core.config.ConfigEvent.EventType;
+import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.core.config.PolicyEvent.EventType;
 import com.jd.live.agent.core.event.FileEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -143,8 +143,8 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
         publish(createEvent(null));
     }
 
-    protected ConfigEvent createEvent(T data) {
-        return new ConfigEvent(EventType.UPDATE_ALL, "", data, getType(), getName());
+    protected PolicyEvent createEvent(T data) {
+        return new PolicyEvent(EventType.UPDATE_ALL, "", data, getType(), getName());
     }
 
     /**

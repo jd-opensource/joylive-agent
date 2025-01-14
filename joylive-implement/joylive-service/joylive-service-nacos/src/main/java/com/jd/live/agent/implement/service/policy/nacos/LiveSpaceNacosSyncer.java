@@ -30,8 +30,8 @@ import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientApi;
-import com.jd.live.agent.implement.service.policy.nacos.client.NacosClientFactory;
+import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
+import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
 import lombok.Getter;
 
@@ -63,7 +63,7 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
     @Override
     protected CompletableFuture<Void> doStart() {
         try {
-            client = NacosClientFactory.create(syncConfig);
+            client = NacosClientFactory.create(syncConfig.getProperties());
             client.connect();
         } catch (NacosException e) {
             return Futures.future(e);

@@ -17,16 +17,16 @@ package com.jd.live.agent.governance.service.sync;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.config.ConfigEvent.EventType;
-import com.jd.live.agent.core.config.ConfigListener;
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyEvent.EventType;
+import com.jd.live.agent.core.config.PolicyListener;
+import com.jd.live.agent.core.config.PolicyWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.service.ConfigService;
+import com.jd.live.agent.core.service.PolicyService;
 import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Waiter;
@@ -51,7 +51,7 @@ import static com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 /**
  * An abstract class that provides a basic implementation of a service syncer.
  */
-public abstract class AbstractServiceSyncer<K extends ServiceKey> extends AbstractSyncer<K, Service> implements ConfigService {
+public abstract class AbstractServiceSyncer<K extends ServiceKey> extends AbstractSyncer<K, Service> implements PolicyService {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractServiceSyncer.class);
 
@@ -73,7 +73,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
 
     @Override
     public String getType() {
-        return ConfigWatcher.TYPE_SERVICE_SPACE;
+        return PolicyWatcher.TYPE_SERVICE_SPACE;
     }
 
     @Override
@@ -275,7 +275,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
                 .description("service " + name)
                 .build();
         configure(event);
-        for (ConfigListener listener : listeners) {
+        for (PolicyListener listener : listeners) {
             if (!listener.onUpdate(event)) {
                 return false;
             }
@@ -327,7 +327,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      */
     protected void addTask(PolicySubscriber task, Predicate<PolicySubscriber> predicate) {
         if (task != null
-                && ConfigWatcher.TYPE_SERVICE_SPACE.equals(task.getType())
+                && PolicyWatcher.TYPE_SERVICE_SPACE.equals(task.getType())
                 && isStarted()
                 && (predicate == null || predicate.test(task))) {
             subscribers.add(task);

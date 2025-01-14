@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.governance.policy.listener;
 
-import com.jd.live.agent.core.config.ConfigEvent;
-import com.jd.live.agent.core.config.ConfigEvent.EventType;
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.core.config.PolicyEvent.EventType;
+import com.jd.live.agent.core.config.PolicyWatcher;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -51,7 +51,7 @@ public class ServiceListener extends AbstractListener<Service> {
     }
 
     @Override
-    protected void updateItems(GovernancePolicy policy, List<Service> items, ConfigEvent event) {
+    protected void updateItems(GovernancePolicy policy, List<Service> items, PolicyEvent event) {
         ServiceEvent se = (ServiceEvent) event;
         Map<String, Long> newVersions = new HashMap<>(items == null ? 0 : items.size());
         List<Service> oldServices = policy.getServices();
@@ -85,7 +85,7 @@ public class ServiceListener extends AbstractListener<Service> {
     }
 
     @Override
-    protected void updateItem(GovernancePolicy policy, Service item, ConfigEvent event) {
+    protected void updateItem(GovernancePolicy policy, Service item, PolicyEvent event) {
         ServiceEvent se = (ServiceEvent) event;
         se.getLoadedServices().add(item.getName());
         List<Service> newServices = policy.onUpdate(Collections.singletonList(item), null, se.getMergePolicy(), se.getWatcher());
@@ -93,7 +93,7 @@ public class ServiceListener extends AbstractListener<Service> {
     }
 
     @Override
-    protected void deleteItem(GovernancePolicy policy, ConfigEvent event) {
+    protected void deleteItem(GovernancePolicy policy, PolicyEvent event) {
         if (event.getName() == null) {
             return;
         }
@@ -104,7 +104,7 @@ public class ServiceListener extends AbstractListener<Service> {
     }
 
     @Override
-    protected synchronized void onSuccess(ConfigEvent event) {
+    protected synchronized void onSuccess(PolicyEvent event) {
         synchronized (mutex) {
             ServiceEvent se = (ServiceEvent) event;
             Set<String> loaded = se.getLoadedServices();
@@ -136,7 +136,7 @@ public class ServiceListener extends AbstractListener<Service> {
      * @param subscriber The policy subscriber to subscribe to.
      */
     private void subscribe(PolicySubscriber subscriber) {
-        if (subscriber != null && ConfigWatcher.TYPE_SERVICE_SPACE.equals(subscriber.getType())) {
+        if (subscriber != null && PolicyWatcher.TYPE_SERVICE_SPACE.equals(subscriber.getType())) {
             String name = subscriber.getName();
             PolicySubscriber old = subscribers.putIfAbsent(name, subscriber);
             if (old != null && old != subscriber) {

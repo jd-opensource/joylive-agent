@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -57,7 +57,7 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
 
     @Override
     public String getType() {
-        return ConfigWatcher.TYPE_LANE_SPACE;
+        return PolicyWatcher.TYPE_LANE_SPACE;
     }
 
     @Override

@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.core.config.ConfigEvent;
-import com.jd.live.agent.core.config.ConfigEvent.EventType;
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.core.config.PolicyEvent.EventType;
+import com.jd.live.agent.core.config.PolicyWatcher;
 import com.jd.live.agent.core.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -57,7 +57,7 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     @Override
     public String getType() {
-        return ConfigWatcher.TYPE_SERVICE_SPACE;
+        return PolicyWatcher.TYPE_SERVICE_SPACE;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     }
 
     @Override
-    protected ConfigEvent createEvent(List<Service> data) {
+    protected PolicyEvent createEvent(List<Service> data) {
         return ServiceEvent.creator()
                 .type(EventType.UPDATE_ALL)
                 .value(data)

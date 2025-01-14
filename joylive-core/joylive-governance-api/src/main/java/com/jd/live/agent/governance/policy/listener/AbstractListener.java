@@ -17,8 +17,8 @@ package com.jd.live.agent.governance.policy.listener;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.config.ConfigEvent;
-import com.jd.live.agent.core.config.ConfigListener;
+import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.core.config.PolicyListener;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @param <T> The type of the parsed configuration value.
  */
-public abstract class AbstractListener<T> implements ConfigListener {
+public abstract class AbstractListener<T> implements PolicyListener {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractListener.class);
 
@@ -68,7 +68,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
     }
 
     @Override
-    public boolean onUpdate(ConfigEvent event) {
+    public boolean onUpdate(PolicyEvent event) {
         try {
             return update(event);
         } catch (Throwable e) {
@@ -83,7 +83,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @param event The configuration update.
      * @return true if the update was successful, false otherwise.
      */
-    protected boolean update(ConfigEvent event) {
+    protected boolean update(PolicyEvent event) {
         for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
             if (supervisor.update(policy -> newPolicy(policy, event))) {
                 logger.info("Success " + event.getType().getName() + " " + event.getDescription());
@@ -102,7 +102,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @param event  The configuration update.
      * @return The new policy.
      */
-    protected GovernancePolicy newPolicy(GovernancePolicy policy, ConfigEvent event) {
+    protected GovernancePolicy newPolicy(GovernancePolicy policy, PolicyEvent event) {
         GovernancePolicy result = policy == null ? new GovernancePolicy() : policy.copy();
         switch (event.getType()) {
             case DELETE_ITEM:
@@ -127,7 +127,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @return A list of objects of the specified type, or an empty list if the configuration value is null or cannot be parsed.
      */
     @SuppressWarnings("unchecked")
-    protected <M> M parseItem(ConfigEvent event, Class<M> type) {
+    protected <M> M parseItem(PolicyEvent event, Class<M> type) {
         Object value = event.getValue();
         if (value == null) {
             return null;
@@ -150,7 +150,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @return A list of objects of the specified type, or an empty list if the configuration value is null or cannot be parsed.
      */
     @SuppressWarnings("unchecked")
-    protected <M> List<M> parseList(ConfigEvent event, Class<M> type) {
+    protected <M> List<M> parseList(PolicyEvent event, Class<M> type) {
         Object value = event.getValue();
         if (value == null) {
             return new ArrayList<>();
@@ -172,7 +172,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @param items  The parsed configuration value.
      * @param event  The original configuration update.
      */
-    protected abstract void updateItems(GovernancePolicy policy, List<T> items, ConfigEvent event);
+    protected abstract void updateItems(GovernancePolicy policy, List<T> items, PolicyEvent event);
 
     /**
      * Updates the governance policy and a specific item based on the given config event.
@@ -181,7 +181,7 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @param item   The specific item to be updated.
      * @param event  The config event that triggered the update.
      */
-    protected abstract void updateItem(GovernancePolicy policy, T item, ConfigEvent event);
+    protected abstract void updateItem(GovernancePolicy policy, T item, PolicyEvent event);
 
     /**
      * Deletes the specified configuration from the policy.
@@ -189,14 +189,14 @@ public abstract class AbstractListener<T> implements ConfigListener {
      * @param policy The policy to delete from.
      * @param event  The configuration to delete.
      */
-    protected abstract void deleteItem(GovernancePolicy policy, ConfigEvent event);
+    protected abstract void deleteItem(GovernancePolicy policy, PolicyEvent event);
 
     /**
      * Called when the policy update is successful.
      *
      * @param event The configuration update.
      */
-    protected void onSuccess(ConfigEvent event) {
+    protected void onSuccess(PolicyEvent event) {
 
     }
 

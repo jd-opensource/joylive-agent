@@ -20,70 +20,86 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * A configuration class that represents a single configuration setting.
+ * A class representing a configuration event.
+ *
+ * @since 1.0
  */
 @Setter
 @Getter
 public class ConfigEvent {
 
+    /**
+     * The type of the configuration event.
+     */
     protected EventType type;
 
     /**
-     * The name of the configuration setting.
+     * The name of the configuration.
      */
     protected String name;
 
     /**
-     * The value of the configuration setting.
+     * The value of the configuration.
      */
     protected Object value;
 
     /**
-     * A description of the configuration setting.
+     * The version of the configuration.
      */
-    protected String description;
+    protected long version;
 
-    protected String watcher;
-
+    /**
+     * Default constructor.
+     */
     public ConfigEvent() {
     }
 
+    /**
+     * Constructor using the Builder pattern.
+     *
+     * @param type    The type of the configuration event.
+     * @param name    The name of the configuration.
+     * @param value   The value of the configuration.
+     * @param version The version of the configuration.
+     */
     @Builder
-    public ConfigEvent(EventType type, String name, Object value, String description, String watcher) {
+    public ConfigEvent(EventType type, String name, Object value, long version) {
         this.type = type;
         this.name = name;
         this.value = value;
-        this.description = description;
-        this.watcher = watcher;
+        this.version = version;
     }
 
     /**
-     * An enumeration representing different types of events.
+     * An enum representing the type of configuration event.
      */
     @Getter
     public enum EventType {
 
         /**
-         * Represents an event to update all items.
+         * An update event.
          */
-        UPDATE_ALL("update all"),
+        UPDATE("update"),
 
         /**
-         * Represents an event to update a specific item.
+         * A delete event.
          */
-        UPDATE_ITEM("update item"),
+        DELETE("delete");
 
         /**
-         * Represents an event to delete a specific item.
+         * The name of the event type.
          */
-        DELETE_ITEM("delete item");
-
         private final String name;
 
+        /**
+         * Constructor for the EventType enum.
+         *
+         * @param name The name of the event type.
+         */
         EventType(String name) {
             this.name = name;
         }
 
     }
-
 }
+

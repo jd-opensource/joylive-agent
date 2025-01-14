@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.listener;
 
-import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.PolicyEvent;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
@@ -36,12 +36,12 @@ public class LiveSpaceListener extends AbstractListener<LiveSpace> {
     }
 
     @Override
-    protected void updateItems(GovernancePolicy policy, List<LiveSpace> items, ConfigEvent event) {
+    protected void updateItems(GovernancePolicy policy, List<LiveSpace> items, PolicyEvent event) {
         policy.setLiveSpaces(items);
     }
 
     @Override
-    protected void updateItem(GovernancePolicy policy, LiveSpace item, ConfigEvent event) {
+    protected void updateItem(GovernancePolicy policy, LiveSpace item, PolicyEvent event) {
         List<LiveSpace> spaces = policy.getLiveSpaces() == null ? new ArrayList<>() : policy.getLiveSpaces();
         filter(spaces, space -> !space.getId().equals(item.getId()));
         spaces.add(item);
@@ -49,7 +49,7 @@ public class LiveSpaceListener extends AbstractListener<LiveSpace> {
     }
 
     @Override
-    protected void deleteItem(GovernancePolicy policy, ConfigEvent event) {
+    protected void deleteItem(GovernancePolicy policy, PolicyEvent event) {
         if (event.getName() == null) {
             return;
         }

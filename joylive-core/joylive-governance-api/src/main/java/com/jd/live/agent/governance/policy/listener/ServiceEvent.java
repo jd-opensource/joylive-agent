@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.listener;
 
-import com.jd.live.agent.core.config.ConfigEvent;
+import com.jd.live.agent.core.config.PolicyEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Getter
-public class ServiceEvent extends ConfigEvent {
+public class ServiceEvent extends PolicyEvent {
 
     @Setter
     private MergePolicy mergePolicy;

@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
-import com.jd.live.agent.core.config.ConfigSupervisor;
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyWatcher;
+import com.jd.live.agent.core.config.PolicyWatcherSupervisor;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -31,7 +31,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.service.ConfigService;
+import com.jd.live.agent.core.service.PolicyService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
@@ -61,7 +61,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.jd.live.agent.core.config.ConfigWatcher.*;
+import static com.jd.live.agent.core.config.PolicyWatcher.*;
 
 /**
  * PolicyManager
@@ -93,8 +93,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(ConfigSupervisor.COMPONENT_CONFIG_SUPERVISOR)
-    private ConfigSupervisor configSupervisor;
+    @Inject(PolicyWatcherSupervisor.COMPONENT_CONFIG_SUPERVISOR)
+    private PolicyWatcherSupervisor configSupervisor;
 
     @Inject(ObjectParser.JSON)
     private ObjectParser objectParser;
@@ -231,8 +231,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR, this);
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
+            source.add(Propagation.COMPONENT_PROPAGATION, propagation);
             if (governanceConfig != null) {
-                source.add(Propagation.COMPONENT_PROPAGATION, propagation);
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
                 source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig.getRegistryConfig());
@@ -345,17 +345,17 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     /**
      * Computes a list of policy service names by inspecting the available services from the service supervisor.
-     * Only services of type {@link ConfigService} with a policy type of {@link ConfigWatcher#TYPE_SERVICE_SPACE} are included.
+     * Only services of type {@link PolicyService} with a policy type of {@link PolicyWatcher#TYPE_SERVICE_SPACE} are included.
      *
      * @return A list of policy service names that match the criteria.
      */
     private List<String> getServiceSyncers() {
         List<String> result = new ArrayList<>();
-        List<ConfigWatcher> watchers = configSupervisor.getWatchers();
+        List<PolicyWatcher> watchers = configSupervisor.getWatchers();
         if (watchers != null) {
-            for (ConfigWatcher service : watchers) {
-                if (service instanceof ConfigService) {
-                    ConfigService configService = (ConfigService) service;
+            for (PolicyWatcher service : watchers) {
+                if (service instanceof PolicyService) {
+                    PolicyService configService = (PolicyService) service;
                     if (TYPE_SERVICE_SPACE.equals(configService.getType())) {
                         result.add(configService.getName());
                     }

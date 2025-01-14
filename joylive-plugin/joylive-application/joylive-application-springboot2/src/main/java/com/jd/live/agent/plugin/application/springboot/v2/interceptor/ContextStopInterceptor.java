@@ -16,20 +16,20 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.bootstrap.ApplicationListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationContext;
 
 public class ContextStopInterceptor extends InterceptorAdaptor {
 
-    private final Publisher<AgentEvent> publisher;
+    private final ApplicationListener listener;
 
-    public ContextStopInterceptor(Publisher<AgentEvent> publisher) {
-        this.publisher = publisher;
+    public ContextStopInterceptor(ApplicationListener listener) {
+        this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        publisher.offer(AgentEvent.onApplicationStop("Application is stopping"));
+        listener.onStop(new SpringApplicationContext());
     }
 }

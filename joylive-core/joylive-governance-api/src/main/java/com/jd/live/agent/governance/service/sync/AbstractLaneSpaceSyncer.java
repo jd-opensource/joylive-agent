@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.governance.service.sync;
 
-import com.jd.live.agent.core.config.ConfigEvent;
-import com.jd.live.agent.core.config.ConfigEvent.EventType;
-import com.jd.live.agent.core.config.ConfigWatcher;
+import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.core.config.PolicyEvent.EventType;
+import com.jd.live.agent.core.config.PolicyWatcher;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.TypeReference;
@@ -41,7 +41,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
 
     @Override
     public String getType() {
-        return ConfigWatcher.TYPE_LANE_SPACE;
+        return PolicyWatcher.TYPE_LANE_SPACE;
     }
 
     @Override
@@ -180,7 +180,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
                 synchronized (subscription) {
                     if (subscription.getVersion() < version) {
                         subscription.setVersion(version);
-                        publish(ConfigEvent.builder()
+                        publish(PolicyEvent.builder()
                                 .type(EventType.UPDATE_ITEM)
                                 .name(space.getId())
                                 .value(space)
@@ -203,7 +203,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
         if (subscription != null) {
             synchronized (subscription) {
                 syncer.remove(subscription);
-                publish(ConfigEvent.builder()
+                publish(PolicyEvent.builder()
                         .type(EventType.DELETE_ITEM)
                         .name(spaceId)
                         .description("lane space " + spaceId)

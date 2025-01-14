@@ -16,25 +16,20 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.bootstrap.ApplicationListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupervisor;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationContext;
 
 public class ApplicationStartedInterceptor extends InterceptorAdaptor {
 
-    private final PolicySupervisor policySupervisor;
+    private final ApplicationListener listener;
 
-    private final Publisher<AgentEvent> publisher;
-
-    public ApplicationStartedInterceptor(PolicySupervisor policySupervisor, Publisher<AgentEvent> publisher) {
-        this.policySupervisor = policySupervisor;
-        this.publisher = publisher;
+    public ApplicationStartedInterceptor(ApplicationListener listener) {
+        this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        publisher.offer(AgentEvent.onApplicationStarted("Application is started"));
-        policySupervisor.waitReady();
+        listener.onStarted(new SpringApplicationContext());
     }
 }

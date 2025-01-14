@@ -12,7 +12,8 @@
     <artifactId>joylive-system</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>joylive-classloader-springboot2</module>
+        <module>joylive-system-springboot2</module>
+        <module>joylive-system-slf4j</module>
     </modules>
 
 

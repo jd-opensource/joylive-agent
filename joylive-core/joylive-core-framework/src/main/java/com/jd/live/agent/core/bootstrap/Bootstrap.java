@@ -25,6 +25,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
@@ -57,7 +58,7 @@ import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
-import com.jd.live.agent.core.service.ConfigService;
+import com.jd.live.agent.core.service.PolicyService;
 import com.jd.live.agent.core.service.ServiceManager;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.util.Close;
@@ -83,6 +84,7 @@ import java.security.CodeSource;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
 
@@ -180,7 +182,11 @@ public class Bootstrap implements AgentLifecycle {
      */
     private ServiceManager serviceManager;
 
-    private ConfigSupervisor configSupervisor;
+    private ConfigCenter configCenter;
+
+    private ApplicationListener applicationListener;
+
+    private PolicyWatcherSupervisor policyWatcherSupervisor;
 
     /**
      * Supervises plugins, handling their lifecycle.
@@ -272,10 +278,12 @@ public class Bootstrap implements AgentLifecycle {
                 //depend on agentConfig
                 throw new InitializeException("the jvm version is not supported enhancement.");
             }
-            configSupervisor = createConfigSupervisor();
+            policyWatcherSupervisor = createPolicyWatcherSupervisor();
             createSourceSuppliers();  // depend on configWatcher
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
-            addConfigWatcher(); // depend on serviceManager & configSupervisor
+            addPolicyWatcher(); // depend on serviceManager & configSupervisor
+            configCenter = createConfigCenter();
+            applicationListener = new ApplicationListenerWrapper(createApplicationListeners());
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
@@ -536,7 +544,9 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
                 ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, serviceManager);
-                ctx.add(ConfigSupervisor.COMPONENT_CONFIG_SUPERVISOR, configSupervisor);
+                ctx.add(ApplicationListener.COMPONENT_APPLICATION_LISTENER, applicationListener);
+                ctx.add(ConfigCenter.COMPONENT_CONFIG_CENTER, configCenter);
+                ctx.add(PolicyWatcherSupervisor.COMPONENT_CONFIG_SUPERVISOR, policyWatcherSupervisor);
                 ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());
@@ -566,16 +576,30 @@ public class Bootstrap implements AgentLifecycle {
         return result;
     }
 
-    private ConfigWatcherManager createConfigSupervisor() {
-        return new ConfigWatcherManager();
+    private PolicyWatcherManager createPolicyWatcherSupervisor() {
+        return new PolicyWatcherManager();
     }
 
-    private void addConfigWatcher() {
+    private void addPolicyWatcher() {
         serviceManager.service(service -> {
-            if (service instanceof ConfigService) {
-                configSupervisor.addWatcher((ConfigService) service);
+            if (service instanceof PolicyService) {
+                policyWatcherSupervisor.addWatcher((PolicyService) service);
             }
         });
+    }
+
+    private List<ApplicationListener> createApplicationListeners() {
+        return extensionManager.getOrLoadExtensible(ApplicationListener.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+    }
+
+    private ConfigCenter createConfigCenter() {
+        AtomicReference<ConfigCenter> result = new AtomicReference<>();
+        serviceManager.service(service -> {
+            if (service instanceof ConfigCenter) {
+                result.set((ConfigCenter) service);
+            }
+        });
+        return result.get();
     }
 
     private PluginSupervisor createPluginManager() {
