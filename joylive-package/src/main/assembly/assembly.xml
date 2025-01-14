@@ -78,7 +78,8 @@
             <outputDirectory>plugin/system</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-classloader-springboot2</include>
+                <include>com.jd.live:joylive-system-springboot2</include>
+                <include>com.jd.live:joylive-system-slf4j</include>
             </includes>
         </dependencySet>
 

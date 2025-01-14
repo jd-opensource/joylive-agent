@@ -73,6 +73,20 @@ public class StringUtils {
     };
 
     /**
+     * A predicate that tests if a character is a comma or semicolon or line break.
+     */
+    public static final Predicate<Character> SEMICOLON_COMMA_LINE = o -> {
+        switch (o) {
+            case ',':
+            case ';':
+            case '\n':
+                return true;
+            default:
+                return false;
+        }
+    };
+
+    /**
      * A predicate that tests if a character is a comma, semicolon, or whitespace.
      */
     public static final Predicate<Character> SEMICOLON_COMMA_WHITESPACE = o -> {

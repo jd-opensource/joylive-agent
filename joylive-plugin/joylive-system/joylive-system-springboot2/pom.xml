@@ -5,16 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.jd.live</groupId>
-        <artifactId>joylive-plugin</artifactId>
+        <artifactId>joylive-system</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-system</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>joylive-system-springboot2</module>
-        <module>joylive-system-slf4j</module>
-    </modules>
-
+    <artifactId>joylive-system-springboot2</artifactId>
 
 </project>

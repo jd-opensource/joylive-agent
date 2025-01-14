@@ -6,20 +6,21 @@
 2. Added support for retry and circuit breaking for outbound traffic of Spring Cloud gRPC, now support for full governance of gRPC unary mode
 3. Added support for Spring Cloud clients to retrieve exceptions from the server, facilitating retry and circuit breaking.
 4. Added support for Spring Cloud port-based routing.
-5. Added support for cluster-level rate limiting by Redis. 
-6. Added support for W3c Baggage transparent transmission.
-7. Added support for gradual traffic recovery at circuit breaking.
-8. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
-9. Improved label matching logic in flow control 
-10. Optimized performance and the startup speed
-11. Provide context lock to facilitate the use of interceptors 
-12. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration 
-13. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications 
-14. Fixed OpenJDK compatibility issues 
-15. Fixed issues with conflicts with other Agents, packaging Bootstrap together 
-16. Fixed the issue that calling the original method would also trigger OnExit/OnSuccess/OnError interceptors 
-17. Fixed Sofarpc injection problem 
-18. Fixed other issues
+5. Added support for Spring Cloud integration with configuration center, as well as dynamic modification of slf4j’s log level.
+6. Added support for cluster-level rate limiting by Redis. 
+7. Added support for W3c Baggage transparent transmission.
+8. Added support for gradual traffic recovery at circuit breaking.
+9. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
+10. Improved label matching logic in flow control 
+11. Optimized performance and the startup speed
+12. Provide context lock to facilitate the use of interceptors 
+13. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration 
+14. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications 
+15. Fixed OpenJDK compatibility issues 
+16. Fixed issues with conflicts with other Agents, packaging Bootstrap together 
+17. Fixed the issue that calling the original method would also trigger OnExit/OnSuccess/OnError interceptors 
+18. Fixed Sofarpc injection problem 
+19. Fixed other issues
 
 ## 1.5.2
 

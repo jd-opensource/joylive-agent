@@ -175,7 +175,12 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-classloader-springboot2</artifactId>
+                <artifactId>joylive-system-springboot2</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-system-slf4j</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
