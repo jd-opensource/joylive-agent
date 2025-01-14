@@ -16,6 +16,8 @@
 package com.jd.live.agent.implement.service.config.nacos;
 
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.ConfigEvent;
 import com.jd.live.agent.core.config.ConfigEvent.EventType;
 import com.jd.live.agent.core.config.ConfigListener;
@@ -34,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class NacosConfigurator implements Configurator {
+
+    private static final Logger logger = LoggerFactory.getLogger(NacosConfigurator.class);
 
     private final NacosClientApi client;
 
@@ -63,7 +67,8 @@ public class NacosConfigurator implements Configurator {
     @Override
     public void subscribe() throws Exception {
         if (started.compareAndSet(false, true)) {
-            client.subscribe(configName.getName(), configName.getProfile(), new MyListener());
+            logger.info("subscribe " + configName + ", parser " + parser.getClass().getSimpleName());
+            client.subscribe(configName.getName(), configName.getProfile(), new ChangeListener());
         }
     }
 
@@ -141,7 +146,7 @@ public class NacosConfigurator implements Configurator {
         }
     }
 
-    private class MyListener implements Listener {
+    private class ChangeListener implements Listener {
         @Override
         public Executor getExecutor() {
             return null;

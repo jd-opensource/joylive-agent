@@ -152,6 +152,8 @@ agent:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:false}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
+    configcenter:
+      enabled: ${CONFIG_CENTER_ENABLED:false}
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
       mariadb: true

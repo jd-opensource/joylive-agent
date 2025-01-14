@@ -47,12 +47,15 @@ public class GovernanceConfig {
     protected static final String CONFIG_SWITCH = "agent.switch";
     protected static final String CONFIG_SWITCH_LIVE = CONFIG_SWITCH + ".live";
     protected static final String CONFIG_SWITCH_LANE = CONFIG_SWITCH + ".lane";
+    protected static final String CONFIG_SWITCH_CONFIG_CENTER = CONFIG_SWITCH + ".configcenter";
     protected static final String CONFIG_SWITCH_FLOW_CONTROL = CONFIG_SWITCH + ".flowcontrol";
     protected static final String CONFIG_SWITCH_PROTECT = CONFIG_SWITCH + ".protect";
     protected static final String CONFIG_SWITCH_TRANSMISSION = CONFIG_SWITCH + ".transmission";
     protected static final String CONFIG_SWITCH_REGISTRY = CONFIG_SWITCH + ".registry";
     protected static final String CONFIG_SWITCH_CLASSLOADER = CONFIG_SWITCH + ".classloader";
     protected static final String CONFIG_SWITCH_COUNTER = CONFIG_SWITCH + ".counter";
+
+    public static final String CONFIG_CENTER_ENABLED = CONFIG_SWITCH_CONFIG_CENTER + ENABLED;
 
     public static final String CONFIG_CLASSLOADER_ENABLED = CONFIG_SWITCH_CLASSLOADER + ENABLED;
     public static final String CONFIG_CLASSLOADER_SPRING_BOOT_ENABLED = CONFIG_SWITCH_CLASSLOADER + ".springboot";

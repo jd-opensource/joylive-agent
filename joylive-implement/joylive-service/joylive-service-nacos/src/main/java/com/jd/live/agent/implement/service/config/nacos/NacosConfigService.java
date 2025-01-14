@@ -26,6 +26,7 @@ import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.service.ConfigService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
@@ -37,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Injectable
+@ConditionalOnConfigCenterEnabled
 @ConditionalOnProperty(name = "agent.governance.configcenter.type", value = "nacos")
 @Extension("NacosConfigService")
 public class NacosConfigService extends AbstractService implements ConfigService {
@@ -44,8 +46,8 @@ public class NacosConfigService extends AbstractService implements ConfigService
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
 
-    @Inject(ConfigParser.PROPERTIES)
-    private ConfigParser parser;
+    @Inject
+    private Map<String, ConfigParser> parsers;
 
     private Configurator configurator;
 
@@ -61,7 +63,7 @@ public class NacosConfigService extends AbstractService implements ConfigService
             return null;
         }
         String key = name.getName() + "@" + name.getProfile();
-        return configurators.computeIfAbsent(key, n -> new NacosConfigurator(client, name, parser));
+        return configurators.computeIfAbsent(key, n -> new NacosConfigurator(client, name, getParser(name.getName())));
     }
 
     @Override
@@ -90,5 +92,21 @@ public class NacosConfigService extends AbstractService implements ConfigService
     protected CompletableFuture<Void> doStop() {
         Close.instance().close(client);
         return CompletableFuture.completedFuture(null);
+    }
+
+    /**
+     * Returns the appropriate ConfigParser for the given configuration name.
+     *
+     * @param name The name of the configuration.
+     * @return The ConfigParser associated with the given configuration name.
+     */
+    protected ConfigParser getParser(String name) {
+        ConfigParser parser = parsers.get(ConfigParser.PROPERTIES);
+        int index = name.lastIndexOf(".");
+        if (index == -1) {
+            return parser;
+        }
+        String type = name.substring(index + 1);
+        return parsers.getOrDefault(type, parser);
     }
 }
