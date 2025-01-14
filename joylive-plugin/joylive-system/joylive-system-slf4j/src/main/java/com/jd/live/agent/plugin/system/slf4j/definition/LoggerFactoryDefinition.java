@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.system.slf4j.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.config.ConfigCenter;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -26,12 +25,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
 import com.jd.live.agent.plugin.system.slf4j.interceptor.LoggerFactoryInterceptor;
 
 @Injectable
 @Extension(value = "LoggerFactoryDefinition", order = PluginDefinition.ORDER_SYSTEM)
-@ConditionalOnProperty(GovernanceConfig.CONFIG_CLASSLOADER_SPRING_BOOT_ENABLED)
+@ConditionalOnConfigCenterEnabled
 @ConditionalOnClass(LoggerFactoryDefinition.TYPE)
 public class LoggerFactoryDefinition extends PluginDefinitionAdapter {
 
