@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.system.slf4j.logger.log4j2;
 
-import com.jd.live.agent.core.util.KeyValue;
 import com.jd.live.agent.plugin.system.slf4j.logger.AbstractLevelUpdater;
 import org.slf4j.Logger;
 
@@ -32,26 +31,9 @@ public class Log4j2Updater extends AbstractLevelUpdater {
 
     private static final String TYPE_CONFIGURATOR = "org.apache.logging.log4j.core.config.Configurator";
 
-    private static final Map<String, Optional<Class<?>>> TYPES = new ConcurrentHashMap<>();
+    private static final String TYPE_LEVEL = "org.apache.logging.log4j.Level";
 
-    @Override
-    public void update(Logger logger, String loggerName, String level) throws Throwable {
-        Optional<Class<?>> optional = TYPES.computeIfAbsent(TYPE_CONFIGURATOR, n -> {
-            try {
-                return Optional.of(Class.forName(n, true, logger.getClass().getClassLoader()));
-            } catch (Throwable e) {
-                return Optional.empty();
-            }
-        });
-        if (optional.isPresent()) {
-            // org.apache.logging.log4j.core.config.Configurator.setLevel(java.lang.String, java.lang.String)
-            KeyValue<Method, Class<?>> keyValue = METHODS.computeIfAbsent(optional.get(), this::findMethod);
-            Method method = keyValue.getKey();
-            if (method != null) {
-                method.invoke(null, logger, level);
-            }
-        }
-    }
+    private static final Map<String, Optional<Class<?>>> TYPES = new ConcurrentHashMap<>();
 
     @Override
     public boolean support(Logger logger) {
@@ -59,16 +41,55 @@ public class Log4j2Updater extends AbstractLevelUpdater {
     }
 
     @Override
-    protected KeyValue<Method, Class<?>> findMethod(Method method) {
+    protected void invoke(Method setter, Logger logger, String loggerName, String level, Object levelObj) throws Throwable {
+        setter.invoke(null, loggerName, level);
+    }
+
+    @Override
+    protected MethodCache findMethod(Class<?> type) {
+        Method getter = getGetter(type.getDeclaredMethods());
+        Class<?> configuratorType = getType(TYPE_CONFIGURATOR, type.getClassLoader());
+        Method setter = getMethod(configuratorType.getDeclaredMethods(), this::isSetter);
+        Class<?> levelType = null;
+        if (getter != null) {
+            levelType = getType(TYPE_LEVEL, type.getClassLoader());
+        }
+        return new MethodCache(getter, setter, levelType, getLevels(levelType));
+    }
+
+    /**
+     * Checks if the specified method is a setter method for the level property with two String parameters.
+     *
+     * @param method The method to check.
+     * @return true if the method is a setter method for the level property with two String parameters, false otherwise.
+     */
+    private boolean isSetter(Method method) {
         if (method.getName().equals(METHOD_SET_LEVEL)) {
             Parameter[] parameters = method.getParameters();
             if (parameters.length == 2
                     && parameters[0].getType() == String.class
                     && parameters[1].getType() == String.class) {
                 method.setAccessible(true);
-                return new KeyValue<>(method, null);
+                return true;
             }
         }
-        return null;
+        return false;
+    }
+
+    /**
+     * Returns the Class object representing the specified type, loaded using the given class loader.
+     *
+     * @param name The name of the type to load.
+     * @param classLoader The class loader to use for loading the type.
+     * @return The Class object representing the specified type, or null if the type could not be loaded.
+     */
+    private Class<?> getType(String name, ClassLoader classLoader) {
+        return TYPES.computeIfAbsent(name, n -> {
+            try {
+                return Optional.of(Class.forName(n, true, classLoader));
+            } catch (Throwable e) {
+                return Optional.empty();
+            }
+        }).orElse(null);
     }
 }

@@ -15,91 +15,189 @@
  */
 package com.jd.live.agent.plugin.system.slf4j.logger;
 
-import com.jd.live.agent.core.util.KeyValue;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * An abstract class that provides a common implementation for updating the logging level for loggers.
  */
 public abstract class AbstractLevelUpdater implements LevelUpdater {
 
-    protected static final Map<Class<?>, KeyValue<Method, Class<?>>> METHODS = new ConcurrentHashMap<>();
-    protected static final Map<String, Optional<Object>> LEVELS = new ConcurrentHashMap<>();
+    protected static final Map<Class<?>, MethodCache> METHODS = new ConcurrentHashMap<>();
     protected static final String METHOD_SET_LEVEL = "setLevel";
+    protected static final String METHOD_GET_LEVEL = "getLevel";
 
     @Override
     public void update(Logger logger, String loggerName, String level) throws Throwable {
-        KeyValue<Method, Class<?>> keyValue = METHODS.computeIfAbsent(logger.getClass(), this::findMethod);
-        Method method = keyValue.getKey();
-        Class<?> levelType = keyValue.getValue();
+        MethodCache cache = METHODS.computeIfAbsent(logger.getClass(), this::findMethod);
+        Method setter = cache.getSetter();
+        if (setter != null) {
+            Object levelObj = cache.getLevel(level);
+            if (levelObj != null) {
+                invoke(setter, logger, loggerName, level, levelObj);
+            }
+        }
+    }
+
+    @Override
+    public String getLevel(Logger logger) {
+        MethodCache cache = METHODS.computeIfAbsent(logger.getClass(), this::findMethod);
+        Method method = cache.getGetter();
         if (method != null) {
-            Optional<Object> optional = LEVELS.computeIfAbsent(level, k -> Optional.ofNullable(findLevel(levelType, k)));
-            if (optional.isPresent()) {
-                method.invoke(logger, optional.get());
+            try {
+                return method.invoke(logger).toString();
+            } catch (Throwable ignored) {
             }
-        }
-    }
-
-    /**
-     * Finds the specified level field in the given class.
-     *
-     * @param type  The class to search for the level field.
-     * @param level The name of the level field to find.
-     * @return The value of the level field if found, otherwise null.
-     */
-    protected Object findLevel(Class<?> type, String level) {
-        try {
-            Field field = type.getDeclaredField(level);
-            if (Modifier.isStatic(field.getModifiers())
-                    && Modifier.isFinal(field.getModifiers())
-                    && Modifier.isPublic(field.getModifiers())
-                    && field.getType() == type) {
-                field.setAccessible(true);
-                return field.get(null);
-            }
-        } catch (Throwable ignored) {
         }
         return null;
     }
 
     /**
-     * Returns the "setLevel" method and its corresponding level type for the specified logger class.
+     * Invokes the specified setter method on the given logger instance, passing the provided level object as an argument.
      *
-     * @param type The logger class.
-     * @return A KeyValue object containing the "setLevel" method and its corresponding level type.
+     * @param setter The setter method to invoke.
+     * @param logger The logger instance on which to invoke the setter method.
+     * @param loggerName The name of the logger instance.
+     * @param level The level to set on the logger instance.
+     * @param levelObj The level object to pass as an argument to the setter method.
+     * @throws Throwable If an exception occurs during the invocation of the setter method.
      */
-    protected KeyValue<Method, Class<?>> findMethod(Class<?> type) {
+    protected void invoke(Method setter, Logger logger, String loggerName, String level, Object levelObj) throws Throwable {
+        setter.invoke(logger, levelObj);
+    }
+
+    /**
+     * Finds the getter and setter methods for the level property in the specified class.
+     *
+     * @param type The class to search for the methods.
+     * @return A MethodCache instance containing the getter, setter, and type of the level property.
+     */
+    protected MethodCache findMethod(Class<?> type) {
         Method[] methods = type.getDeclaredMethods();
-        for (Method method : methods) {
-            KeyValue<Method, Class<?>> keyValue = findMethod(method);
-            if (keyValue != null) return keyValue;
+        Method getter = getGetter(methods);
+        Method setter = getSetter(methods);
+        Class<?> levelType = null;
+        if (getter != null) {
+            levelType = getter.getReturnType();
+        } else if (setter != null) {
+            levelType = setter.getParameters()[0].getType();
         }
-        return new KeyValue<>(null, null);
+        return new MethodCache(getter, setter, levelType, getLevels(levelType));
     }
 
     /**
-     * Finds the "setLevel" method and its corresponding level type for the specified method.
+     * Finds the setter method for the level property in the specified array of methods.
      *
-     * @param method The method to check if it is the "setLevel" method.
-     * @return A KeyValue object containing the "setLevel" method and its corresponding level type, or null if the method is not the "setLevel" method.
+     * @param methods The array of methods to search for the setter method.
+     * @return The setter method for the level property, or null if not found.
      */
-    protected KeyValue<Method, Class<?>> findMethod(Method method) {
-        if (method.getName().equals(METHOD_SET_LEVEL)) {
-            Parameter[] parameters = method.getParameters();
-            if (parameters.length == 1) {
+    protected Method getSetter(Method[] methods) {
+        return getMethod(methods, method -> method.getName().equals(METHOD_SET_LEVEL) && method.getParameterCount() == 1);
+    }
+
+    /**
+     * Finds the getter method for the level property in the specified array of methods.
+     *
+     * @param methods The array of methods to search for the getter method.
+     * @return The getter method for the level property, or null if not found.
+     */
+    protected Method getGetter(Method[] methods) {
+        return getMethod(methods, method -> method.getName().equals(METHOD_GET_LEVEL) && method.getParameterCount() == 0);
+    }
+
+    /**
+     * Finds a method in the specified array of methods that satisfies the given predicate.
+     *
+     * @param methods   The array of methods to search for a matching method.
+     * @param predicate The predicate to test each method against.
+     * @return The first method that satisfies the predicate, or null if no matching method is found.
+     */
+    protected Method getMethod(Method[] methods, Predicate<Method> predicate) {
+        for (Method method : methods) {
+            if (predicate.test(method)) {
                 method.setAccessible(true);
-                Class<?> levelType = parameters[0].getType();
-                return new KeyValue<>(method, levelType);
+                return method;
             }
         }
         return null;
+    }
+
+    /**
+     * Retrieves the static, final, and public fields of the specified class that are of the same type as the class itself.
+     *
+     * @param type The class to retrieve the fields from.
+     * @return A map containing the names and values of the retrieved fields.
+     */
+    protected Map<String, Object> getLevels(Class<?> type) {
+        Map<String, Object> levels = new HashMap<>();
+        if (type != null) {
+            Field[] fields = type.getDeclaredFields();
+            for (Field field : fields) {
+                if (Modifier.isStatic(field.getModifiers())
+                        && Modifier.isFinal(field.getModifiers())
+                        && Modifier.isPublic(field.getModifiers())
+                        && field.getType() == type) {
+                    try {
+                        field.setAccessible(true);
+                        levels.put(field.getName(), field.get(null));
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+        }
+        return levels;
+    }
+
+    /**
+     * A private static inner class that caches getter and setter methods for a specific property.
+     */
+    protected static class MethodCache {
+
+        /**
+         * The getter method for the property.
+         */
+        private final Method getter;
+
+        /**
+         * The setter method for the property.
+         */
+        private final Method setter;
+
+        /**
+         * The type of the property.
+         */
+        private final Class<?> type;
+
+        private final Map<String, Object> levels;
+
+        public MethodCache(Method getter, Method setter, Class<?> type, Map<String, Object> levels) {
+            this.getter = getter;
+            this.setter = setter;
+            this.type = type;
+            this.levels = levels;
+        }
+
+        public Method getGetter() {
+            return getter;
+        }
+
+        public Method getSetter() {
+            return setter;
+        }
+
+        public Class<?> getType() {
+            return type;
+        }
+
+        public Object getLevel(String level) {
+            return levels.get(level);
+        }
     }
 }

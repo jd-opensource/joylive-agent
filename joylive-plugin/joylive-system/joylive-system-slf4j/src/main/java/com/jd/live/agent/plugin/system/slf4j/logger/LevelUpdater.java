@@ -30,6 +30,13 @@ public interface LevelUpdater {
     void update(org.slf4j.Logger logger, String loggerName, String level) throws Throwable;
 
     /**
+     * Returns the level of the current instance.
+     *
+     * @return The level of the current instance.
+     */
+    String getLevel(org.slf4j.Logger logger);
+
+    /**
      * Checks if this level updater supports the specified logger.
      *
      * @param logger The logger to check.
