@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
-import com.jd.live.agent.core.config.ConfigName;
+import com.jd.live.agent.governance.subscription.config.ConfigName;
 import lombok.Getter;
 import lombok.Setter;
 

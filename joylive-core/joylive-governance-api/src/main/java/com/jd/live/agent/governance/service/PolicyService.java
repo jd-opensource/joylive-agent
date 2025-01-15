@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.governance.service;
 
-import com.jd.live.agent.core.config.PolicyWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import com.jd.live.agent.core.service.AgentService;
 
 /**
  * An interface for a configuration service that extends the AgentService interface and implements the ConfigWatcher interface.

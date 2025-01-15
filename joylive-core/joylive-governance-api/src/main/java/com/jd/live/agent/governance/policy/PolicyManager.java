@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.policy;
 
-import com.jd.live.agent.core.config.PolicyWatcher;
-import com.jd.live.agent.core.config.PolicyWatcherSupervisor;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -31,7 +29,8 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.service.PolicyService;
+import com.jd.live.agent.core.service.ServiceSupervisor;
+import com.jd.live.agent.core.service.ServiceSupervisorAware;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
@@ -48,12 +47,17 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
-import com.jd.live.agent.governance.policy.listener.LaneSpaceListener;
-import com.jd.live.agent.governance.policy.listener.LiveSpaceListener;
-import com.jd.live.agent.governance.policy.listener.ServiceListener;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import com.jd.live.agent.governance.service.PolicyService;
+import com.jd.live.agent.governance.subscription.config.ConfigCenter;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcherManager;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcherSupervisor;
+import com.jd.live.agent.governance.subscription.policy.listener.LaneSpaceListener;
+import com.jd.live.agent.governance.subscription.policy.listener.LiveSpaceListener;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceListener;
 import lombok.Getter;
 
 import java.util.*;
@@ -61,7 +65,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.jd.live.agent.core.config.PolicyWatcher.*;
+import static com.jd.live.agent.governance.subscription.policy.PolicyWatcher.*;
 
 /**
  * PolicyManager
@@ -71,7 +75,7 @@ import static com.jd.live.agent.core.config.PolicyWatcher.*;
  */
 @Injectable
 @Extension(value = "PolicyManager", order = InjectSourceSupplier.ORDER_POLICY_MANAGER)
-public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, ExtensionInitializer, InvocationContext {
+public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, ExtensionInitializer, InvocationContext, ServiceSupervisorAware {
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
@@ -92,9 +96,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
-
-    @Inject(PolicyWatcherSupervisor.COMPONENT_CONFIG_SUPERVISOR)
-    private PolicyWatcherSupervisor configSupervisor;
 
     @Inject(ObjectParser.JSON)
     private ObjectParser objectParser;
@@ -177,6 +178,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private List<String> serviceSyncers;
 
+    private ConfigCenter configCenter;
+
+    private final PolicyWatcherSupervisor policyWatcherSupervisor = new PolicyWatcherManager();
+
     private final AtomicBoolean warmup = new AtomicBoolean(false);
 
     @Override
@@ -232,6 +237,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             source.add(Propagation.COMPONENT_PROPAGATION, propagation);
+            source.add(ConfigCenter.COMPONENT_CONFIG_CENTER, configCenter);
             if (governanceConfig != null) {
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
@@ -306,9 +312,21 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 }
             }
         });
-        configSupervisor.addListener(TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
-        configSupervisor.addListener(TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
-        configSupervisor.addListener(TYPE_SERVICE_SPACE, new ServiceListener(this, objectParser, policyPublisher));
+
+        policyWatcherSupervisor.addListener(TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
+        policyWatcherSupervisor.addListener(TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
+        policyWatcherSupervisor.addListener(TYPE_SERVICE_SPACE, new ServiceListener(this, objectParser, policyPublisher));
+    }
+
+    @Override
+    public void setup(ServiceSupervisor serviceSupervisor) {
+        serviceSupervisor.service(service -> {
+            if (service instanceof PolicyService) {
+                policyWatcherSupervisor.addWatcher((PolicyService) service);
+            } else if (service instanceof ConfigCenter) {
+                configCenter = (ConfigCenter) service;
+            }
+        });
     }
 
     /**
@@ -351,7 +369,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      */
     private List<String> getServiceSyncers() {
         List<String> result = new ArrayList<>();
-        List<PolicyWatcher> watchers = configSupervisor.getWatchers();
+        List<PolicyWatcher> watchers = policyWatcherSupervisor.getWatchers();
         if (watchers != null) {
             for (PolicyWatcher service : watchers) {
                 if (service instanceof PolicyService) {

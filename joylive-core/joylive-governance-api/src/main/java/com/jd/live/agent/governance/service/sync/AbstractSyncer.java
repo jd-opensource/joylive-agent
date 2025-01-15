@@ -1,10 +1,10 @@
 package com.jd.live.agent.governance.service.sync;
 
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.service.AbstractPolicyService;
+import com.jd.live.agent.governance.service.AbstractPolicyService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;

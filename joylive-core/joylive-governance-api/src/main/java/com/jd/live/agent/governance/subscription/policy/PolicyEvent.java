@@ -13,93 +13,77 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.subscription.policy;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * A class representing a configuration event.
- *
- * @since 1.0
+ * A configuration class that represents a single configuration setting.
  */
 @Setter
 @Getter
-public class ConfigEvent {
+public class PolicyEvent {
 
-    /**
-     * The type of the configuration event.
-     */
     protected EventType type;
 
     /**
-     * The name of the configuration.
+     * The name of the configuration setting.
      */
     protected String name;
 
     /**
-     * The value of the configuration.
+     * The value of the configuration setting.
      */
     protected Object value;
 
     /**
-     * The version of the configuration.
+     * A description of the configuration setting.
      */
-    protected long version;
+    protected String description;
 
-    /**
-     * Default constructor.
-     */
-    public ConfigEvent() {
+    protected String watcher;
+
+    public PolicyEvent() {
     }
 
-    /**
-     * Constructor using the Builder pattern.
-     *
-     * @param type    The type of the configuration event.
-     * @param name    The name of the configuration.
-     * @param value   The value of the configuration.
-     * @param version The version of the configuration.
-     */
     @Builder
-    public ConfigEvent(EventType type, String name, Object value, long version) {
+    public PolicyEvent(EventType type, String name, Object value, String description, String watcher) {
         this.type = type;
         this.name = name;
         this.value = value;
-        this.version = version;
+        this.description = description;
+        this.watcher = watcher;
     }
 
     /**
-     * An enum representing the type of configuration event.
+     * An enumeration representing different types of events.
      */
     @Getter
     public enum EventType {
 
         /**
-         * An update event.
+         * Represents an event to update all items.
          */
-        UPDATE("update"),
+        UPDATE_ALL("update all"),
 
         /**
-         * A delete event.
+         * Represents an event to update a specific item.
          */
-        DELETE("delete");
+        UPDATE_ITEM("update item"),
 
         /**
-         * The name of the event type.
+         * Represents an event to delete a specific item.
          */
+        DELETE_ITEM("delete item");
+
         private final String name;
 
-        /**
-         * Constructor for the EventType enum.
-         *
-         * @param name The name of the event type.
-         */
         EventType(String name) {
             this.name = name;
         }
 
     }
-}
 
+}

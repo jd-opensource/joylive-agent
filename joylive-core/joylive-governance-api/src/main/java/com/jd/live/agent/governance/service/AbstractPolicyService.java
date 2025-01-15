@@ -1,7 +1,8 @@
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.governance.service;
 
-import com.jd.live.agent.core.config.PolicyEvent;
-import com.jd.live.agent.core.config.PolicyListener;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyListener;
+import com.jd.live.agent.core.service.AbstractService;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

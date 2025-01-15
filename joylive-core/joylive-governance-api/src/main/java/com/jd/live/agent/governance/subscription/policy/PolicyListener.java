@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos.config;
-
-import com.jd.live.agent.governance.config.SyncConfig;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
-import lombok.Getter;
-import lombok.Setter;
+package com.jd.live.agent.governance.subscription.policy;
 
 /**
- *  NacosSyncConfig is responsible for Nacos settings.
+ * An interface for listening to configuration updates.
  */
-@Getter
-@Setter
-public class NacosSyncConfig extends SyncConfig {
+public interface PolicyListener {
 
-    private NacosConfig nacos = new NacosConfig();
-
-    public NacosProperties getProperties() {
-        return new NacosProperties(getUrl(), nacos.getUsername(), nacos.getPassword(), nacos.getNamespace(), getTimeout());
-    }
+    /**
+     * Handles the update of a configuration setting.
+     *
+     * @param event The updated configuration object.
+     * @return true if the update was successful, false otherwise.
+     */
+    boolean onUpdate(PolicyEvent event);
 
 }
+

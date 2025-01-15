@@ -15,16 +15,16 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.core.config.PolicyEvent;
-import com.jd.live.agent.core.config.PolicyEvent.EventType;
-import com.jd.live.agent.core.config.PolicyWatcher;
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.governance.policy.listener.ServiceEvent;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;

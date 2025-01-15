@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.service.sync.http;
 
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectReader.StringReader;
 import com.jd.live.agent.core.util.Close;

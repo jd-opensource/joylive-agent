@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.listener;
+package com.jd.live.agent.governance.subscription.policy.listener;
 
-import com.jd.live.agent.core.config.PolicyEvent;
-import com.jd.live.agent.core.config.PolicyEvent.EventType;
-import com.jd.live.agent.core.config.PolicyWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;

@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.service.sync.http;
 
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;

@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.system.slf4j.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.config.ConfigCenter;
+import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;

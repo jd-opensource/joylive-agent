@@ -13,9 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.listener;
+package com.jd.live.agent.core.service;
 
-public class UpdateResult {
+/**
+ * An interface that allows a service to be aware of and interact with its supervisor.
+ */
+public interface ServiceSupervisorAware {
 
+    /**
+     * Sets the service supervisor for this service.
+     *
+     * @param serviceSupervisor The service supervisor to be set.
+     */
+    void setup(ServiceSupervisor serviceSupervisor);
 
 }
+

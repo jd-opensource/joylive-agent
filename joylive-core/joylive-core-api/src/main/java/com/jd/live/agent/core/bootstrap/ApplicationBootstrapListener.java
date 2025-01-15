@@ -16,8 +16,6 @@
 package com.jd.live.agent.core.bootstrap;
 
 import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerAdapter;
-import com.jd.live.agent.core.config.ConfigCenter;
-import com.jd.live.agent.core.config.Configurator;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -36,19 +34,6 @@ public class ApplicationBootstrapListener extends ApplicationListenerAdapter {
     @Inject(Publisher.SYSTEM)
     private Publisher<AgentEvent> publisher;
 
-    @Inject(value = ConfigCenter.COMPONENT_CONFIG_CENTER, component = true, nullable = true)
-    private ConfigCenter configCenter;
-
-    @Override
-    public void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment) {
-        if (configCenter != null) {
-            Configurator configurator = configCenter.getConfigurator();
-            if (configurator != null) {
-                environment.addFirst(new LivePropertySource(configurator));
-            }
-        }
-    }
-
     @Override
     public void onStarted(ApplicationContext context) {
         publisher.offer(AgentEvent.onApplicationStarted("Application is started"));
@@ -64,23 +49,4 @@ public class ApplicationBootstrapListener extends ApplicationListenerAdapter {
         publisher.offer(AgentEvent.onApplicationStop("Application is stopping"));
     }
 
-    private static class LivePropertySource implements ApplicationPropertySource {
-
-        private final Configurator configurator;
-
-        LivePropertySource(Configurator configurator) {
-            this.configurator = configurator;
-        }
-
-        @Override
-        public String getProperty(String name) {
-            Object property = configurator.getProperty(name);
-            return property == null ? null : property.toString();
-        }
-
-        @Override
-        public String getName() {
-            return configurator.getName();
-        }
-    }
 }

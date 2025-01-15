@@ -1,4 +1,4 @@
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.subscription.policy;
 
 import java.util.*;
 

@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.subscription.config;
 
-/**
- * An interface for listening to configuration updates.
- */
-public interface PolicyListener {
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-    /**
-     * Handles the update of a configuration setting.
-     *
-     * @param event The updated configuration object.
-     * @return true if the update was successful, false otherwise.
-     */
-    boolean onUpdate(PolicyEvent event);
+@Getter
+@Setter
+@ToString
+public class ConfigName {
+
+    private String namespace;
+
+    private String name;
+
+    private String profile;
 
 }
 

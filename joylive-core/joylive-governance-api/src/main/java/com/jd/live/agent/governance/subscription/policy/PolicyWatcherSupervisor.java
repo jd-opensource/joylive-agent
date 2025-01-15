@@ -1,4 +1,4 @@
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.subscription.policy;
 
 import java.util.List;
 
@@ -6,11 +6,6 @@ import java.util.List;
  * Config supervisor
  */
 public interface PolicyWatcherSupervisor extends PolicyWatcher {
-
-    /**
-     * A constant representing the component name for the configuration watcher.
-     */
-    String COMPONENT_CONFIG_SUPERVISOR = "configSupervisor";
 
     /**
      * Adds a watcher to the list of watchers.

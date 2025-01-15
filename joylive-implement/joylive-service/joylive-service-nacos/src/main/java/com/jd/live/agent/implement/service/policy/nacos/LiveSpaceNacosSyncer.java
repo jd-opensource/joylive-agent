@@ -16,7 +16,7 @@
 package com.jd.live.agent.implement.service.policy.nacos;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;

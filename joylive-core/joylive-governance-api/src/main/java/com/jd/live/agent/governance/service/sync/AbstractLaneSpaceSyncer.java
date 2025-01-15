@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.governance.service.sync;
 
-import com.jd.live.agent.core.config.PolicyEvent;
-import com.jd.live.agent.core.config.PolicyEvent.EventType;
-import com.jd.live.agent.core.config.PolicyWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.TypeReference;

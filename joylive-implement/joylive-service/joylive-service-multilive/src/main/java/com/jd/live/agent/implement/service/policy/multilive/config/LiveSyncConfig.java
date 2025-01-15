@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.multilive.config;
 
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.service.sync.SyncAddress.LiveSpaceAddress;
 import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
 import lombok.Setter;

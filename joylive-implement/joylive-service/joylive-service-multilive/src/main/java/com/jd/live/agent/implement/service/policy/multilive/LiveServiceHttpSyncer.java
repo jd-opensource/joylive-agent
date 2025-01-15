@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.multilive;
 
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -25,7 +25,7 @@ import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySubscriber;
-import com.jd.live.agent.governance.policy.listener.ServiceEvent;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;

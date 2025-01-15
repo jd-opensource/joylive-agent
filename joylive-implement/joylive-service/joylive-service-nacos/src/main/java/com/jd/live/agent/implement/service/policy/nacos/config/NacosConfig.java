@@ -18,7 +18,7 @@ package com.jd.live.agent.implement.service.policy.nacos.config;
 import lombok.Getter;
 import lombok.Setter;
 
-import static com.jd.live.agent.core.config.SyncConfig.CONFIG_PREFIX;
+import static com.jd.live.agent.governance.config.SyncConfig.CONFIG_PREFIX;
 
 /**
  * NacosSyncConfig is responsible for Nacos settings.

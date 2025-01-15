@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.listener;
+package com.jd.live.agent.governance.subscription.policy.listener;
 
-import com.jd.live.agent.core.config.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;

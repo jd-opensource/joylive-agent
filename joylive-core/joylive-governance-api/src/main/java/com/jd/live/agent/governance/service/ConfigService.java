@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.governance.service;
+
+import com.jd.live.agent.governance.subscription.config.ConfigCenter;
+import com.jd.live.agent.core.service.AgentService;
 
 /**
- * An interface for listening to configuration updates.
+ * An interface for a configuration service that extends the AgentService interface and implements the ConfigCenter interface.
  */
-public interface ConfigListener {
-
-    /**
-     * Handles the update of a configuration setting.
-     *
-     * @param event The updated configuration object.
-     * @return true if the update was successful, false otherwise.
-     */
-    boolean onUpdate(ConfigEvent event);
+public interface ConfigService extends AgentService, ConfigCenter {
 
 }
 

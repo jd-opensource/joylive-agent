@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.service;
+package com.jd.live.agent.governance.subscription.policy.listener;
 
-import com.jd.live.agent.core.config.ConfigCenter;
+public class UpdateResult {
 
-/**
- * An interface for a configuration service that extends the AgentService interface and implements the ConfigCenter interface.
- */
-public interface ConfigService extends AgentService, ConfigCenter {
 
 }
-

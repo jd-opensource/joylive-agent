@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.service.sync.file;
 
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.FileEvent;

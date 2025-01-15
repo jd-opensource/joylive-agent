@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.core.config.PolicyWatcher;
-import com.jd.live.agent.core.config.SyncConfig;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
