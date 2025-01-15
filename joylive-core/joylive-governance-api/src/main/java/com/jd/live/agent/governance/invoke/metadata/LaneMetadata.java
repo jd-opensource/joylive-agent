@@ -5,12 +5,14 @@ import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * The {@code LaneMetadata} class encapsulates the metadata for a lane request.
  */
 @Getter
 @Builder
+@ToString
 public class LaneMetadata {
 
     /**

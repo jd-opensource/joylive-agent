@@ -29,6 +29,7 @@ public class Resilience4jRateLimiterGroup extends AbstractRateLimiterGroup {
 
     public Resilience4jRateLimiterGroup(RateLimitPolicy policy) {
         super(policy);
+        init();
     }
 
     @Override

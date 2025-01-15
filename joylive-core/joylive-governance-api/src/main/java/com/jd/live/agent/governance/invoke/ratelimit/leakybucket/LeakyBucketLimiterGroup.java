@@ -29,6 +29,7 @@ public class LeakyBucketLimiterGroup extends AbstractRateLimiterGroup {
 
     public LeakyBucketLimiterGroup(RateLimitPolicy policy) {
         super(policy);
+        init();
     }
 
     @Override

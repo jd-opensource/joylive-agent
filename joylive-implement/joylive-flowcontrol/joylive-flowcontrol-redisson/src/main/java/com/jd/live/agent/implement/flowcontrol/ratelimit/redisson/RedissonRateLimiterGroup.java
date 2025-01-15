@@ -33,6 +33,7 @@ public class RedissonRateLimiterGroup extends AbstractRateLimiterGroup {
     public RedissonRateLimiterGroup(RedisClientManager manager, RateLimitPolicy policy) {
         super(policy);
         this.manager = manager;
+        init();
     }
 
     @Override
