@@ -15,16 +15,13 @@
  */
 package com.jd.live.agent.governance.subscription.config;
 
-import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * A class representing a configuration event.
  *
  * @since 1.0
  */
-@Setter
 @Getter
 public class ConfigEvent {
 
@@ -49,12 +46,6 @@ public class ConfigEvent {
     protected long version;
 
     /**
-     * Default constructor.
-     */
-    public ConfigEvent() {
-    }
-
-    /**
      * Constructor using the Builder pattern.
      *
      * @param type    The type of the configuration event.
@@ -62,7 +53,6 @@ public class ConfigEvent {
      * @param value   The value of the configuration.
      * @param version The version of the configuration.
      */
-    @Builder
     public ConfigEvent(EventType type, String name, Object value, long version) {
         this.type = type;
         this.name = name;

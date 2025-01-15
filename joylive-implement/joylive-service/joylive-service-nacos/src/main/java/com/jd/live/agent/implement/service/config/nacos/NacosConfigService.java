@@ -15,20 +15,20 @@
  */
 package com.jd.live.agent.implement.service.config.nacos;
 
-import com.jd.live.agent.governance.subscription.config.ConfigName;
-import com.jd.live.agent.governance.subscription.config.Configurator;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.service.AbstractService;
-import com.jd.live.agent.governance.service.ConfigService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.service.ConfigService;
+import com.jd.live.agent.governance.subscription.config.ConfigName;
+import com.jd.live.agent.governance.subscription.config.Configurator;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
@@ -69,6 +69,11 @@ public class NacosConfigService extends AbstractService implements ConfigService
     @Override
     public Configurator getConfigurator() {
         return configurator;
+    }
+
+    @Override
+    public ConfigCenterConfig getConfig() {
+        return governanceConfig.getConfigCenterConfig();
     }
 
     @Override

@@ -18,12 +18,12 @@ package com.jd.live.agent.implement.service.config.nacos;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
 import com.jd.live.agent.governance.subscription.config.ConfigListener;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
-import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import lombok.Getter;
 
@@ -37,6 +37,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
 
 /**
  * A configurator that uses Nacos as the configuration source.
@@ -92,15 +94,12 @@ public class NacosConfigurator implements Configurator {
         if (name != null && !name.isEmpty() && listener != null) {
             SynchronousListener syncListener = new SynchronousListener(listener);
             listeners.computeIfAbsent(name, k -> new CopyOnWriteArrayList<>()).add(syncListener);
-            long ver = version.get();
-            Object value = getProperty(name);
-            if (value != null) {
-                syncListener.onUpdate(ConfigEvent.builder()
-                        .name(name)
-                        .value(value)
-                        .type(EventType.UPDATE)
-                        .version(ver)
-                        .build());
+            if (!SYSTEM_ALL.equals(name)) {
+                long ver = version.get();
+                Object value = getProperty(name);
+                if (value != null) {
+                    syncListener.onUpdate(new ConfigEvent(EventType.UPDATE, name, value, ver));
+                }
             }
         }
     }
@@ -140,9 +139,15 @@ public class NacosConfigurator implements Configurator {
         ConfigCache oldCache = ref.get();
         ConfigCache newCache = new ConfigCache(newer, version.incrementAndGet());
         ref.set(newCache);
+        // publish update
         Map<String, Object> older = oldCache == null ? null : oldCache.getData();
-        onUpdate(newer, older, newCache.getVersion());
-        onDelete(older, newer, newCache.getVersion());
+        int counter = 0;
+        counter += onUpdate(newer, older, newCache.getVersion());
+        counter += onDelete(older, newer, newCache.getVersion());
+        if (counter > 0) {
+            // publish all
+            publish(new ConfigEvent(EventType.UPDATE, SYSTEM_ALL, null, newCache.getVersion()));
+        }
     }
 
     /**
@@ -151,22 +156,20 @@ public class NacosConfigurator implements Configurator {
      * @param older   The older configuration.
      * @param newer   The newer configuration.
      * @param version The version number of the configuration.
+     * @return The number of properties that were deleted.
      */
-    private void onDelete(Map<String, Object> older, Map<String, Object> newer, long version) {
+    private int onDelete(Map<String, Object> older, Map<String, Object> newer, long version) {
+        int counter = 0;
         if (older != null) {
             for (Map.Entry<String, Object> entry : older.entrySet()) {
                 String key = entry.getKey();
-                Object value = entry.getValue();
                 if (!newer.containsKey(key)) {
-                    publish(ConfigEvent.builder()
-                            .type(EventType.DELETE)
-                            .name(key)
-                            .value(value)
-                            .version(version)
-                            .build());
+                    counter++;
+                    publish(new ConfigEvent(EventType.DELETE, key, null, version));
                 }
             }
         }
+        return counter;
     }
 
     /**
@@ -175,23 +178,22 @@ public class NacosConfigurator implements Configurator {
      * @param newer   The newer configuration.
      * @param older   The older configuration.
      * @param version The version number of the configuration.
+     * @return The number of properties that were updated.
      */
-    private void onUpdate(Map<String, Object> newer, Map<String, Object> older, long version) {
+    private int onUpdate(Map<String, Object> newer, Map<String, Object> older, long version) {
+        int counter = 0;
         if (newer != null) {
             for (Map.Entry<String, Object> entry : newer.entrySet()) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 Object old = older == null ? null : older.get(key);
                 if (value != null && !value.equals(old)) {
-                    publish(ConfigEvent.builder()
-                            .type(EventType.UPDATE)
-                            .name(key)
-                            .value(value)
-                            .version(version)
-                            .build());
+                    counter++;
+                    publish(new ConfigEvent(EventType.UPDATE, key, value, version));
                 }
             }
         }
+        return counter;
     }
 
     /**

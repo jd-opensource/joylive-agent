@@ -30,6 +30,6 @@ public class ApplicationStartedInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onStarted(new SpringApplicationContext());
+        listener.onStarted(new SpringApplicationContext(ctx.getArgument(0)));
     }
 }

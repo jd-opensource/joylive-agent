@@ -14,6 +14,7 @@
     <properties>
         <spring-core.version>5.3.39</spring-core.version>
         <spring-boot.version>3.4.0</spring-boot.version>
+        <spring-cloud-context.version>3.1.9</spring-cloud-context.version>
     </properties>
 
     <dependencies>
@@ -24,11 +25,16 @@
             <version>${spring-boot.version}</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
             <version>${spring-core.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+            <version>${spring-cloud-context.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -15,16 +15,17 @@
  */
 package com.jd.live.agent.governance.bootstrap;
 
-import com.jd.live.agent.core.bootstrap.ApplicationBootstrapContext;
-import com.jd.live.agent.core.bootstrap.ApplicationEnvironment;
-import com.jd.live.agent.core.bootstrap.ApplicationListener;
+import com.jd.live.agent.core.bootstrap.*;
 import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerAdapter;
-import com.jd.live.agent.core.bootstrap.ApplicationPropertySource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.Configurator;
+
+import static com.jd.live.agent.core.util.option.Converts.getBoolean;
+import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
 
 /**
  * An extension that prepares config for the application.
@@ -41,9 +42,19 @@ public class ConfigPreparation extends ApplicationListenerAdapter {
     @Override
     public void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment) {
         if (configCenter != null) {
-            Configurator configurator = configCenter.getConfigurator();
-            if (configurator != null) {
-                environment.addFirst(new LivePropertySource(configurator));
+            configCenter.ifPresent(configurator -> environment.addFirst(new LivePropertySource(configurator)));
+        }
+    }
+
+    @Override
+    public void onStarted(ApplicationContext context) {
+        if (configCenter != null) {
+            ConfigCenterConfig config = configCenter.getConfig();
+            if (getBoolean(config.getProperty(ConfigCenterConfig.KEY_REFRESH_ENVIRONMENT_ENABLED), false)) {
+                configCenter.ifPresent(configurator -> configurator.addListener(SYSTEM_ALL, e -> {
+                    context.refreshEnvironment();
+                    return true;
+                }));
             }
         }
     }

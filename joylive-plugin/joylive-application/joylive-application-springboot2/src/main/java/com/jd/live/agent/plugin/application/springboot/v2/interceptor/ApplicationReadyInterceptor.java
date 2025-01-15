@@ -30,6 +30,6 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onReady(new SpringApplicationContext());
+        listener.onReady(new SpringApplicationContext(ctx.getArgument(0)));
     }
 }

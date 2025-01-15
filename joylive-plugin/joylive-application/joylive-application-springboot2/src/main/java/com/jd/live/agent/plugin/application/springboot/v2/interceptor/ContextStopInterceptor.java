@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.ApplicationListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 
 public class ContextStopInterceptor extends InterceptorAdaptor {
 
@@ -30,6 +31,6 @@ public class ContextStopInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onStop(new SpringApplicationContext());
+        listener.onStop(new SpringApplicationContext((ConfigurableApplicationContext) ctx.getTarget()));
     }
 }

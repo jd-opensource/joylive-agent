@@ -25,6 +25,8 @@ import java.util.Map;
 @Setter
 public class ConfigCenterConfig {
 
+    public static final String KEY_REFRESH_ENVIRONMENT_ENABLED="refreshEnvironmentEnabled";
+
     private String type;
 
     private String address;

@@ -22,4 +22,12 @@ package com.jd.live.agent.core.bootstrap;
  */
 public interface ApplicationContext {
 
+    /**
+     * Refreshes the configuration of the application context.
+     *
+     * @since 1.6.0
+     */
+    void refreshEnvironment();
+
 }
+

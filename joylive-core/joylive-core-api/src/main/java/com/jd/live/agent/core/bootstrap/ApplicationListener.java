@@ -99,7 +99,7 @@ public interface ApplicationListener {
 
         @Override
         public void onStop(ApplicationContext context) {
-
+            // Do nothing
         }
     }
 

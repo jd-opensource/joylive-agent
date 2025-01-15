@@ -15,6 +15,10 @@
  */
 package com.jd.live.agent.governance.subscription.config;
 
+import com.jd.live.agent.governance.config.ConfigCenterConfig;
+
+import java.util.function.Consumer;
+
 /**
  * An interface for managing configurations.
  *
@@ -38,6 +42,20 @@ public interface ConfigCenter {
      * @return A default Configurator instance.
      */
     Configurator getConfigurator();
+
+    ConfigCenterConfig getConfig();
+
+    /**
+     * Invokes the given consumer if a configurator is present.
+     *
+     * @param consumer The consumer to be invoked if a configurator is present.
+     */
+    default void ifPresent(Consumer<Configurator> consumer) {
+        Configurator configurator = getConfigurator();
+        if (configurator != null && consumer != null) {
+            consumer.accept(configurator);
+        }
+    }
 
 }
 

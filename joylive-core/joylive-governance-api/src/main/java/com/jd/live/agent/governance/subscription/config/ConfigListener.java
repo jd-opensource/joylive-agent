@@ -21,6 +21,11 @@ package com.jd.live.agent.governance.subscription.config;
 public interface ConfigListener {
 
     /**
+     * A constant representing all configuration settings.
+     */
+    String SYSTEM_ALL = "__system_all__";
+
+    /**
      * Handles the update of a configuration setting.
      *
      * @param event The updated configuration object.
