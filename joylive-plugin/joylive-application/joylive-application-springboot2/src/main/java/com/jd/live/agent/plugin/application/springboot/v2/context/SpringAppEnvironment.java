@@ -15,27 +15,27 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.context;
 
-import com.jd.live.agent.core.bootstrap.ApplicationEnvironment;
-import com.jd.live.agent.core.bootstrap.ApplicationPropertySource;
+import com.jd.live.agent.core.bootstrap.AppEnvironment;
+import com.jd.live.agent.core.bootstrap.AppPropertySource;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.lang.NonNull;
 
-public class SpringApplicationEnvironment implements ApplicationEnvironment {
+public class SpringAppEnvironment implements AppEnvironment {
 
     private final ConfigurableEnvironment environment;
 
-    public SpringApplicationEnvironment(ConfigurableEnvironment environment) {
+    public SpringAppEnvironment(ConfigurableEnvironment environment) {
         this.environment = environment;
     }
 
     @Override
-    public void addFirst(ApplicationPropertySource propertySource) {
+    public void addFirst(AppPropertySource propertySource) {
         environment.getPropertySources().addFirst(new ConfiguratorSource(propertySource));
     }
 
     @Override
-    public void addLast(ApplicationPropertySource propertySource) {
+    public void addLast(AppPropertySource propertySource) {
         environment.getPropertySources().addLast(new ConfiguratorSource(propertySource));
     }
 
@@ -43,9 +43,9 @@ public class SpringApplicationEnvironment implements ApplicationEnvironment {
      * A PropertySource implementation that wraps a Configurator instance and provides access to its
      * configuration properties.
      */
-    private static class ConfiguratorSource extends PropertySource<ApplicationPropertySource> {
+    private static class ConfiguratorSource extends PropertySource<AppPropertySource> {
 
-        ConfiguratorSource(ApplicationPropertySource configurator) {
+        ConfiguratorSource(AppPropertySource configurator) {
             super(configurator.getName(), configurator);
         }
 

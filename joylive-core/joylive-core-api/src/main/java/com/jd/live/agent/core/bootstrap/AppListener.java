@@ -26,7 +26,7 @@ import java.util.List;
  * @since 1.6.0
  */
 @Extensible("ApplicationListener")
-public interface ApplicationListener {
+public interface AppListener {
 
     int ORDER_BOOTSTRAP = 0;
 
@@ -47,35 +47,35 @@ public interface ApplicationListener {
      * @param context     The application context.
      * @param environment The application environment.
      */
-    void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment);
+    void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment);
 
     /**
      * Called when the application has started.
      *
      * @param context The application context.
      */
-    void onStarted(ApplicationContext context);
+    void onStarted(AppContext context);
 
     /**
      * Called when the application is fully initialized and ready to serve requests.
      *
      * @param context The application context.
      */
-    void onReady(ApplicationContext context);
+    void onReady(AppContext context);
 
     /**
      * Called when the application is stopping.
      *
      * @param context The application context.
      */
-    void onStop(ApplicationContext context);
+    void onStop(AppContext context);
 
     /**
      * A default implementation of the ApplicationListener interface that does nothing.
      *
      * @since 1.6.0
      */
-    class ApplicationListenerAdapter implements ApplicationListener {
+    class AppListenerAdapter implements AppListener {
 
         @Override
         public void onLoading(ClassLoader classLoader) {
@@ -83,22 +83,22 @@ public interface ApplicationListener {
         }
 
         @Override
-        public void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment) {
+        public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
             // Do nothing
         }
 
         @Override
-        public void onStarted(ApplicationContext context) {
+        public void onStarted(AppContext context) {
             // Do nothing
         }
 
         @Override
-        public void onReady(ApplicationContext context) {
+        public void onReady(AppContext context) {
             // Do nothing
         }
 
         @Override
-        public void onStop(ApplicationContext context) {
+        public void onStop(AppContext context) {
             // Do nothing
         }
     }
@@ -108,45 +108,45 @@ public interface ApplicationListener {
      *
      * @since 1.6.0
      */
-    class ApplicationListenerWrapper implements ApplicationListener {
+    class AppListenerWrapper implements AppListener {
 
-        private final List<ApplicationListener> listeners;
+        private final List<AppListener> listeners;
 
-        public ApplicationListenerWrapper(List<ApplicationListener> listeners) {
+        public AppListenerWrapper(List<AppListener> listeners) {
             this.listeners = listeners == null ? new ArrayList<>(0) : listeners;
         }
 
         @Override
         public void onLoading(ClassLoader classLoader) {
-            for (ApplicationListener listener : listeners) {
+            for (AppListener listener : listeners) {
                 listener.onLoading(classLoader);
             }
         }
 
         @Override
-        public void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment) {
-            for (ApplicationListener listener : listeners) {
+        public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
+            for (AppListener listener : listeners) {
                 listener.onEnvironmentPrepared(context, environment);
             }
         }
 
         @Override
-        public void onStarted(ApplicationContext context) {
-            for (ApplicationListener listener : listeners) {
+        public void onStarted(AppContext context) {
+            for (AppListener listener : listeners) {
                 listener.onStarted(context);
             }
         }
 
         @Override
-        public void onReady(ApplicationContext context) {
-            for (ApplicationListener listener : listeners) {
+        public void onReady(AppContext context) {
+            for (AppListener listener : listeners) {
                 listener.onReady(context);
             }
         }
 
         @Override
-        public void onStop(ApplicationContext context) {
-            for (ApplicationListener listener : listeners) {
+        public void onStop(AppContext context) {
+            for (AppListener listener : listeners) {
                 listener.onStop(context);
             }
         }

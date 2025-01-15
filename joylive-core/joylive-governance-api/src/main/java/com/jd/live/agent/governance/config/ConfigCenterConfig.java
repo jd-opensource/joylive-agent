@@ -25,8 +25,6 @@ import java.util.Map;
 @Setter
 public class ConfigCenterConfig {
 
-    public static final String KEY_REFRESH_ENVIRONMENT_ENABLED="refreshEnvironmentEnabled";
-
     private String type;
 
     private String address;
@@ -37,9 +35,15 @@ public class ConfigCenterConfig {
 
     private ConfigName name = new ConfigName();
 
+    private RefreshConfig refresh = new RefreshConfig();
+
     private long timeout = 3000;
 
     private Map<String, String> properties;
+
+    public boolean isEnabled(String beanName, Object bean) {
+        return refresh == null || refresh.isEnabled(beanName, bean);
+    }
 
     public String getProperty(String key) {
         return key == null || properties == null ? null : properties.get(key);

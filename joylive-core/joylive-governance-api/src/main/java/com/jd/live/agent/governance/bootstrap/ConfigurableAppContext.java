@@ -13,13 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.bootstrap;
+package com.jd.live.agent.governance.bootstrap;
+
+import com.jd.live.agent.core.bootstrap.AppContext;
+import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 
 /**
  * Represents the application context, which holds all the beans and their dependencies.
  *
  * @since 1.6.0
  */
-public interface ApplicationBootstrapContext {
+public interface ConfigurableAppContext extends AppContext {
+
+    /**
+     * Subscribes the application context to the given ConfigCenter instance.
+     *
+     * @param configCenter The ConfigCenter instance to which the application context will be subscribed.
+     */
+    void subscribe(ConfigCenter configCenter);
 
 }
+

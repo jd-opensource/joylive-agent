@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.definition;
 
-import com.jd.live.agent.core.bootstrap.ApplicationListener;
+import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -48,8 +48,8 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_ENVIRONMENT_PREPARED = "environmentPrepared";
 
-    @Inject(value = ApplicationListener.COMPONENT_APPLICATION_LISTENER, component = true)
-    private ApplicationListener listener;
+    @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
+    private AppListener listener;
 
     public SpringApplicationDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);

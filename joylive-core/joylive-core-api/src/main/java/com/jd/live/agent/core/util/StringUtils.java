@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -98,6 +99,8 @@ public class StringUtils {
                 return Character.isWhitespace(o);
         }
     };
+
+    private static final Map<String, Optional<String>> KEBAB_TO_CAMEL = new ConcurrentHashMap<>();
 
     /**
      * The empty String {@code ""}.
@@ -691,5 +694,52 @@ public class StringUtils {
             result = url(result, path);
         }
         return result;
+    }
+
+    /**
+     * Converts a kebab-case string to a camel-case string.
+     *
+     * @param name The kebab-case string to be converted.
+     * @return The camel-case string, or null if the input string is null or does not contain any hyphens.
+     */
+    public static String getKebabToCamel(String name) {
+        return name == null || name.isEmpty() ? null : KEBAB_TO_CAMEL.computeIfAbsent(name,
+                k -> Optional.ofNullable(convertKebabToCamel(k))).orElse(null);
+    }
+
+    /**
+     * Converts a kebab-case string to a camel-case string.
+     *
+     * @param name The kebab-case string to be converted.
+     * @return The camel-case string, or null if the input string is null or does not contain any hyphens.
+     */
+    private static String convertKebabToCamel(String name) {
+        int pos = name == null ? -1 : name.indexOf('-');
+        if (pos <= 0) {
+            return null;
+        } else {
+            int start = 0;
+            int length = name.length();
+            StringBuilder builder = new StringBuilder(length);
+            while (pos > 0) {
+                if (start == 0) {
+                    builder.append(name, start, pos);
+                } else {
+                    builder.append(Character.toUpperCase(name.charAt(start)));
+                    if (start < pos - 1) {
+                        builder.append(name, start + 1, pos);
+                    }
+                }
+                start = pos + 1;
+                pos = name.indexOf('-', start);
+            }
+            if (start < length) {
+                builder.append(Character.toUpperCase(name.charAt(start)));
+                if (start < length - 1) {
+                    builder.append(name, start + 1, length);
+                }
+            }
+            return builder.toString();
+        }
     }
 }

@@ -86,7 +86,7 @@ public class NacosConfigurator implements Configurator {
     @Override
     public Object getProperty(String name) {
         ConfigCache cache = ref.get();
-        return cache == null ? null : cache.get(name);
+        return cache == null || name == null || name.isEmpty() ? null : cache.get(name);
     }
 
     @Override

@@ -34,6 +34,9 @@ public class EchoController {
 
     private final EchoConfig config;
 
+    @Value("${echo.suffix}")
+    private String echoSuffix;
+
     public EchoController(@Value("${spring.application.name}") String applicationName, EchoConfig config) {
         this.applicationName = applicationName;
         this.config = config;
@@ -51,7 +54,7 @@ public class EchoController {
             } catch (InterruptedException ignore) {
             }
         }
-        LiveResponse response = new LiveResponse(str);
+        LiveResponse response = new LiveResponse(echoSuffix == null ? str : str + echoSuffix);
         configure(request, response);
         return response;
     }

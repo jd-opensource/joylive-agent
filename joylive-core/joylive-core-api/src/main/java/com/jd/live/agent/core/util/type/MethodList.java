@@ -20,6 +20,7 @@ import lombok.Getter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.type.TypeScanner.scanner;
@@ -96,6 +97,17 @@ public class MethodList {
 
     public List<Method> getMethods(final String name) {
         return methodNames.get(name);
+    }
+
+    /**
+     * Iterates over all the method and applies the given consumer to each one.
+     *
+     * @param consumer The consumer to be applied to each method.
+     */
+    public void forEach(final Consumer<Method> consumer) {
+        if (consumer != null) {
+            methods.forEach(consumer);
+        }
     }
 
     /**

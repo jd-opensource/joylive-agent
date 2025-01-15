@@ -16,16 +16,14 @@
 package com.jd.live.agent.governance.bootstrap;
 
 import com.jd.live.agent.core.bootstrap.*;
-import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerAdapter;
+import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.Configurator;
 
-import static com.jd.live.agent.core.util.option.Converts.getBoolean;
-import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
+import static com.jd.live.agent.core.util.StringUtils.getKebabToCamel;
 
 /**
  * An extension that prepares config for the application.
@@ -33,33 +31,27 @@ import static com.jd.live.agent.governance.subscription.config.ConfigListener.SY
  * @since 1.6.0
  */
 @Injectable
-@Extension(value = "ConfigPreparation", order = ApplicationListener.ORDER_BOOTSTRAP)
-public class ConfigPreparation extends ApplicationListenerAdapter {
+@Extension(value = "ConfigPreparation", order = AppListener.ORDER_BOOTSTRAP)
+public class ConfigPreparation extends AppListenerAdapter {
 
     @Inject(value = ConfigCenter.COMPONENT_CONFIG_CENTER, component = true, nullable = true)
     private ConfigCenter configCenter;
 
     @Override
-    public void onEnvironmentPrepared(ApplicationBootstrapContext context, ApplicationEnvironment environment) {
+    public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
         if (configCenter != null) {
             configCenter.ifPresent(configurator -> environment.addFirst(new LivePropertySource(configurator)));
         }
     }
 
     @Override
-    public void onStarted(ApplicationContext context) {
-        if (configCenter != null) {
-            ConfigCenterConfig config = configCenter.getConfig();
-            if (getBoolean(config.getProperty(ConfigCenterConfig.KEY_REFRESH_ENVIRONMENT_ENABLED), false)) {
-                configCenter.ifPresent(configurator -> configurator.addListener(SYSTEM_ALL, e -> {
-                    context.refreshEnvironment();
-                    return true;
-                }));
-            }
+    public void onStarted(AppContext context) {
+        if (configCenter != null && context instanceof ConfigurableAppContext) {
+            configCenter.ifPresent(configurator -> ((ConfigurableAppContext) context).subscribe(configCenter));
         }
     }
 
-    private static class LivePropertySource implements ApplicationPropertySource {
+    private static class LivePropertySource implements AppPropertySource {
 
         private final Configurator configurator;
 
@@ -70,6 +62,12 @@ public class ConfigPreparation extends ApplicationListenerAdapter {
         @Override
         public String getProperty(String name) {
             Object property = configurator.getProperty(name);
+            if (property == null) {
+                String key = getKebabToCamel(name);
+                if (key != null) {
+                    property = configurator.getProperty(key);
+                }
+            }
             return property == null ? null : property.toString();
         }
 

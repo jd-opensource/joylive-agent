@@ -16,24 +16,11 @@
 package com.jd.live.agent.core.bootstrap;
 
 /**
- * An interface for retrieving configuration properties.
+ * Represents the application context, which holds all the beans and their dependencies.
  *
  * @since 1.6.0
  */
-public interface ApplicationPropertySource {
+public interface AppContext {
 
-    /**
-     * Retrieves the value of a configuration property from the application-specific source.
-     *
-     * @param name The name of the property to retrieve.
-     * @return The value of the specified property, or null if the property does not exist.
-     */
-    String getProperty(String name);
-
-    /**
-     * Returns the name of the object.
-     *
-     * @return The name of the object.
-     */
-    String getName();
 }
+

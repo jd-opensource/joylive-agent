@@ -16,10 +16,10 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.bootstrap.ApplicationListener;
+import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationBootstrapContext;
-import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationEnvironment;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppBootstrapContext;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppEnvironment;
 
 /**
  * An interceptor that adds a Configurator-based PropertySource to the ConfigurableEnvironment
@@ -29,14 +29,14 @@ import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicat
  */
 public class EnvironmentPreparedInterceptor extends InterceptorAdaptor {
 
-    private final ApplicationListener listener;
+    private final AppListener listener;
 
-    public EnvironmentPreparedInterceptor(ApplicationListener listener) {
+    public EnvironmentPreparedInterceptor(AppListener listener) {
         this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onEnvironmentPrepared(new SpringApplicationBootstrapContext(), new SpringApplicationEnvironment(ctx.getArgument(1)));
+        listener.onEnvironmentPrepared(new SpringAppBootstrapContext(), new SpringAppEnvironment(ctx.getArgument(1)));
     }
 }

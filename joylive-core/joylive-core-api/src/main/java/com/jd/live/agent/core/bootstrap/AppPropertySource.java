@@ -16,23 +16,24 @@
 package com.jd.live.agent.core.bootstrap;
 
 /**
- * An interface representing the application environment, which provides access to configuration properties.
+ * An interface for retrieving configuration properties.
  *
  * @since 1.6.0
  */
-public interface ApplicationEnvironment {
+public interface AppPropertySource {
 
     /**
-     * Adds a new ApplicationPropertySource to the beginning of the property source list.
+     * Retrieves the value of a configuration property from the application-specific source.
      *
-     * @param propertySource The property source to add.
+     * @param name The name of the property to retrieve.
+     * @return The value of the specified property, or null if the property does not exist.
      */
-    void addFirst(ApplicationPropertySource propertySource);
+    String getProperty(String name);
 
     /**
-     * Adds a new ApplicationPropertySource to the end of the property source list.
+     * Returns the name of the object.
      *
-     * @param propertySource The property source to add.
+     * @return The name of the object.
      */
-    void addLast(ApplicationPropertySource propertySource);
+    String getName();
 }

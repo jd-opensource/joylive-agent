@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.governance.bootstrap;
 
-import com.jd.live.agent.core.bootstrap.ApplicationContext;
-import com.jd.live.agent.core.bootstrap.ApplicationListener;
-import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerAdapter;
+import com.jd.live.agent.core.bootstrap.AppContext;
+import com.jd.live.agent.core.bootstrap.AppListener;
+import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -29,14 +29,14 @@ import com.jd.live.agent.governance.policy.PolicySupervisor;
  * @since 1.6.0
  */
 @Injectable
-@Extension(value = "PolicyPreparation", order = ApplicationListener.ORDER_POLICY_PREPARATION)
-public class PolicyPreparation extends ApplicationListenerAdapter {
+@Extension(value = "PolicyPreparation", order = AppListener.ORDER_POLICY_PREPARATION)
+public class PolicyPreparation extends AppListenerAdapter {
 
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     private PolicySupervisor policySupervisor;
 
     @Override
-    public void onStarted(ApplicationContext context) {
+    public void onStarted(AppContext context) {
         policySupervisor.waitReady();
     }
 

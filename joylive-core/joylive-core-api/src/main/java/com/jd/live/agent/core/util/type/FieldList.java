@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.type.TypeScanner.scanner;
 
@@ -87,5 +88,16 @@ public class FieldList {
      */
     public FieldDesc getField(final String name) {
         return name == null ? null : fieldNames.get(name);
+    }
+
+    /**
+     * Iterates over all the field descriptions and applies the given consumer to each one.
+     *
+     * @param consumer The consumer to be applied to each field description.
+     */
+    public void forEach(final Consumer<FieldDesc> consumer) {
+        if (consumer != null) {
+            fields.forEach(consumer);
+        }
     }
 }

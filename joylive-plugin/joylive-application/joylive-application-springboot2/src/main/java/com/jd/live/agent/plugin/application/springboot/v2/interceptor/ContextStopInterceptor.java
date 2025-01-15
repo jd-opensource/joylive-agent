@@ -16,21 +16,21 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.bootstrap.ApplicationListener;
+import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.application.springboot.v2.context.SpringApplicationContext;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
 public class ContextStopInterceptor extends InterceptorAdaptor {
 
-    private final ApplicationListener listener;
+    private final AppListener listener;
 
-    public ContextStopInterceptor(ApplicationListener listener) {
+    public ContextStopInterceptor(AppListener listener) {
         this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onStop(new SpringApplicationContext((ConfigurableApplicationContext) ctx.getTarget()));
+        listener.onStop(new SpringAppContext((ConfigurableApplicationContext) ctx.getTarget()));
     }
 }

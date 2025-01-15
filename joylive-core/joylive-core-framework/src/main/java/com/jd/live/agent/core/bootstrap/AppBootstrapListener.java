@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.bootstrap;
 
-import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerAdapter;
+import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -28,24 +28,24 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
  * @since 1.6.0
  */
 @Injectable
-@Extension(value = "ApplicationBootstrapListener", order = ApplicationListener.ORDER_BOOTSTRAP)
-public class ApplicationBootstrapListener extends ApplicationListenerAdapter {
+@Extension(value = "ApplicationBootstrapListener", order = AppListener.ORDER_BOOTSTRAP)
+public class AppBootstrapListener extends AppListenerAdapter {
 
     @Inject(Publisher.SYSTEM)
     private Publisher<AgentEvent> publisher;
 
     @Override
-    public void onStarted(ApplicationContext context) {
+    public void onStarted(AppContext context) {
         publisher.offer(AgentEvent.onApplicationStarted("Application is started"));
     }
 
     @Override
-    public void onReady(ApplicationContext context) {
+    public void onReady(AppContext context) {
         publisher.offer(AgentEvent.onApplicationReady("Application is ready"));
     }
 
     @Override
-    public void onStop(ApplicationContext context) {
+    public void onStop(AppContext context) {
         publisher.offer(AgentEvent.onApplicationStop("Application is stopping"));
     }
 

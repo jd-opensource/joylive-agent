@@ -25,7 +25,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
 import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.bootstrap.ApplicationListener.ApplicationListenerWrapper;
+import com.jd.live.agent.core.bootstrap.AppListener.AppListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
@@ -181,7 +181,7 @@ public class Bootstrap implements AgentLifecycle {
      */
     private ServiceManager serviceManager;
 
-    private ApplicationListener applicationListener;
+    private AppListener applicationListener;
 
     /**
      * Supervises plugins, handling their lifecycle.
@@ -276,7 +276,7 @@ public class Bootstrap implements AgentLifecycle {
             createSourceSuppliers();
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
             setupServiceManager(); // inject to source supplier
-            applicationListener = new ApplicationListenerWrapper(createApplicationListeners()); // depend on source suppliers & serviceManager
+            applicationListener = new AppListenerWrapper(createApplicationListeners()); // depend on source suppliers & serviceManager
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
@@ -537,7 +537,7 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
                 ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, serviceManager);
-                ctx.add(ApplicationListener.COMPONENT_APPLICATION_LISTENER, applicationListener);
+                ctx.add(AppListener.COMPONENT_APPLICATION_LISTENER, applicationListener);
                 ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());
@@ -575,8 +575,8 @@ public class Bootstrap implements AgentLifecycle {
         }
     }
 
-    private List<ApplicationListener> createApplicationListeners() {
-        return extensionManager.getOrLoadExtensible(ApplicationListener.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+    private List<AppListener> createApplicationListeners() {
+        return extensionManager.getOrLoadExtensible(AppListener.class, classLoaderManager.getCoreImplLoader()).getExtensions();
     }
 
     private PluginSupervisor createPluginManager() {

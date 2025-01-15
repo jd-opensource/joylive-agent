@@ -16,18 +16,23 @@
 package com.jd.live.agent.core.bootstrap;
 
 /**
- * Represents the application context, which holds all the beans and their dependencies.
+ * An interface representing the application environment, which provides access to configuration properties.
  *
  * @since 1.6.0
  */
-public interface ApplicationContext {
+public interface AppEnvironment {
 
     /**
-     * Refreshes the configuration of the application context.
+     * Adds a new ApplicationPropertySource to the beginning of the property source list.
      *
-     * @since 1.6.0
+     * @param propertySource The property source to add.
      */
-    void refreshEnvironment();
+    void addFirst(AppPropertySource propertySource);
 
+    /**
+     * Adds a new ApplicationPropertySource to the end of the property source list.
+     *
+     * @param propertySource The property source to add.
+     */
+    void addLast(AppPropertySource propertySource);
 }
-

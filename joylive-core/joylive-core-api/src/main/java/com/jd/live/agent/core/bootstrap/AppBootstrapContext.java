@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.context;
+package com.jd.live.agent.core.bootstrap;
 
-import com.jd.live.agent.core.bootstrap.ApplicationBootstrapContext;
-
-public class SpringApplicationBootstrapContext implements ApplicationBootstrapContext {
+/**
+ * Represents the application context, which holds all the beans and their dependencies.
+ *
+ * @since 1.6.0
+ */
+public interface AppBootstrapContext {
 
 }
