@@ -30,6 +30,7 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.agent.builder.AgentBuilder.PoolStrategy;
 
 import java.lang.instrument.Instrumentation;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * PoolHandler
@@ -68,7 +69,9 @@ public class PoolHandler implements BuilderHandler, ExtensionInitializer {
             int old = poolCache.size();
             poolCache.recycle(enhanceConfig.getPoolExpireTime());
             int current = poolCache.size();
-            logger.info("Clean expired cache from byte buddy pool. " + old + " -> " + current);
+            if (old != current || ThreadLocalRandom.current().nextInt(10) == 0) {
+                logger.info("Clean expired cache from byte buddy pool. " + old + " -> " + current);
+            }
             addCleanTask();
         });
     }
