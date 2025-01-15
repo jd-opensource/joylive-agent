@@ -77,7 +77,13 @@ public class UserServiceController {
                 default:
                     servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
-            return status.getDescription();
+            return status.getDescription() == null ? "Unknown error" : status.getDescription();
+        } catch (IllegalStateException e) {
+            servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return e.getMessage();
+        } catch (Exception e) {
+            servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return e.getMessage();
         }
     }
 

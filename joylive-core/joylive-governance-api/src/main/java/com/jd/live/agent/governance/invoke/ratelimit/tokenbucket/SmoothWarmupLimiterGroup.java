@@ -29,6 +29,7 @@ public class SmoothWarmupLimiterGroup extends AbstractRateLimiterGroup {
 
     public SmoothWarmupLimiterGroup(RateLimitPolicy policy) {
         super(policy);
+        init();
     }
 
     @Override

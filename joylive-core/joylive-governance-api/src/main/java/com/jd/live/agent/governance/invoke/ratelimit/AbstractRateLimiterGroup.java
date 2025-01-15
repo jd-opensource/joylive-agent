@@ -43,6 +43,13 @@ public abstract class AbstractRateLimiterGroup extends AbstractRateLimiter {
      */
     public AbstractRateLimiterGroup(RateLimitPolicy policy) {
         super(policy, TimeUnit.NANOSECONDS);
+    }
+
+    /**
+     * Initializes the rate limiter group by creating the individual rate limiters
+     * based on the sliding windows defined in the rate limit policy.
+     */
+    public void init() {
         int i = 0;
         for (SlidingWindow window : policy.getSlidingWindows()) {
             limiters.add(create(window, policy.getName() + "-" + i++));

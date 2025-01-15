@@ -32,6 +32,13 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onError(new RuntimeException("error"));
             return;
         }
+        if (request.getId() >= 100) {
+            try {
+                Thread.sleep(request.getId());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
         UserGetResponse.Builder builder = UserGetResponse.newBuilder();
         builder.setId(request.getId())
                 .setName("index:" + request.getId() + ", time:" + System.currentTimeMillis())

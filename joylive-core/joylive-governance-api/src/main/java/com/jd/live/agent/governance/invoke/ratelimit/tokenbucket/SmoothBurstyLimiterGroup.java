@@ -29,6 +29,7 @@ public class SmoothBurstyLimiterGroup extends AbstractRateLimiterGroup {
 
     public SmoothBurstyLimiterGroup(RateLimitPolicy policy) {
         super(policy);
+        init();
     }
 
     @Override
