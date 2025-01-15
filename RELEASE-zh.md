@@ -6,7 +6,7 @@
 2. 新增支持 Spring cloud grpc 出流量的重试和熔断，当前已经完整支持grpc unary模式的治理
 3. 新增支持 Spring cloud 客户端获取到服务端的异常，便于重试和熔断 
 4. 新增支持 Spring cloud 端口路由
-5. 新增支持 Spring cloud 集成配置中心，以及slf4j的日志级别动态修改
+5. 新增支持 Spring cloud 集成配置中心，支持对slf4j的日志级别和@Value注解的字段进行动态修改
 6. 新增支持 Redis 集群级限流 
 7. 新增支持 W3c Baggage 透传
 8. 新增支持熔断的流量渐进性恢复

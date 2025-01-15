@@ -6,7 +6,7 @@
 2. Added support for retry and circuit breaking for outbound traffic of Spring Cloud gRPC, now support for full governance of gRPC unary mode
 3. Added support for Spring Cloud clients to retrieve exceptions from the server, facilitating retry and circuit breaking.
 4. Added support for Spring Cloud port-based routing.
-5. Added support for Spring Cloud integration with configuration center, as well as dynamic modification of slf4j’s log level.
+5. Added support for Spring Cloud integration with configuration center, allowing dynamic modification of slf4j’s log level and fields annotated with @Value.
 6. Added support for cluster-level rate limiting by Redis. 
 7. Added support for W3c Baggage transparent transmission.
 8. Added support for gradual traffic recovery at circuit breaking.
