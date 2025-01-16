@@ -89,7 +89,7 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
         String ext = pos > 0 ? resource.substring(pos + 1) : "";
         ConfigParser parser = parsers.get(ext);
         if (parser != null) {
-            URL url = ClassLoader.getSystemClassLoader().getResource(resource);
+            URL url = getResource(resource);
             if (url != null) {
                 try {
                     Map<String, Object> result = parse(url.openStream(), parser);
@@ -102,6 +102,18 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
             }
         }
         return null;
+    }
+
+    protected URL getResource(String resource) {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        URL url = contextClassLoader.getResource(resource);
+        if (url == null) {
+            ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+            if (systemClassLoader != contextClassLoader) {
+                url = systemClassLoader.getResource(resource);
+            }
+        }
+        return url;
     }
 
     /**

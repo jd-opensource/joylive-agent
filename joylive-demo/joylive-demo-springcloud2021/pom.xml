@@ -23,6 +23,7 @@
 
     <modules>
         <module>joylive-demo-springcloud2021-provider</module>
+        <module>joylive-demo-springcloud2021-provider-war</module>
         <module>joylive-demo-springcloud2021-provider-reactive</module>
         <module>joylive-demo-springcloud2021-consumer</module>
         <module>joylive-demo-springcloud2021-gateway</module>

@@ -86,7 +86,9 @@ public class NacosConfigService extends AbstractService implements ConfigService
             client = NacosClientFactory.create(properties);
             client.connect();
             configurator = getConfigurator(configName);
-            configurator.subscribe();
+            if (configurator != null) {
+                configurator.subscribe();
+            }
             return CompletableFuture.completedFuture(null);
         } catch (Throwable e) {
             return Futures.future(e);
