@@ -47,5 +47,9 @@ public class RefreshConfig {
         return true;
     }
 
+    public boolean isEmpty() {
+        return (beanNames == null || beanNames.isEmpty()) && (beanClassPrefixes == null || beanClassPrefixes.isEmpty());
+    }
+
 }
 

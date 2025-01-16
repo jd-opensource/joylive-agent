@@ -20,10 +20,15 @@ import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.RefreshConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.Configurator;
 
-import static com.jd.live.agent.core.util.StringUtils.getKebabToCamel;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * An extension that prepares config for the application.
@@ -36,6 +41,24 @@ public class ConfigPreparation extends AppListenerAdapter {
 
     @Inject(value = ConfigCenter.COMPONENT_CONFIG_CENTER, component = true, nullable = true)
     private ConfigCenter configCenter;
+
+    @Override
+    public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
+        if (configCenter != null && mainClass != null) {
+            RefreshConfig refreshConfig = configCenter.getConfig().getRefresh();
+            if (refreshConfig.isEmpty()) {
+                Set<String> prefixes = new HashSet<>();
+                String name = mainClass.getPackage().getName();
+                String[] packages = split(name, CHAR_DOT);
+                if (packages.length > 3) {
+                    packages = Arrays.copyOfRange(packages, 0, 3);
+                    name = join(packages, CHAR_DOT);
+                }
+                prefixes.add(name);
+                refreshConfig.setBeanClassPrefixes(prefixes);
+            }
+        }
+    }
 
     @Override
     public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {

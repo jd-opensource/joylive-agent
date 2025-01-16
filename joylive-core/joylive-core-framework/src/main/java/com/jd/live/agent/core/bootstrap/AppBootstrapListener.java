@@ -21,6 +21,7 @@ import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 
 /**
  * An extension of the ApplicationListenerAdapter that publishes events to a Publisher when the application starts, is ready, or stops.
@@ -33,6 +34,15 @@ public class AppBootstrapListener extends AppListenerAdapter {
 
     @Inject(Publisher.SYSTEM)
     private Publisher<AgentEvent> publisher;
+
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
+
+    @Override
+    public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
+        application.setClassLoader(classLoader);
+        application.setMainClass(mainClass);
+    }
 
     @Override
     public void onStarted(AppContext context) {

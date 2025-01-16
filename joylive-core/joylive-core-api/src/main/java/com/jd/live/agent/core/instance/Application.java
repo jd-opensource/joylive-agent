@@ -104,6 +104,12 @@ public class Application {
     @Setter
     private Long timestamp;
 
+    @Setter
+    private Class<?> mainClass;
+
+    @Setter
+    private ClassLoader classLoader;
+
     /**
      * Default constructor initializes the process ID and instance with a unique application ID.
      */

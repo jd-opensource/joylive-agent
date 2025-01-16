@@ -26,40 +26,26 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.EnvironmentPreparedInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationLoadInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
 @ConditionalOnGovernanceEnabled
-@ConditionalOnClass(SpringApplicationDefinition.TYPE_SPRING_APPLICATION_RUN_LISTENERS)
+@ConditionalOnClass(SpringApplicationDefinition.TYPE_SPRING_APPLICATION)
 public class SpringApplicationDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SPRING_APPLICATION_RUN_LISTENERS = "org.springframework.boot.SpringApplicationRunListeners";
+    protected static final String TYPE_SPRING_APPLICATION = "org.springframework.boot.SpringApplication";
 
-    private static final String METHOD_STARTED = "started";
-
-    // for spring 2.2.9+
-    private static final String METHOD_READY = "ready";
-
-    // for spring 2.2.9
-    private static final String METHOD_RUNNING = "running";
-
-    private static final String METHOD_ENVIRONMENT_PREPARED = "environmentPrepared";
+    private static final String METHOD_DEDUCE_MAIN_APPLICATION_CLASS = "deduceMainApplicationClass";
 
     @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
     private AppListener listener;
 
     public SpringApplicationDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
+        this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationStartedInterceptor(listener)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
-                        () -> new ApplicationReadyInterceptor(listener)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
-                        () -> new EnvironmentPreparedInterceptor(listener))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_DEDUCE_MAIN_APPLICATION_CLASS),
+                        () -> new ApplicationLoadInterceptor(listener))
         };
     }
 }

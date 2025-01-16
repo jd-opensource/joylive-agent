@@ -75,7 +75,7 @@ public class SpringAppContext implements ConfigurableAppContext {
                 addEnvironmentListener(configurator);
             }
             if (config.isBeanEnabled()) {
-                addBeanListener(configurator);
+                addBeanListener(configurator, config);
             }
         }
     }
@@ -97,13 +97,17 @@ public class SpringAppContext implements ConfigurableAppContext {
      *
      * @param configurator The Configurator instance to which the listener will be added.
      */
-    private void addBeanListener(Configurator configurator) {
+    private void addBeanListener(Configurator configurator, RefreshConfig config) {
         Map<String, Object> beans = BeanFactoryUtils.beansOfTypeIncludingAncestors(context, Object.class);
-        for (Object bean : beans.values()) {
-            ClassDesc describe = ClassUtils.describe(bean.getClass());
-            Set<Method> setters = new HashSet<>();
-            addFieldListener(configurator, bean, describe, setters);
-            addMethodListener(configurator, bean, describe, setters);
+        for (Map.Entry<String, Object> entry : beans.entrySet()) {
+            String beanName = entry.getKey();
+            Object bean = entry.getValue();
+            if (config.isEnabled(beanName, bean.getClass())) {
+                ClassDesc describe = ClassUtils.describe(bean.getClass());
+                Set<Method> setters = new HashSet<>();
+                addFieldListener(configurator, bean, describe, setters);
+                addMethodListener(configurator, bean, describe, setters);
+            }
         }
     }
 

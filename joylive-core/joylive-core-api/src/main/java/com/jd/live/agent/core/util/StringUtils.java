@@ -28,6 +28,11 @@ import java.util.function.Predicate;
 public class StringUtils {
 
     /**
+     * A character is a dot.
+     */
+    public static final char CHAR_DOT = '.';
+
+    /**
      * A character is a comma.
      */
     public static final char CHAR_COMMA = ',';

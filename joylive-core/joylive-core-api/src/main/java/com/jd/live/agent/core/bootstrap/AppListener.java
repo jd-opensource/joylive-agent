@@ -38,8 +38,9 @@ public interface AppListener {
      * Invoked when a ClassLoader is about to load a class.
      *
      * @param classLoader The ClassLoader that is about to load a class.
+     * @param mainClass   The main class that is being loaded.
      */
-    void onLoading(ClassLoader classLoader);
+    void onLoading(ClassLoader classLoader, Class<?> mainClass);
 
     /**
      * Called when the environment is prepared and ready for use.
@@ -78,7 +79,7 @@ public interface AppListener {
     class AppListenerAdapter implements AppListener {
 
         @Override
-        public void onLoading(ClassLoader classLoader) {
+        public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
             // Do nothing
         }
 
@@ -117,9 +118,9 @@ public interface AppListener {
         }
 
         @Override
-        public void onLoading(ClassLoader classLoader) {
+        public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
             for (AppListener listener : listeners) {
-                listener.onLoading(classLoader);
+                listener.onLoading(classLoader, mainClass);
             }
         }
 
