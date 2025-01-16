@@ -19,16 +19,15 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier;
+import com.jd.live.agent.core.bootstrap.resource.BootResourcer;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ConfigParser;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
+import java.io.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,6 +44,9 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
 
     @Inject
     private Map<String, ConfigParser> parsers;
+
+    @Inject
+    private List<BootResourcer> resourcers;
 
     /**
      * Constructs an AbstractEnvSupplier with the specified resources.
@@ -89,31 +91,35 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
         String ext = pos > 0 ? resource.substring(pos + 1) : "";
         ConfigParser parser = parsers.get(ext);
         if (parser != null) {
-            URL url = getResource(resource);
-            if (url != null) {
+            InputStream stream = getResource(resource);
+            if (stream != null) {
                 try {
-                    Map<String, Object> result = parse(url.openStream(), parser);
-                    logger.info("[LiveAgent] Successfully load config from " + url);
+                    Map<String, Object> result = parse(stream, parser);
+                    logger.info("[LiveAgent] Successfully load config from " + resource);
                     return result;
                 } catch (Throwable e) {
-                    logger.warn("[LiveAgent] Failed to load config from " + url, e);
+                    logger.warn("[LiveAgent] Failed to load config from " + resource, e);
                     return new HashMap<>();
+                } finally {
+                    Close.instance().close(stream);
                 }
             }
         }
         return null;
     }
 
-    protected URL getResource(String resource) {
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        URL url = contextClassLoader.getResource(resource);
-        if (url == null) {
-            ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-            if (systemClassLoader != contextClassLoader) {
-                url = systemClassLoader.getResource(resource);
+    protected InputStream getResource(String resource) {
+        for (BootResourcer resourcer : resourcers) {
+            try {
+                InputStream stream = resourcer.getResource(resource);
+                if (stream != null) {
+                    return stream;
+                }
+            } catch (IOException e) {
+                return null;
             }
         }
-        return url;
+        return null;
     }
 
     /**
