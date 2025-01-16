@@ -55,6 +55,7 @@ public class NacosRegistrationInterceptor extends InterceptorAdaptor {
                             registration.setPort(port);
                         }
                         registration.start();
+                        logger.info("Success starting nacos registration.");
                     } catch (Throwable e) {
                         logger.error("Failed to start nacos registration, caused by " + e.getMessage(), e);
                     }
