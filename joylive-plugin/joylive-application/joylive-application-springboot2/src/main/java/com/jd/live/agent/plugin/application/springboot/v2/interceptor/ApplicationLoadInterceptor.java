@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import org.springframework.boot.SpringApplication;
 
 public class ApplicationLoadInterceptor extends InterceptorAdaptor {
@@ -33,6 +34,9 @@ public class ApplicationLoadInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         SpringApplication application = (SpringApplication) mc.getTarget();
-        listener.onLoading(application.getClassLoader(), mc.getResult());
+        ClassLoader classLoader = application.getClassLoader();
+        Class<?> mainClass = mc.getResult();
+        InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
+        listener.onLoading(classLoader, mainClass);
     }
 }

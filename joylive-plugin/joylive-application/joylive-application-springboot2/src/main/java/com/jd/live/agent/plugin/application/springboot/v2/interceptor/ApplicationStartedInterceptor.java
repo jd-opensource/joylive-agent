@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
+import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 
 public class ApplicationStartedInterceptor extends InterceptorAdaptor {
 
@@ -30,6 +31,8 @@ public class ApplicationStartedInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onStarted(new SpringAppContext(ctx.getArgument(0)));
+        SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
+        InnerListener.foreach(l -> l.onStarted(context));
+        listener.onStarted(context);
     }
 }

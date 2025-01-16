@@ -1,3 +1,4 @@
 com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationDefinition
 com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationRunListenersDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.ApplicationContextDefinition
+com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationContextDefinition
+com.jd.live.agent.plugin.application.springboot.v2.definition.NacosRegistrationDefinition

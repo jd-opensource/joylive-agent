@@ -61,7 +61,8 @@ public class LoggerHandler implements BuilderHandler {
                                 @MaybeNull JavaModule module,
                                 boolean loaded) {
             if (logger.isDebugEnabled()) {
-                String message = String.format("ByteKit discovery %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
+                String message = String.format("ByteKit discovery %s [%s, %s, %s, loaded=%b]",
+                        typeName, getName(classLoader), module, Thread.currentThread(), loaded);
                 logger.debug(message);
             }
         }
@@ -73,7 +74,8 @@ public class LoggerHandler implements BuilderHandler {
                                      boolean loaded,
                                      @NeverNull DynamicType dynamicType) {
             if (logger.isInfoEnabled()) {
-                String message = String.format("ByteKit transform %s [%s, %s, %s, loaded=%b]", typeDescription.getName(), classLoader, module, Thread.currentThread(), loaded);
+                String message = String.format("ByteKit transform %s [%s, %s, %s, loaded=%b]",
+                        typeDescription.getName(), getName(classLoader), module, Thread.currentThread(), loaded);
                 logger.info(message);
             }
         }
@@ -84,7 +86,8 @@ public class LoggerHandler implements BuilderHandler {
                               @MaybeNull JavaModule module,
                               boolean loaded) {
             if (logger.isDebugEnabled()) {
-                String message = String.format("ByteKit ignore %s [%s, %s, %s, loaded=%b]", typeDescription.getName(), classLoader, module, Thread.currentThread(), loaded);
+                String message = String.format("ByteKit ignore %s [%s, %s, %s, loaded=%b]",
+                        typeDescription.getName(), getName(classLoader), module, Thread.currentThread(), loaded);
                 logger.debug(message);
             }
         }
@@ -97,7 +100,8 @@ public class LoggerHandler implements BuilderHandler {
                             @NeverNull Throwable throwable) {
             OutputStream bos = new ByteArrayOutputStream(1024);
             PrintStream printStream = new PrintStream(bos);
-            printStream.printf("ByteKit error %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
+            printStream.printf("ByteKit error %s [%s, %s, %s, loaded=%b]",
+                    typeName, getName(classLoader), module, Thread.currentThread(), loaded);
             throwable.printStackTrace(printStream);
             logger.error(bos.toString());
         }
@@ -108,9 +112,17 @@ public class LoggerHandler implements BuilderHandler {
                                @MaybeNull JavaModule module,
                                boolean loaded) {
             if (logger.isDebugEnabled()) {
-                String message = String.format("ByteKit complete %s [%s, %s, %s, loaded=%b]", typeName, classLoader, module, Thread.currentThread(), loaded);
+                String message = String.format("ByteKit complete %s [%s, %s, %s, loaded=%b]",
+                        typeName, getName(classLoader), module, Thread.currentThread(), loaded);
                 logger.debug(message);
             }
+        }
+
+        protected String getName(ClassLoader classLoader) {
+            if (classLoader == null) {
+                return "";
+            }
+            return classLoader.getClass().getSimpleName();
         }
     }
 }

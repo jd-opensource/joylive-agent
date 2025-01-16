@@ -29,7 +29,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.EnvironmentPreparedInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationEnvironmentPreparedInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationRunListenersDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -63,7 +63,7 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
                         () -> new ApplicationReadyInterceptor(listener)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
-                        () -> new EnvironmentPreparedInterceptor(listener))
+                        () -> new ApplicationEnvironmentPreparedInterceptor(listener))
         };
     }
 }

@@ -63,7 +63,7 @@
 
     <build>
         <directory>${basedir}/target</directory>
-        <finalName>joylive-demo-springcloud2021-provider</finalName>
+        <finalName>joylive-demo-springcloud2021-provider-war</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

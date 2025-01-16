@@ -19,18 +19,21 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
+import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import org.springframework.context.ConfigurableApplicationContext;
 
-public class ContextStopInterceptor extends InterceptorAdaptor {
+public class ApplicationStopInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
-    public ContextStopInterceptor(AppListener listener) {
+    public ApplicationStopInterceptor(AppListener listener) {
         this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        listener.onStop(new SpringAppContext((ConfigurableApplicationContext) ctx.getTarget()));
+        SpringAppContext context = new SpringAppContext((ConfigurableApplicationContext) ctx.getTarget());
+        InnerListener.foreach(l -> l.onStop(context));
+        listener.onStop(context);
     }
 }
