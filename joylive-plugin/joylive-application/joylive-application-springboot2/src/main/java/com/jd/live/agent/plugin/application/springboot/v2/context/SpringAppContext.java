@@ -80,6 +80,10 @@ public class SpringAppContext implements ConfigurableAppContext {
         }
     }
 
+    public ConfigurableApplicationContext getContext() {
+        return context;
+    }
+
     /**
      * Adds an environment listener to the given Configurator instance.
      *

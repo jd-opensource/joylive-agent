@@ -15,36 +15,33 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.definition;
 
-import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ContextStopInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.NacosRegistrationInterceptor;
 
+/**
+ * NacosRegistrationDefinition
+ */
 @Injectable
-@Extension(value = "ApplicationContextDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
+@Extension(value = "NacosRegistrationDefinition", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnGovernanceEnabled
-@ConditionalOnClass(ApplicationContextDefinition.TYPE_ABSTRACT_APPLICATION_CONTEXT)
-public class ApplicationContextDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(NacosRegistrationDefinition.TYPE_NACOS_AUTO_SERVICE_REGISTRATION)
+public class NacosRegistrationDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_ABSTRACT_APPLICATION_CONTEXT = "org.springframework.context.support.AbstractApplicationContext";
+    protected static final String TYPE_NACOS_AUTO_SERVICE_REGISTRATION = "com.alibaba.cloud.nacos.registry.NacosAutoServiceRegistration";
 
-    private static final String METHOD_STOP = "stop";
-
-    @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
-    private AppListener listener;
-
-    public ApplicationContextDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_APPLICATION_CONTEXT);
+    public NacosRegistrationDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_NACOS_AUTO_SERVICE_REGISTRATION);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ContextStopInterceptor(listener))
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor(), NacosRegistrationInterceptor::new),
         };
     }
 }
