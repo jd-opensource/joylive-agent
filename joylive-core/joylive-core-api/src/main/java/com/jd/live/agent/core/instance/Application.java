@@ -181,6 +181,7 @@ public class Application {
         accept(consumer, Constants.LABEL_LANE, metadata.get(Constants.LABEL_LANE));
         accept(consumer, Constants.LABEL_WEIGHT, metadata.get(Constants.LABEL_WEIGHT));
         accept(consumer, Constants.LABEL_WARMUP, metadata.get(Constants.LABEL_WARMUP));
+        accept(consumer, Constants.LABEL_STATE, metadata.get(Constants.LABEL_STATE));
         accept(consumer, Constants.LABEL_SERVICE_GROUP, metadata.get(Constants.LABEL_SERVICE_GROUP));
     }
 

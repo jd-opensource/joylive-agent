@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.jd.live.agent.core.Constants.LABEL_STATE;
 import static io.grpc.ConnectivityState.IDLE;
 
 /**
@@ -48,6 +49,10 @@ public class GrpcEndpoint extends AbstractEndpoint {
 
     @Override
     public EndpointState getState() {
+        String state = getLabel(LABEL_STATE);
+        if (state != null && !STATE_HEALTHY.equals(state)) {
+            return EndpointState.DISABLE;
+        }
         switch (getConnectivityState()) {
             case READY:
                 return EndpointState.HEALTHY;

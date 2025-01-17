@@ -153,6 +153,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-router-springweb5</artifactId>
         </dependency>
         <dependency>

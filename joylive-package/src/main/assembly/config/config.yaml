@@ -36,21 +36,20 @@ agent:
       - grpc
       - httpclient
       - jdk
-      - jmq
-      - jsf
       - kafka
-      - okhttp
-      - netty
-      - phevos
-      - rocketmq
-      - shenyu
-      - sofarpc
-      - spring
       - mariadb
       - mongodb
+      - nacos
+      - netty
+      - okhttp
       - opengauss
       - postgresql
+      - pulsar
+      - rabbitmq
       - redis
+      - rocketmq
+      - sofarpc
+      - spring
     disables: null
     dynamics: null
     profiles:

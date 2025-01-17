@@ -149,6 +149,8 @@ public interface Constants {
      */
     String LABEL_WARMUP = "warmup";
 
+    String LABEL_STATE = "state";
+
     /**
      * Default value for labels.
      */

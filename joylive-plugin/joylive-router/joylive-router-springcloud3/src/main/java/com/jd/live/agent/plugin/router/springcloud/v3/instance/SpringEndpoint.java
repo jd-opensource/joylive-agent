@@ -21,13 +21,11 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.Response;
 
+import static com.jd.live.agent.core.Constants.LABEL_STATE;
+
 public class SpringEndpoint extends AbstractEndpoint {
 
     public static final String KEY_SERVICE_ENDPOINT = "x-service-endpoint";
-
-    private static final String STATE_HANGUP = "hangup";
-    private static final String STATE_SUSPEND = "suspend";
-    private static final String LABEL_STATE = "state";
 
     private final ServiceInstance instance;
 

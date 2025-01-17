@@ -55,6 +55,12 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      */
     int DEFAULT_WEIGHT = 100;
 
+    String STATE_HEALTHY = "healthy";
+
+    String STATE_HANGUP = "hangup";
+
+    String STATE_SUSPEND = "suspend";
+
     /**
      * Gets the unique identifier of the endpoint.
      * By default, this is the address of the endpoint.

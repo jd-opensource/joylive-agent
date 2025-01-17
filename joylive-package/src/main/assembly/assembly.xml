@@ -223,6 +223,16 @@
             </includes>
         </dependencySet>
 
+        <!-- plugin/nacos -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/nacos</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-registry-nacos</include>
+            </includes>
+        </dependencySet>
+
         <!-- plugin/jdk -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

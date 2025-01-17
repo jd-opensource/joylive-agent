@@ -20,5 +20,6 @@
         <module>joylive-registry-sofarpc</module>
         <module>joylive-registry-springgateway3</module>
         <module>joylive-registry-springgateway4</module>
+        <module>joylive-registry-nacos</module>
     </modules>
 </project>
