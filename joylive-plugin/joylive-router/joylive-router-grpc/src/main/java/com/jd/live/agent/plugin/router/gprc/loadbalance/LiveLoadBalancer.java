@@ -81,7 +81,7 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     @Override
     public void handleNameResolutionError(Status error) {
-        helper.updateBalancingState(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withNoResult()));
+        helper.updateBalancingState(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withError(error)));
     }
 
     @Override
@@ -157,7 +157,8 @@ public class LiveLoadBalancer extends LoadBalancer {
             }
         });
         if (readies.isEmpty()) {
-            LiveSubchannelPicker picker = new LiveSubchannelPicker(PickResult.withNoResult());
+            PickResult result = PickResult.withDrop(Status.UNAVAILABLE.withDescription("No endpoint available"));
+            LiveSubchannelPicker picker = new LiveSubchannelPicker(result);
             helper.updateBalancingState(ConnectivityState.CONNECTING, picker);
             LiveDiscovery.setSubchannelPicker(serviceName, picker);
         } else {

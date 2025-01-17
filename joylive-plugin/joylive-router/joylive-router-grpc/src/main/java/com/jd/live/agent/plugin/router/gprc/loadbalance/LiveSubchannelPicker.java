@@ -20,6 +20,7 @@ import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
 import io.grpc.LoadBalancer.SubchannelPicker;
+import io.grpc.Status;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,7 +63,7 @@ public class LiveSubchannelPicker extends SubchannelPicker {
             if (result.isSuccess()) {
                 GrpcEndpoint endpoint = result.getEndpoint();
                 return endpoint == null
-                        ? PickResult.withNoResult()
+                        ? PickResult.withDrop(Status.UNAVAILABLE.withDescription("No endpoint available"))
                         : PickResult.withSubchannel(endpoint.getSubchannel());
             } else {
                 return PickResult.withError(GrpcStatus.createException(result.getThrowable()));
