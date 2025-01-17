@@ -63,7 +63,7 @@ public class LiveLoadBalancer extends LoadBalancer {
         endpoints = news;
         olds.forEach((addressGroup, endpoint) -> {
             if (!latestAddresses.contains(addressGroup)) {
-                removed.remove(endpoint);
+                removed.add(endpoint);
             }
         });
         // close not exists
