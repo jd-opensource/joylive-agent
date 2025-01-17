@@ -48,7 +48,17 @@ public class GrpcEndpoint extends AbstractEndpoint {
 
     @Override
     public EndpointState getState() {
-        return EndpointState.HEALTHY;
+        switch (getConnectivityState()) {
+            case READY:
+                return EndpointState.HEALTHY;
+            case IDLE:
+            case CONNECTING:
+            case TRANSIENT_FAILURE:
+                return EndpointState.DISABLE;
+            case SHUTDOWN:
+            default:
+                return EndpointState.CLOSING;
+        }
     }
 
     public Subchannel getSubchannel() {
