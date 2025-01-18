@@ -38,6 +38,8 @@ import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.ClientHttp
 @Extension(value = "ClientHttpRequestFactoryDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(ClientHttpRequestFactoryDefinition.TYPE_CLIENT_HTTP_REQUEST_FACTORY)
+@Deprecated
+// Duplicated transmission with sun http client
 public class ClientHttpRequestFactoryDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_CLIENT_HTTP_REQUEST_FACTORY = "org.springframework.http.client.ClientHttpRequestFactory";

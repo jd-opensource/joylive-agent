@@ -30,6 +30,8 @@ import org.springframework.http.client.ClientHttpRequest;
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
+@Deprecated
+// Duplicated transmission with sun http client
 public class ClientHttpRequestFactoryInterceptor extends InterceptorAdaptor {
 
     private final Propagation propagation;
