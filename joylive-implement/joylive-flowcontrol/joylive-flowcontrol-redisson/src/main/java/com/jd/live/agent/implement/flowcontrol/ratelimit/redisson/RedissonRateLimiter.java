@@ -48,10 +48,12 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
 
     public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, SlidingWindow window, String name) {
         super(policy, TimeUnit.MILLISECONDS);
-        this.client = manager.getOrCreateClient(new RedisConfig(policy.getId(), option));
+        RedisConfig config = new RedisConfig(policy.getId(), option);
+        this.client = manager.getOrCreateClient(config);
         this.limiter = client.getRateLimiter("LiveAgent-limiter-" + policy.getId());
         if (limiter != null) {
             limiter.trySetRate(RateType.OVERALL, window.getThreshold(), Duration.ofMillis(window.getTimeWindowInMs()));
+            limiter.expire(Duration.ofMillis(config.getExpireTime()));
         }
     }
 
@@ -67,6 +69,7 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
     }
 
     @Override
+
     protected void doClose() {
         client.close();
     }

@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.Option;
+import lombok.Getter;
 
 import java.util.Objects;
 
@@ -27,6 +28,8 @@ import static com.jd.live.agent.core.util.StringUtils.split;
 /**
  * Configuration class for Redis settings.
  */
+
+@Getter
 public class RedisConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
@@ -40,6 +43,7 @@ public class RedisConfig {
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_DATABASE = "database";
     private static final String KEY_TIMEOUT = "timeout";
+    private static final String KEY_EXPIRE_TIME = "expireTime";
     private static final String KEY_SENTINEL_USER = "sentinelUser";
     private static final String KEY_SENTINEL_PASSWORD = "sentinelPassword";
     private static final String KEY_RETRY_ATTEMPTS = "retryAttempts";
@@ -67,6 +71,8 @@ public class RedisConfig {
     protected final int database;
 
     protected final int timeout;
+
+    protected final int expireTime;
 
     protected final int connectionPoolSize;
 
@@ -106,6 +112,7 @@ public class RedisConfig {
         sentinelUser = option.getTrimmed(KEY_SENTINEL_USER);
         sentinelPassword = option.getTrimmed(KEY_SENTINEL_PASSWORD);
         timeout = option.getPositive(KEY_TIMEOUT, 5000);
+        expireTime = option.getPositive(KEY_EXPIRE_TIME, 60000);
         keepAlive = option.getBoolean(KEY_RETRY_ATTEMPTS, false);
         connectTimeout = option.getPositive(KEY_CONNECT_TIMEOUT, 10000);
         idleConnectionTimeout = option.getPositive(KEY_IDLE_CONNECTION_TIMEOUT, 10000);
@@ -118,10 +125,6 @@ public class RedisConfig {
         masterConnectionMinimumIdleSize = option.getPositive(KEY_MASTER_CONNECTION_MINIMUM_IDLE_SIZE, 24);
         slaveConnectionPoolSize = option.getPositive(KEY_SLAVE_CONNECTION_POOL_SIZE, 64);
         slaveConnectionMinimumIdleSize = option.getPositive(KEY_SLAVE_CONNECTION_MINIMUM_IDLE_SIZE, 24);
-    }
-
-    public long getId() {
-        return id;
     }
 
     /**
