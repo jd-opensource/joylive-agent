@@ -120,7 +120,7 @@ public interface GrpcRequest {
         public <E extends Endpoint> E getEndpoint() {
             LiveRouteResult result = request.getRouteResult();
             if (result == null) {
-                throw new RejectNoProviderException("There is no provider for invocation " + service);
+                throw RejectNoProviderException.ofService(service);
             } else if (result.isSuccess()) {
                 return (E) result.getEndpoint();
             } else if (result.getThrowable() instanceof RuntimeException) {

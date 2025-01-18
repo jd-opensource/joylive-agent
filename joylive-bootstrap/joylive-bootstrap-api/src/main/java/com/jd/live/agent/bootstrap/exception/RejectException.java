@@ -80,6 +80,10 @@ public class RejectException extends LiveException implements Unretryable {
             super(cause);
         }
 
+        public static RejectNoProviderException ofService(String service) {
+            return new RejectNoProviderException("There is no provider for invocation " + service);
+        }
+
     }
 
     /**

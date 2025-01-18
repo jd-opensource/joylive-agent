@@ -43,6 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint.NO_ENDPOINT_AVAILABLE;
+
 /**
  * Live request.
  */
@@ -275,10 +277,15 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                 LiveRef ref = subchannel.getAttributes().get(LiveRef.KEY_STATE);
                 routeResult = new LiveRouteResult(ref != null ? ref.getEndpoint() : new GrpcEndpoint(subchannel));
             } else {
-                routeResult = new LiveRouteResult(new RejectNoProviderException("There is no provider for invocation " + request.getService()));
+                routeResult = new LiveRouteResult(RejectNoProviderException.ofService(request.getService()));
             }
         } else {
-            routeResult = new LiveRouteResult(status.asRuntimeException());
+            String description = status.getDescription();
+            if (NO_ENDPOINT_AVAILABLE.equals(description)) {
+                routeResult = new LiveRouteResult(RejectNoProviderException.ofService(request.getService()));
+            } else {
+                routeResult = new LiveRouteResult(status.asRuntimeException());
+            }
         }
     }
 

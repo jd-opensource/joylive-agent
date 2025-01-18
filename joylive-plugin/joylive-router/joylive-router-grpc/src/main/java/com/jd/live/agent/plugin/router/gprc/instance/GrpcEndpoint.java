@@ -22,6 +22,8 @@ import static io.grpc.ConnectivityState.IDLE;
  */
 public class GrpcEndpoint extends AbstractEndpoint {
 
+    public static final String NO_ENDPOINT_AVAILABLE = "No endpoint available";
+
     public static final Map<String, Key<String>> KEYS = new ConcurrentHashMap<>();
 
     private final Subchannel subchannel;

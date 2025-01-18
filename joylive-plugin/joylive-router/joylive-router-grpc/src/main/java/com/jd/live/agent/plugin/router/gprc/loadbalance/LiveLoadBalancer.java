@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint.NO_ENDPOINT_AVAILABLE;
 import static io.grpc.ConnectivityState.*;
 
 /**
@@ -157,7 +158,7 @@ public class LiveLoadBalancer extends LoadBalancer {
             }
         });
         if (readies.isEmpty()) {
-            PickResult result = PickResult.withDrop(Status.UNAVAILABLE.withDescription("No endpoint available"));
+            PickResult result = PickResult.withDrop(Status.UNAVAILABLE.withDescription(NO_ENDPOINT_AVAILABLE));
             LiveSubchannelPicker picker = new LiveSubchannelPicker(result);
             helper.updateBalancingState(ConnectivityState.CONNECTING, picker);
             LiveDiscovery.setSubchannelPicker(serviceName, picker);
