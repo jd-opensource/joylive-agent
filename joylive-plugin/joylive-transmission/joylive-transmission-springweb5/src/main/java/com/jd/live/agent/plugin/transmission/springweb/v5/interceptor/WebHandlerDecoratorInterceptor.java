@@ -16,15 +16,11 @@
 package com.jd.live.agent.plugin.transmission.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.HeaderReader.MultiValueMapReader;
-import com.jd.live.agent.governance.request.HeaderWriter.MultiValueMapWriter;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
 /**
  * WebHandlerDecoratorInterceptor
@@ -45,16 +41,5 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
         // for inbound traffic
         ServerWebExchange exchange = ctx.getArgument(0);
         propagation.read(RequestContext.create(), new MultiValueMapReader(exchange.getRequest().getHeaders()));
-    }
-
-    @Override
-    public void onSuccess(ExecutableContext ctx) {
-        // for outbound traffic
-        MethodContext mc = (MethodContext) ctx;
-        ServerWebExchange exchange = ctx.getArgument(0);
-        HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
-        Mono<Void> mono = mc.getResult();
-        mono = mono.doFirst(() -> propagation.write(RequestContext.get(), new MultiValueMapWriter(headers)));
-        mc.setResult(mono);
     }
 }
