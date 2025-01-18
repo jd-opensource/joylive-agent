@@ -17,15 +17,17 @@ package com.jd.live.agent.demo.springcloud.v2023.consumer.service;
 
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.service.HelloService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 public class RestService implements HelloService {
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
+
+    public RestService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     @Override
     public LiveResponse echo(String str) {

@@ -20,6 +20,7 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v2023.consumer.service.FeignService;
+import com.jd.live.agent.demo.springcloud.v2023.consumer.service.HttpExchangeService;
 import com.jd.live.agent.demo.springcloud.v2023.consumer.service.ReactiveService;
 import com.jd.live.agent.demo.springcloud.v2023.consumer.service.RestService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +45,9 @@ public class EchoController {
     @Autowired
     private ReactiveService reactiveService;
 
+    @Autowired
+    private HttpExchangeService httpExchangeService;
+
     @GetMapping({"/echo-rest/{str}", "/echo/{str}"})
     public LiveResponse echoRest(@PathVariable String str, HttpServletRequest request) {
         LiveResponse response = restService.echo(str);
@@ -61,6 +65,13 @@ public class EchoController {
     @GetMapping({"/echo-reactive/{str}"})
     public LiveResponse echoReactive(@PathVariable String str, HttpServletRequest request) {
         LiveResponse response = reactiveService.echo(str);
+        addTrace(request, response);
+        return response;
+    }
+
+    @GetMapping({"/echo-http-exchange/{str}"})
+    public LiveResponse echoHttpExchange(@PathVariable String str, HttpServletRequest request) {
+        LiveResponse response = httpExchangeService.echo(str);
         addTrace(request, response);
         return response;
     }

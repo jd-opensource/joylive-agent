@@ -27,7 +27,6 @@ import reactor.netty.http.client.HttpClient;
 /**
  * NettyHttpClientInterceptor
  */
-@Deprecated
 public class NettyHttpClientInterceptor extends InterceptorAdaptor {
 
     private final Propagation propagation;

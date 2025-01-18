@@ -15,12 +15,15 @@
  */
 package com.jd.live.agent.demo.springcloud.v2023.consumer.config;
 
+import com.jd.live.agent.demo.springcloud.v2023.consumer.service.HttpExchangeService;
 import okhttp3.ConnectionPool;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.support.WebClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -48,5 +51,18 @@ public class ConsumerConfig {
     @LoadBalanced
     public WebClient.Builder loadBalancedWebClientBuilder() {
         return WebClient.builder();
+    }
+
+    @Bean
+    public WebClient webClient(WebClient.Builder builder) {
+        return builder.baseUrl("http://service-provider-reactive").build();
+    }
+
+    @Bean
+    public HttpExchangeService helloClient(WebClient webClient) {
+        return HttpServiceProxyFactory
+                .builder()
+                .exchangeAdapter(WebClientAdapter.create(webClient))
+                .build().createClient(HttpExchangeService.class);
     }
 }

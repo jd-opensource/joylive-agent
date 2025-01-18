@@ -32,7 +32,6 @@ import com.jd.live.agent.plugin.transimission.nettyhttp.v1.interceptor.NettyHttp
 @Extension(value = "NettyHttpClientDefinition_v1", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(NettyHttpClientDefinition.TYPE_HTTP_CLIENT)
-@Deprecated
 public class NettyHttpClientDefinition extends PluginDefinitionAdapter {
 
     public static final String TYPE_HTTP_CLIENT = "reactor.netty.http.client.HttpClient";
