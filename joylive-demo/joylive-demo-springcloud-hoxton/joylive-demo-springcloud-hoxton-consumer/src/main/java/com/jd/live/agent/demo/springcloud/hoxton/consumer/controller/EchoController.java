@@ -87,6 +87,13 @@ public class EchoController {
         return response;
     }
 
+    @GetMapping({"/exception"})
+    public LiveResponse exception(HttpServletRequest request) {
+        LiveResponse response = restService.exception();
+        addTrace(request, response);
+        return response;
+    }
+
     private void addTrace(HttpServletRequest request, LiveResponse response) {
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));

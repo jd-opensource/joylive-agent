@@ -39,4 +39,8 @@ public class RestService implements HelloService {
     public LiveResponse status(int code) {
         return restTemplate.getForObject("http://service-provider/status/" + code, LiveResponse.class);
     }
+
+    public LiveResponse exception() {
+        return restTemplate.getForObject("http://service-provider/exception", LiveResponse.class);
+    }
 }
