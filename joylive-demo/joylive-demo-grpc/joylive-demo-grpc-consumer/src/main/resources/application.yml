@@ -7,10 +7,10 @@ spring:
         heart-beat:
           enabled: true
         heart-beat-interval: 5000
-        server-addr: ${NACOS_ADDR:${AP_SD_INTERNAL_ADDRESS}:${AP_SD_INTERNAL_HTTP_PORT}}
+        server-addr: ${NACOS_ADDR:${REGISTRY_INTERNAL_HOST}:${REGISTRY_INTERNAL_HTTP_PORT}}
         namespace: ${NACOS_NAMESPACE:public}
-        username: ${NACOS_USERNAME:nacos}
-        password: ${NACOS_PASSWORD:nacos}
+        username: ${NACOS_USERNAME:${REGISTRY_USERNAME:nacos}}
+        password: ${NACOS_PASSWORD:${REGISTRY_PASSWORD:nacos}}
 grpc:
   client:
     grpc-provider:

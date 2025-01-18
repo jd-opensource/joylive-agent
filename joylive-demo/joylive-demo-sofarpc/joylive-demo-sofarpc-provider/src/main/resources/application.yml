@@ -5,7 +5,7 @@ com:
   alipay:
     sofa:
       rpc:
-        registry-address: nacos://${NACOS_ADDR}?username=${NACOS_USERNAME}&password=${NACOS_PASSWORD}&namespace=${NACOS_NAMESPACE}
+        registry-address: nacos://${NACOS_ADDR:${REGISTRY_INTERNAL_HOST}:${REGISTRY_INTERNAL_HTTP_PORT}}?username=${NACOS_USERNAME:${REGISTRY_USERNAME:nacos}}&password=${NACOS_PASSWORD:${REGISTRY_PASSWORD:nacos}}&namespace=${NACOS_NAMESPACE}
         bind-network-interface: en0
 logging:
   level:

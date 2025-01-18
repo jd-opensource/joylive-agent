@@ -67,9 +67,9 @@ spring:
           enabled: true
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR}
-        username: ${NACOS_USERNAME:nacos}
-        password: ${NACOS_PASSWORD:nacos}
+        server-addr: ${NACOS_ADDR:${REGISTRY_INTERNAL_HOST}:${REGISTRY_INTERNAL_HTTP_PORT}}
+        username: ${NACOS_USERNAME:${REGISTRY_USERNAME:nacos}}
+        password: ${NACOS_PASSWORD:${REGISTRY_PASSWORD:nacos}}
         namespace: ${NACOS_NAMESPACE:public}
 
 logging:
