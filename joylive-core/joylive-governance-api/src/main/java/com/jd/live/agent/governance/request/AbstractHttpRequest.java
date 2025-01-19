@@ -16,8 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
-import com.jd.live.agent.core.util.network.IpLong;
-import com.jd.live.agent.core.util.network.IpType;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import lombok.Getter;
 
@@ -259,7 +258,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
                 return false;
             } else {
                 // Not IPv4
-                return IpLong.parseIp(host, IpType.IPV4) == null;
+                return !Ipv4.isIpv4(host);
             }
         }
     }

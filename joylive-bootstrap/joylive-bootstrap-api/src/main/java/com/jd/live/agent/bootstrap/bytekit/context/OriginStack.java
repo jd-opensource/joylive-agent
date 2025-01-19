@@ -56,6 +56,7 @@ public class OriginStack {
     public static boolean tryPop(Object target, Method method) {
         LinkedList<OriginMethod> stack = INVOKE_ORIGIN_METHOD_STACK.get();
         OriginMethod result = stack == null ? null : stack.peek();
+        // method is always a new instance in bytebuddy, so we use equals to compare
         if (result != null && result.getTarget() == target && result.getMethod().equals(method)) {
             stack.pop();
             return true;

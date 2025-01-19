@@ -158,6 +158,59 @@ public class Ipv4 {
     }
 
     /**
+     * Checks if the given string represents a valid IPv4 address.
+     *
+     * @param ip The string to check.
+     * @return true if the string represents a valid IPv4 address, false otherwise.
+     */
+    public static boolean isIpv4(String ip) {
+        if (ip == null) {
+            return false;
+        }
+        int count = 0;
+        int start = -1;
+        char ch;
+        int length = ip.length();
+        for (int i = 0; i < length; i++) {
+            ch = ip.charAt(i);
+            switch (ch) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    if (start == -1) {
+                        start = i;
+                    }
+                    continue;
+                case '.':
+                    if (start < 0 || Integer.parseInt(ip.substring(start, i)) > 255) {
+                        return false;
+                    }
+                    count++;
+                    if (count > 4) {
+                        return false;
+                    }
+                    start = i + 1;
+                    continue;
+                default:
+                    return false;
+            }
+        }
+        if (count != 3) {
+            return false;
+        } else if (start >= length || start < 0) {
+            return false;
+        }
+        return Integer.parseInt(ip.substring(start, length)) <= 255;
+    }
+
+    /**
      * Determines if the specified host is an any-host address (0.0.0.0).
      *
      * @param host The host to check.
