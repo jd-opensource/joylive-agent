@@ -198,8 +198,8 @@ public class CollectionUtils {
      */
     public static <T> List<T> toList(Enumeration<T> enumeration) {
         List<T> result = null;
-        if (enumeration != null) {
-            result = new ArrayList<>();
+        if (enumeration != null && enumeration.hasMoreElements()) {
+            result = new ArrayList<>(2);
             while (enumeration.hasMoreElements()) {
                 result.add(enumeration.nextElement());
             }
