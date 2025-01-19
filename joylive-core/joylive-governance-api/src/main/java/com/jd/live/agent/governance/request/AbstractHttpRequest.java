@@ -182,19 +182,32 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
         }
         String host = header;
         int port = -1;
-        char ch;
-        for (int i = header.length() - 1; i > 0; i--) {
-            ch = header.charAt(i);
-            if (ch == ':') {
-                host = header.substring(0, i);
-                // port
-                try {
-                    port = Integer.parseInt(header.substring(i + 1));
-                } catch (NumberFormatException ignore) {
-                }
-                break;
-            } else if (!Character.isDigit(ch)) {
-                break;
+        int length = header.length();
+        for (int i = length - 1; i > 0; i--) {
+            switch (header.charAt(i)) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    continue;
+                case ':':
+                    host = header.substring(0, i);
+                    // port
+                    if (i < length - 1) {
+                        try {
+                            port = Integer.parseInt(header.substring(i + 1));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         }
         return validateHost(host) ? new Address(host, port < 0 ? null : port) : null;
