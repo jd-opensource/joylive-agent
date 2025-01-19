@@ -176,22 +176,24 @@ public abstract class HttpUtils {
 
         int length = query.length();
         int start = 0;
+        int end;
+        int equalIndex;
         String key;
         String value = null;
         while (start < length) {
-            int end = query.indexOf('&', start);
+            end = query.indexOf('&', start);
             if (end == -1) {
                 end = length;
             }
-            int equalsIndex = query.indexOf('=', start);
-            if (equalsIndex == -1) {
+            equalIndex = query.indexOf('=', start);
+            if (equalIndex == -1) {
                 key = query.substring(start, end).trim();
                 key = decode ? decodeURL(key) : key;
                 value = null;
-            } else if (equalsIndex < end) {
-                key = query.substring(start, equalsIndex).trim();
+            } else if (equalIndex < end) {
+                key = query.substring(start, equalIndex).trim();
                 key = decode ? decodeURL(key) : key;
-                value = query.substring(equalsIndex + 1, end).trim();
+                value = query.substring(equalIndex + 1, end).trim();
                 value = decode ? decodeURL(value) : value;
             } else {
                 key = null;
@@ -210,9 +212,7 @@ public abstract class HttpUtils {
      * @return a map where each key is associated with a list of values
      */
     public static MultiMap<String, String> parseQuery(String query) {
-        MultiMap<String, String> result = new MultiLinkedMap<>();
-        parseQuery(query, true, (key, value) -> result.add(key, value == null ? "" : value));
-        return result;
+        return parseQuery(query, true);
     }
 
     /**
@@ -223,6 +223,9 @@ public abstract class HttpUtils {
      * @return a map where each key is associated with a list of values
      */
     public static MultiMap<String, String> parseQuery(String query, boolean decode) {
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
         MultiMap<String, String> result = new MultiLinkedMap<>();
         parseQuery(query, decode, (key, value) -> result.add(key, value == null ? "" : value));
         return result;
