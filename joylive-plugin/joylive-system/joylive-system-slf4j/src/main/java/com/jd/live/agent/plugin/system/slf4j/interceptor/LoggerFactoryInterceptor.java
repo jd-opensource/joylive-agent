@@ -19,18 +19,19 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.ConfigCenterConfig;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
 import com.jd.live.agent.governance.subscription.config.Configurator;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.ConfigCenterConfig;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.system.slf4j.logger.LevelUpdater;
 import com.jd.live.agent.plugin.system.slf4j.logger.LevelUpdaterFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.core.util.StringUtils.SEMICOLON_COMMA_LINE;
@@ -52,7 +53,7 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
 
     private final Map<String, LoggerCache> loggerCaches = new ConcurrentHashMap<>();
 
-    private Map<String, String> configs;
+    private volatile Map<String, String> configs;
 
     public LoggerFactoryInterceptor(ConfigCenter configCenter, GovernanceConfig governanceConfig) {
         this.config = governanceConfig.getConfigCenterConfig();
@@ -67,7 +68,15 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         String name = mc.getArgument(0);
-        loggerCaches.put(name, getCache(name, mc.getResult()));
+        org.slf4j.Logger logger = mc.getResult();
+        LevelUpdater updater = LevelUpdaterFactory.getLevelUpdater(logger);
+        String level = updater == null ? null : updater.getLevel(logger);
+        LoggerCache cache = new LoggerCache(name, logger, updater, level);
+        loggerCaches.put(name, cache);
+        // avoid concurrent modification by config listener.
+        Map<String, String> newLevels = configs;
+        String newLevel = newLevels == null ? null : newLevels.get(name);
+        cache.compareAndUpdate(level, newLevel);
     }
 
     /**
@@ -112,14 +121,9 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
             String newLevel = entry.getValue();
             String oldLevel = oldConfigs == null ? null : oldConfigs.get(name);
             if (!newLevel.equals(oldLevel)) {
-                LoggerCache cache = getCache(name);
-                try {
-                    if (update(cache, newLevel)) {
-                        logger.info("Success updating logger level, " + name + "=" + newLevel);
-                        counter++;
-                    }
-                } catch (Throwable e) {
-                    logger.info("Failed to update logger level, " + name + "=" + newLevel + ", cased by " + e.getMessage());
+                LoggerCache cache = loggerCaches.get(name);
+                if (cache != null && cache.update(newLevel)) {
+                    counter++;
                 }
             }
         }
@@ -140,60 +144,14 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
                 String name = entry.getKey();
                 if (newConfigs == null || !newConfigs.containsKey(name)) {
                     LoggerCache cache = loggerCaches.get(name);
-                    if (cache != null) {
-                        try {
-                            if (update(cache, cache.level)) {
-                                logger.info("Success updating logger level, " + name + "=" + cache.level);
-                                counter++;
-                            }
-                        } catch (Throwable e) {
-                            logger.info("Failed to update logger level, " + name + "=" + cache.level + ", cased by " + e.getMessage());
-                        }
+                    if (cache != null && cache.update(cache.originLevel)) {
+                        counter++;
                     }
                 }
             }
         }
         return counter;
     }
-
-    /**
-     * Updates the logging level of the specified logger.
-     *
-     * @param level The new logging level.
-     * @return true if the logger level was successfully updated, false otherwise.
-     * @throws Throwable If an exception occurs during the update process.
-     */
-    private boolean update(LoggerCache cache, String level) throws Throwable {
-        if (cache.updater != null && level != null && !level.isEmpty()) {
-            cache.update(level);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns a logger instance for the specified name.
-     *
-     * @param name The name of the logger.
-     * @return A logger instance for the specified name.
-     */
-    private LoggerCache getCache(String name) {
-        return getCache(name, org.slf4j.LoggerFactory.getLogger(name));
-    }
-
-    /**
-     * Returns a logger cache instance for the specified name and logger.
-     *
-     * @param name   The name of the logger.
-     * @param logger The logger instance.
-     * @return A logger cache instance for the specified name and logger.
-     */
-    private LoggerCache getCache(String name, org.slf4j.Logger logger) {
-        LevelUpdater updater = LevelUpdaterFactory.getLevelUpdater(logger);
-        String level = updater == null ? null : updater.getLevel(logger);
-        return new LoggerCache(name, logger, updater, level);
-    }
-
 
     /**
      * A private static inner class that caches logger instances and their corresponding levels.
@@ -216,35 +174,83 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
         private final LevelUpdater updater;
 
         /**
+         * The original level of the logger.
+         */
+        private final String originLevel;
+
+        /**
          * The current level of the logger.
          */
-        private final String level;
+        private volatile String currentLevel;
+
+        private final Object mutex = new Object();
 
         /**
          * Constructs a new LoggerCache instance with the specified name, logger, level updater, and level.
          *
-         * @param name    The name of the logger.
-         * @param logger  The logger instance.
-         * @param updater The level updater responsible for updating the logger's level.
-         * @param level   The current level of the logger.
+         * @param name          The name of the logger.
+         * @param logger        The logger instance.
+         * @param updater       The level updater responsible for updating the logger's level.
+         * @param originLevel   The original level of the logger.
          */
-        LoggerCache(String name, org.slf4j.Logger logger, LevelUpdater updater, String level) {
+        LoggerCache(String name, org.slf4j.Logger logger, LevelUpdater updater, String originLevel) {
             this.name = name;
             this.logger = logger;
             this.updater = updater;
-            this.level = level;
+            this.originLevel = originLevel;
+            this.currentLevel = originLevel;
         }
 
         /**
          * Updates the level of the cached logger instance.
          *
-         * @param level The new level to set.
-         * @throws Throwable If an error occurs while updating the logger's level.
+         * @param newLevel The new level to set.
          */
-        public void update(String level) throws Throwable {
-            updater.update(logger, name, level);
+        public boolean update(String newLevel) {
+            synchronized (mutex) {
+                return doUpdate(newLevel);
+            }
+        }
+
+
+        /**
+         * Atomically updates the level of the cached logger instance if the current level matches the expected level.
+         *
+         * @param oldLevel The expected current level.
+         * @param newLevel The new level to set.
+         * @return true if the level was successfully updated, false otherwise.
+         */
+        public boolean compareAndUpdate(String oldLevel, String newLevel) {
+            synchronized (mutex) {
+                if (Objects.equals(currentLevel, oldLevel)) {
+                    return doUpdate(newLevel);
+                }
+                return false;
+            }
+        }
+
+        /**
+         * Updates the level of the cached logger instance.
+         *
+         * @param newLevel The new level to set.
+         */
+        private boolean doUpdate(String newLevel) {
+            if (newLevel != null && !newLevel.isEmpty() && !newLevel.equals(currentLevel)) {
+                if (updater == null) {
+                    logger.info("Failed to update logger newLevel, " + name + "=" + newLevel + ", caused by updater is null");
+                } else {
+                    try {
+                        updater.update(logger, name, newLevel);
+                        currentLevel = newLevel;
+                        logger.info("Success updating logger level, " + name + "=" + newLevel);
+                        return true;
+                    } catch (Throwable e) {
+                        logger.info("Failed to update logger newLevel, " + name + "=" + newLevel + ", caused by " + e.getMessage());
+                    }
+                }
+            }
+            return false;
         }
     }
-
 
 }
