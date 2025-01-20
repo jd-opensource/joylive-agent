@@ -38,13 +38,13 @@ public class ConstructorAdvice {
                                @Advice.Origin Constructor<?> constructor,
                                @Advice.Origin("#t\\##m#s") String methodDesc,
                                @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] arguments,
-                               @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
+                               @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                                @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         Class<?> localType = type;
         Constructor<?> localConstructor = constructor;
         String localMehotdDesc = methodDesc;
-        adviceKey = AdviceKey.getMethodKey(localMehotdDesc, localType.getClassLoader());
+        adviceKey = new AdviceKey(localMehotdDesc, localType.getClassLoader());
         ConstructorContext cc = new ConstructorContext(localType, arguments, localConstructor, localMehotdDesc);
         context = cc;
         AdviceHandler.onEnter(cc, adviceKey);
@@ -53,7 +53,7 @@ public class ConstructorAdvice {
 
     @Advice.OnMethodExit
     public static void onExit(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object result,
-                              @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
+                              @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                               @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         ConstructorContext cc = (ConstructorContext) context;

@@ -99,7 +99,17 @@ public class BuddyMethodDesc implements MethodDesc {
 
     @Override
     public String getDescription() {
-        StringBuilder sb = new StringBuilder().append(desc.getDeclaringType().asErasure().getTypeName());
+        return getDescription(desc);
+    }
+
+    /**
+     * Generates a description of a method based on its declaring type, name, and parameter types.
+     *
+     * @param desc the method description to generate a description for
+     * @return a string representing the method description
+     */
+    public static String getDescription(MethodDescription desc) {
+        StringBuilder sb = new StringBuilder(256).append(desc.getDeclaringType().asErasure().getTypeName());
         if (desc.isConstructor()) {
             sb.append("#<init>(");
         } else {

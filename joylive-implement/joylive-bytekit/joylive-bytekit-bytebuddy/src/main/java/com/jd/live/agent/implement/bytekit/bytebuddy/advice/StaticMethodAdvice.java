@@ -16,14 +16,13 @@
 package com.jd.live.agent.implement.bytekit.bytebuddy.advice;
 
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.bytekit.context.OriginStack;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Method;
-
-import static com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey.getMethodKey;
 
 /**
  * StaticMethodAdvice
@@ -40,7 +39,7 @@ public class StaticMethodAdvice {
                                   @Advice.Origin Method method,
                                   @Advice.Origin("#t\\##m#s") String methodDesc,
                                   @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] arguments,
-                                  @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
+                                  @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                                   @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         Class<?> localType = type;
@@ -49,7 +48,7 @@ public class StaticMethodAdvice {
         Method localMethod = method;
         boolean origin = OriginStack.tryPop(null, localMethod);
         MethodContext mc = new MethodContext(localType, null, localMethod, arguments, localMehotdDesc, origin);
-        adviceKey = origin ? null : getMethodKey(localMehotdDesc, localType.getClassLoader());
+        adviceKey = origin ? null : new AdviceKey(localMehotdDesc, localType.getClassLoader());
         context = mc;
         if (!origin) {
             // invoke enhanced method
@@ -64,7 +63,7 @@ public class StaticMethodAdvice {
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onExit(@Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object result,
                               @Advice.Thrown(readOnly = false) Throwable throwable,
-                              @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") String adviceKey,
+                              @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                               @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         MethodContext mc = (MethodContext) context;

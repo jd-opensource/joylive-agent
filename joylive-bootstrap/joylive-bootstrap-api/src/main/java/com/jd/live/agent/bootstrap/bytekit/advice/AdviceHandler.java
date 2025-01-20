@@ -36,7 +36,7 @@ public class AdviceHandler {
     /**
      * A concurrent map that holds all advices identified by their unique keys.
      */
-    private static final Map<String, AdviceDesc> advices = new ConcurrentHashMap<>(1000);
+    private static final Map<Object, AdviceDesc> advices = new ConcurrentHashMap<>(1000);
 
     /**
      * Private constructor to prevent instantiation.
@@ -52,7 +52,7 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onEnter(final T context, final String adviceKey) throws Throwable {
+    public static <T extends ExecutableContext> void onEnter(final T context, final Object adviceKey) throws Throwable {
         if (context == null || adviceKey == null) {
             return;
         }
@@ -96,7 +96,7 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onExit(final T context, final String adviceKey) throws Throwable {
+    public static <T extends ExecutableContext> void onExit(final T context, final Object adviceKey) throws Throwable {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
         if (interceptors != null) {
@@ -161,7 +161,7 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @return the AdviceDesc instance
      */
-    public static AdviceDesc getOrCreate(final String adviceKey) {
+    public static AdviceDesc getOrCreate(final Object adviceKey) {
         return advices.computeIfAbsent(adviceKey, AdviceDesc::new);
     }
 
@@ -170,7 +170,7 @@ public class AdviceHandler {
      *
      * @param adviceKey the unique key of the advice to be removed
      */
-    public static void remove(final String adviceKey) {
+    public static void remove(final Object adviceKey) {
         advices.remove(adviceKey);
     }
 

@@ -76,7 +76,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
         int position = 1;
         int currentState = 0;
         List<Hit<V>> collectedEmits = new ArrayList<Hit<V>>();
-        for (int i = 0; i < text.length(); ++i) {
+        int length = text.length();
+        for (int i = 0; i < length; ++i) {
             currentState = getState(currentState, text.charAt(i));
             storeEmits(position, currentState, collectedEmits);
             ++position;
@@ -94,7 +95,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
     public void parseText(CharSequence text, IHit<V> processor) {
         int position = 1;
         int currentState = 0;
-        for (int i = 0; i < text.length(); ++i) {
+        int length = text.length();
+        for (int i = 0; i < length; ++i) {
             currentState = getState(currentState, text.charAt(i));
             int[] hitArray = output[currentState];
             if (hitArray != null) {
@@ -114,7 +116,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      */
     public void parseText(CharSequence text, IHitCancellable<V> processor) {
         int currentState = 0;
-        for (int i = 0; i < text.length(); i++) {
+        int length = text.length();
+        for (int i = 0; i < length; i++) {
             final int position = i + 1;
             currentState = getState(currentState, text.charAt(i));
             int[] hitArray = output[currentState];
@@ -179,7 +182,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      */
     public boolean matches(CharSequence text) {
         int currentState = 0;
-        for (int i = 0; i < text.length(); ++i) {
+        int length = text.length();
+        for (int i = 0; i < length; ++i) {
             currentState = getState(currentState, text.charAt(i));
             int[] hitArray = output[currentState];
             if (hitArray != null) {
@@ -198,7 +202,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
     public Hit<V> findFirst(CharSequence text) {
         int position = 1;
         int currentState = 0;
-        for (int i = 0; i < text.length(); ++i) {
+        int length = text.length();
+        for (int i = 0; i < length; ++i) {
             currentState = getState(currentState, text.charAt(i));
             int[] hitArray = output[currentState];
             if (hitArray != null) {

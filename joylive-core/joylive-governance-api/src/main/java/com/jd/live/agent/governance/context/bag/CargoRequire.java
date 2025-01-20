@@ -52,18 +52,6 @@ public interface CargoRequire {
     }
 
     /**
-     * Returns an array of suffixes for names that meet the requirement.
-     * <p>
-     * By default, this method returns an empty array, indicating no suffixes are defined.
-     * </p>
-     *
-     * @return An array of name suffixes that should be included.
-     */
-    default String[] getSuffixes() {
-        return new String[0];
-    }
-
-    /**
      * Determines if a given name matches the requirement based on the specified names and prefixes.
      * <p>
      * A name matches the requirement if it is exactly equal to one of the specified names or if it starts with one of the
@@ -88,13 +76,6 @@ public interface CargoRequire {
         if (prefixes != null) {
             for (String v : prefixes) {
                 if (name.startsWith(v))
-                    return true;
-            }
-        }
-        String[] suffixes = getSuffixes();
-        if (suffixes != null) {
-            for (String v : suffixes) {
-                if (name.endsWith(v))
                     return true;
             }
         }

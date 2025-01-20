@@ -33,7 +33,7 @@ import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc;
 import com.jd.live.agent.implement.bytekit.bytebuddy.util.ModuleUtil;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.method.MethodDescription.InDefinedShape;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -63,7 +63,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
 
     private final PluginDeclare plugin;
 
-    private final Map<String, List<InterceptorDefinition>> types = new ConcurrentHashMap<>();
+    private final Map<AdviceKey, List<InterceptorDefinition>> types = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new {@code PluginTransformer} with the specified instrumentation,
@@ -88,8 +88,8 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
             return false;
         }
 
-        String uniqueName = getUniqueName(description, loader);
-        if (types.containsKey(uniqueName)) {
+        AdviceKey adviceKey = new AdviceKey(description.getActualName(), loader);
+        if (types.containsKey(adviceKey)) {
             return true;
         }
 
@@ -101,7 +101,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
             // export internal java module packages to plugin
             export(loader, module, definition);
         }
-        return !interceptors.isEmpty() && types.putIfAbsent(uniqueName, interceptors) == null;
+        return !interceptors.isEmpty() && types.putIfAbsent(adviceKey, interceptors) == null;
     }
 
     /**
@@ -137,54 +137,39 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         ModuleUtil.export(instrumentation, targets, definitionModule, loader, loader == candidate ? null : candidate);
     }
 
-    /**
-     * Generates a unique name for a type or class based on its description and class loader.
-     * This unique name is used to identify classes across different class loaders.
-     *
-     * @param description The type description of the class.
-     * @param loader      The class loader loading the class; may be {@code null} for the bootstrap class loader.
-     * @return A unique name for the class, combining its full name and class loader.
-     */
-    private String getUniqueName(@NeverNull TypeDescription description, @MaybeNull ClassLoader loader) {
-        return loader == null ? description.getActualName() : (description.getActualName() + "@" + loader);
-    }
-
     @Override
     public DynamicType.Builder<?> transform(@NeverNull DynamicType.Builder<?> builder,
                                             @NeverNull TypeDescription description,
                                             @MaybeNull ClassLoader loader,
                                             @MaybeNull JavaModule module,
                                             @MaybeNull ProtectionDomain domain) {
-        List<InterceptorDefinition> interceptorDefinitions = types.get(getUniqueName(description, loader));
+        AdviceKey typeKey = new AdviceKey(description.getActualName(), loader);
+        List<InterceptorDefinition> interceptorDefinitions = types.get(typeKey);
         if (interceptorDefinitions == null || interceptorDefinitions.isEmpty()) {
             return builder;
         }
 
         DynamicType.Builder<?> newBuilder = builder;
         List<Interceptor> interceptors;
-        for (MethodDescription.InDefinedShape methodDesc : description.getDeclaredMethods()) {
+        for (InDefinedShape methodDesc : description.getDeclaredMethods()) {
             if (methodDesc.isNative() || methodDesc.isAbstract()) {
                 continue;
             }
             interceptors = getInterceptors(methodDesc, interceptorDefinitions);
             if (!interceptors.isEmpty()) {
-                String adviceKey;
-                BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc);
-                String key = desc.getDescription();
+                String desc = BuddyMethodDesc.getDescription(methodDesc);
                 try {
+                    Object methodKey = new AdviceKey(desc, loader);
                     if (methodDesc.isStatic()) {
-                        adviceKey = AdviceKey.getMethodKey(key, loader);
-                        newBuilder = enhanceMethod(newBuilder, methodDesc, loader, interceptors, StaticMethodAdvice.class, adviceKey);
+                        newBuilder = enhanceMethod(newBuilder, methodDesc, interceptors, StaticMethodAdvice.class, methodKey);
                     } else if (methodDesc.isConstructor()) {
-                        adviceKey = AdviceKey.getMethodKey(key, loader);
-                        newBuilder = enhanceMethod(newBuilder, methodDesc, loader, interceptors, ConstructorAdvice.class, adviceKey);
+                        newBuilder = enhanceMethod(newBuilder, methodDesc, interceptors, ConstructorAdvice.class, methodKey);
                     } else {
-                        adviceKey = AdviceKey.getMethodKey(key, loader);
-                        newBuilder = enhanceMethod(newBuilder, methodDesc, loader, interceptors, MemberMethodAdvice.class, adviceKey);
+                        newBuilder = enhanceMethod(newBuilder, methodDesc, interceptors, MemberMethodAdvice.class, methodKey);
                     }
                 } catch (NoSuchFieldException | NoSuchMethodException | IllegalAccessException |
                          InvocationTargetException e) {
-                    logger.warn("failed to enhance " + key + " , caused by " + e.getMessage());
+                    logger.warn("failed to enhance " + desc + " , caused by " + e.getMessage());
                 }
             }
         }
@@ -199,7 +184,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * @param interceptors A list of interceptor definitions to evaluate against the method.
      * @return A list of {@link Interceptor} instances that match the method according to their respective definitions.
      */
-    private List<Interceptor> getInterceptors(MethodDescription.InDefinedShape methodDesc, List<InterceptorDefinition> interceptors) {
+    private List<Interceptor> getInterceptors(InDefinedShape methodDesc, List<InterceptorDefinition> interceptors) {
         List<Interceptor> result = new ArrayList<>(interceptors.size());
         BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc);
         for (InterceptorDefinition interceptor : interceptors) {
@@ -218,7 +203,6 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      *
      * @param builder      The builder used to create or modify the class that contains the method.
      * @param methodDesc   The description of the method to be enhanced.
-     * @param classLoader  The class loader of the class being modified.
      * @param interceptors A list of interceptors to apply to the method.
      * @param templateCls  The class that contains the advice to be applied to the method.
      * @param adviceKey    A unique key identifying the specific advice to use.
@@ -229,11 +213,10 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * @throws NoSuchFieldException      if a required field by the advice does not exist.
      */
     protected DynamicType.Builder<?> enhanceMethod(DynamicType.Builder<?> builder,
-                                                   MethodDescription.InDefinedShape methodDesc,
-                                                   ClassLoader classLoader,
+                                                   InDefinedShape methodDesc,
                                                    List<Interceptor> interceptors,
                                                    Class<?> templateCls,
-                                                   String adviceKey)
+                                                   Object adviceKey)
             throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
         AdviceDesc adviceDesc = AdviceHandler.getOrCreate(adviceKey);
         for (Interceptor interceptor : interceptors) {

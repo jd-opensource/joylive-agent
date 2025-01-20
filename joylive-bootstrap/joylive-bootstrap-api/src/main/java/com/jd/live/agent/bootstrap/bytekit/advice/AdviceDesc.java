@@ -37,7 +37,7 @@ public class AdviceDesc implements PluginListener {
      * A unique key identifying the advice.
      */
     @Getter
-    private final String key;
+    private final Object key;
 
     /**
      * A list of interceptors associated with this advice.
@@ -60,7 +60,7 @@ public class AdviceDesc implements PluginListener {
      *
      * @param key the unique key for the advice
      */
-    public AdviceDesc(String key) {
+    public AdviceDesc(Object key) {
         this.key = key;
     }
 
