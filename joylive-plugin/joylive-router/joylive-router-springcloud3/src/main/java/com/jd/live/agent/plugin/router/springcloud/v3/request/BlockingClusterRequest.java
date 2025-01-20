@@ -27,8 +27,6 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.util.MultiValueMapAdapter;
 
-import java.util.HashMap;
-
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractClusterRequest}
  * to handle HTTP requests in environments where reactive programming models are not used.
@@ -94,7 +92,7 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
     @Override
     protected RequestData buildRequestData() {
         return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
-                new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
+                new MultiValueMapAdapter<>(cookies.get()), null);
     }
 
     public byte[] getBody() {

@@ -34,7 +34,6 @@ import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
@@ -135,7 +134,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     @Override
     protected RequestData buildRequestData() {
         return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
-                new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
+                new MultiValueMapAdapter<>(cookies.get()), null);
     }
 
 }

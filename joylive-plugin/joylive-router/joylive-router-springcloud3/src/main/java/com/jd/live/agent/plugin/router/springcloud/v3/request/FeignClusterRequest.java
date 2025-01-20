@@ -30,7 +30,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMapAdapter;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 
@@ -108,7 +111,7 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         return new RequestData(
                 org.springframework.http.HttpMethod.resolve(request.httpMethod().name()), getURI(),
                 new HttpHeaders(new MultiValueMapAdapter<>(headers.get())),
-                new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
+                new MultiValueMapAdapter<>(cookies.get()), null);
     }
 
     public Request.Options getOptions() {
