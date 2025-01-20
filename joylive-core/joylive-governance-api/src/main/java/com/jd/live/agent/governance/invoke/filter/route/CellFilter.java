@@ -56,7 +56,7 @@ import java.util.function.Function;
 public class CellFilter implements RouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         UnitAction action = target.getUnitAction();
         if (action.getType() == UnitActionType.FORWARD && forward(invocation, target)) {
@@ -73,7 +73,7 @@ public class CellFilter implements RouteFilter {
      * @param target     The RouteTarget where the invocation should be directed.
      * @return true if the routing decision was successful and endpoints were set, false otherwise.
      */
-    private boolean forward(OutboundInvocation<?> invocation, RouteTarget target) {
+    private boolean forward(final OutboundInvocation<?> invocation, final RouteTarget target) {
         ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
         ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
         ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();

@@ -89,7 +89,7 @@ public interface RouteFilterChain {
          * @param <T>        The type of the outbound request.
          */
         @Override
-        public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation) {
+        public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation) {
             if (index < size) {
                 if (logger.isDebugEnabled()) {
                     log(index - 1, invocation);
@@ -101,7 +101,7 @@ public interface RouteFilterChain {
             }
         }
 
-        private <T extends OutboundRequest> void log(int index, OutboundInvocation<T> invocation) {
+        private <T extends OutboundRequest> void log(final int index, final OutboundInvocation<T> invocation) {
             if (index < 0) {
                 logger.debug("Before apply any filter, endpoint size: " + invocation.getEndpointSize());
             } else {

@@ -38,7 +38,7 @@ import java.util.Set;
 public class RetryFilter implements RouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
         // Get the set of attempted endpoint IDs from the request
         Set<String> attempts = invocation.getRequest().getAttempts();
