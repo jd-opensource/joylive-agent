@@ -55,6 +55,7 @@ public interface RouteFilterChain {
 
         private int index; // Tracks the current position in the filter chain.
         private final RouteFilter[] filters; // Array of filters in the chain.
+        private final int size;
 
         /**
          * Constructs a chain with an array of routing filters.
@@ -64,6 +65,7 @@ public interface RouteFilterChain {
         @SafeVarargs
         public <K extends RouteFilter> Chain(final K... filters) {
             this.filters = filters == null ? new RouteFilter[0] : filters;
+            this.size = this.filters.length;
         }
 
         /**
@@ -73,6 +75,7 @@ public interface RouteFilterChain {
          */
         public Chain(final Collection<? extends RouteFilter> filters) {
             this.filters = filters == null ? new RouteFilter[0] : filters.toArray(new RouteFilter[0]);
+            this.size = this.filters.length;
         }
 
         /**
@@ -87,22 +90,22 @@ public interface RouteFilterChain {
          */
         @Override
         public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation) {
-            if (index < filters.length) {
-                log(index - 1, invocation);
+            if (index < size) {
+                if (logger.isDebugEnabled()) {
+                    log(index - 1, invocation);
+                }
                 RouteFilter filter = filters[index++];
                 filter.filter(invocation, this);
-            } else if (index == filters.length) {
+            } else if (index == size && logger.isDebugEnabled()) {
                 log(index - 1, invocation);
             }
         }
 
         private <T extends OutboundRequest> void log(int index, OutboundInvocation<T> invocation) {
-            if (logger.isDebugEnabled()) {
-                if (index < 0) {
-                    logger.debug("Before apply any filter, endpoint size: " + invocation.getEndpointSize());
-                } else {
-                    logger.debug("After apply " + filters[index].getClass().getSimpleName() + ", endpoint size: " + invocation.getEndpointSize());
-                }
+            if (index < 0) {
+                logger.debug("Before apply any filter, endpoint size: " + invocation.getEndpointSize());
+            } else {
+                logger.debug("After apply " + filters[index].getClass().getSimpleName() + ", endpoint size: " + invocation.getEndpointSize());
             }
         }
     }
