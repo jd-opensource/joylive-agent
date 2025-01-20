@@ -15,27 +15,51 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 public class TokenPolicy {
 
     public static final String KEY_TOKEN = "token";
 
     public static final String KEY_TOKEN_KEY = "token.key";
 
+    @Getter
+    @Setter
     private String key;
 
+    @Getter
+    @Setter
     private String token;
+
+    private volatile String base64Token;
+
+    public TokenPolicy() {
+    }
+
+    public TokenPolicy(String key, String token) {
+        this.key = key;
+        this.token = token;
+    }
 
     public boolean isValid() {
         return key != null && !key.isEmpty() && token != null && !token.isEmpty();
+    }
+
+    public String getBase64Token() {
+        if (base64Token == null) {
+            synchronized (this) {
+                if (base64Token == null) {
+                    base64Token = token == null || token.isEmpty()
+                            ? ""
+                            : new String(Base64.getEncoder().encode(token.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+                }
+            }
+        }
+        return base64Token;
     }
 
 }
