@@ -291,9 +291,9 @@ agent:
           - org.apache.catalina.core.StandardServer$$Lambda$
     configcenter:
       type: nacos
-      address: ${CONFIG_CENTER_ADDRESS:127.0.0.1:8848}
-      username: ${CONFIG_CENTER_USERNAME:nacos}
-      password: ${CONFIG_CENTER_PASSWORD:nacos}
+      address: ${CONFIG_CENTER_ADDRESS:${CONFIG_EXTERNAL_HOST}:${CONFIG_EXTERNAL_HTTP_PORT}}
+      username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}
+      password: ${CONFIG_CENTER_PASSWORD:${CONFIG_PASSWORD:nacos}}
       refresh:
         environmentEnabled: ${CONFIG_CENTER_REFRESH_ENVIRONMENT_ENABLED:false}
         beanEnabled: ${CONFIG_CENTER_REFRESH_BEAN_ENABLED:true}
