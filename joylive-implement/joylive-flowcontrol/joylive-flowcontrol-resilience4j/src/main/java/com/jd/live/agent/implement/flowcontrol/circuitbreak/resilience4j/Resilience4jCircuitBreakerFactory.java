@@ -27,7 +27,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
 import java.time.Duration;
 
-import static com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy.*;
+import static com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy.SLIDING_WINDOW_COUNT;
 
 /**
  * Resilience4jCircuitBreakerFactory
@@ -62,13 +62,13 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
         // TODO Uniform time unit. waitDurationInOpenState
         CircuitBreakerConfig.Builder result = CircuitBreakerConfig.custom()
                 .slidingWindowType(SLIDING_WINDOW_COUNT.equals(policy.getSlidingWindowType()) ? SlidingWindowType.COUNT_BASED : SlidingWindowType.TIME_BASED)
-                .slidingWindowSize(policy.getSlidingWindowSize() <= 0 ? DEFAULT_SLIDING_WINDOW_SIZE : policy.getSlidingWindowSize())
-                .minimumNumberOfCalls(policy.getMinCallsThreshold() <= 0 ? DEFAULT_MIN_CALLS_THRESHOLD : policy.getMinCallsThreshold())
-                .failureRateThreshold(policy.getFailureRateThreshold() <= 0 || policy.getFailureRateThreshold() > 100 ? DEFAULT_FAILURE_RATE_THRESHOLD : policy.getFailureRateThreshold())
-                .slowCallRateThreshold(policy.getSlowCallRateThreshold() <= 0 || policy.getSlowCallRateThreshold() > 100 ? DEFAULT_SLOW_CALL_RATE_THRESHOLD : policy.getSlowCallRateThreshold())
-                .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold() <= 0 ? DEFAULT_SLOW_CALL_DURATION_THRESHOLD : policy.getSlowCallDurationThreshold()))
-                .waitDurationInOpenState(Duration.ofSeconds(policy.getWaitDurationInOpenState() <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : policy.getWaitDurationInOpenState()))
-                .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState() <= 0 ? DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE : policy.getAllowedCallsInHalfOpenState())
+                .slidingWindowSize(policy.getSlidingWindowSize())
+                .minimumNumberOfCalls(policy.getMinCallsThreshold())
+                .failureRateThreshold(policy.getFailureRateThreshold())
+                .slowCallRateThreshold(policy.getSlowCallRateThreshold())
+                .slowCallDurationThreshold(Duration.ofMillis(policy.getSlowCallDurationThreshold()))
+                .waitDurationInOpenState(Duration.ofSeconds(policy.getWaitDurationInOpenState()))
+                .permittedNumberOfCallsInHalfOpenState(policy.getAllowedCallsInHalfOpenState())
                 .recordException(e -> true);
         if (policy.getMaxWaitDurationInHalfOpenState() > 0) {
             result.maxWaitDurationInHalfOpenState(Duration.ofMillis(policy.getMaxWaitDurationInHalfOpenState()));
