@@ -38,6 +38,10 @@ public class RestService implements HelloService {
         return restTemplate.getForObject("http://service-provider/status/" + code, LiveResponse.class);
     }
 
+    public String state(int code) {
+        return restTemplate.getForObject("http://service-provider/state/" + code, String.class);
+    }
+
     public LiveResponse exception() {
         return restTemplate.getForObject("http://service-provider/exception", LiveResponse.class);
     }

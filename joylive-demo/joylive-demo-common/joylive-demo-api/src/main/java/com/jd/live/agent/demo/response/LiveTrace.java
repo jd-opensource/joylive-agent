@@ -17,11 +17,13 @@ package com.jd.live.agent.demo.response;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 
 @Getter
 @Setter
+@ToString
 public class LiveTrace implements Serializable {
 
     private String service;

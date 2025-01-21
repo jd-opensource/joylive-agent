@@ -82,6 +82,20 @@ public class EchoController {
         throw new RuntimeException("RuntimeException happened!");
     }
 
+    @RequestMapping(value = "/state/{code}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
+    public String state(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+        if (code <= 0) {
+            throw new RuntimeException("RuntimeException happened!");
+        }
+        if (code > 500) {
+            Thread.sleep(code);
+        }
+        response.setStatus(code);
+        LiveResponse lr = new LiveResponse(code, null, code);
+        configure(request, lr);
+        return lr.toString();
+    }
+
     private void configure(HttpServletRequest request, LiveResponse response) {
         response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
                 LiveTransmission.build("header", request::getHeader)));
