@@ -439,7 +439,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             if (status != null) {
                 listener.onClose(status.getStatus(), status.getTrailers());
             } else {
-                listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), null);
+                listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), new Metadata());
             }
         }
 
