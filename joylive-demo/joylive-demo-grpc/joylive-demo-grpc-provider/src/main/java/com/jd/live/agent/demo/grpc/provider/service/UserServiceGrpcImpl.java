@@ -18,6 +18,7 @@ package com.jd.live.agent.demo.grpc.provider.service;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.demo.grpc.service.api.*;
 import com.jd.live.agent.demo.response.LiveTransmission;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
@@ -29,7 +30,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
         if (request.getId() < 0 && ThreadLocalRandom.current().nextInt(3) == 0) {
-            responseObserver.onError(new RuntimeException("error"));
+            responseObserver.onError(Status.INTERNAL.withDescription("Server error!").asException());
             return;
         }
         if (request.getId() >= 100) {

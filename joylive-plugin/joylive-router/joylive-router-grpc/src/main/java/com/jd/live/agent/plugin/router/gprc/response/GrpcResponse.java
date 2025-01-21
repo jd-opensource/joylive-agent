@@ -31,9 +31,16 @@ public interface GrpcResponse {
 
         private final Status status;
 
+        private final boolean server;
+
         public GrpcOutboundResponse(Object response) {
+            this(response, false);
+        }
+
+        public GrpcOutboundResponse(Object response, boolean isServer) {
             super(response, null);
             status = Status.OK;
+            server = isServer;
         }
 
         public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
@@ -43,6 +50,7 @@ public interface GrpcResponse {
         public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate, Status status) {
             super(null, error, retryPredicate);
             this.status = status != null ? status : getStatus(error.getThrowable());
+            this.server = error != null && error.isServerError();
         }
 
         @Override
@@ -52,6 +60,10 @@ public interface GrpcResponse {
 
         private Status getStatus(Throwable throwable) {
             return throwable == null ? Status.INTERNAL : Status.fromThrowable(throwable);
+        }
+
+        public boolean isServer() {
+            return server;
         }
     }
 }

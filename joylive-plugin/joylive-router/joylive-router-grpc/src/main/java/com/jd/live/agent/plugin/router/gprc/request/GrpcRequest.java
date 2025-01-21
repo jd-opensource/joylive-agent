@@ -16,22 +16,22 @@
 package com.jd.live.agent.plugin.router.gprc.request;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.governance.request.RoutedRequest;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcException;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcClientException;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRouteResult;
-import io.grpc.Grpc;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.ServerCall;
+import io.grpc.*;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -88,6 +88,17 @@ public interface GrpcRequest {
      */
     class GrpcOutboundRequest extends AbstractRpcOutboundRequest<LiveRequest<?, ?>> implements GrpcRequest, RoutedRequest {
 
+        private static final Function<Throwable, ErrorName> GRPC_ERROR_FUNCTION = throwable -> {
+            if (throwable instanceof StatusException) {
+                return new ErrorName(null, String.valueOf(((StatusException) throwable).getStatus().getCode().value()));
+            } else if (throwable instanceof StatusRuntimeException) {
+                return new ErrorName(null, String.valueOf(((StatusRuntimeException) throwable).getStatus().getCode().value()));
+            } else if (throwable instanceof GrpcException.GrpcServerException) {
+                return new ErrorName(null, String.valueOf(((GrpcException.GrpcServerException) throwable).getStatus().getCode().value()));
+            }
+            return DEFAULT_ERROR_FUNCTION.apply(throwable);
+        };
+
         public GrpcOutboundRequest(LiveRequest<?, ?> request) {
             super(request);
             this.service = LiveDiscovery.getService(request.getPath());
@@ -133,6 +144,16 @@ public interface GrpcRequest {
         public boolean hasEndpoint() {
             LiveRouteResult result = request.getRouteResult();
             return result != null && result.isSuccess();
+        }
+
+        /**
+         * Returns the default error name function.
+         *
+         * @return The default error name function.
+         */
+        @Override
+        public Function<Throwable, ErrorName> getErrorFunction() {
+            return GRPC_ERROR_FUNCTION;
         }
     }
 }
