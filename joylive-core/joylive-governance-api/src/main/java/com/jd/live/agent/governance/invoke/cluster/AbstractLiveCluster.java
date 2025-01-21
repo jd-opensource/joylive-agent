@@ -18,11 +18,11 @@ package com.jd.live.agent.governance.invoke.cluster;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import static com.jd.live.agent.bootstrap.exception.RejectException.RejectCircuitBreakException.getCircuitBreakException;
@@ -48,7 +48,7 @@ public abstract class AbstractLiveCluster<R extends OutboundRequest,
         RejectCircuitBreakException circuitBreakException = getCircuitBreakException(throwable);
         if (circuitBreakException != null) {
             DegradeConfig config = circuitBreakException.getConfig();
-            if (config != null) {
+            if (config != null && isValid(config)) {
                 try {
                     return createResponse(request, config);
                 } catch (Throwable e) {
@@ -58,6 +58,16 @@ public abstract class AbstractLiveCluster<R extends OutboundRequest,
             }
         }
         return createResponse(new ServiceError(createException(throwable, request, endpoint), false), getRetryPredicate());
+    }
+
+    /**
+     * Checks if the given degrade configuration is valid.
+     *
+     * @param config the degrade configuration to check
+     * @return true if the configuration is valid, false otherwise
+     */
+    protected boolean isValid(DegradeConfig config) {
+        return true;
     }
 
     /**

@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.gprc.loadbalance;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
@@ -33,14 +34,12 @@ import io.grpc.LoadBalancer.Subchannel;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -53,11 +52,11 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
     public static final CallOptions.Key<LiveRequest<?, ?>> KEY_LIVE_REQUEST = CallOptions.Key.create("x-live-request");
 
-    private static final Map<Class<?>, Optional<Method>> METHODS = new ConcurrentHashMap<>();
-
     private static final String METHOD_NEW_BUILDER = "newBuilder";
 
     private final MethodDescriptor<ReqT, RespT> methodDescriptor;
+
+    private final LazyObject<Method> method = new LazyObject<>(this::getNewBuilder);
 
     private final InvocationContext context;
 
@@ -313,11 +312,10 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      */
     public Object parse(byte[] json) throws Throwable {
         Method method = getNewBuilder();
-        // TODO handle void
         if (method == null) {
             throw new NoSuchMethodException("method 'newBuilder' is not found in " + request.getPath());
-        } else if (method.getReturnType() == Void.class) {
-            return numMessages;
+        } else if (method.getReturnType() == void.class) {
+            return null;
         }
         try {
             Message.Builder builder = (Message.Builder) method.invoke(null);
@@ -335,21 +333,18 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      * @return The 'newBuilder' method if found, otherwise null.
      */
     private Method getNewBuilder() {
-        Class<?> type = methodDescriptor.getResponseMarshaller().getClass();
-        Optional<Method> optional = METHODS.computeIfAbsent(type, k -> {
-            try {
-                String name = k.getName();
-                int pos = name.lastIndexOf('$');
-                name = name.substring(0, pos);
-                k = k.getClassLoader().loadClass(name);
-                Method method = k.getMethod(METHOD_NEW_BUILDER);
-                method.setAccessible(true);
-                return Optional.of(method);
-            } catch (Throwable e) {
-                return Optional.empty();
-            }
-        });
-        return optional.orElse(null);
+        try {
+            MethodDescriptor.Marshaller<?> marshaller = methodDescriptor.getResponseMarshaller();
+            Class<?> type = marshaller.getClass();
+            Field field = type.getDeclaredField("defaultInstance");
+            field.setAccessible(true);
+            Object instance = field.get(marshaller);
+            Method method = instance.getClass().getMethod(METHOD_NEW_BUILDER);
+            method.setAccessible(true);
+            return method;
+        } catch (Throwable e) {
+            return null;
+        }
     }
 
     /**
@@ -442,6 +437,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                 GrpcServerException gse = (GrpcServerException) throwable;
                 listener.onClose(gse.getStatus(), gse.getTrailers());
             } else {
+                // TODO halfClose?
                 clientCall.cancel(throwable.getMessage(), throwable);
                 if (throwable instanceof StatusRuntimeException) {
                     StatusRuntimeException sre = (StatusRuntimeException) throwable;

@@ -56,6 +56,11 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     }
 
     @Override
+    protected boolean isValid(DegradeConfig config) {
+        return config.getResponseBody() != null && !config.getResponseBody().isEmpty();
+    }
+
+    @Override
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request) {
         return new GrpcOutboundResponse(null);
     }

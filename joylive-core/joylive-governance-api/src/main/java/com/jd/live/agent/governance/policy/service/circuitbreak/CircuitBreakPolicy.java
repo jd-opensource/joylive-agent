@@ -37,10 +37,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CircuitBreakPolicy extends PolicyId
         implements PolicyInherit.PolicyInheritWithIdGen<CircuitBreakPolicy>, ErrorPolicy, PolicyVersion {
 
-    public static final String SLIDING_WINDOW_TIME = "time";
+    public static final String DEFAULT_SLIDING_WINDOW_TIME = "time";
     public static final String SLIDING_WINDOW_COUNT = "count";
-    public static final int DEFAULT_FAILURE_RATE_THRESHOLD = 50;
-    public static final int DEFAULT_SLOW_CALL_RATE_THRESHOLD = 50;
+    public static final float DEFAULT_FAILURE_RATE_THRESHOLD = 50F;
+    public static final float DEFAULT_SLOW_CALL_RATE_THRESHOLD = 50F;
     public static final int DEFAULT_SLOW_CALL_DURATION_THRESHOLD = 10000;
     public static final int DEFAULT_WAIT_DURATION_IN_OPEN_STATE = 60;
     public static final int DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE = 10;
@@ -68,29 +68,25 @@ public class CircuitBreakPolicy extends PolicyId
      * Level of circuit breaker policy
      */
     @Setter
-    @Getter
-    private CircuitBreakLevel level = CircuitBreakLevel.INSTANCE;
+    private CircuitBreakLevel level;
 
     /**
      * Sliding window type (statistical window type): count, time
      */
     @Setter
-    @Getter
-    private String slidingWindowType = SLIDING_WINDOW_TIME;
+    private String slidingWindowType;
 
     /**
      * Sliding window size (statistical window size)
      */
     @Setter
-    @Getter
-    private int slidingWindowSize = DEFAULT_SLIDING_WINDOW_SIZE;
+    private Integer slidingWindowSize;
 
     /**
      * Minimum request threshold
      */
     @Setter
-    @Getter
-    private int minCallsThreshold = DEFAULT_MIN_CALLS_THRESHOLD;
+    private Integer minCallsThreshold;
 
     /**
      * Code policy
@@ -131,67 +127,60 @@ public class CircuitBreakPolicy extends PolicyId
      * Failure rate threshold
      */
     @Setter
-    @Getter
-    private float failureRateThreshold = DEFAULT_FAILURE_RATE_THRESHOLD;
+    private Float failureRateThreshold;
 
     /**
      * Threshold for slow call rate
      */
     @Setter
-    @Getter
-    private float slowCallRateThreshold = DEFAULT_SLOW_CALL_RATE_THRESHOLD;
+    private Float slowCallRateThreshold;
 
     /**
      * Minimum duration for slow invocation (milliseconds)
      */
     @Setter
-    @Getter
-    private int slowCallDurationThreshold = DEFAULT_SLOW_CALL_DURATION_THRESHOLD;
+    private Integer slowCallDurationThreshold;
 
     /**
      * Fuse time (seconds)
      */
     @Setter
-    private int waitDurationInOpenState = DEFAULT_WAIT_DURATION_IN_OPEN_STATE;
+    private Integer waitDurationInOpenState;
 
     /**
      * In the half-open state, callable numbers
      */
     @Setter
-    @Getter
-    private int allowedCallsInHalfOpenState = DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE;
+    private Integer allowedCallsInHalfOpenState;
 
     @Setter
-    @Getter
-    private int maxWaitDurationInHalfOpenState = DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE;
+    private Integer maxWaitDurationInHalfOpenState;
 
     /**
      * Whether to force the circuit breaker to be turned on
      */
     @Setter
-    @Getter
-    private boolean forceOpen = false;
+    private Boolean forceOpen;
 
     /**
      * Indicates whether the recovery mechanism is enabled.
      */
     @Setter
-    @Getter
-    private boolean recoveryEnabled;
+    private Boolean recoveryEnabled;
 
     /**
      * The duration in milliseconds for which the recovery mechanism is active.
      * Defaults to {@link #DEFAULT_RECOVER_DURATION}.
      */
     @Setter
-    private int recoveryDuration = DEFAULT_RECOVER_DURATION;
+    private Integer recoveryDuration;
 
     /**
      * The number of phases in the recovery mechanism.
      * Defaults to {@link #DEFAULT_RECOVER_PHASE}.
      */
     @Setter
-    private int recoveryPhase = DEFAULT_RECOVER_PHASE;
+    private Integer recoveryPhase;
 
     /**
      * Downgrade configuration
@@ -214,16 +203,60 @@ public class CircuitBreakPolicy extends PolicyId
      */
     private transient Map<String, CircuitBreakInspector> inspectors = new ConcurrentHashMap<>();
 
+    public CircuitBreakLevel getLevel() {
+        return level == null ? CircuitBreakLevel.INSTANCE : level;
+    }
+
+    public String getSlidingWindowType() {
+        return slidingWindowType == null || slidingWindowType.isEmpty() ? DEFAULT_SLIDING_WINDOW_TIME : slidingWindowType;
+    }
+
+    public int getSlidingWindowSize() {
+        return slidingWindowSize == null || slidingWindowSize <= 0 ? DEFAULT_SLIDING_WINDOW_SIZE : slidingWindowSize;
+    }
+
+    public int getMinCallsThreshold() {
+        return minCallsThreshold == null || minCallsThreshold <= 0 ? DEFAULT_MIN_CALLS_THRESHOLD : minCallsThreshold;
+    }
+
+    public float getFailureRateThreshold() {
+        return failureRateThreshold == null || failureRateThreshold <= 0 ? DEFAULT_FAILURE_RATE_THRESHOLD : Math.min(failureRateThreshold, 100);
+    }
+
+    public float getSlowCallRateThreshold() {
+        return slowCallRateThreshold == null || slowCallRateThreshold < 0 ? DEFAULT_SLOW_CALL_RATE_THRESHOLD : Math.min(slowCallRateThreshold, 100);
+    }
+
+    public int getSlowCallDurationThreshold() {
+        return slowCallDurationThreshold == null ? DEFAULT_SLOW_CALL_DURATION_THRESHOLD : slowCallDurationThreshold;
+    }
+
+    public int getAllowedCallsInHalfOpenState() {
+        return allowedCallsInHalfOpenState == null || allowedCallsInHalfOpenState <= 0 ? DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE : allowedCallsInHalfOpenState;
+    }
+
+    public int getMaxWaitDurationInHalfOpenState() {
+        return maxWaitDurationInHalfOpenState == null || maxWaitDurationInHalfOpenState <= 0 ? DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE : maxWaitDurationInHalfOpenState;
+    }
+
+    public boolean isForceOpen() {
+        return forceOpen != null && forceOpen;
+    }
+
+    public boolean isRecoveryEnabled() {
+        return recoveryEnabled != null && recoveryEnabled;
+    }
+
     public int getWaitDurationInOpenState() {
-        return waitDurationInOpenState <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : waitDurationInOpenState;
+        return waitDurationInOpenState == null || waitDurationInOpenState <= 0 ? DEFAULT_WAIT_DURATION_IN_OPEN_STATE : waitDurationInOpenState;
     }
 
     public int getRecoveryDuration() {
-        return recoveryDuration <= 0 ? DEFAULT_RECOVER_DURATION : recoveryDuration;
+        return recoveryDuration == null || recoveryDuration <= 0 ? DEFAULT_RECOVER_DURATION : recoveryDuration;
     }
 
     public int getRecoveryPhase() {
-        return recoveryPhase <= 0 ? DEFAULT_RECOVER_PHASE : recoveryPhase;
+        return recoveryPhase == null || recoveryPhase <= 0 ? DEFAULT_RECOVER_PHASE : recoveryPhase;
     }
 
     @Override
@@ -231,40 +264,71 @@ public class CircuitBreakPolicy extends PolicyId
         if (source == null) {
             return;
         }
-        if (version <= 0) {
+        if (name == null) {
             name = source.getName();
-            realizeType = source.getRealizeType();
-            level = source.getLevel();
-            version = source.getVersion();
-            slidingWindowType = source.getSlidingWindowType();
-            slidingWindowSize = source.getSlidingWindowSize();
-            minCallsThreshold = source.getMinCallsThreshold();
-            codePolicy = source.getCodePolicy() == null ? null : source.getCodePolicy().clone();
-            if (errorCodes == null && source.getErrorCodes() != null) {
-                errorCodes = new HashSet<>(source.getErrorCodes());
-            }
-            messagePolicy = source.getMessagePolicy() == null ? null : source.getMessagePolicy().clone();
-            if (errorMessages == null && source.getErrorMessages() != null) {
-                errorMessages = new HashSet<>(source.getErrorMessages());
-            }
-            if (exceptions == null && source.getExceptions() != null) {
-                exceptions = new HashSet<>(source.getExceptions());
-            }
-            failureRateThreshold = source.getFailureRateThreshold();
-            slowCallRateThreshold = source.getSlowCallRateThreshold();
-            slowCallDurationThreshold = source.getSlowCallDurationThreshold();
-            waitDurationInOpenState = source.getWaitDurationInOpenState();
-            allowedCallsInHalfOpenState = source.getAllowedCallsInHalfOpenState();
-            forceOpen = source.isForceOpen();
-            if (degradeConfig == null && source.getDegradeConfig() != null) {
-                degradeConfig = new DegradeConfig(source.getDegradeConfig());
-            }
-            id = source.getId();
-            uri = source.getUri();
         }
-        if (source.getVersion() == version) {
-            // disable assignment, because the supplement maybe called by inherit
-            // inspectors = source.inspectors;
+        if (realizeType == null) {
+            realizeType = source.getRealizeType();
+        }
+        if (level == null) {
+            level = source.getLevel();
+        }
+        if (slidingWindowType == null) {
+            slidingWindowType = source.slidingWindowType;
+        }
+        if (slidingWindowSize == null) {
+            slidingWindowSize = source.slidingWindowSize;
+        }
+        if (minCallsThreshold == null) {
+            minCallsThreshold = source.minCallsThreshold;
+        }
+        if (codePolicy == null) {
+            codePolicy = source.codePolicy == null ? null : source.codePolicy.clone();
+        }
+        if (errorCodes == null) {
+            errorCodes = source.errorCodes == null ? null : new HashSet<>(source.errorCodes);
+        }
+        if (messagePolicy == null) {
+            messagePolicy = source.messagePolicy == null ? null : source.messagePolicy.clone();
+        }
+        if (errorMessages == null) {
+            errorMessages = source.errorMessages == null ? null : new HashSet<>(source.errorMessages);
+        }
+        if (exceptions == null) {
+            exceptions = source.exceptions == null ? null : new HashSet<>(source.exceptions);
+        }
+        if (failureRateThreshold == null) {
+            failureRateThreshold = source.failureRateThreshold;
+        }
+        if (slowCallRateThreshold == null) {
+            slowCallRateThreshold = source.slowCallRateThreshold;
+        }
+        if (slowCallDurationThreshold == null) {
+            slowCallDurationThreshold = source.slowCallDurationThreshold;
+        }
+        if (waitDurationInOpenState == null) {
+            waitDurationInOpenState = source.waitDurationInOpenState;
+        }
+        if (allowedCallsInHalfOpenState == null) {
+            allowedCallsInHalfOpenState = source.allowedCallsInHalfOpenState;
+        }
+        if (forceOpen == null) {
+            forceOpen = source.forceOpen;
+        }
+        if (degradeConfig == null) {
+            degradeConfig = source.degradeConfig == null ? null : new DegradeConfig(source.getDegradeConfig());
+        }
+        if (recoveryEnabled == null) {
+            recoveryEnabled = source.recoveryEnabled;
+        }
+        if (recoveryDuration == null) {
+            recoveryDuration = source.recoveryDuration;
+        }
+        if (recoveryPhase == null) {
+            recoveryPhase = source.recoveryPhase;
+        }
+        if (version <= 0) {
+            version = source.getVersion();
         }
     }
 
@@ -350,7 +414,7 @@ public class CircuitBreakPolicy extends PolicyId
         if (codePolicy != null) {
             codePolicy.cache();
         }
-        recoverRatio = recoveryEnabled ? new RecoverRatio(getRecoveryDuration(), getRecoveryPhase()) : null;
+        recoverRatio = isRecoveryEnabled() ? new RecoverRatio(getRecoveryDuration(), getRecoveryPhase()) : null;
     }
 
 }
