@@ -56,7 +56,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
     private final MethodDescriptor<ReqT, RespT> methodDescriptor;
 
-    private final LazyObject<Method> method = new LazyObject<>(this::getNewBuilder);
+    private final LazyObject<Method> methodCache = new LazyObject<>(this::getNewBuilder);
 
     private final InvocationContext context;
 
@@ -311,7 +311,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      * @throws Throwable If any other exception occurs during the parsing process.
      */
     public Object parse(byte[] json) throws Throwable {
-        Method method = getNewBuilder();
+        Method method = methodCache.get();
         if (method == null) {
             throw new NoSuchMethodException("method 'newBuilder' is not found in " + request.getPath());
         } else if (method.getReturnType() == void.class) {
