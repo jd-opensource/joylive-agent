@@ -60,13 +60,11 @@ public class UserServiceController {
         UserGetRequest request = UserGetRequest.newBuilder().setId(id).build();
         Metadata metadata = getMetadata(servletRequest);
         try {
-            // 使用 stub.withInterceptors() 方法
             UserGetResponse response = userServiceGrpc.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                     .get(request);
             return response.toString();
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
-            // 根据状态码进行对应处理
             switch (status.getCode()) {
                 case RESOURCE_EXHAUSTED:
                     servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -78,9 +76,6 @@ public class UserServiceController {
                     servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
             return status.getDescription() == null ? "Unknown error" : status.getDescription();
-        } catch (IllegalStateException e) {
-            servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            return e.getMessage();
         } catch (Exception e) {
             servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             return e.getMessage();
@@ -99,12 +94,9 @@ public class UserServiceController {
     }
 
     private Metadata getMetadata(HttpServletRequest servletRequest) {
-        // 创建 Metadata 对象来存储 header 和 cookie
         Metadata metadata = new Metadata();
 
-        // 获取并转移所有 header
         Enumeration<String> headerNames = servletRequest.getHeaderNames();
-        // 在添加 header 时进行过滤
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
             if (!excludeHeaders.contains(headerName.toLowerCase())) {
@@ -116,7 +108,6 @@ public class UserServiceController {
             }
         }
 
-        // 获取并转移所有 cookie
         Cookie[] cookies = servletRequest.getCookies();
         if (cookies != null) {
             StringBuilder cookieString = new StringBuilder();
