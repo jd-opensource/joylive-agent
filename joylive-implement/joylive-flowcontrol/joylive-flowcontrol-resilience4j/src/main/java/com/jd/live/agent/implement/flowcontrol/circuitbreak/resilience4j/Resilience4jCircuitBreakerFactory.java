@@ -43,7 +43,9 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
     @Override
     public CircuitBreaker create(CircuitBreakPolicy policy, URI uri) {
         CircuitBreakerConfig config = getBuilder(policy).build();
-        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = REGISTRY.circuitBreaker(uri.toString(), config);
+        String name = uri.toString();
+        REGISTRY.remove(name);
+        io.github.resilience4j.circuitbreaker.CircuitBreaker cb = REGISTRY.circuitBreaker(name, config);
         if (policy.isForceOpen()) {
             cb.transitionToForcedOpenState();
         }
