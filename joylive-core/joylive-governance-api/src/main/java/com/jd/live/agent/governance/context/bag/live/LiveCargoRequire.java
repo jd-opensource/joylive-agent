@@ -58,10 +58,4 @@ public class LiveCargoRequire implements CargoRequire {
         Set<String> keys = governanceConfig.getTransmitConfig().getPrefixes();
         return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
     }
-
-    @Override
-    public String[] getSuffixes() {
-        Set<String> keys = governanceConfig.getTransmitConfig().getSuffixes();
-        return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
-    }
 }
