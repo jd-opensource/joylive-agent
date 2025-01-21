@@ -59,6 +59,7 @@ public class ChannelFactoryInterceptor extends InterceptorAdaptor {
         public <ReqT, RespT> ClientCall<ReqT, RespT> newCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions) {
             if (method.getType() != MethodType.UNARY) {
                 // This is not a Unary RPC method
+                // TODO test
                 return channel.newCall(method, callOptions);
             }
             LiveRequest<ReqT, RespT> request = new LiveRequest<>(method, context);
