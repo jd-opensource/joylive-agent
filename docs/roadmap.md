@@ -5,8 +5,8 @@ Roadmap
 2. Support xDS
 
 # 2025/Q1
-1. Improve gRPC support
-2. Enhance stability
+1. Support the W3C baggage specification 
+2. Enhance stability 
 3. Performance optimization
 
 # 2024/12

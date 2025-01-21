@@ -960,7 +960,7 @@
               "slowCallDurationThreshold": 1000,
               "waitDurationInOpenState": 50,
               "allowedCallsInHalfOpenState": 3,
-              "forceOpen": true,
+              "forceOpen": false,
               "realizeType": "Resilience4j",
               "degradeConfig": {
                 "responseCode": 200,
