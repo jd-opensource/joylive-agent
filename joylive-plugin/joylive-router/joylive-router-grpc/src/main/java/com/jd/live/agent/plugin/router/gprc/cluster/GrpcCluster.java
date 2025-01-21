@@ -11,6 +11,8 @@ import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.response.GrpcResponse.GrpcOutboundResponse;
 import io.grpc.LoadBalancer.SubchannelPicker;
+import io.grpc.Metadata;
+import io.grpc.Metadata.Key;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +71,8 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request, DegradeConfig degradeConfig) {
         try {
             Object response = request.getRequest().parse(degradeConfig.getResponseBytes());
+            Metadata metadata = new Metadata();
+            degradeConfig.foreach((key, value) -> metadata.put(Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value));
             return new GrpcOutboundResponse(response);
         } catch (Throwable e) {
             return createResponse(new ServiceError(createException(e, request), false), getRetryPredicate());

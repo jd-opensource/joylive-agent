@@ -425,7 +425,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             } else if (response != null && !response.isServer()) {
                 // client response by degrade.
                 listener.onMessage((RespT) response.getResponse());
-                listener.onClose(Status.OK, new Metadata());
+                listener.onClose(Status.OK, response.getMetadata());
             }
         }
 

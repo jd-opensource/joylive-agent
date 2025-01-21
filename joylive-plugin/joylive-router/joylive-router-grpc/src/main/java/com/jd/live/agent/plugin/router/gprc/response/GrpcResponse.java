@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.gprc.response;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import io.grpc.Metadata;
 import io.grpc.Status;
 
 /**
@@ -33,14 +34,25 @@ public interface GrpcResponse {
 
         private final boolean server;
 
+        private final Metadata metadata;
+
         public GrpcOutboundResponse(Object response) {
-            this(response, false);
+            this(response, false, null);
+        }
+
+        public GrpcOutboundResponse(Object response, Metadata metadata) {
+            this(response, false, metadata);
         }
 
         public GrpcOutboundResponse(Object response, boolean isServer) {
+            this(response, isServer, null);
+        }
+
+        public GrpcOutboundResponse(Object response, boolean isServer, Metadata metadata) {
             super(response, null);
-            status = Status.OK;
-            server = isServer;
+            this.status = Status.OK;
+            this.server = isServer;
+            this.metadata = metadata;
         }
 
         public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
@@ -51,6 +63,7 @@ public interface GrpcResponse {
             super(null, error, retryPredicate);
             this.status = status != null ? status : getStatus(error.getThrowable());
             this.server = error != null && error.isServerError();
+            this.metadata = new Metadata();
         }
 
         @Override
@@ -64,6 +77,10 @@ public interface GrpcResponse {
 
         public boolean isServer() {
             return server;
+        }
+
+        public Metadata getMetadata() {
+            return metadata;
         }
     }
 }
