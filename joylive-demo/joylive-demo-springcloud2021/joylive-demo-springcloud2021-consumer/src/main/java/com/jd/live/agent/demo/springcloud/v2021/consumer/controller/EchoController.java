@@ -78,7 +78,7 @@ public class EchoController {
     }
 
     @GetMapping("/status-feign/{code}")
-    public LiveResponse echoFeign(@PathVariable int code, HttpServletRequest request) {
+    public LiveResponse statusFeign(@PathVariable int code, HttpServletRequest request) {
         LiveResponse response = feignService.status(code);
         addTrace(request, response);
         return response;
@@ -110,6 +110,16 @@ public class EchoController {
         LiveResponse response = restService.exception();
         addTrace(request, response);
         return response;
+    }
+
+    @GetMapping("/state-feign/{code}")
+    public String stateFeign(@PathVariable int code, HttpServletRequest request) {
+        return feignService.state(code);
+    }
+
+    @GetMapping({"/state-rest/{code}", "/state/{code}"})
+    public String stateRest(@PathVariable int code, HttpServletRequest request) {
+        return restService.state(code);
     }
 
     private void addTrace(HttpServletRequest request, LiveResponse response) {

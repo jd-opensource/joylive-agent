@@ -44,4 +44,11 @@ public class ReactiveService implements HelloService {
                 .retrieve()
                 .bodyToMono(LiveResponse.class).block();
     }
+
+    public String state(int code) {
+        return webClient.get()
+                .uri("/state/" + code)
+                .retrieve()
+                .bodyToMono(String.class).block();
+    }
 }

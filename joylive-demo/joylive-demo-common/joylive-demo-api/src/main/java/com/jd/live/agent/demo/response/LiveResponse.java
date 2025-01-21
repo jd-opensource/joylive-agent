@@ -17,6 +17,7 @@ package com.jd.live.agent.demo.response;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@ToString
 public class LiveResponse implements Serializable {
 
     public static final int SUCCESS = 200;

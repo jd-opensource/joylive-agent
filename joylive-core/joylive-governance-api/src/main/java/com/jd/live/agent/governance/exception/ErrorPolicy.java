@@ -85,7 +85,7 @@ public interface ErrorPolicy {
             Set<String> messages = getErrorMessages();
             if (messages != null && !messages.isEmpty()) {
                 for (String message : messages) {
-                    if (message.contains(errorMessage)) {
+                    if (errorMessage.contains(message)) {
                         return true;
                     }
                 }
