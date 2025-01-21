@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.gprc.response;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import io.grpc.Status;
 
 /**
  * Represents a generic response in the Dubbo RPC framework. This interface serves as a marker
@@ -28,12 +29,29 @@ public interface GrpcResponse {
 
     class GrpcOutboundResponse extends AbstractRpcOutboundResponse<Object> implements GrpcResponse {
 
+        private final Status status;
+
         public GrpcOutboundResponse(Object response) {
             super(response, null);
+            status = Status.OK;
         }
 
         public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
+            this(error, retryPredicate, null);
+        }
+
+        public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate, Status status) {
             super(null, error, retryPredicate);
+            this.status = status != null ? status : getStatus(error.getThrowable());
+        }
+
+        @Override
+        public String getCode() {
+            return String.valueOf(status.getCode().value());
+        }
+
+        private Status getStatus(Throwable throwable) {
+            return throwable == null ? Status.INTERNAL : Status.fromThrowable(throwable);
         }
     }
 }

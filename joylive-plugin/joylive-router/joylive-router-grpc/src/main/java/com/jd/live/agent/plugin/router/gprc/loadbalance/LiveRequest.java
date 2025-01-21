@@ -390,7 +390,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             if (!status.isOk()) {
                 // retry
                 GrpcServerException exception = new GrpcServerException(status.asRuntimeException(trailers), status, trailers);
-                GrpcOutboundResponse response = new GrpcOutboundResponse(new ServiceError(exception, true), null);
+                GrpcOutboundResponse response = new GrpcOutboundResponse(new ServiceError(exception, true), null, status);
                 future.complete(response);
             } else {
                 // Close when successful.
