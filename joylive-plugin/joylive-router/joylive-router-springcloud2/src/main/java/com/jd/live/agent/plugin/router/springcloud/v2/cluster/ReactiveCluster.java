@@ -146,14 +146,15 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
         } catch (Throwable ignored) {
             strategies = ExchangeStrategies.withDefaults();
         }
+        int length = degradeConfig.getBodyLength();
         return new ReactiveClusterResponse(ClientResponse.create(degradeConfig.getResponseCode(), strategies)
-                .body(degradeConfig.getResponseBody() == null ? "" : degradeConfig.getResponseBody())
+                .body(length == 0 ? "" : degradeConfig.getResponseBody())
                 .request(new DegradeHttpRequest(request))
                 .headers(headers -> {
                     headers.addAll(request.getRequest().headers());
                     degradeConfig.foreach(headers::add);
-                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
-                    headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(degradeConfig.bodyLength()));
+                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+                    headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
                 }).build());
     }
 

@@ -63,7 +63,7 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
     @Override
     protected GrpcOutboundResponse createResponse(GrpcOutboundRequest request, DegradeConfig degradeConfig) {
         try {
-            Object response = request.getRequest().parse(degradeConfig.getResponseBody());
+            Object response = request.getRequest().parse(degradeConfig.getResponseBytes());
             return new GrpcOutboundResponse(response);
         } catch (Throwable e) {
             return createResponse(new ServiceError(createException(e, request), false), getRetryPredicate());

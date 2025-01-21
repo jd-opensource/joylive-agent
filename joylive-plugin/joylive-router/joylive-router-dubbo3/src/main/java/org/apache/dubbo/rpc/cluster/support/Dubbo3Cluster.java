@@ -200,7 +200,7 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
         if (body != null) {
             Object value;
             if (request.isGeneric()) {
-                value = degradeConfig.text()
+                value = degradeConfig.isText()
                         ? body
                         : parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
             } else {

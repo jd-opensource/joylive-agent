@@ -31,7 +31,8 @@ import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
 import io.grpc.LoadBalancer.Subchannel;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -310,8 +311,9 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      * @return The parsed gRPC message.
      * @throws Throwable If any other exception occurs during the parsing process.
      */
-    public Object parse(String json) throws Throwable {
+    public Object parse(byte[] json) throws Throwable {
         Method method = getNewBuilder();
+        // TODO handle void
         if (method == null) {
             throw new NoSuchMethodException("method 'newBuilder' is not found in " + request.getPath());
         } else if (method.getReturnType() == Void.class) {
@@ -319,7 +321,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
         }
         try {
             Message.Builder builder = (Message.Builder) method.invoke(null);
-            JsonFormat.parser().merge(new StringReader(json), builder);
+            JsonFormat.parser().merge(new InputStreamReader(new ByteArrayInputStream(json)), builder);
             return builder.build();
         } catch (InvocationTargetException e) {
             throw e.getCause() != null ? e.getCause() : e;

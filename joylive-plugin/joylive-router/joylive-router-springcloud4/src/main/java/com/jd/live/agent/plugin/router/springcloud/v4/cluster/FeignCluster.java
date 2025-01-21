@@ -35,7 +35,6 @@ import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLo
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -118,15 +117,13 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     @Override
     protected FeignClusterResponse createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
         Request feignRequest = request.getRequest();
-        String body = degradeConfig.getResponseBody();
-        body = body == null ? "" : body;
-        byte[] data = body.getBytes(StandardCharsets.UTF_8);
+        byte[] data = degradeConfig.getResponseBytes();
         Map<String, Collection<String>> headers = new HashMap<>(feignRequest.headers());
         if (degradeConfig.getAttributes() != null) {
             degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
         }
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
-        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.contentType()));
+        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
 
         return new FeignClusterResponse(feign.Response.builder()
                 .status(degradeConfig.getResponseCode())

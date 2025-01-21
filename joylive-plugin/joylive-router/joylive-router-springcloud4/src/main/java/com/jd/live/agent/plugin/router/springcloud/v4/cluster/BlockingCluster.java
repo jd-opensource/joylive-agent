@@ -34,7 +34,6 @@ import org.springframework.lang.NonNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -159,15 +158,18 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         DegradeResponse(DegradeConfig degradeConfig, BlockingClusterRequest httpRequest) {
             this.degradeConfig = degradeConfig;
             this.httpRequest = httpRequest;
-            String body = degradeConfig.getResponseBody();
-            this.length = body == null ? 0 : body.length();
-            this.bodyStream = body == null ? null : new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+            this.length = degradeConfig.getBodyLength();
+            this.bodyStream = new ByteArrayInputStream(degradeConfig.getResponseBytes());
         }
 
         @NonNull
         @Override
         public HttpStatus getStatusCode() throws IOException {
-            return HttpStatus.valueOf(degradeConfig.getResponseCode());
+            try {
+                return HttpStatus.valueOf(degradeConfig.getResponseCode());
+            } catch (Throwable e) {
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+            }
         }
 
         @Override
@@ -204,7 +206,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
             if (attributes != null) {
                 attributes.forEach(headers::add);
             }
-            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
+            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
             headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
             return headers;
         }

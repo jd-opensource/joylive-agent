@@ -216,7 +216,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
             Object value;
             if (request.isGeneric()) {
                 GenericType genericType = request.getGenericType();
-                if (degradeConfig.text()) {
+                if (degradeConfig.isText()) {
                     value = body;
                 } else if (RemotingConstants.SERIALIZE_FACTORY_GENERIC.equals(genericType.getType())) {
                     value = convertGenericObject(parser.read(new StringReader(body), Object.class));

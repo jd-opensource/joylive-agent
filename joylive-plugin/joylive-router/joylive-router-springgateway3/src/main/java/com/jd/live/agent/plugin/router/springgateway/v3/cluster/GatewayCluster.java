@@ -175,11 +175,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         ServerHttpResponse response = httpRequest.getExchange().getResponse();
         ServerHttpRequest request = httpRequest.getExchange().getRequest();
 
-        String body = degradeConfig.getResponseBody();
-        int length = body == null ? 0 : body.length();
-        byte[] bytes = length == 0 ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
-        DataBuffer buffer = response.bufferFactory().wrap(bytes);
-
+        DataBuffer buffer = response.bufferFactory().wrap(degradeConfig.getResponseBytes());
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
         headers.putAll(request.getHeaders());
         Map<String, String> attributes = degradeConfig.getAttributes();
@@ -188,7 +184,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         }
         response.setRawStatusCode(degradeConfig.getResponseCode());
         response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
-        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentType());
+        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
 
         response.writeWith(Flux.just(buffer)).subscribe();
         return new GatewayClusterResponse(response);

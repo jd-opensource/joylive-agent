@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.governance.policy.service.circuitbreak;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,11 +28,6 @@ import java.util.function.BiConsumer;
  *
  * @since 1.1.0
  */
-@Setter
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class DegradeConfig {
 
     public static final String TYPE_STRING = "string";
@@ -38,13 +35,33 @@ public class DegradeConfig {
     public static final String TYPE_APPLICATION_JSON = "application/json";
     public static final String TYPE_JSON = "json";
 
+    @Getter
+    @Setter
     private int responseCode;
 
+    @Setter
     private String contentType;
 
+    @Getter
+    @Setter
     private Map<String, String> attributes;
 
+    @Getter
+    @Setter
     private String responseBody;
+
+    private transient volatile byte[] responseBytes;
+
+    public DegradeConfig() {
+    }
+
+    @Builder
+    public DegradeConfig(int responseCode, String contentType, Map<String, String> attributes, String responseBody) {
+        this.responseCode = responseCode;
+        this.contentType = contentType;
+        this.attributes = attributes;
+        this.responseBody = responseBody;
+    }
 
     public DegradeConfig(DegradeConfig config) {
         this.responseCode = config.responseCode;
@@ -53,7 +70,7 @@ public class DegradeConfig {
         this.responseBody = config.responseBody;
     }
 
-    public String contentType() {
+    public String getContentType() {
         return contentType == null ? TYPE_APPLICATION_JSON : contentType;
     }
 
@@ -63,15 +80,25 @@ public class DegradeConfig {
         }
     }
 
-    public int bodyLength() {
+    public int getBodyLength() {
         return responseBody == null ? 0 : responseBody.length();
     }
 
-    public boolean text() {
+    public boolean isText() {
         return TYPE_STRING.equalsIgnoreCase(contentType)
                 || TYPE_JSON.equalsIgnoreCase(contentType)
                 || TYPE_APPLICATION_TEXT.equalsIgnoreCase(contentType)
                 || TYPE_APPLICATION_JSON.equalsIgnoreCase(contentType);
     }
 
+    public byte[] getResponseBytes() {
+        if (responseBytes == null) {
+            synchronized (this) {
+                if (responseBytes == null) {
+                    responseBytes = responseBody == null ? new byte[0] : responseBody.getBytes();
+                }
+            }
+        }
+        return responseBytes;
+    }
 }
