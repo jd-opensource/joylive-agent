@@ -228,7 +228,7 @@ public class CircuitBreakPolicy extends PolicyId
     }
 
     public int getSlowCallDurationThreshold() {
-        return slowCallDurationThreshold == null ? DEFAULT_SLOW_CALL_DURATION_THRESHOLD : slowCallDurationThreshold;
+        return slowCallDurationThreshold == null || slowCallDurationThreshold <= 0 ? DEFAULT_SLOW_CALL_DURATION_THRESHOLD : slowCallDurationThreshold;
     }
 
     public int getAllowedCallsInHalfOpenState() {
