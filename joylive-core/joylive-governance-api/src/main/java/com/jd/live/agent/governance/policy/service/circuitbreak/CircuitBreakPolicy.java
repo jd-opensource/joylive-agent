@@ -224,7 +224,7 @@ public class CircuitBreakPolicy extends PolicyId
     }
 
     public float getSlowCallRateThreshold() {
-        return slowCallRateThreshold == null || slowCallRateThreshold < 0 ? DEFAULT_SLOW_CALL_RATE_THRESHOLD : Math.min(slowCallRateThreshold, 100);
+        return slowCallRateThreshold == null || slowCallRateThreshold <= 0 ? DEFAULT_SLOW_CALL_RATE_THRESHOLD : Math.min(slowCallRateThreshold, 100);
     }
 
     public int getSlowCallDurationThreshold() {
