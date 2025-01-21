@@ -292,7 +292,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
     /**
      * Recovers from a degraded state by closing the client call.
-     *
+     * <p>
      * If the client call is not null, this method will half-close the client call.
      */
     public void onRecover() {
@@ -425,7 +425,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             } else if (response != null && !response.isServer()) {
                 // client response by degrade.
                 listener.onMessage((RespT) response.getResponse());
-                // listener.onClose(Status.OK, new Metadata());
+                listener.onClose(Status.OK, new Metadata());
             }
         }
 
