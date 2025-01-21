@@ -41,6 +41,8 @@ public class Resilience4jConcurrencyLimiter extends AbstractConcurrencyLimiter {
                 .maxConcurrentCalls(policy.getMaxConcurrency() == null ? 0 : policy.getMaxConcurrency())
                 .maxWaitDuration(Duration.ofMillis(policy.getMaxWaitMs() == null || policy.getMaxWaitMs() < 0 ? 0 : policy.getMaxWaitMs()))
                 .build();
+        String name = policy.getName();
+        REGISTRY.remove(name);
         bulkhead = REGISTRY.bulkhead(policy.getName(), config);
     }
 
