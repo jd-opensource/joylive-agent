@@ -21,12 +21,15 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
 import com.jd.live.agent.governance.request.RoutedRequest;
-import com.jd.live.agent.plugin.router.gprc.exception.GrpcException;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcClientException;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveDiscovery;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRequest;
 import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveRouteResult;
-import io.grpc.*;
+import io.grpc.Grpc;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
+import io.grpc.ServerCall;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -89,14 +92,10 @@ public interface GrpcRequest {
     class GrpcOutboundRequest extends AbstractRpcOutboundRequest<LiveRequest<?, ?>> implements GrpcRequest, RoutedRequest {
 
         private static final Function<Throwable, ErrorName> GRPC_ERROR_FUNCTION = throwable -> {
-            if (throwable instanceof StatusException) {
-                return new ErrorName(null, String.valueOf(((StatusException) throwable).getStatus().getCode().value()));
-            } else if (throwable instanceof StatusRuntimeException) {
-                return new ErrorName(null, String.valueOf(((StatusRuntimeException) throwable).getStatus().getCode().value()));
-            } else if (throwable instanceof GrpcException.GrpcServerException) {
-                return new ErrorName(null, String.valueOf(((GrpcException.GrpcServerException) throwable).getStatus().getCode().value()));
-            }
-            return DEFAULT_ERROR_FUNCTION.apply(throwable);
+            GrpcStatus status = GrpcStatus.from(throwable);
+            return status != null
+                    ? new ErrorName(null, String.valueOf(status.getValue()))
+                    : DEFAULT_ERROR_FUNCTION.apply(throwable);
         };
 
         public GrpcOutboundRequest(LiveRequest<?, ?> request) {

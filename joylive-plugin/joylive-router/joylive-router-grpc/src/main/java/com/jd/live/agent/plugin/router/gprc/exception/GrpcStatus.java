@@ -21,12 +21,45 @@ import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcServerException;
+import io.grpc.Metadata;
 import io.grpc.Status;
+import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
 
 /**
  * A utility class that provides methods for creating gRPC Status objects from various types of exceptions.
  */
 public class GrpcStatus {
+
+    private final Status status;
+
+    private final Metadata trailers;
+
+    private final boolean server;
+
+    public GrpcStatus(Status status, Metadata trailers, boolean server) {
+        this.status = status;
+        this.trailers = trailers;
+        this.server = server;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Metadata getTrailers() {
+        return trailers;
+    }
+
+    public boolean isServer() {
+        return server;
+    }
+
+    public Integer getValue() {
+        return status == null ? null : status.getCode().value();
+
+    }
 
     /**
      * Creates a gRPC Status object from the given Throwable object.
@@ -195,5 +228,25 @@ public class GrpcStatus {
      */
     protected static Status createUnknownException(Throwable exception) {
         return Status.INTERNAL.withDescription(exception.getMessage());
+    }
+
+    /**
+     * Converts a Throwable object to a GrpcStatus object.
+     *
+     * @param throwable the Throwable object to convert
+     * @return a GrpcStatus object representing the status of the Throwable, or null if the Throwable cannot be converted
+     */
+    public static GrpcStatus from(Throwable throwable) {
+        if (throwable instanceof StatusRuntimeException) {
+            StatusRuntimeException exception = (StatusRuntimeException) throwable;
+            return new GrpcStatus(exception.getStatus(), exception.getTrailers(), false);
+        } else if (throwable instanceof StatusException) {
+            StatusException exception = (StatusException) throwable;
+            return new GrpcStatus(exception.getStatus(), exception.getTrailers(), false);
+        } else if (throwable instanceof GrpcServerException) {
+            GrpcServerException exception = (GrpcServerException) throwable;
+            return new GrpcStatus(exception.getStatus(), exception.getTrailers(), true);
+        }
+        return null;
     }
 }

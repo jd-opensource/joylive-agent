@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.cluster.GrpcCluster;
 import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcServerException;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import com.jd.live.agent.plugin.router.gprc.request.invoke.GrpcInvocation.GrpcOutboundInvocation;
@@ -296,7 +297,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      */
     public void onRecover() {
         // recover from degrade
-        clientCall.halfClose();
+        // clientCall.halfClose();
     }
 
     /**
@@ -365,7 +366,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
         @Override
         public void onMessage(RespT message) {
-            future.complete(new GrpcOutboundResponse(message));
+            future.complete(new GrpcOutboundResponse(message, true));
             listener.onMessage(message);
         }
 
@@ -412,6 +413,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             this.listener = listener;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void accept(GrpcOutboundResponse response, Throwable throwable) {
             // Just handle the exceptions, the success response has already been handled in the listener.
@@ -419,11 +421,11 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             if (throwable != null) {
                 onException(throwable);
             } else if (error != null) {
-                if (error.hasException()) {
-                    onException(error.getThrowable());
-                } else {
-                    onException(error.getError());
-                }
+                onException(error);
+            } else if (response != null && !response.isServer()) {
+                // client response by degrade.
+                listener.onMessage((RespT) response.getResponse());
+                // listener.onClose(Status.OK, new Metadata());
             }
         }
 
@@ -433,28 +435,26 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
          * @param throwable The throwable that occurred during the gRPC call.
          */
         private void onException(Throwable throwable) {
-            if (throwable instanceof GrpcServerException) {
-                GrpcServerException gse = (GrpcServerException) throwable;
-                listener.onClose(gse.getStatus(), gse.getTrailers());
+            GrpcStatus status = GrpcStatus.from(throwable);
+            if (status != null) {
+                listener.onClose(status.getStatus(), status.getTrailers());
             } else {
-                // TODO halfClose?
-                clientCall.cancel(throwable.getMessage(), throwable);
-                if (throwable instanceof StatusRuntimeException) {
-                    StatusRuntimeException sre = (StatusRuntimeException) throwable;
-                    listener.onClose(sre.getStatus(), sre.getTrailers());
-                } else {
-                    listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), null);
-                }
+                listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), null);
             }
         }
 
         /**
-         * Handles an exception by notifying the listener with a generic UNKNOWN status and the provided error description.
+         * Handles an exception that occurred during service execution.
          *
-         * @param error The error description.
+         * @param error the service error containing information about the exception
          */
-        private void onException(String error) {
-            listener.onClose(Status.UNKNOWN.withDescription(error), null);
+        private void onException(ServiceError error) {
+            Throwable throwable = error.getThrowable();
+            if (throwable != null) {
+                onException(throwable);
+            } else {
+                listener.onClose(Status.UNKNOWN.withDescription(error.getError()), new Metadata());
+            }
         }
     }
 }
