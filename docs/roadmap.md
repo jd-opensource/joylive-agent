@@ -1,16 +1,20 @@
 Roadmap
 ===
+# 2025/Q2
+1. Support HTTP3
+2. Support xDS
+
 # 2025/Q1
-1. Optimize MQ routing
-2. Support more framework
-3. Support xDS
+1. Improve gRPC support
+2. Enhance stability
+3. Performance optimization
 
 # 2024/12
 
 1. Support gRPC
 2. Support synchronizing policies from the configuration center
 3. Enhance swimlane routing
-4. Support Spring cloud 2020 & 2022
+4. Support Spring cloud 2020 & 2022 & 2023
 
 # 2024/11
 
