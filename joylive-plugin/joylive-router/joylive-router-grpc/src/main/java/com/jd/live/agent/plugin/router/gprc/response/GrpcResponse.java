@@ -34,36 +34,36 @@ public interface GrpcResponse {
 
         private final boolean server;
 
-        private final Metadata metadata;
+        private final Metadata trailers;
 
         public GrpcOutboundResponse(Object response) {
             this(response, false, null);
         }
 
-        public GrpcOutboundResponse(Object response, Metadata metadata) {
-            this(response, false, metadata);
+        public GrpcOutboundResponse(Object response, Metadata trailers) {
+            this(response, false, trailers);
         }
 
         public GrpcOutboundResponse(Object response, boolean isServer) {
             this(response, isServer, null);
         }
 
-        public GrpcOutboundResponse(Object response, boolean isServer, Metadata metadata) {
+        public GrpcOutboundResponse(Object response, boolean isServer, Metadata trailers) {
             super(response, null);
             this.status = Status.OK;
             this.server = isServer;
-            this.metadata = metadata;
+            this.trailers = trailers;
         }
 
         public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate) {
-            this(error, retryPredicate, null);
+            this(error, retryPredicate, null, null);
         }
 
-        public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate, Status status) {
+        public GrpcOutboundResponse(ServiceError error, ErrorPredicate retryPredicate, Status status, Metadata trailers) {
             super(null, error, retryPredicate);
             this.status = status != null ? status : getStatus(error.getThrowable());
             this.server = error != null && error.isServerError();
-            this.metadata = new Metadata();
+            this.trailers = trailers;
         }
 
         @Override
@@ -71,16 +71,16 @@ public interface GrpcResponse {
             return String.valueOf(status.getCode().value());
         }
 
-        private Status getStatus(Throwable throwable) {
-            return throwable == null ? Status.INTERNAL : Status.fromThrowable(throwable);
-        }
-
         public boolean isServer() {
             return server;
         }
 
-        public Metadata getMetadata() {
-            return metadata;
+        public Metadata getTrailers() {
+            return trailers;
+        }
+
+        private Status getStatus(Throwable throwable) {
+            return throwable == null ? Status.INTERNAL : Status.fromThrowable(throwable);
         }
     }
 }

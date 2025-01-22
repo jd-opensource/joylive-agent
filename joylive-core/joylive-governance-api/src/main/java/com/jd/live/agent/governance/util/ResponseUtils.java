@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-import static com.jd.live.agent.core.Constants.EXCEPTION_MESSAGE_LABEL;
-import static com.jd.live.agent.core.Constants.EXCEPTION_NAMES_LABEL;
+import static com.jd.live.agent.core.Constants.LABEL_EXCEPTION_MESSAGE;
+import static com.jd.live.agent.core.Constants.LABEL_EXCEPTION_NAMES;
 import static com.jd.live.agent.core.util.ExceptionUtils.getExceptions;
 
 /**
@@ -45,7 +45,7 @@ public class ResponseUtils {
         if (names == null) {
             return null;
         }
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder(512);
         int i = 0;
         int size = 0;
         int len;
@@ -103,12 +103,12 @@ public class ResponseUtils {
     public static void labelHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
         describe(e, predicate == null ? ExceptionUtils::isNoneWrapped : predicate, (name, message) -> {
             if (name != null && !name.isEmpty()) {
-                consumer.accept(EXCEPTION_NAMES_LABEL, name);
+                consumer.accept(LABEL_EXCEPTION_NAMES, name);
             }
             if (message != null && !message.isEmpty()) {
                 try {
                     String encodeMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.name());
-                    consumer.accept(EXCEPTION_MESSAGE_LABEL, encodeMessage);
+                    consumer.accept(LABEL_EXCEPTION_MESSAGE, encodeMessage);
                 } catch (UnsupportedEncodingException ignore) {
                 }
             }

@@ -32,6 +32,7 @@ import io.grpc.*;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
 import io.grpc.LoadBalancer.Subchannel;
+import io.grpc.Metadata.Key;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -247,7 +248,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      */
     public void setHeader(String key, String value) {
         if (headers != null && key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            headers.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
+            headers.put(Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
         }
     }
 
@@ -386,7 +387,8 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             if (!status.isOk()) {
                 // retry
                 GrpcServerException exception = new GrpcServerException(status.asRuntimeException(trailers), status, trailers);
-                GrpcOutboundResponse response = new GrpcOutboundResponse(new ServiceError(exception, true), null, status);
+                ServiceError error = new ServiceError(exception, key -> trailers == null ? null : trailers.get(Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
+                GrpcOutboundResponse response = new GrpcOutboundResponse(error, null, status, trailers);
                 future.complete(response);
             } else {
                 // Close when successful.
@@ -425,7 +427,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             } else if (response != null && !response.isServer()) {
                 // client response by degrade.
                 listener.onMessage((RespT) response.getResponse());
-                listener.onClose(Status.OK, response.getMetadata());
+                listener.onClose(Status.OK, response.getTrailers());
             }
         }
 

@@ -159,22 +159,12 @@ public interface Constants {
     /**
      * Constant for the http exception names header.
      */
-    String EXCEPTION_NAMES_LABEL = "x-exception-names";
-
-    /**
-     * exception names separator
-     */
-    String EXCEPTION_NAMES_SEPARATOR = ",";
+    String LABEL_EXCEPTION_NAMES = "x-exception-names";
 
     /**
      * Constant for the http exception message header.
      */
-    String EXCEPTION_MESSAGE_LABEL = "x-exception-message";
-
-    /**
-     * http header size limit
-     */
-    int DEFAULT_HEADER_SIZE_LIMIT = 1024 * 2;
+    String LABEL_EXCEPTION_MESSAGE = "x-exception-message";
 
 }
 
