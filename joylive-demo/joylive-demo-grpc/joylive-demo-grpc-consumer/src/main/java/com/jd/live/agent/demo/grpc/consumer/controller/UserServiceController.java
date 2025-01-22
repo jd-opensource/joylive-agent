@@ -65,6 +65,12 @@ public class UserServiceController {
             return response.toString();
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
+            Metadata trailers = e.getTrailers();
+            if (trailers != null) {
+                trailers.keys().forEach(key -> {
+                    servletResponse.addHeader(key, trailers.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
+                });
+            }
             switch (status.getCode()) {
                 case RESOURCE_EXHAUSTED:
                     servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
