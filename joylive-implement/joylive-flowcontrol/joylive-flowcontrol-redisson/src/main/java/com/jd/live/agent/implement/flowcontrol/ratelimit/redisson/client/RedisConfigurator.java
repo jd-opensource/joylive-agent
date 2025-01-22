@@ -41,7 +41,7 @@ public interface RedisConfigurator<T> {
 
         @Override
         public void configure(T config, RedisConfig redisConfig) {
-            config.setUsername(redisConfig.user);
+            config.setUsername(redisConfig.user == null || redisConfig.user.isEmpty() ? null : redisConfig.user);
             config.setPassword(redisConfig.password);
             config.setRetryAttempts(redisConfig.retryAttempts);
             config.setRetryInterval(redisConfig.retryInterval);
