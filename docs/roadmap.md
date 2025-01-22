@@ -6,8 +6,9 @@ Roadmap
 
 # 2025/Q1
 1. Support the W3C baggage specification 
-2. Enhance stability 
-3. Performance optimization
+2. Support for injecting dynamic configurations into applications 
+3. Enhance stability 
+4. Performance optimization
 
 # 2024/12
 
