@@ -2,25 +2,21 @@
 
 ## 1.6.0
 
-1. Added support for Spring Cloud 2024, now supports Spring Cloud Hoxton, 2020, 2021, 2022, 2023, and 2024
-2. Added support for retry and circuit breaking for outbound traffic of Spring Cloud gRPC, now support for full governance of gRPC unary mode
-3. Added support for Spring Cloud clients to retrieve exceptions from the server, facilitating retry and circuit breaking.
-4. Added support for Spring Cloud port-based routing.
-5. Added support for Spring Cloud integration with configuration center, allowing dynamic modification of slf4j’s log level and fields annotated with @Value.
-6. Added support for cluster-level rate limiting by Redis. 
-7. Added support for W3c Baggage transparent transmission.
-8. Added support for gradual traffic recovery at circuit breaking.
-9. Improved extension condition matching, supporting custom combination conditions, and simplified related configurations 
-10. Improved label matching logic in flow control 
-11. Optimized performance and the startup speed
-12. Provide context lock to facilitate the use of interceptors 
-13. Modified configuration, by default not starting multi-active, swimlane, and flow control governance, enabled through environment variable configuration 
-14. Fixed the issue that configuring Agent in JAVA_TOOL_OPTIONS would affect the use of Java operational tools, supporting configuration to filter out related applications 
-15. Fixed OpenJDK compatibility issues 
-16. Fixed issues with conflicts with other Agents, packaging Bootstrap together 
-17. Fixed the issue that calling the original method would also trigger OnExit/OnSuccess/OnError interceptors 
-18. Fixed Sofarpc injection problem 
-19. Fixed other issues
+1. Added support for Spring Cloud 2024. Currently, Spring Cloud Hoxton/2020/2021/2022/2023/2024 are supported.
+2. Added support for retry and circuit breaker for Spring Cloud gRPC outbound traffic. Currently, full support for gRPC unary mode governance is provided.
+3. Added support for Spring Cloud client to obtain server exceptions, facilitating retry and circuit breaker.
+4. Added support for Spring Cloud port routing.
+5. Added support for Spring Cloud integration with configuration center, supporting dynamic modification of slf4j log levels and fields annotated with @Value.
+6. Added support for Redis cluster-level rate limiting.
+7. Added support for W3C Baggage propagation.
+8. Added support for gradual recovery of circuit breaker traffic.
+9. Improved extension conditional matching, supporting custom combination conditions and simplifying related configurations.
+10. Improved label matching logic in flow control.
+11. Provided context lock to facilitate the use of interceptors.
+12. Modified configuration to not start multi-active, swimlane, and flow control governance by default. These can be enabled through environment variable configuration.
+13. Fixed an issue where configuring the Agent in JAVA_TOOL_OPTIONS would affect the use of Java operation and maintenance tools. Added support for configuring to filter out related applications.
+14. Fixed a series of issues and improved stability.
+15. Optimized performance and startup speed.
 
 ## 1.5.2
 
