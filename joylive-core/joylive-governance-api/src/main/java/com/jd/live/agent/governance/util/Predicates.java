@@ -81,10 +81,11 @@ public class Predicates {
                                   Function<String, ErrorParser> factory) {
         if (response.match(policy)) {
             // extract error from json
-            return isError(policy.getCodePolicy(), response, factory, policy::containsErrorCode)
-                    || isError(policy.getMessagePolicy(), response, factory, policy::containsErrorMessage);
-        }
-        if (policy.containsErrorCode(response.getCode())) {
+            if (isError(policy.getCodePolicy(), response, factory, policy::containsErrorCode)
+                    || isError(policy.getMessagePolicy(), response, factory, policy::containsErrorMessage)) {
+                return true;
+            }
+        } else if (policy.containsErrorCode(response.getCode())) {
             return true;
         }
         ErrorCause cause = cause(response.getError(), request.getErrorFunction(), predicate);
