@@ -15,9 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.gprc.response;
 
+import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcStatus;
 import io.grpc.Metadata;
 import io.grpc.Status;
 
@@ -68,7 +71,7 @@ public interface GrpcResponse {
 
         @Override
         public String getCode() {
-            return String.valueOf(status.getCode().value());
+            return GrpcStatus.getValue(status);
         }
 
         public boolean isServer() {
@@ -81,6 +84,12 @@ public interface GrpcResponse {
 
         private Status getStatus(Throwable throwable) {
             return throwable == null ? Status.INTERNAL : Status.fromThrowable(throwable);
+        }
+
+        @Override
+        public boolean match(ErrorPolicy errorPolicy) {
+            ErrorParserPolicy codePolicy = errorPolicy == null ? null : errorPolicy.getCodePolicy();
+            return codePolicy != null && codePolicy.match(getCode(), null, GrpcStatus.OK);
         }
     }
 }

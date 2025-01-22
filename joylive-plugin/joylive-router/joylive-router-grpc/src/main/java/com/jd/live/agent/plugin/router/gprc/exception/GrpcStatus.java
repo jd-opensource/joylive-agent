@@ -32,6 +32,10 @@ import io.grpc.StatusRuntimeException;
  */
 public class GrpcStatus {
 
+    public static final String OK = String.valueOf(Status.OK.getCode().value());
+
+    private static final String[] VALUES;
+
     private final Status status;
 
     private final Metadata trailers;
@@ -59,6 +63,18 @@ public class GrpcStatus {
     public Integer getValue() {
         return status == null ? null : status.getCode().value();
 
+    }
+
+    static {
+        Status.Code[] values = Status.Code.values();
+        VALUES = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            VALUES[i] = String.valueOf(values[i].value());
+        }
+    }
+
+    public static String getValue(Status status) {
+        return status == null ? null : VALUES[status.getCode().value()];
     }
 
     /**
