@@ -212,7 +212,7 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
         }
 
         protected void onClose(long now) {
-            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.CLOSED, now, null));
+            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.CLOSED, now, now + policy.getRecoveryDuration()));
         }
     }
 
