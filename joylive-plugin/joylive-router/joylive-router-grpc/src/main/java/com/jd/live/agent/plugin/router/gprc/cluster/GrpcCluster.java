@@ -73,7 +73,7 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
             Object response = request.getRequest().parse(degradeConfig.getResponseBytes());
             Metadata metadata = new Metadata();
             degradeConfig.foreach((key, value) -> metadata.put(Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value));
-            return new GrpcOutboundResponse(response);
+            return new GrpcOutboundResponse(response, metadata);
         } catch (Throwable e) {
             return createResponse(new ServiceError(createException(e, request), false), getRetryPredicate());
         }

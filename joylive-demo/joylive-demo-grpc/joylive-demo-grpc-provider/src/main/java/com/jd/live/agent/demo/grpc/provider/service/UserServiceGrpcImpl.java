@@ -29,6 +29,10 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
     @Override
     public void get(UserGetRequest request, StreamObserver<UserGetResponse> responseObserver) {
+        if (request.getId() <= -100) {
+            responseObserver.onError(Status.INTERNAL.withDescription("Server error!").asException());
+            return;
+        }
         if (request.getId() < 0 && ThreadLocalRandom.current().nextInt(3) == 0) {
             responseObserver.onError(Status.INTERNAL.withDescription("Server error!").asException());
             return;
