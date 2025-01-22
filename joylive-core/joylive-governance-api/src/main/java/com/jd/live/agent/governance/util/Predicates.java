@@ -79,13 +79,7 @@ public class Predicates {
                                   ServiceResponse response,
                                   ErrorPredicate predicate,
                                   Function<String, ErrorParser> factory) {
-        if (response.match(policy)) {
-            // extract error from json
-            if (isError(policy.getCodePolicy(), response, factory, policy::containsErrorCode)
-                    || isError(policy.getMessagePolicy(), response, factory, policy::containsErrorMessage)) {
-                return true;
-            }
-        } else if (policy.containsErrorCode(response.getCode())) {
+        if (policy.containsErrorCode(response.getCode())) {
             return true;
         }
         ErrorCause cause = cause(response.getError(), request.getErrorFunction(), predicate);
@@ -96,6 +90,10 @@ public class Predicates {
                 // throw exception
                 return false;
             }
+        }
+        if (response.match(policy)) {
+            if (isError(policy.getCodePolicy(), response, factory, policy::containsErrorCode)) return true;
+            if (isError(policy.getMessagePolicy(), response, factory, policy::containsErrorMessage)) return true;
         }
         return false;
     }
