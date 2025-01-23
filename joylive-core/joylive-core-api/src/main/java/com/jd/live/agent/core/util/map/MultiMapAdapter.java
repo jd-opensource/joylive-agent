@@ -79,9 +79,7 @@ public class MultiMapAdapter<K, V> implements MultiMap<K, V>, Serializable {
 
     @Override
     public void setAll(K key, Collection<? extends V> values) {
-        List<V> targets = new ArrayList<>(values.size());
-        targets.addAll(values);
-        delegate.put(key, targets);
+        setAll(key, values, false);
     }
 
     @Override
@@ -173,6 +171,17 @@ public class MultiMapAdapter<K, V> implements MultiMap<K, V>, Serializable {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void setAll(K key, Collection<? extends V> values, boolean zeroCopy) {
+        List<V> targets;
+        if (!zeroCopy || !(values instanceof ArrayList)) {
+            targets = new ArrayList<>(values);
+        } else {
+            targets = (List<V>) values;
+        }
+        delegate.put(key, targets);
     }
 
 }

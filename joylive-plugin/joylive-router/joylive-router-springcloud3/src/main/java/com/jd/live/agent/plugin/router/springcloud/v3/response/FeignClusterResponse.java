@@ -19,9 +19,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
-import com.jd.live.agent.core.util.map.MultiLinkedMap;
-import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
@@ -32,6 +29,8 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
 
 /**
  * FeignOutboundResponse
@@ -102,9 +101,7 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
         if (headers == null) {
             return null;
         }
-        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
-        headers.forEach(result::setAll);
-        return result;
+        return caseInsensitive(headers, true);
     }
 
 }

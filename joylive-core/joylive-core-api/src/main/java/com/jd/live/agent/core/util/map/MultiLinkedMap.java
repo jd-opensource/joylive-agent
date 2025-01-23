@@ -88,8 +88,19 @@ public class MultiLinkedMap<K, V> extends MultiMapAdapter<K, V>  // new public b
      * @param creator a supplier that provides the initial map implementation
      */
     public MultiLinkedMap(Map<K, ? extends Collection<V>> other, Supplier<Map<K, List<V>>> creator) {
+        this(other, creator, false);
+    }
+
+    /**
+     * Creates a new instance of MultiLinkedMap with the specified initial capacity and load factor.
+     *
+     * @param other    the Map whose mappings are to be placed in this Map
+     * @param creator  a supplier that provides the initial map implementation
+     * @param zeroCopy a flag indicating whether to perform a zero-copy operation when setting values
+     */
+    public MultiLinkedMap(Map<K, ? extends Collection<V>> other, Supplier<Map<K, List<V>>> creator, boolean zeroCopy) {
         super(creator.get());
-        other.forEach(this::setAll);
+        other.forEach((key, value) -> setAll(key, value, zeroCopy));
     }
 
     /**
@@ -140,6 +151,17 @@ public class MultiLinkedMap<K, V> extends MultiMapAdapter<K, V>  // new public b
             result.setAll(other);
         }
         return result;
+    }
+
+    /**
+     * Creates a new case-insensitive MultiMap from the given map.
+     *
+     * @param other    the original map
+     * @param zeroCopy a flag indicating whether to perform a zero-copy operation when setting values
+     * @return a new MultiMap with case-insensitive keys
+     */
+    public static MultiMap<String, String> caseInsensitive(Map<String, Collection<String>> other, boolean zeroCopy) {
+        return new MultiLinkedMap<>(other, () -> new CaseInsensitiveLinkedMap<>(other.size()), zeroCopy);
     }
 
 }
