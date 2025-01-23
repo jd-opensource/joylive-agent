@@ -42,7 +42,7 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
     @Override
     protected double getMaxStoredPermits() {
         // Keep a constant rate and prevent excessive token accumulation.
-        return Math.max(getPermits(option.getPositive(KEY_FLOW_WINDOW_SECONDS, 1)), 1D);
+        return getPermits(option.getPositive(KEY_FLOW_WINDOW_SECONDS, 1));
     }
 
     @Override

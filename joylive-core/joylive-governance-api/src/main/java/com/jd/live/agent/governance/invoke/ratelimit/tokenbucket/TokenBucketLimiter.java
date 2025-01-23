@@ -102,7 +102,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      * Initializes the rate limiter by setting the maximum number of permits.
      */
     protected void initialize() {
-        this.maxStoredPermits = getMaxStoredPermits();
+        this.maxStoredPermits = Math.max(getMaxStoredPermits(), 1D);
     }
 
     /**
