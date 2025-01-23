@@ -20,6 +20,8 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v2021.provider.config.EchoConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +35,8 @@ public class EchoController {
     private final String applicationName;
 
     private final EchoConfig config;
+
+    private final static Logger logger = LoggerFactory.getLogger(EchoController.class);
 
     @Value("${echo.suffix}")
     private String echoSuffix;
@@ -56,6 +60,9 @@ public class EchoController {
         }
         LiveResponse response = new LiveResponse(echoSuffix == null ? str : str + echoSuffix);
         configure(request, response);
+        if (logger.isInfoEnabled()) {
+            logger.info("echo str: {}, time: {}", str, System.currentTimeMillis());
+        }
         return response;
     }
 
@@ -64,6 +71,9 @@ public class EchoController {
         response.setStatus(code);
         LiveResponse lr = new LiveResponse(code, null, code);
         configure(request, lr);
+        if (logger.isInfoEnabled()) {
+            logger.info("status code: {}, time: {}", code, System.currentTimeMillis());
+        }
         return lr;
     }
 
@@ -79,11 +89,17 @@ public class EchoController {
 
     @RequestMapping(value = "/exception", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
     public LiveResponse exception(HttpServletRequest request, HttpServletResponse response) {
+        if (logger.isInfoEnabled()) {
+            logger.info("exception at time: {}", System.currentTimeMillis());
+        }
         throw new RuntimeException("RuntimeException happened!");
     }
 
     @RequestMapping(value = "/state/{code}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
     public String state(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+        if (logger.isInfoEnabled()) {
+            logger.info("state code: {}, time: {}", code, System.currentTimeMillis());
+        }
         if (code <= 0) {
             throw new RuntimeException("RuntimeException happened!");
         }
