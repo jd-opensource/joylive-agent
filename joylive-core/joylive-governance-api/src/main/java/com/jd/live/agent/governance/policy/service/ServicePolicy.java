@@ -111,7 +111,8 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             livePolicy.setId(id);
         }
         if (rateLimitPolicies != null && !rateLimitPolicies.isEmpty()) {
-            rateLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_RATE_LIMIT, r.getName())));
+            rateLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_RATE_LIMIT, r.getName())
+                    .parameter(KEY_SERVICE_RATE_LIMIT_TYPE, r.getRealizeType())));
         }
         if (concurrencyLimitPolicies != null && !concurrencyLimitPolicies.isEmpty()) {
             concurrencyLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, r.getName())));
