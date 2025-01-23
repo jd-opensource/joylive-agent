@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.response;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import org.springframework.http.ResponseCookie;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * ReactiveRouteResponse
@@ -34,8 +37,6 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
 
     public ReactiveClusterResponse(ClientResponse response) {
         super(response);
-        this.headers = new UnsafeLazyObject<>(() -> response.headers().asHttpHeaders());
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.cookies(), ResponseCookie::getValue));
     }
 
     public ReactiveClusterResponse(ServiceError error, ErrorPredicate predicate) {
@@ -59,6 +60,17 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
             }
         }
         return body;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        MultiValueMap<String, ResponseCookie> cookies = response == null ? null : response.cookies();
+        return cookies == null ? null : HttpUtils.parseCookie(cookies, ResponseCookie::getValue);
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return response == null ? null : response.headers().asHttpHeaders();
     }
 
 }

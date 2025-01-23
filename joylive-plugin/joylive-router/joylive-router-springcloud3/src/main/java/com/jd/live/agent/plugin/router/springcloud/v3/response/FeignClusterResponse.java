@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.response;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.IOUtils;
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
@@ -30,6 +29,7 @@ import feign.Response;
 import org.springframework.http.HttpHeaders;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -46,8 +46,6 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
 
     public FeignClusterResponse(Response response) {
         super(response);
-        this.headers = new UnsafeLazyObject<>(() -> parserHeader(response));
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.headers().get(HttpHeaders.COOKIE)));
     }
 
     public FeignClusterResponse(ServiceError error, ErrorPredicate predicate) {
@@ -92,13 +90,21 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
         return body;
     }
 
-    private Map<String, List<String>> parserHeader(Response response) {
-        if (response == null || response.headers() == null) {
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        Map<String, Collection<String>> headers = response == null ? null : response.headers();
+        return headers == null ? null : HttpUtils.parseCookie(headers.get(HttpHeaders.COOKIE));
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        Map<String, Collection<String>> headers = response == null ? null : response.headers();
+        if (headers == null) {
             return null;
         }
-        MultiMap<String, String> headers = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
-        response.headers().forEach(headers::setAll);
-        return headers;
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
+        headers.forEach(result::setAll);
+        return result;
     }
 
 }

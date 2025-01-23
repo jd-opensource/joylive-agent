@@ -15,9 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.exception;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.HashSet;
@@ -27,27 +25,40 @@ import java.util.Set;
  * A class representing a error parser policy.
  */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class ErrorParserPolicy implements Cloneable {
 
     /**
      * Code parser
      */
+    @Setter
     private String parser;
 
     /**
      * Code expression
      */
+    @Setter
     private String expression;
 
+    @Setter
     private Set<String> statuses;
 
     /**
      * Code parser
      */
+    @Setter
     private Set<String> contentTypes;
+
+    private transient boolean valid;
+
+    public ErrorParserPolicy() {
+    }
+
+    public ErrorParserPolicy(String parser, String expression, Set<String> statuses, Set<String> contentTypes) {
+        this.parser = parser;
+        this.expression = expression;
+        this.statuses = statuses;
+        this.contentTypes = contentTypes;
+    }
 
     /**
      * Checks if the given status code and content type match the configured values.
@@ -77,15 +88,6 @@ public class ErrorParserPolicy implements Cloneable {
                 && (contentTypes == null || contentTypes.isEmpty() || contentType != null && contentTypes.contains(contentType));
     }
 
-    /**
-     * Checks if the body of the code should be parsed.
-     *
-     * @return true if the body of the code should be parsed, false otherwise.
-     */
-    public boolean requireResponseBody() {
-        return parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
-    }
-
     @Override
     public ErrorParserPolicy clone() {
         try {
@@ -101,5 +103,6 @@ public class ErrorParserPolicy implements Cloneable {
             contentTypes.forEach(o -> lowerCases.add(o.toLowerCase()));
             contentTypes = lowerCases;
         }
+        valid = parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
     }
 }

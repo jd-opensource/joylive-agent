@@ -15,7 +15,8 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.core.util.http.HttpHeader;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 
@@ -44,12 +45,12 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected UnsafeLazyObject<Map<String, List<String>>> cookies;
+    protected CacheObject<Map<String, List<String>>> cookies;
 
     /**
      * Lazily evaluated HTTP headers from the request.
      */
-    protected UnsafeLazyObject<Map<String, List<String>>> headers;
+    protected CacheObject<Map<String, List<String>>> headers;
 
     /**
      * The URI of the HTTP request.
@@ -59,17 +60,19 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     /**
      * Lazily evaluated port number of the request URI.
      */
-    protected UnsafeLazyObject<Integer> port;
+    protected CacheObject<Integer> port;
 
     /**
      * Lazily evaluated host of the request URI.
      */
-    protected UnsafeLazyObject<String> host;
+    protected CacheObject<String> host;
 
     /**
      * Lazily evaluated scheme of the request URI.
      */
-    protected UnsafeLazyObject<String> schema;
+    protected CacheObject<String> schema;
+
+    protected CacheObject<String> contentType;
 
     /**
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
@@ -110,9 +113,6 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      */
     public AbstractHttpResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
         super(response, errorSupplier, retryPredicate);
-        port = new UnsafeLazyObject<>(this::parsePort);
-        host = new UnsafeLazyObject<>(this::parseHost);
-        schema = new UnsafeLazyObject<>(this::parseScheme);
     }
 
     @Override
@@ -122,29 +122,41 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
 
     @Override
     public String getSchema() {
+        if (schema == null) {
+            schema = new CacheObject<>(parseScheme());
+        }
         String result = schema.get();
         return result == null || result.isEmpty() ? null : result;
     }
 
     @Override
     public int getPort() {
+        if (port == null) {
+            port = new CacheObject<>(parsePort());
+        }
         return port.get();
     }
 
     @Override
     public String getHost() {
+        if (host == null) {
+            host = new CacheObject<>(parseHost());
+        }
         String result = host.get();
         return result == null || result.isEmpty() ? null : result;
     }
 
     @Override
     public String getPath() {
-        return uri.getPath();
+        return uri == null ? null : uri.getPath();
     }
 
     @Override
     public Map<String, List<String>> getHeaders() {
-        return headers == null ? null : headers.get();
+        if (headers == null) {
+            headers = new CacheObject<>(parseHeaders());
+        }
+        return headers.get();
     }
 
     @Override
@@ -157,7 +169,10 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
 
     @Override
     public Map<String, List<String>> getCookies() {
-        return cookies == null ? null : cookies.get();
+        if (cookies == null) {
+            cookies = new CacheObject<>(parseCookies());
+        }
+        return cookies.get();
     }
 
     @Override
@@ -168,13 +183,21 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
         return values == null || values.isEmpty() ? null : values.get(0);
     }
 
+    @Override
+    public String getContentType() {
+        if (contentType == null) {
+            contentType = new CacheObject<>(getHeader(HttpHeader.CONTENT_TYPE));
+        }
+        return contentType.get();
+    }
+
     /**
      * Parses the port number from the request URI.
      *
      * @return The port number, or a default value if it cannot be parsed from the URI.
      */
     protected int parsePort() {
-        int result = uri.getPort();
+        int result = uri == null ? -1 : uri.getPort();
         if (result < 0) {
             result = parsePortByHeader();
         }
@@ -218,7 +241,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @return The host, or a default value if it cannot be parsed from the URI.
      */
     protected String parseHost() {
-        String result = uri.getHost();
+        String result = uri == null ? null : uri.getHost();
         if (result == null) {
             result = parseHostByHeader();
         }
@@ -254,9 +277,26 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
      * @return The scheme, or null if it cannot be determined.
      */
     protected String parseScheme() {
-        return uri.getScheme();
+        return uri == null ? null : uri.getScheme();
     }
 
+    /**
+     * Parses the cookies from the HTTP response headers.
+     *
+     * @return A map of cookie names to their corresponding values, or null if no cookies were found
+     */
+    protected Map<String, List<String>> parseCookies() {
+        return null;
+    }
+
+    /**
+     * Parses the headers from the HTTP response headers.
+     *
+     * @return A map of header names to their corresponding values, or null if no headers were found
+     */
+    protected Map<String, List<String>> parseHeaders() {
+        return null;
+    }
 
     public abstract static class AbstractHttpOutboundResponse<T> extends AbstractHttpResponse<T>
             implements HttpResponse.HttpOutboundResponse {

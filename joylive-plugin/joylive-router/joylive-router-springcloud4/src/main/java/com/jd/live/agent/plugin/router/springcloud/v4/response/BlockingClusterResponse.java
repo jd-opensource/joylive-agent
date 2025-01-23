@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v4.response;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.IOUtils;
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -31,6 +30,8 @@ import org.springframework.lang.NonNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -47,8 +48,6 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
 
     public BlockingClusterResponse(ClientHttpResponse response) {
         super(response);
-        this.headers = new UnsafeLazyObject<>(response::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.getHeaders().get(HttpHeaders.COOKIE)));
     }
 
     public BlockingClusterResponse(ServiceError error, ErrorPredicate predicate) {
@@ -82,6 +81,17 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
             }
         }
         return body;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        Map<String, List<String>> headers = getHeaders();
+        return headers == null ? null : HttpUtils.parseCookie(headers.get(HttpHeaders.COOKIE));
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return response.getHeaders();
     }
 
     private static class ClientHttpResponseAdapter implements ClientHttpResponse {

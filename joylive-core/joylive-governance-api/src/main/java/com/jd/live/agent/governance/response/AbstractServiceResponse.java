@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.response;
 
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import lombok.Getter;
@@ -46,7 +46,7 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * service operation. A {@code null} value indicates that the operation completed
      * without errors.
      */
-    protected final UnsafeLazyObject<ServiceError> error;
+    protected CacheObject<ServiceError> error;
 
     /**
      * An optional predicate used to determine if the response should be retried.
@@ -54,6 +54,11 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      * the default retryability logic will be applied.
      */
     protected final ErrorPredicate retryPredicate;
+
+    /**
+     * A supplier of service errors.
+     */
+    protected final Supplier<ServiceError> errorSupplier;
 
     /**
      * Constructs an instance of {@code AbstractServiceResponse} with the specified
@@ -77,15 +82,23 @@ public abstract class AbstractServiceResponse<T> extends AbstractAttributes impl
      */
     public AbstractServiceResponse(T response, Supplier<ServiceError> errorSupplier, ErrorPredicate retryPredicate) {
         this.response = response;
-        this.error = new UnsafeLazyObject<>(errorSupplier != null ? errorSupplier : this::parseError);
+        this.errorSupplier = errorSupplier;
         this.retryPredicate = retryPredicate;
     }
 
     @Override
     public ServiceError getError() {
-        return error == null ? null : error.get();
+        if (error == null) {
+            error = new CacheObject<>(errorSupplier != null ? errorSupplier.get() : parseError());
+        }
+        return error.get();
     }
 
+    /**
+     * Parses the service error from the HTTP response.
+     *
+     * @return The parsed service error, or null if no error was found
+     */
     protected ServiceError parseError() {
         return null;
     }

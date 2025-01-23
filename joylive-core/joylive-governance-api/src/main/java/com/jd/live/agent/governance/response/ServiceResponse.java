@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 
 /**
  * ServiceResponse
@@ -76,12 +76,12 @@ public interface ServiceResponse extends Response {
     }
 
     /**
-     * Checks if the given error policy matches the criteria for this error handler.
+     * Checks if the given error parser policy matches the criteria for this error handler.
      *
-     * @param errorPolicy the error policy to check
+     * @param policy the error policy to check
      * @return true if the error policy matches, false otherwise (default implementation always returns false)
      */
-    default boolean match(ErrorPolicy errorPolicy) {
+    default boolean match(ErrorParserPolicy policy) {
         return false;
     }
 

@@ -602,7 +602,6 @@ public enum HttpStatus {
         return this.value + " " + name();
     }
 
-
     /**
      * Return the {@code HttpStatus} enum constant with the specified numeric value.
      *

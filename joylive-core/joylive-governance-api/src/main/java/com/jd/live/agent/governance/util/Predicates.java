@@ -79,23 +79,36 @@ public class Predicates {
                                   ServiceResponse response,
                                   ErrorPredicate predicate,
                                   Function<String, ErrorParser> factory) {
-        if (policy.containsErrorCode(response.getCode())) {
+        // parse code
+        ErrorParserPolicy errorPolicy = policy.getCodePolicy();
+        boolean codeEnabled = isValid(errorPolicy) && response.match(errorPolicy);
+        if (codeEnabled) {
+            if (isError(errorPolicy, response, factory, policy::containsErrorCode)) {
+                return true;
+            }
+        } else if (policy.containsErrorCode(response.getCode())) {
             return true;
         }
-        ErrorCause cause = cause(response.getError(), request.getErrorFunction(), predicate);
-        if (cause != null) {
-            if (cause.match(policy)) {
+        // parse message
+        ErrorParserPolicy messagePolicy = policy.getMessagePolicy();
+        boolean messageEnabled = isValid(messagePolicy) && response.match(messagePolicy);
+        if (messageEnabled) {
+            if (isError(messagePolicy, response, factory, policy::containsErrorMessage)) {
                 return true;
-            } else if (cause.getCause() != null) {
-                // throw exception
-                return false;
             }
         }
-        if (response.match(policy)) {
-            if (isError(policy.getCodePolicy(), response, factory, policy::containsErrorCode)) return true;
-            if (isError(policy.getMessagePolicy(), response, factory, policy::containsErrorMessage)) return true;
-        }
-        return false;
+        ErrorCause cause = cause(response.getError(), request.getErrorFunction(), predicate);
+        return cause != null && cause.match(policy, !codeEnabled, !messageEnabled);
+    }
+
+    /**
+     * Checks if the given error parser policy is valid.
+     *
+     * @param policy The error parser policy to validate
+     * @return true if the policy is valid, false otherwise
+     */
+    private static boolean isValid(ErrorParserPolicy policy) {
+        return policy != null && policy.isValid();
     }
 
     /**
@@ -130,17 +143,16 @@ public class Predicates {
                                      Object result,
                                      Function<String, ErrorParser> factory) {
         String value = null;
-        if (policy != null && result != null) {
+        if (result != null) {
+            // parser and expression are valid
             String errorParser = policy.getParser();
             String errorExpression = policy.getExpression();
-            if (errorParser != null && !errorParser.isEmpty() && errorExpression != null && !errorExpression.isEmpty()) {
-                ErrorParser parser = factory.apply(errorParser);
-                if (parser != null) {
-                    try {
-                        value = parser.getValue(errorExpression, result);
-                    } catch (Throwable e) {
-                        logger.error(e.getMessage(), e);
-                    }
+            ErrorParser parser = factory.apply(errorParser);
+            if (parser != null) {
+                try {
+                    value = parser.getValue(errorExpression, result);
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
                 }
             }
         }

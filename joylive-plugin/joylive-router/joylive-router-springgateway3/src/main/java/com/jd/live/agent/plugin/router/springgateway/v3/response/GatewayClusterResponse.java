@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.response;
 
+import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -32,7 +33,7 @@ import java.util.function.Supplier;
  */
 public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerHttpResponse> {
 
-    private final UnsafeLazyObject<String> body;
+    private final CacheObject<String> body;
 
     public GatewayClusterResponse(ServerHttpResponse response) {
         this(response, null, null);

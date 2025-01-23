@@ -296,7 +296,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
         @Override
         public void addErrorPolicy(ErrorPolicy policy) {
-            if (policy != null && policy.requireResponseBody()) {
+            if (policy != null && policy.isBodyRequired()) {
                 getAttributeIfAbsent(KEY_ERROR_POLICY, k -> new HashSet<ErrorPolicy>()).add(policy);
             }
         }

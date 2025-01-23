@@ -114,12 +114,12 @@ public interface ErrorPolicy {
      * Checks if the response body is required for error parsing.
      *
      * @return true if the response body is required for error parsing, false otherwise
-     * @see ErrorParserPolicy#requireResponseBody()
+     * @see ErrorParserPolicy#isValid()
      */
-    default boolean requireResponseBody() {
+    default boolean isBodyRequired() {
         ErrorParserPolicy codePolicy = getCodePolicy();
         ErrorParserPolicy messagePolicy = getMessagePolicy();
-        return codePolicy != null && codePolicy.requireResponseBody() || messagePolicy != null && messagePolicy.requireResponseBody();
+        return codePolicy != null && codePolicy.isValid() || messagePolicy != null && messagePolicy.isValid();
     }
 
     /**

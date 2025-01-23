@@ -43,18 +43,30 @@ public class ErrorCause {
     private boolean matched;
 
     /**
-     * Checks if the given circuit breaker policy matches the error code or exceptions.
+     * Checks if the given error policy matches the current error condition, considering both error codes and messages.
      *
-     * @param policy the circuit breaker policy to match against
-     * @return true if the policy matches the error code or exceptions, false otherwise
+     * @param policy The error policy to check against
+     * @return true if the error policy matches the current error condition, false otherwise
      */
     public boolean match(ErrorPolicy policy) {
+        return match(policy, true, true);
+    }
+
+    /**
+     * Checks if the given error policy matches the current error condition.
+     *
+     * @param policy         The error policy to check against
+     * @param includeCode    Whether to consider error codes in the matching process
+     * @param includeMessage Whether to consider error messages in the matching process
+     * @return true if the error policy matches the current error condition, false otherwise
+     */
+    public boolean match(ErrorPolicy policy, boolean includeCode, boolean includeMessage) {
         if (matched) {
             return true;
         }
-        if (policy != null && (policy.containsErrorCode(errorCode)
+        if (policy != null && (includeCode && policy.containsErrorCode(errorCode)
                 || policy.containsException(exceptions)
-                || policy.containsErrorMessage(errorMessage))) {
+                || includeMessage && policy.containsErrorMessage(errorMessage))) {
             return true;
         }
         return containsException(exceptions, targets);

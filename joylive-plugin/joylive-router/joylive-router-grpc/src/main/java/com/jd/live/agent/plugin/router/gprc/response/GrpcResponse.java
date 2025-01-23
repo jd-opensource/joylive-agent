@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.gprc.response;
 
-import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
@@ -87,9 +86,8 @@ public interface GrpcResponse {
         }
 
         @Override
-        public boolean match(ErrorPolicy errorPolicy) {
-            ErrorParserPolicy codePolicy = errorPolicy == null ? null : errorPolicy.getCodePolicy();
-            return codePolicy != null && codePolicy.match(getCode(), null, GrpcStatus.OK);
+        public boolean match(ErrorParserPolicy policy) {
+            return policy != null && policy.match(getCode(), null, GrpcStatus.OK);
         }
     }
 }
