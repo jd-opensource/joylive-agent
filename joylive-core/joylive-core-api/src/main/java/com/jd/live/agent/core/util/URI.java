@@ -233,7 +233,7 @@ public class URI {
         String path = null;
         Map<String, String> parameters = null;
 
-        int i = url.indexOf("?");
+        int i = url.indexOf('?');
         if (i >= 0) {
             // parameter
             if (i < url.length() - 1) {
@@ -276,4 +276,61 @@ public class URI {
         }
         return new URI(protocol, host, port, path, parameters);
     }
+
+    /**
+     * Parses the host from a given URI.
+     *
+     * @param uri the URI to parse
+     * @return the host part of the URI, or null if the URI is invalid or does not contain a host
+     */
+    /**
+     * Parses the host from a given URI.
+     *
+     * @param uri the URI to parse
+     * @return the host part of the URI, or null if the URI is invalid or does not contain a host
+     */
+    public static String parseHost(String uri) {
+        String url = uri == null ? null : uri.trim();
+        if (uri == null || uri.isEmpty()) {
+            return null;
+        }
+
+        int start = url.indexOf("://");
+        int end = -1;
+
+        char c;
+        for (int i = (start >= 0 ? start + 3 : 0); i < url.length(); i++) {
+            c = url.charAt(i);
+            if (c == '/' || c == '?' || c == '#') {
+                end = i;
+                break;
+            }
+        }
+        if (start >= 0) {
+            url = url.substring(start + 3, end >= 0 ? end : url.length());
+        } else {
+            url = end >= 0 ? url.substring(0, end) : uri;
+        }
+        if (url.isEmpty()) {
+            return null;
+        } else if (url.charAt(0) == '[') {
+            // ipv6
+            int pos = url.lastIndexOf(']');
+            if (pos > 0) {
+                return url.substring(1, pos);
+            }
+            return null;
+        } else {
+            // max port 65535
+            int max = url.length() - 1;
+            int min = max - 5;
+            for (int i = max; i >= min; i--) {
+                if (url.charAt(i) == ':') {
+                    return url.substring(0, i);
+                }
+            }
+            return url;
+        }
+    }
+
 }

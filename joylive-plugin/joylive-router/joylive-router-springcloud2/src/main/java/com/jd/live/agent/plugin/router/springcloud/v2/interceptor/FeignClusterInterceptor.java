@@ -67,8 +67,7 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
             }
         } else {
             // only for live & lane
-            URI uri = URI.parse(request.url());
-            String serviceName = uri.getHost();
+            String serviceName = URI.parseHost(request.url());
             RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceName);
             RequestContext.setAttribute(Carrier.ATTRIBUTE_REQUEST, request);
         }
