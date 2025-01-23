@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.governance.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.core.util.http.HttpHeader;
+import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import lombok.Getter;
@@ -50,17 +52,17 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected UnsafeLazyObject<Map<String, List<String>>> cookies;
+    protected CacheObject<Map<String, List<String>>> cookies;
 
     /**
      * Lazily evaluated, parsed query parameters from the HTTP request URL.
      */
-    protected UnsafeLazyObject<Map<String, List<String>>> queries;
+    protected CacheObject<Map<String, List<String>>> queries;
 
     /**
      * Lazily evaluated HTTP headers from the request.
      */
-    protected UnsafeLazyObject<Map<String, List<String>>> headers;
+    protected CacheObject<Map<String, List<String>>> headers;
 
     /**
      * The URI of the HTTP request.
@@ -70,12 +72,12 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated host of the request URI.
      */
-    protected UnsafeLazyObject<Address> address;
+    protected CacheObject<Address> address;
 
     /**
      * Lazily evaluated scheme of the request URI.
      */
-    protected UnsafeLazyObject<String> schema;
+    protected CacheObject<String> schema;
 
     /**
      * Constructs an instance of {@code AbstractHttpRequest} with the original request object.
@@ -84,8 +86,6 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      */
     public AbstractHttpRequest(T request) {
         super(request);
-        address = new UnsafeLazyObject<>(this::parseAddress);
-        schema = new UnsafeLazyObject<>(this::parseScheme);
     }
 
     @Override
@@ -95,19 +95,22 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
     @Override
     public String getSchema() {
+        if (schema == null) {
+            schema = new CacheObject<>(parseScheme());
+        }
         String result = schema.get();
         return result == null || result.isEmpty() ? null : result;
     }
 
     @Override
     public Integer getPort() {
-        Address addr = address.get();
+        Address addr = getAddress();
         return addr == null ? null : addr.getPort();
     }
 
     @Override
     public String getHost() {
-        Address addr = address.get();
+        Address addr = getAddress();
         return addr == null ? null : addr.getHost();
     }
 
@@ -118,16 +121,25 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
     @Override
     public Map<String, List<String>> getHeaders() {
+        if (headers == null) {
+            headers = new CacheObject<>(parseHeaders());
+        }
         return headers.get();
     }
 
     @Override
     public Map<String, List<String>> getQueries() {
+        if (queries == null) {
+            queries = new CacheObject<>(parseQueries());
+        }
         return queries.get();
     }
 
     @Override
     public Map<String, List<String>> getCookies() {
+        if (cookies == null) {
+            cookies = new CacheObject<>(parseCookies());
+        }
         return cookies.get();
     }
 
@@ -144,6 +156,13 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     @Override
     public String getMethod() {
         return getHttpMethod().name();
+    }
+
+    protected Address getAddress() {
+        if (address == null) {
+            address = new CacheObject<>(parseAddress());
+        }
+        return address.get();
     }
 
     /**
@@ -229,7 +248,37 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * @return The scheme, or null if it cannot be determined.
      */
     protected String parseScheme() {
-        return uri.getScheme();
+        URI uri = getURI();
+        return uri == null ? null : uri.getScheme();
+    }
+
+    /**
+     * Parses the cookies from the HTTP response headers.
+     *
+     * @return A map of cookie names to their corresponding values, or null if no cookies were found
+     */
+    protected Map<String, List<String>> parseCookies() {
+        List<String> cookies = getHeaders(HttpHeader.COOKIE);
+        return cookies == null || cookies.isEmpty() ? null : HttpUtils.parseCookie(getHeader(HttpHeader.COOKIE));
+    }
+
+    /**
+     * Parses the headers from the HTTP response headers.
+     *
+     * @return A map of header names to their corresponding values, or null if no headers were found
+     */
+    protected Map<String, List<String>> parseHeaders() {
+        return null;
+    }
+
+    /**
+     * Parses the queries from the HTTP response headers.
+     *
+     * @return A map of query names to their corresponding values, or null if no headers were found
+     */
+    protected Map<String, List<String>> parseQueries() {
+        URI uri = getURI();
+        return uri == null ? null : HttpUtils.parseQuery(uri.getRawQuery());
     }
 
     @Getter

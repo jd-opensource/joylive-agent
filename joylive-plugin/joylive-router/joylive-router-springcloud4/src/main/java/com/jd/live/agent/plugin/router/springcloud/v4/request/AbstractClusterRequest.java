@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.core.util.type.FieldList;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
@@ -63,37 +62,37 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
     protected final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
     /**
+     * A {@code LoadBalancerProperties} object, containing configuration
+     * properties for load balancing.
+     */
+    protected final LoadBalancerProperties properties;
+
+    /**
      * A lazy-initialized object of {@code Set<LoadBalancerLifecycle>}, representing the lifecycle
      * processors for the load balancer. These processors provide hooks for custom logic at various
      * stages of the load balancing process.
      */
-    protected final UnsafeLazyObject<Set<LoadBalancerLifecycle>> lifecycles;
+    protected CacheObject<Set<LoadBalancerLifecycle>> lifecycles;
 
     /**
      * A lazy-initialized {@code Request<?>} object that encapsulates the original request data
      * along with any hints to influence load balancing decisions.
      */
-    protected final UnsafeLazyObject<Request<?>> lbRequest;
-
-    /**
-     * A lazy-initialized {@code LoadBalancerProperties} object, containing configuration
-     * properties for load balancing.
-     */
-    protected final UnsafeLazyObject<LoadBalancerProperties> properties;
+    protected CacheObject<Request<?>> lbRequest;
 
     /**
      * A lazy-initialized {@code RequestData} object, representing the data of the original
      * request that will be used by the load balancer to select an appropriate service instance.
      */
-    protected final UnsafeLazyObject<RequestData> requestData;
+    protected CacheObject<RequestData> requestData;
 
     /**
      * A lazy-initialized {@code ServiceInstanceListSupplier} object, responsible for providing
      * a list of available service instances for load balancing.
      */
-    protected final UnsafeLazyObject<ServiceInstanceListSupplier> instanceSupplier;
+    protected CacheObject<ServiceInstanceListSupplier> instanceSupplier;
 
-    protected final UnsafeLazyObject<String> stickyId;
+    protected CacheObject<String> stickyId;
 
     /**
      * Constructs a new ClientOutboundRequest with the specified parameters.
@@ -111,12 +110,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
                                   LoadBalancerProperties properties) {
         super(request);
         this.loadBalancerFactory = loadBalancerFactory;
-        this.lifecycles = new UnsafeLazyObject<>(this::buildLifecycleProcessors);
-        this.properties = new UnsafeLazyObject<>(() -> buildProperties(properties));
-        this.lbRequest = new UnsafeLazyObject<>(this::buildLbRequest);
-        this.instanceSupplier = new UnsafeLazyObject<>(this::buildServiceInstanceListSupplier);
-        this.requestData = new UnsafeLazyObject<>(this::buildRequestData);
-        this.stickyId = new UnsafeLazyObject<>(this::buildStickyId);
+        this.properties = buildProperties(properties);
     }
 
     @Override
@@ -134,29 +128,54 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
 
     @Override
     public String getStickyId() {
+        if (stickyId == null) {
+            stickyId = new CacheObject<>(buildStickyId());
+        }
         return stickyId.get();
     }
 
     @Override
     public void lifecycles(Consumer<LoadBalancerLifecycle> consumer) {
+        Set<LoadBalancerLifecycle> lifecycles = getLifecycles();
         if (lifecycles != null && consumer != null) {
-            lifecycles.get().forEach(consumer);
+            lifecycles.forEach(consumer);
         }
     }
 
+    public Set<LoadBalancerLifecycle> getLifecycles() {
+        if (lifecycles == null) {
+            lifecycles = new CacheObject<>(buildLifecycleProcessors());
+        }
+        return lifecycles.get();
+    }
+
     public Request<?> getLbRequest() {
+        if (lbRequest == null) {
+            lbRequest = new CacheObject<>(buildLbRequest());
+        }
         return lbRequest.get();
     }
 
     public LoadBalancerProperties getProperties() {
-        return properties.get();
+        return properties;
     }
 
+    /**
+     * Returns a supplier of service instance lists.
+     *
+     * @return a supplier of service instance lists
+     */
     public ServiceInstanceListSupplier getInstanceSupplier() {
+        if (instanceSupplier == null) {
+            instanceSupplier = new CacheObject<>(buildServiceInstanceListSupplier());
+        }
         return instanceSupplier.get();
     }
 
     public RequestData getRequestData() {
+        if (requestData == null) {
+            requestData = new CacheObject<>(buildRequestData());
+        }
         return requestData.get();
     }
 
@@ -175,7 +194,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @param defaultProperties the default LoadBalancerProperties
      * @return the built LoadBalancerProperties
      */
-    private LoadBalancerProperties buildProperties(LoadBalancerProperties defaultProperties) {
+    protected LoadBalancerProperties buildProperties(LoadBalancerProperties defaultProperties) {
         LoadBalancerProperties result = loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
         return result == null ? defaultProperties : result;
     }
@@ -187,7 +206,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      *
      * @return A set of LoadBalancerLifecycle objects that are compatible with the current service and request/response types.
      */
-    private Set<LoadBalancerLifecycle> buildLifecycleProcessors() {
+    protected Set<LoadBalancerLifecycle> buildLifecycleProcessors() {
         return LOAD_BALANCER_LIFE_CYCLES.computeIfAbsent(getService(), service -> loadBalancerFactory == null
                 ? new HashSet<>()
                 : LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
@@ -204,7 +223,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      *
      * @return A DefaultRequest object containing the context for the load balancing operation.
      */
-    private DefaultRequest<RequestDataContext> buildLbRequest() {
+    protected DefaultRequest<RequestDataContext> buildLbRequest() {
         LoadBalancerProperties properties = getProperties();
         Map<String, String> hints = properties == null ? null : properties.getHint();
         String defaultHint = hints == null ? null : hints.getOrDefault("default", "default");
@@ -220,7 +239,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * @return A ServiceInstanceListSupplier that provides a list of available service instances, or null if the
      * load balancer does not provide such a supplier.
      */
-    private ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
+    protected ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
         return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(getService(), service -> {
             ServiceInstanceListSupplier supplier = null;
             ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
@@ -262,7 +281,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * This value is used to identify the server instance that should handle requests
      * from this client to ensure session persistence.
      */
-    private String buildStickyId() {
+    protected String buildStickyId() {
         LoadBalancerProperties properties = getProperties();
         if (properties != null) {
             String instanceIdCookieName = properties.getStickySession().getInstanceIdCookieName();

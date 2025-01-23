@@ -15,16 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
-import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import feign.Request;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
-import org.springframework.http.HttpHeaders;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -33,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
+import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
 
 /**
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractClusterRequest}
@@ -48,7 +45,7 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
 
     private final Request.Options options;
 
-    private final UnsafeLazyObject<Map<String, Collection<String>>> writeableHeaders;
+    private CacheObject<Map<String, Collection<String>>> writeableHeaders;
 
     /**
      * Constructs a new {@code FeignOutboundRequest} with the specified Feign request, load balancer client factory,
@@ -64,10 +61,6 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         super(request, loadBalancerFactory);
         this.options = options;
         this.uri = URI.create(request.url());
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.requestTemplate().queryLine()));
-        this.headers = new UnsafeLazyObject<>(() -> new MultiLinkedMap<>(request.headers(), CaseInsensitiveLinkedMap::new));
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.headers().get(HttpHeaders.COOKIE)));
-        this.writeableHeaders = new UnsafeLazyObject<>(() -> modifiedMap(request.headers()));
     }
 
     @Override
@@ -97,12 +90,24 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            getWriteableHeaders().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
     }
 
     public Request.Options getOptions() {
         return options;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return caseInsensitive(request.headers(), true);
+    }
+
+    protected Map<String, Collection<String>> getWriteableHeaders() {
+        if (writeableHeaders == null) {
+            writeableHeaders = new CacheObject<>(modifiedMap(request.headers()));
+        }
+        return writeableHeaders.get();
     }
 
 }

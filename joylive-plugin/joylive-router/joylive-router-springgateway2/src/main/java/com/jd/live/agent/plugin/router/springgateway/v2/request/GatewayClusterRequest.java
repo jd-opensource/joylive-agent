@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v2.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.plugin.router.springcloud.v2.request.AbstractClusterRequest;
@@ -32,6 +31,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
@@ -55,6 +55,8 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
 
     private final int index;
 
+    private final HttpHeaders writeableHeaders;
+
     public GatewayClusterRequest(ServerWebExchange exchange,
                                  ReactiveLoadBalancer.Factory<ServiceInstance> factory,
                                  GatewayFilterChain chain,
@@ -68,10 +70,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         this.gatewayConfig = gatewayConfig;
         this.index = index;
         this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
-        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
-
+        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -98,7 +97,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+            writeableHeaders.set(key, value);
         }
     }
 
@@ -129,4 +128,13 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
         return loadBalancerFactory != null;
     }
 
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        return HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue);
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return writeableHeaders;
+    }
 }

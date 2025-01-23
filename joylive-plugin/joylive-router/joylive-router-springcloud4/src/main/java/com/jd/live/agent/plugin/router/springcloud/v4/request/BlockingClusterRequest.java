@@ -15,9 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
@@ -27,6 +25,8 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.util.MultiValueMapAdapter;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractClusterRequest}
@@ -46,6 +46,8 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
      */
     private final ClientHttpRequestExecution execution;
 
+    private final HttpHeaders writeableHeaders;
+
     /**
      * Constructs a new {@code BlockingRouteRequest} with the specified request details and load balancing context.
      *
@@ -60,11 +62,9 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
                                   ClientHttpRequestExecution execution) {
         super(request, loadBalancerFactory);
         this.uri = request.getURI();
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
-        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getHeaders().get(HttpHeaders.COOKIE)));
         this.body = body;
         this.execution = execution;
+        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -84,14 +84,15 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+            writeableHeaders.set(key, value);
         }
     }
 
     @Override
     protected RequestData buildRequestData() {
+        Map<String, List<String>> cookies = getCookies();
         return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
-                new MultiValueMapAdapter<>(cookies.get()), new HashMap<>());
+                cookies == null ? null : new MultiValueMapAdapter<>(cookies), new HashMap<>());
     }
 
     public byte[] getBody() {
@@ -100,5 +101,10 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
 
     public ClientHttpRequestExecution getExecution() {
         return execution;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return writeableHeaders;
     }
 }

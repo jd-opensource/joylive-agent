@@ -15,15 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -35,6 +36,8 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest> {
 
     private final ExchangeFunction next;
+
+    private final HttpHeaders writeableHeaders;
 
     /**
      * Constructs a new ClientOutboundRequest with the specified parameters.
@@ -48,10 +51,8 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
                                   ExchangeFunction next) {
         super(request, loadBalancerFactory);
         this.uri = request.url();
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.url().getRawQuery()));
-        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.headers()));
-        this.cookies = new UnsafeLazyObject<>(request::cookies);
         this.next = next;
+        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
     }
 
     @Override
@@ -76,7 +77,7 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            HttpHeaders.writableHttpHeaders(request.headers()).set(key, value);
+            writeableHeaders.set(key, value);
         }
     }
 
@@ -87,5 +88,15 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
     @Override
     protected RequestData buildRequestData() {
         return new RequestData(request);
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return writeableHeaders;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        return request.cookies();
     }
 }

@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
@@ -23,6 +22,9 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * ReactiveOutboundRequest
@@ -34,15 +36,13 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
 
     private final String serviceId;
 
+    private final HttpHeaders writeableHeaders;
+
     public BlockingOutboundRequest(HttpRequest request, String serviceId) {
         super(request);
         this.serviceId = serviceId;
         this.uri = request.getURI();
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
-        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.cookies = new UnsafeLazyObject<>(() -> request instanceof ServerHttpRequest
-                ? HttpUtils.parseCookie(((ServerHttpRequest) request).getCookies(), HttpCookie::getValue)
-                : HttpUtils.parseCookie(request.getHeaders().get(HttpHeaders.COOKIE)));
+        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -68,7 +68,7 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            HttpHeaders.writableHttpHeaders(request.getHeaders()).set(key, value);
+            writeableHeaders.set(key, value);
         }
     }
 
@@ -82,5 +82,17 @@ public class BlockingOutboundRequest extends AbstractHttpOutboundRequest<HttpReq
             return cookie == null ? null : cookie.getValue();
         }
         return super.getCookie(key);
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return writeableHeaders;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        return request instanceof ServerHttpRequest
+                ? HttpUtils.parseCookie(((ServerHttpRequest) request).getCookies(), HttpCookie::getValue)
+                : HttpUtils.parseCookie(request.getHeaders().get(HttpHeaders.COOKIE));
     }
 }

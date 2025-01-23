@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -54,7 +53,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * A lazy-initialized {@code ServiceInstanceListSupplier} object, responsible for providing
      * a list of available service instances for load balancing.
      */
-    protected final UnsafeLazyObject<ServiceInstanceListSupplier> instanceSupplier;
+    protected CacheObject<ServiceInstanceListSupplier> instanceSupplier;
 
     /**
      * Constructs a new ClientOutboundRequest with the specified parameters.
@@ -66,7 +65,6 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory) {
         super(request);
         this.loadBalancerFactory = loadBalancerFactory;
-        this.instanceSupplier = new UnsafeLazyObject<>(this::buildServiceInstanceListSupplier);
     }
 
     @Override
@@ -82,7 +80,15 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
         }
     }
 
+    /**
+     * Returns a supplier of service instance lists.
+     *
+     * @return a supplier of service instance lists
+     */
     public ServiceInstanceListSupplier getInstanceSupplier() {
+        if (instanceSupplier == null) {
+            instanceSupplier = new CacheObject<>(buildServiceInstanceListSupplier());
+        }
         return instanceSupplier.get();
     }
 
