@@ -82,7 +82,8 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     @Override
     public void handleNameResolutionError(Status error) {
-        helper.updateBalancingState(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withError(error)));
+//        helper.updateBalancingState(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withError(error)));
+        handleResolvedAddresses(null);
     }
 
     @Override
@@ -123,6 +124,9 @@ public class LiveLoadBalancer extends LoadBalancer {
      */
     private Set<EquivalentAddressGroup> deDup(ResolvedAddresses resolvedAddresses) {
         Set<EquivalentAddressGroup> result = new HashSet<>();
+        if (resolvedAddresses == null) {
+            return result;
+        }
         resolvedAddresses.getAddresses().forEach(addressGroup -> {
             Attributes attributes = addressGroup.getAttributes();
             addressGroup.getAddresses().forEach(address -> result.add(new EquivalentAddressGroup(address, attributes)));
