@@ -240,6 +240,15 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             String group = application.getService().getGroup();
             return group == null || group.isEmpty() ? request.getGroup() : group;
         }
+
+        @Override
+        protected Service parseService(String serviceName) {
+            if (governancePolicy == null) {
+                return null;
+            }
+            Service localService = governancePolicy.getLocalService();
+            return localService != null && localService.getName().equals(serviceName) ? localService : governancePolicy.getService(serviceName);
+        }
     }
 
     /**

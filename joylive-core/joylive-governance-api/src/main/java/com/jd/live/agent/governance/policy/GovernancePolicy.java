@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.core.instance.AppService;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
@@ -66,6 +68,9 @@ public class GovernancePolicy {
 
     @Getter
     private transient LaneSpace localLaneSpace;
+
+    @Getter
+    private transient Service localService;
 
     private final transient UnsafeLazyObject<LaneSpace> defaultLaneSpaceCache = new UnsafeLazyObject<>(() -> {
         if (laneSpaces != null) {
@@ -241,14 +246,15 @@ public class GovernancePolicy {
     }
 
     /**
-     * Locates the given location in the live space and lane space.
+     * Locates the given application in the live space and lane space.
      *
-     * @param location the location to locate
+     * @param application the application object containing the location information
      */
-    public void locate(Location location) {
-        if (location == null) {
+    public void locate(Application application) {
+        if (application == null) {
             return;
         }
+        Location location = application.getLocation();
         localLiveSpace = getLiveSpace(location.getLiveSpaceId());
         if (localLiveSpace != null) {
             localLiveSpace.locate(location.getUnit(), location.getCell());
@@ -257,6 +263,8 @@ public class GovernancePolicy {
         if (localLaneSpace != null) {
             localLaneSpace.locate(location.getLane());
         }
+        AppService appService = application.getService();
+        localService = getService(appService.getName());
     }
 
     /**
