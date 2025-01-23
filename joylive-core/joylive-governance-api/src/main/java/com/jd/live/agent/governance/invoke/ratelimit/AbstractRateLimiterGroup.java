@@ -52,7 +52,7 @@ public abstract class AbstractRateLimiterGroup extends AbstractRateLimiter {
     public void init() {
         int i = 0;
         for (SlidingWindow window : policy.getSlidingWindows()) {
-            limiters.add(create(window, policy.getName() + "-" + i++));
+            limiters.add(create(window, policy.getName() + "-" + policy.getRealizeType() + "-" + i++));
         }
     }
 

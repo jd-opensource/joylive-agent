@@ -52,6 +52,8 @@ public class PolicyId implements PolicyIdGen {
 
     public static final String KEY_SERVICE_RATE_LIMIT = "rateLimit";
 
+    public static final String KEY_SERVICE_RATE_LIMIT_TYPE = "rateLimitType";
+
     public static final String KEY_SERVICE_LOAD_LIMIT = "loadLimit";
 
     public static final String KEY_SERVICE_ROUTE = "route";
