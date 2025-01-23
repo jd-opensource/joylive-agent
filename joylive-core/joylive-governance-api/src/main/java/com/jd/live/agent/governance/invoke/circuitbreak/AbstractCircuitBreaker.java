@@ -17,6 +17,8 @@ package com.jd.live.agent.governance.invoke.circuitbreak;
 
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakInfo;
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPhase;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import lombok.Getter;
 
@@ -56,40 +58,28 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
     }
 
     @Override
-    public boolean isOpen(long now) {
-        // The transition from Open state to half_open state will not be automatically triggered.
-        // A request is needed to trigger it.
-        // Therefore, it is necessary to add an expiration time check.
+    public CircuitBreakInfo getInfo(long now) {
         CircuitBreakerStateWindow state = windowRef.get();
-        return state != null && state.getState() == CircuitBreakerState.OPEN && now <= state.getEndTime();
-    }
-
-    @Override
-    public boolean isHalfOpen(long now) {
-        CircuitBreakerStateWindow state = windowRef.get();
-        return state != null && (state.getState() == CircuitBreakerState.HALF_OPEN
-                || state.getState() == CircuitBreakerState.OPEN && now > state.getEndTime());
-    }
-
-    @Override
-    public boolean isRecover(long now) {
-        if (!policy.isRecoveryEnabled()) {
-            return false;
+        if (state == null) {
+            return null;
         }
-        CircuitBreakerStateWindow state = windowRef.get();
-        if (state == null || state.getState() != CircuitBreakerState.CLOSED) {
-            return false;
+        switch (state.getState()) {
+            case OPEN:
+                return now <= state.getEndTime() ? new CircuitBreakInfo(CircuitBreakPhase.OPEN) : new CircuitBreakInfo(CircuitBreakPhase.HALF_OPEN);
+            case HALF_OPEN:
+                return new CircuitBreakInfo(CircuitBreakPhase.HALF_OPEN);
+            case CLOSED:
+                if (!policy.isRecoveryEnabled()) {
+                    return new CircuitBreakInfo(CircuitBreakPhase.CLOSED);
+                } else if (now > state.getEndTime()) {
+                    windowRef.compareAndSet(state, null);
+                    return new CircuitBreakInfo(CircuitBreakPhase.CLOSED);
+                }
+                return new CircuitBreakInfo(CircuitBreakPhase.RECOVER, policy.getRecoveryRatio(now - state.getStartTime()));
+            case DISABLED:
+            default:
+                return null;
         }
-        if (now > state.getEndTime()) {
-            windowRef.compareAndSet(state, null);
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public Double getRecoverRatio(long now) {
-        return policy.getRecoveryRatio(now - lastAccessTime);
     }
 
     @Override

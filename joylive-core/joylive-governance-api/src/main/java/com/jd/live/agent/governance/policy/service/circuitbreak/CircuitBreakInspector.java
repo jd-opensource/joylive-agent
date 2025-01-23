@@ -21,35 +21,10 @@ package com.jd.live.agent.governance.policy.service.circuitbreak;
 public interface CircuitBreakInspector {
 
     /**
-     * Checks if the circuit breaker is in the open state and the current time is within the end time.
+     * Returns the current status of the circuit breaker, including its phase and recover ratio (if applicable).
      *
-     * @param now The current timestamp in milliseconds.
-     * @return {@code true} if the circuit breaker is in the open state and
-     * the current time is less than or equal to the end time, {@code false} otherwise.
+     * @param now the current time in milliseconds since the epoch
+     * @return the current status of the circuit breaker
      */
-    boolean isOpen(long now);
-
-    /**
-     * Checks if the circuit breaker is in the half-open state.
-     *
-     * @param now The current timestamp in milliseconds.
-     * @return {@code true} if the circuit breaker is in the half-open state, {@code false} otherwise.
-     */
-    boolean isHalfOpen(long now);
-
-    /**
-     * Checks if the circuit breaker is in the closed state and has not recovered within the specified duration.
-     *
-     * @param now The current timestamp in milliseconds.
-     * @return {@code true} if the circuit breaker is in the closed state and has not recovered within the specified duration, {@code false} otherwise.
-     */
-    boolean isRecover(long now);
-
-    /**
-     * Retrieves the recovery ratio for the circuit breaker at the specified time.
-     *
-     * @param now the current time in milliseconds
-     * @return the recovery ratio as a double value
-     */
-    Double getRecoverRatio(long now);
+    CircuitBreakInfo getInfo(long now);
 }

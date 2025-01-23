@@ -37,9 +37,7 @@ import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakInspector;
-import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.circuitbreak.*;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
@@ -157,21 +155,25 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         CircuitBreakInspector inspector;
         Double ratio;
         Double minRatio = null;
+        CircuitBreakInfo status;
         for (CircuitBreakPolicy policy : policies) {
             inspector = policy.getInspector(endpoint.getId());
-            if (inspector != null) {
-                if (inspector.isOpen(now)) {
-                    // in open
-                    return false;
-                } else if (inspector.isRecover(now)) {
-                    // in recover
-                    ratio = inspector.getRecoverRatio(now);
-                    if (ratio != null && (minRatio == null || ratio < minRatio)) {
-                        minRatio = ratio;
-                    }
-                } else if (!inspector.isHalfOpen(now)) {
-                    // Healthy nodes, delete.
-                    policy.removeInspector(endpoint.getId(), inspector);
+            status = inspector == null ? null : inspector.getInfo(now);
+            if (status != null) {
+                switch (status.getPhase()) {
+                    case OPEN:
+                        return false;
+                    case RECOVER:
+                        // in recover
+                        ratio = status.getRecoverRatio();
+                        if (ratio != null && (minRatio == null || ratio < minRatio)) {
+                            minRatio = ratio;
+                        }
+                        break;
+                    case CLOSED:
+                        // Healthy nodes, delete.
+                        policy.removeInspector(endpoint.getId(), inspector);
+                        break;
                 }
             }
         }
@@ -296,9 +298,11 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         Double ratio;
         Double minRatio = null;
         long now = System.currentTimeMillis();
+        CircuitBreakInfo status;
         for (CircuitBreaker breaker : circuitBreakers) {
-            if (breaker.isRecover(now)) {
-                ratio = breaker.getRecoverRatio(now);
+            status = breaker.getInfo(now);
+            if (status != null && status.getPhase() == CircuitBreakPhase.RECOVER) {
+                ratio = status.getRecoverRatio();
                 if (ratio != null && (minRatio == null || ratio < minRatio)) {
                     minRatio = ratio;
                     minBreaker = breaker;
