@@ -47,7 +47,7 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
 
     @Override
     protected long adjustRequiredPermitsWaitTime(long startTime, long timeoutMicros, long nowMicros, long waitTime) {
-        return nowMicros + waitTime - startTime > timeoutMicros ? TIMEOUT : waitTime;
+        return waitTime > 0 && nowMicros + waitTime - startTime > timeoutMicros ? TIMEOUT : waitTime;
     }
 
     @Override
