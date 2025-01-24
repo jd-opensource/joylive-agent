@@ -48,8 +48,6 @@ public class ErrorParserPolicy implements Cloneable {
     @Setter
     private Set<String> contentTypes;
 
-    private transient boolean valid;
-
     public ErrorParserPolicy() {
     }
 
@@ -97,12 +95,15 @@ public class ErrorParserPolicy implements Cloneable {
         }
     }
 
+    public boolean isValid() {
+        return parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
+    }
+
     public void cache() {
         if (contentTypes != null) {
             Set<String> lowerCases = new HashSet<>(contentTypes);
             contentTypes.forEach(o -> lowerCases.add(o.toLowerCase()));
             contentTypes = lowerCases;
         }
-        valid = parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
     }
 }
