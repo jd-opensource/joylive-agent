@@ -139,7 +139,8 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     public boolean isEnabled() {
         return retry != null && retry > 0 &&
                 (errorCodes != null && !errorCodes.isEmpty()
-                        || exceptions != null && !exceptions.isEmpty());
+                        || exceptions != null && !exceptions.isEmpty()
+                        || errorMessages != null && !errorMessages.isEmpty());
     }
 
     @Override

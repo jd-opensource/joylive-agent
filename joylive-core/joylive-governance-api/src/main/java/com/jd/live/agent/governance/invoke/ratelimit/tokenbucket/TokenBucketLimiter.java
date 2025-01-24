@@ -193,7 +193,8 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
 
     /**
      * Refresh permits based on the current time.
-     * @param nowMicros     the current time in microseconds
+     *
+     * @param nowMicros the current time in microseconds
      */
     protected void refresh(long nowMicros) {
         if (nowMicros > nextPermitMicros) {
