@@ -45,6 +45,8 @@ public class ErrorParserPolicy implements Cloneable {
      */
     private Set<String> contentTypes;
 
+    private transient Boolean valid;
+
     public ErrorParserPolicy() {
     }
 
@@ -93,7 +95,10 @@ public class ErrorParserPolicy implements Cloneable {
     }
 
     public boolean isValid() {
-        return parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
+        if (valid == null) {
+            valid = parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
+        }
+        return valid;
     }
 
     public void cache() {
