@@ -24,28 +24,25 @@ import java.util.Set;
 /**
  * A class representing a error parser policy.
  */
+@Setter
 @Getter
 public class ErrorParserPolicy implements Cloneable {
 
     /**
      * Code parser
      */
-    @Setter
     private String parser;
 
     /**
      * Code expression
      */
-    @Setter
     private String expression;
 
-    @Setter
     private Set<String> statuses;
 
     /**
      * Code parser
      */
-    @Setter
     private Set<String> contentTypes;
 
     public ErrorParserPolicy() {
