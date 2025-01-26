@@ -162,7 +162,10 @@ public class CollectionUtils {
         }
         List<V> result = iterable instanceof Collection ? new ArrayList<>(((Collection<T>) iterable).size()) : new ArrayList<>();
         for (T t : iterable) {
-            result.add(function.apply(t));
+            V apply = function.apply(t);
+            if (apply != null) {
+                result.add(apply);
+            }
         }
         return result;
     }

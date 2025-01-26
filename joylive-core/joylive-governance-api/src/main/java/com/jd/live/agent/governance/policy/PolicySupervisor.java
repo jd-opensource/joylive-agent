@@ -63,11 +63,11 @@ public interface PolicySupervisor extends PolicySupplier {
     }
 
     /**
-     * Retrieves a list of policy subscribers.
+     * Retrieves a list of policy subscription.
      *
-     * @return A list of {@link PolicySubscriber} who are subscribed to policy updates.
+     * @return A list of {@link PolicySubscription} who are subscribed to policy updates.
      */
-    List<PolicySubscriber> getSubscribers();
+    List<PolicySubscription> getSubscriptions();
 
     /**
      * Waits until the application is ready.

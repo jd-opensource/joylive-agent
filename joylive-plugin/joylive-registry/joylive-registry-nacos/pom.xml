@@ -12,6 +12,7 @@
     <artifactId>joylive-registry-nacos</artifactId>
     <properties>
         <spring-cloud-commons.version>3.1.8</spring-cloud-commons.version>
+        <nacos-client.version>2.4.3</nacos-client.version>
     </properties>
 
     <dependencies>
@@ -20,6 +21,11 @@
             <artifactId>spring-cloud-commons</artifactId>
             <version>${spring-cloud-commons.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <version>${nacos-client.version}</version>
         </dependency>
     </dependencies>
 

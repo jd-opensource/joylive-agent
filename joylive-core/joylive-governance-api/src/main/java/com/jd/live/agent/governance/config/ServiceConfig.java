@@ -167,5 +167,15 @@ public class ServiceConfig {
         return path != null && systemPaths != null && !systemPaths.isEmpty()
                 && systemPathTrie.match(path, PathMatchType.PREFIX) != null;
     }
+
+    /**
+     * Returns the group associated with the specified service.
+     *
+     * @param service the name of the service
+     * @return the group associated with the service, or null if the service is not found or if the service groups map is null
+     */
+    public String getGroup(String service) {
+        return serviceGroups == null || service == null ? null : serviceGroups.get(service);
+    }
 }
 

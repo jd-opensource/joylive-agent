@@ -15,8 +15,12 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 /**
- * Interface for a registry .
+ * An interface that defines the methods for registering and unregistering service instances with a registry.
  */
 public interface Registry {
 
@@ -30,7 +34,17 @@ public interface Registry {
      *
      * @param instance the service instance to be registered
      */
-    void register(ServiceInstance instance);
+    default void register(ServiceInstance instance) {
+        register(instance, null);
+    }
+
+    /**
+     * Registers a service instance with the registry.
+     *
+     * @param instance the service instance to be registered
+     * @param callback a callback function that will be called if the registration is successful
+     */
+    void register(ServiceInstance instance, Callable<Void> callback);
 
     /**
      * Unregisters a service instance from the registry.
@@ -38,5 +52,21 @@ public interface Registry {
      * @param instance the service instance to be unregistered
      */
     void unregister(ServiceInstance instance);
+
+    /**
+     * Subscribes a specific service policy based on its name.
+     *
+     * @param service The service name of the policy to subscribe to.
+     * @return A {@link CompletableFuture} that completes when the subscription is successful.
+     */
+    CompletableFuture<Void> subscribe(String service);
+
+    /**
+     * Subscribes to endpoint events for a specific service.
+     *
+     * @param service  the service name to subscribe to
+     * @param consumer the consumer that will receive endpoint events
+     */
+    void subscribe(String service, Consumer<EndpointEvent> consumer);
 }
 

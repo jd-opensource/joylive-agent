@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
@@ -31,8 +31,8 @@ import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGIST
  */
 public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceConfig<?>> {
 
-    public ServiceConfigInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+    public ServiceConfigInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     @SuppressWarnings("unchecked")

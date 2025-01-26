@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos;
+package com.jd.live.agent.governance.registry;
 
-import com.jd.live.agent.governance.policy.PolicySubscription;
-import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
+import com.jd.live.agent.governance.instance.Endpoint;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
-public class NacosServiceKey extends ServiceKey implements NacosSyncKey {
+@AllArgsConstructor
+public class EndpointEvent {
 
-    private final String dataId;
+    private String service;
 
-    private final String group;
+    private List<? extends Endpoint> endpoints;
 
-    public NacosServiceKey(PolicySubscription subscriber, String dataId, String group) {
-        super(subscriber);
-        this.dataId = dataId;
-        this.group = group;
-    }
+    private List<? extends Endpoint> adds;
+
+    private List<? extends Endpoint> removes;
 }

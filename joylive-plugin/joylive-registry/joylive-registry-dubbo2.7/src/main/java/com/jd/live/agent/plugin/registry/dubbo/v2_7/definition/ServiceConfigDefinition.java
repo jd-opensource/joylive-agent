@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ServiceConfigInterceptor;
 
@@ -51,8 +51,8 @@ public class ServiceConfigDefinition extends PluginDefinitionAdapter {
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
 
     public ServiceConfigDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SERVICE_CONFIG);
@@ -60,7 +60,7 @@ public class ServiceConfigDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FIND_CONFIGED_HOSTS)
                                 .and(MatcherBuilder.arguments(ARGUMENT_FIND_CONFIGED_HOSTS)),
-                        () -> new ServiceConfigInterceptor(application, policySupplier))
+                        () -> new ServiceConfigInterceptor(application, registry))
         };
     }
 }

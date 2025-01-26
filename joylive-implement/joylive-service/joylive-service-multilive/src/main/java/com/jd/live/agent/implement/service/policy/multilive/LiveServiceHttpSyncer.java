@@ -24,7 +24,7 @@ import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
@@ -60,7 +60,7 @@ public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey>
     }
 
     @Override
-    protected ServiceKey createServiceKey(PolicySubscriber subscriber) {
+    protected ServiceKey createServiceKey(PolicySubscription subscriber) {
         return new ServiceKey(subscriber);
     }
 

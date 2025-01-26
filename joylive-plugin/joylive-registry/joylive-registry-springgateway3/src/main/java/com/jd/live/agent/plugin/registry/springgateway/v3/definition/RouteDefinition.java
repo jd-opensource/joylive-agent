@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springgateway.v3.condition.ConditionalOnSpringGateway3GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.springgateway.v3.interceptor.RouteInterceptor;
 
@@ -45,8 +45,8 @@ public class RouteDefinition extends PluginDefinitionAdapter {
             "org.springframework.cloud.gateway.route.RouteDefinition"
     };
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
 
     public RouteDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR);
@@ -54,7 +54,7 @@ public class RouteDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_CONVERT_TO_ROUTE).
                                 and(MatcherBuilder.arguments(ARGUMENT_CONVERT_TO_ROUTE)),
-                        () -> new RouteInterceptor(policySupplier))
+                        () -> new RouteInterceptor(registry))
         };
     }
 }

@@ -50,6 +50,11 @@ public interface Publisher<E> {
     String POLICY_SUBSCRIBER = "policy-subscriber";
 
     /**
+     * Topic identifier for endpoint events.
+     */
+    String ENDPOINT = "endpoint";
+
+    /**
      * Retrieves the topic associated with this publisher.
      *
      * @return The topic of this publisher.

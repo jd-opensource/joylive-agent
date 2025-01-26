@@ -79,11 +79,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
-    private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
+    private final Map<String, PolicySubscription> subscriptions = new ConcurrentHashMap<>();
 
     @Getter
     @Inject(Publisher.POLICY_SUBSCRIBER)
-    private Publisher<PolicySubscriber> policyPublisher;
+    private Publisher<PolicySubscription> policyPublisher;
 
     @Getter
     @Inject(Publisher.SYSTEM)
@@ -252,27 +252,21 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             return CompletableFuture.completedFuture(null);
         }
         namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
-        PolicySubscriber subscriber = new PolicySubscriber(service, namespace, TYPE_SERVICE_SPACE, serviceSyncers);
+        PolicySubscription subscriber = new PolicySubscription(service, namespace, TYPE_SERVICE_SPACE, serviceSyncers);
         subscribe(subscriber);
         return subscriber.getFuture();
     }
 
     @Override
-    public boolean isDone(String name) {
-        PolicySubscriber subscriber = name == null ? null : subscribers.get(name);
-        return subscriber != null && subscriber.isDone();
-    }
-
-    @Override
-    public List<PolicySubscriber> getSubscribers() {
-        return Collections.unmodifiableList(new ArrayList<>(subscribers.values()));
+    public List<PolicySubscription> getSubscriptions() {
+        return Collections.unmodifiableList(new ArrayList<>(subscriptions.values()));
     }
 
     @Override
     public void waitReady() {
-        if (!subscribers.isEmpty()) {
-            List<CompletableFuture<Void>> futures = new ArrayList<>(subscribers.size());
-            subscribers.forEach((k, v) -> futures.add(v.getFuture()));
+        if (!subscriptions.isEmpty()) {
+            List<CompletableFuture<Void>> futures = new ArrayList<>(subscriptions.size());
+            subscriptions.forEach((k, v) -> futures.add(v.getFuture()));
             try {
                 Futures.allOf(futures).get(governanceConfig.getInitializeTimeout(), TimeUnit.MILLISECONDS);
                 systemPublisher.offer(AgentEvent.onServicePolicyReady("Application service policies are ready."));
@@ -398,18 +392,18 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 warmups.add(name);
             }
             if (!warmups.isEmpty()) {
-                warmups.forEach(o -> subscribe(new PolicySubscriber(o, namespace, TYPE_SERVICE_SPACE, serviceSyncers)));
+                warmups.forEach(o -> subscribe(new PolicySubscription(o, namespace, TYPE_SERVICE_SPACE, serviceSyncers)));
             }
         }
     }
 
     /**
-     * Subscribes a {@link PolicySubscriber} to the policy publisher.
+     * Subscribes a {@link PolicySubscription} to the policy publisher.
      *
-     * @param subscriber The {@link PolicySubscriber} to be subscribed.
+     * @param subscriber The {@link PolicySubscription} to be subscribed.
      */
-    protected void subscribe(PolicySubscriber subscriber) {
-        PolicySubscriber exist = subscribers.putIfAbsent(subscriber.getName(), subscriber);
+    protected void subscribe(PolicySubscription subscriber) {
+        PolicySubscription exist = subscriptions.putIfAbsent(subscriber.getName(), subscriber);
         if (exist == null) {
             policyPublisher.offer(subscriber);
         } else {

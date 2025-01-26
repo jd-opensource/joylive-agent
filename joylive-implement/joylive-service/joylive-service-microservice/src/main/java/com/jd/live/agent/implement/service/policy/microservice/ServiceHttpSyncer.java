@@ -21,7 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
@@ -50,7 +50,7 @@ public class ServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
     }
 
     @Override
-    protected ServiceKey createServiceKey(PolicySubscriber subscriber) {
+    protected ServiceKey createServiceKey(PolicySubscription subscriber) {
         return new ServiceKey(subscriber);
     }
 

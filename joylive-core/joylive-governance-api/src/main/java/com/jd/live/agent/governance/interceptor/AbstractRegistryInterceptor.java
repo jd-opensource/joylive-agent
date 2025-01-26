@@ -17,9 +17,6 @@ package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -31,17 +28,12 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
  */
 public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
 
-    private final Logger logger = LoggerFactory.getLogger(AbstractRegistryInterceptor.class);
-
     protected final Application application;
-
-    protected final AgentLifecycle lifecycle;
 
     protected final Registry registry;
 
-    public AbstractRegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry) {
+    public AbstractRegistryInterceptor(Application application, Registry registry) {
         this.application = application;
-        this.lifecycle = lifecycle;
         this.registry = registry;
     }
 
@@ -51,12 +43,10 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
         if (application.getStatus() == AppStatus.STARTING) {
             ServiceInstance instance = getInstance(mc);
             if (instance != null) {
-                logger.info("Delay registration until application is ready, service=" + instance.getService());
-                lifecycle.addReadyHook(() -> {
-                    logger.info("Register when application is ready, service=" + instance.getService());
-                    registry.register(instance);
-                    return mc.invokeOrigin();
-                }, ctx.getType().getClassLoader());
+                registry.register(instance, () -> {
+                    mc.invokeOrigin();
+                    return null;
+                });
                 mc.setSkip(true);
             }
         }

@@ -34,15 +34,15 @@ public class RegistryEvent implements Serializable {
 
     private ServiceInstance instance;
 
-    public static RegistryEvent register(ServiceInstance instance) {
+    public static RegistryEvent ofRegister(ServiceInstance instance) {
         return new RegistryEvent(EventType.REGISTER, instance);
     }
 
-    public static RegistryEvent unregister(ServiceInstance instance) {
+    public static RegistryEvent ofUnregister(ServiceInstance instance) {
         return new RegistryEvent(EventType.UNREGISTER, instance);
     }
 
-    public static RegistryEvent heartbeat(ServiceInstance instance) {
+    public static RegistryEvent ofHeartbeat(ServiceInstance instance) {
         return new RegistryEvent(EventType.HEARTBEAT, instance);
     }
 

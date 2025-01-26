@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
@@ -40,11 +40,11 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     protected final Application application;
 
-    protected final PolicySupplier policySupplier;
+    protected final Registry registry;
 
-    public AbstractConfigInterceptor(Application application, PolicySupplier policySupplier) {
+    public AbstractConfigInterceptor(Application application, Registry registry) {
         this.application = application;
-        this.policySupplier = policySupplier;
+        this.registry = registry;
     }
 
     @SuppressWarnings("unchecked")
@@ -76,15 +76,15 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         switch (type) {
             case REGISTRY_TYPE_SERVICE:
                 ctx.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
-                policySupplier.subscribe(config.getApplication().getName());
+                registry.subscribe(config.getApplication().getName());
                 break;
             case REGISTRY_TYPE_ALL:
                 ctx.put(REGISTRY_TYPE_KEY, "all");
-                policySupplier.subscribe(config.getApplication().getName());
-                policySupplier.subscribe(service);
+                registry.subscribe(config.getApplication().getName());
+                registry.subscribe(service);
             case REGISTRY_TYPE_INTERFACE:
             default:
-                policySupplier.subscribe(service);
+                registry.subscribe(service);
 
         }
     }

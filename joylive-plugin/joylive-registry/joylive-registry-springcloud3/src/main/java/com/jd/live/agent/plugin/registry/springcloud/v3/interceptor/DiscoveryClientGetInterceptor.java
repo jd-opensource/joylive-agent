@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.loadbalancer.core.DiscoveryClientServiceInstanceListSupplier;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpHeaders;
@@ -27,16 +27,17 @@ import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * DiscoveryClientGetInterceptor
  */
 public class DiscoveryClientGetInterceptor extends InterceptorAdaptor {
 
-    private final PolicySupplier policySupplier;
+    private final Registry registry;
 
-    public DiscoveryClientGetInterceptor(PolicySupplier policySupplier) {
-        this.policySupplier = policySupplier;
+    public DiscoveryClientGetInterceptor(Registry registry) {
+        this.registry = registry;
     }
 
     /**
@@ -48,7 +49,8 @@ public class DiscoveryClientGetInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         ServiceInstanceListSupplier supplier = (ServiceInstanceListSupplier) mc.getTarget();
-        if (!policySupplier.isDone(supplier.getServiceId())) {
+        CompletableFuture<Void> future = registry.subscribe(supplier.getServiceId());
+        if (!future.isDone() || future.isCompletedExceptionally()) {
             mc.setResult(Flux.error(HttpClientErrorException.create(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Governance policy is not synchronized.",

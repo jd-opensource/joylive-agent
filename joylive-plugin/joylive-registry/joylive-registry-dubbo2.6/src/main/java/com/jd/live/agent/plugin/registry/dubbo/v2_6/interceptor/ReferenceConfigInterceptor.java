@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor;
 import com.alibaba.dubbo.config.ReferenceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 
 import java.util.Map;
 
@@ -27,8 +27,8 @@ import java.util.Map;
  */
 public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<ReferenceConfig<?>> {
 
-    public ReferenceConfigInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+    public ReferenceConfigInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     @SuppressWarnings("unchecked")

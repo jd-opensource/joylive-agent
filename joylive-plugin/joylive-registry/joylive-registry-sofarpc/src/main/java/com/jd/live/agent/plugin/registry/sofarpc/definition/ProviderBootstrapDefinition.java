@@ -23,7 +23,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.sofarpc.interceptor.ProviderBootstrapInterceptor;
 
 import java.util.HashMap;
@@ -45,8 +45,8 @@ public class ProviderBootstrapDefinition extends PluginDefinitionAdapter impleme
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
 
     public ProviderBootstrapDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_PROVIDER_BOOTSTRAP).
@@ -55,7 +55,7 @@ public class ProviderBootstrapDefinition extends PluginDefinitionAdapter impleme
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXPORT).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new ProviderBootstrapInterceptor(application, policySupplier))
+                        () -> new ProviderBootstrapInterceptor(application, registry))
         };
     }
 

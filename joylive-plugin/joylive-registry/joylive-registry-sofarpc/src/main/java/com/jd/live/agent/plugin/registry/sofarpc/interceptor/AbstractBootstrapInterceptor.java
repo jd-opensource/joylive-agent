@@ -19,7 +19,7 @@ import com.alipay.sofa.rpc.config.AbstractInterfaceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 
 /**
  * AbstractBootstrapInterceptor
@@ -28,11 +28,11 @@ public abstract class AbstractBootstrapInterceptor<T extends AbstractInterfaceCo
 
     protected final Application application;
 
-    protected final PolicySupplier policySupplier;
+    protected final Registry registry;
 
-    public AbstractBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
+    public AbstractBootstrapInterceptor(Application application, Registry registry) {
         this.application = application;
-        this.policySupplier = policySupplier;
+        this.registry = registry;
     }
 
     @Override
@@ -44,7 +44,7 @@ public abstract class AbstractBootstrapInterceptor<T extends AbstractInterfaceCo
                 config.setParameter(key, value);
             }
         });
-        policySupplier.subscribe(config.getInterfaceId());
+        registry.subscribe(config.getInterfaceId());
     }
 
     protected abstract T getConfig(ExecutableContext ctx);

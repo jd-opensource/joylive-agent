@@ -25,7 +25,7 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
@@ -86,7 +86,7 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
     }
 
     @Override
-    protected NacosServiceKey createServiceKey(PolicySubscriber subscriber) {
+    protected NacosServiceKey createServiceKey(PolicySubscription subscriber) {
         Map<String, Object> context = new HashMap<>();
         context.put("name", subscriber.getName());
         context.put("space", application.getService().getNamespace());

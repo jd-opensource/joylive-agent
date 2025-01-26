@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * of the policy subscription process.
  */
 @Getter
-public class PolicySubscriber implements ServiceName {
+public class PolicySubscription implements ServiceName {
 
     private final String name;
 
@@ -54,7 +54,7 @@ public class PolicySubscriber implements ServiceName {
      * @param type      The type of the subscriber.
      * @param owners    The owner of the subscriber.
      */
-    public PolicySubscriber(String name, String namespace, String type, List<String> owners) {
+    public PolicySubscription(String name, String namespace, String type, List<String> owners) {
         this.name = name;
         this.namespace = namespace;
         this.type = type;
@@ -101,16 +101,6 @@ public class PolicySubscriber implements ServiceName {
             }
         }
         return false;
-    }
-
-    /**
-     * Checks if the associated future has completed successfully.
-     *
-     * @return {@code true} if the future is done and has not completed exceptionally,
-     * otherwise {@code false}
-     */
-    public boolean isDone() {
-        return future.isDone() && !future.isCompletedExceptionally();
     }
 
     /**

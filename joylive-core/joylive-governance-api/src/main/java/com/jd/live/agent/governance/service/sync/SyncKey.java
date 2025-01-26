@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.service.sync;
 
-import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.service.ServiceName;
 import com.jd.live.agent.governance.service.sync.http.HttpResource;
 import lombok.Getter;
@@ -38,9 +38,9 @@ public interface SyncKey {
     @Getter
     class ServiceKey implements SyncKey, ServiceName {
 
-        protected final PolicySubscriber subscriber;
+        protected final PolicySubscription subscriber;
 
-        public ServiceKey(PolicySubscriber subscriber) {
+        public ServiceKey(PolicySubscription subscriber) {
             this.subscriber = subscriber;
         }
 

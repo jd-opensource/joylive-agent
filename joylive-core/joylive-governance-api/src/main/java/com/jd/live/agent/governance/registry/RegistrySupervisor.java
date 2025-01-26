@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos;
+package com.jd.live.agent.governance.registry;
 
-import com.jd.live.agent.governance.policy.PolicySubscription;
-import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
-import lombok.Getter;
+import com.jd.live.agent.governance.instance.Endpoint;
 
-@Getter
-public class NacosServiceKey extends ServiceKey implements NacosSyncKey {
+import java.util.List;
 
-    private final String dataId;
+/**
+ * An interface that defines the method for updating a service group's endpoints in the registry.
+ */
+public interface RegistrySupervisor extends Registry {
 
-    private final String group;
-
-    public NacosServiceKey(PolicySubscription subscriber, String dataId, String group) {
-        super(subscriber);
-        this.dataId = dataId;
-        this.group = group;
-    }
+    /**
+     * Updates the endpoints for a specific service group in the registry.
+     *
+     * @param service   the service
+     * @param endpoints the new list of endpoints for the service group
+     */
+    void update(String service, List<? extends Endpoint> endpoints);
 }
