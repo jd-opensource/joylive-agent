@@ -116,7 +116,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
     @Override
     public String getPath() {
-        return uri.getPath();
+        return uri == null ? null : uri.getPath();
     }
 
     @Override
@@ -184,6 +184,9 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * @return the parsed address, or null if the host is invalid
      */
     protected Address parseAddressByUrl() {
+        if (uri == null) {
+            return null;
+        }
         String host = uri.getHost();
         int port = uri.getPort();
         return validateHost(host) ? new Address(host, port < 0 ? null : port) : null;
@@ -248,7 +251,6 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * @return The scheme, or null if it cannot be determined.
      */
     protected String parseScheme() {
-        URI uri = getURI();
         return uri == null ? null : uri.getScheme();
     }
 
