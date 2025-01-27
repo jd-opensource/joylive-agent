@@ -9,6 +9,7 @@ import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,6 +17,7 @@ import lombok.Getter;
  * The {@code ServiceMetadata} class encapsulates the metadata for a service request.
  */
 @Getter
+@AllArgsConstructor
 @Builder
 public class ServiceMetadata {
 

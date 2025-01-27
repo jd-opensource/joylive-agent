@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.jd.live.agent.governance.policy.PolicyId.KEY_SERVICE_GROUP;
@@ -80,25 +81,15 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
         boolean writeProtect = parseWriteProtect(servicePolicy);
-        URI uri = URI.builder().host(serviceName).path(path).build();
-        if (serviceGroup != null && !serviceGroup.isEmpty()) {
-            uri = uri.parameters(KEY_SERVICE_GROUP, serviceGroup, KEY_SERVICE_METHOD, method);
-        } else {
-            uri = uri.parameters(KEY_SERVICE_METHOD, method);
-        }
 
-        return ServiceMetadata.builder().
-                consumer(consumer).
-                serviceConfig(serviceConfig).
-                serviceName(serviceName).
-                serviceGroup(serviceGroup).
-                path(path).
-                method(method).
-                service(service).
-                uri(uri).
-                servicePolicy(servicePolicy).
-                writeProtect(writeProtect).
-                build();
+        Map<String, String> parameters = new HashMap<>(4);
+        parameters.put(KEY_SERVICE_METHOD, method);
+        if (serviceGroup != null && !serviceGroup.isEmpty()) {
+            parameters.put(KEY_SERVICE_GROUP, serviceGroup);
+        }
+        URI uri = new URI(null, serviceName, null, path, parameters);
+
+        return new ServiceMetadata(serviceConfig, serviceName, serviceGroup, path, method, writeProtect, service, consumer, servicePolicy, uri);
     }
 
     /**
