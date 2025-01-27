@@ -19,7 +19,6 @@ import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.alipay.sofa.rpc.config.ServerConfig;
 import com.alipay.sofa.rpc.registry.utils.RegistryUtils;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
@@ -35,8 +34,8 @@ import java.util.List;
  */
 public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
-    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry) {
-        super(application, lifecycle, registry);
+    public RegistryInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     @Override

@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos;
+package com.jd.live.agent.core.bootstrap;
 
-import com.jd.live.agent.governance.policy.PolicySubscription;
-import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
-import lombok.Getter;
+/**
+ * An interface that supplies an AppListener instance.
+ */
+public interface AppListenerSupplier {
 
-@Getter
-public class NacosServiceKey extends ServiceKey implements NacosSyncKey {
-
-    private final String dataId;
-
-    private final String group;
-
-    public NacosServiceKey(PolicySubscription subscriber, String dataId, String group) {
-        super(subscriber);
-        this.dataId = dataId;
-        this.group = group;
-    }
+    /**
+     * Returns an AppListener instance.
+     *
+     * @return an AppListener instance
+     */
+    AppListener getAppListener();
 }

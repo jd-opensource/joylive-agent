@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.grpc.interceptor.DiscoveryClientConstructorInterceptor;
 
 /**
@@ -39,14 +39,14 @@ public class DiscoveryClientNameResolverDefinition extends PluginDefinitionAdapt
 
     protected static final String TYPE_DISCOVERY_CLIENT_NAME_RESOLVER = "net.devh.boot.grpc.client.nameresolver.DiscoveryClientNameResolver";
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
 
     public DiscoveryClientNameResolverDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISCOVERY_CLIENT_NAME_RESOLVER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(policySupplier)),
+                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(registry)),
         };
     }
 }

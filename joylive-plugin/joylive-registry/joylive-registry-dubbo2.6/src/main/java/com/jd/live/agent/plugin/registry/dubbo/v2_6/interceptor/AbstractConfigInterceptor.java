@@ -19,7 +19,7 @@ import com.alibaba.dubbo.config.AbstractInterfaceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 
 import java.util.Map;
 
@@ -32,11 +32,11 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     protected final Application application;
 
-    protected final PolicySupplier policySupplier;
+    protected final Registry registry;
 
-    public AbstractConfigInterceptor(Application application, PolicySupplier policySupplier) {
+    public AbstractConfigInterceptor(Application application, Registry registry) {
         this.application = application;
-        this.policySupplier = policySupplier;
+        this.registry = registry;
     }
 
     @SuppressWarnings("unchecked")
@@ -47,13 +47,16 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         String service = getService(config);
         if (!isDubboSystemService(service)) {
             application.labelRegistry(map::putIfAbsent);
-            policySupplier.subscribe(service);
+            subscribe(service);
         }
-
     }
 
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
 
     protected abstract String getService(T config);
+
+    protected void subscribe(String service) {
+        registry.subscribe(service);
+    }
 
 }

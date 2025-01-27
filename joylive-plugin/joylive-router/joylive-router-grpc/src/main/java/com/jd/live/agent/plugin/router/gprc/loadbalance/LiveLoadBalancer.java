@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.governance.registry.EndpointEvent;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.*;
 
@@ -41,6 +42,21 @@ public class LiveLoadBalancer extends LoadBalancer {
     public LiveLoadBalancer(Helper helper) {
         this.helper = helper;
         this.serviceName = getServiceName(helper);
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    /**
+     * Handles an endpoint event by refreshing the name resolution if the event is for the same service.
+     *
+     * @param event the endpoint event to handle
+     */
+    protected void handle(EndpointEvent event) {
+        if (serviceName.equals(event.getService())) {
+            helper.getSynchronizationContext().execute(helper::refreshNameResolution);
+        }
     }
 
     @Override
@@ -82,7 +98,7 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     @Override
     public void handleNameResolutionError(Status error) {
-//        helper.updateBalancingState(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withError(error)));
+        updatePicker(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withDrop(error)));
         handleResolvedAddresses(null);
     }
 
@@ -157,20 +173,21 @@ public class LiveLoadBalancer extends LoadBalancer {
     private void pickReady() {
         List<GrpcEndpoint> readies = new ArrayList<>();
         endpoints.values().forEach(endpoint -> {
-            if (endpoint.getConnectivityState() == ConnectivityState.READY) {
+            if (endpoint.getConnectivityState() == READY) {
                 readies.add(endpoint);
             }
         });
         if (readies.isEmpty()) {
-            PickResult result = PickResult.withDrop(Status.UNAVAILABLE.withDescription(NO_ENDPOINT_AVAILABLE));
-            LiveSubchannelPicker picker = new LiveSubchannelPicker(result);
-            helper.updateBalancingState(ConnectivityState.CONNECTING, picker);
-            LiveDiscovery.setSubchannelPicker(serviceName, picker);
+            updatePicker(TRANSIENT_FAILURE, new LiveSubchannelPicker(PickResult.withDrop(
+                    Status.UNAVAILABLE.withDescription(NO_ENDPOINT_AVAILABLE))));
         } else {
-            LiveSubchannelPicker picker = new LiveSubchannelPicker(readies);
-            helper.updateBalancingState(ConnectivityState.READY, picker);
-            LiveDiscovery.setSubchannelPicker(serviceName, picker);
+            updatePicker(READY, new LiveSubchannelPicker(readies));
         }
+    }
+
+    private void updatePicker(ConnectivityState state, LiveSubchannelPicker picker) {
+        helper.updateBalancingState(state, picker);
+        LiveDiscovery.setSubchannelPicker(serviceName, picker);
     }
 
     private class LiveStateListener implements SubchannelStateListener {

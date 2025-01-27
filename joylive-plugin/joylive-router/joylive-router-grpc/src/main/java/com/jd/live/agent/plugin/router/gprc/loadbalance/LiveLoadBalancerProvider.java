@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.governance.registry.Registry;
 import io.grpc.LoadBalancer;
 import io.grpc.LoadBalancerProvider;
 
@@ -22,6 +23,12 @@ import io.grpc.LoadBalancerProvider;
  * A class that provides a live load balancer for distributing network traffic across multiple servers.
  */
 public class LiveLoadBalancerProvider extends LoadBalancerProvider {
+
+    private final Registry registry;
+
+    public LiveLoadBalancerProvider(Registry registry) {
+        this.registry = registry;
+    }
 
     @Override
     public boolean isAvailable() {
@@ -40,6 +47,8 @@ public class LiveLoadBalancerProvider extends LoadBalancerProvider {
 
     @Override
     public LoadBalancer newLoadBalancer(LoadBalancer.Helper helper) {
-        return new LiveLoadBalancer(helper);
+        LiveLoadBalancer balancer = new LiveLoadBalancer(helper);
+        registry.subscribe(balancer.getServiceName(), balancer::handle);
+        return balancer;
     }
 }

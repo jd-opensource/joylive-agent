@@ -13,51 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.definition;
+package com.jd.live.agent.plugin.registry.nacos.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ReferenceConfigInterceptor;
+import com.jd.live.agent.governance.registry.RegistrySupervisor;
+import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosInstanceChangeInterceptor;
 
 /**
- * ServiceConfigDefinition
+ * NacosInstanceChangeDefinition
  */
 @Injectable
-@Extension(value = "ServiceConfigDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnDubbo27GovernanceEnabled
-@ConditionalOnClass(ReferenceConfigDefinition.TYPE_REFERENCE_CONFIG)
-public class ReferenceConfigDefinition extends PluginDefinitionAdapter {
+@Extension(value = "NacosInstanceChangeDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@ConditionalOnGovernanceEnabled
+@ConditionalOnClass(NacosInstanceChangeDefinition.TYPE_INSTANCES_CHANGE_NOTIFIER)
+public class NacosInstanceChangeDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_REFERENCE_CONFIG = "org.apache.dubbo.config.ReferenceConfig";
+    protected static final String TYPE_INSTANCES_CHANGE_NOTIFIER = "com.alibaba.nacos.client.naming.event.InstancesChangeNotifier";
 
-    private static final String METHOD_CREATE_PROXY = "createProxy";
-
-    private static final String[] ARGUMENT_CREATE_PROXY = new String[]{
-            "java.util.Map"
-    };
-
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
+    private static final String METHOD_ON_EVENT = "onEvent";
 
     @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
+    private RegistrySupervisor registry;
 
-    public ReferenceConfigDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_REFERENCE_CONFIG);
+    public NacosInstanceChangeDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_INSTANCES_CHANGE_NOTIFIER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_CREATE_PROXY).and(MatcherBuilder.arguments(ARGUMENT_CREATE_PROXY)),
-                        () -> new ReferenceConfigInterceptor(application, registry))
+                        MatcherBuilder.named(METHOD_ON_EVENT),
+                        () -> new NacosInstanceChangeInterceptor(registry)),
         };
     }
 }

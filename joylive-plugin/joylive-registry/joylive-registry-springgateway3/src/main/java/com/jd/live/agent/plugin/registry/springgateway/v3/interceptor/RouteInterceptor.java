@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.registry.springgateway.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 
 import java.net.URI;
@@ -29,10 +29,10 @@ public class RouteInterceptor extends InterceptorAdaptor {
 
     private static final String SCHEMA_LB = "lb";
 
-    private final PolicySupplier policySupplier;
+    private final Registry registry;
 
-    public RouteInterceptor(PolicySupplier policySupplier) {
-        this.policySupplier = policySupplier;
+    public RouteInterceptor(Registry registry) {
+        this.registry = registry;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class RouteInterceptor extends InterceptorAdaptor {
         RouteDefinition definition = (RouteDefinition) ctx.getArguments()[0];
         URI uri = definition.getUri();
         if (SCHEMA_LB.equals(uri.getScheme())) {
-            policySupplier.subscribe(uri.getHost());
+            registry.subscribe(uri.getHost());
         }
     }
 }

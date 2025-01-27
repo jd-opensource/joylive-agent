@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.FeignClientFactoryBeanInterceptor;
 
 /**
@@ -51,8 +51,8 @@ public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
             "org.springframework.cloud.openfeign.FeignClientFactory"
     };
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
 
     public FeignClientFactoryBeanDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FEIGN_CLIENT_FACTORY_BEAN);
@@ -60,11 +60,11 @@ public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FEIGN).
                                 and(MatcherBuilder.arguments(ARGUMENT_FEIGN3)),
-                        () -> new FeignClientFactoryBeanInterceptor(policySupplier)),
+                        () -> new FeignClientFactoryBeanInterceptor(registry)),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FEIGN).
                                 and(MatcherBuilder.arguments(ARGUMENT_FEIGN4)),
-                        () -> new FeignClientFactoryBeanInterceptor(policySupplier))
+                        () -> new FeignClientFactoryBeanInterceptor(registry))
         };
     }
 }

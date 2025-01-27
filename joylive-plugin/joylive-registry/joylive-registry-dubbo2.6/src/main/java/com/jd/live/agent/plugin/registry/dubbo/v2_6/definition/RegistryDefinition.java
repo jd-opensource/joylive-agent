@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.definition;
 
-import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -50,9 +49,6 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(AgentLifecycle.COMPONENT_AGENT_LIFECYCLE)
-    private AgentLifecycle lifecycle;
-
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
@@ -65,7 +61,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_REGISTER)
                                 .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
                                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new RegistryInterceptor(application, lifecycle, registry))
+                        () -> new RegistryInterceptor(application, registry))
         };
     }
 }

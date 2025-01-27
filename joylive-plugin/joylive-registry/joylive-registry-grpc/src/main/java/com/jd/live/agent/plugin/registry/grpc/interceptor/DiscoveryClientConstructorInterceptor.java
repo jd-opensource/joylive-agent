@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -32,17 +32,18 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryClientConstructorInterceptor.class);
 
-    private final PolicySupplier policySupplier;
+    private final Registry registry;
 
-    public DiscoveryClientConstructorInterceptor(PolicySupplier policySupplier) {
-        this.policySupplier = policySupplier;
+    public DiscoveryClientConstructorInterceptor(Registry registry) {
+        this.registry = registry;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // gRPC is triggered on the first request
         String serviceId = ctx.getArgument(0);
         try {
-            policySupplier.subscribe(serviceId).get(5000, TimeUnit.MILLISECONDS);
+            registry.subscribe(serviceId).get(5000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignore) {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;

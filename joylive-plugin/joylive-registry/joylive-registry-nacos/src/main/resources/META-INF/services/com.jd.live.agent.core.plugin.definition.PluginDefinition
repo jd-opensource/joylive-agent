@@ -1,1 +1,2 @@
 com.jd.live.agent.plugin.registry.nacos.definition.NacosServiceDiscoveryDefinition
+com.jd.live.agent.plugin.registry.nacos.definition.NacosInstanceChangeDefinition

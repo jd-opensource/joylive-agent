@@ -31,7 +31,7 @@ import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Waiter;
 import com.jd.live.agent.core.util.template.Template;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.Service;
@@ -61,15 +61,15 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
     protected PolicySupervisor policySupervisor;
 
     @Inject(Publisher.POLICY_SUBSCRIBER)
-    protected Publisher<PolicySubscriber> publisher;
+    protected Publisher<PolicySubscription> publisher;
 
     protected ExecutorService executorService;
 
-    protected final Queue<PolicySubscriber> subscribers = new ConcurrentLinkedQueue<>();
+    protected final Queue<PolicySubscription> subscribers = new ConcurrentLinkedQueue<>();
 
     protected final Waiter.MutexWaiter waiter = new Waiter.MutexWaiter();
 
-    protected final EventHandler<PolicySubscriber> handler = this::onEvent;
+    protected final EventHandler<PolicySubscription> handler = this::onEvent;
 
     @Override
     public String getType() {
@@ -85,9 +85,9 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
         for (int i = 0; i < concurrency; i++) {
             executorService.submit(() -> {
                 while (isStarted()) {
-                    PolicySubscriber subscriber = subscribers.poll();
-                    if (subscriber != null) {
-                        syncAndUpdate(subscriber);
+                    PolicySubscription subscription = subscribers.poll();
+                    if (subscription != null) {
+                        syncAndUpdate(subscription);
                     } else {
                         try {
                             waiter.await(1000, TimeUnit.MILLISECONDS);
@@ -97,7 +97,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
                 }
             });
         }
-        addTasks(policySupervisor.getSubscribers());
+        addTasks(policySupervisor.getSubscriptions());
     }
 
     @Override
@@ -129,7 +129,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param subscriber The PolicySubscriber for which to create the subscription.
      * @return A new Subscription object for synchronizing Service objects.
      */
-    protected Subscription<K, Service> createSubscription(PolicySubscriber subscriber) {
+    protected Subscription<K, Service> createSubscription(PolicySubscription subscriber) {
         Subscription<K, Service> result = new Subscription<>(getName(), createServiceKey(subscriber));
         result.setListener(r -> onResponse(result, r));
         return result;
@@ -141,14 +141,14 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param subscriber The PolicySubscriber for which to create the ServiceKey object.
      * @return A new ServiceKey object representing the PolicySubscriber.
      */
-    protected abstract K createServiceKey(PolicySubscriber subscriber);
+    protected abstract K createServiceKey(PolicySubscription subscriber);
 
     /**
      * Synchronizes and updates the service based on the given subscriber.
      *
      * @param subscriber the policy subscriber to synchronize and update.
      */
-    protected void syncAndUpdate(PolicySubscriber subscriber) {
+    protected void syncAndUpdate(PolicySubscription subscriber) {
         Subscription<K, Service> subscription = subscriptions.computeIfAbsent(subscriber.getUniqueName(),
                 name -> createSubscription(subscriber));
         if (subscription.lock()) {
@@ -199,7 +199,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
         if (service == null) {
             onNotFound(subscription);
         } else {
-            PolicySubscriber subscriber = subscription.getKey().getSubscriber();
+            PolicySubscription subscriber = subscription.getKey().getSubscriber();
             if (update(subscriber.getName(), service)) {
                 subscription.setVersion(service.getVersion());
                 subscriber.complete(subscription.getOwner());
@@ -214,7 +214,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param subscription The subscription for which an error occurred.
      */
     protected void onNotModified(Subscription<K, Service> subscription) {
-        PolicySubscriber subscriber = subscription.getKey().getSubscriber();
+        PolicySubscription subscriber = subscription.getKey().getSubscriber();
         subscriber.complete(getName());
         if (subscription.shouldPrint()) {
             logger.info(subscription.getSuccessMessage(SyncStatus.NOT_MODIFIED));
@@ -227,7 +227,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param subscription The subscription for which an error occurred.
      */
     protected void onNotFound(Subscription<K, Service> subscription) {
-        PolicySubscriber subscriber = subscription.getKey().getSubscriber();
+        PolicySubscription subscriber = subscription.getKey().getSubscriber();
         if (subscription.getVersion() > 0) {
             if (update(subscriber.getName(), null)) {
                 // Retry from version 0 after data is recovered.
@@ -251,7 +251,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      */
     protected void onError(Subscription<K, Service> subscription, String error, Throwable e) {
         e = e != null ? e : new SyncException(error);
-        PolicySubscriber subscriber = subscription.getKey().getSubscriber();
+        PolicySubscription subscriber = subscription.getKey().getSubscriber();
         if (subscriber.completeExceptionally(e)) {
             logger.error(subscription.getErrorMessage(SyncStatus.ERROR, error), e);
         } else if (subscription.shouldPrint()) {
@@ -295,7 +295,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      *
      * @param events the list of events containing policy subscribers.
      */
-    protected void onEvent(List<Event<PolicySubscriber>> events) {
+    protected void onEvent(List<Event<PolicySubscription>> events) {
         events.forEach(e -> addTask(e.getData(), t -> !subscriptions.containsKey(t.getName())));
     }
 
@@ -304,7 +304,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      *
      * @param tasks the list of policy subscriber tasks to be added.
      */
-    protected void addTasks(List<PolicySubscriber> tasks) {
+    protected void addTasks(List<PolicySubscription> tasks) {
         if (tasks != null) {
             tasks.forEach(task -> addTask(task, t -> !subscriptions.containsKey(t.getName())));
         }
@@ -315,7 +315,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      *
      * @param task the policy subscriber task to be added.
      */
-    protected void addTask(PolicySubscriber task) {
+    protected void addTask(PolicySubscription task) {
         addTask(task, null);
     }
 
@@ -325,7 +325,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param task      the policy subscriber task to be added.
      * @param predicate an optional predicate to test the task before adding it to the queue.
      */
-    protected void addTask(PolicySubscriber task, Predicate<PolicySubscriber> predicate) {
+    protected void addTask(PolicySubscription task, Predicate<PolicySubscription> predicate) {
         if (task != null
                 && PolicyWatcher.TYPE_SERVICE_SPACE.equals(task.getType())
                 && isStarted()

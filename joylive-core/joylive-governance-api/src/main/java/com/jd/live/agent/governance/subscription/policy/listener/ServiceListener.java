@@ -22,7 +22,7 @@ import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySubscriber;
+import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.service.Service;
 
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ServiceListener extends AbstractListener<Service> {
 
-    private final Map<String, PolicySubscriber> subscribers = new ConcurrentHashMap<>();
+    private final Map<String, PolicySubscription> subscribers = new ConcurrentHashMap<>();
 
     private Set<String> loadedServices = new HashSet<>();
 
@@ -44,10 +44,10 @@ public class ServiceListener extends AbstractListener<Service> {
 
     public ServiceListener(PolicySupervisor supervisor,
                            ObjectParser parser,
-                           Publisher<PolicySubscriber> publisher) {
+                           Publisher<PolicySubscription> publisher) {
         super(Service.class, supervisor, parser);
         publisher.addHandler(this::onEvent);
-        supervisor.getSubscribers().forEach(this::subscribe);
+        supervisor.getSubscriptions().forEach(this::subscribe);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class ServiceListener extends AbstractListener<Service> {
      *
      * @param events A list of events containing policy subscribers to subscribe to.
      */
-    private void onEvent(List<Event<PolicySubscriber>> events) {
+    private void onEvent(List<Event<PolicySubscription>> events) {
         events.forEach(e -> subscribe(e.getData()));
     }
 
@@ -135,10 +135,10 @@ public class ServiceListener extends AbstractListener<Service> {
      *
      * @param subscriber The policy subscriber to subscribe to.
      */
-    private void subscribe(PolicySubscriber subscriber) {
+    private void subscribe(PolicySubscription subscriber) {
         if (subscriber != null && PolicyWatcher.TYPE_SERVICE_SPACE.equals(subscriber.getType())) {
             String name = subscriber.getName();
-            PolicySubscriber old = subscribers.putIfAbsent(name, subscriber);
+            PolicySubscription old = subscribers.putIfAbsent(name, subscriber);
             if (old != null && old != subscriber) {
                 old.trigger((v, t) -> {
                     if (t == null) {

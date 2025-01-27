@@ -19,15 +19,15 @@ import com.alipay.sofa.rpc.bootstrap.ConsumerBootstrap;
 import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 
 /**
  * ConsumerBootstrapInterceptor
  */
 public class ConsumerBootstrapInterceptor extends AbstractBootstrapInterceptor<ConsumerConfig<?>> {
 
-    public ConsumerBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+    public ConsumerBootstrapInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     @Override

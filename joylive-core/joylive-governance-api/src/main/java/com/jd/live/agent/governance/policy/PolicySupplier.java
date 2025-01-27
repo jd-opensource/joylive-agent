@@ -51,7 +51,6 @@ public interface PolicySupplier {
         return subscribe(null, service);
     }
 
-
     /**
      * Subscribes a specific service policy based on its name.
      *
@@ -60,14 +59,5 @@ public interface PolicySupplier {
      * @return A {@link CompletableFuture} that completes when the subscription is successful.
      */
     CompletableFuture<Void> subscribe(String namespace, String service);
-
-    /**
-     * Checks if the task associated with the given name has completed successfully.
-     *
-     * @param name the name of the task to check
-     * @return {@code true} if the task with the specified name is done and has not completed exceptionally,
-     * otherwise {@code false}
-     */
-    boolean isDone(String name);
 }
 

@@ -79,11 +79,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.InvocationTargetException;
 import java.security.CodeSource;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
 
@@ -223,8 +220,6 @@ public class Bootstrap implements AgentLifecycle {
      */
     private List<InjectSourceSupplier> sourceSuppliers;
 
-    private final List<Callable<?>> readies = new CopyOnWriteArrayList<>();
-
     private Shutdown shutdown;
 
     /**
@@ -362,21 +357,6 @@ public class Bootstrap implements AgentLifecycle {
                 //only throw initialize exception without error stack to agent.
                 throw new InitializeException("Command " + command + " is not found.");
             }
-        }
-    }
-
-    @Override
-    public void addReadyHook(Callable<?> callable, ClassLoader classLoader) {
-        if (callable != null) {
-            readies.add(() -> {
-                ClassLoader old = Thread.currentThread().getContextClassLoader();
-                Thread.currentThread().setContextClassLoader(classLoader);
-                try {
-                    return callable.call();
-                } finally {
-                    Thread.currentThread().setContextClassLoader(old);
-                }
-            });
         }
     }
 
@@ -576,7 +556,14 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     private List<AppListener> createApplicationListeners() {
-        return extensionManager.getOrLoadExtensible(AppListener.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+        List<AppListener> extensions = extensionManager.getOrLoadExtensible(AppListener.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+        List<AppListener> result = new ArrayList<>(extensions);
+        serviceManager.service(service -> {
+            if (service instanceof AppListenerSupplier) {
+                result.add(((AppListenerSupplier) service).getAppListener());
+            }
+        });
+        return result;
     }
 
     private PluginSupervisor createPluginManager() {
@@ -715,30 +702,11 @@ public class Bootstrap implements AgentLifecycle {
                 application.setStatus(AppStatus.STARTED);
                 break;
             case APPLICATION_READY:
-                onReady();
                 application.setStatus(AppStatus.READY);
                 break;
             case APPLICATION_STOP:
                 application.setStatus(AppStatus.DESTROYING);
                 break;
-        }
-    }
-
-    /**
-     * Executes all registered ready hooks.
-     * Runs each runnable and logs exceptions if any occur during execution.
-     */
-    private void onReady() {
-        // Some framework does not support multi thread to registration
-        for (Callable<?> runnable : readies) {
-            try {
-                runnable.call();
-            } catch (Throwable e) {
-                Throwable cause = e instanceof InvocationTargetException ? e.getCause() : null;
-                cause = cause != null ? cause : e;
-                onException(cause.getMessage(), cause);
-            }
-            readies.clear();
         }
     }
 

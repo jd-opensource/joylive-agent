@@ -18,10 +18,8 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.registry.ServiceProtocol;
@@ -38,11 +36,8 @@ import java.util.Map;
  */
 public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
-    private final PolicySupplier policySupplier;
-
-    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry, PolicySupplier policySupplier) {
-        super(application, lifecycle, registry);
-        this.policySupplier = policySupplier;
+    public RegistryInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     /**
@@ -58,7 +53,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
             application.labelRegistry(metadata::putIfAbsent, true);
             metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
         }
-        policySupplier.subscribe(registration.getServiceId());
+        registry.subscribe(registration.getServiceId());
         super.onEnter(ctx);
     }
 

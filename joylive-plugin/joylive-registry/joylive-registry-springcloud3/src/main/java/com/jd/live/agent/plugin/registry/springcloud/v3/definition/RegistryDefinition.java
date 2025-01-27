@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.registry.springcloud.v3.definition;
 
-import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -27,7 +26,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInterceptor;
 
@@ -52,12 +50,6 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(AgentLifecycle.COMPONENT_AGENT_LIFECYCLE)
-    private AgentLifecycle lifecycle;
-
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
-
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
@@ -67,7 +59,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_REGISTER).
                                 and(MatcherBuilder.arguments(MatcherBuilder.isSubTypeOf(ARGUMENT_REGISTER))),
-                        () -> new RegistryInterceptor(application, lifecycle, registry, policySupplier))
+                        () -> new RegistryInterceptor(application, registry))
         };
     }
 }

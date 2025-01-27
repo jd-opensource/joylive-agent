@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.bootstrap.AgentLifecycle;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
@@ -32,8 +31,8 @@ import java.util.Map;
  */
 public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
-    public RegistryInterceptor(Application application, AgentLifecycle lifecycle, Registry registry) {
-        super(application, lifecycle, registry);
+    public RegistryInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     @Override

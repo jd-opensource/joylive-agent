@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.openfeign.FeignClientFactoryBean;
 
 /**
@@ -25,15 +25,15 @@ import org.springframework.cloud.openfeign.FeignClientFactoryBean;
  */
 public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
 
-    private final PolicySupplier policySupplier;
+    private final Registry registry;
 
-    public FeignClientFactoryBeanInterceptor(PolicySupplier policySupplier) {
-        this.policySupplier = policySupplier;
+    public FeignClientFactoryBeanInterceptor(Registry registry) {
+        this.registry = registry;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         FeignClientFactoryBean factoryBean = (FeignClientFactoryBean) ctx.getTarget();
-        policySupplier.subscribe(factoryBean.getName());
+        registry.subscribe(factoryBean.getName());
     }
 }

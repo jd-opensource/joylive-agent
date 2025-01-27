@@ -13,28 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.gprc.interceptor;
+package com.jd.live.agent.plugin.registry.nacos.interceptor;
 
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.gprc.loadbalance.LiveLoadBalancerProvider;
+import com.jd.live.agent.governance.registry.RegistrySupervisor;
+import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
- * LoadbalancerInterceptor
+ * NacosInstanceChangeInterceptor
  */
-public class LoadbalancerInterceptor extends InterceptorAdaptor {
+public class NacosInstanceChangeInterceptor extends InterceptorAdaptor {
 
-    private final Registry registry;
+    private final RegistrySupervisor supervisor;
 
-    public LoadbalancerInterceptor(Registry registry) {
-        this.registry = registry;
+    public NacosInstanceChangeInterceptor(RegistrySupervisor supervisor) {
+        this.supervisor = supervisor;
     }
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
+    public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        mc.skipWithResult(new LiveLoadBalancerProvider(registry));
+        InstancesChangeEvent event = mc.getArgument(0);
+        if (supervisor.isSubscribed(event.getServiceName())) {
+            supervisor.update(event.getServiceName(), toList(event.getHosts(), NacosEndpoint::new));
+        }
     }
 }

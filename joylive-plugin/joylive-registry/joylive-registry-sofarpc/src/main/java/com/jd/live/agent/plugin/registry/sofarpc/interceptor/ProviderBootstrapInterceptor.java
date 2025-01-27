@@ -19,15 +19,15 @@ import com.alipay.sofa.rpc.bootstrap.ProviderBootstrap;
 import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.Registry;
 
 /**
  * ProviderBootstrapInterceptor
  */
 public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<ProviderConfig<?>> {
 
-    public ProviderBootstrapInterceptor(Application application, PolicySupplier policySupplier) {
-        super(application, policySupplier);
+    public ProviderBootstrapInterceptor(Application application, Registry registry) {
+        super(application, registry);
     }
 
     @Override
