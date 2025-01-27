@@ -153,6 +153,11 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
     }
 
+    @Override
+    public boolean isSubscribed(String service) {
+        return service != null && !service.isEmpty() && subscriptions.containsKey(service);
+    }
+
     /**
      * Called when the application is ready to start. This method iterates through all registered services and calls their register method.
      */

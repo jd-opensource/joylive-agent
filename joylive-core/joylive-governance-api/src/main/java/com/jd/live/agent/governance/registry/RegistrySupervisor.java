@@ -31,4 +31,12 @@ public interface RegistrySupervisor extends Registry {
      * @param endpoints the new list of endpoints for the service group
      */
     void update(String service, List<? extends Endpoint> endpoints);
+
+    /**
+     * Checks if the registry is subscribed to a specific service.
+     *
+     * @param service the service
+     * @return true if the registry is subscribed to the service, false otherwise
+     */
+    boolean isSubscribed(String service);
 }

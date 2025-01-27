@@ -22,8 +22,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.RegistrySupervisor;
 import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
 
-import java.util.List;
-
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
@@ -41,9 +39,8 @@ public class NacosInstanceChangeInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         InstancesChangeEvent event = mc.getArgument(0);
-        List<NacosEndpoint> endpoints = toList(event.getHosts(), NacosEndpoint::new);
-        // get group from meta
-        supervisor.update(event.getServiceName(), endpoints);
-
+        if (supervisor.isSubscribed(event.getServiceName())) {
+            supervisor.update(event.getServiceName(), toList(event.getHosts(), NacosEndpoint::new));
+        }
     }
 }
