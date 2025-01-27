@@ -58,32 +58,14 @@ public class AdviceHandler {
         }
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
-        if (interceptors != null) {
-            onEnter(context, interceptors);
-        }
-    }
-
-    /**
-     * Handles the entry point for a given execution context and a list of interceptors.
-     *
-     * @param <T>          the type of the execution context
-     * @param context      the execution context
-     * @param interceptors the list of interceptors to be executed
-     * @throws Throwable if any exception occurs during interception
-     */
-    public static <T extends ExecutableContext> void onEnter(final T context, final List<Interceptor> interceptors) throws Throwable {
-        if (context == null || interceptors == null) {
-            return;
-        }
-        for (Interceptor interceptor : interceptors) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("enter [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
-            }
-            handle(context, interceptor, Interceptor::onEnter, "enter");
-            if (!context.isSuccess()) {
-                throw context.getThrowable();
-            } else if (context.isSkip()) {
-                break;
+        int size = interceptors == null ? 0 : interceptors.size();
+        if (size == 1) {
+            onEnter(context, interceptors.get(0));
+        } else if (size > 1) {
+            for (Interceptor interceptor : interceptors) {
+                if (onEnter(context, interceptor)) {
+                    break;
+                }
             }
         }
     }
@@ -99,38 +81,55 @@ public class AdviceHandler {
     public static <T extends ExecutableContext> void onExit(final T context, final Object adviceKey) throws Throwable {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
-        if (interceptors != null) {
-            onExit(context, interceptors);
+        int size = interceptors == null ? 0 : interceptors.size();
+        if (size == 1) {
+            onExit(context, interceptors.get(0));
+        } else if (size > 1) {
+            // reverse order
+            for (int i = size - 1; i >= 0; i--) {
+                onExit(context, interceptors.get(i));
+            }
         }
     }
 
     /**
-     * Handles the exit point for a given execution context and a list of interceptors.
+     * Handles the entry point of an executable context by invoking the onEnter method of the given interceptor.
      *
-     * @param <T>          the type of the execution context
-     * @param context      the execution context
-     * @param interceptors the list of interceptors to be executed
-     * @throws Throwable if any exception occurs during interception
+     * @param context     the executable context
+     * @param interceptor the interceptor to be invoked
+     * @param <T>         the type of the executable context, which must extend ExecutableContext
+     * @return true if the execution should be skipped, false otherwise
+     * @throws Throwable if an error occurs during the execution of the interceptor's onEnter method
      */
-    public static <T extends ExecutableContext> void onExit(final T context,
-                                                            final List<Interceptor> interceptors) throws Throwable {
-        if (context == null || interceptors == null)
-            return;
-        // reverse order
-        int size = interceptors.size();
-        Interceptor interceptor;
-        for (int i = size - 1; i >= 0; i--) {
-            interceptor = interceptors.get(i);
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("exit [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
-            }
-            if (context.isSuccess()) {
-                handle(context, interceptor, Interceptor::onSuccess, "success");
-            } else {
-                handle(context, interceptor, Interceptor::onError, "recover");
-            }
-            handle(context, interceptor, Interceptor::onExit, "exit");
+    private static <T extends ExecutableContext> boolean onEnter(T context, Interceptor interceptor) throws Throwable {
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("enter [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
         }
+        handle(context, interceptor, Interceptor::onEnter, "enter");
+        if (!context.isSuccess()) {
+            throw context.getThrowable();
+        }
+        return context.isSkip();
+    }
+
+    /**
+     * Handles the exit point of an executable context by invoking the appropriate method of the given interceptor.
+     *
+     * @param context     the executable context
+     * @param interceptor the interceptor to be invoked
+     * @param <T>         the type of the executable context, which must extend ExecutableContext
+     * @throws Throwable if an error occurs during the execution of the interceptor's methods
+     */
+    private static <T extends ExecutableContext> void onExit(T context, Interceptor interceptor) throws Throwable {
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("exit [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
+        }
+        if (context.isSuccess()) {
+            handle(context, interceptor, Interceptor::onSuccess, "success");
+        } else {
+            handle(context, interceptor, Interceptor::onError, "recover");
+        }
+        handle(context, interceptor, Interceptor::onExit, "exit");
     }
 
     /**
