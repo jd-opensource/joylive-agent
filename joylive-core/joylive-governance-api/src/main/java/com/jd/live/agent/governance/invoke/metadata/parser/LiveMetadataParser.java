@@ -121,13 +121,13 @@ public abstract class LiveMetadataParser implements LiveParser {
      */
     protected String parseLiveSpaceId() {
         String result = null;
-        Cargo cargo = RequestContext.getCargo(Constants.LABEL_LIVE_SPACE_ID);
+        Cargo cargo = request.getCargo(Constants.LABEL_LIVE_SPACE_ID);
         if (cargo != null) {
             result = cargo.getFirstValue();
         } else if (isFallbackLocationIfNoSpace()) {
             result = application.getLocation().getLiveSpaceId();
             if (result != null && !result.isEmpty()) {
-                RequestContext.getOrCreate().addCargo(Constants.LABEL_LIVE_SPACE_ID, result);
+                request.getOrCreateCarrier().addCargo(Constants.LABEL_LIVE_SPACE_ID, result);
             }
         }
         return result;
@@ -140,7 +140,7 @@ public abstract class LiveMetadataParser implements LiveParser {
      */
     protected String parseRuleId(String spaceId) {
         String result = null;
-        Cargo cargo = RequestContext.getCargo(Constants.LABEL_RULE_ID);
+        Cargo cargo = request.getCargo(Constants.LABEL_RULE_ID);
         if (cargo != null) {
             result = cargo.getFirstValue();
         } else if (spaceId != null && !spaceId.isEmpty() && isFallbackLocationIfNoSpace()) {
@@ -148,7 +148,7 @@ public abstract class LiveMetadataParser implements LiveParser {
             if (spaceId.equals(location.getLiveSpaceId())) {
                 result = location.getUnitRuleId();
                 if (result != null && !result.isEmpty()) {
-                    RequestContext.getOrCreate().addCargo(Constants.LABEL_RULE_ID, result);
+                    request.getOrCreateCarrier().addCargo(Constants.LABEL_RULE_ID, result);
                 }
             }
         }
@@ -291,7 +291,7 @@ public abstract class LiveMetadataParser implements LiveParser {
                 sourceName = path.isCustomVariableSource() ? path.getVariableSource() : sourceName;
             }
             UnitRule unitRule = unitRuleId == null ? null : liveSpace.getUnitRule(unitRuleId);
-            Carrier carrier = RequestContext.getOrCreate();
+            Carrier carrier = request.getOrCreateCarrier();
             // The gateway may have decrypted the user and placed it in the context attribute
             String variable = carrier.getAttribute(Constants.LABEL_VARIABLE);
             if (variable == null) {
@@ -341,7 +341,7 @@ public abstract class LiveMetadataParser implements LiveParser {
             // Overwrite contextual tags
             LiveSpace liveSpace = metadata.getTargetSpace();
             UnitRule unitRule = metadata.getRule();
-            Carrier carrier = RequestContext.getOrCreate();
+            Carrier carrier = request.getOrCreateCarrier();
             if (unitRule != null) {
                 carrier.setCargo(Constants.LABEL_LIVE_SPACE_ID, liveSpace.getId());
                 carrier.setCargo(Constants.LABEL_RULE_ID, unitRule.getId());

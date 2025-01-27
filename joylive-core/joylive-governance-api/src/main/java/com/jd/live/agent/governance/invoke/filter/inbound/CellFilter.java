@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.CellAction;
 import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
@@ -52,7 +51,7 @@ public class CellFilter implements InboundFilter {
             CellAction cellAction = cellAction(invocation);
             invocation.setCellAction(cellAction);
             if (cellAction.getType() == CellActionType.FAILOVER) {
-                Carrier carrier = RequestContext.getOrCreate();
+                Carrier carrier = invocation.getRequest().getOrCreateCarrier();
                 carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL, cellAction);
             }
         }

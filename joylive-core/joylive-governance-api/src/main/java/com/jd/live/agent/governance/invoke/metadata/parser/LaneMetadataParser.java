@@ -5,7 +5,6 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.config.LaneConfig;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
@@ -118,7 +117,7 @@ public class LaneMetadataParser implements LaneParser {
      * @return The lane space id, or null if not found.
      */
     protected String parseLaneSpace() {
-        Cargo cargo = RequestContext.getCargo(Constants.LABEL_LANE_SPACE_ID);
+        Cargo cargo = request.getCargo(Constants.LABEL_LANE_SPACE_ID);
         String laneSpaceId = cargo == null ? null : cargo.getFirstValue();
         if ((laneSpaceId == null || laneSpaceId.isEmpty()) && laneConfig.isFallbackLocationIfNoSpace()) {
             laneSpaceId = application.getLocation().getLaneSpaceId();
@@ -134,7 +133,7 @@ public class LaneMetadataParser implements LaneParser {
      * @return The lane code as a String, or null if not found.
      */
     protected String parseLane(String laneSpaceId, LaneSpace laneSpace) {
-        Cargo cargo = RequestContext.getCargo(Constants.LABEL_LANE);
+        Cargo cargo = request.getCargo(Constants.LABEL_LANE);
         String lane = cargo == null ? null : cargo.getFirstValue();
         Location location = application.getLocation();
         if ((lane == null || lane.isEmpty())
@@ -152,7 +151,7 @@ public class LaneMetadataParser implements LaneParser {
      * @param metadata the lane metadata to inject into the request context
      */
     protected void inject(LaneMetadata metadata) {
-        Carrier carrier = RequestContext.getOrCreate();
+        Carrier carrier = request.getOrCreateCarrier();
         if (metadata.getTargetSpaceId() != null
                 && !metadata.getTargetSpaceId().isEmpty()) {
             addCargo(carrier, metadata);

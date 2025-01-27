@@ -17,8 +17,8 @@ package com.jd.live.agent.governance.invoke.matcher.system;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.List;
@@ -31,7 +31,8 @@ public class ConsumerTagProvider implements SystemTagProvider {
 
     @Override
     public List<String> getValues(ServiceRequest request) {
-        Cargo cargo = RequestContext.getCargo(Constants.LABEL_SERVICE_CONSUMER);
+        Carrier carrier = request.getCarrier();
+        Cargo cargo = carrier == null ? null : carrier.getCargo(Constants.LABEL_SERVICE_CONSUMER);
         return cargo == null ? null : cargo.getValues();
     }
 }

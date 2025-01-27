@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.core.util.type.ValuePath;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 
 import java.util.ArrayList;
@@ -95,13 +94,13 @@ public interface RpcRequest extends ServiceRequest {
 
     @Override
     default List<String> getCookies(String key) {
-        Cargo cargo = RequestContext.getCargo(key);
+        Cargo cargo = getCargo(key);
         return cargo == null ? null : cargo.getValues();
     }
 
     @Override
     default String getCookie(String key) {
-        Cargo cargo = RequestContext.getCargo(key);
+        Cargo cargo = getCargo(key);
         return cargo == null ? null : cargo.getFirstValue();
     }
 

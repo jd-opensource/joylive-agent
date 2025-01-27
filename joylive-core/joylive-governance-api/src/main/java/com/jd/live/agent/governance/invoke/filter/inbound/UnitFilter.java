@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.UnitAction;
@@ -52,7 +51,7 @@ public class UnitFilter implements InboundFilter {
         switch (unitAction.getType()) {
             case FAILOVER_CENTER:
             case FAILOVER:
-                Carrier carrier = RequestContext.getOrCreate();
+                Carrier carrier = invocation.getRequest().getOrCreateCarrier();
                 carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_UNIT, unitAction);
                 break;
             case REJECT:

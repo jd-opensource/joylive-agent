@@ -16,6 +16,8 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.governance.context.bag.Cargo;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.live.FaultType;
@@ -36,6 +38,31 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 public interface ServiceRequest extends Request {
+
+    /**
+     * Returns the carrier associated with this instance.
+     *
+     * @return the carrier
+     */
+    Carrier getCarrier();
+
+    /**
+     * Returns the carrier associated with this instance, creating a new one if it does not exist.
+     *
+     * @return the carrier
+     */
+    Carrier getOrCreateCarrier();
+
+    /**
+     * Returns the cargo with the specified key from the carrier associated with this instance.
+     *
+     * @param key the key of the cargo
+     * @return the cargo with the specified key, or null if the carrier is null or the cargo is not found
+     */
+    default Cargo getCargo(String key) {
+        Carrier carrier = getCarrier();
+        return carrier == null ? null : carrier.getCargo(key);
+    }
 
     /**
      * Retrieves the name of the service.

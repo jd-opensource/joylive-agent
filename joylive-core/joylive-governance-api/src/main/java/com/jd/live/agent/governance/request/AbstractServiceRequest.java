@@ -16,6 +16,8 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import lombok.Getter;
 
 import java.util.HashSet;
@@ -25,24 +27,28 @@ import java.util.Set;
  * Provides an abstract base class for service requests.*
  * @param <T> The type of the original request object this class wraps.
  */
-@Getter
 public abstract class AbstractServiceRequest<T> extends AbstractAttributes implements ServiceRequest {
 
     /**
      * The original request object associated with this service request.
      */
+    @Getter
     protected final T request;
 
     /**
      * A set of identifiers representing attempts made in the context of this service request.
      * This is useful for tracking retries or duplicate handling.
      */
+    @Getter
     protected Set<String> attempts;
 
     /**
      * The timestamp when the service request was created.
      */
+    @Getter
     protected long startTime;
+
+    protected Carrier carrier;
 
     /**
      * Constructs an instance of {@code AbstractServiceRequest} with the original request object.
@@ -74,5 +80,24 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
             attempts.add(attempt);
         }
     }
+
+    @Override
+    public Carrier getCarrier() {
+        // cache thread local value to improve performance
+        if (carrier == null) {
+            carrier = RequestContext.get();
+        }
+        return carrier;
+    }
+
+    @Override
+    public Carrier getOrCreateCarrier() {
+        // cache thread local value to improve performance
+        if (carrier == null) {
+            carrier = RequestContext.getOrCreate();
+        }
+        return carrier;
+    }
+
 }
 

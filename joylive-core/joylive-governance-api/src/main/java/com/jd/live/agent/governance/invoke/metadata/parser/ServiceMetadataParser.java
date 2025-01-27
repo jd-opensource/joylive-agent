@@ -5,7 +5,6 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
@@ -181,7 +180,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
 
         @Override
         protected String parseConsumer() {
-            RequestContext.getOrCreate().setCargo(Constants.LABEL_SERVICE_CONSUMER, application.getName());
+            request.getOrCreateCarrier().setCargo(Constants.LABEL_SERVICE_CONSUMER, application.getName());
             return application.getName();
         }
 
@@ -215,7 +214,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
 
         @Override
         protected String parseConsumer() {
-            Cargo cargo = RequestContext.getCargo(Constants.LABEL_SERVICE_CONSUMER);
+            Cargo cargo = request.getCargo(Constants.LABEL_SERVICE_CONSUMER);
             return cargo == null ? null : cargo.getFirstValue();
         }
 
