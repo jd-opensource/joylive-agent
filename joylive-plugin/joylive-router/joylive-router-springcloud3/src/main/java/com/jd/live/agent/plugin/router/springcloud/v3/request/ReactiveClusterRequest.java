@@ -51,8 +51,7 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
                                   LoadBalancerProperties properties,
                                   ExchangeFunction next) {
-        super(request, loadBalancerFactory, properties);
-        this.uri = request.url();
+        super(request, request.url(), loadBalancerFactory, properties);
         this.next = next;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
     }

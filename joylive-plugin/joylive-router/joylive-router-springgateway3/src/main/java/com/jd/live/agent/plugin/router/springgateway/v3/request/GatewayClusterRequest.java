@@ -65,13 +65,12 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
                                  GatewayConfig gatewayConfig,
                                  RetryConfig retryConfig,
                                  int index) {
-        super(exchange.getRequest(), factory, null);
+        super(exchange.getRequest(), exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI()), factory, null);
         this.exchange = exchange;
         this.chain = chain;
         this.retryConfig = retryConfig;
         this.gatewayConfig = gatewayConfig;
         this.index = index;
-        this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 

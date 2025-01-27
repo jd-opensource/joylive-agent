@@ -64,9 +64,8 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
                                ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerClientFactory,
                                LoadBalancerProperties properties,
                                Request.Options options) {
-        super(request, loadBalancerClientFactory, properties);
+        super(request, URI.create(request.url()), loadBalancerClientFactory, properties);
         this.options = options;
-        this.uri = URI.create(request.url());
     }
 
     @Override

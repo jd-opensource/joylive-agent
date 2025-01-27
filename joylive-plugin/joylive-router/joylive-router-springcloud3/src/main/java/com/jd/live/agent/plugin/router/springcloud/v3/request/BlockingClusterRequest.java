@@ -62,8 +62,7 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
                                   LoadBalancerProperties properties,
                                   byte[] body,
                                   ClientHttpRequestExecution execution) {
-        super(request, loadBalancerFactory, properties);
-        this.uri = request.getURI();
+        super(request, request.getURI(), loadBalancerFactory, properties);
         this.body = body;
         this.execution = execution;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
