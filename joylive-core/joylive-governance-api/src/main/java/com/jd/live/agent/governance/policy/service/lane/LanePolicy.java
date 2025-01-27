@@ -37,20 +37,13 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
 
     private String laneSpaceId;
 
-    private Map<String, String> lanes;
+    private Map<String, String> fallbackLanes;
 
     /**
      * Types of fallback strategies for lane redirection
      * <p>
      */
     private FallbackType fallbackType;
-
-    /**
-     * When the fallbackType type is CUSTOM, the lane request is redirected based on the lane specified in this field.
-     * If there is still no corresponding instance, the request is denied.
-     * <p>
-     */
-    private String fallbackLane;
 
     @Override
     public void supplement(LanePolicy source) {
@@ -60,26 +53,15 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
         if (laneSpaceId == null) {
             laneSpaceId = source.getLaneSpaceId();
         }
-        if (lanes == null && source.getLanes() != null) {
-            lanes = new HashMap<>(source.getLanes());
+        if (fallbackLanes == null && source.getFallbackLanes() != null) {
+            fallbackLanes = new HashMap<>(source.getFallbackLanes());
         }
         if (fallbackType == null) {
             fallbackType = source.getFallbackType();
         }
-        if (fallbackLane == null) {
-            fallbackLane = source.getFallbackLane();
-        }
     }
 
-    public FallbackType getFallbackType() {
-        if (fallbackType == null
-                || fallbackType == FallbackType.CUSTOM && (fallbackLane == null || fallbackLane.isEmpty())) {
-            return FallbackType.DEFAULT;
-        }
-        return fallbackType;
-    }
-
-    public String getTarget(String lane) {
-        return lane == null || lane.isEmpty() ? null : lanes.get(lane);
+    public String getFallbackLane(String lane) {
+        return lane == null || lane.isEmpty() ? null : fallbackLanes.get(lane);
     }
 }
