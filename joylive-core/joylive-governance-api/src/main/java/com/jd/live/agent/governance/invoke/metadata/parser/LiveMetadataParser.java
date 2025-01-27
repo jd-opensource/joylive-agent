@@ -4,7 +4,6 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.LiveConfig;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
@@ -170,7 +169,7 @@ public abstract class LiveMetadataParser implements LiveParser {
      * @return The first value associated with the cargo for the specified variable key, or {@code null} if no such value exists.
      */
     protected String parseVariable() {
-        Cargo cargo = RequestContext.getCargo(Constants.LABEL_VARIABLE);
+        Cargo cargo = request.getCargo(Constants.LABEL_VARIABLE);
         return cargo == null ? null : cargo.getFirstValue();
     }
 
