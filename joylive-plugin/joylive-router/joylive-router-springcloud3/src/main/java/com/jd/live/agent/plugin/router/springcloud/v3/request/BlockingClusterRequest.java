@@ -23,7 +23,6 @@ import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalanc
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.util.MultiValueMapAdapter;
 
 import java.util.List;
 import java.util.Map;
@@ -91,9 +90,10 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
 
     @Override
     protected RequestData buildRequestData() {
-        Map<String, List<String>> cookies = getCookies();
-        return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
-                cookies == null ? null : new MultiValueMapAdapter<>(cookies), null);
+        // cookie is used only in RequestBasedStickySessionServiceInstanceListSupplier
+        // it's disabled by live interceptor
+        // so we can use null value to improve performance.
+        return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(), null, null);
     }
 
     public byte[] getBody() {

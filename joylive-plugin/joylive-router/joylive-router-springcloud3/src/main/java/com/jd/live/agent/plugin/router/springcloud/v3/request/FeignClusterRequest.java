@@ -101,11 +101,12 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
 
     @Override
     protected RequestData buildRequestData() {
-        Map<String, List<String>> cookies = getCookies();
+        // cookie is used only in RequestBasedStickySessionServiceInstanceListSupplier
+        // it's disabled by live interceptor
+        // so we can use null value to improve performance.
         return new RequestData(
                 org.springframework.http.HttpMethod.resolve(request.httpMethod().name()), getURI(),
-                new HttpHeaders(new MultiValueMapAdapter<>(getHeaders())),
-                cookies == null ? null : new MultiValueMapAdapter<>(cookies), null);
+                new HttpHeaders(new MultiValueMapAdapter<>(getHeaders())), null, null);
     }
 
     public Request.Options getOptions() {

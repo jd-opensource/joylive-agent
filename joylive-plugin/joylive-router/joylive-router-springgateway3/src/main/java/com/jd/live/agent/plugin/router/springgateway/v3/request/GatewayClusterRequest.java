@@ -29,7 +29,6 @@ import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -131,9 +130,10 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
 
     @Override
     protected RequestData buildRequestData() {
-        Map<String, List<String>> cookies = getCookies();
-        return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(),
-                cookies == null ? null : new MultiValueMapAdapter<>(cookies), null);
+        // cookie is used only in RequestBasedStickySessionServiceInstanceListSupplier
+        // it's disabled by live interceptor
+        // so we can use null value to improve performance.
+        return new RequestData(request.getMethod(), request.getURI(), request.getHeaders(), null, null);
     }
 
     @Override
