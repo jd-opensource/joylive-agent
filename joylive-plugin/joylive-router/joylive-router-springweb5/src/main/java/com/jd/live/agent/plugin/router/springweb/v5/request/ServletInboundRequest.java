@@ -15,18 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v5.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -68,9 +66,6 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         } catch (URISyntaxException ignore) {
         }
         uri = u;
-        headers = new UnsafeLazyObject<>(() -> HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders));
-        queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getQueryString()));
-        cookies = new UnsafeLazyObject<>(() -> parseCookie(request));
     }
 
     @Override
@@ -109,7 +104,8 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeader(key);
+        // request.getHeader() is slow.
+        return super.getHeader(key);
     }
 
     @Override
@@ -130,6 +126,21 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
             result = parseAddressByRequest();
         }
         return result;
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
+    }
+
+    @Override
+    protected Map<String, List<String>> parseQueries() {
+        return HttpUtils.parseQuery(request.getQueryString());
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        return HttpUtils.parseCookie(request.getCookies(), Cookie::getName, Cookie::getValue);
     }
 
     /**
@@ -168,15 +179,4 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
                     "Expected type is " + ModelAndView.class.getName() + ", but actual type is " + obj.getClass()), this));
         }
     }
-
-    private Map<String, List<String>> parseCookie(HttpServletRequest request) {
-        Map<String, List<String>> result = new HashMap<>();
-        if (request.getCookies() != null) {
-            for (javax.servlet.http.Cookie cookie : request.getCookies()) {
-                result.computeIfAbsent(cookie.getName(), name -> new ArrayList<>()).add(cookie.getValue());
-            }
-        }
-        return result;
-    }
-
 }

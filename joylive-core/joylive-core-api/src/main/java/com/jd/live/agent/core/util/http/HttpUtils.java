@@ -232,17 +232,38 @@ public abstract class HttpUtils {
     }
 
     /**
+     * Parses an array of cookie objects into a MultiMap where the keys are the cookie names and the values are the cookie values.
+     *
+     * @param cookies   the array of cookie objects
+     * @param keyFunc   a function that extracts the cookie name from a cookie object
+     * @param valueFunc a function that extracts the cookie value from a cookie object
+     * @param <T>       the type of the cookie objects
+     * @return a MultiMap containing the parsed cookies, or null if the input is invalid
+     */
+    public static <T> MultiMap<String, String> parseCookie(T[] cookies, Function<T, String> keyFunc, Function<T, String> valueFunc) {
+        if (cookies == null || cookies.length == 0 || keyFunc == null || valueFunc == null) {
+            return null;
+        }
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
+        for (T cookie : cookies) {
+            result.add(keyFunc.apply(cookie), valueFunc.apply(cookie));
+        }
+        return result;
+    }
+
+    /**
      * Parses cookies from the "Cookie" headers of the request.
      *
      * @param headers the collection of "Cookie" headers
      * @return a map of cookie names to lists of cookie values
      */
     public static MultiMap<String, String> parseCookie(Collection<String> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return null;
+        }
         MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
-        if (headers != null && !headers.isEmpty()) {
-            for (String header : headers) {
-                parseCookie(header, (key, value) -> result.add(key, value == null ? "" : value));
-            }
+        for (String header : headers) {
+            parseCookie(header, (key, value) -> result.add(key, value == null ? "" : value));
         }
         return result;
     }
@@ -254,6 +275,9 @@ public abstract class HttpUtils {
      * @return a map of cookie names to lists of cookie values
      */
     public static MultiMap<String, String> parseCookie(String header) {
+        if (header == null || header.isEmpty()) {
+            return null;
+        }
         MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
         parseCookie(header, (key, value) -> result.add(key, value == null ? "" : value));
         return result;
@@ -278,20 +302,21 @@ public abstract class HttpUtils {
      * @return a map where the key is the cookie name and the value is a list of cookie values as strings
      */
     public static <T> MultiMap<String, String> parseCookie(Map<String, List<T>> cookies, Function<T, String> valueFunc) {
-        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
-        if (cookies != null && !cookies.isEmpty()) {
-            cookies.forEach((name, cooke) -> {
-                if (!cooke.isEmpty()) {
-                    if (cooke.size() == 1) {
-                        result.set(name, valueFunc.apply(cooke.get(0)));
-                    } else {
-                        List<String> values = new ArrayList<>(cooke.size());
-                        cooke.forEach(value -> values.add(valueFunc.apply(value)));
-                        result.setAll(name, values);
-                    }
-                }
-            });
+        if (cookies == null || cookies.isEmpty() || valueFunc == null) {
+            return null;
         }
+        MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
+        cookies.forEach((name, cooke) -> {
+            if (!cooke.isEmpty()) {
+                if (cooke.size() == 1) {
+                    result.set(name, valueFunc.apply(cooke.get(0)));
+                } else {
+                    List<String> values = new ArrayList<>(cooke.size());
+                    cooke.forEach(value -> values.add(valueFunc.apply(value)));
+                    result.setAll(name, values);
+                }
+            }
+        });
         return result;
     }
 
@@ -304,6 +329,9 @@ public abstract class HttpUtils {
      */
     public static MultiMap<String, String> parseHeader(Enumeration<String> names,
                                                        Function<String, Enumeration<String>> headerFunc) {
+        if (names == null || headerFunc == null || !names.hasMoreElements()) {
+            return null;
+        }
         MultiMap<String, String> result = new MultiLinkedMap<>(CaseInsensitiveLinkedMap::new);
         String name;
         Enumeration<String> valueEnumeration;

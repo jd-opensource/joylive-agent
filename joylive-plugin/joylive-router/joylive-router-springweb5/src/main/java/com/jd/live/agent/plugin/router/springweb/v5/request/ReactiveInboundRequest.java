@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v5.request;
 
-import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
@@ -27,6 +26,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
@@ -59,9 +60,6 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
         this.handler = handler;
         this.systemPredicate = systemPredicate;
         this.uri = request.getURI();
-        this.headers = new UnsafeLazyObject<>(() -> HttpHeaders.writableHttpHeaders(request.getHeaders()));
-        this.queries = new UnsafeLazyObject<>(() -> HttpUtils.parseQuery(request.getURI().getRawQuery()));
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue));
     }
 
     @Override
@@ -114,6 +112,21 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return HttpHeaders.writableHttpHeaders(request.getHeaders());
+    }
+
+    @Override
+    protected Map<String, List<String>> parseQueries() {
+        return HttpUtils.parseQuery(request.getURI().getRawQuery());
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        return HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue);
     }
 
     /**
