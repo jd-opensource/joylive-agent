@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.context.bag;
 import com.jd.live.agent.core.util.tag.Tag;
 
 import java.util.Collection;
-import java.util.Enumeration;
 
 /**
  * Represents a cargo, an entity for carrying data within a request, extending the functionality of a {@link Tag}.
@@ -70,16 +69,6 @@ public class Cargo extends Tag {
     }
 
     /**
-     * Constructs a cargo with a specified key and an enumeration of values.
-     *
-     * @param key    The key associated with the cargo.
-     * @param values The enumeration of values associated with the key.
-     */
-    public Cargo(String key, Enumeration<String> values) {
-        super(key, values);
-    }
-
-    /**
      * Adds a single value to the cargo.
      *
      * @param value The value to add.
@@ -94,15 +83,6 @@ public class Cargo extends Tag {
      * @param items The collection of values to add.
      */
     public void add(Collection<String> items) {
-        super.add(items);
-    }
-
-    /**
-     * Adds an enumeration of values to the cargo.
-     *
-     * @param items The enumeration of values to add.
-     */
-    public void add(Enumeration<String> items) {
         super.add(items);
     }
 

@@ -18,7 +18,6 @@ package com.jd.live.agent.core.util.tag;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
 
 /**
@@ -82,17 +81,6 @@ public class Tag implements Label, Serializable {
     public Tag(String key, Collection<String> values, boolean zeroCopy) {
         this.key = key;
         add(values, zeroCopy);
-    }
-
-    /**
-     * Constructs a {@code Tag} with the specified key and an enumeration of values.
-     *
-     * @param key    The key of the tag.
-     * @param values The enumeration of values associated with the tag key.
-     */
-    public Tag(String key, Enumeration<String> values) {
-        this.key = key;
-        add(values);
     }
 
     @Override
@@ -176,27 +164,6 @@ public class Tag implements Label, Serializable {
                 }
             }
         }
-    }
-
-    /**
-     * Adds an enumeration of values to the list of values associated with the tag.
-     * This method converts the enumeration to a list and then calls {@code add(Collection<String> items)}
-     * to add each value, ensuring that only unique, non-null values are added.
-     *
-     * @param items The enumeration of values to be added.
-     */
-    protected void add(Enumeration<String> items) {
-        if (values == items) {
-            return;
-        }
-        List<String> list = null;
-        if (items != null) {
-            list = new ArrayList<>(1);
-            while (items.hasMoreElements()) {
-                list.add(items.nextElement());
-            }
-        }
-        add(list);
     }
 
     @Override
