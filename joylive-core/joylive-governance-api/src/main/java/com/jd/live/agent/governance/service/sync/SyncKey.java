@@ -61,7 +61,7 @@ public interface SyncKey {
 
         @Override
         public String toString() {
-            return subscriber.getName();
+            return subscriber.getNamespace() + "/" + subscriber.getName();
         }
     }
 
