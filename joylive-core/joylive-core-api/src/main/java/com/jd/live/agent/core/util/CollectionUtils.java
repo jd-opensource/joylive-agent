@@ -88,6 +88,19 @@ public class CollectionUtils {
     }
 
     /**
+     * Converts a value to a List.
+     *
+     * @param <T>   the type of elements in the iterator
+     * @param value the value to convert
+     * @return a List containing all the elements from the iterator, or null if the iterator is null
+     */
+    public static <T> List<T> toList(T value) {
+        List<T> result = new ArrayList<>();
+        result.add(value);
+        return result;
+    }
+
+    /**
      * Converts an Iterator to a List.
      *
      * @param <T>      the type of elements in the iterator

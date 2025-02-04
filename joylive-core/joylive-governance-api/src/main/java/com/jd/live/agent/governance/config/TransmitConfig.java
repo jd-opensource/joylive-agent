@@ -43,7 +43,7 @@ public class TransmitConfig {
     private String type = "w3c";
 
     /**
-     * Auto detect transmit type when reading.
+     * Auto-detect transmit type when reading.
      */
     private AutoDetect autoDetect = AutoDetect.NONE;
 

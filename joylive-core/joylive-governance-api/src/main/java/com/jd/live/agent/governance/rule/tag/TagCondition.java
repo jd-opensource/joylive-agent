@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.rule.tag;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.tag.Tag;
 import com.jd.live.agent.governance.rule.OpType;
 import lombok.Getter;
@@ -35,6 +37,8 @@ import java.util.List;
 @Getter
 @Setter
 public class TagCondition extends Tag {
+
+    private static final Logger logger = LoggerFactory.getLogger(TagCondition.class);
 
     /**
      * The operation type for matching the condition.
@@ -106,6 +110,9 @@ public class TagCondition extends Tag {
      * @return {@code true} if at least one value in the list satisfies the tag condition; {@code false} otherwise.
      */
     public boolean match(List<String> targets) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Matching opType:{}, tag value:{}, request value:{}", opType, values, targets);
+        }
         return opType.isMatch(values, targets);
     }
 }

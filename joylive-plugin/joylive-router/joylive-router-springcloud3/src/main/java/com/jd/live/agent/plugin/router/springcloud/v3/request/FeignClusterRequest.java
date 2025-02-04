@@ -125,5 +125,4 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
         return writeableHeaders.get();
     }
 
-
 }

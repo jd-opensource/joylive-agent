@@ -1,3 +1,4 @@
 com.jd.live.agent.plugin.transmission.springweb.v5.definition.WebHandlerDecoratorDefinition
 com.jd.live.agent.plugin.transmission.springweb.v5.definition.HandshakeWebSocketServiceDefinition
 com.jd.live.agent.plugin.transmission.springweb.v5.definition.DefaultExchangeFunctionDefinition
+com.jd.live.agent.plugin.transmission.springweb.v5.definition.ClientHttpRequestFactoryDefinition
