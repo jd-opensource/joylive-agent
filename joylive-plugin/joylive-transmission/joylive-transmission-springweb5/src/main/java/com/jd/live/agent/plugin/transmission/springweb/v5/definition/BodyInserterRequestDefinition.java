@@ -26,37 +26,30 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.DefaultExchangeFunctionInterceptor;
+import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.BodyInserterRequestInterceptor;
 
 /**
- * DefaultExchangeFunctionDefinition
+ * BodyInserterRequestDefinition
  *
- * @since 1.0.0
+ * @since 1.6.0
  */
 @Injectable
-@Extension(value = "DefaultExchangeFunctionDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "BodyInserterRequestDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
-@ConditionalOnClass(DefaultExchangeFunctionDefinition.TYPE_DEFAULT_EXCHANGE_FUNCTION)
-public class DefaultExchangeFunctionDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(BodyInserterRequestDefinition.TYPE_BODY_INSERTER_QUEST)
+public class BodyInserterRequestDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_EXCHANGE_FUNCTION = "org.springframework.web.reactive.function.client.ExchangeFunction";
-
-    private static final String METHOD_EXCHANGE = "exchange";
-
-    private static final String[] ARGUMENT_EXCHANGE = new String[]{
-            "org.springframework.web.reactive.function.client.ClientRequest"
-    };
+    protected static final String TYPE_BODY_INSERTER_QUEST = "org.springframework.web.reactive.function.client.DefaultClientRequestBuilder$BodyInserterRequest";
 
     @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
-    public DefaultExchangeFunctionDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_DEFAULT_EXCHANGE_FUNCTION);
+    public BodyInserterRequestDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_BODY_INSERTER_QUEST);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXCHANGE).
-                                and(MatcherBuilder.arguments(ARGUMENT_EXCHANGE)),
-                        () -> new DefaultExchangeFunctionInterceptor(propagation))
+                        MatcherBuilder.isConstructor(),
+                        () -> new BodyInserterRequestInterceptor(propagation))
         };
     }
 }
