@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.BodyInsert
  * @since 1.6.0
  */
 @Injectable
-@Extension(value = "BodyInserterRequestDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "BodyInserterRequestDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(BodyInserterRequestDefinition.TYPE_BODY_INSERTER_QUEST)
 public class BodyInserterRequestDefinition extends PluginDefinitionAdapter {

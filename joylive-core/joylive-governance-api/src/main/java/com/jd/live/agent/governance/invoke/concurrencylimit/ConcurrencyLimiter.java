@@ -25,5 +25,5 @@ import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
  */
 public interface ConcurrencyLimiter extends Licensee<ConcurrencyLimitPolicy> {
 
-
+    void complete();
 }

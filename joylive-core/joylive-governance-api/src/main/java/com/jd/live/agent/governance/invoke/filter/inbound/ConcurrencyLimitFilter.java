@@ -31,6 +31,7 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -65,6 +66,7 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<ConcurrencyLimitPolicy> concurrencyLimitPolicies = servicePolicy == null ? null : servicePolicy.getConcurrencyLimitPolicies();
+        List<ConcurrencyLimiter> limiters = new ArrayList<>();
         if (null != concurrencyLimitPolicies && !concurrencyLimitPolicies.isEmpty()) {
             for (ConcurrencyLimitPolicy policy : concurrencyLimitPolicies) {
                 // match logic
@@ -75,10 +77,17 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
                                 "The request is rejected by concurrency limiter. maxConcurrency=" +
                                         policy.getMaxConcurrency());
                     }
+                    if (limiter != null) {
+                        limiters.add(limiter);
+                    }
                 }
             }
         }
-        return chain.filter(invocation);
+        return chain.filter(invocation).whenComplete((o, throwable) -> {
+            for (ConcurrencyLimiter limiter : limiters) {
+                limiter.complete();
+            }
+        });
     }
 
     /**

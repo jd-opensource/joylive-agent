@@ -30,4 +30,9 @@ public abstract class AbstractConcurrencyLimiter extends AbstractLicensee<Concur
      * @return true if the acquisition is successful, false otherwise.
      */
     protected abstract boolean doAcquire();
+
+    @Override
+    public void complete() {
+    }
+
 }
