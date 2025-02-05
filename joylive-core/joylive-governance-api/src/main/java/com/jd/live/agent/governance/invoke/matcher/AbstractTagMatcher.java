@@ -45,4 +45,5 @@ public abstract class AbstractTagMatcher implements TagMatcher {
      * @return The value list to be matched.
      */
     protected abstract List<String> getValues(TagCondition condition, ServiceRequest request);
+
 }

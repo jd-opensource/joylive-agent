@@ -21,7 +21,10 @@ import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * HeaderTagMatcher is an implementation of the {@link TagMatcher} interface that matches
@@ -34,6 +37,8 @@ public class HeaderTagMatcher extends AbstractTagMatcher {
 
     @Override
     protected List<String> getValues(TagCondition condition, ServiceRequest request) {
-        return request.getHeaders(condition.getKey());
+        return Optional.ofNullable(request.getHeaders(condition.getKey()))
+                .map(values -> values.stream().distinct().collect(Collectors.toList()))
+                .orElse(Collections.emptyList());
     }
 }
