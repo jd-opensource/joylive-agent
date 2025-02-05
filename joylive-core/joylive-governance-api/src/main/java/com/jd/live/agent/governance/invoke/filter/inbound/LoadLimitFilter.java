@@ -155,7 +155,7 @@ public class LoadLimitFilter implements InboundFilter {
             processCpuTime = newProcessCpuTime;
             processUpTime = newProcessUpTime;
 
-            double cpuUsage = Math.max(processCpuUsage, systemCpuUsage);
+            double cpuUsage = Math.max(processCpuUsage, systemCpuUsage) * 100;
             double loadAverage = osBean.getSystemLoadAverage();
 
             load = new SystemLoad((int) cpuUsage, (int) loadAverage);
