@@ -55,10 +55,11 @@ public class ExporterHandler implements BuilderHandler {
     @Inject(value = AgentPath.COMPONENT_AGENT_PATH)
     private AgentPath agentPath;
 
+    private final LocalDateTime now = LocalDateTime.now();
+
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
-        File output = new File(agentPath.getOutputPath(),
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")) + File.separator);
+        File output = new File(agentPath.getOutputPath(), now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")) + File.separator);
         if (!output.mkdirs() && !output.exists()) {
             logger.warn("failed to create output directory " + output.getPath());
             return builder;
