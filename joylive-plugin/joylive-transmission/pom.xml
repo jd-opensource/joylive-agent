@@ -18,7 +18,6 @@
         <module>joylive-transmission-httpclient4</module>
         <module>joylive-transmission-httpclient3</module>
         <module>joylive-transmission-jdkhttp</module>
-        <module>joylive-transmission-openfeign</module>
         <module>joylive-transmission-okhttp1</module>
         <module>joylive-transmission-okhttp3</module>
         <module>joylive-transmission-servlet-javax</module>

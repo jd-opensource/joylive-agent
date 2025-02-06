@@ -107,7 +107,7 @@ public class EchoController {
             Thread.sleep(code);
         }
         response.setStatus(code);
-        LiveResponse lr = new LiveResponse(code, null, code);
+        LiveResponse lr = new LiveResponse(code, "code:" + code, code);
         configure(request, lr);
         return lr.toString();
     }
