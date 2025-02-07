@@ -1,4 +1,4 @@
-version=1.5.0-$(shell git rev-parse --short HEAD)
+version=1.6.0-$(shell git rev-parse --short HEAD)
 #version=1.0.0
 repo ?= hub.jdcloud.com/jmsf
 
