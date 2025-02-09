@@ -261,10 +261,6 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-transmission-openfeign</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
             <artifactId>joylive-transmission-okhttp1</artifactId>
         </dependency>
         <dependency>

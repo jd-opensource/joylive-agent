@@ -103,7 +103,6 @@
                 <include>com.jd.live:joylive-router-springgateway3</include>
                 <include>com.jd.live:joylive-router-springgateway4</include>
                 <include>com.jd.live:joylive-transmission-springweb5</include>
-                <include>com.jd.live:joylive-transmission-openfeign</include>
             </includes>
         </dependencySet>
 

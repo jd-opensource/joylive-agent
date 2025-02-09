@@ -123,8 +123,10 @@ public class EchoController {
     }
 
     private void addTrace(HttpServletRequest request, LiveResponse response) {
-        response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
-                LiveTransmission.build("header", request::getHeader)));
+        if (response != null) {
+            response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
+                    LiveTransmission.build("header", request::getHeader)));
+        }
     }
 
 }
