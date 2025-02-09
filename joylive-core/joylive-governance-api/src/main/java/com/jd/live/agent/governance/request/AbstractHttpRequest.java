@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.http.HttpHeader.HOST;
+
 /**
  * Provides an abstract base class for HTTP requests, implementing the {@link HttpRequest} interface.
  * <p>
@@ -38,11 +40,6 @@ import java.util.Set;
  * @param <T> The type of the original request object this class wraps.
  */
 public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> implements HttpRequest {
-
-    /**
-     * Key for the "Host" header in HTTP requests.
-     */
-    protected static final String HEAD_HOST_KEY = "Host";
 
     /**
      * Key for the "serviceGroup" header in HTTP requests.
@@ -198,7 +195,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * @return the parsed address, or null if the host is invalid
      */
     protected Address parseAddressByHeader() {
-        String header = getHeader(HEAD_HOST_KEY);
+        String header = getHeader(HOST);
         if (header == null) {
             return null;
         }
