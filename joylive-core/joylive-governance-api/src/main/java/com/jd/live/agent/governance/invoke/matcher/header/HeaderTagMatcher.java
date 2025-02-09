@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.invoke.matcher.header;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.invoke.matcher.AbstractTagMatcher;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
@@ -38,7 +37,7 @@ public class HeaderTagMatcher extends AbstractTagMatcher {
     protected List<String> getValues(TagCondition condition, ServiceRequest request) {
         List<String> values = request.getHeaders(condition.getKey());
         if (values == null || values.isEmpty()) {
-            Cargo cargo = RequestContext.getCargo(condition.getKey());
+            Cargo cargo = request.getCargo(condition.getKey());
             if (cargo != null) {
                 values = cargo.getValues();
             }
