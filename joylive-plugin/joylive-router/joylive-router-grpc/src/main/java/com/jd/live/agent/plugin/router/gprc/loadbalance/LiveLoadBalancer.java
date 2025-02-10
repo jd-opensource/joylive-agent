@@ -173,8 +173,13 @@ public class LiveLoadBalancer extends LoadBalancer {
     private void pickReady() {
         List<GrpcEndpoint> readies = new ArrayList<>();
         endpoints.values().forEach(endpoint -> {
-            if (endpoint.getConnectivityState() == READY) {
-                readies.add(endpoint);
+            switch (endpoint.getConnectivityState()) {
+                case READY:
+                    readies.add(endpoint);
+                    break;
+                case IDLE:
+                    endpoint.requestConnection();
+                    break;
             }
         });
         if (readies.isEmpty()) {
