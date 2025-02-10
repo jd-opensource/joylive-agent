@@ -35,6 +35,7 @@ import com.jd.live.agent.plugin.router.springweb.v5.interceptor.ExceptionCarryin
 @ConditionalOnSpringWeb5FlowControlEnabled
 @ConditionalOnClass(ExceptionCarryingDefinition.TYPE_DISPATCHER_SERVLET)
 public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
+
     protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
     protected static final String METHOD = "processHandlerException";

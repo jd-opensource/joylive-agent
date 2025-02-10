@@ -48,7 +48,6 @@ public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
             "java.lang.Object"
     };
 
-
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 

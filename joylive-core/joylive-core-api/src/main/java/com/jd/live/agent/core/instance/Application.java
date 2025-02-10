@@ -208,6 +208,7 @@ public class Application {
                 labelLiveSpace(consumer);
                 labelLane(consumer);
             }
+            labelApplication(consumer);
             labelService(consumer, serviceGroup);
         }
     }
@@ -241,6 +242,17 @@ public class Application {
         accept(consumer, Constants.LABEL_APPLICATION, name);
         accept(consumer, Constants.LABEL_INSTANCE_ID, instance);
         accept(consumer, Constants.LABEL_TIMESTAMP, timestamp == null ? null : String.valueOf(timestamp));
+    }
+
+    /**
+     * Labels the application information using the provided consumer.
+     *
+     * @param consumer the BiConsumer to use for labeling. It takes two parameters: the label key and the label value.
+     */
+    private void labelApplication(BiConsumer<String, String> consumer) {
+        if (meta != null) {
+            meta.forEach(consumer);
+        }
     }
 
     /**
