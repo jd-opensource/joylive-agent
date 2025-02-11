@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.exception.Unretryable;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
@@ -117,6 +118,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          */
         private final long deadline;
 
+        private final Object mutex = new Object();
+
         /**
          * Constructs a new {@code RetryContext} with the specified retry policy and response function.
          *
@@ -172,9 +175,9 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                 Throwable throwable = se == null ? e : se.getThrowable();
                 switch (isRetryable(request, v, e, count)) {
                     case RETRY:
-                        Throwable unreadyException = cluster.isDestroyed() ? cluster.createException(new RejectUnreadyException(), request) : null;
-                        if (unreadyException != null) {
-                            future.completeExceptionally(unreadyException);
+                        Throwable ex = checkAndAwait(request, throwable);
+                        if (ex != null) {
+                            future.completeExceptionally(ex);
                         } else {
                             doExecute(invocation, supplier, future);
                         }
@@ -186,13 +189,60 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                         future.completeExceptionally(new RetryTimeoutException("retry is timeout.", throwable, retryPolicy.getTimeout()));
                         break;
                     default:
-                        if (e != null) {
-                            future.completeExceptionally(e);
-                        } else {
-                            future.complete(v);
-                        }
+                        Futures.complete(future, v, e);
                 }
             });
+        }
+
+        /**
+         * Checks if the request is ready and waits if necessary.
+         *
+         * @param request the request to check
+         * @param cause   the cause of the previous failure, or null if this is the first attempt
+         * @return the exception that occurred during the check or wait, or null if the request is ready
+         */
+        private Throwable checkAndAwait(R request, Throwable cause) {
+            Throwable result = checkReady(request);
+            if (result == null) {
+                result = await(cause);
+                if (result == null) {
+                    result = checkReady(request);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Checks if the cluster is destroyed and returns an exception if it is.
+         *
+         * @param request the request to check
+         * @return an exception if the cluster is destroyed, or null if it is not
+         */
+        private Throwable checkReady(R request) {
+            return cluster.isDestroyed() ? cluster.createException(new RejectUnreadyException(), request) : null;
+        }
+
+        /**
+         * Waits for a specified interval before retrying the request.
+         *
+         * @param cause the cause of the previous failure, or null if this is the first attempt
+         * @return an exception if the retry timed out, or null if the wait was successful
+         */
+        private Throwable await(Throwable cause) {
+            Long interval = retryPolicy == null ? null : retryPolicy.getInterval();
+            if (interval != null && interval > 0) {
+                if (interval + System.currentTimeMillis() > deadline) {
+                    return new RetryTimeoutException("retry is timeout.", cause, retryPolicy.getTimeout());
+                }
+                synchronized (mutex) {
+                    try {
+                        mutex.wait(interval);
+                    } catch (InterruptedException e) {
+                        return new RetryTimeoutException("retry is timeout.", cause, retryPolicy.getTimeout());
+                    }
+                }
+            }
+            return null;
         }
 
         private int getAndIncrement() {

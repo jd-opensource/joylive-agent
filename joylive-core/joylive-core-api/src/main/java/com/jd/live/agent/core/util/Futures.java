@@ -25,6 +25,24 @@ import java.util.concurrent.CompletionStage;
 public abstract class Futures {
 
     /**
+     * Completes a CompletableFuture with either an exception or a value.
+     *
+     * @param future    the CompletableFuture to complete
+     * @param value     the value to complete with, or null if completing with an exception
+     * @param throwable the exception to complete with, or null if completing with a value
+     * @param <T>       the type of the value
+     */
+    public static <T> void complete(CompletableFuture<T> future, T value, Throwable throwable) {
+        if (future != null) {
+            if (throwable != null) {
+                future.completeExceptionally(throwable);
+            } else {
+                future.complete(value);
+            }
+        }
+    }
+
+    /**
      * Converts a {@link CompletionStage} into a {@link CompletableFuture}.
      *
      * @param <T>   the result type returned by this future's {@code get} method
