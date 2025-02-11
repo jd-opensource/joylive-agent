@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOu
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -64,5 +65,15 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     @Override
     public Object getResult() {
         return body == null ? null : body.get();
+    }
+
+    @Override
+    public String getHeader(String key) {
+        return response == null || key == null ? null : response.getHeaders().getFirst(key);
+    }
+
+    @Override
+    public List<String> getHeaders(String key) {
+        return response == null || key == null ? null : response.getHeaders().get(key);
     }
 }

@@ -80,8 +80,8 @@ public interface HttpResponse extends ServiceResponse {
      * @return A list of values for the specified header, or null if the header does not exist.
      */
     default List<String> getHeaders(String key) {
-        Map<String, List<String>> result = getHeaders();
-        return result == null || key == null ? null : result.get(key);
+        Map<String, List<String>> result = key == null ? null : getHeaders();
+        return result == null ? null : result.get(key);
     }
 
     /**

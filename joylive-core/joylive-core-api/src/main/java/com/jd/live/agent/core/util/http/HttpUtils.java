@@ -16,12 +16,17 @@
 package com.jd.live.agent.core.util.http;
 
 import com.jd.live.agent.core.parser.ObjectReader;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +53,14 @@ public abstract class HttpUtils {
     public static final String CONNECTION_KEEP_ALIVE = "keep-alive";
 
     public static final String ACCEPT_ENCODING_GZIP_DEFLATE = ENCODING_GZIP + "," + ENCODING_DEFLATE;
+
+    private static final LazyObject<URIConstructor> cache = new LazyObject<>(() -> {
+        try {
+            return new URIConstructor();
+        } catch (Throwable e) {
+            return null;
+        }
+    });
 
     /**
      * Performs an HTTP GET request to the specified URI, configures the connection,
@@ -413,6 +426,144 @@ public abstract class HttpUtils {
         }
 
         return new String(result, 0, resultPos);
+    }
+
+    /**
+     * Creates a new URI object with the specified components.
+     *
+     * @param uri    the original URI object
+     * @param scheme the scheme component of the new URI
+     * @param host   the host component of the new URI
+     * @param port   the port component of the new URI
+     * @return a new URI object with the specified components
+     */
+    public static URI newURI(URI uri, String scheme, String host, Integer port) {
+        int p = port != null ? port : uri.getPort();
+        String s = scheme == null || scheme.isEmpty() ? uri.getScheme() : scheme;
+        String h = host == null || host.isEmpty() ? uri.getHost() : host;
+        URIConstructor constructor = cache.get();
+        if (constructor != null) {
+            try {
+                return constructor.create(s, uri.getRawUserInfo(), h, p, uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment());
+            } catch (Throwable ignored) {
+            }
+        }
+        try {
+            return new URI(s, uri.getRawUserInfo(), h, p, uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment());
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Creates a new URI object with the specified components.
+     *
+     * @param uri  the original URI object
+     * @param host the host component of the new URI
+     * @return a new URI object with the specified components
+     */
+    public static URI newURI(URI uri, String host) {
+        return newURI(uri, null, host, null);
+    }
+
+    /**
+     * A private static class that provides a way to construct URI objects using reflection.
+     */
+    private static class URIConstructor {
+
+        private final Constructor<URI> constructor;
+
+        private final Field schemeField;
+
+        private final Field fragmentField;
+
+        private final Field authorityField;
+
+        private final Field userInfoField;
+
+        private final Field hostField;
+
+        private final Field portField;
+
+        private final Field pathField;
+
+        private final Field queryField;
+
+        @SuppressWarnings("unchecked")
+        URIConstructor() throws NoSuchFieldException, NoSuchMethodException {
+            Class<?> uriClass = URI.class;
+            constructor = (Constructor<URI>) uriClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            schemeField = uriClass.getDeclaredField("scheme");
+            schemeField.setAccessible(true);
+            fragmentField = uriClass.getDeclaredField("fragment");
+            fragmentField.setAccessible(true);
+            authorityField = uriClass.getDeclaredField("authority");
+            authorityField.setAccessible(true);
+            userInfoField = uriClass.getDeclaredField("userInfo");
+            userInfoField.setAccessible(true);
+            hostField = uriClass.getDeclaredField("host");
+            hostField.setAccessible(true);
+            portField = uriClass.getDeclaredField("port");
+            portField.setAccessible(true);
+            pathField = uriClass.getDeclaredField("path");
+            pathField.setAccessible(true);
+            queryField = uriClass.getDeclaredField("query");
+            queryField.setAccessible(true);
+        }
+
+        /**
+         * Creates a new URI object with the specified components.
+         *
+         * @param scheme   the scheme component of the new URI
+         * @param userInfo the user info component of the new URI
+         * @param host     the host component of the new URI
+         * @param port     the port component of the new URI
+         * @param path     the path component of the new URI
+         * @param query    the query component of the new URI
+         * @param fragment the fragment component of the new URI
+         * @return a new URI object with the specified components
+         * @throws Exception if an error occurs while constructing the URI
+         */
+        public URI create(String scheme, String userInfo, String host, int port, String path, String query, String fragment) throws Exception {
+            URI result = constructor.newInstance();
+            schemeField.set(result, scheme);
+            userInfoField.set(result, userInfo);
+            hostField.set(result, host);
+            portField.set(result, port);
+            pathField.set(result, path);
+            queryField.set(result, query);
+            fragmentField.set(result, fragment);
+            authorityField.set(result, authority(userInfo, host, port));
+            return result;
+        }
+
+        /**
+         * Constructs the authority component of a URI from the user info, host, and port components.
+         *
+         * @param userInfo the user info component
+         * @param host     the host component
+         * @param port     the port component
+         * @return the authority component of the URI
+         */
+        private String authority(String userInfo, String host, int port) {
+            if (userInfo == null || userInfo.isEmpty()) {
+                if (port <= 0) {
+                    return host == null ? "" : host;
+                } else {
+                    return (host == null ? "" : host) + ":" + port;
+                }
+            }
+            StringBuilder builder = new StringBuilder(128);
+            builder.append(userInfo).append("@");
+            if (host != null) {
+                builder.append(host);
+            }
+            if (port > 0) {
+                builder.append(":").append(port);
+            }
+            return builder.toString();
+        }
     }
 }
 

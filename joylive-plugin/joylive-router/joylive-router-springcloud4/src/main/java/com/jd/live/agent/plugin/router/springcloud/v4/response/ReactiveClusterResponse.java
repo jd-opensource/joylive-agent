@@ -64,6 +64,11 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
     }
 
     @Override
+    public List<String> getHeaders(String key) {
+        return response == null ? null : response.headers().header(key);
+    }
+
+    @Override
     protected Map<String, List<String>> parseCookies() {
         MultiValueMap<String, ResponseCookie> cookies = response == null ? null : response.cookies();
         return cookies == null ? null : HttpUtils.parseCookie(cookies, ResponseCookie::getValue);

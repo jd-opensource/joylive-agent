@@ -160,14 +160,6 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     }
 
     @Override
-    public String getHeader(String key) {
-        if (key == null) return null;
-        Map<String, List<String>> headers = getHeaders();
-        List<String> values = headers == null ? null : headers.get(key);
-        return values == null || values.isEmpty() ? null : values.get(0);
-    }
-
-    @Override
     public Map<String, List<String>> getCookies() {
         if (cookies == null) {
             cookies = new CacheObject<>(parseCookies());

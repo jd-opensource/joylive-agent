@@ -35,7 +35,6 @@ import java.util.List;
  * specified by this {@code TagCondition}.
  */
 @Getter
-@Setter
 public class TagCondition extends Tag {
 
     private static final Logger logger = LoggerFactory.getLogger(TagCondition.class);
@@ -43,6 +42,7 @@ public class TagCondition extends Tag {
     /**
      * The operation type for matching the condition.
      */
+    @Setter
     private OpType opType = OpType.EQUAL;
 
     /**
@@ -80,7 +80,11 @@ public class TagCondition extends Tag {
     public TagCondition(String key, List<String> value, OpType opType, String type) {
         super(key, value);
         this.opType = opType;
-        this.type = type;
+        setType(type);
+    }
+
+    public void setType(String type) {
+        this.type = type == null ? null : type.toLowerCase();
     }
 
     /**

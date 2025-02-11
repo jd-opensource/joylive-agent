@@ -31,12 +31,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
@@ -123,7 +123,7 @@ public class GatewayClusterRequest extends AbstractClusterRequest<ServerHttpRequ
 
     @Override
     public void forward(String host) {
-        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, UriComponentsBuilder.fromUri(uri).host(host).build().toUri());
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, newURI(uri, host));
     }
 
     @Override

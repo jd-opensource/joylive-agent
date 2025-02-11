@@ -85,14 +85,23 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     }
 
     @Override
+    public String getHeader(String key) {
+        return response == null || key == null ? null : response.getHeaders().getFirst(key);
+    }
+
+    @Override
+    public List<String> getHeaders(String key) {
+        return response == null || key == null ? null : response.getHeaders().get(key);
+    }
+
+    @Override
     protected Map<String, List<String>> parseCookies() {
-        Map<String, List<String>> headers = getHeaders();
-        return headers == null ? null : HttpUtils.parseCookie(headers.get(HttpHeaders.COOKIE));
+        return HttpUtils.parseCookie(getHeaders(HttpHeaders.COOKIE));
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return response.getHeaders();
+        return response == null ? null : response.getHeaders();
     }
 
     private static class ClientHttpResponseAdapter implements ClientHttpResponse {

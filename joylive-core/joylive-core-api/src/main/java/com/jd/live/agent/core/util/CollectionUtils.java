@@ -151,6 +151,9 @@ public class CollectionUtils {
         if (iterable == null) {
             return null;
         }
+        if (iterable instanceof List) {
+            return (List<T>) iterable;
+        }
         List<T> result = iterable instanceof Collection ? new ArrayList<>(((Collection<T>) iterable).size()) : new ArrayList<>();
         for (T t : iterable) {
             result.add(t);

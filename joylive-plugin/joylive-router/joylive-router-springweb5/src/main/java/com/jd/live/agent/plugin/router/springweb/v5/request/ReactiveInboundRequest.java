@@ -106,12 +106,17 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+        return key == null ? null : request.getHeaders().getFirst(key);
     }
 
     @Override
     public String getQuery(String key) {
-        return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
+        return key == null ? null : request.getQueryParams().getFirst(key);
+    }
+
+    @Override
+    public List<String> getQueries(String key) {
+        return key == null ? null : request.getQueryParams().get(key);
     }
 
     @Override
@@ -121,7 +126,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     protected Map<String, List<String>> parseQueries() {
-        return HttpUtils.parseQuery(request.getURI().getRawQuery());
+        return request.getQueryParams();
     }
 
     @Override

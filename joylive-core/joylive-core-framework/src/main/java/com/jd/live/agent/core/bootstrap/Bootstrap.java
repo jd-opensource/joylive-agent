@@ -599,10 +599,12 @@ public class Bootstrap implements AgentLifecycle {
     private ByteSupplier createByteSupplier() {
         ByteSupplier result = extensionManager.getOrLoadExtension(ByteSupplier.class, classLoaderManager.getCoreImplLoader());
 
-        // export & open "java.uti" to core module.
+        // export & open "java.uti & java.net" to core module.
         Map<String, Set<String>> mapping = new HashMap<>();
         Set<String> targets = mapping.computeIfAbsent("com.jd.live.agent.governance.invoke.Invocation", key -> new HashSet<>());
         targets.add("java.util.Map");
+        targets = mapping.computeIfAbsent("com.jd.live.agent.core.util.http.HttpUtils", key -> new HashSet<>());
+        targets.add("java.net.URI");
         result.export(instrumentation, mapping, classLoaderManager.getCoreImplLoader());
 
         return result;

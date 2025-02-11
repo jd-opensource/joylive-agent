@@ -28,7 +28,6 @@ import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -37,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 import static com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveRouteFilter.ROUTE_VERSION;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
@@ -240,13 +240,7 @@ public class LiveChainBuilder {
             chain.filter(exchange).subscribe();
         }
         URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
-        boolean encoded = containsEncodedParts(uri);
-        uri = UriComponentsBuilder.fromUri(uri)
-                .scheme(routeUri.getScheme())
-                .host(routeUri.getHost())
-                .port(routeUri.getPort())
-                .build(encoded)
-                .toUri();
+        uri = newURI(uri, routeUri.getScheme(), routeUri.getHost(), routeUri.getPort());
         attributes.put(GATEWAY_REQUEST_URL_ATTR, uri);
         return SCHEMA_LB.equals(scheme) || SCHEMA_LB.equals(schemePrefix);
     }

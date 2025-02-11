@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2.response;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -85,9 +86,28 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
     }
 
     @Override
+    public String getHeader(String key) {
+        if (key == null || response == null) {
+            return null;
+        }
+        Map<String, Collection<String>> headers = response.headers();
+        Collection<String> values = headers == null ? null : headers.get(key);
+        return values == null ? null : values.iterator().next();
+    }
+
+    @Override
+    public List<String> getHeaders(String key) {
+        if (key == null || response == null) {
+            return null;
+        }
+        Map<String, Collection<String>> headers = response.headers();
+        Collection<String> values = headers == null ? null : headers.get(key);
+        return values == null ? null : CollectionUtils.toList(values);
+    }
+
+    @Override
     protected Map<String, List<String>> parseCookies() {
-        Map<String, Collection<String>> headers = response == null ? null : response.headers();
-        return headers == null ? null : HttpUtils.parseCookie(headers.get(HttpHeaders.COOKIE));
+        return HttpUtils.parseCookie(getHeaders(HttpHeaders.COOKIE));
     }
 
     @Override
