@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v5.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
+import com.jd.live.agent.governance.request.servlet.JavaxRequest;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -103,17 +104,6 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     }
 
     @Override
-    public String getHeader(String key) {
-        // request.getHeader() is slow.
-        return super.getHeader(key);
-    }
-
-    @Override
-    public String getQuery(String key) {
-        return key == null || key.isEmpty() ? null : request.getParameter(key);
-    }
-
-    @Override
     protected String parseScheme() {
         String result = super.parseScheme();
         return result == null ? request.getScheme() : result;
@@ -130,7 +120,9 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
+        return request instanceof JavaxRequest
+                ? ((JavaxRequest) request).getHeaders()
+                : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
     }
 
     @Override

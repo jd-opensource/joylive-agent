@@ -215,9 +215,13 @@ public class CollectionUtils {
     public static <T> List<T> toList(Enumeration<T> enumeration) {
         List<T> result = null;
         if (enumeration != null && enumeration.hasMoreElements()) {
-            result = new ArrayList<>(2);
-            while (enumeration.hasMoreElements()) {
-                result.add(enumeration.nextElement());
+            if (enumeration instanceof ListEnumeration) {
+                result = ((ListEnumeration<T>) enumeration).getElements();
+            } else {
+                result = new ArrayList<>(2);
+                while (enumeration.hasMoreElements()) {
+                    result.add(enumeration.nextElement());
+                }
             }
         }
         return result;
@@ -273,6 +277,28 @@ public class CollectionUtils {
             return null;
         }
         return new ArrayIterator<>(arrays, function);
+    }
+
+    /**
+     * Converts a List of values to an Enumeration.
+     *
+     * @param values the List of values to convert
+     * @param <T>    the type of the values
+     * @return an Enumeration containing the values from the List, or null if the List is null
+     */
+    public static <T> Enumeration<T> toEnumeration(List<T> values) {
+        return values == null ? Collections.emptyEnumeration() : new ListEnumeration<>(values);
+    }
+
+    /**
+     * Converts a Collection of values to an Enumeration.
+     *
+     * @param values the Collection of values to convert
+     * @param <T>    the type of the values
+     * @return an Enumeration containing the values from the Collection, or null if the Collection is null
+     */
+    public static <T> Enumeration<T> toEnumeration(Collection<T> values) {
+        return values == null ? Collections.emptyEnumeration() : Collections.enumeration(values);
     }
 
     /**
@@ -620,4 +646,35 @@ public class CollectionUtils {
             return function.apply(arrays[index++]);
         }
     }
+
+    /**
+     * A private static class that implements the Enumeration interface for a List of values.
+     *
+     * @param <T> the type of the values in the List
+     */
+    private static class ListEnumeration<T> implements Enumeration<T> {
+
+        private final List<T> list;
+
+        private int index = 0;
+
+        ListEnumeration(List<T> list) {
+            this.list = list;
+        }
+
+        @Override
+        public boolean hasMoreElements() {
+            return list != null && index < list.size();
+        }
+
+        @Override
+        public T nextElement() {
+            return list == null ? null : list.get(index++);
+        }
+
+        public List<T> getElements() {
+            return index == 0 || list == null ? list : list.subList(index, list.size());
+        }
+    }
+
 }

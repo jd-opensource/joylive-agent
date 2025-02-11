@@ -21,7 +21,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.servlet.jakarta.request.HttpServletRequestParser;
-import jakarta.servlet.http.HttpServletRequest;
+
+import static com.jd.live.agent.governance.request.servlet.JakartaRequest.replace;
 
 /**
  * An interceptor for HttpServlet requests to capture and restore context (cargo) from the request headers.
@@ -45,8 +46,7 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
-            HttpServletRequest request = ctx.getArgument(0);
-            propagation.read(RequestContext.create(), new HttpServletRequestParser(request));
+            propagation.read(RequestContext.create(), new HttpServletRequestParser(replace(ctx.getArguments(), 0)));
         }
     }
 
