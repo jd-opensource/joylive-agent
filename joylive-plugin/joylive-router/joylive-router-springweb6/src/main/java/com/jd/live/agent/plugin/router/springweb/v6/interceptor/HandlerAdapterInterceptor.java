@@ -25,7 +25,7 @@ import com.jd.live.agent.plugin.router.springweb.v6.request.ExceptionView;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ServletInboundRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import static com.jd.live.agent.governance.request.servlet.JakartaRequest.replace;
+import static com.jd.live.agent.plugin.router.springweb.v6.request.JakartaRequest.replace;
 
 /**
  * HandlerAdapterInterceptor

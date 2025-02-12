@@ -25,7 +25,7 @@ import com.jd.live.agent.plugin.router.springweb.v5.request.ExceptionView;
 import com.jd.live.agent.plugin.router.springweb.v5.request.ServletInboundRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import static com.jd.live.agent.governance.request.servlet.JavaxRequest.replace;
+import static com.jd.live.agent.plugin.router.springweb.v5.request.JavaxRequest.replace;
 
 /**
  * HandlerAdapterInterceptor

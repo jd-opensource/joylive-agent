@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.request.servlet;
+package com.jd.live.agent.plugin.transmission.servlet.jakarta.request;
 
 import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiMap;
+import com.jd.live.agent.governance.request.HeaderProvider;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 
@@ -34,7 +35,7 @@ import java.util.*;
 /**
  * A wrapper class for HttpServletRequest that delegates all method calls to the underlying request object.
  */
-public class JakartaRequest implements jakarta.servlet.http.HttpServletRequest {
+public class JakartaRequest implements HttpServletRequest, HeaderProvider {
 
     // HTTP date formats
     private static final String DATE_RFC5322 = "EEE, dd MMM yyyy HH:mm:ss z";
@@ -484,11 +485,7 @@ public class JakartaRequest implements jakarta.servlet.http.HttpServletRequest {
         return request.getDispatcherType();
     }
 
-    /**
-     * Returns a MultiMap containing the headers of the request.
-     *
-     * @return a MultiMap containing the headers of the request
-     */
+    @Override
     public MultiMap<String, String> getHeaders() {
         if (headers == null) {
             headers = HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
@@ -506,7 +503,7 @@ public class JakartaRequest implements jakarta.servlet.http.HttpServletRequest {
      */
     public static HttpServletRequest replace(final Object[] arguments, final int index) {
         HttpServletRequest hsr = (HttpServletRequest) arguments[index];
-        if (!(hsr instanceof JakartaRequest)) {
+        if (!(hsr instanceof HeaderProvider)) {
             hsr = new JakartaRequest(hsr);
             arguments[index] = hsr;
         }

@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v6.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
-import com.jd.live.agent.governance.request.servlet.JakartaRequest;
+import com.jd.live.agent.governance.request.HeaderProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
@@ -105,8 +105,8 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return request instanceof JakartaRequest
-                ? ((JakartaRequest) request).getHeaders()
+        return request instanceof HeaderProvider
+                ? ((HeaderProvider) request).getHeaders()
                 : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
     }
 

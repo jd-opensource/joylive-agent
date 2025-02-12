@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v5.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
-import com.jd.live.agent.governance.request.servlet.JavaxRequest;
+import com.jd.live.agent.governance.request.HeaderProvider;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -120,8 +120,8 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return request instanceof JavaxRequest
-                ? ((JavaxRequest) request).getHeaders()
+        return request instanceof HeaderProvider
+                ? ((HeaderProvider) request).getHeaders()
                 : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
     }
 

@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.request.servlet;
+package com.jd.live.agent.plugin.router.springweb.v6.request;
 
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiMap;
+import com.jd.live.agent.governance.request.HeaderProvider;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -32,7 +35,7 @@ import java.util.*;
 /**
  * A wrapper class for HttpServletRequest that delegates all method calls to the underlying request object.
  */
-public class JavaxRequest implements HttpServletRequest {
+public class JakartaRequest implements HttpServletRequest, HeaderProvider {
 
     // HTTP date formats
     private static final String DATE_RFC5322 = "EEE, dd MMM yyyy HH:mm:ss z";
@@ -64,8 +67,49 @@ public class JavaxRequest implements HttpServletRequest {
 
     private MultiMap<String, String> headers;
 
-    public JavaxRequest(HttpServletRequest request) {
+    public JakartaRequest(HttpServletRequest request) {
         this.request = request;
+    }
+
+    @Override
+    public String getRequestId() {
+        return request.getRequestId();
+    }
+
+    @Override
+    public String getProtocolRequestId() {
+        return request.getProtocolRequestId();
+    }
+
+    @Override
+    public ServletConnection getServletConnection() {
+        return request.getServletConnection();
+    }
+
+    @Override
+    public void setCharacterEncoding(Charset encoding) {
+        request.setCharacterEncoding(encoding);
+    }
+
+    @Override
+    public HttpServletMapping getHttpServletMapping() {
+        return request.getHttpServletMapping();
+    }
+
+    @Override
+    @Deprecated
+    public PushBuilder newPushBuilder() {
+        return request.newPushBuilder();
+    }
+
+    @Override
+    public Map<String, String> getTrailerFields() {
+        return request.getTrailerFields();
+    }
+
+    @Override
+    public boolean isTrailerFieldsReady() {
+        return request.isTrailerFieldsReady();
     }
 
     @Override
@@ -105,13 +149,13 @@ public class JavaxRequest implements HttpServletRequest {
     @Override
     public Enumeration<String> getHeaders(String name) {
         MultiMap<String, String> headers = getHeaders();
-        return Collections.enumeration(headers == null ? Collections.emptyList() : headers.get(name));
+        return CollectionUtils.toEnumeration(headers == null ? null : headers.get(name));
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
         MultiMap<String, String> headers = getHeaders();
-        return Collections.enumeration(headers == null ? Collections.emptyList() : headers.keySet());
+        return CollectionUtils.toEnumeration(headers == null ? null : headers.keySet());
     }
 
     @Override
@@ -220,12 +264,6 @@ public class JavaxRequest implements HttpServletRequest {
     @Override
     public boolean isRequestedSessionIdFromURL() {
         return request.isRequestedSessionIdFromURL();
-    }
-
-    @Override
-    @Deprecated
-    public boolean isRequestedSessionIdFromUrl() {
-        return request.isRequestedSessionIdFromUrl();
     }
 
     @Override
@@ -393,12 +431,6 @@ public class JavaxRequest implements HttpServletRequest {
     }
 
     @Override
-    @Deprecated
-    public String getRealPath(String path) {
-        return request.getRealPath(path);
-    }
-
-    @Override
     public int getRemotePort() {
         return request.getRemotePort();
     }
@@ -453,11 +485,7 @@ public class JavaxRequest implements HttpServletRequest {
         return request.getDispatcherType();
     }
 
-    /**
-     * Returns a MultiMap containing the headers of the request.
-     *
-     * @return a MultiMap containing the headers of the request
-     */
+    @Override
     public MultiMap<String, String> getHeaders() {
         if (headers == null) {
             headers = HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
@@ -466,8 +494,8 @@ public class JavaxRequest implements HttpServletRequest {
     }
 
     /**
-     * Replaces the HttpServletRequest object at the specified index in the arguments array with a JavaxRequest wrapper,
-     * if it is not already a JavaxRequest instance.
+     * Replaces the HttpServletRequest object at the specified index in the arguments array with a JakartaRequest wrapper,
+     * if it is not already a JakartaRequest instance.
      *
      * @param arguments the array of arguments
      * @param index     the index of the HttpServletRequest object to replace
@@ -475,8 +503,8 @@ public class JavaxRequest implements HttpServletRequest {
      */
     public static HttpServletRequest replace(final Object[] arguments, final int index) {
         HttpServletRequest hsr = (HttpServletRequest) arguments[index];
-        if (!(hsr instanceof JavaxRequest)) {
-            hsr = new JavaxRequest(hsr);
+        if (!(hsr instanceof HeaderProvider)) {
+            hsr = new JakartaRequest(hsr);
             arguments[index] = hsr;
         }
         return hsr;

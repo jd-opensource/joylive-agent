@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.servlet.jakarta.request.HttpServletRequestParser;
 
-import static com.jd.live.agent.governance.request.servlet.JakartaRequest.replace;
+import static com.jd.live.agent.plugin.transmission.servlet.jakarta.request.JakartaRequest.replace;
 
 /**
  * An interceptor for HttpServlet requests to capture and restore context (cargo) from the request headers.
