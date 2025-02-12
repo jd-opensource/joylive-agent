@@ -29,6 +29,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.function.SingletonSupplier;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -94,21 +95,12 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
 
     protected CacheObject<String> stickyId;
 
-    /**
-     * Constructs a new ClientOutboundRequest with the specified parameters.
-     *
-     * @param request             The original client request to be processed.
-     * @param loadBalancerFactory A factory for creating instances of ReactiveLoadBalancer for service instances.
-     */
     public AbstractClusterRequest(T request,
-                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory) {
-        this(request, loadBalancerFactory, null);
-    }
-
-    public AbstractClusterRequest(T request,
+                                  URI uri,
                                   ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
                                   LoadBalancerProperties properties) {
         super(request);
+        this.uri = uri;
         this.loadBalancerFactory = loadBalancerFactory;
         this.properties = buildProperties(properties);
     }
