@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.transmission.servlet.javax.request;
 
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.request.HeaderProvider;
@@ -106,13 +107,13 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
     @Override
     public Enumeration<String> getHeaders(String name) {
         MultiMap<String, String> headers = getHeaders();
-        return Collections.enumeration(headers == null ? Collections.emptyList() : headers.get(name));
+        return CollectionUtils.toEnumeration(headers == null ? null : headers.get(name));
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
         MultiMap<String, String> headers = getHeaders();
-        return Collections.enumeration(headers == null ? Collections.emptyList() : headers.keySet());
+        return CollectionUtils.toEnumeration(headers == null ? null : headers.keySet());
     }
 
     @Override
