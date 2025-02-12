@@ -68,6 +68,30 @@ push-joylive-demo-springcloud2021-gateway:
 	  ${repo}/joylive-demo-springcloud2021-gateway:${version}-arm64
 	docker manifest push ${repo}/joylive-demo-springcloud2021-gateway:${version}
 
+image-joylive-demo-springcloud2023-consumer:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2023-consumer:${version}-amd64 ./joylive-demo-springcloud2023/joylive-demo-springcloud2023-consumer
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2023-consumer:${version}-arm64 ./joylive-demo-springcloud2023/joylive-demo-springcloud2023-consumer
+
+push-joylive-demo-springcloud2023-consumer:
+	docker push ${repo}/joylive-demo-springcloud2023-consumer:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2023-consumer:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2023-consumer:${version} \
+	  ${repo}/joylive-demo-springcloud2023-consumer:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2023-consumer:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2023-consumer:${version}
+
+image-joylive-demo-springcloud2023-provider:
+	docker build --platform linux/amd64 -t ${repo}/joylive-demo-springcloud2023-provider:${version}-amd64 ./joylive-demo-springcloud2023/joylive-demo-springcloud2023-provider
+	docker build --platform linux/arm64 -t ${repo}/joylive-demo-springcloud2023-provider:${version}-arm64 ./joylive-demo-springcloud2023/joylive-demo-springcloud2023-provider
+
+push-joylive-demo-springcloud2023-provider:
+	docker push ${repo}/joylive-demo-springcloud2023-provider:${version}-amd64
+	docker push ${repo}/joylive-demo-springcloud2023-provider:${version}-arm64
+	docker manifest create ${repo}/joylive-demo-springcloud2023-provider:${version} \
+	  ${repo}/joylive-demo-springcloud2023-provider:${version}-amd64 \
+	  ${repo}/joylive-demo-springcloud2023-provider:${version}-arm64
+	docker manifest push ${repo}/joylive-demo-springcloud2023-provider:${version}
+
 image-joylive-demo-rocketmq:
 	docker build --platform linux/amd64 -t ${repo}/joylive-demo-rocketmq:${version}-amd64 ./joylive-demo-rocketmq
 	docker build --platform linux/arm64 -t ${repo}/joylive-demo-rocketmq:${version}-arm64 ./joylive-demo-rocketmq

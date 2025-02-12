@@ -19,14 +19,15 @@ import com.jd.live.agent.demo.response.LiveLocation;
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
+import com.jd.live.agent.demo.springcloud.v2023.provider.config.EchoConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 public class EchoController {
@@ -34,16 +35,35 @@ public class EchoController {
     @Value("${spring.application.name}")
     private String applicationName;
 
-    private final CountDownLatch latch = new CountDownLatch(1);
+    private final EchoConfig config;
+
+    private final static Logger logger = LoggerFactory.getLogger(EchoController.class);
+
+    @Value("${echo.suffix}")
+    private String echoSuffix;
+
+    public EchoController(@Value("${spring.application.name}") String applicationName, EchoConfig config) {
+        this.applicationName = applicationName;
+        this.config = config;
+    }
 
     @GetMapping("/echo/{str}")
     public LiveResponse echo(@PathVariable String str, HttpServletRequest request) {
-        try {
-            latch.await(2000 + ThreadLocalRandom.current().nextInt(1000), TimeUnit.MICROSECONDS);
-        } catch (InterruptedException ignore) {
+        int sleepTime = config.getSleepTime();
+        if (sleepTime > 0) {
+            if (config.getRandomTime() > 0) {
+                sleepTime = sleepTime + ThreadLocalRandom.current().nextInt(config.getRandomTime());
+            }
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException ignore) {
+            }
         }
-        LiveResponse response = new LiveResponse(str);
+        LiveResponse response = new LiveResponse(echoSuffix == null ? str : str + echoSuffix);
         configure(request, response);
+        if (logger.isInfoEnabled()) {
+            logger.info("echo str: {}, time: {}", str, System.currentTimeMillis());
+        }
         return response;
     }
 
@@ -58,6 +78,23 @@ public class EchoController {
     @RequestMapping(value = "/exception", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
     public LiveResponse exception(HttpServletRequest request, HttpServletResponse response) {
         throw new RuntimeException("RuntimeException happened!");
+    }
+
+    @RequestMapping(value = "/state/{code}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
+    public String state(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+        if (logger.isInfoEnabled()) {
+            logger.info("state code: {}, time: {}", code, System.currentTimeMillis());
+        }
+        if (code <= 0) {
+            throw new RuntimeException("RuntimeException happened!");
+        }
+        if (code > 500) {
+            Thread.sleep(code);
+        }
+        response.setStatus(code);
+        LiveResponse lr = new LiveResponse(code, "code:" + code, code);
+        configure(request, lr);
+        return lr.toString();
     }
 
     private void configure(HttpServletRequest request, LiveResponse response) {

@@ -20,10 +20,11 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v2024.consumer.service.FeignService;
+import com.jd.live.agent.demo.springcloud.v2024.consumer.service.NoDiscoveryRestService;
 import com.jd.live.agent.demo.springcloud.v2024.consumer.service.ReactiveService;
 import com.jd.live.agent.demo.springcloud.v2024.consumer.service.RestService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,18 +36,28 @@ public class EchoController {
     @Value("${spring.application.name}")
     private String applicationName;
 
-    @Autowired
+    @Resource
     private RestService restService;
 
-    @Autowired
+    @Resource
     private FeignService feignService;
 
-    @Autowired
+    @Resource
     private ReactiveService reactiveService;
+
+    @Resource
+    private NoDiscoveryRestService noDiscoveryRestService;
 
     @GetMapping({"/echo-rest/{str}", "/echo/{str}"})
     public LiveResponse echoRest(@PathVariable String str, HttpServletRequest request) {
         LiveResponse response = restService.echo(str);
+        addTrace(request, response);
+        return response;
+    }
+
+    @GetMapping({"/echo-origin/{str}"})
+    public LiveResponse echoRestOrigin(@PathVariable String str, HttpServletRequest request) {
+        LiveResponse response = noDiscoveryRestService.echo(str);
         addTrace(request, response);
         return response;
     }
@@ -66,7 +77,7 @@ public class EchoController {
     }
 
     @GetMapping("/status-feign/{code}")
-    public LiveResponse echoFeign(@PathVariable int code, HttpServletRequest request) {
+    public LiveResponse statusFeign(@PathVariable int code, HttpServletRequest request) {
         LiveResponse response = feignService.status(code);
         addTrace(request, response);
         return response;
@@ -75,6 +86,13 @@ public class EchoController {
     @GetMapping({"/status-rest/{code}"})
     public LiveResponse statusRest(@PathVariable int code, HttpServletRequest request) {
         LiveResponse response = restService.status(code);
+        addTrace(request, response);
+        return response;
+    }
+
+    @GetMapping({"/status-origin/{code}"})
+    public LiveResponse statusRestOrigin(@PathVariable int code, HttpServletRequest request) {
+        LiveResponse response = noDiscoveryRestService.status(code);
         addTrace(request, response);
         return response;
     }
@@ -91,6 +109,16 @@ public class EchoController {
         LiveResponse response = restService.exception();
         addTrace(request, response);
         return response;
+    }
+
+    @GetMapping("/state-feign/{code}")
+    public String stateFeign(@PathVariable int code, HttpServletRequest request) {
+        return feignService.state(code);
+    }
+
+    @GetMapping({"/state-rest/{code}", "/state/{code}"})
+    public String stateRest(@PathVariable int code, HttpServletRequest request) {
+        return restService.state(code);
     }
 
     private void addTrace(HttpServletRequest request, LiveResponse response) {

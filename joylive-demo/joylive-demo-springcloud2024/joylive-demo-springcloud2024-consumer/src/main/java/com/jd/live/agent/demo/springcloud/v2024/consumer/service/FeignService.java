@@ -28,4 +28,8 @@ public interface FeignService {
 
     @GetMapping("/status/{code}")
     LiveResponse status(@PathVariable("code") int code);
+
+    @GetMapping("/state/{code}")
+    String state(@PathVariable("code") int code);
+
 }

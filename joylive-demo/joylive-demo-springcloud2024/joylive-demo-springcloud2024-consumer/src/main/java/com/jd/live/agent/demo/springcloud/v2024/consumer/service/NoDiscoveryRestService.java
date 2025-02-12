@@ -17,31 +17,25 @@ package com.jd.live.agent.demo.springcloud.v2024.consumer.service;
 
 import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.service.HelloService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-public class RestService implements HelloService {
+public class NoDiscoveryRestService implements HelloService {
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${provider.url}")
+    private String providerUrl;
 
     @Override
     public LiveResponse echo(String str) {
-        return restTemplate.getForObject("http://service-provider/echo/" + str, LiveResponse.class);
+        return restTemplate.getForObject(providerUrl + "/echo/" + str, LiveResponse.class);
     }
 
     @Override
     public LiveResponse status(int code) {
-        return restTemplate.getForObject("http://service-provider/status/" + code, LiveResponse.class);
-    }
-
-    public String state(int code) {
-        return restTemplate.getForObject("http://service-provider/state/" + code, String.class);
-    }
-
-    public LiveResponse exception() {
-        return restTemplate.getForObject("http://service-provider/exception", LiveResponse.class);
+        return restTemplate.getForObject(providerUrl + "/status/" + code, LiveResponse.class);
     }
 }
