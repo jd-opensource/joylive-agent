@@ -40,15 +40,15 @@ import java.lang.instrument.Instrumentation;
 @FunctionalInterface
 public interface BuilderHandler {
 
-    int ORDER_RETRANSFORM_HANDLER = 0;
+    int ORDER_IGNORED_HANDLER = 10;
 
-    int ORDER_POOL_HANDLER = ORDER_RETRANSFORM_HANDLER + 1;
+    int ORDER_RETRANSFORM_HANDLER = ORDER_IGNORED_HANDLER + 10;
 
-    int ORDER_IGNORED_HANDLER = ORDER_POOL_HANDLER + 1;
+    int ORDER_POOL_HANDLER = ORDER_RETRANSFORM_HANDLER + 10;
 
-    int ORDER_LOGGER_HANDLER = ORDER_IGNORED_HANDLER + 1;
+    int ORDER_LOGGER_HANDLER = ORDER_POOL_HANDLER + 10;
 
-    int ORDER_EXPORTER_HANDLER = ORDER_LOGGER_HANDLER + 1;
+    int ORDER_EXPORTER_HANDLER = ORDER_LOGGER_HANDLER + 10;
 
     /**
      * Configures the provided {@link AgentBuilder} with custom settings for instrumentation.

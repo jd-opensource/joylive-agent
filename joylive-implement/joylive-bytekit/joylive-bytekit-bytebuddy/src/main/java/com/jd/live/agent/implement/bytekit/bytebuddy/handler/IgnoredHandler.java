@@ -66,7 +66,8 @@ public class IgnoredHandler implements BuilderHandler {
                                @MaybeNull JavaModule javaModule,
                                @MaybeNull Class<?> aClass,
                                @MaybeNull ProtectionDomain protectionDomain) {
-            return isArray(typeDescription) || isPrimitive(typeDescription) || isAgent(classLoader) || isExcluded(typeDescription);
+            return isArray(typeDescription) || isPrimitive(typeDescription) || isAgent(classLoader) || isExcluded(typeDescription)
+                    || isReflectionDynamicCreated(typeDescription);
         }
 
         protected boolean isArray(TypeDescription typeDesc) {
@@ -83,6 +84,12 @@ public class IgnoredHandler implements BuilderHandler {
 
         protected boolean isExcluded(TypeDescription typeDesc) {
             return config.isExclude(typeDesc.getClass());
+        }
+
+        protected boolean isReflectionDynamicCreated(TypeDescription typeDesc) {
+            // jdk.internal.reflect.GeneratedMethodAccessor
+            // jdk.internal.reflect.GeneratedConstructorAccessor
+            return typeDesc.getActualName().startsWith("jdk.internal.reflect.Generated");
         }
     }
 }
