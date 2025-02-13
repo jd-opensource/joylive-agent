@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.inject.jbind;
 
-import com.jd.live.agent.core.util.type.ObjectAccessor;
+import com.jd.live.agent.bootstrap.util.type.ObjectAccessor;
 import com.jd.live.agent.core.util.type.generic.Generic;
 import lombok.Getter;
 

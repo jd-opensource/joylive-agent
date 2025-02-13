@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import com.jd.live.agent.bootstrap.util.type.ObjectGetter;
 import lombok.Getter;
 
 import java.lang.reflect.Array;

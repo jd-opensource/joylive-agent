@@ -488,7 +488,13 @@ public class JakartaRequest implements HttpServletRequest, HeaderProvider {
     @Override
     public MultiMap<String, String> getHeaders() {
         if (headers == null) {
-            headers = HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
+            // direct access the underlying
+            // org.apache.catalina.connector.RequestFacade
+            // org.apache.catalina.connector.Request
+            HttpHeaderParser parser = HttpHeaderParsers.create(request.getClass());
+            headers = parser != null
+                    ? parser.parse(request)
+                    : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
         return headers;
     }

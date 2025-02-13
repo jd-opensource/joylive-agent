@@ -49,5 +49,10 @@ public class BuddySupplier implements ByteSupplier {
     public void export(Instrumentation instrumentation, Map<String, Set<String>> targets, ClassLoader... loaders) {
         ModuleUtil.export(instrumentation, targets, null, loaders);
     }
+
+    @Override
+    public void export(Instrumentation instrumentation, String sourceType, String sourcePackage, String targetType, ClassLoader... loaders) {
+        ModuleUtil.export(instrumentation, sourceType, sourcePackage, targetType, loaders);
+    }
 }
 

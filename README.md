@@ -54,6 +54,10 @@ Compile requirement: JDK 17+ and Maven 3.2.5+
 
 Runtime requirement: JDK 8+
 
+Note: When using IDEA, please disable cross-compilation as shown below:
+
+![pic](docs/image/idea-0.jpg)
+
 ## Main Features
 
 1. Supports traffic control for various models, including in-region multi-activity and cross-region multi-activity.

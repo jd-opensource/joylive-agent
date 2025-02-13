@@ -71,6 +71,27 @@ public class ModuleUtil {
     }
 
     /**
+     * Exports the specified package from the source module to the target module.
+     *
+     * @param instrumentation the instrumentation object used to modify the modules
+     * @param sourceType      the type of the source module (e.g., "java.base")
+     * @param sourcePackage   the package to export
+     * @param targetType      the type of the target module (e.g., "java.se")
+     * @param loaders         the class loaders to use when resolving the modules
+     */
+    public static void export(Instrumentation instrumentation, String sourceType, String sourcePackage, String targetType, ClassLoader... loaders) {
+        JavaModule sourceModule = getModule(sourceType, loaders);
+        JavaModule targetModule = getModule(targetType, loaders);
+        if (sourceModule != null && targetModule != null) {
+            Set<String> exported = MODULE_EXPORTS.computeIfAbsent(sourceModule, m -> new ConcurrentHashMap<>()).
+                    computeIfAbsent(targetModule, m -> new CopyOnWriteArraySet<>());
+            if (!isExportedAndOpen(sourceModule, sourcePackage, targetModule) && exported.add(sourcePackage)) {
+                addExportOrOpen(instrumentation, sourceModule, sourcePackage, targetModule);
+            }
+        }
+    }
+
+    /**
      * Retrieves the {@link JavaModule} associated with a given class name, attempting to resolve
      * the class via the specified class loader. This method is used to find the module of a class
      * that needs to have packages exported or opened to another module.
