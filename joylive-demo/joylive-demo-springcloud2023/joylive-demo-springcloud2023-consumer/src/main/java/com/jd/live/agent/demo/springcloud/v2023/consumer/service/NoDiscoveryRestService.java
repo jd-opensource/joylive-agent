@@ -26,7 +26,7 @@ public class NoDiscoveryRestService implements HelloService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${provider.url}")
+    @Value("${provider.url:http://service-provider.demo.svc}")
     private String providerUrl;
 
     @Override
