@@ -1,4 +1,4 @@
-FROM ghcr.io/meshware/ubuntu-oracle-jdk:11.0.21
+FROM ghcr.io/meshware/ubuntu-oracle-jdk:17.0.9
 USER root
 
 ENV TZ Asia/Shanghai
