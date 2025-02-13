@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.plugin;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.plugin.PluginEvent;
 import com.jd.live.agent.bootstrap.plugin.PluginEvent.EventType;
 import com.jd.live.agent.bootstrap.plugin.PluginListener;
@@ -39,6 +41,8 @@ import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND
  * Represents a composite plugin that contains multiple plugins and manages their lifecycle and matching.
  */
 public abstract class AbstractPluginDescriptor implements PluginDescriptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractPluginDescriptor.class);
 
     /**
      * The name of the plugin.
@@ -256,7 +260,14 @@ public abstract class AbstractPluginDescriptor implements PluginDescriptor {
         Class<?> type = definition.getClass();
         String name = type.getName();
         name = classLoader == null ? name : (name + "@" + classLoader);
-        return enabled.computeIfAbsent(name, n -> conditionMatcher.match(type, classLoader, DEPEND_ON_LOADER));
+        return enabled.computeIfAbsent(name, n -> {
+            boolean result = conditionMatcher.match(type, classLoader, DEPEND_ON_LOADER);
+            if (logger.isDebugEnabled()) {
+                logger.debug("AbstractPluginDescriptor matched plugin definition {}, classLoader {}, result {}",
+                        type.getName(), classLoader == null ? "" : classLoader.getClass(), result);
+            }
+            return result;
+        });
     }
 
 }

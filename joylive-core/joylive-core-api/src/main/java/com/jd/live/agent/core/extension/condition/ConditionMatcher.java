@@ -16,8 +16,12 @@
 package com.jd.live.agent.core.extension.condition;
 
 import com.jd.live.agent.core.extension.annotation.Conditional;
+import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 
 import java.lang.annotation.Annotation;
+import java.util.LinkedList;
 import java.util.function.Predicate;
 
 /**
@@ -28,12 +32,45 @@ import java.util.function.Predicate;
 public interface ConditionMatcher {
 
     /**
+     * A default Predicate that checks if an annotation is system annotation.
+     */
+    Predicate<Class<?>> SYSTEM_ANNOTATION = type -> type == Conditional.class
+            || type == ConditionalComposite.class
+            || type == Extension.class
+            || type == Injectable.class
+            || type.getName().startsWith("java.");
+
+    /**
      * A default Predicate that checks if an annotation is annotated with the {@link Conditional} annotation
      * and if the {@code dependOnLoader} attribute is set to true.
      */
     Predicate<Annotation> DEPEND_ON_LOADER = a -> {
-        Conditional annotation = a.annotationType().getAnnotation(Conditional.class);
-        return annotation != null && annotation.dependOnLoader();
+        LinkedList<Annotation> stack = new LinkedList<>();
+        stack.push(a);
+        while (!stack.isEmpty()) {
+            Annotation annotation = stack.pop();
+            Class<? extends Annotation> type = annotation.annotationType();
+            Conditional conditional = type.getAnnotation(Conditional.class);
+            if (conditional != null) {
+                if (conditional.dependOnLoader()) {
+                    return true;
+                }
+            } else {
+                ConditionalComposite composite = type.getAnnotation(ConditionalComposite.class);
+                if (composite != null) {
+                    Annotation[] annotations = type.getAnnotations();
+                    for (Annotation an : annotations) {
+                        Class<? extends Annotation> annotationType = an.annotationType();
+                        if (!SYSTEM_ANNOTATION.test(annotationType) && (
+                                annotationType.getAnnotation(Conditional.class) != null
+                                        || annotationType.getAnnotation(ConditionalComposite.class) != null)) {
+                            stack.push(an);
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     };
 
     /**

@@ -19,10 +19,8 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Conditional;
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.extension.condition.Condition.CompositeCondition;
 import com.jd.live.agent.core.extension.condition.Condition.DelegateCondition;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -161,11 +159,7 @@ public class ConditionManager implements ConditionMatcher {
      * @return a condition for the given annotation type, or null if the condition could not be created
      */
     private Condition getCondition(Class<?> type, Function<Class<?>, Condition> function) {
-        if (type == Conditional.class
-                || type == ConditionalComposite.class
-                || type == Extension.class
-                || type == Injectable.class
-                || type.getName().startsWith("java.")) {
+        if (SYSTEM_ANNOTATION.test(type)) {
             return null;
         }
         Optional<Condition> optional = CONDITIONS.get(type);
@@ -184,7 +178,7 @@ public class ConditionManager implements ConditionMatcher {
      * supports both explicit class names and a naming convention that infers the class name from the conditional
      * annotation name.
      *
-     * @param implementClass The class name of the condition implementation.
+     * @param implementClass  The class name of the condition implementation.
      * @param conditionalName The name of the conditional annotation.
      * @return A new instance of the condition implementation, or null if instantiation fails.
      */
