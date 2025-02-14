@@ -56,7 +56,7 @@ public class CellGroup {
     public CellGroup(String unit, String cell) {
         this.unit = Objects.requireNonNull(unit, "Unit cannot be null");
         this.cell = Objects.requireNonNull(cell, "Cell cannot be null");
-        this.endpoints = new ArrayList<>();
+        this.endpoints = new ArrayList<>(4);
     }
 
     /**

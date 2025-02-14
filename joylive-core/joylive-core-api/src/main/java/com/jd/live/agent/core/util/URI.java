@@ -112,7 +112,13 @@ public class URI {
         if (key == null) {
             return this;
         }
-        Map<String, String> newParameters = parameters == null ? new HashMap<>() : new HashMap<>(parameters);
+        Map<String, String> newParameters;
+        if (parameters == null) {
+            newParameters = new HashMap<>(1);
+        } else {
+            newParameters = new HashMap<>(parameters.size() + 1);
+            newParameters.putAll(parameters);
+        }
         newParameters.put(key, value);
         return new URI(schema, host, port, path, newParameters);
     }
@@ -127,8 +133,14 @@ public class URI {
         if (keyValues == null || keyValues.length == 0) {
             return this;
         }
-        Map<String, String> newParameters = parameters == null ? new HashMap<>() : new HashMap<>(parameters);
         int pairs = keyValues.length / 2;
+        Map<String, String> newParameters;
+        if (parameters == null) {
+            newParameters = new HashMap<>(pairs);
+        } else {
+            newParameters = new HashMap<>(parameters.size() + pairs);
+            newParameters.putAll(parameters);
+        }
         for (int i = 0; i < pairs; i++) {
             int keyIdx = i * 2;
             int valueIdx = keyIdx + 1;
