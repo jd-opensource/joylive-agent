@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.core.util.http;
 
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectReader;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
@@ -392,20 +392,23 @@ public abstract class HttpUtils {
         }
 
         int length = s.length();
-        char[] result = new char[length];
-        int resultPos = 0;
-        byte[] bytes = new byte[length / 3];
-        int bytesPos = 0;
+        DecodeBuf buf = null;
 
         for (int i = 0; i < length; i++) {
             char c = s.charAt(i);
             if (c == '+') {
-                result[resultPos++] = ' ';
+                if (buf == null) {
+                    buf = new DecodeBuf(s, 0, i);
+                }
+                buf.chars[buf.charPos++] = ' ';
             } else if (c == '%') {
-                bytesPos = 0;
+                if (buf == null) {
+                    buf = new DecodeBuf(s, 0, i);
+                }
+                buf.bytesPos = 0;
                 while (i + 2 < length && c == '%') {
                     int v = Integer.parseInt(s.substring(i + 1, i + 3), 16);
-                    bytes[bytesPos++] = (byte) v;
+                    buf.bytes[buf.bytesPos++] = (byte) v;
                     i += 3;
                     if (i < length) {
                         c = s.charAt(i);
@@ -414,19 +417,19 @@ public abstract class HttpUtils {
                 if (i < length && c == '%') {
                     throw new UnsupportedEncodingException("Incomplete trailing escape (%) pattern");
                 }
-                String decodedChunk = new String(bytes, 0, bytesPos, charset);
+                String decodedChunk = new String(buf.bytes, 0, buf.bytesPos, charset);
                 for (int j = 0; j < decodedChunk.length(); j++) {
-                    result[resultPos++] = decodedChunk.charAt(j);
+                    buf.chars[buf.charPos++] = decodedChunk.charAt(j);
                 }
                 if (i < length) {
                     i--; // Adjust for the outer loop increment
                 }
-            } else {
-                result[resultPos++] = c;
+            } else if (buf != null) {
+                buf.chars[buf.charPos++] = c;
             }
         }
 
-        return new String(result, 0, resultPos);
+        return buf == null ? s : buf.toString();
     }
 
     /**
@@ -571,6 +574,28 @@ public abstract class HttpUtils {
                 builder.append(":").append(port);
             }
             return builder.toString();
+        }
+    }
+
+    private static class DecodeBuf {
+
+        final int length;
+        final char[] chars;
+        final byte[] bytes;
+        int charPos;
+        int bytesPos = 0;
+
+        public DecodeBuf(String value, int start, int end) {
+            this.length = value.length();
+            this.chars = new char[length];
+            this.bytes = new byte[length / 3];
+            value.getChars(start, end, this.chars, 0);
+            charPos = end;
+        }
+
+        @Override
+        public String toString() {
+            return new String(chars, 0, charPos);
         }
     }
 }
