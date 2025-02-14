@@ -39,8 +39,8 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_SERVICE = "service";
 
     private static final String[] ARGUMENT_SERVICE = new String[]{
-            "jakarta.servlet.ServletRequest",
-            "jakarta.servlet.ServletResponse"
+            "jakarta.servlet.http.HttpServletRequest",
+            "jakarta.servlet.http.HttpServletResponse"
     };
 
     @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
