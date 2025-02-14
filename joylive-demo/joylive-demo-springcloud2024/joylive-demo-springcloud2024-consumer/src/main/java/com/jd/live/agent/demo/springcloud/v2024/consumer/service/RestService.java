@@ -37,8 +37,8 @@ public class RestService implements HelloService {
         return restTemplate.getForObject("http://service-provider/status/" + code, LiveResponse.class);
     }
 
-    public String state(int code) {
-        return restTemplate.getForObject("http://service-provider/state/" + code, String.class);
+    public String state(int code, int time) {
+        return restTemplate.getForObject("http://service-provider/state/" + code + "/sleep/" + time, String.class);
     }
 
     public LiveResponse exception() {

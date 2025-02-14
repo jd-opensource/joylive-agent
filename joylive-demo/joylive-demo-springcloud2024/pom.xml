@@ -14,7 +14,7 @@
 
     <properties>
         <spring.cloud.version>2024.0.0</spring.cloud.version>
-        <spring-boot.version>3.4.0</spring-boot.version>
+        <spring-boot.version>3.4.1</spring-boot.version>
         <spring-cloud-openfeign.version>4.2.0</spring-cloud-openfeign.version>
         <spring-cloud-loadbalancer.version>4.2.0</spring-cloud-loadbalancer.version>
         <spring-cloud-nacos.version>2023.0.3.2</spring-cloud-nacos.version>

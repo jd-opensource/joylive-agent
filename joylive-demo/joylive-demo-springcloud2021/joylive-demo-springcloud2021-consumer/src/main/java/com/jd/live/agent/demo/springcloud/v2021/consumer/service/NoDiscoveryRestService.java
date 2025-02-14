@@ -38,4 +38,8 @@ public class NoDiscoveryRestService implements HelloService {
     public LiveResponse status(int code) {
         return restTemplate.getForObject(providerUrl + "/status/" + code, LiveResponse.class);
     }
+
+    public String state(int code, int time) {
+        return restTemplate.getForObject(providerUrl + "/state/" + code + "/sleep/" + time, String.class);
+    }
 }

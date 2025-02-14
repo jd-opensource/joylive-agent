@@ -111,14 +111,14 @@ public class EchoController {
         return response;
     }
 
-    @GetMapping("/state-feign/{code}")
-    public String stateFeign(@PathVariable int code, HttpServletRequest request) {
-        return feignService.state(code);
+    @GetMapping("/state-feign/{code}/sleep/{time}")
+    public String stateFeign(@PathVariable int code, @PathVariable int time, HttpServletRequest request) {
+        return feignService.state(code, time);
     }
 
-    @GetMapping({"/state-rest/{code}", "/state/{code}"})
-    public String stateRest(@PathVariable int code, HttpServletRequest request) {
-        return restService.state(code);
+    @GetMapping({"/state-rest/{code}/sleep/{time}", "/state/{code}/sleep/{time}"})
+    public String stateRest(@PathVariable int code, @PathVariable int time, HttpServletRequest request) {
+        return restService.state(code, time);
     }
 
     private void addTrace(HttpServletRequest request, LiveResponse response) {

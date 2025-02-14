@@ -13,11 +13,11 @@
     <packaging>pom</packaging>
 
     <properties>
-        <spring.cloud.version>2023.0.3</spring.cloud.version>
-        <spring-boot.version>3.3.2</spring-boot.version>
+        <spring.cloud.version>2023.0.5</spring.cloud.version>
+        <spring-boot.version>3.3.7</spring-boot.version>
         <spring-cloud-openfeign.version>4.1.3</spring-cloud-openfeign.version>
-        <spring-cloud-loadbalancer.version>4.1.4</spring-cloud-loadbalancer.version>
-        <spring-cloud-nacos.version>2023.0.1.2</spring-cloud-nacos.version>
+        <spring-cloud-loadbalancer.version>4.1.5</spring-cloud-loadbalancer.version>
+        <spring-cloud-nacos.version>2023.0.3.2</spring-cloud-nacos.version>
     </properties>
 
     <modules>

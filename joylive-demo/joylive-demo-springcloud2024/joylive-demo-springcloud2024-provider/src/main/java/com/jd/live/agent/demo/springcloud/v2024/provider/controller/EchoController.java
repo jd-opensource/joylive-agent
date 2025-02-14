@@ -80,18 +80,22 @@ public class EchoController {
         throw new RuntimeException("RuntimeException happened!");
     }
 
-    @RequestMapping(value = "/state/{code}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
-    public String state(@PathVariable int code, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+    @RequestMapping(value = "/state/{code}/sleep/{time}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
+    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
         if (logger.isInfoEnabled()) {
-            logger.info("state code: {}, time: {}", code, System.currentTimeMillis());
+            logger.info("state code: {}, sleep time: {}, date: {}", code, time, System.currentTimeMillis());
         }
         if (code <= 0) {
             throw new RuntimeException("RuntimeException happened!");
         }
-        if (code > 500) {
-            Thread.sleep(code);
+        if (code > 600) {
+            response.setStatus(500);
+        } else {
+            response.setStatus(code);
         }
-        response.setStatus(code);
+        if (time > 0) {
+            Thread.sleep(time);
+        }
         LiveResponse lr = new LiveResponse(code, "code:" + code, code);
         configure(request, lr);
         return lr.toString();

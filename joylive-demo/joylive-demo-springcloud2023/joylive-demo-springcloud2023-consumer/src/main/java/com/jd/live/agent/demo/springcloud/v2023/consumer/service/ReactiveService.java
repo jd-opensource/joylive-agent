@@ -45,9 +45,9 @@ public class ReactiveService implements HelloService {
                 .bodyToMono(LiveResponse.class).block();
     }
 
-    public String state(int code) {
+    public String state(int code, int time) {
         return webClient.get()
-                .uri("/state/" + code)
+                .uri("/state/" + code + "/sleep/" + time)
                 .retrieve()
                 .bodyToMono(String.class).block();
     }
