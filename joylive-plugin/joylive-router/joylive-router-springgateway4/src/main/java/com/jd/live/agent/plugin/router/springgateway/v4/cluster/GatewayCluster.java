@@ -29,6 +29,7 @@ import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v4.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v4.util.UriUtils;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
@@ -60,7 +61,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 
-import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 @Getter
@@ -150,7 +150,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
             if (schemePrefix != null) {
                 overrideScheme = request.getURI().getScheme();
             }
-            URI requestUrl = reconstructURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
+            URI requestUrl = UriUtils.newURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
 
             attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
             attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, endpoint.getResponse());
