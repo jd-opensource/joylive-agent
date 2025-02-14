@@ -53,6 +53,15 @@ public class URI {
     public URI() {
     }
 
+    private URI(String schema, String host, Integer port, String path, Map<String, String> parameters, String url) {
+        this.schema = schema;
+        this.host = host;
+        this.port = port;
+        this.path = path;
+        this.parameters = parameters;
+        this.url = url;
+    }
+
     /**
      * Constructs a URI with the specified schema, host, path, and parameters.
      *
@@ -64,11 +73,7 @@ public class URI {
      */
     @Builder
     public URI(String schema, String host, Integer port, String path, Map<String, String> parameters) {
-        this.schema = schema;
-        this.host = host;
-        this.port = port;
-        this.path = path;
-        this.parameters = parameters;
+        this(schema, host, port, path, parameters, null);
     }
 
     /**
@@ -109,44 +114,26 @@ public class URI {
      * @return a new URI instance with the updated parameters.
      */
     public URI parameter(String key, String value) {
-        if (key == null) {
+        if (key == null || key.isEmpty()) {
             return this;
         }
-        Map<String, String> newParameters;
-        if (parameters == null) {
-            newParameters = new HashMap<>(1);
-        } else {
-            newParameters = new HashMap<>(parameters.size() + 1);
-            newParameters.putAll(parameters);
-        }
+        int size = parameters == null ? 0 : parameters.size();
+        Map<String, String> newParameters = size == 0 ? new HashMap<>(size + 1) : new HashMap<>(parameters);
         newParameters.put(key, value);
-        return new URI(schema, host, port, path, newParameters);
-    }
-
-    /**
-     * Adds or updates multiple query parameters.
-     *
-     * @param keyValues an array of key-value pairs.
-     * @return a new URI instance with the updated parameters.
-     */
-    public URI parameters(String... keyValues) {
-        if (keyValues == null || keyValues.length == 0) {
-            return this;
+        String newUrl = url;
+        if (newUrl != null) {
+            // improve performance
+            int valueLen = value == null ? 0 : value.length();
+            StringBuilder builder = new StringBuilder(newUrl.length() + key.length() + valueLen + 2)
+                    .append(newUrl)
+                    .append(size > 0 ? '&' : '?')
+                    .append(key);
+            if (valueLen > 0) {
+                builder.append('=').append(value);
+            }
+            newUrl = builder.toString();
         }
-        int pairs = keyValues.length / 2;
-        Map<String, String> newParameters;
-        if (parameters == null) {
-            newParameters = new HashMap<>(pairs);
-        } else {
-            newParameters = new HashMap<>(parameters.size() + pairs);
-            newParameters.putAll(parameters);
-        }
-        for (int i = 0; i < pairs; i++) {
-            int keyIdx = i * 2;
-            int valueIdx = keyIdx + 1;
-            newParameters.put(keyValues[keyIdx], valueIdx >= keyValues.length ? null : keyValues[valueIdx]);
-        }
-        return new URI(schema, host, port, path, newParameters);
+        return new URI(schema, host, port, path, newParameters, newUrl);
     }
 
     public String getAddress() {
@@ -289,12 +276,6 @@ public class URI {
         return new URI(protocol, host, port, path, parameters);
     }
 
-    /**
-     * Parses the host from a given URI.
-     *
-     * @param uri the URI to parse
-     * @return the host part of the URI, or null if the URI is invalid or does not contain a host
-     */
     /**
      * Parses the host from a given URI.
      *
