@@ -189,33 +189,51 @@ public abstract class HttpUtils {
         }
 
         int length = query.length();
-        int start = 0;
-        int end;
-        int equalIndex;
+        int keyStart = 0;
+        int keyEnd = -1;
+        int valueStart = -1;
+        int valueEnd = -1;
+        char c;
         String key;
-        String value = null;
-        while (start < length) {
-            end = query.indexOf('&', start);
-            if (end == -1) {
-                end = length;
-            }
-            equalIndex = query.indexOf('=', start);
-            if (equalIndex == -1) {
-                key = query.substring(start, end).trim();
-                key = decode ? decodeURL(key) : key;
-                value = null;
-            } else if (equalIndex < end) {
-                key = query.substring(start, equalIndex).trim();
-                key = decode ? decodeURL(key) : key;
-                value = query.substring(equalIndex + 1, end).trim();
-                value = decode ? decodeURL(value) : value;
+        String value;
+        for (int i = 0; i < length; i++) {
+            c = query.charAt(i);
+            if (c == '&') {
+                if (keyEnd >= 0) {
+                    key = query.substring(keyStart, keyEnd + 1);
+                    key = decode ? decodeURL(key) : key;
+                    if (valueStart == -1 || valueEnd == -1) {
+                        consumer.accept(key, null);
+                    } else {
+                        value = query.substring(valueStart, valueEnd + 1);
+                        value = decode ? decodeURL(value) : value;
+                        consumer.accept(key, value);
+                    }
+                }
+                keyStart = i + 1;
+                keyEnd = -1;
+                valueStart = -1;
+                valueEnd = -1;
+            } else if (c == '=') {
+                valueStart = i + 1;
+            } else if (valueStart > 0) {
+                valueEnd = i;
             } else {
-                key = null;
+                keyEnd = i;
             }
-            if (key != null && !key.isEmpty()) {
+        }
+        if (keyStart < length && keyEnd >= 0) {
+            if (valueStart == -1) {
+                key = query.substring(keyStart, length);
+                key = decode ? decodeURL(key) : key;
+                consumer.accept(key, null);
+            } else {
+                key = query.substring(keyStart, keyEnd + 1);
+                key = decode ? decodeURL(key) : key;
+                value = valueStart < length ? query.substring(valueStart, length) : null;
+                value = decode ? decodeURL(value) : value;
                 consumer.accept(key, value);
             }
-            start = end + 1;
         }
     }
 
@@ -585,7 +603,7 @@ public abstract class HttpUtils {
         int charPos;
         int bytesPos = 0;
 
-        public DecodeBuf(String value, int start, int end) {
+        DecodeBuf(String value, int start, int end) {
             this.length = value.length();
             this.chars = new char[length];
             this.bytes = new byte[length / 3];
