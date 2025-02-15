@@ -15,11 +15,16 @@
  */
 package com.jd.live.agent.plugin.transmission.servlet.javax.request;
 
+import com.jd.live.agent.core.util.map.MultiMap;
+import com.jd.live.agent.governance.request.HeaderProvider;
 import com.jd.live.agent.governance.request.HeaderReader;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
@@ -45,5 +50,27 @@ public class HttpServletRequestParser implements HeaderReader {
     @Override
     public String getHeader(String key) {
         return request.getHeader(key);
+    }
+
+    @Override
+    public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        if (consumer != null) {
+            if (request instanceof HeaderProvider) {
+                int count = 0;
+                MultiMap<String, String> headers = ((HeaderProvider) request).getHeaders();
+                String name;
+                for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                    name = entry.getKey();
+                    if (predicate == null || predicate.test(name)) {
+                        count++;
+                        consumer.accept(name, entry.getValue());
+                    }
+                }
+                return count;
+            } else {
+                return HeaderReader.super.read(consumer, predicate);
+            }
+        }
+        return 0;
     }
 }

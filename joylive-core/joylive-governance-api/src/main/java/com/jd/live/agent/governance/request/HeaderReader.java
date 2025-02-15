@@ -19,7 +19,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Interface for reading HTTP headers.
@@ -42,6 +44,38 @@ public interface HeaderReader {
      * @return A list of values for the specified header key.
      */
     Iterable<String> getHeaders(String key);
+
+    /**
+     * Reads all the header names and values from this object and passes them to the given consumer.
+     *
+     * @param consumer a bi-consumer that accepts a header name and an iterable of header values
+     */
+    default void read(BiConsumer<String, Iterable<String>> consumer) {
+        read(consumer, null);
+    }
+
+    /**
+     * Reads all the header names and values from this object that match the given predicate and passes them to the given consumer.
+     *
+     * @param consumer  a bi-consumer that accepts a header name and an iterable of header values
+     * @param predicate a predicate used to filter the header names; if null, all header names are included
+     * @return the number of header names that were passed to the consumer
+     */
+    default int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        int count = 0;
+        if (consumer != null) {
+            Iterator<String> names = getNames();
+            String name;
+            while (names.hasNext()) {
+                name = names.next();
+                if (predicate == null || predicate.test(name)) {
+                    count++;
+                    consumer.accept(name, getHeaders(name));
+                }
+            }
+        }
+        return count;
+    }
 
     /**
      * Returns the first value for the specified header key.

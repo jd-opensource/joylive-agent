@@ -75,8 +75,8 @@ public class LivePropagation extends AbstractPropagation {
             return false;
         }
         CargoRequire require = getRequire();
-        return iterate(reader.getNames(), require::match,
-                name -> carrier.addCargo(
-                        new Cargo(name, Label.parseValue(reader.getHeaders(name)), true))) > 0;
+        return reader.read((name, values) ->
+                        carrier.addCargo(new Cargo(name, Label.parseValue(values), true)),
+                require::match) > 0;
     }
 }
