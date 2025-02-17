@@ -18,9 +18,13 @@ package com.jd.live.agent.plugin.transmission.rabbitmq.v5.request;
 import com.jd.live.agent.governance.request.HeaderParser;
 import com.rabbitmq.client.BasicProperties;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.util.CollectionUtils.iterate;
+import static java.util.Collections.singletonList;
 
 public class EnvelopeParser implements HeaderParser {
 
@@ -38,9 +42,8 @@ public class EnvelopeParser implements HeaderParser {
 
     @Override
     public Iterable<String> getHeaders(String key) {
-        Map<String, Object> headers = props.getHeaders();
-        Object value = headers == null ? null : headers.get(key);
-        return value == null ? null : Collections.singletonList(value.toString());
+        // read only
+        return singletonList(getHeader(key));
     }
 
     @Override
@@ -48,6 +51,12 @@ public class EnvelopeParser implements HeaderParser {
         Map<String, Object> headers = props.getHeaders();
         Object value = headers == null ? null : headers.get(key);
         return value == null ? null : value.toString();
+    }
+
+    @Override
+    public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        // read only
+        return iterate(props.getHeaders(), predicate, (key, value) -> consumer.accept(key, value == null ? null : singletonList(value.toString())));
     }
 
     @Override

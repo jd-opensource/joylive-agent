@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.governance.request;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.util.CollectionUtils.iterate;
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 
 /**
  * Interface for reading HTTP headers.
@@ -115,14 +117,20 @@ public interface HeaderReader {
 
         @Override
         public Iterable<String> getHeaders(String key) {
-            T obj = map == null ? null : map.get(key);
-            return obj == null ? null : Collections.singletonList(obj.toString());
+            // read only
+            return singletonList(getHeader(key));
         }
 
         @Override
         public String getHeader(String key) {
             T obj = map == null ? null : map.get(key);
             return obj == null ? null : obj.toString();
+        }
+
+        @Override
+        public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+            // read only
+            return iterate(map, predicate, (key, value) -> consumer.accept(key, value == null ? null : singletonList(value.toString())));
         }
     }
 
@@ -173,6 +181,10 @@ public interface HeaderReader {
             return values == null || values.isEmpty() ? null : values.get(0);
         }
 
+        @Override
+        public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+            return consumer == null ? 0 : iterate(map, predicate, consumer::accept);
+        }
     }
 
 }
