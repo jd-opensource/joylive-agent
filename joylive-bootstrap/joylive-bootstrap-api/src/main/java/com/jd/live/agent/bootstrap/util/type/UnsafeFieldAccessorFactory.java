@@ -356,24 +356,46 @@ public class UnsafeFieldAccessorFactory {
 
         private final long offset;
 
+        private boolean hasReference;
+
         OpenUnsafeFieldAccessor(Field field, jdk.internal.misc.Unsafe unsafe) {
             this.unsafe = unsafe;
             this.offset = unsafe.objectFieldOffset(field);
+            try {
+                unsafe.getClass().getMethod("putReference", Object.class, long.class, Object.class);
+                hasReference = true;
+            } catch (Exception e) {
+                hasReference = false;
+            }
         }
 
         OpenUnsafeFieldAccessor(Class<?> type, String field, jdk.internal.misc.Unsafe unsafe) {
             this.unsafe = unsafe;
             this.offset = unsafe.objectFieldOffset(type, field);
+            try {
+                unsafe.getClass().getMethod("putReference", Object.class, long.class, Object.class);
+                hasReference = true;
+            } catch (Exception e) {
+                hasReference = false;
+            }
         }
 
         @Override
         public Object get(Object target) {
-            return unsafe.getReference(target, offset);
+            if (hasReference) {
+                return unsafe.getReference(target, offset);
+            } else {
+                return unsafe.getObject(target, offset);
+            }
         }
 
         @Override
         public void set(Object target, Object value) {
-            unsafe.putReference(target, offset, value);
+            if (hasReference) {
+                unsafe.putReference(target, offset, value);
+            } else {
+                unsafe.putObject(target, offset, value);
+            }
         }
 
         @Override
