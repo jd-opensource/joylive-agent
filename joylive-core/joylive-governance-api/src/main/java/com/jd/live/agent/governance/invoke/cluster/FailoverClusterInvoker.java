@@ -262,7 +262,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         private RetryType isRetryable(R request, O response, Throwable e, int count) {
             if (retryPolicy == null || !retryPolicy.isEnabled()) {
                 return RetryType.NONE;
-            } else if (deadline > 0 && System.currentTimeMillis() > deadline) {
+            } else if (count > 0 && deadline > 0 && System.currentTimeMillis() > deadline) {
                 return RetryType.TIMEOUT;
             } else if (count >= retryPolicy.getRetry()) {
                 return RetryType.EXHAUSTED;
