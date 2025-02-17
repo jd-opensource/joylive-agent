@@ -13,6 +13,7 @@
 
     <properties>
         <javax-servlet-api.version>3.0.1</javax-servlet-api.version>
+        <tomcat-embed-core.version>10.1.33</tomcat-embed-core.version>
     </properties>
 
 
@@ -23,6 +24,14 @@
             <version>${javax-servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>${tomcat-embed-core.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

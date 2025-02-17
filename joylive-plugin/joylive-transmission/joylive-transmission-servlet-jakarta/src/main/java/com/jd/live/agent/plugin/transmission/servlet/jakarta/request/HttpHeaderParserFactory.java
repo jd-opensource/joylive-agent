@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.type;
+package com.jd.live.agent.plugin.transmission.servlet.jakarta.request;
 
 /**
- * An interface that defines a method for setting a value on a target object.
+ * An interface for creating instances of HttpHeaderParser.
  */
-public interface ObjectSetter {
+public interface HttpHeaderParserFactory {
 
     /**
-     * Sets a specified value on the given target object.
+     * Creates a new instance of HttpHeaderParser.
      *
-     * @param target The object on which the value is to be set.
-     * @param value  The value to set on the target object.
+     * @return a new instance of HttpHeaderParser
      */
-    void set(Object target, Object value);
+    HttpHeaderParser create();
+
+    /**
+     * Checks if the factory supports creating HttpHeaderParser instances for the given type.
+     *
+     * @param type the type to check support for
+     * @return true if the factory supports creating HttpHeaderParser instances for the given type, false otherwise
+     */
+    boolean support(Class<?> type);
 }
 

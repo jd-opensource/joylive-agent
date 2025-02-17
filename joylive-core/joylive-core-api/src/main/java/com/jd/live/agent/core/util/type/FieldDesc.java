@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util.type;
 
 import com.jd.live.agent.bootstrap.exception.ReflectException;
+import com.jd.live.agent.bootstrap.util.type.ObjectAccessor;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.type.generic.Generic;
 import lombok.Getter;

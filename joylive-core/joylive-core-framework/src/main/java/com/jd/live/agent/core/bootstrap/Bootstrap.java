@@ -606,7 +606,9 @@ public class Bootstrap implements AgentLifecycle {
         targets = mapping.computeIfAbsent("com.jd.live.agent.core.util.http.HttpUtils", key -> new HashSet<>());
         targets.add("java.net.URI");
         result.export(instrumentation, mapping, classLoaderManager.getCoreImplLoader());
-
+        // access unsafe
+        result.export(instrumentation, "java.util.Map", "jdk.internal.misc", "com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory", classLoader);
+        result.export(instrumentation, "sun.misc.Unsafe", "sun.misc", "com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory", classLoader);
         return result;
     }
 

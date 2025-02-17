@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.util.http;
 
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectReader;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
@@ -23,7 +25,6 @@ import com.jd.live.agent.core.util.map.MultiMap;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -188,33 +189,51 @@ public abstract class HttpUtils {
         }
 
         int length = query.length();
-        int start = 0;
-        int end;
-        int equalIndex;
+        int keyStart = 0;
+        int keyEnd = -1;
+        int valueStart = -1;
+        int valueEnd = -1;
+        char c;
         String key;
-        String value = null;
-        while (start < length) {
-            end = query.indexOf('&', start);
-            if (end == -1) {
-                end = length;
-            }
-            equalIndex = query.indexOf('=', start);
-            if (equalIndex == -1) {
-                key = query.substring(start, end).trim();
-                key = decode ? decodeURL(key) : key;
-                value = null;
-            } else if (equalIndex < end) {
-                key = query.substring(start, equalIndex).trim();
-                key = decode ? decodeURL(key) : key;
-                value = query.substring(equalIndex + 1, end).trim();
-                value = decode ? decodeURL(value) : value;
+        String value;
+        for (int i = 0; i < length; i++) {
+            c = query.charAt(i);
+            if (c == '&') {
+                if (keyEnd >= 0) {
+                    key = query.substring(keyStart, keyEnd + 1);
+                    key = decode ? decodeURL(key) : key;
+                    if (valueStart == -1 || valueEnd == -1) {
+                        consumer.accept(key, null);
+                    } else {
+                        value = query.substring(valueStart, valueEnd + 1);
+                        value = decode ? decodeURL(value) : value;
+                        consumer.accept(key, value);
+                    }
+                }
+                keyStart = i + 1;
+                keyEnd = -1;
+                valueStart = -1;
+                valueEnd = -1;
+            } else if (c == '=') {
+                valueStart = i + 1;
+            } else if (valueStart > 0) {
+                valueEnd = i;
             } else {
-                key = null;
+                keyEnd = i;
             }
-            if (key != null && !key.isEmpty()) {
+        }
+        if (keyStart < length && keyEnd >= 0) {
+            if (valueStart == -1) {
+                key = query.substring(keyStart, length);
+                key = decode ? decodeURL(key) : key;
+                consumer.accept(key, null);
+            } else {
+                key = query.substring(keyStart, keyEnd + 1);
+                key = decode ? decodeURL(key) : key;
+                value = valueStart < length ? query.substring(valueStart, length) : null;
+                value = decode ? decodeURL(value) : value;
                 consumer.accept(key, value);
             }
-            start = end + 1;
         }
     }
 
@@ -391,20 +410,23 @@ public abstract class HttpUtils {
         }
 
         int length = s.length();
-        char[] result = new char[length];
-        int resultPos = 0;
-        byte[] bytes = new byte[length / 3];
-        int bytesPos = 0;
+        DecodeBuf buf = null;
 
         for (int i = 0; i < length; i++) {
             char c = s.charAt(i);
             if (c == '+') {
-                result[resultPos++] = ' ';
+                if (buf == null) {
+                    buf = new DecodeBuf(s, 0, i);
+                }
+                buf.chars[buf.charPos++] = ' ';
             } else if (c == '%') {
-                bytesPos = 0;
+                if (buf == null) {
+                    buf = new DecodeBuf(s, 0, i);
+                }
+                buf.bytesPos = 0;
                 while (i + 2 < length && c == '%') {
                     int v = Integer.parseInt(s.substring(i + 1, i + 3), 16);
-                    bytes[bytesPos++] = (byte) v;
+                    buf.bytes[buf.bytesPos++] = (byte) v;
                     i += 3;
                     if (i < length) {
                         c = s.charAt(i);
@@ -413,19 +435,48 @@ public abstract class HttpUtils {
                 if (i < length && c == '%') {
                     throw new UnsupportedEncodingException("Incomplete trailing escape (%) pattern");
                 }
-                String decodedChunk = new String(bytes, 0, bytesPos, charset);
+                String decodedChunk = new String(buf.bytes, 0, buf.bytesPos, charset);
                 for (int j = 0; j < decodedChunk.length(); j++) {
-                    result[resultPos++] = decodedChunk.charAt(j);
+                    buf.chars[buf.charPos++] = decodedChunk.charAt(j);
                 }
                 if (i < length) {
                     i--; // Adjust for the outer loop increment
                 }
-            } else {
-                result[resultPos++] = c;
+            } else if (buf != null) {
+                buf.chars[buf.charPos++] = c;
             }
         }
 
-        return new String(result, 0, resultPos);
+        return buf == null ? s : buf.toString();
+    }
+
+    /**
+     * Creates a new URI object with the specified components, using the original URI as a template.
+     *
+     * @param uri    the original URI object
+     * @param scheme the scheme component of the new URI, or null to use the original scheme
+     * @param host   the host component of the new URI, or null to use the original host
+     * @param port   the port component of the new URI, or null to use the original port
+     * @param path   the path component of the new URI, or null to use the original path
+     * @return a new URI object with the specified components, or null if an error occurs
+     */
+    public static URI newURI(URI uri, String scheme, String host, Integer port, String path) {
+        int p = port != null ? port : uri.getPort();
+        String s = scheme == null || scheme.isEmpty() ? uri.getScheme() : scheme;
+        String h = host == null || host.isEmpty() ? uri.getHost() : host;
+        String t = path == null || path.isEmpty() ? uri.getRawPath() : path;
+        URIConstructor constructor = cache.get();
+        if (constructor != null) {
+            try {
+                return constructor.create(s, uri.getRawUserInfo(), h, p, t, uri.getRawQuery(), uri.getRawFragment());
+            } catch (Throwable ignored) {
+            }
+        }
+        try {
+            return new URI(s, uri.getRawUserInfo(), h, p, t, uri.getRawQuery(), uri.getRawFragment());
+        } catch (URISyntaxException e) {
+            return null;
+        }
     }
 
     /**
@@ -438,21 +489,7 @@ public abstract class HttpUtils {
      * @return a new URI object with the specified components
      */
     public static URI newURI(URI uri, String scheme, String host, Integer port) {
-        int p = port != null ? port : uri.getPort();
-        String s = scheme == null || scheme.isEmpty() ? uri.getScheme() : scheme;
-        String h = host == null || host.isEmpty() ? uri.getHost() : host;
-        URIConstructor constructor = cache.get();
-        if (constructor != null) {
-            try {
-                return constructor.create(s, uri.getRawUserInfo(), h, p, uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment());
-            } catch (Throwable ignored) {
-            }
-        }
-        try {
-            return new URI(s, uri.getRawUserInfo(), h, p, uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment());
-        } catch (URISyntaxException e) {
-            return null;
-        }
+        return newURI(uri, scheme, host, port, null);
     }
 
     /**
@@ -463,7 +500,7 @@ public abstract class HttpUtils {
      * @return a new URI object with the specified components
      */
     public static URI newURI(URI uri, String host) {
-        return newURI(uri, null, host, null);
+        return newURI(uri, null, host, null, null);
     }
 
     /**
@@ -473,43 +510,35 @@ public abstract class HttpUtils {
 
         private final Constructor<URI> constructor;
 
-        private final Field schemeField;
+        private final UnsafeFieldAccessor schemeField;
 
-        private final Field fragmentField;
+        private final UnsafeFieldAccessor fragmentField;
 
-        private final Field authorityField;
+        private final UnsafeFieldAccessor authorityField;
 
-        private final Field userInfoField;
+        private final UnsafeFieldAccessor userInfoField;
 
-        private final Field hostField;
+        private final UnsafeFieldAccessor hostField;
 
-        private final Field portField;
+        private final UnsafeFieldAccessor portField;
 
-        private final Field pathField;
+        private final UnsafeFieldAccessor pathField;
 
-        private final Field queryField;
+        private final UnsafeFieldAccessor queryField;
 
         @SuppressWarnings("unchecked")
         URIConstructor() throws NoSuchFieldException, NoSuchMethodException {
             Class<?> uriClass = URI.class;
             constructor = (Constructor<URI>) uriClass.getDeclaredConstructor();
             constructor.setAccessible(true);
-            schemeField = uriClass.getDeclaredField("scheme");
-            schemeField.setAccessible(true);
-            fragmentField = uriClass.getDeclaredField("fragment");
-            fragmentField.setAccessible(true);
-            authorityField = uriClass.getDeclaredField("authority");
-            authorityField.setAccessible(true);
-            userInfoField = uriClass.getDeclaredField("userInfo");
-            userInfoField.setAccessible(true);
-            hostField = uriClass.getDeclaredField("host");
-            hostField.setAccessible(true);
-            portField = uriClass.getDeclaredField("port");
-            portField.setAccessible(true);
-            pathField = uriClass.getDeclaredField("path");
-            pathField.setAccessible(true);
-            queryField = uriClass.getDeclaredField("query");
-            queryField.setAccessible(true);
+            schemeField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "scheme");
+            fragmentField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "fragment");
+            authorityField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "authority");
+            userInfoField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "userInfo");
+            hostField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "host");
+            portField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "port");
+            pathField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "path");
+            queryField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "query");
         }
 
         /**
@@ -530,7 +559,7 @@ public abstract class HttpUtils {
             schemeField.set(result, scheme);
             userInfoField.set(result, userInfo);
             hostField.set(result, host);
-            portField.set(result, port);
+            portField.setInt(result, port);
             pathField.set(result, path);
             queryField.set(result, query);
             fragmentField.set(result, fragment);
@@ -563,6 +592,28 @@ public abstract class HttpUtils {
                 builder.append(":").append(port);
             }
             return builder.toString();
+        }
+    }
+
+    private static class DecodeBuf {
+
+        final int length;
+        final char[] chars;
+        final byte[] bytes;
+        int charPos;
+        int bytesPos = 0;
+
+        DecodeBuf(String value, int start, int end) {
+            this.length = value.length();
+            this.chars = new char[length];
+            this.bytes = new byte[length / 3];
+            value.getChars(start, end, this.chars, 0);
+            charPos = end;
+        }
+
+        @Override
+        public String toString() {
+            return new String(chars, 0, charPos);
         }
     }
 }

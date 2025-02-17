@@ -41,10 +41,24 @@ public class Cell implements Place {
 
     private Map<String, String> labels;
 
+    private transient String cloud;
+
     private final transient LazyObject<String> hostPrefix = new LazyObject<>(() -> code == null ? "" : code.replace('_', '-'));
 
     public String getLabel(String key) {
         return labels == null ? null : labels.get(key);
+    }
+
+    public String getLabel(String key, String defaultValue) {
+        String value = labels == null ? null : labels.get(key);
+        return value == null ? defaultValue : value;
+    }
+
+    public String getCloud() {
+        if (cloud == null) {
+            cloud = getLabel(LABEL_CLOUD, "");
+        }
+        return cloud;
     }
 
     @Override

@@ -23,9 +23,10 @@ import org.apache.kafka.common.header.Headers;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toIterator;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 
 public class KafkaHeaderParser implements HeaderParser {
 
@@ -50,6 +51,13 @@ public class KafkaHeaderParser implements HeaderParser {
         Iterator<Header> iterator = headers.headers(key).iterator();
         Header header = !iterator.hasNext() ? null : iterator.next();
         return getValue(header);
+    }
+
+    @Override
+    public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        return iterate(headers,
+                header -> predicate == null || predicate.test(header.key()),
+                header -> consumer.accept(header.key(), toList(getValue(header))));
     }
 
     @Override

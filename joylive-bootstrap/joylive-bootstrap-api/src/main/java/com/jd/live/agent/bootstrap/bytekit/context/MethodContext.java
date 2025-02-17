@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.context;
 
+import com.jd.live.agent.bootstrap.util.type.Accessible;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -81,12 +82,12 @@ public class MethodContext extends ExecutableContext {
 
     public void skipWithResult(final Object result) {
         setResult(result);
-        skip();
+        setSkip(true);
     }
 
     public void skipWithThrowable(final Throwable throwable) {
         setThrowable(throwable);
-        skip();
+        setSkip(true);
     }
 
     @SuppressWarnings("unchecked")
@@ -124,9 +125,9 @@ public class MethodContext extends ExecutableContext {
     public Object invokeOrigin(final Object target) throws Exception {
         try {
             OriginStack.push(target, method);
-            // method is always a copy object
-            // java.lang.Class.getMethods
-            method.setAccessible(true);
+            // method is always a copy object by java.lang.Class.getMethods
+            // so we need to set accessible to true
+            Accessible.setAccessible(method, true);
             return method.invoke(target, arguments);
         } catch (InvocationTargetException e) {
             if (e.getCause() != null && e.getCause() instanceof Exception) {
@@ -142,7 +143,6 @@ public class MethodContext extends ExecutableContext {
     public String toString() {
         return description;
     }
-
 
 }
 

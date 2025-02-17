@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import com.jd.live.agent.bootstrap.util.type.ObjectGetter;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;

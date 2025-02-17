@@ -20,6 +20,10 @@ import com.jd.live.agent.governance.request.HeaderParser;
 import org.springframework.http.HttpHeaders;
 
 import java.util.Iterator;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.util.CollectionUtils.iterate;
 
 public class HttpHeadersParser implements HeaderParser {
 
@@ -42,6 +46,11 @@ public class HttpHeadersParser implements HeaderParser {
     @Override
     public String getHeader(String key) {
         return headers.getFirst(key);
+    }
+
+    @Override
+    public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        return consumer == null ? 0 : iterate(headers, predicate, consumer::accept);
     }
 
     @Override

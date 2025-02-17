@@ -350,7 +350,7 @@ public class CellFilter implements RouteFilter {
                 Integer threshold = localFirst == null ? null : failoverThresholdFunc.apply(cell.getCode());
                 threshold = threshold == null ? 0 : threshold;
 
-                String cloud = cellRoute.getCell().getLabel(Cell.LABEL_CLOUD);
+                String cloud = cellRoute.getCell().getCloud();
                 if (cloud == null) {
                     cloud = cellGroup == null || cellGroup.isEmpty() ? "" : cellGroup.getEndpoints().get(0).getCloud();
                 }

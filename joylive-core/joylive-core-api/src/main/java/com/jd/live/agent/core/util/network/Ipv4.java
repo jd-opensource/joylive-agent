@@ -189,7 +189,7 @@ public class Ipv4 {
                     }
                     continue;
                 case '.':
-                    if (start < 0 || Integer.parseInt(ip.substring(start, i)) > 255) {
+                    if (start < 0 || !isIpv4Part(ip, start, i)) {
                         return false;
                     }
                     count++;
@@ -207,7 +207,31 @@ public class Ipv4 {
         } else if (start >= length || start < 0) {
             return false;
         }
-        return Integer.parseInt(ip.substring(start, length)) <= 255;
+        return isIpv4Part(ip, start, length);
+    }
+
+    /**
+     * Checks if a substring of an IP address string represents a valid IPv4 part.
+     *
+     * @param ip    the IP address string
+     * @param start the starting index of the substring
+     * @param end   the ending index of the substring
+     * @return true if the substring represents a valid IPv4 part, false otherwise
+     */
+    private static boolean isIpv4Part(String ip, int start, int end) {
+        int len = end - start;
+        if (len < 3) {
+            return true;
+        } else if (len > 3) {
+            return false;
+        }
+        int d1 = Character.digit(ip.charAt(start), 10);
+        if (d1 > 2) {
+            return false;
+        }
+        int d2 = Character.digit(ip.charAt(start + 1), 10);
+        int d3 = Character.digit(ip.charAt(start + 2), 10);
+        return d1 * 100 + d2 * 10 + d3 <= 255;
     }
 
     /**

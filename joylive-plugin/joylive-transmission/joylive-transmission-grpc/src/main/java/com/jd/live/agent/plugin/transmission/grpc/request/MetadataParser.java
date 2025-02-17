@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.transmission.grpc.request;
 
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.KeyValue;
 import com.jd.live.agent.core.util.LookupIndex;
 import com.jd.live.agent.governance.request.HeaderFeature;
@@ -22,12 +24,14 @@ import com.jd.live.agent.governance.request.HeaderParser;
 import io.grpc.Metadata;
 import io.grpc.Metadata.Key;
 
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.CollectionUtils.lookup;
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static io.grpc.Metadata.ASCII_STRING_MARSHALLER;
 
 public class MetadataParser implements HeaderParser {
@@ -53,6 +57,24 @@ public class MetadataParser implements HeaderParser {
     @Override
     public String getHeader(String key) {
         return metadata.get(getOrCreate(key));
+    }
+
+    @Override
+    public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        int length = 2 * FieldGetter.INSTANCE.getSize(metadata);
+        Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
+        int count = 0;
+        String name;
+        Object value;
+        for (int i = 0; i < length; i++) {
+            name = new String((byte[]) namesAndValues[i]);
+            value = namesAndValues[++i];
+            if (predicate == null || predicate.test(name)) {
+                count++;
+                consumer.accept(name, value == null ? null : singletonList(new String((byte[]) value, StandardCharsets.UTF_8)));
+            }
+        }
+        return count;
     }
 
     @Override
@@ -175,14 +197,14 @@ public class MetadataParser implements HeaderParser {
         /**
          * The private field 'namesAndValues' in the {@link Metadata} class.
          */
-        private Field headersField;
+        private UnsafeFieldAccessor headersField;
 
         /**
          * The private field 'nameBytes' in the {@link Key} class.
          */
-        private Field namesField;
+        private UnsafeFieldAccessor namesField;
 
-        private Field sizeField;
+        private UnsafeFieldAccessor sizeField;
 
         /**
          * Constructs a new FieldGetter instance and initializes the private fields.
@@ -190,12 +212,10 @@ public class MetadataParser implements HeaderParser {
          */
         FieldGetter() {
             try {
-                headersField = Metadata.class.getDeclaredField("namesAndValues");
-                headersField.setAccessible(true);
-                sizeField = Metadata.class.getDeclaredField("size");
-                sizeField.setAccessible(true);
-                namesField = Key.class.getDeclaredField("nameBytes");
-                namesField.setAccessible(true);
+                Class<Metadata> type = Metadata.class;
+                headersField = UnsafeFieldAccessorFactory.getAccessor(type, "namesAndValues");
+                sizeField = UnsafeFieldAccessorFactory.getAccessor(type, "size");
+                namesField = UnsafeFieldAccessorFactory.getAccessor(Key.class, ("nameBytes"));
             } catch (Throwable ignored) {
                 // Ignore the exception if the field is not found or an error occurs
             }
@@ -224,7 +244,7 @@ public class MetadataParser implements HeaderParser {
                 return 0;
             }
             try {
-                return (int) sizeField.get(metadata);
+                return (int) sizeField.getInt(metadata);
             } catch (Throwable e) {
                 return 0;
             }

@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.type;
+package com.jd.live.agent.plugin.transmission.servlet.jakarta.request;
+
+import com.jd.live.agent.core.util.map.MultiMap;
 
 /**
- * An interface that combines the functionality of both {@link ObjectGetter} and {@link ObjectSetter}.
- * It allows for both retrieving and setting values on a target object.
+ * An interface for parsing HTTP headers from a given request object.
  */
-public interface ObjectAccessor extends ObjectGetter, ObjectSetter {
-    // This interface inherits all methods from ObjectGetter and ObjectSetter.
-}
+public interface HttpHeaderParser {
 
+    /**
+     * Parses the HTTP headers from the given request object and returns them as a MultiMap.
+     *
+     * @param request the request object to parse
+     * @return a MultiMap containing the parsed HTTP headers
+     */
+    MultiMap<String, String> parse(Object request);
+}
