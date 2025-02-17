@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.router.gprc.loadbalance;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -51,6 +53,8 @@ import static com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint.NO_ENDP
  * Live request.
  */
 public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
+
+    private static final Logger logger = LoggerFactory.getLogger(LiveRequest.class);
 
     public static final CallOptions.Key<LiveRequest<?, ?>> KEY_LIVE_REQUEST = CallOptions.Key.create("x-live-request");
 
@@ -279,11 +283,13 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                 LiveRef ref = subchannel.getAttributes().get(LiveRef.KEY_STATE);
                 routeResult = new LiveRouteResult(ref != null ? ref.getEndpoint() : new GrpcEndpoint(subchannel));
             } else {
+                logger.warn("[LiveRequest]Subchannel is null, service {}", request.getService());
                 routeResult = new LiveRouteResult(RejectNoProviderException.ofService(request.getService()));
             }
         } else {
             String description = status.getDescription();
             if (NO_ENDPOINT_AVAILABLE.equals(description)) {
+                logger.warn("[LiveRequest]No endpoint available, service {}", request.getService());
                 routeResult = new LiveRouteResult(RejectNoProviderException.ofService(request.getService()));
             } else {
                 routeResult = new LiveRouteResult(status.asRuntimeException());

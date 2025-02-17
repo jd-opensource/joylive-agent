@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import io.grpc.LoadBalancer.SubchannelPicker;
 
 import java.util.Map;
@@ -85,6 +87,8 @@ public class LiveDiscovery {
      */
     private static class Picker {
 
+        private static final Logger logger = LoggerFactory.getLogger(Picker.class);
+
         private final String service;
 
         private volatile long updateTime;
@@ -123,6 +127,9 @@ public class LiveDiscovery {
                         }
                     }
                 }
+            }
+            if (picker == null) {
+                logger.warn("[LiveDiscovery]Picker is null, service {}", service);
             }
             return picker;
         }

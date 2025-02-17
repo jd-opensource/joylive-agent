@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.gprc.request;
 
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
@@ -91,6 +93,8 @@ public interface GrpcRequest {
      */
     class GrpcOutboundRequest extends AbstractRpcOutboundRequest<LiveRequest<?, ?>> implements GrpcRequest, RoutedRequest {
 
+        private static final Logger logger = LoggerFactory.getLogger(GrpcOutboundRequest.class);
+
         private static final Function<Throwable, ErrorName> GRPC_ERROR_FUNCTION = throwable -> {
             GrpcStatus status = GrpcStatus.from(throwable);
             return status != null
@@ -130,6 +134,7 @@ public interface GrpcRequest {
         public <E extends Endpoint> E getEndpoint() {
             LiveRouteResult result = request.getRouteResult();
             if (result == null) {
+                logger.warn("[GrpcOutboundRequest]Get route result is null, service {}", service);
                 throw RejectNoProviderException.ofService(service);
             } else if (result.isSuccess()) {
                 return (E) result.getEndpoint();
