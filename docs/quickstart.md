@@ -56,8 +56,6 @@ The JoyLive Agent package has the following directory structure:
 │   │   ├── joylive-event-logger-1.0.0.jar
 │   │   ├── joylive-event-opentelemetry-1.0.0.jar
 │   │   ├── ......
-│   └── system
-│       └── joylive-bootstrap-api-1.0.0.jar
 ├── live.jar
 └── plugin
     ├── dubbo

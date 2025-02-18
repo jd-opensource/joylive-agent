@@ -48,8 +48,6 @@ public class AgentPath {
 
     public static final String DIR_LIB = "lib";
 
-    public static final String DIR_LIB_SYSTEM = "system";
-
     public static final String DIR_LIB_CORE = "core";
 
     public static final String DIR_LIB_CORE_IMPL = "core.impl";
@@ -72,8 +70,6 @@ public class AgentPath {
 
     private final File libPath;
 
-    private final File systemLibPath;
-
     private final File coreLibPath;
 
     private final File coreImplLibPath;
@@ -94,7 +90,6 @@ public class AgentPath {
         this.logPath = logPath != null ? createDir(logPath, true, false) :
                 createDir(root, DIR_LOG, true, false);
         this.libPath = createDir(root, DIR_LIB, false, true);
-        this.systemLibPath = createDir(libPath, DIR_LIB_SYSTEM, true, true);
         this.coreLibPath = createDir(libPath, DIR_LIB_CORE, false, true);
         this.coreImplLibPath = createDir(libPath, DIR_LIB_CORE_IMPL, false, true);
         this.configPath = createDir(root, DIR_CONFIG, false, true);
