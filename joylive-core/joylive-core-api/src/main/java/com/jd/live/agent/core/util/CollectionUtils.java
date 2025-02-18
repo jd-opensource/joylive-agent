@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -95,9 +96,26 @@ public class CollectionUtils {
      * @return a List containing all the elements from the iterator, or null if the iterator is null
      */
     public static <T> List<T> toList(T value) {
-        List<T> result = new ArrayList<>();
+        if (value == null) {
+            return null;
+        }
+        List<T> result = new ArrayList<>(1);
         result.add(value);
         return result;
+    }
+
+    /**
+     * Converts a value to a List.
+     *
+     * @param <T>   the type of elements in the iterator
+     * @param value the value to convert
+     * @return a List containing all the elements from the iterator, or null if the iterator is null
+     */
+    public static <T> List<T> singletonList(T value) {
+        if (value == null) {
+            return null;
+        }
+        return Collections.singletonList(value);
     }
 
     /**
@@ -428,6 +446,31 @@ public class CollectionUtils {
             if (predicate == null || predicate.test(t)) {
                 count++;
                 consumer.accept(t);
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Iterates over the entries of the given map, applying the given predicate to each key and passing the matching key-value pairs to the given consumer.
+     *
+     * @param map       the map to iterate over
+     * @param predicate a predicate used to filter the keys; if null, all keys are included
+     * @param consumer  a bi-consumer that accepts a key and a value
+     * @param <K>       the type of the keys in the map
+     * @param <V>       the type of the values in the map
+     * @return the number of key-value pairs that were passed to the consumer
+     */
+    public static <K, V> int iterate(Map<K, V> map, Predicate<K> predicate, BiConsumer<K, V> consumer) {
+        int count = 0;
+        K key;
+        if (map != null && consumer != null) {
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                key = entry.getKey();
+                if (predicate == null || predicate.test(key)) {
+                    count++;
+                    consumer.accept(key, entry.getValue());
+                }
             }
         }
         return count;

@@ -23,11 +23,11 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v4.util.UriUtils;
 import feign.Client;
 import feign.Request;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.CompletionContext;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.cloud.client.loadbalancer.ResponseData;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
@@ -83,7 +83,7 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
     public CompletionStage<FeignClusterResponse> invoke(FeignClusterRequest request, SpringEndpoint endpoint) {
         try {
             Request req = request.getRequest();
-            String url = LoadBalancerUriTools.reconstructURI(endpoint.getInstance(), request.getURI()).toString();
+            String url = UriUtils.newURI(endpoint.getInstance(), request.getURI()).toString();
             // TODO sticky session
             req = Request.create(req.httpMethod(), url, req.headers(), req.body(), req.charset(), req.requestTemplate());
             feign.Response response = delegate.execute(req, request.getOptions());

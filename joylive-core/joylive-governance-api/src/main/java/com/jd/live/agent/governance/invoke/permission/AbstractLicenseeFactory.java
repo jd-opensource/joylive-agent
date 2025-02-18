@@ -45,7 +45,7 @@ public abstract class AbstractLicenseeFactory<P extends PolicyVersion, K, V exte
      * A map that stores licensees with their keys. Each value is an {@link AtomicReference}
      * to a {@link Licensee}.
      */
-    protected final Map<K, AtomicReference<V>> licensees = new ConcurrentHashMap<>();
+    protected final Map<K, AtomicReference<V>> licensees = new ConcurrentHashMap<>(1024);
 
     /**
      * A timer used to schedule recurring tasks for recycling licensees.

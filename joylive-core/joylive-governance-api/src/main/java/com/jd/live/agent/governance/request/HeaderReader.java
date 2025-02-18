@@ -15,11 +15,15 @@
  */
 package com.jd.live.agent.governance.request;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.util.CollectionUtils.iterate;
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 
 /**
  * Interface for reading HTTP headers.
@@ -42,6 +46,38 @@ public interface HeaderReader {
      * @return A list of values for the specified header key.
      */
     Iterable<String> getHeaders(String key);
+
+    /**
+     * Reads all the header names and values from this object and passes them to the given consumer.
+     *
+     * @param consumer a bi-consumer that accepts a header name and an iterable of header values
+     */
+    default void read(BiConsumer<String, Iterable<String>> consumer) {
+        read(consumer, null);
+    }
+
+    /**
+     * Reads all the header names and values from this object that match the given predicate and passes them to the given consumer.
+     *
+     * @param consumer  a bi-consumer that accepts a header name and an iterable of header values
+     * @param predicate a predicate used to filter the header names; if null, all header names are included
+     * @return the number of header names that were passed to the consumer
+     */
+    default int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        int count = 0;
+        if (consumer != null) {
+            Iterator<String> names = getNames();
+            String name;
+            while (names.hasNext()) {
+                name = names.next();
+                if (predicate == null || predicate.test(name)) {
+                    count++;
+                    consumer.accept(name, getHeaders(name));
+                }
+            }
+        }
+        return count;
+    }
 
     /**
      * Returns the first value for the specified header key.
@@ -81,14 +117,20 @@ public interface HeaderReader {
 
         @Override
         public Iterable<String> getHeaders(String key) {
-            T obj = map == null ? null : map.get(key);
-            return obj == null ? null : Collections.singletonList(obj.toString());
+            // read only
+            return singletonList(getHeader(key));
         }
 
         @Override
         public String getHeader(String key) {
             T obj = map == null ? null : map.get(key);
             return obj == null ? null : obj.toString();
+        }
+
+        @Override
+        public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+            // read only
+            return iterate(map, predicate, (key, value) -> consumer.accept(key, value == null ? null : singletonList(value.toString())));
         }
     }
 
@@ -139,6 +181,10 @@ public interface HeaderReader {
             return values == null || values.isEmpty() ? null : values.get(0);
         }
 
+        @Override
+        public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+            return consumer == null ? 0 : iterate(map, predicate, consumer::accept);
+        }
     }
 
 }

@@ -25,9 +25,9 @@ import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2.request.ReactiveClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2.response.ReactiveClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2.util.LoadBalancerUtil;
+import com.jd.live.agent.plugin.router.springcloud.v2.util.UriUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClientRequestTransformer;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.HttpHeaders;
@@ -121,7 +121,7 @@ public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterReques
         ClientRequest clientRequest = request.getRequest();
         URI originalUrl = clientRequest.url();
         ClientRequest result = ClientRequest
-                .create(clientRequest.method(), LoadBalancerUriTools.reconstructURI(serviceInstance, originalUrl))
+                .create(clientRequest.method(), UriUtils.newURI(serviceInstance, originalUrl))
                 .headers(headers -> headers.addAll(clientRequest.headers()))
                 .cookies(cookies -> {
                     cookies.addAll(clientRequest.cookies());

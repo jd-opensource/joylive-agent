@@ -38,7 +38,7 @@ public class UnitGroup {
      * and should not be modified directly.
      */
     @Getter
-    private final List<Endpoint> endpoints = new ArrayList<>();
+    private final List<Endpoint> endpoints = new ArrayList<>(4);
 
     /**
      * A map that associates cell strings with CellGroup objects. Each CellGroup contains a collection

@@ -96,7 +96,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                         addCircuitBreaker(breakers, policy, policy.getUri());
                         break;
                     case API:
-                        URI api = policy.getUri().path(metadata.getPath()).parameters(PolicyId.KEY_SERVICE_METHOD, metadata.getMethod());
+                        URI api = policy.getUri().path(metadata.getPath()).parameter(PolicyId.KEY_SERVICE_METHOD, metadata.getMethod());
                         addCircuitBreaker(breakers, policy, api);
                         break;
                     default:

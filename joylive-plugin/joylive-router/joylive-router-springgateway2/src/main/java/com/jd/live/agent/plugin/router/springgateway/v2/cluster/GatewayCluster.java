@@ -32,6 +32,7 @@ import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilter
 import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.HttpHeadersParser;
 import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v2.util.UriUtils;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
@@ -60,7 +61,6 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import static org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools.reconstructURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 @Getter
@@ -152,7 +152,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
             if (schemePrefix != null) {
                 overrideScheme = request.getURI().getScheme();
             }
-            URI requestUrl = reconstructURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
+            URI requestUrl = UriUtils.newURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
 
             attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
         }

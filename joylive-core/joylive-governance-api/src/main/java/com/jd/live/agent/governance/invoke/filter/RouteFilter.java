@@ -49,9 +49,7 @@ public interface RouteFilter {
 
     int ORDER_HEALTH = ORDER_PORT + 100;
 
-    int ORDER_VIRTUAL = ORDER_HEALTH + 100;
-
-    int ORDER_LIVE_UNIT = ORDER_VIRTUAL + 100;
+    int ORDER_LIVE_UNIT = ORDER_HEALTH + 100;
 
     int ORDER_TAG_ROUTE = ORDER_LIVE_UNIT + 100;
 

@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.type;
+package com.jd.live.agent.plugin.transmission.servlet.javax.request;
 
 /**
- * An interface that defines a method for retrieving a value from a target object.
+ * An interface for creating instances of HttpHeaderParser.
  */
-public interface ObjectGetter {
+public interface HttpHeaderParserFactory {
 
     /**
-     * Retrieves a value from the specified target object.
+     * Creates a new instance of HttpHeaderParser.
      *
-     * @param target The target object from which the value is to be retrieved.
-     * @return The value retrieved from the target object.
+     * @return a new instance of HttpHeaderParser
      */
-    Object get(Object target);
+    HttpHeaderParser create();
+
+    /**
+     * Checks if the factory supports creating HttpHeaderParser instances for the given type.
+     *
+     * @param type the type to check support for
+     * @return true if the factory supports creating HttpHeaderParser instances for the given type, false otherwise
+     */
+    boolean support(Class<?> type);
 }
 

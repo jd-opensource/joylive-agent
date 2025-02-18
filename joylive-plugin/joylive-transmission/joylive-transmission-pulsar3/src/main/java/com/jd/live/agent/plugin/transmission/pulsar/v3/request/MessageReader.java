@@ -18,9 +18,13 @@ package com.jd.live.agent.plugin.transmission.pulsar.v3.request;
 import com.jd.live.agent.governance.request.HeaderReader;
 import org.apache.pulsar.client.api.Message;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+
+import static com.jd.live.agent.core.util.CollectionUtils.iterate;
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 
 public class MessageReader implements HeaderReader {
 
@@ -37,12 +41,18 @@ public class MessageReader implements HeaderReader {
 
     @Override
     public List<String> getHeaders(String key) {
-        String value = message.getProperty(key);
-        return value == null ? null : Collections.singletonList(value);
+        // read only
+        return singletonList(message.getProperty(key));
     }
 
     @Override
     public String getHeader(String key) {
         return message.getProperty(key);
+    }
+
+    @Override
+    public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
+        // read only
+        return iterate(message.getProperties(), predicate, (key, value) -> consumer.accept(key, singletonList(value)));
     }
 }

@@ -1,5 +1,7 @@
 package com.jd.live.agent.plugin.router.gprc.cluster;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -22,6 +24,8 @@ import static com.jd.live.agent.plugin.router.gprc.exception.GrpcOutboundThrower
 
 public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOutboundResponse, GrpcEndpoint> {
 
+    private static final Logger logger = LoggerFactory.getLogger(GrpcCluster.class);
+
     public static final GrpcCluster INSTANCE = new GrpcCluster();
 
     @Override
@@ -30,8 +34,13 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
             // the endpoint maybe null in initialization
             // wait for picker
             SubchannelPicker picker = LiveDiscovery.getSubchannelPicker(request.getService());
+            if (picker == null) {
+                picker = LiveDiscovery.getSubchannelPicker(request.getService());
+            }
             if (picker != null) {
                 picker.pickSubchannel(request.getRequest());
+            } else {
+                logger.warn("[GrpcCluster]Get picker is null, service {}", request.getService());
             }
         }
 
