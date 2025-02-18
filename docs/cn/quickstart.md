@@ -56,8 +56,6 @@ JoyLive Agent包如下目录结构：
 │   │   ├── joylive-event-logger-1.0.0.jar
 │   │   ├── joylive-event-opentelemetry-1.0.0.jar
 │   │   ├── ......
-│   └── system
-│       └── joylive-bootstrap-api-1.0.0.jar
 ├── live.jar
 └── plugin
     ├── dubbo
@@ -92,32 +90,35 @@ JoyLive Agent包如下目录结构：
 
 常用的环境变量如下，更多请参阅[配置参考手册](./config.md)
 
-| **名称**                          | **说明**           | **必需** | **默认值** | **说明**                                                 |
-| --------------------------------- | ------------------ | -------- | ---------- | -------------------------------------------------------- |
-| APPLICATION_NAME                  | 应用名             | 是       |            | 建议和Spring的应用名称保持一致                           |
-| APPLICATION_SERVICE_NAME          | 服务名             | 否       | 应用名称   | 建议和SpringCloud的应用名称保持一致                      |
-| APPLICATION_LOCATION_LIVESPACE_ID | 实例所在多活空间ID | 是       |            |                                                          |
-| APPLICATION_LOCATION_UNIT         | 实例所在单元编码   | 是       |            |                                                          |
-| APPLICATION_LOCATION_CELL         | 实例所在分区编码   | 是       |            |                                                          |
-| APPLICATION_LOCATION_LANESPACE_ID | 实例所在泳道空间ID | 否       |            | 当启用泳道服务时候配置                                   |
-| APPLICATION_LOCATION_LANE         | 实例所在泳道编码   | 否       |            | 当启用泳道服务时候配置                                   |
-| APPLICATION_LOCATION_REGION       | 实例所在地域       | 否       |            |                                                          |
-| APPLICATION_LOCATION_ZONE         | 实例所在可用区     | 否       |            |                                                          |
-| CONFIG_LIVE_ENABLED               | 启用多活流控       | 否       | true       | 是否要进行多活的流控                                     |
-| CONFIG_POLICY_INITIALIZE_TIMEOUT  | 策略同步超时       | 否       | 10000(ms)  |                                                          |
-| CONFIG_FLOW_CONTROL_ENABLED       | 启用服务流控       | 否       | true       | 启用服务流控，包括限流、熔断、负载均衡、标签路由等等策略 |
-| CONFIG_LANE_ENABLED               | 启用泳道流控       | 否       | true       | 启用泳道流控                                             |
-| APPLICATION_SERVICE_GATEWAY       | 网关类型           | 否       | NONE       | 若为入口网关设置为FRONTEND，普通应用设置为NONE           |
+| **名称**                          | **说明**           | **必需** | **默认值**   | **说明**                                                 |
+| --------------------------------- | ------------------ | -------- |-----------| -------------------------------------------------------- |
+| APPLICATION_NAME                  | 应用名             | 是       |           | 建议和Spring的应用名称保持一致                           |
+| APPLICATION_SERVICE_NAME          | 服务名             | 否       | 应用名称      | 建议和SpringCloud的应用名称保持一致                      |
+| APPLICATION_LOCATION_LIVESPACE_ID | 实例所在多活空间ID | 是       |           |                                                          |
+| APPLICATION_LOCATION_UNIT         | 实例所在单元编码   | 是       |           |                                                          |
+| APPLICATION_LOCATION_CELL         | 实例所在分区编码   | 是       |           |                                                          |
+| APPLICATION_LOCATION_LANESPACE_ID | 实例所在泳道空间ID | 否       |           | 当启用泳道服务时候配置                                   |
+| APPLICATION_LOCATION_LANE         | 实例所在泳道编码   | 否       |           | 当启用泳道服务时候配置                                   |
+| APPLICATION_LOCATION_REGION       | 实例所在地域       | 否       |           |                                                          |
+| APPLICATION_LOCATION_ZONE         | 实例所在可用区     | 否       |           |                                                          |
+| CONFIG_LIVE_ENABLED               | 启用多活流控       | 否       | false      | 是否要进行多活的流控                                     |
+| CONFIG_POLICY_INITIALIZE_TIMEOUT  | 策略同步超时       | 否       | 10000(ms) |                                                          |
+| CONFIG_FLOW_CONTROL_ENABLED       | 启用服务流控       | 否       | false      | 启用服务流控，包括限流、熔断、负载均衡、标签路由等等策略 |
+| CONFIG_LANE_ENABLED               | 启用泳道流控       | 否       | false     | 启用泳道流控                                             |
+| APPLICATION_SERVICE_GATEWAY       | 网关类型           | 否       | NONE      | 若为入口网关设置为FRONTEND，普通应用设置为NONE           |
 
 注意：启动`joylive-demo-springcloud3-gateway` Spring Cloud Gateway网关demo时需设置为FRONTEND。启动`joylive-demo-springcloud3-provider` Spring Cloud应用demo则不需要设置，默认为NONE。
 
-### 1.4 启动网关
+### 1.4 单元多活
+
+#### 1.4.1 启动网关
 
 本例子中采用非修改配置文件而是设置环境变量方式。
 
 > 说明：
 > - ${path_to_gateway_demo}为joylive-demo-springcloud3-gateway.jar所在路径；
 > - ${path_to_agent}为joylive.jar所在路径。
+> - 多活的本地策略文件为livespaces.json
 
 模拟单元1内启动网关实例，命令如下：
 
@@ -125,9 +126,11 @@ JoyLive Agent包如下目录结构：
 # Linux or macOS设置环境变量
 export APPLICATION_NAME=springcloud3-gateway
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
+export APPLICATION_LOCATION_UNIT_RULE_ID=1003
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
 export APPLICATION_SERVICE_GATEWAY=FRONTEND
+export CONFIG_LIVE_ENABLED=true
 # 设置启动的nacos访问地址
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
@@ -138,9 +141,11 @@ java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-d
 # Windows设置环境变量（PowerShell）
 $env:APPLICATION_NAME="springcloud3-gateway"
 $env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT_RULE_ID="1003"
 $env:APPLICATION_LOCATION_UNIT="unit1"
 $env:APPLICATION_LOCATION_CELL="cell1"
 $env:APPLICATION_SERVICE_GATEWAY="FRONTEND"
+$env:CONFIG_LIVE_ENABLED="true"
 # 设置启动的nacos访问地址
 $env:NACOS_ADDR="localhost:8848"
 $env:NACOS_USERNAME="nacos"
@@ -149,7 +154,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-### 1.5 启动应用
+### 1.4.2 启动应用
 
 参考启动网关，模拟单元1内启动应用实例，命令如下：
 
@@ -157,8 +162,10 @@ java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-d
 # Linux or macOS设置环境变量
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
+export APPLICATION_LOCATION_UNIT_RULE_ID=1003
 export APPLICATION_LOCATION_UNIT=unit1
 export APPLICATION_LOCATION_CELL=cell1
+export CONFIG_LIVE_ENABLED=true
 # 设置启动的nacos访问地址
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
@@ -169,8 +176,10 @@ java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-
 # Windows设置环境变量（PowerShell）
 $env:APPLICATION_NAME="springcloud3-provider"
 $env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT_RULE_ID="1003"
 $env:APPLICATION_LOCATION_UNIT="unit1"
 $env:APPLICATION_LOCATION_CELL="cell1"
+$env:CONFIG_LIVE_ENABLED="true"
 # 设置启动的nacos访问地址
 $env:NACOS_ADDR="localhost:8848"
 $env:NACOS_USERNAME="nacos"
@@ -185,8 +194,11 @@ java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-
 # Linux or macOS设置环境变量
 export APPLICATION_NAME=springcloud3-provider
 export APPLICATION_LOCATION_LIVESPACE_ID=v4bEh4kd6Jvu5QBX09qYq-qlbcs
+export APPLICATION_LOCATION_UNIT_RULE_ID=1003
 export APPLICATION_LOCATION_UNIT=unit2
 export APPLICATION_LOCATION_CELL=cell4
+export APPLICATION_NAME=springcloud3-provider
+export CONFIG_LIVE_ENABLED=true
 # 设置启动的nacos访问地址
 export NACOS_ADDR=localhost:8848
 export NACOS_USERNAME=nacos
@@ -197,8 +209,10 @@ java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-
 # Windows设置环境变量（PowerShell）
 $env:APPLICATION_NAME="springcloud3-provider"
 $env:APPLICATION_LOCATION_LIVESPACE_ID="v4bEh4kd6Jvu5QBX09qYq-qlbcs"
+$env:APPLICATION_LOCATION_UNIT_RULE_ID="1003"
 $env:APPLICATION_LOCATION_UNIT="unit2"
 $env:APPLICATION_LOCATION_CELL="cell4"
+$env:CONFIG_LIVE_ENABLED="true"
 # 设置启动的nacos访问地址
 $env:NACOS_ADDR="localhost:8848"
 $env:NACOS_USERNAME="nacos"
@@ -207,7 +221,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.6 验证注册
+### 1.4.3 验证注册
 
 访问`nacos`注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
 
@@ -217,7 +231,9 @@ x-live-unit=unit1
 x-live-cell=cell1
 ```
 
-### 1.7 流量测试
+### 1.4.4 流量测试
+
+参考多活策略文件配置中的规则
 
 ```bash
 # 通过网关访问应用接口，指定单元变量unit1，指向访问unit1单元
@@ -225,6 +241,134 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit1" -H "Hos
 
 # 通过网关访问应用接口，指定单元变量unit2，指向访问unit2单元
 curl -X GET "http://localhost:8888/service-provider/echo/abc?user=unit2" -H "Host:demo.live.local"
+```
+
+### 1.5 泳道及服务治理
+
+#### 1.5.1 启动网关
+
+本例子中采用非修改配置文件而是设置环境变量方式。
+
+> 说明：
+> - ${path_to_gateway_demo}为joylive-demo-springcloud3-gateway.jar所在路径；
+> - ${path_to_agent}为joylive.jar所在路径。
+> - 泳道的本地策略文件为lanes.json
+> - 微服务本地策略文件为microservice.json
+
+模拟生产泳道内启动网关实例，命令如下：
+
+```bash
+# Linux or macOS设置环境变量
+export APPLICATION_NAME=springcloud3-gateway
+export APPLICATION_SERVICE_GATEWAY=FRONTEND
+export APPLICATION_LOCATION_LANESPACE_ID=1
+export APPLICATION_LOCATION_LANE=production
+export CONFIG_FLOW_CONTROL_ENABLED=true
+export CONFIG_LANE_ENABLED=true
+# 设置启动的nacos访问地址
+export NACOS_ADDR=localhost:8848
+export NACOS_USERNAME=nacos
+export NACOS_PASSWORD=nacos
+# 启动
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_gateway_demo}/joylive-demo-springcloud3-gateway.jar 
+
+# Windows设置环境变量（PowerShell）
+$env:APPLICATION_NAME="springcloud3-gateway"
+$env:APPLICATION_SERVICE_GATEWAY="FRONTEND"
+$env:APPLICATION_LOCATION_LANESPACE_ID="1"
+$env:APPLICATION_LOCATION_LANE="production"
+$env:CONFIG_FLOW_CONTROL_ENABLED="true"
+$env:CONFIG_LANE_ENABLED="true"
+# 设置启动的nacos访问地址
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# 启动
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
+```
+
+### 1.5.2 启动应用
+
+参考启动网关，模拟生成泳道内启动应用实例，命令如下：
+
+```bash
+# Linux or macOS设置环境变量
+export APPLICATION_NAME=springcloud3-provider
+export APPLICATION_LOCATION_LANESPACE_ID=1
+export APPLICATION_LOCATION_LANE=production
+export CONFIG_FLOW_CONTROL_ENABLED=true
+export CONFIG_LANE_ENABLED=true
+# 设置启动的nacos访问地址
+export NACOS_ADDR=localhost:8848
+export NACOS_USERNAME=nacos
+export NACOS_PASSWORD=nacos
+# 启动
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
+
+# Windows设置环境变量（PowerShell）
+$env:APPLICATION_NAME="springcloud3-provider"
+$env:APPLICATION_LOCATION_LANESPACE_ID="1"
+$env:APPLICATION_LOCATION_LANE="production"
+$env:CONFIG_FLOW_CONTROL_ENABLED="true"
+$env:CONFIG_LANE_ENABLED="true"
+# 设置启动的nacos访问地址
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# 启动
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
+```
+
+模拟预发泳道内启动应用实例，命令如下：
+
+```bash
+# Linux or macOS设置环境变量
+export APPLICATION_NAME=springcloud3-provider
+export APPLICATION_LOCATION_LANESPACE_ID=1
+export APPLICATION_LOCATION_LANE=beta
+export CONFIG_FLOW_CONTROL_ENABLED=true
+export CONFIG_LANE_ENABLED=true
+# 设置启动的nacos访问地址
+export NACOS_ADDR=localhost:8848
+export NACOS_USERNAME=nacos
+export NACOS_PASSWORD=nacos
+# 启动
+java -javaagent:${path_to_agent}/live.jar -jar ${path_to_provider_demo}/joylive-demo-springcloud3-provider.jar 
+
+# Windows设置环境变量（PowerShell）
+$env:APPLICATION_NAME="springcloud3-provider"
+$env:APPLICATION_LOCATION_LANESPACE_ID="1"
+$env:APPLICATION_LOCATION_LANE="beta"
+$env:CONFIG_FLOW_CONTROL_ENABLED="true"
+$env:CONFIG_LANE_ENABLED="true"
+# 设置启动的nacos访问地址
+$env:NACOS_ADDR="localhost:8848"
+$env:NACOS_USERNAME="nacos"
+$env:NACOS_PASSWORD="nacos"
+# 启动
+java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
+```
+
+### 1.5.3 验证注册
+
+访问`nacos`注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
+
+```properties
+x-lane-space-id=1
+x-lane-code=production
+```
+
+### 1.5.4 流量测试
+
+参考泳道策略文件配置中的染色规则
+
+```bash
+
+# 通过网关访问应用接口，路由到生产泳道
+curl -X GET "http://localhost:8888/service-provider/echo/abc?aaa=false" -H "Host:demo.live.local"
+
+# 通过网关访问应用接口，路由到预发泳道
+curl -X GET "http://localhost:8888/service-provider/echo/abc?aaa=true" -H "Host:demo.live.local"
 ```
 
 ## 2. 调试
