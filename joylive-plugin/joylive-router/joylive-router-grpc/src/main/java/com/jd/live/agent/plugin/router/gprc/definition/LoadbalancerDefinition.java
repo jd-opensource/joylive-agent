@@ -24,6 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.gprc.condition.ConditionalOnGrpcGovernanceEnabled;
 import com.jd.live.agent.plugin.router.gprc.interceptor.LoadbalancerInterceptor;
@@ -45,12 +46,15 @@ public class LoadbalancerDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     public LoadbalancerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new LoadbalancerInterceptor(registry))
+                        () -> new LoadbalancerInterceptor(registry, timer))
         };
 
     }

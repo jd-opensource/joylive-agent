@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.registry.EndpointEvent;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.*;
@@ -22,6 +23,8 @@ import io.grpc.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint.NO_ENDPOINT_AVAILABLE;
 import static io.grpc.ConnectivityState.*;
@@ -35,12 +38,25 @@ public class LiveLoadBalancer extends LoadBalancer {
 
     private final Helper helper;
 
+    private final Timer timer;
+
     private final String serviceName;
+
+    private final AtomicBoolean submitted = new AtomicBoolean(false);
+
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+    private final Set<GrpcEndpoint> initializedEndpoints = new CopyOnWriteArraySet<>();
+
+    private final AtomicBoolean ready = new AtomicBoolean(false);
+
+    private final Object mutex = new Object();
 
     private volatile Map<EquivalentAddressGroup, GrpcEndpoint> endpoints = new ConcurrentHashMap<>();
 
-    public LiveLoadBalancer(Helper helper) {
+    public LiveLoadBalancer(Helper helper, Timer timer) {
         this.helper = helper;
+        this.timer = timer;
         this.serviceName = getServiceName(helper);
     }
 
@@ -92,6 +108,9 @@ public class LiveLoadBalancer extends LoadBalancer {
         }
         // create new connection
         if (!added.isEmpty()) {
+            if (initialized.compareAndSet(false, true)) {
+                initializedEndpoints.addAll(added);
+            }
             added.forEach(GrpcEndpoint::requestConnection);
         }
     }
@@ -171,6 +190,19 @@ public class LiveLoadBalancer extends LoadBalancer {
      * Picks the ready GrpcEndpoints and updates the balancing state accordingly.
      */
     private void pickReady() {
+        synchronized (mutex) {
+            if (ready.compareAndSet(false, true)) {
+                initializedEndpoints.clear();
+            }
+            submitted.compareAndSet(true, false);
+            doPickReady();
+        }
+    }
+
+    /**
+     * Picks a new ready endpoint from the available endpoints.
+     */
+    private void doPickReady() {
         List<GrpcEndpoint> readies = new ArrayList<>();
         endpoints.values().forEach(endpoint -> {
             switch (endpoint.getConnectivityState()) {
@@ -190,11 +222,21 @@ public class LiveLoadBalancer extends LoadBalancer {
         }
     }
 
+    /**
+     * Updates the picker with the given connectivity state and subchannel picker.
+     *
+     * @param state  the new connectivity state
+     * @param picker the new subchannel picker
+     */
     private void updatePicker(ConnectivityState state, LiveSubchannelPicker picker) {
-        helper.updateBalancingState(state, picker);
+        helper.getSynchronizationContext().execute(() -> helper.updateBalancingState(state, picker));
         LiveDiscovery.setSubchannelPicker(serviceName, picker);
     }
 
+    /**
+     * A listener for subchannel state changes that updates the connectivity state of the associated endpoint and triggers
+     * the selection of a new ready endpoint if necessary.
+     */
     private class LiveStateListener implements SubchannelStateListener {
 
         private final GrpcEndpoint endpoint;
@@ -212,7 +254,35 @@ public class LiveLoadBalancer extends LoadBalancer {
                     || currentState != READY && newState == READY) {
                 // call helper.updateBalancingState in this thread to avoid exception
                 // syncContext.throwIfNotInThisSynchronizationContext()
-                pickReady();
+                if (!ready.get() && initializedEndpoints.remove(endpoint) && initializedEndpoints.isEmpty()) {
+                    // all endpoints are connected.
+                    tryExecute();
+                } else {
+                    submitTask();
+                }
+            }
+        }
+
+        /**
+         * Attempts to execute the task of picking a new ready endpoint if all endpoints are connected.
+         */
+        private void tryExecute() {
+            synchronized (mutex) {
+                if (!ready.get()) {
+                    pickReady();
+                } else {
+                    submitTask();
+                }
+            }
+        }
+
+        /**
+         * Submits a task to pick a new ready endpoint if necessary.
+         */
+        private void submitTask() {
+            if (submitted.compareAndSet(false, true)) {
+                // group commit
+                timer.delay("Live-PickReady", 200, LiveLoadBalancer.this::pickReady);
             }
         }
     }
