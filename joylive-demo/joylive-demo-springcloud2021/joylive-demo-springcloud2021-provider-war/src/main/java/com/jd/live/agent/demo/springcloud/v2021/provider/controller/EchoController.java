@@ -20,6 +20,7 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v2021.provider.config.EchoConfig;
+import com.jd.live.agent.demo.util.CpuBusyUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,9 +69,9 @@ public class EchoController {
     }
 
     @RequestMapping(value = "/sleep/{millis}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
-    public LiveResponse sleep(@PathVariable int millis, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+    public LiveResponse sleep(@PathVariable int millis, HttpServletRequest request, HttpServletResponse response) {
         if (millis > 0) {
-            Thread.sleep(millis);
+            CpuBusyUtil.busyCompute(millis);
         }
         LiveResponse lr = new LiveResponse(200, null, millis);
         configure(request, lr);
