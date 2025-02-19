@@ -20,6 +20,7 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v2021.provider.config.EchoConfig;
+import com.jd.live.agent.demo.util.CpuBusyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,10 +54,7 @@ public class EchoController {
             if (config.getRandomTime() > 0) {
                 sleepTime = sleepTime + ThreadLocalRandom.current().nextInt(config.getRandomTime());
             }
-            try {
-                Thread.sleep(sleepTime);
-            } catch (InterruptedException ignore) {
-            }
+            CpuBusyUtil.busyCompute(sleepTime);
         }
         LiveResponse response = new LiveResponse(echoSuffix == null ? str : str + echoSuffix);
         configure(request, response);
@@ -78,9 +76,9 @@ public class EchoController {
     }
 
     @RequestMapping(value = "/sleep/{millis}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
-    public LiveResponse sleep(@PathVariable int millis, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+    public LiveResponse sleep(@PathVariable int millis, HttpServletRequest request, HttpServletResponse response) {
         if (millis > 0) {
-            Thread.sleep(millis);
+            CpuBusyUtil.busyCompute(millis);
         }
         LiveResponse lr = new LiveResponse(200, null, millis);
         configure(request, lr);
@@ -96,7 +94,7 @@ public class EchoController {
     }
 
     @RequestMapping(value = "/state/{code}/sleep/{time}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
-    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) {
         if (logger.isInfoEnabled()) {
             logger.info("state code: {}, sleep time: {}, date: {}", code, time, System.currentTimeMillis());
         }
@@ -109,7 +107,7 @@ public class EchoController {
             response.setStatus(code);
         }
         if (time > 0) {
-            Thread.sleep(time);
+            CpuBusyUtil.busyCompute(time);
         }
         LiveResponse lr = new LiveResponse(code, "code:" + code, code);
         configure(request, lr);

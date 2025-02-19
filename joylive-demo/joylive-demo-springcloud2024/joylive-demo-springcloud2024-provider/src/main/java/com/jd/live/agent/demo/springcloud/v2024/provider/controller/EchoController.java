@@ -20,6 +20,7 @@ import com.jd.live.agent.demo.response.LiveResponse;
 import com.jd.live.agent.demo.response.LiveTrace;
 import com.jd.live.agent.demo.response.LiveTransmission;
 import com.jd.live.agent.demo.springcloud.v2024.provider.config.EchoConfig;
+import com.jd.live.agent.demo.util.CpuBusyUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -54,10 +55,7 @@ public class EchoController {
             if (config.getRandomTime() > 0) {
                 sleepTime = sleepTime + ThreadLocalRandom.current().nextInt(config.getRandomTime());
             }
-            try {
-                Thread.sleep(sleepTime);
-            } catch (InterruptedException ignore) {
-            }
+            CpuBusyUtil.busyCompute(sleepTime);
         }
         LiveResponse response = new LiveResponse(echoSuffix == null ? str : str + echoSuffix);
         configure(request, response);
@@ -81,7 +79,7 @@ public class EchoController {
     }
 
     @RequestMapping(value = "/state/{code}/sleep/{time}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
-    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
+    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) {
         if (logger.isInfoEnabled()) {
             logger.info("state code: {}, sleep time: {}, date: {}", code, time, System.currentTimeMillis());
         }
@@ -94,7 +92,7 @@ public class EchoController {
             response.setStatus(code);
         }
         if (time > 0) {
-            Thread.sleep(time);
+            CpuBusyUtil.busyCompute(time);
         }
         LiveResponse lr = new LiveResponse(code, "code:" + code, code);
         configure(request, lr);
