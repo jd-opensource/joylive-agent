@@ -25,23 +25,29 @@ public class PathMatcherTest {
         PathMatcher<String> matcher = new PathMatcher<>();
         matcher.addPath("/", "RootHandler");
         matcher.addPath("/user", "UserHandler");
-        matcher.addPath("/order/{id}/create", "OrderCreateHandler");
-        matcher.addPath("/order/{id}", "OrderHandler");
-        matcher.addPath("/space/{id}/service/{name}", "ServiceCreateHandler");
-        matcher.addPath("/space/{id}/service/{name}/route/{name}", "RouteCreateHandler");
+        matcher.addPath("/order/{orderId}/create", "OrderCreateHandler");
+        matcher.addPath("/order/{orderId}", "OrderHandler");
+        matcher.addPath("/space/{spaceId}/service/{service}", "ServiceCreateHandler");
+        matcher.addPath("/space/{spaceId}/service/{service}/route/{route}", "RouteCreateHandler");
         matcher.addPath("/product/*/create", "ProductCreateHandler");
+        matcher.addPath("/product/{name}/add", "ProductAddHandler");
+        matcher.addPath("/product/{id}/update", "ProductUpdateHandler");
 
-        Assertions.assertEquals(matcher.match("/").getValue(), "RootHandler");
-        Assertions.assertEquals(matcher.match("/user").getValue(), "UserHandler");
-        Assertions.assertEquals(matcher.match("/user/500").getValue(), "UserHandler");
-        Assertions.assertEquals(matcher.match("/order/1/create").getValue(), "OrderCreateHandler");
-        Assertions.assertEquals(matcher.match("/order/2").getValue(), "OrderHandler");
-        Assertions.assertEquals(matcher.match("/order/2/update").getValue(), "OrderHandler");
-        Assertions.assertEquals(matcher.match("/test").getValue(), "RootHandler");
-        Assertions.assertEquals(matcher.match("/space/1/service/service-consumer").getValue(), "ServiceCreateHandler");
-        Assertions.assertEquals(matcher.match("/space/1/service/service-provider").getValue(), "ServiceCreateHandler");
-        Assertions.assertEquals(matcher.match("/space/1/service/service-provider/route/abc").getValue(), "RouteCreateHandler");
-        Assertions.assertEquals(matcher.match("/space/1/service/service-provider/lb/abc").getValue(), "ServiceCreateHandler");
-        Assertions.assertEquals(matcher.match("/product/123/create").getValue(), "ProductCreateHandler");
+        Assertions.assertEquals("RootHandler", matcher.match("/").getValue());
+        Assertions.assertEquals("UserHandler", matcher.match("/user").getValue());
+        Assertions.assertEquals("UserHandler", matcher.match("/user/500").getValue());
+        Assertions.assertEquals("OrderCreateHandler", matcher.match("/order/1/create").getValue());
+        Assertions.assertEquals("OrderHandler", matcher.match("/order/2").getValue());
+        Assertions.assertEquals("2", matcher.match("/order/2/update").getVariable("orderId"));
+        Assertions.assertEquals("OrderHandler", matcher.match("/order/2/update").getValue());
+        Assertions.assertEquals("RootHandler", matcher.match("/test").getValue());
+        Assertions.assertEquals("ServiceCreateHandler", matcher.match("/space/1/service/service-consumer").getValue());
+        Assertions.assertEquals("ServiceCreateHandler", matcher.match("/space/1/service/service-provider").getValue());
+        Assertions.assertEquals("RouteCreateHandler", matcher.match("/space/1/service/service-provider/route/abc").getValue());
+        Assertions.assertEquals("abc", matcher.match("/space/1/service/service-provider/route/abc").getVariable("route"));
+        Assertions.assertEquals("ServiceCreateHandler", matcher.match("/space/1/service/service-provider/lb/abc").getValue());
+        Assertions.assertEquals("ProductCreateHandler", matcher.match("/product/123/create").getValue());
+        Assertions.assertEquals("ProductAddHandler", matcher.match("/product/123/add").getValue());
+        Assertions.assertEquals("123", matcher.match("/product/123/add").getVariable("name"));
     }
 }

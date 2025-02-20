@@ -19,7 +19,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -39,7 +41,7 @@ public class PathMatcher<T> {
 
     public PathMatcher(char delimiter) {
         this.delimiter = delimiter;
-        this.root = new TrieNode<>();
+        this.root = new TrieNode<>("");
     }
 
     /**
@@ -55,7 +57,9 @@ public class PathMatcher<T> {
         }
         final TrieNode<T>[] current = new TrieNode[]{root};
         preprocessPath(path, part -> {
-            if (part.isEmpty()) return true;
+            if (part.isEmpty()) {
+                return true;
+            }
             String variableName = null;
             if (isVariable(part)) {
                 variableName = part.substring(1, part.length() - 1);
@@ -65,8 +69,8 @@ public class PathMatcher<T> {
             }
             TrieNode<T> parent = current[0];
             int level = parent.level + 1;
-            current[0] = parent.getOrCreate(part);
-            current[0].variableName = variableName;
+            current[0] = parent.getOrCreateChild(part);
+            current[0].addVariable(variableName);
             current[0].level = level;
             parent.hasVariable = parent.hasVariable || VARIABLE.equals(part);
             return true;
@@ -81,57 +85,17 @@ public class PathMatcher<T> {
      * @param path The path to match.
      * @return A MatchResult containing the matched value and variables, or null if no match is found.
      */
-    @SuppressWarnings("unchecked")
     public MatchResult<T> match(String path) {
         if (path == null || path.isEmpty()) {
             return null;
         }
-        final TrieNode<T>[] current = new TrieNode[]{root};
-        final TrieNode<T>[] bestNode = new TrieNode[]{null};
-        final Map<String, String>[] variables = new Map[]{null};
-        final Map<String, String>[] bestVariables = new Map[]{null};
-
-        int count = preprocessPath(path, part -> {
-            int size = current[0].size();
-            TrieNode<T> nextNode = size == 0 || (size == 1 && current[0].hasVariable) ? null : current[0].get(part);
-            if (nextNode == null && current[0].hasVariable) {
-                nextNode = current[0].get(VARIABLE);
-                if (nextNode != null && nextNode.variableName != null) {
-                    if (variables[0] == null) {
-                        variables[0] = new HashMap<>();
-                    }
-                    variables[0].put(nextNode.variableName, part);
-                }
-            }
-
-            if (nextNode != null) {
-                current[0] = nextNode;
-                if (nextNode.isEnd) {
-                    bestNode[0] = nextNode;
-                    if (variables[0] != null) {
-                        if (bestVariables[0] == null) {
-                            bestVariables[0] = new HashMap<>();
-                        }
-                        bestVariables[0].clear();
-                        bestVariables[0].putAll(variables[0]);
-                    }
-                }
-            } else {
-                return false;
-            }
-            return true;
-        });
-
-        if (bestNode[0] == null) {
-            // Special case: if there is no specific match, check if the root node has a value
-            return !root.isEnd ? null : new MatchResult<>(
-                    count == 0 ? PathMatchType.EQUAL : PathMatchType.PREFIX,
-                    root.value, null);
-        } else {
-            return new MatchResult<>(
-                    count == bestNode[0].level ? PathMatchType.EQUAL : PathMatchType.PREFIX,
-                    bestNode[0].value, bestVariables[0]);
-        }
+        // TODO match the max length?
+        // /user/*/a/b
+        // /user/order/a
+        // /user/order/a/b/c now match /user/order/a, maybe the best result is /user/*/a/b.
+        MatchState<T> state = new MatchState<>(root);
+        int count = preprocessPath(path, state::next);
+        return state.getResult(count);
     }
 
     /**
@@ -151,11 +115,12 @@ public class PathMatcher<T> {
         int count = 0;
         int start = 0;
         int end;
+        String part;
 
         while ((end = path.indexOf(delimiter, start)) != -1) {
             if (start != end) {
                 count++;
-                String part = path.substring(start, end);
+                part = path.substring(start, end);
                 if (!func.apply(part)) {
                     return count;
                 }
@@ -165,7 +130,7 @@ public class PathMatcher<T> {
 
         if (start < path.length()) {
             count++;
-            String part = path.substring(start);
+            part = path.substring(start);
             func.apply(part);
         }
         return count;
@@ -187,24 +152,112 @@ public class PathMatcher<T> {
      *
      * @param <T> The type of the value associated with each path.
      */
-    static class TrieNode<T> {
-        Map<String, TrieNode<T>> children = new HashMap<>();
-        int level;
-        boolean hasVariable;
-        boolean isEnd;
-        String variableName;
-        T value;
+    private static class TrieNode<T> {
+        private final String name;
+        private TrieNode<T> child;
+        private Map<String, TrieNode<T>> children;
+        private int size;
+        private int level;
+        private boolean hasVariable;
+        private boolean isEnd;
+        private List<String> variables;
+        private T value;
 
-        TrieNode<T> getOrCreate(String child) {
-            return children.computeIfAbsent(child, k -> new TrieNode<>());
+        TrieNode(String name) {
+            this.name = name;
         }
 
-        TrieNode<T> get(String child) {
-            return children.get(child);
+        public TrieNode<T> getOrCreateChild(String name) {
+            TrieNode<T> result;
+            if (children == null && child == null) {
+                child = new TrieNode<>(name);
+                size = 1;
+                result = child;
+            } else if (child != null) {
+                children = new HashMap<>();
+                children.put(child.name, child);
+                child = null;
+                result = children.computeIfAbsent(name, TrieNode::new);
+                size = children.size();
+            } else {
+                result = children.computeIfAbsent(name, TrieNode::new);
+                size = children.size();
+            }
+            return result;
         }
 
-        int size() {
-            return children.size();
+        public TrieNode<T> getChild(String name) {
+            if (children == null) {
+                return child == null || !child.name.equals(name) ? null : child;
+            }
+            return children.get(name);
+        }
+
+        public int size() {
+            return size;
+        }
+
+        public void addVariable(String variable) {
+            if (variable != null) {
+                if (variables == null) {
+                    variables = new ArrayList<>(1);
+                }
+                if (!variables.contains(variable)) {
+                    variables.add(variable);
+                }
+            }
+        }
+    }
+
+    private static class MatchState<T> {
+        private final TrieNode<T> root;
+        private TrieNode<T> current;
+        private TrieNode<T> bestNode;
+        private Map<String, String> variables;
+        private Map<String, String> bestVariables;
+
+        public MatchState(TrieNode<T> root) {
+            this.root = root;
+            this.current = root;
+        }
+
+        public boolean next(String part) {
+            int size = current.size();
+            TrieNode<T> nextNode = size == 0 || (size == 1 && current.hasVariable) ? null : current.getChild(part);
+            if (nextNode == null && current.hasVariable) {
+                nextNode = current.getChild(VARIABLE);
+                if (nextNode != null && nextNode.variables != null) {
+                    if (variables == null) {
+                        variables = new HashMap<>(1);
+                    }
+                    nextNode.variables.forEach(v -> variables.put(v, part));
+                }
+            }
+            if (nextNode != null) {
+                current = nextNode;
+                if (nextNode.isEnd) {
+                    bestNode = nextNode;
+                    if (variables != null) {
+                        if (bestVariables == null) {
+                            bestVariables = new HashMap<>(variables);
+                        } else {
+                            bestVariables.clear();
+                            bestVariables.putAll(variables);
+                        }
+                    }
+                }
+            }
+
+            return nextNode != null;
+        }
+
+        public MatchResult<T> getResult(int level) {
+            if (bestNode == null) {
+                // Special case: if there is no specific match, check if the root node has a value
+                return !root.isEnd ? null : new MatchResult<>(level == 0 ? PathMatchType.EQUAL : PathMatchType.PREFIX, root.value, null);
+            } else {
+                return new MatchResult<>(level == bestNode.level ? PathMatchType.EQUAL : PathMatchType.PREFIX, bestNode.value, bestVariables);
+            }
         }
     }
 
@@ -220,6 +273,10 @@ public class PathMatcher<T> {
         private final PathMatchType type;
         private final T value;
         private final Map<String, String> variables;
+
+        public String getVariable(String name) {
+            return name == null || variables == null ? null : variables.get(name);
+        }
     }
 
 }
