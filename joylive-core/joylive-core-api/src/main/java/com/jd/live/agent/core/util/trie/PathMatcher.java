@@ -216,7 +216,7 @@ public class PathMatcher<T> {
         private Map<String, String> variables;
         private Map<String, String> bestVariables;
 
-        public MatchState(TrieNode<T> root) {
+        MatchState(TrieNode<T> root) {
             this.root = root;
             this.current = root;
         }

@@ -196,7 +196,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      */
     public void sendMessage(ReqT message) {
         this.message = message;
-        GrpcCluster.INSTANCE.invoke(invocation).whenComplete(new LiveCompletion<>(clientCall, responseListener));
+        GrpcCluster.INSTANCE.invoke(invocation).whenComplete(new LiveCompletion<>(clientCall, responseListener, future));
     }
 
     /**
@@ -374,7 +374,6 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
         @Override
         public void onMessage(RespT message) {
             future.complete(new GrpcOutboundResponse(message, true));
-            listener.onMessage(message);
         }
 
         @Override
@@ -391,11 +390,16 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
         @Override
         public void onClose(Status status, Metadata trailers) {
             if (!status.isOk()) {
-                // retry
-                GrpcServerException exception = new GrpcServerException(status.asRuntimeException(trailers), status, trailers);
-                ServiceError error = new ServiceError(exception, key -> trailers == null ? null : trailers.get(Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
-                GrpcOutboundResponse response = new GrpcOutboundResponse(error, null, status, trailers);
-                future.complete(response);
+                if (!future.isDone()) {
+                    // retry
+                    GrpcServerException exception = new GrpcServerException(status.asRuntimeException(trailers), status, trailers);
+                    ServiceError error = new ServiceError(exception, key -> trailers == null ? null : trailers.get(Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
+                    GrpcOutboundResponse response = new GrpcOutboundResponse(error, null, status, trailers);
+                    future.complete(response);
+                } else {
+                    // failed to retry client exception
+                    listener.onClose(status, trailers);
+                }
             } else {
                 // Close when successful.
                 listener.onClose(status, trailers);
@@ -416,9 +420,14 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
         private final ClientCall.Listener<RespT> listener;
 
-        LiveCompletion(ClientCall<ReqT, RespT> clientCall, ClientCall.Listener<RespT> listener) {
+        private final CompletableFuture<GrpcOutboundResponse> future;
+
+        LiveCompletion(ClientCall<ReqT, RespT> clientCall,
+                       ClientCall.Listener<RespT> listener,
+                       CompletableFuture<GrpcOutboundResponse> future) {
             this.clientCall = clientCall;
             this.listener = listener;
+            this.future = future;
         }
 
         @SuppressWarnings("unchecked")
@@ -428,9 +437,15 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
             ServiceError error = response == null ? null : response.getError();
             if (throwable != null) {
                 onException(throwable);
+            } else if (error != null && error.getThrowable() != null) {
+                onException(error.getThrowable());
             } else if (error != null) {
-                onException(error);
-            } else if (response != null && !response.isServer()) {
+                // server error
+                listener.onClose(Status.UNKNOWN.withDescription(error.getError()), new Metadata());
+            } else if (response != null && response.isServer()) {
+                // server response
+                listener.onMessage((RespT) response.getResponse());
+            } else if (response != null) {
                 // client response by degrade.
                 listener.onMessage((RespT) response.getResponse());
                 listener.onClose(Status.OK, response.getTrailers());
@@ -443,25 +458,22 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
          * @param throwable The throwable that occurred during the gRPC call.
          */
         private void onException(Throwable throwable) {
-            GrpcStatus status = GrpcStatus.from(throwable);
-            if (status != null) {
-                listener.onClose(status.getStatus(), status.getTrailers());
+            if (!future.isDone()) {
+                // throw client exception
+                future.completeExceptionally(throwable);
+                if (throwable instanceof StatusRuntimeException) {
+                    throw (StatusRuntimeException) throwable;
+                } else {
+                    throw new StatusRuntimeException(GrpcStatus.createException(throwable));
+                }
             } else {
-                listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), new Metadata());
-            }
-        }
-
-        /**
-         * Handles an exception that occurred during service execution.
-         *
-         * @param error the service error containing information about the exception
-         */
-        private void onException(ServiceError error) {
-            Throwable throwable = error.getThrowable();
-            if (throwable != null) {
-                onException(throwable);
-            } else {
-                listener.onClose(Status.UNKNOWN.withDescription(error.getError()), new Metadata());
+                // server error
+                GrpcStatus status = GrpcStatus.from(throwable);
+                if (status != null) {
+                    listener.onClose(status.getStatus(), status.getTrailers());
+                } else {
+                    listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), new Metadata());
+                }
             }
         }
     }
