@@ -136,6 +136,16 @@ public class EchoController {
         return restService.state(code, time);
     }
 
+    @GetMapping({"/state-origin/{code}/sleep/{time}"})
+    public String stateRestOrigin(@PathVariable int code, @PathVariable int time, HttpServletRequest request) {
+        if (time > 0) {
+            long cpuTime = (long) (time * cpuPercent);
+            CpuBusyUtil.busyCompute(cpuTime);
+            time = (int) (time - cpuTime);
+        }
+        return noDiscoveryRestService.state(code, time);
+    }
+
     private void addTrace(HttpServletRequest request, LiveResponse response) {
         if (response != null) {
             response.addFirst(new LiveTrace(applicationName, LiveLocation.build(),
