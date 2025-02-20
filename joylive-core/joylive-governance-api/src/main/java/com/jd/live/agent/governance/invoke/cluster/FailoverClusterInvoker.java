@@ -262,21 +262,19 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         private RetryType isRetryable(R request, O response, Throwable e, int count) {
             if (retryPolicy == null || !retryPolicy.isEnabled()) {
                 return RetryType.NONE;
-            } else if (count > 0 && deadline > 0 && System.currentTimeMillis() > deadline) {
-                return RetryType.TIMEOUT;
-            } else if (count >= retryPolicy.getRetry()) {
-                return RetryType.EXHAUSTED;
             } else if (e instanceof Unretryable) {
                 return RetryType.NONE;
             } else if (!retryPolicy.containsMethod(request.getMethod())) {
                 return RetryType.NONE;
             } else {
                 ErrorCause cause = cause(e, request.getErrorFunction(), response == null ? null : response.getRetryPredicate());
-                if (cause != null && cause.match(retryPolicy)) {
-                    return RetryType.RETRY;
-                } else if (response == null) {
-                    return RetryType.NONE;
-                } else if (isError(retryPolicy, request, response, response.getRetryPredicate(), errorParsers::get)) {
+                if (cause != null && cause.match(retryPolicy)
+                        || response != null && isError(retryPolicy, request, response, response.getRetryPredicate(), errorParsers::get)) {
+                    if (count > 0 && deadline > 0 && System.currentTimeMillis() > deadline) {
+                        return RetryType.TIMEOUT;
+                    } else if (count >= retryPolicy.getRetry()) {
+                        return RetryType.EXHAUSTED;
+                    }
                     return RetryType.RETRY;
                 } else {
                     return RetryType.NONE;

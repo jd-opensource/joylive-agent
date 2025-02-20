@@ -781,11 +781,11 @@
               "interval": 1000,
               "timeout": 5000,
               "errorCodes": [
-                500,
-                502
+                13,
+                14
               ],
               "methods": [
-                "GET"
+                "get"
               ],
               "exceptions": [
                 "java.lang.NullPointException"
