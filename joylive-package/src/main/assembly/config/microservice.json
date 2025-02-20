@@ -952,8 +952,7 @@
               "slidingWindowSize": 5,
               "minCallsThreshold": 2,
               "errorCodes": [
-                "500",
-                "502"
+                "13"
               ],
               "failureRateThreshold": 1,
               "slowCallRateThreshold": 20,
@@ -963,12 +962,12 @@
               "forceOpen": false,
               "realizeType": "Resilience4j",
               "degradeConfig": {
-                "responseCode": 200,
+                "responseCode": 0,
                 "attributes": {
                   "degrade-header-1": "service1",
                   "degrade-header-2": "service2"
                 },
-                "responseBody": ""
+                "responseBody": "{\n    \"name\": \"zhangsan\",\n    \"gender\": 200,\n    \"cell\": \"cell1\"\n\n}"
               },
               "version": 1
             }

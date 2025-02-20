@@ -74,10 +74,13 @@ public class UserServiceController {
             switch (status.getCode()) {
                 case RESOURCE_EXHAUSTED:
                     servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    break;
                 case PERMISSION_DENIED:
                     servletResponse.setStatus(HttpStatus.FORBIDDEN.value());
+                    break;
                 case UNAUTHENTICATED:
                     servletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    break;
                 default:
                     servletResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
