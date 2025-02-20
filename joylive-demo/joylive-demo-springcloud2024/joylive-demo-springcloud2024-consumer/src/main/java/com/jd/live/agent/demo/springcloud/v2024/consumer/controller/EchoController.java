@@ -23,6 +23,7 @@ import com.jd.live.agent.demo.springcloud.v2024.consumer.service.FeignService;
 import com.jd.live.agent.demo.springcloud.v2024.consumer.service.NoDiscoveryRestService;
 import com.jd.live.agent.demo.springcloud.v2024.consumer.service.ReactiveService;
 import com.jd.live.agent.demo.springcloud.v2024.consumer.service.RestService;
+import com.jd.live.agent.demo.util.CpuBusyUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,9 @@ public class EchoController {
 
     @Value("${spring.application.name}")
     private String applicationName;
+
+    @Value("${mock.cpuPercent:0.2}")
+    private double cpuPercent;
 
     @Resource
     private RestService restService;
@@ -113,11 +117,21 @@ public class EchoController {
 
     @GetMapping("/state-feign/{code}/sleep/{time}")
     public String stateFeign(@PathVariable int code, @PathVariable int time, HttpServletRequest request) {
+        if (time > 0) {
+            long cpuTime = (long) (time * cpuPercent);
+            CpuBusyUtil.busyCompute(cpuTime);
+            time = (int) (time - cpuTime);
+        }
         return feignService.state(code, time);
     }
 
     @GetMapping({"/state-rest/{code}/sleep/{time}", "/state/{code}/sleep/{time}"})
     public String stateRest(@PathVariable int code, @PathVariable int time, HttpServletRequest request) {
+        if (time > 0) {
+            long cpuTime = (long) (time * cpuPercent);
+            CpuBusyUtil.busyCompute(cpuTime);
+            time = (int) (time - cpuTime);
+        }
         return restService.state(code, time);
     }
 

@@ -108,5 +108,4 @@ public class GrpcCluster extends AbstractLiveCluster<GrpcOutboundRequest, GrpcOu
         return THROWER.createException(throwable, invocation);
     }
 
-
 }

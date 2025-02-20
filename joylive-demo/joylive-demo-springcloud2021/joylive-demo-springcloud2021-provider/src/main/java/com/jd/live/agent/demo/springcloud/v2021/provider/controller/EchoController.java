@@ -42,6 +42,9 @@ public class EchoController {
     @Value("${echo.suffix}")
     private String echoSuffix;
 
+    @Value("${mock.cpuPercent:0.2}")
+    private double cpuPercent;
+
     public EchoController(@Value("${spring.application.name}") String applicationName, EchoConfig config) {
         this.applicationName = applicationName;
         this.config = config;
@@ -94,7 +97,7 @@ public class EchoController {
     }
 
     @RequestMapping(value = "/state/{code}/sleep/{time}", method = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST})
-    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) {
+    public String state(@PathVariable int code, @PathVariable int time, HttpServletRequest request, HttpServletResponse response) throws InterruptedException {
         if (logger.isInfoEnabled()) {
             logger.info("state code: {}, sleep time: {}, date: {}", code, time, System.currentTimeMillis());
         }
@@ -106,10 +109,13 @@ public class EchoController {
         } else {
             response.setStatus(code);
         }
+        double result = 0;
         if (time > 0) {
-            CpuBusyUtil.busyCompute(time);
+            long cpuTime = (long) (time * cpuPercent);
+            result = CpuBusyUtil.busyCompute(cpuTime);
+            Thread.sleep(time - cpuTime);
         }
-        LiveResponse lr = new LiveResponse(code, "code:" + code, code);
+        LiveResponse lr = new LiveResponse(code, "code:" + code + ", result: " + result, code);
         configure(request, lr);
         return lr.toString();
     }
