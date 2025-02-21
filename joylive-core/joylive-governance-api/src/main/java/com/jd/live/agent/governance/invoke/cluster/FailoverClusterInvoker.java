@@ -173,7 +173,10 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
             stage.whenComplete((v, e) -> {
                 ServiceError se = v == null ? null : v.getError();
                 Throwable throwable = se == null ? e : se.getThrowable();
-                switch (isRetryable(request, v, e, count)) {
+                // not retry when empty instance
+                int size = invocation.getInstances() == null ? 0 : invocation.getInstances().size();
+                RetryType retryType = size == 0 ? RetryType.NONE : isRetryable(request, v, e, count);
+                switch (retryType) {
                     case RETRY:
                         Throwable ex = checkAndAwait(request, throwable);
                         if (ex != null) {

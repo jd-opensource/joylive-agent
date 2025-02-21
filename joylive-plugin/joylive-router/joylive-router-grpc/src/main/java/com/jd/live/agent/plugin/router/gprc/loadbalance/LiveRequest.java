@@ -82,7 +82,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
     private ClientCall<ReqT, RespT> clientCall;
 
-    private CompletableFuture<GrpcOutboundResponse> future;
+    private CompletableFuture<GrpcOutboundResponse> future = new CompletableFuture<>();
 
     private final GrpcOutboundRequest request;
 
@@ -97,7 +97,6 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
         this.context = context;
         this.request = new GrpcOutboundRequest(this);
         this.invocation = new GrpcOutboundInvocation(request, context);
-        this.future = new CompletableFuture<>();
     }
 
     public InvocationContext getContext() {
@@ -186,7 +185,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      * Starts the client call with the specified response listener and metadata headers.
      */
     public void start() {
-        clientCall.start(new LiveCallListener<>(responseListener, future), headers);
+        clientCall.start(new LiveCallListener(), headers);
     }
 
     /**
@@ -196,7 +195,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      */
     public void sendMessage(ReqT message) {
         this.message = message;
-        GrpcCluster.INSTANCE.invoke(invocation).whenComplete(new LiveCompletion<>(clientCall, responseListener, future));
+        GrpcCluster.INSTANCE.invoke(invocation).whenComplete(new LiveCompletion());
     }
 
     /**
@@ -205,13 +204,13 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
      * @return A CompletionStage that will be completed with the GrpcOutboundResponse when the message is processed.
      */
     public CompletionStage<GrpcOutboundResponse> sendMessage() {
-        CompletableFuture<GrpcOutboundResponse> result = future;
+        CompletableFuture<GrpcOutboundResponse> future = this.future;
         if (counter == 0) {
-            sendMessage(clientCall, result);
+            sendMessage(clientCall, future);
         } else {
-            sendMessageOnRetry(clientCall, result);
+            sendMessageOnRetry(clientCall, future);
         }
-        return result;
+        return future;
     }
 
     /**
@@ -292,7 +291,7 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                 logger.warn("[LiveRequest]No endpoint available, service {}", request.getService());
                 routeResult = new LiveRouteResult(RejectNoProviderException.ofService(request.getService()));
             } else {
-                routeResult = new LiveRouteResult(status.asRuntimeException());
+                routeResult = new LiveRouteResult(InternalStatus.asRuntimeException(status, new Metadata(), false));
             }
         }
     }
@@ -357,19 +356,8 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
 
     /**
      * A listener for handling gRPC client call events.
-     *
-     * @param <RespT> The type of the response message.
      */
-    private static class LiveCallListener<RespT> extends ClientCall.Listener<RespT> {
-
-        private final ClientCall.Listener<RespT> listener;
-
-        private final CompletableFuture<GrpcOutboundResponse> future;
-
-        LiveCallListener(ClientCall.Listener<RespT> listener, CompletableFuture<GrpcOutboundResponse> future) {
-            this.listener = listener;
-            this.future = future;
-        }
+    private class LiveCallListener extends ClientCall.Listener<RespT> {
 
         @Override
         public void onMessage(RespT message) {
@@ -379,12 +367,12 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
         @Override
         public void onHeaders(Metadata headers) {
             // called before onMessage
-            listener.onHeaders(headers);
+            responseListener.onHeaders(headers);
         }
 
         @Override
         public void onReady() {
-            listener.onReady();
+            responseListener.onReady();
         }
 
         @Override
@@ -398,11 +386,11 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                     future.complete(response);
                 } else {
                     // failed to retry client exception
-                    listener.onClose(status, trailers);
+                    responseListener.onClose(status, trailers);
                 }
             } else {
                 // Close when successful.
-                listener.onClose(status, trailers);
+                responseListener.onClose(status, trailers);
             }
         }
 
@@ -411,24 +399,8 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
     /**
      * A BiConsumer for handling the completion of a gRPC outbound response.
      *
-     * @param <ReqT>  The type of the request message.
-     * @param <RespT> The type of the response message.
      */
-    private static class LiveCompletion<ReqT, RespT> implements BiConsumer<GrpcOutboundResponse, Throwable> {
-
-        private final ClientCall<ReqT, RespT> clientCall;
-
-        private final ClientCall.Listener<RespT> listener;
-
-        private final CompletableFuture<GrpcOutboundResponse> future;
-
-        LiveCompletion(ClientCall<ReqT, RespT> clientCall,
-                       ClientCall.Listener<RespT> listener,
-                       CompletableFuture<GrpcOutboundResponse> future) {
-            this.clientCall = clientCall;
-            this.listener = listener;
-            this.future = future;
-        }
+    private class LiveCompletion implements BiConsumer<GrpcOutboundResponse, Throwable> {
 
         @SuppressWarnings("unchecked")
         @Override
@@ -441,14 +413,14 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                 onException(error.getThrowable());
             } else if (error != null) {
                 // server error
-                listener.onClose(Status.UNKNOWN.withDescription(error.getError()), new Metadata());
+                responseListener.onClose(Status.UNKNOWN.withDescription(error.getError()), new Metadata());
             } else if (response != null && response.isServer()) {
                 // server response
-                listener.onMessage((RespT) response.getResponse());
+                responseListener.onMessage((RespT) response.getResponse());
             } else if (response != null) {
                 // client response by degrade.
-                listener.onMessage((RespT) response.getResponse());
-                listener.onClose(Status.OK, response.getTrailers());
+                responseListener.onMessage((RespT) response.getResponse());
+                responseListener.onClose(Status.OK, response.getTrailers());
             }
         }
 
@@ -470,9 +442,9 @@ public class LiveRequest<ReqT, RespT> extends PickSubchannelArgs {
                 // server error
                 GrpcStatus status = GrpcStatus.from(throwable);
                 if (status != null) {
-                    listener.onClose(status.getStatus(), status.getTrailers());
+                    responseListener.onClose(status.getStatus(), status.getTrailers());
                 } else {
-                    listener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), new Metadata());
+                    responseListener.onClose(Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable), new Metadata());
                 }
             }
         }

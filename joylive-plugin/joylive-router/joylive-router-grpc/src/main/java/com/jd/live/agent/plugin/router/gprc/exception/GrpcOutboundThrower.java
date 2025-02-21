@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.AbstractOutboundThrower;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
+import io.grpc.InternalStatus;
 import io.grpc.Metadata;
 import io.grpc.StatusRuntimeException;
 
@@ -49,42 +50,42 @@ public class GrpcOutboundThrower extends AbstractOutboundThrower<GrpcOutboundReq
 
     @Override
     protected StatusRuntimeException createUnReadyException(RejectUnreadyException exception, GrpcOutboundRequest request) {
-        return GrpcStatus.createUnReadyException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createUnReadyException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createLiveException(LiveException exception, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        return GrpcStatus.createLiveException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createLiveException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createFaultException(FaultException exception, GrpcOutboundRequest request) {
-        return GrpcStatus.createFaultException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createFaultException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, GrpcOutboundRequest request) {
-        return GrpcStatus.createCircuitBreakException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createCircuitBreakException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createNoProviderException(RejectNoProviderException exception, GrpcOutboundRequest request) {
-        return GrpcStatus.createNoProviderException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createNoProviderException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createRejectException(RejectException exception, GrpcOutboundRequest request) {
-        return GrpcStatus.createRejectException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createRejectException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<GrpcOutboundRequest> invocation) {
-        return GrpcStatus.createRetryExhaustedException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createRetryExhaustedException(exception), new Metadata(), false);
     }
 
     @Override
     protected StatusRuntimeException createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<GrpcOutboundRequest> invocation) {
-        return GrpcStatus.createRetryTimeoutException(exception).asRuntimeException(new Metadata());
+        return InternalStatus.asRuntimeException(GrpcStatus.createRetryTimeoutException(exception), new Metadata(), false);
     }
 
 }
