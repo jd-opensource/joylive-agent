@@ -15,9 +15,6 @@
  */
 package com.jd.live.agent.governance.subscription.policy.listener;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
-import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -25,6 +22,9 @@ import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,11 +42,11 @@ public class ServiceListener extends AbstractListener<Service> {
 
     private final Object mutex = new Object();
 
-    public ServiceListener(PolicySupervisor supervisor,
-                           ObjectParser parser,
-                           Publisher<PolicySubscription> publisher) {
+    public ServiceListener(PolicySupervisor supervisor, ObjectParser parser, Publisher<PolicySubscription> publisher) {
         super(Service.class, supervisor, parser);
+        // Register the listener with the publisher
         publisher.addHandler(this::onEvent);
+        // Subscribe to all policies
         supervisor.getSubscriptions().forEach(this::subscribe);
     }
 
@@ -105,9 +105,9 @@ public class ServiceListener extends AbstractListener<Service> {
 
     @Override
     protected synchronized void onSuccess(PolicyEvent event) {
+        ServiceEvent se = (ServiceEvent) event;
+        Set<String> loaded = new HashSet<>(se.getLoadedServices());
         synchronized (mutex) {
-            ServiceEvent se = (ServiceEvent) event;
-            Set<String> loaded = se.getLoadedServices();
             loaded.addAll(loadedServices);
             loadedServices = loaded;
             loadedAll = loadedAll || event.getType() == EventType.UPDATE_ALL;
@@ -117,8 +117,6 @@ public class ServiceListener extends AbstractListener<Service> {
                 }
             });
         }
-        super.onSuccess(event);
-
     }
 
     /**
@@ -131,26 +129,27 @@ public class ServiceListener extends AbstractListener<Service> {
     }
 
     /**
-     * Subscribes to a policy subscriber, replacing any existing subscriber with the same unique name.
+     * Subscribes to a policy subscription, replacing any existing subscription with the same unique name.
      *
-     * @param subscriber The policy subscriber to subscribe to.
+     * @param subscription The policy subscription to subscribe to.
      */
-    private void subscribe(PolicySubscription subscriber) {
-        if (subscriber != null && PolicyWatcher.TYPE_SERVICE_SPACE.equals(subscriber.getType())) {
-            String name = subscriber.getName();
-            PolicySubscription old = subscribers.putIfAbsent(name, subscriber);
-            if (old != null && old != subscriber) {
-                old.trigger((v, t) -> {
+    private void subscribe(PolicySubscription subscription) {
+        if (subscription != null && PolicyWatcher.TYPE_SERVICE_SPACE.equals(subscription.getType())) {
+            String name = subscription.getName();
+            PolicySubscription old = subscribers.putIfAbsent(name, subscription);
+            if (old != null && old != subscription) {
+                // Also known as it will never happen.
+                old.watch().whenComplete((v, t) -> {
                     if (t == null) {
-                        subscriber.complete();
+                        subscription.complete();
                     } else {
-                        subscriber.completeExceptionally(t);
+                        subscription.completeExceptionally(t);
                     }
                 });
             } else {
                 synchronized (mutex) {
                     if (loadedAll || loadedServices.contains(name)) {
-                        subscriber.complete();
+                        subscription.complete();
                     }
                 }
             }

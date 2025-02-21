@@ -252,9 +252,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             return CompletableFuture.completedFuture(null);
         }
         namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
-        PolicySubscription subscriber = new PolicySubscription(service, namespace, TYPE_SERVICE_SPACE, serviceSyncers);
-        subscribe(subscriber);
-        return subscriber.getFuture();
+        return subscribe(new PolicySubscription(service, namespace, TYPE_SERVICE_SPACE, serviceSyncers));
     }
 
     @Override
@@ -266,7 +264,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     public void waitReady() {
         if (!subscriptions.isEmpty()) {
             List<CompletableFuture<Void>> futures = new ArrayList<>(subscriptions.size());
-            subscriptions.forEach((k, v) -> futures.add(v.getFuture()));
+            subscriptions.forEach((k, v) -> futures.add(v.watch()));
             try {
                 Futures.allOf(futures).get(governanceConfig.getInitializeTimeout(), TimeUnit.MILLISECONDS);
                 systemPublisher.offer(AgentEvent.onServicePolicyReady("Application service policies are ready."));
@@ -402,12 +400,14 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      *
      * @param subscriber The {@link PolicySubscription} to be subscribed.
      */
-    protected void subscribe(PolicySubscription subscriber) {
+    protected CompletableFuture<Void> subscribe(PolicySubscription subscriber) {
         PolicySubscription exist = subscriptions.putIfAbsent(subscriber.getName(), subscriber);
         if (exist == null) {
+            // notify syncer by event bus.
             policyPublisher.offer(subscriber);
+            return subscriber.watch();
         } else {
-            exist.trigger(subscriber.getFuture());
+            return exist.watch();
         }
     }
 }

@@ -21,9 +21,11 @@ import lombok.Getter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -40,11 +42,15 @@ public class PolicySubscription implements ServiceName {
 
     private final String type;
 
-    private final Map<String, AtomicBoolean> states;
+    private final Map<String, AtomicBoolean> syncers;
 
     private final AtomicInteger counter;
 
-    private final CompletableFuture<Void> future = new CompletableFuture<>();
+    private final AtomicReference<SyncState> state = new AtomicReference<>(null);
+
+    private final List<CompletableFuture<Void>> futures = new CopyOnWriteArrayList<>();
+
+    private final Object mutex = new Object();
 
     /**
      * Constructs a new instance of a policy subscriber with the specified name, namespace, and policy type.
@@ -52,32 +58,34 @@ public class PolicySubscription implements ServiceName {
      * @param name      The name of the subscriber.
      * @param namespace The namespace of the subscriber.
      * @param type      The type of the subscriber.
-     * @param owners    The owner of the subscriber.
+     * @param syncers   The owner of the subscriber.
      */
-    public PolicySubscription(String name, String namespace, String type, List<String> owners) {
+    public PolicySubscription(String name, String namespace, String type, List<String> syncers) {
         this.name = name;
         this.namespace = namespace;
         this.type = type;
-        this.states = owners == null || owners.isEmpty() ? null
-                : owners.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));
-        this.counter = states == null ? null : new AtomicInteger(states.size());
+        this.syncers = syncers == null || syncers.isEmpty() ? null
+                : syncers.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));
+        this.counter = this.syncers == null ? null : new AtomicInteger(this.syncers.size());
     }
 
     /**
-     * Marks the subscription process as complete successfully. This method completes the associated future
-     * normally, indicating that the subscription process has finished without errors.
+     * Completes the synchronization process for the specified syncer.
      *
-     * @param owner The owner whose subscription process is marked as complete.
-     * @return {@code true} if the completion was successful, {@code false} otherwise.
+     * @param syncer The name of the syncer to complete.
+     * @return true if the syncer was successfully completed, false otherwise.
      */
-    public boolean complete(String owner) {
-        if (states == null) {
-            return future.complete(null);
+    public boolean complete(String syncer) {
+        if (syncer == null || syncers == null) {
+            return complete();
         }
-        AtomicBoolean done = owner == null ? null : states.get(owner);
+        AtomicBoolean done = syncers.get(syncer);
         if (done != null && done.compareAndSet(false, true)) {
             if (counter.decrementAndGet() == 0) {
-                future.complete(null);
+                SyncState sr = state.get();
+                if ((sr == null || !sr.isSuccess()) && state.compareAndSet(sr, new SyncState(true))) {
+                    onComplete(future -> future.complete(null));
+                }
             }
             return true;
         }
@@ -85,70 +93,80 @@ public class PolicySubscription implements ServiceName {
     }
 
     /**
-     * Completes the asynchronous operation represented by this class.
+     * Completes the synchronization process.
      *
-     * @return true if the operation was successfully completed, false otherwise.
+     * @return true if the synchronization process was successfully completed, false otherwise.
      */
     public boolean complete() {
-        if (states == null) {
-            return future.complete(null);
-        }
-        for (Map.Entry<String, AtomicBoolean> entry : states.entrySet()) {
-            if (entry.getValue().compareAndSet(false, true)) {
-                if (counter.decrementAndGet() == 0) {
-                    return future.complete(null);
-                }
+        SyncState sr = state.get();
+        if ((sr == null || !sr.isSuccess()) && state.compareAndSet(sr, new SyncState(true))) {
+            if (syncers != null) {
+                syncers.forEach((k, v) -> v.compareAndSet(false, true));
             }
+            counter.set(0);
+            onComplete(future -> future.complete(null));
+            return true;
         }
         return false;
     }
 
     /**
-     * Marks the subscription process as complete with an exception. This method completes the associated future
-     * exceptionally, indicating that the subscription process has finished due to an error.
+     * Completes the synchronization process exceptionally with the given throwable.
      *
-     * @param ex The exception to complete the future with, representing the error that occurred during the
-     *           subscription process.
-     * @return {@code true} if the future was completed exceptionally, {@code false} otherwise.
+     * @param ex The throwable that caused the exceptional completion.
+     * @return true if the synchronization process was successfully completed exceptionally, false otherwise.
      */
     public boolean completeExceptionally(Throwable ex) {
-        boolean result = future.completeExceptionally(ex);
-        if (result && states != null) {
-            states.forEach((key, value) -> value.compareAndSet(false, true));
+        if (state.compareAndSet(null, new SyncState(ex))) {
+            onComplete(future -> future.completeExceptionally(ex));
+            return true;
         }
-        return result;
+        return false;
     }
 
     /**
-     * Triggers another CompletableFuture based on the completion status of this subscriber's future.
-     * If this subscriber's future completes normally, the other future is also completed normally. If this
-     * subscriber's future completes exceptionally, the other future is completed exceptionally with the same
-     * exception.
+     * Watches the result of an asynchronous operation and returns a future that will be completed when the operation succeeds.
      *
-     * @param other The CompletableFuture to be triggered based on the completion status of this subscriber's future.
+     * @return a future that will be completed with null when the operation succeeds
      */
-    public void trigger(CompletableFuture<Void> other) {
-        if (other != null) {
-            future.whenComplete((v, e) -> {
-                if (e == null) {
-                    other.complete(v);
-                } else {
-                    other.completeExceptionally(e);
-                }
-            });
+    public CompletableFuture<Void> watch() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        synchronized (mutex) {
+            SyncState sr = state.get();
+            if (sr != null && sr.isSuccess()) {
+                future.complete(null);
+            } else {
+                futures.add(future);
+            }
+        }
+        return future;
+    }
+
+    private void onComplete(Consumer<CompletableFuture<Void>> consumer) {
+        synchronized (mutex) {
+            futures.forEach(consumer);
+            futures.clear();
         }
     }
 
-    /**
-     * Registers an action to be triggered upon completion of the subscription process. The action is provided
-     * with the result (if the process completes normally) or the exception (if the process completes exceptionally).
-     *
-     * @param action The action to be performed upon completion of the subscription process, accepting either
-     *               the result of the completion or the exception thrown.
-     */
-    public void trigger(BiConsumer<Void, Throwable> action) {
-        if (action != null) {
-            future.whenComplete(action);
+    @Getter
+    private static class SyncState {
+
+        private final boolean success;
+
+        private final Throwable error;
+
+        SyncState(boolean success) {
+            this(success, null);
+        }
+
+        SyncState(Throwable error) {
+            this(false, error);
+        }
+
+        SyncState(boolean success, Throwable error) {
+            this.success = success;
+            this.error = error;
         }
     }
 
