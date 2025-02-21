@@ -18,7 +18,6 @@ package com.jd.live.agent.bootstrap.util.type;
 import com.jd.live.agent.bootstrap.exception.ReflectException;
 import lombok.Getter;
 
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -37,8 +36,9 @@ public class UnsafeFieldAccessorFactory {
         try {
             classLoader.loadClass("jdk.internal.misc.Unsafe");
             jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-            unsafeFieldFunc = field -> new OpenUnsafeFieldAccessor(field, unsafe);
-            unsafeNameFunc = (type, name) -> new OpenUnsafeFieldAccessor(type, name, unsafe);
+            boolean hasReference = withReference(unsafe);
+            unsafeFieldFunc = field -> new OpenUnsafeFieldAccessor(field, unsafe, hasReference);
+            unsafeNameFunc = (type, name) -> new OpenUnsafeFieldAccessor(type, name, unsafe, hasReference);
             System.out.println("Use jdk.internal.misc.Unsafe to fast access field");
         } catch (Throwable e) {
             try {
@@ -127,6 +127,21 @@ public class UnsafeFieldAccessorFactory {
             }
         }
         return getAccessor(clazz.getDeclaredField(field), defaultFunc);
+    }
+
+    /**
+     * Checks if the given object has a putReference method.
+     *
+     * @param unsafe The object to check.
+     * @return true if the object has a putReference method, false otherwise.
+     */
+    private static boolean withReference(Object unsafe) {
+        try {
+            unsafe.getClass().getMethod("putReference", Object.class, long.class, Object.class);
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     /**
@@ -356,36 +371,23 @@ public class UnsafeFieldAccessorFactory {
 
         private final long offset;
 
-        private boolean hasReference;
+        private final boolean hasReference;
 
-        OpenUnsafeFieldAccessor(Field field, jdk.internal.misc.Unsafe unsafe) {
+        OpenUnsafeFieldAccessor(Field field, jdk.internal.misc.Unsafe unsafe, boolean hasReference) {
             this.unsafe = unsafe;
             this.offset = unsafe.objectFieldOffset(field);
-            hasReference();
+            this.hasReference = hasReference;
         }
 
-        OpenUnsafeFieldAccessor(Class<?> type, String field, jdk.internal.misc.Unsafe unsafe) {
+        OpenUnsafeFieldAccessor(Class<?> type, String field, jdk.internal.misc.Unsafe unsafe, boolean hasReference) {
             this.unsafe = unsafe;
             this.offset = unsafe.objectFieldOffset(type, field);
-            hasReference();
-        }
-
-        private void hasReference() {
-            try {
-                unsafe.getClass().getMethod("putReference", Object.class, long.class, Object.class);
-                hasReference = true;
-            } catch (Exception e) {
-                hasReference = false;
-            }
+            this.hasReference = hasReference;
         }
 
         @Override
         public Object get(Object target) {
-            if (hasReference) {
-                return unsafe.getReference(target, offset);
-            } else {
-                return unsafe.getObject(target, offset);
-            }
+            return hasReference ? unsafe.getReference(target, offset) : unsafe.getObject(target, offset);
         }
 
         @Override
@@ -477,8 +479,5 @@ public class UnsafeFieldAccessorFactory {
             unsafe.putDouble(target, offset, value);
         }
 
-        public static void main(String[] args) {
-            System.out.println(jdk.internal.misc.Unsafe.getUnsafe().objectFieldOffset(AccessibleObject.class, "override"));
-        }
     }
 }
