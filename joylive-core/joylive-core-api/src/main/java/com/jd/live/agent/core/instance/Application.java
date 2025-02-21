@@ -235,6 +235,10 @@ public class Application {
         }
     }
 
+    public boolean isReady() {
+        return status == AppStatus.READY;
+    }
+
     /**
      * Labels the instance information using the provided consumer.
      *

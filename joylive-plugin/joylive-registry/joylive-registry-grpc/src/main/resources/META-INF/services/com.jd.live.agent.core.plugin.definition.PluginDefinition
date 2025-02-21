@@ -1,1 +1,3 @@
 com.jd.live.agent.plugin.registry.grpc.definition.DiscoveryClientNameResolverDefinition
+com.jd.live.agent.plugin.registry.grpc.definition.GrpcClientInjectionDefinition
+com.jd.live.agent.plugin.registry.grpc.definition.GrpcClientBeanDefinition

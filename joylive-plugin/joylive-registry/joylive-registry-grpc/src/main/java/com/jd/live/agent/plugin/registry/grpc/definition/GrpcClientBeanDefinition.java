@@ -20,37 +20,35 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.grpc.interceptor.DiscoveryClientConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.grpc.interceptor.GrpcClientBeanInterceptor;
 
 /**
- * DiscoveryClientNameResolverDefinition
+ * GrpcClientBeanDefinition
  */
 @Injectable
-@Extension(value = "DiscoveryClientNameResolverDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "GrpcClientBeanDefinition", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnGovernanceEnabled
-@ConditionalOnClass(DiscoveryClientNameResolverDefinition.TYPE_DISCOVERY_CLIENT_NAME_RESOLVER)
-public class DiscoveryClientNameResolverDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(GrpcClientBeanDefinition.TYPE_REGISTRY)
+public class GrpcClientBeanDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DISCOVERY_CLIENT_NAME_RESOLVER = "net.devh.boot.grpc.client.nameresolver.DiscoveryClientNameResolver";
+    protected static final String TYPE_REGISTRY = "net.devh.boot.grpc.client.inject.GrpcClientBeanPostProcessor";
+
+    private static final String METHOD = "processInjectionPoint";
 
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
-    public DiscoveryClientNameResolverDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DISCOVERY_CLIENT_NAME_RESOLVER);
+    public GrpcClientBeanDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(registry, application)),
+                        MatcherBuilder.named(METHOD), () -> new GrpcClientBeanInterceptor(registry)),
         };
     }
 }

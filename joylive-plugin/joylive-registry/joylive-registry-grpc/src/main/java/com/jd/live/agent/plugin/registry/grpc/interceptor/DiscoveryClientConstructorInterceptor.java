@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.registry.grpc.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 
@@ -34,22 +35,29 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    public DiscoveryClientConstructorInterceptor(Registry registry) {
+    private final Application application;
+
+    public DiscoveryClientConstructorInterceptor(Registry registry, Application application) {
         this.registry = registry;
+        this.application = application;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        // gRPC is triggered on the first request
         String serviceId = ctx.getArgument(0);
-        try {
-            registry.subscribe(serviceId).get(5000, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException ignore) {
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            logger.warn("Failed to get governance policy for " + serviceId + ", caused by " + cause.getMessage(), cause);
-        } catch (TimeoutException e) {
-            logger.warn("Failed to get governance policy for " + serviceId + ", caused by it's timeout.");
+        if (!application.isReady()) {
+            registry.subscribe(serviceId);
+        } else {
+            // gRPC is triggered on the first request
+            try {
+                registry.subscribe(serviceId).get(5000, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ignore) {
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                logger.warn("Failed to get governance policy for " + serviceId + ", caused by " + cause.getMessage(), cause);
+            } catch (TimeoutException e) {
+                logger.warn("Failed to get governance policy for " + serviceId + ", caused by it's timeout.");
+            }
         }
     }
 }
