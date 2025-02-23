@@ -16,6 +16,7 @@
         <spring-boot.version>3.4.0</spring-boot.version>
         <spring-cloud-context.version>3.1.9</spring-cloud-context.version>
         <nacos-discovery.version>2023.0.3.2</nacos-discovery.version>
+        <reactor-netty-http.version>1.0.32</reactor-netty-http.version>
     </properties>
 
     <dependencies>
@@ -42,6 +43,12 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
             <version>${nacos-discovery.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
+            <version>${reactor-netty-http.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
