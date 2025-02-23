@@ -44,7 +44,7 @@ public class SpringCloudHttp3Interceptor extends InterceptorAdaptor {
             HttpServer httpServer = (HttpServer) httpServerField.get(nettyWebServer);
             HttpProtocol[] protocols = httpServer.configuration().protocols();
             for (HttpProtocol protocol : protocols) {
-                if (PROTOCOL_HTTP3.equals(protocol.name())){
+                if (PROTOCOL_HTTP3.equals(protocol.name())) {
                     publisher.offer(AgentEvent.onApplicationStarted("Spring http3 web server started"));
                     break;
                 }

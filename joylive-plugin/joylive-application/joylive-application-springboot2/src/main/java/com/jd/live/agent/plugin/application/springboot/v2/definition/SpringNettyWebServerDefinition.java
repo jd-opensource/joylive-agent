@@ -36,10 +36,10 @@ import com.jd.live.agent.plugin.application.springboot.v2.interceptor.SpringClou
 @ConditionalOnClass(SpringNettyWebServerDefinition.TYPE_REACTOR_HTTP_SERVER)
 public class SpringNettyWebServerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SPRING_NETTY_WEB_SERVER= "org.springframework.boot.web.embedded.netty.NettyWebServer";
-    protected static final String TYPE_REACTOR_HTTP_SERVER= "reactor.netty.http.server.HttpServer";
+    protected static final String TYPE_SPRING_NETTY_WEB_SERVER = "org.springframework.boot.web.embedded.netty.NettyWebServer";
+    protected static final String TYPE_REACTOR_HTTP_SERVER = "reactor.netty.http.server.HttpServer";
 
-    private static final String METHOD_START= "start";
+    private static final String METHOD_START = "start";
 
     @Inject(Publisher.SYSTEM)
     private Publisher<AgentEvent> publisher;
@@ -48,7 +48,7 @@ public class SpringNettyWebServerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_NETTY_WEB_SERVER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_START),
-                        () -> new SpringCloudHttp3Interceptor( publisher)),
+                        () -> new SpringCloudHttp3Interceptor(publisher)),
         };
     }
 }
