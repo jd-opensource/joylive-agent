@@ -249,7 +249,7 @@ public class CellFilter implements RouteFilter {
                 preferClusterEndpoints, preferCellEndpoints, preferCloudEndpoints,
                 preferUnitEndpoints, centerUnitEndpoints, otherUnitEndpoints
         };
-        Integer threshold = thresholdFunc.apply(preferCell == null ? preferCellCode : preferCell.getCode());
+        Integer threshold = thresholdFunc == null ? null : thresholdFunc.apply(preferCell == null ? preferCellCode : preferCell.getCode());
         if (threshold == null || threshold <= 0) {
             for (List<Endpoint> candidate : candidates) {
                 if (!candidate.isEmpty()) {
