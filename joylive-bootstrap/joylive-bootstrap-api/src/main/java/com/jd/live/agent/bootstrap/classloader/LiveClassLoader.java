@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -47,7 +47,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     /**
      * A cache for storing loaded class definitions to avoid redundant loading.
      */
-    private final Map<String, ClassCache> caches = new HashMap<>(4096);
+    private final ConcurrentMap<String, ClassCache> caches = new ConcurrentHashMap<>(4096);
 
     /**
      * Flag indicating whether this class loader has been started.
