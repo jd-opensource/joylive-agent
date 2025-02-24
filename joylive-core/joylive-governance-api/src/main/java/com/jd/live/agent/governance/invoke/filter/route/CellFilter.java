@@ -241,13 +241,15 @@ public class CellFilter implements RouteFilter {
                 preferClusterEndpoints.add(endpoint);
             } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
                 preferCloudEndpoints.add(endpoint);
+            } else {
+                otherUnitEndpoints.add(endpoint);
             }
         }
         List<Endpoint>[] candidates = new List[]{
                 preferClusterEndpoints, preferCellEndpoints, preferCloudEndpoints,
                 preferUnitEndpoints, centerUnitEndpoints, otherUnitEndpoints
         };
-        Integer threshold = preferCell == null ? null : thresholdFunc.apply(preferCell.getCode());
+        Integer threshold = thresholdFunc.apply(preferCell == null ? preferCellCode : preferCell.getCode());
         if (threshold == null || threshold <= 0) {
             for (List<Endpoint> candidate : candidates) {
                 if (!candidate.isEmpty()) {
@@ -279,7 +281,8 @@ public class CellFilter implements RouteFilter {
     private Set<String> getUnavailableCells(OutboundInvocation<?> invocation) {
         Set<String> unavailableCells = new HashSet<>();
         LiveMetadata metadata = invocation.getLiveMetadata();
-        List<Unit> units = metadata != null ? metadata.getTargetSpace().getSpec().getUnits() : null;
+        List<Unit> units = (metadata != null && metadata.getTargetSpace() != null && metadata.getTargetSpace().getSpec() != null)
+                ? metadata.getTargetSpace().getSpec().getUnits() : null;
 
         if (units != null) {
             UnitRule rule = metadata.getRule();
