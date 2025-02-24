@@ -278,13 +278,13 @@ public class Bootstrap implements AgentLifecycle {
             subscriptions = createSubscriptions();
             subscribe();
             printExtensions();
-            serviceManager.start().join();
             // TODO In AgentMain mode, it is necessary to enhance the registry first to obtain the service strategy, and then enhance the routing plugin
             if (pluginManager.install(dynamic)) {
                 publisher.offer(AgentEvent.onAgentEnhanceReady("Success installing all plugins."));
             } else {
                 publisher.offer(AgentEvent.onAgentEnhanceFailure("Failed to install plugin.", null));
             }
+            serviceManager.start().join();
             shutdown = new Shutdown();
             shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
             shutdown.addHook(() -> serviceManager.stop());
