@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -47,7 +47,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     /**
      * A cache for storing loaded class definitions to avoid redundant loading.
      */
-    private final ConcurrentMap<String, ClassCache> caches = new ConcurrentHashMap<>(4096);
+    private final Map<String, ClassCache> caches = new HashMap<>(4096);
 
     /**
      * Flag indicating whether this class loader has been started.
@@ -138,47 +138,33 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
 
     @Override
     public Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException {
-        if (!started.get()) {
-            throw new ClassNotFoundException("class " + name + " is not found.");
-        }
-
-        ClassCache cache = caches.get(name);
-        if (cache != null && cache.type != null) {
-            if (resolve) {
-                resolveClass(cache.type);
-            }
-            return cache.type;
-        }
-
-        Class<?> clazz;
+        if (!started.get())
+            throw new ClassNotFoundException("class" + name + " is not found.");
         synchronized (getClassLoadingLock(name)) {
-            cache = caches.get(name);
-            if (cache != null && cache.type != null) {
-                clazz = cache.type;
-            } else {
-                if (filter != null && !filter.loadByParent(name)) {
-                    clazz = findClass(name);
-                } else {
-                    try {
-                        clazz = super.loadClass(name, resolve);
-                    } catch (ClassNotFoundException e) {
-                        ClassLoader candidature = filter == null ? null : filter.getCandidator();
-                        if (candidature != null && candidature != this && candidature != this.getParent()) {
-                            clazz = candidature.loadClass(name);
-                        } else {
-                            throw e;
-                        }
+            Class<?> clazz = null;
+            if (filter != null && !filter.loadByParent(name)) {
+                clazz = findClassWithCache(name);
+            }
+            if (clazz == null) {
+                try {
+                    clazz = super.loadClass(name, resolve);
+                    if (clazz.getClassLoader() == this) {
+                        caches.put(name, new ClassCache(clazz));
                     }
-                    caches.put(name, new ClassCache(clazz));
+                } catch (ClassNotFoundException e) {
+                    ClassLoader candidature = filter == null ? null : filter.getCandidator();
+                    if (candidature != null && candidature != this && candidature != this.getParent()) {
+                        clazz = candidature.loadClass(name);
+                    } else {
+                        throw e;
+                    }
                 }
             }
-
             if (resolve) {
                 resolveClass(clazz);
             }
+            return clazz;
         }
-
-        return clazz;
     }
 
     @Override
