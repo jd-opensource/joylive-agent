@@ -68,8 +68,7 @@ public class SpringAppContext implements ConfigurableAppContext {
 
     @Override
     public void subscribe(ConfigCenter configCenter) {
-        Configurator configurator = configCenter.getConfigurator();
-        if (configurator != null) {
+        configCenter.ifPresent(configurator -> {
             RefreshConfig config = configCenter.getConfig().getRefresh();
             if (config.isEnvironmentEnabled()) {
                 addEnvironmentListener(configurator);
@@ -77,7 +76,7 @@ public class SpringAppContext implements ConfigurableAppContext {
             if (config.isBeanEnabled()) {
                 addBeanListener(configurator, config);
             }
-        }
+        });
     }
 
     public ConfigurableApplicationContext getContext() {

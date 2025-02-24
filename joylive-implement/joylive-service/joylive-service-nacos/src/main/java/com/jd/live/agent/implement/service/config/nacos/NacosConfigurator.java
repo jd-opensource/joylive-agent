@@ -24,7 +24,6 @@ import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
 import com.jd.live.agent.governance.subscription.config.ConfigListener;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import lombok.Getter;
 
 import java.io.StringReader;
@@ -39,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
+import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_GROUP;
 
 /**
  * A configurator that uses Nacos as the configuration source.
@@ -50,11 +50,7 @@ public class NacosConfigurator implements Configurator {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosConfigurator.class);
 
-    private final NacosClientApi client;
-
-    private final ConfigName configName;
-
-    private final ConfigParser parser;
+    private final List<NacosSubscription> subscriptions;
 
     private final Map<String, List<SynchronousListener>> listeners = new ConcurrentHashMap<>();
 
@@ -64,10 +60,12 @@ public class NacosConfigurator implements Configurator {
 
     private final AtomicLong version = new AtomicLong(0);
 
-    public NacosConfigurator(NacosClientApi client, ConfigName configName, ConfigParser parser) {
-        this.client = client;
-        this.configName = configName;
-        this.parser = parser;
+    private final Object mutex = new Object();
+
+    private int size;
+
+    public NacosConfigurator(List<NacosSubscription> subscriptions) {
+        this.subscriptions = subscriptions;
     }
 
     @Override
@@ -78,8 +76,13 @@ public class NacosConfigurator implements Configurator {
     @Override
     public void subscribe() throws Exception {
         if (started.compareAndSet(false, true)) {
-            logger.info("subscribe " + configName + ", parser " + parser.getClass().getSimpleName());
-            client.subscribe(configName.getName(), configName.getProfile(), new ChangeListener());
+            for (NacosSubscription subscription : subscriptions) {
+                ConfigName name = subscription.getName();
+                String profile = name.getProfile();
+                profile = profile == null || profile.isEmpty() ? DEFAULT_GROUP : profile;
+                logger.info("subscribe " + name + ", parser " + subscription.getParser().getClass().getSimpleName());
+                subscription.getClient().subscribe(name.getName(), profile, new ChangeListener(subscription));
+            }
         }
     }
 
@@ -133,21 +136,42 @@ public class NacosConfigurator implements Configurator {
      *
      * @param configInfo The updated configuration information.
      */
-    private void onUpdate(String configInfo) {
+    private void onUpdate(String configInfo, NacosSubscription subscription) {
+        ConfigParser parser = subscription.getParser();
         configInfo = configInfo == null ? "" : configInfo.trim();
-        Map<String, Object> newer = !configInfo.isEmpty() ? parser.parse(new StringReader(configInfo)) : new HashMap<>();
-        ConfigCache oldCache = ref.get();
-        ConfigCache newCache = new ConfigCache(newer, version.incrementAndGet());
-        ref.set(newCache);
-        // publish update
-        Map<String, Object> older = oldCache == null ? null : oldCache.getData();
-        int counter = 0;
-        counter += onUpdate(newer, older, newCache.getVersion());
-        counter += onDelete(older, newer, newCache.getVersion());
-        if (counter > 0) {
-            // publish all
-            publish(new ConfigEvent(EventType.UPDATE, SYSTEM_ALL, null, newCache.getVersion()));
+        Map<String, Object> newValues = !configInfo.isEmpty() ? parser.parse(new StringReader(configInfo)) : new HashMap<>();
+        Map<String, Object> oldValues = subscription.getConfig();
+        // avoid concurrent merge
+        synchronized (mutex) {
+            size = size + newValues.size() - (oldValues == null ? 0 : oldValues.size());
+            subscription.setConfig(newValues);
+            // merge all configs
+            Map<String, Object> newer;
+            if (subscriptions.size() == 1) {
+                newer = newValues;
+            } else {
+                newer = new HashMap<>(size);
+                for (NacosSubscription ns : subscriptions) {
+                    oldValues = ns.getConfig();
+                    if (oldValues != null) {
+                        newer.putAll(oldValues);
+                    }
+                }
+            }
+            ConfigCache oldCache = ref.get();
+            ConfigCache newCache = new ConfigCache(newer, version.incrementAndGet());
+            ref.set(newCache);
+            // publish update
+            Map<String, Object> older = oldCache == null ? null : oldCache.getData();
+            int counter = 0;
+            counter += onUpdate(newer, older, newCache.getVersion());
+            counter += onDelete(older, newer, newCache.getVersion());
+            if (counter > 0) {
+                // publish all
+                publish(new ConfigEvent(EventType.UPDATE, SYSTEM_ALL, null, newCache.getVersion()));
+            }
         }
+
     }
 
     /**
@@ -200,6 +224,13 @@ public class NacosConfigurator implements Configurator {
      * An inner class that implements the Listener interface and handles configuration changes.
      */
     private class ChangeListener implements Listener {
+
+        private final NacosSubscription subscription;
+
+        ChangeListener(NacosSubscription subscription) {
+            this.subscription = subscription;
+        }
+
         @Override
         public Executor getExecutor() {
             return null;
@@ -207,7 +238,7 @@ public class NacosConfigurator implements Configurator {
 
         @Override
         public void receiveConfigInfo(String configInfo) {
-            onUpdate(configInfo);
+            onUpdate(configInfo, subscription);
         }
     }
 

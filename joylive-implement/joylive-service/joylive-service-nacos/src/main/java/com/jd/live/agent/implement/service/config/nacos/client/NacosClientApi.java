@@ -27,6 +27,8 @@ public interface NacosClientApi extends AutoCloseable {
 
      String DEFAULT_NAMESPACE = "public";
 
+     String DEFAULT_GROUP = "DEFAULT_GROUP";
+
     /**
      * Connects to the Nacos server using the specified configuration.
      *

@@ -19,7 +19,11 @@ import com.jd.live.agent.governance.subscription.config.ConfigName;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 @Getter
 @Setter
@@ -33,6 +37,8 @@ public class ConfigCenterConfig {
 
     private String password;
 
+    private List<String> names;
+
     private ConfigName name = new ConfigName();
 
     private RefreshConfig refresh = new RefreshConfig();
@@ -40,6 +46,8 @@ public class ConfigCenterConfig {
     private long timeout = 3000;
 
     private Map<String, String> properties;
+
+    private transient List<ConfigName> configs;
 
     public boolean isEnabled(String beanName, Object bean) {
         return refresh == null || refresh.isEnabled(beanName, bean);
@@ -53,5 +61,29 @@ public class ConfigCenterConfig {
         return key == null || properties == null ? defaultValue : properties.getOrDefault(key, defaultValue);
     }
 
+    public List<ConfigName> getConfigs() {
+        if (configs == null) {
+            configs = new ArrayList<>(4);
+            if (names != null && !names.isEmpty()) {
+                List<String> values = new ArrayList<>(3);
+                for (String name : names) {
+                    values.clear();
+                    // name@profile@namespace
+                    splitList(name, c -> c == '@', true, true, null, values::add);
+                    if (values.size() >= 3) {
+                        configs.add(new ConfigName(values.get(2), values.get(0), values.get(1)));
+                    } else if (values.size() == 2) {
+                        configs.add(new ConfigName(null, values.get(0), values.get(1)));
+                    } else if (configs.size() == 1) {
+                        configs.add(new ConfigName(null, values.get(0), null));
+                    }
+                }
+            }
+            if (configs.isEmpty() && name != null) {
+                configs.add(name);
+            }
+        }
+        return configs;
+    }
 }
 

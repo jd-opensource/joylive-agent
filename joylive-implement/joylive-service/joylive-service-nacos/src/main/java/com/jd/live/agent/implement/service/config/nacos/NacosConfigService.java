@@ -33,9 +33,13 @@ import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_NAMESPACE;
 
 @Injectable
 @ConditionalOnConfigCenterEnabled
@@ -51,20 +55,7 @@ public class NacosConfigService extends AbstractService implements ConfigService
 
     private Configurator configurator;
 
-    private final Map<String, Configurator> configurators = new ConcurrentHashMap<>();
-
-    private NacosClientApi client;
-
-    @Override
-    public Configurator getConfigurator(ConfigName name) {
-        if (name == null
-                || name.getName() == null || name.getName().isEmpty()
-                || name.getProfile() == null || name.getProfile().isEmpty()) {
-            return null;
-        }
-        String key = name.getName() + "@" + name.getProfile();
-        return configurators.computeIfAbsent(key, n -> new NacosConfigurator(client, name, getParser(name.getName())));
-    }
+    private final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
 
     @Override
     public Configurator getConfigurator() {
@@ -80,15 +71,26 @@ public class NacosConfigService extends AbstractService implements ConfigService
     protected CompletableFuture<Void> doStart() {
         try {
             ConfigCenterConfig config = governanceConfig.getConfigCenterConfig();
-            ConfigName configName = config.getName();
-            NacosProperties properties = new NacosProperties(config.getAddress(), config.getUsername(),
-                    config.getPassword(), configName.getNamespace(), config.getTimeout());
-            client = NacosClientFactory.create(properties);
-            client.connect();
-            configurator = getConfigurator(configName);
-            if (configurator != null) {
-                configurator.subscribe();
+            List<ConfigName> names = config.getConfigs();
+            String namespace;
+            NacosClientApi client = null;
+            List<NacosSubscription> subscriptions = new ArrayList<>(names.size());
+            for (ConfigName name : names) {
+                if (name.validate()) {
+                    namespace = name.getNamespace();
+                    namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE : namespace;
+                    if (!clients.containsKey(namespace)) {
+                        NacosProperties properties = new NacosProperties(config.getAddress(), config.getUsername(),
+                                config.getPassword(), namespace, config.getTimeout());
+                        client = NacosClientFactory.create(properties);
+                        client.connect();
+                        clients.put(namespace, client);
+                    }
+                    subscriptions.add(new NacosSubscription(client, name, getParser(name)));
+                }
             }
+            configurator = new NacosConfigurator(subscriptions);
+            configurator.subscribe();
             return CompletableFuture.completedFuture(null);
         } catch (Throwable e) {
             return Futures.future(e);
@@ -97,17 +99,19 @@ public class NacosConfigService extends AbstractService implements ConfigService
 
     @Override
     protected CompletableFuture<Void> doStop() {
-        Close.instance().close(client);
+        clients.forEach((namespace, client) -> Close.instance().close(client));
+        clients.clear();
         return CompletableFuture.completedFuture(null);
     }
 
     /**
      * Returns the appropriate ConfigParser for the given configuration name.
      *
-     * @param name The name of the configuration.
+     * @param configName The name of the configuration.
      * @return The ConfigParser associated with the given configuration name.
      */
-    protected ConfigParser getParser(String name) {
+    protected ConfigParser getParser(ConfigName configName) {
+        String name = configName.getName();
         ConfigParser parser = parsers.get(ConfigParser.PROPERTIES);
         int index = name.lastIndexOf(".");
         if (index == -1) {

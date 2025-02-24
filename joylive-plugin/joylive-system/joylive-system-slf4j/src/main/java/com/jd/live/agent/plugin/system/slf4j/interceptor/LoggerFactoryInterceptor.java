@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
-import com.jd.live.agent.governance.subscription.config.Configurator;
 import com.jd.live.agent.plugin.system.slf4j.logger.LevelUpdater;
 import com.jd.live.agent.plugin.system.slf4j.logger.LevelUpdaterFactory;
 
@@ -47,8 +46,6 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
 
     private static final String KEY_LOGGER = "logger.key";
 
-    private final Configurator configurator;
-
     private final ConfigCenterConfig config;
 
     private final Map<String, LoggerCache> loggerCaches = new ConcurrentHashMap<>();
@@ -57,11 +54,10 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
 
     public LoggerFactoryInterceptor(ConfigCenter configCenter, GovernanceConfig governanceConfig) {
         this.config = governanceConfig.getConfigCenterConfig();
-        this.configurator = configCenter.getConfigurator();
-        if (configurator != null) {
+        configCenter.ifPresent(configurator -> {
             String key = config.getOrDefault(KEY_LOGGER, DEFAULT_LOGGER_KEY);
             configurator.addListener(key, this::onUpdate);
-        }
+        });
     }
 
     @Override

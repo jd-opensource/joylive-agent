@@ -345,6 +345,8 @@ public class StringUtils {
                     }
                     start = -1;
                     end = -1;
+                } else if (emptyable) {
+                    consumer.accept(null);
                 }
             } else {
                 if (start == -1) {

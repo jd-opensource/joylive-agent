@@ -29,14 +29,6 @@ public interface ConfigCenter {
     String COMPONENT_CONFIG_CENTER = "configCenter";
 
     /**
-     * Returns a Configurator instance for the specified configuration name.
-     *
-     * @param name The ConfigName object representing the namespace, name, and profile of the configuration.
-     * @return A Configurator instance for the specified configuration.
-     */
-    Configurator getConfigurator(ConfigName name);
-
-    /**
      * Returns a default Configurator instance.
      *
      * @return A default Configurator instance.

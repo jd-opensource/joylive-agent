@@ -299,6 +299,7 @@ agent:
         beanEnabled: ${CONFIG_CENTER_REFRESH_BEAN_ENABLED:true}
         beanNames: ${CONFIG_CENTER_REFRESH_BEAN_NAMES:}
         beanClassPrefixes: ${CONFIG_CENTER_REFRESH_BEAN_CLASS_PREFIXES:}
+      names: ${CONFIG_CENTER_NAMES:}
       name:
         namespace: ${CONFIG_CENTER_NAMESPACE:public}
         name: ${CONFIG_CENTER_NAME:${APPLICATION_NAME}}
