@@ -198,6 +198,8 @@ public class CellFilter implements RouteFilter {
 
         String preferCluster = localFirst == LocalFirstMode.CLUSTER ? invocation.getContext().getLocation().getCluster() : null;
         String preferCloud = localFirst == LocalFirstMode.CLOUD ? invocation.getContext().getLocation().getCloud() : null;
+        String preferCellCode = localFirst == LocalFirstMode.CELL ? invocation.getContext().getLocation().getCell() : null;
+
         Unit preferUnit = localFirst != null && targetSpace != null ? targetSpace.getLocalUnit() : null;
         Unit centerUnit = targetSpace != null ? targetSpace.getCenter() : null;
         Cell preferCell = localFirst != null && targetSpace != null ? targetSpace.getLocalCell() : null;
@@ -233,6 +235,8 @@ public class CellFilter implements RouteFilter {
                 } else {
                     otherUnitEndpoints.add(endpoint);
                 }
+            } else if (preferCellCode != null && endpoint.isCell(preferCellCode)) {
+                preferCellEndpoints.add(endpoint);
             } else if (preferCluster != null && endpoint.isCluster(preferCluster)) {
                 preferClusterEndpoints.add(endpoint);
             } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
