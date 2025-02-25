@@ -290,8 +290,8 @@ public class Application {
             accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
             accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
             accept(consumer, Constants.LABEL_UNIT, location.getUnit());
-            accept(consumer, Constants.LABEL_CELL, location.getCell());
         }
+        accept(consumer, Constants.LABEL_CELL, location.getCell());
     }
 
     /**
