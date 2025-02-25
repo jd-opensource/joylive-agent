@@ -33,7 +33,7 @@ public class RefreshConfig {
     private Set<String> beanClassPrefixes;
 
     public boolean isEnabled(String beanName, Object bean) {
-        if (beanName != null && beanNames != null && !beanName.isEmpty() && !beanNames.contains(beanName)) {
+        if (beanName != null && beanNames != null && !beanNames.isEmpty() && !beanName.isEmpty() && !beanNames.contains(beanName)) {
             return false;
         } else if (bean != null && beanClassPrefixes != null && !beanClassPrefixes.isEmpty()) {
             String className = bean.getClass().getName();

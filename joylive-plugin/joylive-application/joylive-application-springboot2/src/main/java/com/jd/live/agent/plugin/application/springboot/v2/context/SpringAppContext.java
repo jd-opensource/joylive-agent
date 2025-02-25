@@ -105,7 +105,7 @@ public class SpringAppContext implements ConfigurableAppContext {
         for (Map.Entry<String, Object> entry : beans.entrySet()) {
             String beanName = entry.getKey();
             Object bean = entry.getValue();
-            if (config.isEnabled(beanName, bean.getClass())) {
+            if (config.isEnabled(beanName, bean)) {
                 ClassDesc describe = ClassUtils.describe(bean.getClass());
                 Set<Method> setters = new HashSet<>();
                 addFieldListener(configurator, bean, describe, setters);
