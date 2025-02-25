@@ -74,7 +74,7 @@ public class ConfigCenterConfig {
                         configs.add(new ConfigName(values.get(2), values.get(0), values.get(1)));
                     } else if (values.size() == 2) {
                         configs.add(new ConfigName(null, values.get(0), values.get(1)));
-                    } else if (configs.size() == 1) {
+                    } else if (values.size() == 1) {
                         configs.add(new ConfigName(null, values.get(0), null));
                     }
                 }
