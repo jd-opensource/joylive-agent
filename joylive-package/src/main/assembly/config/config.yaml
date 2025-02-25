@@ -148,7 +148,7 @@ agent:
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:true}
     flowcontrol:
-      enabled: ${CONFIG_FLOW_CONTROL_ENABLED:false}
+      enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
     configcenter:
@@ -170,6 +170,7 @@ agent:
     service:
       localFirst: ${CONFIG_LOCAL_FIRST:true}
       localFirstMode: ${CONFIG_LOCAL_FIRST_MODE:CELL}
+      cellFailoverThresholds: ${CELL_FAILOVER_THRESHOLDS}
       serviceGroups: ${CONFIG_SERVICE_GROUPS:}
       serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}
       responseException: ${CONFIG_RESPONSE_EXCEPTION:true}
@@ -291,7 +292,7 @@ agent:
           - org.apache.catalina.core.StandardServer$$Lambda$
     configcenter:
       type: nacos
-      address: ${CONFIG_CENTER_ADDRESS:${CONFIG_EXTERNAL_HOST}:${CONFIG_EXTERNAL_HTTP_PORT}}
+      address: ${CONFIG_CENTER_ADDRESS:}
       username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}
       password: ${CONFIG_CENTER_PASSWORD:${CONFIG_PASSWORD:nacos}}
       refresh:
