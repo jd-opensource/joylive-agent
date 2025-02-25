@@ -15,13 +15,17 @@
  */
 package com.jd.live.agent.bootstrap.classloader;
 
+import lombok.Getter;
+
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * A class loader that supports dynamic loading of classes and resources from URLs,
@@ -47,7 +51,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     /**
      * A cache for storing loaded class definitions to avoid redundant loading.
      */
-    private final ConcurrentMap<String, ClassCache> caches = new ConcurrentHashMap<>(4096);
+    private final Map<String, ClassCache> caches = new ConcurrentHashMap<>(4096);
 
     /**
      * Flag indicating whether this class loader has been started.
@@ -98,25 +102,6 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         return name;
     }
 
-    /**
-     * Attempts to find a class in the cache, loading and caching it if not already present.
-     *
-     * @param name The name of the class to load.
-     * @return The loaded class.
-     */
-    protected Class<?> findClassWithCache(String name) {
-        ClassCache cache = caches.get(name);
-        if (cache == null) {
-            try {
-                cache = new ClassCache(findClass(name));
-            } catch (ClassNotFoundException ignored) {
-                cache = ClassCache.EMPTY;
-            }
-            caches.put(name, cache);
-        }
-        return cache.type;
-    }
-
     @Override
     public void add(URL... urls) {
         if (urls != null) {
@@ -138,33 +123,33 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
 
     @Override
     public Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException {
-        if (!started.get())
-            throw new ClassNotFoundException("class" + name + " is not found.");
-        synchronized (getClassLoadingLock(name)) {
-            Class<?> clazz = null;
-            if (filter != null && !filter.loadByParent(name)) {
-                clazz = findClassWithCache(name);
-            }
-            if (clazz == null) {
-                try {
-                    clazz = super.loadClass(name, resolve);
-                    if (clazz.getClassLoader() == this) {
-                        caches.put(name, new ClassCache(clazz));
+        if (!started.get()) {
+            throw new ClassNotFoundException("class " + name + " is not found.");
+        }
+        boolean loadByParent = filter != null && filter.loadByParent(name);
+        Object mutex = getClassLoadingLock(name);
+        ClassCache cache = loadByParent ? null : findClass(name, mutex, resolve);
+        Class<?> type = cache == null ? null : cache.getType();
+        if (type == null) {
+            try {
+                type = super.loadClass(name, resolve);
+                if (type.getClassLoader() == this) {
+                    caches.putIfAbsent(name, new ClassCache(name, mutex, type, resolve));
+                }
+            } catch (ClassNotFoundException e) {
+                ClassLoader candidature = filter == null ? null : filter.getCandidator();
+                if (candidature != null && candidature != this && candidature != this.getParent()) {
+                    type = candidature.loadClass(name);
+                    if (resolve) {
+                        resolveClass(type);
                     }
-                } catch (ClassNotFoundException e) {
-                    ClassLoader candidature = filter == null ? null : filter.getCandidator();
-                    if (candidature != null && candidature != this && candidature != this.getParent()) {
-                        clazz = candidature.loadClass(name);
-                    } else {
-                        throw e;
-                    }
+                } else {
+                    throw e;
                 }
             }
-            if (resolve) {
-                resolveClass(clazz);
-            }
-            return clazz;
         }
+        return type;
+
     }
 
     @Override
@@ -198,16 +183,71 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     }
 
     /**
+     * Attempts to find a class in the cache, loading and caching it if not already present.
+     *
+     * @param name    The name of the class to load.
+     * @param mutex   The lock of the classloader
+     * @param resolve Whether to resolve the class or not
+     * @return The loaded class, wrapped in a ClassCache object.
+     */
+    private ClassCache findClass(String name, Object mutex, boolean resolve) {
+        ClassCache cache = caches.computeIfAbsent(name, n -> {
+            ClassCache result = new ClassCache(name, mutex, () -> findClass(n));
+            return result.getType() != null ? result : null;
+        });
+        if (cache != null && resolve) {
+            cache.resolve(this::resolveClass);
+        }
+        return cache;
+    }
+
+    /**
      * A simple cache entry for storing class definitions.
      */
-    protected static class ClassCache {
+    private static class ClassCache {
 
-        public static final ClassCache EMPTY = new ClassCache(null);
+        @Getter
+        private final String name;
 
-        protected Class<?> type;
+        @Getter
+        private final Class<?> type;
 
-        public ClassCache(Class<?> type) {
+        private final Object mutex;
+
+        private volatile boolean resolved;
+
+        ClassCache(String name, Object mutex, Callable<Class<?>> callable) {
+            this(name, mutex, findClass(callable, mutex), null);
+        }
+
+        ClassCache(String name, Object mutex, Class<?> type, Boolean resolved) {
+            this.name = name;
+            this.mutex = mutex;
             this.type = type;
+            this.resolved = resolved != null && resolved;
+        }
+
+        private static Class<?> findClass(Callable<Class<?>> callable, Object mutex) {
+            synchronized (mutex) {
+                try {
+                    return callable.call();
+                } catch (Exception ignored) {
+                }
+            }
+            return null;
+        }
+
+        public void resolve(Consumer<Class<?>> resolver) {
+            if (resolved) {
+                return;
+            }
+            synchronized (mutex) {
+                if (resolved) {
+                    return;
+                }
+                resolver.accept(type);
+                resolved = true;
+            }
         }
     }
 }
