@@ -278,6 +278,8 @@ public class Application {
         accept(consumer, Constants.LABEL_REGION, location.getRegion());
         accept(consumer, Constants.LABEL_ZONE, location.getZone());
         accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
+        // cell is useful for governance
+        accept(consumer, Constants.LABEL_CELL, location.getCell());
     }
 
     /**
@@ -291,7 +293,6 @@ public class Application {
             accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
             accept(consumer, Constants.LABEL_UNIT, location.getUnit());
         }
-        accept(consumer, Constants.LABEL_CELL, location.getCell());
     }
 
     /**
