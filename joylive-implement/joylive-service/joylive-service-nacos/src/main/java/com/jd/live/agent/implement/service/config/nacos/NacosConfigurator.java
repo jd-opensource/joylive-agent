@@ -167,6 +167,8 @@ public class NacosConfigurator implements Configurator {
             // publish update
             Map<String, Object> older = oldCache == null ? null : oldCache.getData();
             int counter = 0;
+            // TODO compare value by listener name to match prefix listener
+            // @ConfigurationProperties(prefix="mail")
             counter += onUpdate(newer, older, newCache.getVersion());
             counter += onDelete(older, newer, newCache.getVersion());
             if (counter > 0) {
