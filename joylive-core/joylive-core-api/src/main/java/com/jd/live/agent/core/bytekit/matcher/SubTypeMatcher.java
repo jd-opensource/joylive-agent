@@ -76,6 +76,7 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
         }
 
         private Class<?> getType() {
+            // TODO use cache to improve performance
             try {
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
                 return classLoader != null ? classLoader.loadClass(type) : Class.forName(type);
