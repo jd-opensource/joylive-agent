@@ -79,6 +79,8 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
             try {
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
                 return classLoader != null ? classLoader.loadClass(type) : Class.forName(type);
+            } catch (NoClassDefFoundError ignore) {
+                return null;
             } catch (Throwable e) {
                 logger.error("class is not found in context class loader. " + type);
                 return null;
