@@ -141,6 +141,9 @@ public class NacosConfigurator implements Configurator {
         configInfo = configInfo == null ? "" : configInfo.trim();
         Map<String, Object> newValues = !configInfo.isEmpty() ? parser.parse(new StringReader(configInfo)) : new HashMap<>();
         Map<String, Object> oldValues = subscription.getConfig();
+        // TODO handle yaml & properties && @ConfigurationProperties
+        // mail.defaultRecipients[0]=admin@mail.com
+        // mail.defaultRecipients[1]=owner@mail.com
         // avoid concurrent merge
         synchronized (mutex) {
             size = size + newValues.size() - (oldValues == null ? 0 : oldValues.size());
