@@ -71,8 +71,8 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
             if (target == null || type == null || type.isEmpty() || implement && target.isInterface()) {
                 return false;
             }
-            Class<?> type = optional.get();
-            return type != null && target.isAssignableTo(type);
+            Class<?> clazz = optional.get();
+            return clazz != null && target.isAssignableTo(clazz);
         }
 
         private Class<?> getType() {
