@@ -16,8 +16,11 @@
 package com.jd.live.agent.core.util;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -77,5 +80,69 @@ public class AtomicUtils {
             return old;
         }
         return update(reference, supplier.get(), predicate == null ? null : predicate.negate(), success);
+    }
+
+    /**
+     * Updates the value of an {@link AtomicLong} if the specified condition is met.
+     *
+     * @param atomic    The {@link AtomicLong} to update. If null, returns false.
+     * @param value     The new value to set.
+     * @param predicate The update condition. If null, the update is unconditional.
+     *                  Takes the current and new value as input; returns true if the update is allowed.
+     * @return true if the update succeeds, false otherwise.
+     */
+    public static boolean update(AtomicLong atomic, long value, BiPredicate<Long, Long> predicate) {
+        if (atomic == null) {
+            return false;
+        }
+        long old = atomic.get();
+        if (predicate != null && !predicate.test(old, value)) {
+            return false;
+        } else if (atomic.compareAndSet(old, value)) {
+            return true;
+        } else {
+            while (true) {
+                old = atomic.get();
+                if (predicate == null || predicate.test(old, value)) {
+                    if (atomic.compareAndSet(old, value)) {
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+    }
+
+    /**
+     * Increments the value of an {@link AtomicInteger} if the specified condition is met.
+     *
+     * @param atomic    The {@link AtomicInteger} to increment. If null, returns false.
+     * @param predicate The increment condition. If null, the increment is unconditional.
+     *                  Takes the current and new value as input; returns true if the increment is allowed.
+     * @return true if the increment succeeds, false otherwise.
+     */
+    public static boolean increment(AtomicInteger atomic, BiPredicate<Integer, Integer> predicate) {
+        if (atomic == null) {
+            return false;
+        }
+        int older = atomic.get();
+        int newer = older + 1;
+        if (predicate != null && !predicate.test(older, newer)) {
+            return false;
+        } else if (atomic.compareAndSet(older, newer)) {
+            return true;
+        } else {
+            while (true) {
+                older = atomic.get();
+                if (predicate == null || predicate.test(older, newer)) {
+                    if (atomic.compareAndSet(older, newer)) {
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.counter;
 
+import com.jd.live.agent.core.util.AtomicUtils;
 import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,23 +76,8 @@ public class Counter {
     }
 
     public boolean begin(int max) {
-        max = (max <= 0) ? Integer.MAX_VALUE : max;
-        if (active.get() == Integer.MAX_VALUE) {
-            return false;
-        }
-        for (int i; ; ) {
-            i = active.get();
-
-            if (i == Integer.MAX_VALUE || i + 1 > max) {
-                return false;
-            }
-
-            if (active.compareAndSet(i, i + 1)) {
-                break;
-            }
-        }
-
-        return true;
+        int maxValue = (max <= 0) ? Integer.MAX_VALUE : max;
+        return AtomicUtils.increment(active, (older, newer) -> older != Integer.MAX_VALUE && newer <= maxValue);
     }
 
     public void success(long elapsed) {
@@ -107,21 +93,13 @@ public class Counter {
         total.incrementAndGet();
         totalElapsed.addAndGet(elapsed);
 
-        if (maxElapsed.get() < elapsed) {
-            maxElapsed.set(elapsed);
-        }
-
+        AtomicUtils.update(maxElapsed, elapsed, (older, newer) -> older < newer);
         if (succeeded) {
-            if (succeededMaxElapsed.get() < elapsed) {
-                succeededMaxElapsed.set(elapsed);
-            }
-
+            AtomicUtils.update(succeededMaxElapsed, elapsed, (older, newer) -> older < newer);
         } else {
             failed.incrementAndGet();
             failedElapsed.addAndGet(elapsed);
-            if (failedMaxElapsed.get() < elapsed) {
-                failedMaxElapsed.set(elapsed);
-            }
+            AtomicUtils.update(failedMaxElapsed, elapsed, (older, newer) -> older < newer);
         }
     }
 
