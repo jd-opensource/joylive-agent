@@ -50,13 +50,15 @@ public class CollectionUtilsTest {
         Map<String, Object> map = new HashMap<>();
         map.put("key4.a[0].c", "value5");
         map.put("key4.a[1].c", "value6");
+        map.put("key8.a[0]", "value5");
+        map.put("key8.a[1]", "value6");
         map.put("key1", "value1");
         map.put("key3.key4", "value3");
         map.put("key3.key5", "value4");
         map.put("key61]", "value7");
         map.put("key7[]", "value8");
         Map<String, Object> cascaded = CollectionUtils.cascade(map);
-        Assertions.assertEquals("{key1=value1, key3={key5=value4, key4=value3}, key61]=value7, key4={a=[value5, value6], c=value5}, key7[]=value8}", cascaded.toString());
+        Assertions.assertEquals("{key1=value1, key3={key5=value4, key4=value3}, key4={a=[{c=value5}, {c=value6}]}, key7[]=value8, key8={a=[value5, value6]}, key61]=value7}", cascaded.toString());
     }
 
 

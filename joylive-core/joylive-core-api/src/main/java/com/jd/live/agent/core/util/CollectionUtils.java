@@ -458,7 +458,12 @@ public class CollectionUtils {
                     while (list.size() <= index) {
                         list.add(null);
                     }
-                    list.set(index, i == size - 1 ? new HashMap<>() : value);
+                    if (i == size - 1) {
+                        list.set(index, value);
+                    } else {
+                        parent = new HashMap<>();
+                        list.set(index, parent);
+                    }
                 } else if (i == size - 1) {
                     parent.put(part, value);
                 } else {
