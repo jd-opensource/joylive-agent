@@ -91,8 +91,6 @@ public class Counter {
             }
         }
 
-        active.incrementAndGet();
-
         return true;
     }
 
