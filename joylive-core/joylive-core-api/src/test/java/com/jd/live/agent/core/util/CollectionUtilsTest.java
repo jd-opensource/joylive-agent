@@ -18,6 +18,9 @@ package com.jd.live.agent.core.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.jd.live.agent.core.util.CollectionUtils.lookup;
 
 public class CollectionUtilsTest {
@@ -40,6 +43,20 @@ public class CollectionUtilsTest {
         Assertions.assertEquals(1, index.size());
         lookup(sources, sources.length, 1, v -> v.equals(55));
         Assertions.assertEquals(1, index.size());
+    }
+
+    @Test
+    void testCascade() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("key4.a[0].c", "value5");
+        map.put("key4.a[1].c", "value6");
+        map.put("key1", "value1");
+        map.put("key3.key4", "value3");
+        map.put("key3.key5", "value4");
+        map.put("key61]", "value7");
+        map.put("key7[]", "value8");
+        Map<String, Object> cascaded = CollectionUtils.cascade(map);
+        Assertions.assertEquals("{key1=value1, key3={key5=value4, key4=value3}, key61]=value7, key4={a=[value5, value6], c=value5}, key7[]=value8}", cascaded.toString());
     }
 
 

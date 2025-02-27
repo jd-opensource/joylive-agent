@@ -24,6 +24,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.StringUtils.CHAR_DOT;
+import static com.jd.live.agent.core.util.StringUtils.splitList;
+
 /**
  * CollectionUtils
  */
@@ -394,6 +397,79 @@ public class CollectionUtils {
             t = iterator.next();
             if (predicate == null || predicate.test(t)) {
                 result.put(keyFunction.apply(t), valueFunction.apply(t));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Converts a flat map with dot-separated keys into a nested map structure.
+     * Handles special cases such as keys representing lists (e.g., `a.b[0]`) .
+     *
+     * @param flatMap A flat map where keys are dot-separated strings representing nested paths.
+     *                For example, `{"a.b.c": "value", "a.b[0]": "list_value"}`.
+     * @return A nested map structure based on the keys in the input flat map.
+     * For example, `{"a": {"b": {"c": "value", "0": "list_value"}}}`.
+     * Returns `null` if the input `flatMap` is `null`.
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> cascade(Map<String, Object> flatMap) {
+        if (flatMap == null) {
+            return null;
+        }
+        Map<String, Object> result = new HashMap<>(flatMap.size());
+        Map<String, Object> parent;
+        for (Map.Entry<String, Object> entry : flatMap.entrySet()) {
+            parent = result;
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            List<String> parts = splitList(key, c -> c == CHAR_DOT);
+            int size = parts.size();
+            int i = 0;
+            Object v;
+            List<Object> list;
+            Integer index;
+            int max = 0;
+            int pos;
+            for (String part : parts) {
+                index = null;
+                max = part.length() - 1;
+                if (part.charAt(max) == ']') {
+                    pos = part.lastIndexOf('[');
+                    if (pos > 0 && pos < max) {
+                        try {
+                            index = Integer.parseInt(part.substring(pos + 1, max));
+                            if (index >= 0) {
+                                part = part.substring(0, pos);
+                            } else {
+                                index = null;
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+                if (index != null) {
+                    v = parent.get(part);
+                    if (!(v instanceof List)) {
+                        v = new ArrayList<>();
+                        parent.put(part, v);
+                    }
+                    list = (List<Object>) v;
+                    while (list.size() <= index) {
+                        list.add(null);
+                    }
+                    list.set(index, i == size - 1 ? new HashMap<>() : value);
+                } else if (i == size - 1) {
+                    parent.put(part, value);
+                } else {
+                    v = parent.get(part);
+                    if (!(v instanceof Map)) {
+                        v = new HashMap<>();
+                        parent.put(part, v);
+                    }
+                    parent = (Map<String, Object>) v;
+                }
+                i++;
             }
         }
         return result;
