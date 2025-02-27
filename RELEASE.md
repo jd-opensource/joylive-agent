@@ -6,18 +6,17 @@
 2. Added support for retry and circuit breaker for Spring Cloud gRPC outbound traffic. Currently, full support for gRPC unary mode governance is provided.
 3. Added support for Spring Cloud client to obtain server exceptions, facilitating retry and circuit breaker.
 4. Added support for Spring Cloud port routing.
-5. Added support for Spring Cloud integration with configuration center, supporting dynamic modification of slf4j log levels and fields annotated with @Value.
+5. Added support for Spring Cloud integration with nacos configuration center, supporting dynamic modification of slf4j log levels and fields annotated with @Value.
 6. Added support for Redis cluster-level rate limiting.
 7. Added support for W3C Baggage propagation.
-8. Added support for gradual recovery of circuit breaker traffic.
-9. Added support for integrating with Nacos configuration center, providing dynamic configuration for applications.
-10. Improved extension conditional matching, supporting custom combination conditions and simplifying related configurations.
-11. Improved label matching logic in flow control.
-12. Provided context lock to facilitate the use of interceptors.
-13. Modified configuration to not start multi-active, swimlane, and flow control governance by default. These can be enabled through environment variable configuration.
-14. Fixed an issue where configuring the Agent in JAVA_TOOL_OPTIONS would affect the use of Java operation and maintenance tools. Added support for configuring to filter out related applications.
-15. Fixed a series of issues and improved stability.
-16. Optimized performance and startup speed.
+8. Added support for gradual recovery of circuit breaker traffic. 
+9. Improved extension conditional matching, supporting custom combination conditions and simplifying related configurations. 
+10. Improved label matching logic in flow control. 
+11. Provided context lock to facilitate the use of interceptors. 
+12. Modified configuration to not start multi-active, swimlane, and flow control governance by default. These can be enabled through environment variable configuration. 
+13. Fixed an issue where configuring the Agent in JAVA_TOOL_OPTIONS would affect the use of Java operation and maintenance tools. Added support for configuring to filter out related applications. 
+14. Fixed a series of issues and improved stability. 
+15. Optimized performance and startup speed.
 
 ## 1.5.2
 
