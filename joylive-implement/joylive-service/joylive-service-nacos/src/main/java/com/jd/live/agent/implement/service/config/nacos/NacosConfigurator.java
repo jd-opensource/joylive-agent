@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ConfigParser;
+import com.jd.live.agent.core.util.type.ValuePath;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
 import com.jd.live.agent.governance.subscription.config.ConfigListener;
@@ -36,6 +37,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
 import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_GROUP;
@@ -52,7 +54,7 @@ public class NacosConfigurator implements Configurator {
 
     private final List<NacosSubscription> subscriptions;
 
-    private final Map<String, List<SynchronousListener>> listeners = new ConcurrentHashMap<>();
+    private final Map<String, NameListener> listeners = new ConcurrentHashMap<>();
 
     private final AtomicReference<ConfigCache> ref = new AtomicReference<>();
 
@@ -96,7 +98,7 @@ public class NacosConfigurator implements Configurator {
     public void addListener(String name, ConfigListener listener) {
         if (name != null && !name.isEmpty() && listener != null) {
             SynchronousListener syncListener = new SynchronousListener(listener);
-            listeners.computeIfAbsent(name, k -> new CopyOnWriteArrayList<>()).add(syncListener);
+            listeners.computeIfAbsent(name, NameListener::new).addListener(syncListener);
             if (!SYSTEM_ALL.equals(name)) {
                 long ver = version.get();
                 Object value = getProperty(name);
@@ -123,11 +125,9 @@ public class NacosConfigurator implements Configurator {
      * @param event The configuration event to be published.
      */
     private void publish(ConfigEvent event) {
-        List<SynchronousListener> watchers = listeners.get(event.getName());
-        if (watchers != null) {
-            for (ConfigListener listener : watchers) {
-                listener.onUpdate(event);
-            }
+        NameListener listener = listeners.get(event.getName());
+        if (listener != null) {
+            listener.onUpdate(event);
         }
     }
 
@@ -244,6 +244,42 @@ public class NacosConfigurator implements Configurator {
         @Override
         public void receiveConfigInfo(String configInfo) {
             onUpdate(configInfo, subscription);
+        }
+    }
+
+    private static class NameListener {
+
+        @Getter
+        private final String name;
+
+        @Getter
+        private final ValuePath path;
+
+        private final List<SynchronousListener> listeners = new CopyOnWriteArrayList<>();
+
+        NameListener(String name) {
+            this.name = name;
+            this.path = new ValuePath(name);
+        }
+
+        public void addListener(SynchronousListener listener) {
+            if (listener != null) {
+                listeners.add(listener);
+            }
+        }
+
+        public void removeIf(Predicate<SynchronousListener> predicate) {
+            listeners.removeIf(predicate);
+        }
+
+        public boolean isEmpty() {
+            return listeners.isEmpty();
+        }
+
+        public void onUpdate(ConfigEvent event) {
+            for (SynchronousListener listener : listeners) {
+                listener.onUpdate(event);
+            }
         }
     }
 
