@@ -43,4 +43,8 @@ public interface ConfigParser {
      * @return A map representing the parsed configuration data.
      */
     Map<String, Object> parse(Reader reader);
+
+    default boolean isFlatted() {
+        return false;
+    }
 }

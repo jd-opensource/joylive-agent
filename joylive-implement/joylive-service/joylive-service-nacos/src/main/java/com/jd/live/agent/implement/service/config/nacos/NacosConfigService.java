@@ -111,13 +111,6 @@ public class NacosConfigService extends AbstractService implements ConfigService
      * @return The ConfigParser associated with the given configuration name.
      */
     protected ConfigParser getParser(ConfigName configName) {
-        String name = configName.getName();
-        ConfigParser parser = parsers.get(ConfigParser.PROPERTIES);
-        int index = name.lastIndexOf(".");
-        if (index == -1) {
-            return parser;
-        }
-        String type = name.substring(index + 1);
-        return parsers.getOrDefault(type, parser);
+        return parsers.getOrDefault(configName.getFormat(), parsers.get(ConfigParser.PROPERTIES));
     }
 }

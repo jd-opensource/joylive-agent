@@ -48,4 +48,9 @@ public class PropertiesParser implements ConfigParser {
             throw new ParseException("an error occurred while parsing properties.", e);
         }
     }
+
+    @Override
+    public boolean isFlatted() {
+        return true;
+    }
 }

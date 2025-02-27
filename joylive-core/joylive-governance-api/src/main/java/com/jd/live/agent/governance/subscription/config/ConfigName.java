@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.subscription.config;
 
+import com.jd.live.agent.core.parser.ConfigParser;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,26 +29,45 @@ public class ConfigName {
 
     private String profile;
 
+    private String format;
+
     private transient String fullName;
 
     public ConfigName() {
     }
 
     public ConfigName(String namespace, String name, String profile) {
+        this(namespace, name, profile, null);
+    }
+
+    public ConfigName(String namespace, String name, String profile, String format) {
         this.namespace = namespace;
         this.name = name;
         this.profile = profile;
+        this.format = format;
     }
 
     public boolean validate() {
         return name != null && !name.isEmpty();
     }
 
+    public String getFormat() {
+        if (format == null) {
+            int index = name == null ? -1 : name.lastIndexOf(".");
+            if (index == -1) {
+                format = ConfigParser.PROPERTIES;
+            } else {
+                format = name.substring(index + 1);
+            }
+        }
+        return format;
+    }
+
     @Override
     public String toString() {
         if (fullName == null) {
-            boolean withProfile = profile == null || profile.isEmpty();
-            boolean withNamespace = namespace == null || namespace.isEmpty();
+            boolean withProfile = profile != null && !profile.isEmpty();
+            boolean withNamespace = namespace != null && !namespace.isEmpty();
             String configName = name == null ? "" : name;
             if (withProfile && withNamespace) {
                 fullName = configName + "@" + profile + "@" + namespace;
