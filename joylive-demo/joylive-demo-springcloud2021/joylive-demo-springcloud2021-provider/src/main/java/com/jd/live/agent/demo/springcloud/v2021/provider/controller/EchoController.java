@@ -59,7 +59,11 @@ public class EchoController {
             }
             CpuBusyUtil.busyCompute(sleepTime);
         }
-        LiveResponse response = new LiveResponse(echoSuffix == null ? str : str + echoSuffix);
+        String value = str + "-sleepTime-" + sleepTime;
+        if (echoSuffix != null && !echoSuffix.isEmpty()) {
+            value = value + "-" + echoSuffix;
+        }
+        LiveResponse response = new LiveResponse(value);
         configure(request, response);
         if (logger.isInfoEnabled()) {
             logger.info("echo str: {}, time: {}", str, System.currentTimeMillis());
