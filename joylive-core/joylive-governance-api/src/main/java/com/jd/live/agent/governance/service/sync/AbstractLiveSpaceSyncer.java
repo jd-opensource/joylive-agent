@@ -49,11 +49,11 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
         spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
         spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
-        String laneSpaceId = location == null ? null : location.getLiveSpaceId();
-        if (laneSpaceId == null) {
+        String liveSpaceId = location == null ? null : location.getLiveSpaceId();
+        if (liveSpaceId == null || liveSpaceId.isEmpty()) {
             syncSpaceList();
         } else {
-            syncSpace(laneSpaceId);
+            syncSpace(liveSpaceId);
         }
     }
 
@@ -127,7 +127,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
      * Handles the response from the sync operation for a LiveSpace object.
      *
      * @param response The SyncResponse object containing the response from the sync operation.
-     * @param spaceId The space id.
+     * @param spaceId  The space id.
      */
     protected void onSpaceResponse(SyncResponse<LiveSpace> response, String spaceId) {
         switch (response.getStatus()) {
@@ -168,7 +168,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
      * Updates the specified LiveSpace object.
      *
      * @param spaceId The space id.
-     * @param space The LiveSpace object to update.
+     * @param space   The LiveSpace object to update.
      */
     protected void updateSpace(String spaceId, LiveSpace space) {
         if (space == null) {

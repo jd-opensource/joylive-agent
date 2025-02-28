@@ -50,7 +50,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
         spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
         String laneSpaceId = location == null ? null : location.getLaneSpaceId();
-        if (laneSpaceId == null) {
+        if (laneSpaceId == null || laneSpaceId.isEmpty()) {
             syncSpaceList();
         } else {
             syncSpace(laneSpaceId);
