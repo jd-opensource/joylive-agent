@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignClusterIn
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FeignRetryableClientDefinition_v3")
+@Extension(value = "FeignRetryableClientDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnSpringRetry
 @ConditionalOnClass(RetryableFeignClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
@@ -46,7 +46,7 @@ public class RetryableFeignClusterDefinition extends PluginDefinitionAdapter {
 
     private static final String[] ARGUMENT_FILTER = new String[]{
             "feign.Request",
-            "feign.Request.Options"
+            "feign.Request$Options"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
