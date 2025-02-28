@@ -50,7 +50,7 @@ public class TomcatHeaderParser implements HttpHeaderParser {
             }
             MultiMap<String, String> result = MultiLinkedMap.caseInsensitive(count);
             for (int i = 0; i < count; i++) {
-                result.add(mimeHeaders.getName(i).toStringType(), mimeHeaders.getValue(i).toString());
+                result.add(mimeHeaders.getName(i).toString(), mimeHeaders.getValue(i).toString());
             }
             return result;
         } else {
