@@ -47,7 +47,7 @@ public class TomcatHeaderParser implements HttpHeaderParser {
             MimeHeaders mimeHeaders = req.getCoyoteRequest().getMimeHeaders();
             int count = mimeHeaders.size();
             for (int i = 0; i < count; i++) {
-                result.add(mimeHeaders.getName(i).toStringType(), mimeHeaders.getValue(i).toStringType());
+                result.add(mimeHeaders.getName(i).toStringType(), mimeHeaders.getValue(i).toString());
             }
             return result;
         } else {
