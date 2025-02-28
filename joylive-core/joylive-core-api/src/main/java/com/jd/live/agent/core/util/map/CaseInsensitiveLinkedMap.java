@@ -71,7 +71,7 @@ public class CaseInsensitiveLinkedMap<V> implements Map<String, V>, Serializable
      * @see #convertKey(String)
      */
     public CaseInsensitiveLinkedMap(Locale locale) {
-        this(12, locale);  // equivalent to LinkedHashMap's initial capacity of 16
+        this(16, locale);  // equivalent to LinkedHashMap's initial capacity of 16
     }
 
     /**

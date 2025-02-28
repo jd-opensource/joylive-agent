@@ -43,9 +43,12 @@ public class TomcatHeaderParser implements HttpHeaderParser {
             req = (Request) request;
         }
         if (req != null) {
-            MultiMap<String, String> result = MultiLinkedMap.caseInsensitive(null);
             MimeHeaders mimeHeaders = req.getCoyoteRequest().getMimeHeaders();
             int count = mimeHeaders.size();
+            if (count == 0) {
+                return null;
+            }
+            MultiMap<String, String> result = MultiLinkedMap.caseInsensitive(count);
             for (int i = 0; i < count; i++) {
                 result.add(mimeHeaders.getName(i).toStringType(), mimeHeaders.getValue(i).toString());
             }
