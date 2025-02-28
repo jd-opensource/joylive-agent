@@ -46,7 +46,7 @@ public class RetryableFeignClusterDefinition extends PluginDefinitionAdapter {
 
     private static final String[] ARGUMENT_FILTER = new String[]{
             "feign.Request",
-            "feign.Request.Options"
+            "feign.Request$Options"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
