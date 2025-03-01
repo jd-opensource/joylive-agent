@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.service.sync.http;
 
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectReader.StringReader;
 import com.jd.live.agent.core.util.Close;
@@ -23,6 +22,7 @@ import com.jd.live.agent.core.util.Daemon;
 import com.jd.live.agent.core.util.Waiter;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.service.sync.SyncKey.HttpSyncKey;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.SyncStatus;
@@ -142,15 +142,15 @@ public class HttpWatcher implements AutoCloseable {
                     listener.onUpdate(new HttpWatchEvent(EventType.UPDATE, resource.getId(), response.getData()));
                     break;
                 case NOT_FOUND:
-                    listener.onUpdate(new HttpWatchEvent(resource.getId(), new IOException("Failed to request " + resource + ", caused by it's not found.")));
+                    listener.onUpdate(new HttpWatchEvent(resource.getId(), new IOException("Failed to request " + resource.getUrl() + ", caused by it's not found.")));
                 case NOT_MODIFIED:
                     break;
                 default:
-                    listener.onUpdate(new HttpWatchEvent(resource.getId(), new IOException("Failed to request " + resource + ", caused by " + response.getMessage())));
+                    listener.onUpdate(new HttpWatchEvent(resource.getId(), new IOException("Failed to request " + resource.getUrl() + ", caused by " + response.getMessage())));
                     break;
             }
         } catch (IOException e) {
-            listener.onUpdate(new HttpWatchEvent(resource.getId(), e));
+            listener.onUpdate(new HttpWatchEvent(resource.getId(), new IOException("Failed to request " + resource.getUrl() + ", caused by " + e.getMessage(), e)));
         }
     }
 
