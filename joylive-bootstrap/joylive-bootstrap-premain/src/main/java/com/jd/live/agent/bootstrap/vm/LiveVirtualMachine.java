@@ -28,7 +28,7 @@ import java.util.Properties;
 /**
  * The {@code LiveVirtualMachine} class extends the {@link VirtualMachine} class and
  * provides methods to load agent libraries and agents into a target JVM.
- * It uses reflection to invoke methods from the {@link HotSpotVirtualMachine} class.
+ * It uses reflection to invoke methods from the HotSpotVirtualMachine class.
  */
 public class LiveVirtualMachine extends VirtualMachine {
 

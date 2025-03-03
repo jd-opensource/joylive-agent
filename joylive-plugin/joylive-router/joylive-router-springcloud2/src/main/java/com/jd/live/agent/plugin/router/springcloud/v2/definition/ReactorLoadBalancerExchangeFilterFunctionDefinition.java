@@ -28,11 +28,15 @@ import com.jd.live.agent.plugin.router.springcloud.v2.condition.ConditionalOnSpr
 import com.jd.live.agent.plugin.router.springcloud.v2.interceptor.ReactiveClusterInterceptor;
 
 /**
- * @author: yuanjinzhong
- * @date: 2025/1/2 19:52
- * @description: When <code>spring.cloud.loadbalancer.ribbon.enabled=false </code> is configured in the application, ReactorLoadBalancerExchangeFilterFunction is automatically injected;
+ * ReactorLoadBalancerExchangeFilterFunctionDefinition
+ *
+ * <p>
+ * When <code>spring.cloud.loadbalancer.ribbon.enabled=false </code> is configured in the application, ReactorLoadBalancerExchangeFilterFunction is automatically injected;
  * otherwise, LoadBalancerExchangeFilterFunction is injected. Note that they have an either-or relationship.
- * @see  org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
+ * </p>
+ *
+ * @author yuanjinzhong
+ * @see org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
  */
 @Injectable
 @Extension(value = "ReactorExchangeFilterFunctionDefinition_v2")
@@ -58,7 +62,7 @@ public class ReactorLoadBalancerExchangeFilterFunctionDefinition extends PluginD
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
                                 and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () ->  new ReactiveClusterInterceptor(context)
+                        () -> new ReactiveClusterInterceptor(context)
                 )
         };
     }

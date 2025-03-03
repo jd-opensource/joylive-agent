@@ -27,13 +27,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
- * @author: yuanjinzhong
- * @date: 2024/8/29 20:09
- * @description:
+ * SofaRpcProviderService
+ *
+ * @author yuanjinzhong
  */
-@SofaService(interfaceType = HelloService.class, bindings = { @SofaServiceBinding(bindingType = "bolt") })
+@SofaService(interfaceType = HelloService.class, bindings = {@SofaServiceBinding(bindingType = "bolt")})
 @Service
-public class SofaRpcProviderService  implements HelloService {
+public class SofaRpcProviderService implements HelloService {
 
     @Value("${spring.application.name}")
     private String applicationName;

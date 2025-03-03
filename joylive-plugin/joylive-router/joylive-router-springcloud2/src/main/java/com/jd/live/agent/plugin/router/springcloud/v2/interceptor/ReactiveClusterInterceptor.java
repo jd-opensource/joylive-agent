@@ -37,9 +37,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author: yuanjinzhong
- * @date: 2025/1/2 20:02
- * @description:
+ * ReactiveClusterInterceptor
+ *
+ * @author yuanjinzhong
  */
 public class ReactiveClusterInterceptor extends InterceptorAdaptor {
 

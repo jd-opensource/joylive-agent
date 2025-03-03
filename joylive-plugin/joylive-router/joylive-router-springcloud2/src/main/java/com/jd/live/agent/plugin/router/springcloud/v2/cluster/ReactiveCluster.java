@@ -49,10 +49,10 @@ import java.util.concurrent.CompletionStage;
 import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 
 /**
- * @author: yuanjinzhong
- * @date: 2025/1/3 17:43
- * @description:  a cluster for reactor mode
- * @see  org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
+ * A cluster for reactor mode
+ *
+ * @author yuanjinzhong
+ * @see org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
  */
 public class ReactiveCluster extends AbstractClientCluster<ReactiveClusterRequest, ReactiveClusterResponse> {
 

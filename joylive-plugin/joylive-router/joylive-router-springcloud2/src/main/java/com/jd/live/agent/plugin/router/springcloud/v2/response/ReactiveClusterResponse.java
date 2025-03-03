@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author: yuanjinzhong
- * @date: 2025/1/3 18:00
- * @description:
+ * ReactiveClusterResponse
+ *
+ * @author yuanjinzhong
  */
 public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<ClientResponse> {
 

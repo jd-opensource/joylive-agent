@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author: yuanjinzhong
- * @date: 2025/1/3 17:59
- * @description:
+ * ReactiveClusterRequest
+ *
+ * @author yuanjinzhong
  */
 public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest> {
 
