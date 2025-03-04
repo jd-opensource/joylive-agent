@@ -1,0 +1,3 @@
+[submodule "joylive-demo"]
+	path = joylive-demo
+	url = https://github.com/jd-opensource/joylive-demo.git
