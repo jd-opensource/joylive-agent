@@ -22,7 +22,7 @@
 
 ### 1.2 获取Demo程序
 
-编译`joylive-agent`，获取`joylive-demo/joylive-demo-springcloud2021`下各项目的二进制包
+编译[joylive-demo](https://github.com/jd-opensource/joylive-demo)，获取`joylive-demo/joylive-demo-springcloud2021`下各项目的二进制包
 
 - 网关
 

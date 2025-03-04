@@ -21,7 +21,7 @@ Quick Start
 
 ### 1.2 Getting the Demo Program
 
-Compile `joylive-agent` to obtain the binary packages of each project under `joylive-demo/joylive-demo-springcloud2021`
+Compile [joylive-demo](https://github.com/jd-opensource/joylive-demo) to obtain the binary packages of each project under `joylive-demo/joylive-demo-springcloud2021`
 
 - Gateway
 
