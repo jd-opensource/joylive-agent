@@ -84,7 +84,6 @@
         <module>joylive-test</module>
         <module>joylive-plugin</module>
         <module>joylive-package</module>
-        <module>joylive-demo</module>
     </modules>
 
     <dependencyManagement>
