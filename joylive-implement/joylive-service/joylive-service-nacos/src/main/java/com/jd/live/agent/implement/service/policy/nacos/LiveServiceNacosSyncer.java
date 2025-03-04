@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -25,12 +23,13 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.PolicySubscription;
-import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
 import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
@@ -63,7 +62,7 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
         try {
             client = NacosClientFactory.create(syncConfig.getProperties());
             client.connect();
-        } catch (NacosException e) {
+        } catch (Exception e) {
             return Futures.future(e);
         }
         return super.doStart();

@@ -17,23 +17,18 @@ package com.jd.live.agent.implement.service.config.nacos;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.ConfigParser;
-import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.service.ConfigService;
+import com.jd.live.agent.governance.service.config.AbstractConfigService;
+import com.jd.live.agent.governance.service.config.ConfigSubscription;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -45,56 +40,24 @@ import static com.jd.live.agent.implement.service.config.nacos.client.NacosClien
 @ConditionalOnConfigCenterEnabled
 @ConditionalOnProperty(name = "agent.governance.configcenter.type", value = "nacos")
 @Extension("NacosConfigService")
-public class NacosConfigService extends AbstractService implements ConfigService {
+public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
 
-    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
-    private GovernanceConfig governanceConfig;
-
-    @Inject
-    private Map<String, ConfigParser> parsers;
-
-    private Configurator configurator;
-
-    private final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
+    protected final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
 
     @Override
-    public Configurator getConfigurator() {
-        return configurator;
-    }
-
-    @Override
-    public ConfigCenterConfig getConfig() {
-        return governanceConfig.getConfigCenterConfig();
-    }
-
-    @Override
-    protected CompletableFuture<Void> doStart() {
-        try {
-            ConfigCenterConfig config = governanceConfig.getConfigCenterConfig();
-            List<ConfigName> names = config.getConfigs();
-            String namespace;
-            NacosClientApi client = null;
-            List<NacosSubscription> subscriptions = new ArrayList<>(names.size());
-            for (ConfigName name : names) {
-                if (name.validate()) {
-                    namespace = name.getNamespace();
-                    namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE : namespace;
-                    if (!clients.containsKey(namespace)) {
-                        NacosProperties properties = new NacosProperties(config.getAddress(), config.getUsername(),
-                                config.getPassword(), namespace, config.getTimeout());
-                        client = NacosClientFactory.create(properties);
-                        client.connect();
-                        clients.put(namespace, client);
-                    }
-                    subscriptions.add(new NacosSubscription(client, name, getParser(name)));
-                }
-            }
-            configurator = new NacosConfigurator(subscriptions);
-            configurator.subscribe();
-            return CompletableFuture.completedFuture(null);
-        } catch (Throwable e) {
-            return Futures.future(e);
+    protected ConfigSubscription<NacosClientApi> createSubscription(ConfigName configName) throws Exception {
+        ConfigCenterConfig config = governanceConfig.getConfigCenterConfig();
+        String namespace = configName.getNamespace();
+        namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE : namespace;
+        NacosClientApi client = clients.get(namespace);
+        if (client == null) {
+            NacosProperties properties = new NacosProperties(config.getAddress(), config.getUsername(),
+                    config.getPassword(), namespace, config.getTimeout());
+            client = NacosClientFactory.create(properties);
+            client.connect();
+            clients.put(namespace, client);
         }
+        return new ConfigSubscription<>(client, configName, getParser(configName));
     }
 
     @Override
@@ -104,13 +67,8 @@ public class NacosConfigService extends AbstractService implements ConfigService
         return CompletableFuture.completedFuture(null);
     }
 
-    /**
-     * Returns the appropriate ConfigParser for the given configuration name.
-     *
-     * @param configName The name of the configuration.
-     * @return The ConfigParser associated with the given configuration name.
-     */
-    protected ConfigParser getParser(ConfigName configName) {
-        return parsers.getOrDefault(configName.getFormat(), parsers.get(ConfigParser.PROPERTIES));
+    @Override
+    protected Configurator createConfigurator(List<ConfigSubscription<NacosClientApi>> subscriptions) {
+        return new NacosConfigurator(subscriptions);
     }
 }

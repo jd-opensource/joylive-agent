@@ -66,7 +66,7 @@ public abstract class NacosClientFactory {
         }
 
         @Override
-        public void connect() throws NacosException {
+        public void connect() throws Exception {
             if (!connected.get()) {
                 synchronized (api) {
                     if (connected.compareAndSet(false, true)) {
@@ -77,7 +77,7 @@ public abstract class NacosClientFactory {
         }
 
         @Override
-        public void close() throws NacosException {
+        public void close() throws Exception {
             if (reference.decrementAndGet() == 0 && connected.compareAndSet(true, false)) {
                 api.close();
             }

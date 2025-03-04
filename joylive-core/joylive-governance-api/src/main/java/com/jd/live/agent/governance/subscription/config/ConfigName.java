@@ -53,14 +53,18 @@ public class ConfigName {
 
     public String getFormat() {
         if (format == null) {
-            int index = name == null ? -1 : name.lastIndexOf(".");
-            if (index == -1) {
-                format = ConfigParser.PROPERTIES;
-            } else {
-                format = name.substring(index + 1);
-            }
+            format = getFormat(name);
         }
         return format;
+    }
+
+    public static String getFormat(String name) {
+        int index = name == null ? -1 : name.lastIndexOf(".");
+        if (index == -1) {
+            return ConfigParser.PROPERTIES;
+        } else {
+            return name.substring(index + 1);
+        }
     }
 
     @Override
