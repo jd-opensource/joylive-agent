@@ -42,7 +42,8 @@ public class ApolloClient implements ApolloClientApi {
 
     @Override
     public void connect() throws Exception {
-        // TODO use open api
+        // TODO use open api, HttpWatcher
+        // @see com.ctrip.framework.apollo.internals.RemoteConfigRepository.transformApolloConfigToProperties
         ConfigName name = properties.getName();
         setProperty(ApolloClientSystemConsts.APOLLO_CACHE_FILE_ENABLE, "false");
         setProperty(KEY_ENV, name.getNamespace());
