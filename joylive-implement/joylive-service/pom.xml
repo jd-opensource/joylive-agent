@@ -18,6 +18,7 @@
         <module>joylive-service-multilive</module>
         <module>joylive-service-microservice</module>
         <module>joylive-service-nacos</module>
+        <module>joylive-service-apollo</module>
     </modules>
 
 </project>

@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.config.nacos;
+package com.jd.live.agent.governance.service.config;
 
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Map;
 
+/**
+ * Represents a subscription to a configuration resource.
+ * <p>
+ * Holds the client, configuration name, parser, and associated configuration data.
+ *
+ * @param <T> The type of {@link ConfigClientApi} used for the subscription.
+ */
 @Getter
-public class NacosSubscription {
+public class ConfigSubscription<T extends ConfigClientApi> {
 
-    private final NacosClientApi client;
+    private final T client;
 
     private final ConfigName name;
 
@@ -35,7 +41,7 @@ public class NacosSubscription {
     @Setter
     private Map<String, Object> config;
 
-    public NacosSubscription(NacosClientApi client, ConfigName name, ConfigParser parser) {
+    public ConfigSubscription(T client, ConfigName name, ConfigParser parser) {
         this.client = client;
         this.name = name;
         this.parser = parser;

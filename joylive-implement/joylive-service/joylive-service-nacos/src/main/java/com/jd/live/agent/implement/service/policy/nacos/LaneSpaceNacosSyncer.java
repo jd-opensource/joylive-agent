@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.implement.service.policy.nacos;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -25,6 +23,7 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
@@ -65,7 +64,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
         try {
             client = NacosClientFactory.create(syncConfig.getProperties());
             client.connect();
-        } catch (NacosException e) {
+        } catch (Exception e) {
             return Futures.future(e);
         }
         return super.doStart();

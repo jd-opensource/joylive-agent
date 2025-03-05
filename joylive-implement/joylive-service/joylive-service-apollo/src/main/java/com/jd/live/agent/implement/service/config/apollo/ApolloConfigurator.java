@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.config.nacos;
+package com.jd.live.agent.implement.service.config.apollo;
 
-import com.alibaba.nacos.api.config.listener.Listener;
+import com.ctrip.framework.apollo.ConfigFileChangeListener;
+import com.ctrip.framework.apollo.model.ConfigFileChangeEvent;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.service.config.AbstractConfigurator;
 import com.jd.live.agent.governance.service.config.ConfigSubscription;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
+import com.jd.live.agent.implement.service.config.apollo.client.ApolloClientApi;
 
 import java.util.List;
-import java.util.concurrent.Executor;
-
-import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_GROUP;
 
 /**
  * A configurator that uses Nacos as the configuration source.
@@ -35,47 +33,40 @@ import static com.jd.live.agent.implement.service.config.nacos.client.NacosClien
  * This class implements the {@link Configurator} interface and provides methods for subscribing to configuration changes,
  * getting properties, adding and removing listeners, and publishing configuration events.
  */
-public class NacosConfigurator extends AbstractConfigurator<NacosClientApi> {
+public class ApolloConfigurator extends AbstractConfigurator<ApolloClientApi> {
 
-    private static final Logger logger = LoggerFactory.getLogger(NacosConfigurator.class);
+    private static final Logger logger = LoggerFactory.getLogger(ApolloConfigurator.class);
 
-    public NacosConfigurator(List<ConfigSubscription<NacosClientApi>> subscriptions) {
+    public ApolloConfigurator(List<ConfigSubscription<ApolloClientApi>> subscriptions) {
         super(subscriptions);
     }
 
     @Override
     public String getName() {
-        return "nacos";
+        return "apollo";
     }
 
     @Override
-    protected void subscribe(ConfigSubscription<NacosClientApi> subscription) throws Exception {
+    protected void subscribe(ConfigSubscription<ApolloClientApi> subscription) throws Exception {
         ConfigName name = subscription.getName();
-        String profile = name.getProfile();
-        profile = profile == null || profile.isEmpty() ? DEFAULT_GROUP : profile;
         logger.info("subscribe " + name + ", parser " + subscription.getParser().getClass().getSimpleName());
-        subscription.getClient().subscribe(name.getName(), profile, new ChangeListener(subscription));
+        subscription.getClient().subscribe(new ChangeListener(subscription));
     }
 
     /**
      * An inner class that implements the Listener interface and handles configuration changes.
      */
-    private class ChangeListener implements Listener {
+    private class ChangeListener implements ConfigFileChangeListener {
 
-        private final ConfigSubscription<NacosClientApi> subscription;
+        private final ConfigSubscription<ApolloClientApi> subscription;
 
-        ChangeListener(ConfigSubscription<NacosClientApi> subscription) {
+        ChangeListener(ConfigSubscription<ApolloClientApi> subscription) {
             this.subscription = subscription;
         }
 
         @Override
-        public Executor getExecutor() {
-            return null;
-        }
-
-        @Override
-        public void receiveConfigInfo(String configInfo) {
-            onUpdate(configInfo, subscription);
+        public void onChange(ConfigFileChangeEvent changeEvent) {
+            onUpdate(changeEvent.getNewValue(), subscription);
         }
     }
 }

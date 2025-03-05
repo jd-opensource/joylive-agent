@@ -17,8 +17,6 @@ package com.jd.live.agent.plugin.system.slf4j.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -40,7 +38,6 @@ import static com.jd.live.agent.core.util.StringUtils.splitMap;
  * An interceptor class that listens for changes in logger levels and updates them accordingly.
  */
 public class LoggerFactoryInterceptor extends InterceptorAdaptor {
-    private static final Logger logger = LoggerFactory.getLogger(LoggerFactoryInterceptor.class);
 
     private static final String DEFAULT_LOGGER_KEY = "logger.level";
 
@@ -54,10 +51,12 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
 
     public LoggerFactoryInterceptor(ConfigCenter configCenter, GovernanceConfig governanceConfig) {
         this.config = governanceConfig.getConfigCenterConfig();
-        configCenter.ifPresent(configurator -> {
-            String key = config.getOrDefault(KEY_LOGGER, DEFAULT_LOGGER_KEY);
-            configurator.addListener(key, this::onUpdate);
-        });
+        if (configCenter != null) {
+            configCenter.ifPresent(configurator -> {
+                String key = config.getOrDefault(KEY_LOGGER, DEFAULT_LOGGER_KEY);
+                configurator.addListener(key, this::onUpdate);
+            });
+        }
     }
 
     @Override

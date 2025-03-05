@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.system.slf4j.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -27,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.plugin.system.slf4j.interceptor.LoggerFactoryInterceptor;
 
 @Injectable
@@ -43,7 +43,7 @@ public class LoggerFactoryDefinition extends PluginDefinitionAdapter {
             "java.lang.String",
     };
 
-    @Inject(ConfigCenter.COMPONENT_CONFIG_CENTER)
+    @Inject(value = ConfigCenter.COMPONENT_CONFIG_CENTER, component = true, nullable = true)
     private ConfigCenter configCenter;
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)

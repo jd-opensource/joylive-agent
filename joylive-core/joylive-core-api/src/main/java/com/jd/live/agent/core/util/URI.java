@@ -77,6 +77,16 @@ public class URI {
     }
 
     /**
+     * Sets the schema component of the URI.
+     *
+     * @param schema the new schema.
+     * @return a new URI instance with the updated schema.
+     */
+    public URI schema(String schema) {
+        return new URI(schema, host, port, path, parameters);
+    }
+
+    /**
      * Sets the host component of the URI.
      *
      * @param host the new host name or IP address.
@@ -228,7 +238,7 @@ public class URI {
         }
         String protocol = null;
         String host = null;
-        int port = 0;
+        Integer port = null;
         String path = null;
         Map<String, String> parameters = null;
 
@@ -267,7 +277,7 @@ public class URI {
                 host = url.substring(0, i);
             } catch (NumberFormatException e) {
                 // Handle invalid port number
-                port = 0;
+                port = null;
                 host = url;  // Fallback to full URL as host
             }
         } else {

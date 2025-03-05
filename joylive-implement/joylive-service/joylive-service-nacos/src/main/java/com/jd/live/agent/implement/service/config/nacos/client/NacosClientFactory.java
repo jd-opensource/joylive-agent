@@ -19,14 +19,14 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.service.config.AbstractSharedClientApi;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class NacosClientFactory {
@@ -45,42 +45,18 @@ public abstract class NacosClientFactory {
         String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
         String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();
         String name = username + ":" + password + "@" + uri.getAddress() + "/" + namespace;
-        SharedNacosClientApi client = clients.computeIfAbsent(name, n -> new SharedNacosClientApi(new NacosClient(config)));
-        client.reference.incrementAndGet();
+        SharedNacosClientApi client = clients.computeIfAbsent(name, n -> new SharedNacosClientApi(n, new NacosClient(config), clients::remove));
+        client.incReference();
         return client;
     }
 
     /**
      * An inner class that implements the NacosClientApi interface and provides a shared instance of NacosClient.
      */
-    protected static class SharedNacosClientApi implements NacosClientApi {
+    private static class SharedNacosClientApi extends AbstractSharedClientApi<NacosClientApi> implements NacosClientApi {
 
-        private final NacosClientApi api;
-
-        private final AtomicInteger reference = new AtomicInteger(0);
-
-        private final AtomicBoolean connected = new AtomicBoolean(false);
-
-        public SharedNacosClientApi(NacosClientApi api) {
-            this.api = api;
-        }
-
-        @Override
-        public void connect() throws NacosException {
-            if (!connected.get()) {
-                synchronized (api) {
-                    if (connected.compareAndSet(false, true)) {
-                        api.connect();
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void close() throws NacosException {
-            if (reference.decrementAndGet() == 0 && connected.compareAndSet(true, false)) {
-                api.close();
-            }
+        SharedNacosClientApi(String name, NacosClientApi api, Consumer<String> cleaner) {
+            super(name, api, cleaner);
         }
 
         @Override

@@ -17,27 +17,18 @@ package com.jd.live.agent.implement.service.config.nacos.client;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.jd.live.agent.governance.service.config.ConfigClientApi;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 
 import java.util.function.Function;
 
-public interface NacosClientApi extends AutoCloseable {
+public interface NacosClientApi extends ConfigClientApi {
 
      String DEFAULT_NAMESPACE = "public";
 
      String DEFAULT_GROUP = "DEFAULT_GROUP";
-
-    /**
-     * Connects to the Nacos server using the specified configuration.
-     *
-     * @throws NacosException If there is an error connecting to the Nacos server.
-     */
-    void connect() throws NacosException;
-
-    @Override
-    void close() throws NacosException;
 
     /**
      * Subscribes to configuration changes for the specified dataId and group.
