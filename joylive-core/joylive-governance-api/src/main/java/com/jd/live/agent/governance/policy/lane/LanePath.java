@@ -20,6 +20,8 @@ import com.jd.live.agent.core.util.trie.PathMatchType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class LanePath implements Path {
@@ -28,6 +30,6 @@ public class LanePath implements Path {
 
     private PathMatchType matchType = PathMatchType.PREFIX;
 
-    private String ruleId;
+    private List<String> rules;
 
 }
