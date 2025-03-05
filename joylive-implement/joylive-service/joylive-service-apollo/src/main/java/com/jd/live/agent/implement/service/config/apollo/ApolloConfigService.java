@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.config.nacos;
+package com.jd.live.agent.implement.service.config.apollo;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -24,31 +24,27 @@ import com.jd.live.agent.governance.service.config.AbstractConfigService;
 import com.jd.live.agent.governance.service.config.ConfigSubscription;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
+import com.jd.live.agent.implement.service.config.apollo.client.ApolloClientApi;
+import com.jd.live.agent.implement.service.config.apollo.client.ApolloClientFactory;
+import com.jd.live.agent.implement.service.config.apollo.client.ApolloProperties;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_NAMESPACE;
-
 @Injectable
 @ConditionalOnConfigCenterEnabled
-@ConditionalOnProperty(name = "agent.governance.configcenter.type", value = "nacos")
-@Extension("NacosConfigService")
-public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
+@ConditionalOnProperty(name = "agent.governance.configcenter.type", value = "apollo")
+@Extension("ApolloConfigService")
+public class ApolloConfigService extends AbstractConfigService<ApolloClientApi> {
 
-    protected final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
+    protected final Map<String, ApolloClientApi> clients = new ConcurrentHashMap<>();
 
     @Override
-    protected ConfigSubscription<NacosClientApi> createSubscription(ConfigName configName) throws Exception {
-        String namespace = configName.getNamespace();
-        namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE : namespace;
-        NacosClientApi client = clients.computeIfAbsent(namespace,
-                n -> NacosClientFactory.create(new NacosProperties(governanceConfig.getConfigCenterConfig(), n)));
+    protected ConfigSubscription<ApolloClientApi> createSubscription(ConfigName configName) throws Exception {
+        ApolloClientApi client = clients.computeIfAbsent(configName.getName(),
+                name -> ApolloClientFactory.create(new ApolloProperties(governanceConfig.getConfigCenterConfig(), configName)));
         client.connect();
         return new ConfigSubscription<>(client, configName, getParser(configName));
     }
@@ -61,7 +57,8 @@ public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
     }
 
     @Override
-    protected Configurator createConfigurator(List<ConfigSubscription<NacosClientApi>> subscriptions) {
-        return new NacosConfigurator(subscriptions);
+    protected Configurator createConfigurator(List<ConfigSubscription<ApolloClientApi>> subscriptions) {
+        return new ApolloConfigurator(subscriptions);
     }
+
 }

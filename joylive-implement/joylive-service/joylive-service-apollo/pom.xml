@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jd.live</groupId>
+        <artifactId>joylive-service</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>joylive-service-apollo</artifactId>
+
+    <properties>
+        <apollo-client.version>2.3.0</apollo-client.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-governance-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ctrip.framework.apollo</groupId>
+            <artifactId>apollo-core</artifactId>
+            <version>${apollo-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ctrip.framework.apollo</groupId>
+            <artifactId>apollo-client</artifactId>
+            <version>${apollo-client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.ctrip.framework.apollo</groupId>
+                    <artifactId>apollo-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.ctrip.framework.apollo:*</include>
+                                    <include>com.google.inject:guice</include>
+                                    <include>javax.inject:javax.inject</include>
+                                    <include>aopalliance:aopalliance</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <!-- This transformer will merge the contents of META-INF/services -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.ctrip.framework.apollo</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.com.ctrip.framework.apollo</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.slf4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.yaml</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.yaml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javax.inject</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.javax.inject</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.aopalliance</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.aopalliance</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <!--com.google.guava-->
+                                    <!--com.google.code.gson-->
+                                    <!--com.google.inject-->
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.com.google</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

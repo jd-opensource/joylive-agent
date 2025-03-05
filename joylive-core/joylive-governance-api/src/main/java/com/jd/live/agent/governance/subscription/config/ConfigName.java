@@ -19,6 +19,8 @@ import com.jd.live.agent.core.parser.ConfigParser;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @Getter
 @Setter
 public class ConfigName {
@@ -29,7 +31,7 @@ public class ConfigName {
 
     private String profile;
 
-    private String format;
+    private String format = ConfigParser.PROPERTIES;
 
     private transient String fullName;
 
@@ -37,7 +39,7 @@ public class ConfigName {
     }
 
     public ConfigName(String namespace, String name, String profile) {
-        this(namespace, name, profile, null);
+        this(namespace, name, profile, getFormat(name));
     }
 
     public ConfigName(String namespace, String name, String profile, String format) {
@@ -84,6 +86,18 @@ public class ConfigName {
             }
         }
         return fullName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ConfigName)) return false;
+        ConfigName that = (ConfigName) o;
+        return Objects.equals(namespace, that.namespace) && Objects.equals(name, that.name) && Objects.equals(profile, that.profile);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(namespace, name, profile);
     }
 }
 

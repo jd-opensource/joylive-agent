@@ -15,20 +15,31 @@
  */
 package com.jd.live.agent.implement.service.config.nacos.client;
 
-import lombok.AllArgsConstructor;
+import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class NacosProperties {
 
-    private String url;
+    private final String url;
 
-    private String username;
+    private final String username;
 
-    private String password;
+    private final String password;
 
-    public String namespace;
+    private final String namespace;
 
-    private long timeout = 3000;
+    private final long timeout;
+
+    public NacosProperties(String url, String username, String password, String namespace, long timeout) {
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        this.namespace = namespace;
+        this.timeout = timeout;
+    }
+
+    public NacosProperties(ConfigCenterConfig config, String namespace) {
+        this(config.getAddress(), config.getUsername(), config.getPassword(), namespace, config.getTimeout());
+    }
 }

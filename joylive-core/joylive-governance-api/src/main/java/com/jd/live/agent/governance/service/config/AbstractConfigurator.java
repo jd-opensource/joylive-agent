@@ -131,13 +131,24 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
     /**
      * Handles an update of the configuration information.
      *
-     * @param configInfo The updated configuration information.
+     * @param configInfo   The updated configuration information.
+     * @param subscription The configuration subscription associated with the update.
      */
     protected void onUpdate(String configInfo, ConfigSubscription<T> subscription) {
         logger.info("receive config update event from {}", subscription.getName().toString());
         ConfigParser parser = subscription.getParser();
         configInfo = configInfo == null ? "" : configInfo.trim();
         Map<String, Object> newValues = !configInfo.isEmpty() ? parser.parse(new StringReader(configInfo)) : new HashMap<>();
+        onUpdate(newValues, subscription);
+    }
+
+    /**
+     * Handles an update of the configuration information with parsed values.
+     *
+     * @param newValues    The parsed configuration values.
+     * @param subscription The configuration subscription associated with the update.
+     */
+    protected void onUpdate(Map<String, Object> newValues, ConfigSubscription<T> subscription) {
         Map<String, Object> oldValues = subscription.getConfig();
         // TODO handle yaml & properties && @ConfigurationProperties
         // mail.defaultRecipients[0]=admin@mail.com
@@ -174,7 +185,6 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
                 publish(new ConfigEvent(EventType.UPDATE, SYSTEM_ALL, null, newCache.getVersion()));
             }
         }
-
     }
 
     /**

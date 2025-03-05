@@ -31,4 +31,5 @@ public interface ConfigClientApi extends AutoCloseable {
 
     @Override
     void close() throws Exception;
+
 }
