@@ -11,9 +11,13 @@ import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LaneParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
-import com.jd.live.agent.governance.policy.lane.*;
+import com.jd.live.agent.governance.policy.lane.Lane;
+import com.jd.live.agent.governance.policy.lane.LaneDomain;
+import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
+
+import java.util.List;
 
 /**
  * The {@code LaneMetadataParser} class is responsible for parsing metadata related to lanes,
@@ -248,11 +252,10 @@ public class LaneMetadataParser implements LaneParser {
         @Override
         protected String parseLane(String laneSpaceId, LaneSpace laneSpace) {
             if (laneSpace != null) {
-                LaneRule laneRule = getLaneRule(laneSpace);
-                if (laneRule != null) {
-                    if (laneRule.match(matcher)) {
-                        return laneRule.getLaneCode();
-                    }
+                LaneDomain domain = domainPolicy == null ? null : domainPolicy.getLaneDomain();
+                if (domain != null) {
+                    List<String> ruleIds = domain.getRules(request.getPath());
+                    return laneSpace.getLane(ruleIds, matcher);
                 }
             }
             return fallbackLane(laneSpaceId, laneSpace);
@@ -277,31 +280,6 @@ public class LaneMetadataParser implements LaneParser {
         protected String fallbackLane(String laneSpaceId, LaneSpace laneSpace) {
             return super.parseLane(laneSpaceId, laneSpace);
         }
-
-        /**
-         * Retrieves the LaneRule associated with a given LaneSpace based on the LaneDomain policy.
-         *
-         * @param laneSpace The LaneSpace for which to retrieve the LaneRule
-         * @return The LaneRule associated with the LaneSpace, or null if no rule applies
-         */
-        protected LaneRule getLaneRule(LaneSpace laneSpace) {
-            LaneDomain domain = domainPolicy == null ? null : domainPolicy.getLaneDomain();
-            LaneRule rule = null;
-            if (domain == null) {
-                if (laneSpace.getDomainSize() == 0 && laneSpace.getRuleSize() == 1) {
-                    rule = laneSpace.getRules().get(0);
-                }
-            } else {
-                LanePath path = domain.getPath(request.getPath());
-                if (path != null) {
-                    rule = laneSpace.getLaneRule(path.getRuleId());
-                } else if (domain.getPathSize() == 0 && laneSpace.getRuleSize() == 1) {
-                    rule = laneSpace.getRules().get(0);
-                }
-            }
-            return rule;
-        }
-
     }
 
     /**

@@ -75,10 +75,17 @@
     "domains": [
       {
         "host": "demo.live.local",
+        "rules": [
+          "1",
+          "2"
+        ],
         "paths": [
           {
             "path": "/",
-            "ruleId": "1"
+            "rules": [
+              "1",
+              "2"
+            ]
           }
         ]
       }

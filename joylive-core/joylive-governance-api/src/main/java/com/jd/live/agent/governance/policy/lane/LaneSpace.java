@@ -19,6 +19,8 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.core.util.matcher.Matcher;
+import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -113,6 +115,27 @@ public class LaneSpace {
 
     public void locate(String lane) {
         currentLane = getLane(lane);
+    }
+
+    public String getLane(List<String> ruleIds, Matcher<TagCondition> matcher) {
+        if (getRuleSize() == 0) {
+            return null;
+        }
+        if (ruleIds == null || ruleIds.isEmpty()) {
+            for (LaneRule rule : rules) {
+                if (rule.match(matcher)) {
+                    return rule.getLaneCode();
+                }
+            }
+        } else {
+            for (String ruleId : ruleIds) {
+                LaneRule rule = getLaneRule(ruleId);
+                if (rule != null && rule.match(matcher)) {
+                    return rule.getLaneCode();
+                }
+            }
+        }
+        return null;
     }
 
     public void cache() {

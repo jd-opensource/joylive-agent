@@ -33,6 +33,10 @@ public class LaneDomain {
     @Setter
     private List<LanePath> paths;
 
+    @Getter
+    @Setter
+    private List<String> rules;
+
     private final transient PathTrie<LanePath> pathTrie = new PathMatcherTrie<>(() -> paths);
 
     public LanePath getPath(String path) {
@@ -45,6 +49,28 @@ public class LaneDomain {
 
     public void cache() {
         getPath("");
+    }
+
+    /**
+     * Retrieves the rules associated with the specified path.
+     * If no specific rules are found for the path, the default rules are returned.
+     *
+     * @param path The path to retrieve rules for.
+     * @return A list of rules associated with the path, or the default rules if none are found.
+     * Returns null if the path is invalid.
+     */
+    public List<String> getRules(String path) {
+        if (paths == null || paths.isEmpty()) {
+            return rules;
+        } else {
+            LanePath lanePath = getPath(path);
+            if (path != null) {
+                List<String> ruleIds = lanePath.getRules();
+                return ruleIds == null || ruleIds.isEmpty() ? rules : ruleIds;
+            } else {
+                return null;
+            }
+        }
     }
 
 }
