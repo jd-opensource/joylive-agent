@@ -41,10 +41,10 @@ public interface Registry {
     /**
      * Registers a service instance with the registry.
      *
-     * @param instance the service instance to be registered
-     * @param callback a callback function that will be called if the registration is successful
+     * @param instance   the service instance to be registered
+     * @param doRegister a doRegister function that will be called if the registration is successful
      */
-    void register(ServiceInstance instance, Callable<Void> callback);
+    void register(ServiceInstance instance, Callable<Void> doRegister);
 
     /**
      * Unregisters a service instance from the registry.

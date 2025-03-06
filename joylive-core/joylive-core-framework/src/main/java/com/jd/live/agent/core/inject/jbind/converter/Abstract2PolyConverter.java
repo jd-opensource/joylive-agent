@@ -190,7 +190,7 @@ public abstract class Abstract2PolyConverter implements Converter {
                 if (targetElement == null) {
                     return null;
                 }
-                targetSet.add(sourceElement);
+                targetSet.add(targetElement);
             }
         }
         return targetSet.getTarget();

@@ -18,6 +18,8 @@ package com.jd.live.agent.governance.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class RegistryConfig {
@@ -28,5 +30,10 @@ public class RegistryConfig {
     public static final String COMPONENT_REGISTRY_CONFIG = "registryConfig";
 
     private long heartbeatInterval = 5000L;
+
+    private boolean enabled;
+
+    private List<RegistryClusterConfig> clusters;
+
 }
 

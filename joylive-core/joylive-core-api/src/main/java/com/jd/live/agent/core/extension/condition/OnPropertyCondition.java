@@ -62,10 +62,10 @@ public class OnPropertyCondition extends OnCondition {
             return onProperty.matchIfMissing();
         } else if (isEmpty(value)) {
             return Boolean.parseBoolean(config);
-        } else if (onProperty.caseSensitive()) {
-            return value.equals(config);
         } else {
-            return value.equalsIgnoreCase(config);
+            return onProperty.caseSensitive()
+                    ? onProperty.comparison().match(value, config)
+                    : onProperty.comparison().match(value.toLowerCase(), config.toLowerCase());
         }
     }
 

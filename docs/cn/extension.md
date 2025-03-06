@@ -79,13 +79,14 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 #### 4.3.1 `@ConditionalOnProperty`
 该注解声明启用的配置项开关，可以配置多个`@ConditionalOnProperty`，每个之间是`AND`的关系
 
-| 参数             | 类型                  | 默认值   | 说明                      |
-|----------------|---------------------|-------|-------------------------|
-| value          | String              |       | 配置值                     |
-| name           | String[]            |       | 配置名称数组                  |
-| matchIfMissing | boolean             | true  | 没有配置的时候是否匹配             |
-| relation       | ConditionalRelation | OR    | 关系<br/>OR 或者<br/>AND 并且 |
-| caseSensitive       | boolean             | false | 大小写敏感                   |
+| 参数             | 类型                  | 默认值   | 说明                                   |
+|----------------|---------------------|-------|--------------------------------------|
+| value          | String              |       | 配置值                                  |
+| name           | String[]            |       | 配置名称数组                               |
+| matchIfMissing | boolean             | true  | 没有配置的时候是否匹配                          |
+| relation       | ConditionalRelation | OR    | 关系<br/>OR 或者<br/>AND 并且              |
+| caseSensitive       | boolean             | false | 大小写敏感                                |
+| comparison       | enum                | EQUAL | 比较 <br/>EQUAL 等于 <br/> NOT_EQAUL 不等于 |
 
 #### 4.3.2 `@ConditionalOnProperties`
 该注解声明启用多个配置项开关，由多个`@ConditionalOnProperty`组成，并且每个之间的关系
