@@ -110,3 +110,10 @@ joylive-service-nacos
     org.apache.commons.codec -> com.jd.live.agent.shaded.org.apache.commons.codec
     org.apache.commons.io -> com.jd.live.agent.shaded.org.apache.commons.io
     io.prometheus.client -> com.jd.live.agent.shaded.io.prometheus.client
+joylive-service-apollo
+    com.ctrip.framework.apollo -> com.jd.live.agent.shaded.com.ctrip.framework.apollo
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+    org.yaml -> com.jd.live.agent.shaded.org.yaml depend on joylive-parser-jackson
+    javax.inject -> com.jd.live.agent.shaded.javax.inject
+    org.aopalliance -> com.jd.live.agent.shaded.org.aopalliance
+    com.google -> com.jd.live.agent.shaded.com.google depend on joylive-event-opentelemetry
