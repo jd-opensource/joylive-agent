@@ -151,7 +151,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                 // delay register
                 registration.register();
             } else {
-                logger.info("Delay registration until application is ready, service=" + service);
+                logger.info("Delay registering instance {}:{} to {} until application is ready",
+                        instance.getHost(), instance.getPort(),
+                        instance.getService());
             }
         }
     }
@@ -452,7 +454,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                 });
             }
             this.endpoints = newEndpoints;
-            logger.info("Service instance is changed, service=" + service + ", adds=" + adds.size() + ", removes=" + removes.size());
+            logger.info("Service instance is changed, service={}, adds={}, removes={}", service, adds.size(), removes.size());
             for (Consumer<EndpointEvent> consumer : consumers) {
                 consumer.accept(new EndpointEvent(service, endpoints, adds, removes));
             }
