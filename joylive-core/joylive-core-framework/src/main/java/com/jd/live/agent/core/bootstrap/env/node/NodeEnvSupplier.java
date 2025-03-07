@@ -42,9 +42,10 @@ public class NodeEnvSupplier implements EnvSupplier {
                         parts -> parts[0],
                         parts -> Arrays.asList(parts[1].split(","))
                 ));
-        List<String> nodeCells = zoneToNodesMap.get(nodeName);
-        if (nodeCells != null && !nodeCells.isEmpty()) {
-            env.put("NODE_CELL", nodeCells.get(0));
-        }
+        zoneToNodesMap.forEach((zone, nodeNames) -> {
+            if (nodeNames.contains(nodeName)) {
+                env.put("NODE_CELL", zone);
+            }
+        });
     }
 }
