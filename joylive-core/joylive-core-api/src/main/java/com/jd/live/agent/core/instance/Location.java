@@ -18,11 +18,6 @@ package com.jd.live.agent.core.instance;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 /**
  * Represents the geographical and logical location information for an application or service.
  * This class encapsulates details such as the region, zone, and various identifiers that
@@ -108,34 +103,6 @@ public class Location {
 
     public boolean isLaneless() {
         return laneSpaceId == null || laneSpaceId.isEmpty();
-    }
-
-    public String getCell() {
-        if (cell == null || cell.isEmpty()) {
-            cell = getCellFromEnv();
-        }
-        return cell;
-    }
-
-    private String getCellFromEnv() {
-        String nodeName = System.getenv("NODE_NAME");
-        String nodeZones = System.getenv("NODE_ZONES");
-        if (nodeName == null || nodeZones == null || nodeName.isEmpty() || nodeZones.isEmpty()) {
-            return null;
-        }
-        Map<String, List<String>> zoneToNodesMap = Arrays.stream(nodeZones.split(";"))
-                .map(nz -> nz.split(":", 2))
-                .filter(parts -> parts.length == 2)
-                .collect(Collectors.toMap(
-                        parts -> parts[0],
-                        parts -> Arrays.asList(parts[1].split(","))
-                ));
-
-        return zoneToNodesMap.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(nodeName))
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .orElse(null);
     }
 
 }
