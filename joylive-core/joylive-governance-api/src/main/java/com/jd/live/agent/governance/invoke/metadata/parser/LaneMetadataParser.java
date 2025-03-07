@@ -287,7 +287,6 @@ public class LaneMetadataParser implements LaneParser {
      */
     public static class GatewayInboundLaneMetadataParser extends HttpInboundLaneMetadataParser {
 
-
         public GatewayInboundLaneMetadataParser(ServiceRequest request,
                                                 LaneConfig laneConfig,
                                                 Application application,
