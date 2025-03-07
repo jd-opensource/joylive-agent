@@ -179,6 +179,7 @@ public class Counter {
     }
 
     public void snapshot() {
-        snapshot.set(new CounterSnapshot(this));
+        CounterSnapshot last = snapshot.get();
+        snapshot.set(new CounterSnapshot(this, last.getSucceededAverageElapsed()));
     }
 }

@@ -35,16 +35,23 @@ public class CounterSnapshot {
      */
     private final long succeededElapsedOffset;
 
+    private final long lastSucceededAverageElapsed;
+
     public CounterSnapshot(Counter counter) {
+        this(counter, 0);
+    }
+
+    public CounterSnapshot(final Counter counter, final long lastSucceededAverageElapsed) {
         this.counter = counter;
         this.succeededOffset = counter.getSucceeded();
         this.succeededElapsedOffset = counter.getSucceededElapsed();
+        this.lastSucceededAverageElapsed = lastSucceededAverageElapsed;
     }
 
-    private long getSucceededAverageElapsed() {
+    public long getSucceededAverageElapsed() {
         long succeed = this.counter.getSucceeded() - this.succeededOffset;
         if (succeed == 0) {
-            return 0;
+            return lastSucceededAverageElapsed;
         }
         return (this.counter.getSucceededElapsed() - this.succeededElapsedOffset) / succeed;
     }
