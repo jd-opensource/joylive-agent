@@ -324,27 +324,19 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             if (unitRule == null || unitRule.getLiveType() == LiveType.ONE_REGION_LIVE) {
                 return metadata;
             }
-            ServicePolicy policy = metadata.getServicePolicy();
             ServiceLivePolicy livePolicy = metadata.getServiceLivePolicy();
-            UnitPolicy unitPolicy = metadata.getUnitPolicy();
-            if (unitPolicy != UnitPolicy.NONE) {
+            UnitPolicy unitPolicy = livePolicy == null ? null : livePolicy.getUnitPolicy();
+            if (unitPolicy != null) {
                 return metadata;
             }
+            // TODO policyId with new ServiceLivePolicy & ServicePolicy;
             livePolicy = livePolicy != null ? livePolicy.clone() : new ServiceLivePolicy();
             livePolicy.setUnitPolicy(UnitPolicy.UNIT);
             livePolicy.setWriteProtect(metadata.isWriteProtect());
-            ServicePolicy result = policy != null ? policy.clone() : new ServicePolicy();
-            // TODO policyId;
-            result.setLivePolicy(livePolicy);
-            return ServiceMetadata.builder().
-                    serviceConfig(metadata.getServiceConfig()).
-                    serviceName(metadata.getServiceName()).
-                    serviceGroup(metadata.getServiceGroup()).
-                    path(metadata.getPath()).
-                    method(metadata.getMethod()).
-                    service(metadata.getService()).
-                    servicePolicy(metadata.getServicePolicy()).
-                    writeProtect(metadata.isWriteProtect()).build();
+            ServicePolicy policy = metadata.getServicePolicy();
+            policy = policy != null ? policy.clone() : new ServicePolicy();
+            policy.setLivePolicy(livePolicy);
+            return metadata.copyWith(policy);
         }
     }
 }
