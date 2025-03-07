@@ -73,15 +73,18 @@ public @interface ConditionalOnProperty {
     /**
      * Specifies whether the comparison between the actual property value and the {@link #value()}
      * should be case-sensitive.
-     * <p>
-     * By default, this attribute is set to {@code false}, meaning the comparison is case-insensitive.
-     * Setting this to {@code true} requires an exact case match between the specified value and the
-     * actual property value for the condition to be considered true.
-     * </p>
      *
      * @return {@code true} if the comparison should be case-sensitive; {@code false} otherwise.
      */
     boolean caseSensitive() default false;
+
+    /**
+     * Specifies the type of conditional comparison to be used.
+     * Defaults to {@link ConditionalComparison#EQUAL}.
+     *
+     * @return The conditional comparison type.
+     */
+    ConditionalComparison comparison() default ConditionalComparison.EQUAL;
 
 }
 

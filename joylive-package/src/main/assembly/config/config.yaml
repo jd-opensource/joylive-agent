@@ -145,8 +145,6 @@ agent:
     transmission:
       enabled: ${CONFIG_TRANSMISSION_ENABLED:true}
       threadpool: ${CONFIG_TRANSMISSION_THREADPOOL_ENABLED:true}
-    registry:
-      enabled: ${CONFIG_REGISTRY_ENABLED:true}
     flowcontrol:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
@@ -280,6 +278,8 @@ agent:
           - sun.rmi.transport.DGCImpl$1
           - sun.rmi.transport.DGCAckHandler$1
           - org.apache.tomcat.util.threads.TaskThreadFactory
+        excludeExecutorPrefixes:
+          - com.jd.live.agent.shaded.
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
@@ -288,6 +288,7 @@ agent:
           - com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate$$Lambda$
           - com.alibaba.nacos.common.remote.client.RpcClient$$Lambda$
           - com.alibaba.nacos.common.utils.ThreadFactoryBuilder$$Lambda$
+          - com.jd.live.agent.shaded.
           - org.apache.catalina.core.ContainerBase$
           - org.apache.catalina.core.StandardServer$$Lambda$
     configcenter:
@@ -305,6 +306,27 @@ agent:
         namespace: ${CONFIG_CENTER_NAMESPACE:public}
         name: ${CONFIG_CENTER_NAME:${APPLICATION_NAME}}
         profile: ${CONFIG_CENTER_PROFILE:DEFAULT_GROUP}
+    registry:
+      enabled: ${CONFIG_REGISTRY_ENABLED:false}
+      clusters:
+        - type: ${CONFIG_REGISTRY_TYPE_FIRST:nacos}
+          address: ${CONFIG_REGISTRY_ADDRESS_FIRST}
+          username: ${CONFIG_REGISTRY_USERNAME_FIRST:nacos}
+          password: ${CONFIG_REGISTRY_PASSWORD_FIRST:nacos}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST}
+        - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
+          address: ${CONFIG_REGISTRY_ADDRESS_SECOND}
+          username: ${CONFIG_REGISTRY_USERNAME_SECOND:nacos}
+          password: ${CONFIG_REGISTRY_PASSWORD_SECOND:nacos}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND}
+        - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
+          address: ${CONFIG_REGISTRY_ADDRESS_THIRD}
+          username: ${CONFIG_REGISTRY_USERNAME_THIRD:nacos}
+          password: ${CONFIG_REGISTRY_PASSWORD_THIRD:nacos}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD}
   counter:
     gateway: true
     service: true

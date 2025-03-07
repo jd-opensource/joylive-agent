@@ -59,6 +59,8 @@ public class TransmitConfig {
 
         private Set<String> excludeExecutors = new HashSet<>();
 
+        private Set<String> excludeExecutorPrefixes = new HashSet<>();
+
         private Set<String> excludeTasks = new HashSet<>();
 
         private Set<String> excludeTaskPrefixes = new HashSet<>();
@@ -80,7 +82,22 @@ public class TransmitConfig {
          * @return {@code true} if the executor name is excluded, {@code false} otherwise.
          */
         public boolean isExcludedExecutor(String name) {
-            return name != null && excludeExecutors.contains(name);
+            return name != null && (excludeExecutors.contains(name) || isExcludedExecutorPrefix(name));
+        }
+
+        /**
+         * Checks if the given executor name matches any excluded prefix.
+         *
+         * @param name The name of the executor to check.
+         * @return {@code true} if the executor name starts with any excluded prefix, {@code false} otherwise.
+         */
+        private boolean isExcludedExecutorPrefix(String name) {
+            for (String prefix : excludeExecutorPrefixes) {
+                if (name.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**

@@ -20,17 +20,22 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bootstrap.AppListenerSupplier;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.service.AbstractService;
+import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
+import com.jd.live.agent.governance.exception.RegistryException;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.registry.RegistryService.AbstractRegistryService;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,14 +46,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-
-import static com.jd.live.agent.governance.registry.RegistryEvent.*;
 
 /**
  * {@code LiveRegistry} is an implementation of {@link Registry} that manages the registration and unregistration
- * of service instances. It also handles agent events to determine the readiness of the registry and manages
- * heartbeat signals to ensure service instances are alive.
+ * of service instances.
  *
  * @see AbstractService
  * @see Registry
@@ -60,9 +63,6 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     private static final Logger logger = LoggerFactory.getLogger(LiveRegistry.class);
 
-    @Inject(Publisher.REGISTRY)
-    private Publisher<RegistryEvent> publisher;
-
     @Inject(RegistryConfig.COMPONENT_REGISTRY_CONFIG)
     private RegistryConfig registryConfig;
 
@@ -72,6 +72,11 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
+    @Inject
+    private Map<String, RegistryFactory> factories;
+
+    private volatile List<RegistryService> registries = null;
+
     private final Map<String, Registration> registrations = new ConcurrentHashMap<>();
 
     private final Map<String, Subscription> subscriptions = new ConcurrentHashMap<>();
@@ -80,6 +85,35 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     @Override
     protected CompletableFuture<Void> doStart() {
+        if (!registryConfig.isEnabled()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        // start registries
+        List<RegistryClusterConfig> clusters = registryConfig.getClusters();
+        List<RegistryService> registries = new ArrayList<>();
+        try {
+            if (clusters != null) {
+                for (RegistryClusterConfig cluster : clusters) {
+                    if (cluster.validate()) {
+                        RegistryFactory factory = factories.get(cluster.getType());
+                        if (factory == null) {
+                            throw new RegistryException("registry type " + cluster.getType() + " is not supported");
+                        }
+                        registries.add(factory.create(cluster));
+                    }
+                }
+            }
+            if (registries.isEmpty()) {
+                throw new RegistryException("No registry config found");
+            } else {
+                for (RegistryService registry : registries) {
+                    startCluster(registry);
+                }
+            }
+        } catch (Throwable e) {
+            return Futures.future(e);
+        }
+        this.registries = registries;
         return CompletableFuture.completedFuture(null);
     }
 
@@ -87,6 +121,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     protected CompletableFuture<Void> doStop() {
         ready.set(false);
         onApplicationStop();
+        // stop registries
+        Close.instance().close(registries);
+        registries = null;
         return CompletableFuture.completedFuture(null);
     }
 
@@ -106,16 +143,17 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
-    public void register(ServiceInstance instance, Callable<Void> callback) {
+    public void register(ServiceInstance instance, Callable<Void> doRegister) {
         if (instance != null) {
             String service = instance.getService();
-            Registration registration = registrations.computeIfAbsent(service,
-                    name -> new Registration(instance, callback, publisher, registryConfig, timer));
+            Registration registration = registrations.computeIfAbsent(service, name -> createRegistration(instance, doRegister));
             if (ready.get()) {
                 // delay register
                 registration.register();
             } else {
-                logger.info("Delay registration until application is ready, service=" + service);
+                logger.info("Delay registering instance {}:{} to {} until application is ready",
+                        instance.getHost(), instance.getPort(),
+                        instance.getService());
             }
         }
     }
@@ -158,6 +196,21 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         return service != null && !service.isEmpty() && subscriptions.containsKey(service);
     }
 
+    @Override
+    public void apply(InjectSource source) {
+        source.add(Registry.COMPONENT_REGISTRY, this);
+    }
+
+    private static void startCluster(RegistryService registry) throws Exception {
+        try {
+            registry.start();
+            logger.info("Success starting registry: {}", registry.getName());
+        } catch (Exception e) {
+            logger.error("Failed to start registry: {}", registry.getName(), e);
+            throw e;
+        }
+    }
+
     /**
      * Called when the application is ready to start. This method iterates through all registered services and calls their register method.
      */
@@ -176,11 +229,31 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         for (Registration registration : registrations.values()) {
             registration.stop();
         }
+        registrations.clear();
     }
 
-    @Override
-    public void apply(InjectSource source) {
-        source.add(Registry.COMPONENT_REGISTRY, this);
+    /**
+     * Creates a new {@link Registration} object based on the provided service instance and registration action.
+     * If the registration action ({@code doRegister}) is null, the existing registries are used.
+     * If the registries list is null, a new list is created with the provided registration action and existing registries.
+     *
+     * @param instance   The service instance to be registered.
+     * @param doRegister A {@link Callable} representing the registration action. If null, the existing registries are used.
+     * @return A new {@link Registration} object containing the service instance, registries, publisher, registry configuration, and timer.
+     */
+    private Registration createRegistration(ServiceInstance instance, Callable<Void> doRegister) {
+        // violate
+        List<RegistryService> services = registries;
+        List<ClusterRegistry> result = new ArrayList<>(services == null ? 1 : services.size() + 1);
+        if (doRegister != null) {
+            result.add(new ClusterRegistry(new FrameworkRegistryService(doRegister)));
+        }
+        if (services != null) {
+            for (RegistryService service : services) {
+                result.add(new ClusterRegistry(service));
+            }
+        }
+        return new Registration(instance, result, timer);
     }
 
     /**
@@ -198,20 +271,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private final ServiceInstance instance;
 
-        /**
-         * A callback function that will be called when the registration is successful.
-         */
-        private final Callable<Void> callback;
-
-        /**
-         * The publisher to which registry events will be sent.
-         */
-        private final Publisher<RegistryEvent> publisher;
-
-        /**
-         * The configuration for the registry.
-         */
-        private final RegistryConfig registryConfig;
+        private final List<ClusterRegistry> clusters;
 
         /**
          * A timer used to schedule heartbeat and registration delays.
@@ -228,25 +288,12 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private final AtomicBoolean registered = new AtomicBoolean(false);
 
-        /**
-         * Creates a new registration object.
-         *
-         * @param instance       the service instance being registered
-         * @param callback       a callback function that will be called when the registration is successful
-         * @param publisher      the publisher to which registry events will be sent
-         * @param registryConfig the configuration for the registry
-         * @param timer          a timer used to schedule heartbeat and registration delays
-         */
         Registration(ServiceInstance instance,
-                     Callable<Void> callback,
-                     Publisher<RegistryEvent> publisher,
-                     RegistryConfig registryConfig,
+                     List<ClusterRegistry> clusters,
                      Timer timer) {
+            this.clusters = clusters;
             this.service = instance.getService();
             this.instance = instance;
-            this.callback = callback;
-            this.publisher = publisher;
-            this.registryConfig = registryConfig;
             this.timer = timer;
         }
 
@@ -255,8 +302,10 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         public void register() {
             if (registered.compareAndSet(false, true)) {
-                if (callback != null) {
+                if (clusters != null && !clusters.isEmpty()) {
                     doRegister();
+                } else {
+                    throw new RegistryException("Registry center is not configured");
                 }
             }
         }
@@ -279,14 +328,6 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
 
         /**
-         * Delays the next heartbeat by a random amount of time.
-         */
-        private void delayHeartbeat() {
-            long delay = registryConfig.getHeartbeatInterval() + (long) (Math.random() * 2000.0);
-            timer.delay("heartbeat-" + service, delay, this::doHeartbeat);
-        }
-
-        /**
          * Delays the register process by a random amount of time.
          */
         private void delayRegister() {
@@ -299,25 +340,28 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private void doRegister() {
             if (started.get()) {
-                logger.info("Register when application is ready, service=" + service);
-                try {
-                    callback.call();
-                    publisher.offer(ofRegister(instance));
-                    delayHeartbeat();
-                } catch (Exception e) {
-                    logger.error("Register error, service=" + service + ", caused by " + e.getMessage(), e);
+                int counter = 0;
+                for (ClusterRegistry cluster : clusters) {
+                    if (!cluster.isRegistered()) {
+                        String group = cluster.getGroup(instance.getGroup());
+                        try {
+                            cluster.register(instance.getService(), group, instance);
+                            logger.info("Success registering instance {}:{} to {}@{} at {}",
+                                    instance.getHost(), instance.getPort(),
+                                    instance.getService(), group, cluster);
+                            counter++;
+                        } catch (Exception e) {
+                            logger.error("Failed to register instance {}:{} to {}@{} at {}, caused by {}",
+                                    instance.getHost(), instance.getPort(),
+                                    instance.getService(), group, cluster, e.getMessage(), e);
+                        }
+                    } else {
+                        counter++;
+                    }
+                }
+                if (counter != clusters.size()) {
                     delayRegister();
                 }
-            }
-        }
-
-        /**
-         * Performs the actual heartbeat for the service instance.
-         */
-        private void doHeartbeat() {
-            if (started.get()) {
-                publisher.offer(ofHeartbeat(instance));
-                delayHeartbeat();
             }
         }
 
@@ -325,7 +369,21 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          * Performs the actual unregister of the service instance.
          */
         private void doUnregister() {
-            publisher.offer(ofUnregister(instance));
+            for (ClusterRegistry cluster : clusters) {
+                if (cluster.isRegistered()) {
+                    String group = cluster.getGroup(instance.getGroup());
+                    try {
+                        cluster.unregister(instance.getService(), group, instance);
+                        logger.info("Success unregistering instance {}:{} to {}@{} at {}",
+                                instance.getHost(), instance.getPort(),
+                                instance.getService(), group, cluster);
+                    } catch (Exception e) {
+                        logger.error("Failed to unregister instance {}:{} to {}@{} at {}, caused by {}",
+                                instance.getHost(), instance.getPort(),
+                                instance.getService(), group, cluster, e.getMessage(), e);
+                    }
+                }
+            }
         }
     }
 
@@ -396,10 +454,92 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                 });
             }
             this.endpoints = newEndpoints;
-            logger.info("Service instance is changed, service=" + service + ", adds=" + adds.size() + ", removes=" + removes.size());
+            logger.info("Service instance is changed, service={}, adds={}, removes={}", service, adds.size(), removes.size());
             for (Consumer<EndpointEvent> consumer : consumers) {
                 consumer.accept(new EndpointEvent(service, endpoints, adds, removes));
             }
+        }
+    }
+
+    /**
+     * Represents a registration of a service to a cluster, tracking the registration status and retry attempts.
+     * This class is used to manage the lifecycle of a service registration within a cluster.
+     */
+    private static class ClusterRegistry {
+
+        @Getter
+        private final RegistryService cluster;
+
+        private final AtomicBoolean registered = new AtomicBoolean(false);
+
+        private final AtomicLong retry = new AtomicLong(0);
+
+        ClusterRegistry(RegistryService cluster) {
+            this.cluster = cluster;
+        }
+
+        public String getGroup(String defaultGroup) {
+            RegistryClusterConfig config = cluster.getConfig();
+            return config == null ? defaultGroup : config.getGroup(defaultGroup);
+        }
+
+        public boolean isRegistered() {
+            return registered.get();
+        }
+
+        public void setRegistered(boolean registered) {
+            this.registered.set(registered);
+        }
+
+        public long getRetry() {
+            return retry.get();
+        }
+
+        public void addRetry() {
+            retry.incrementAndGet();
+        }
+
+        /**
+         * Registers a service instance with the registry.
+         *
+         * @param instance The service instance to be registered.
+         */
+        public void register(String service, String group, ServiceInstance instance) throws Exception {
+            cluster.register(service, group, instance);
+            registered.set(true);
+        }
+
+        /**
+         * Unregisters a service instance from the registry.
+         *
+         * @param instance The service instance to be unregistered.
+         */
+        public void unregister(String service, String group, ServiceInstance instance) throws Exception {
+            cluster.unregister(service, group, instance);
+            registered.set(false);
+        }
+    }
+
+    /**
+     * A specialized implementation of {@link AbstractRegistryService} that performs registration
+     * using a provided callback. This class is designed to handle framework-specific registration logic.
+     */
+    private static class FrameworkRegistryService extends AbstractRegistryService {
+
+        private final Callable<Void> callback;
+
+        FrameworkRegistryService(Callable<Void> callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public String getName() {
+            return "framework";
+        }
+
+        @Override
+        public void register(String service, String group, ServiceInstance instance) throws Exception {
+            callback.call();
         }
     }
 }

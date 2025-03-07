@@ -83,8 +83,9 @@ This annotation declares the configuration item switch for enabling. Multiple `@
 | value           | String                |               | Configuration value                |
 | name            | String[]              |               | Configuration name array           |
 | matchIfMissing  | boolean               | true          | Whether to match if not configured |
-| relation        | ConditionalRelation   | OR            | Relation<br/>OR or<br/>AND         |
+| relation        | ConditionalRelation   | OR            | Relation<br/>OR or AND             |
 | caseSensitive   | boolean               | false         | Case sensitivity                   |
+| comparison       | enum                | EQUAL | comparison <br/>EQUAL or NOT_EQAUL |
 
 #### 4.3.2 `@ConditionalOnProperties`
 This annotation declares multiple configuration item switches, consisting of multiple `@ConditionalOnProperty` annotations, with a relationship between each.

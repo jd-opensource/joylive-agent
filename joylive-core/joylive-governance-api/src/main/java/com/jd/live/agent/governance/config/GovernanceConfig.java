@@ -78,8 +78,6 @@ public class GovernanceConfig {
     public static final String CONFIG_TRANSMISSION_ENABLED = CONFIG_SWITCH_TRANSMISSION + ENABLED;
     public static final String CONFIG_TRANSMISSION_THREADPOOL_ENABLED = CONFIG_SWITCH_TRANSMISSION + ".threadpool";
 
-    public static final String CONFIG_REGISTRY_ENABLED = CONFIG_SWITCH_REGISTRY + ENABLED;
-
     public static final String CONFIG_FLOW_CONTROL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ENABLED;
     public static final String CONFIG_LOCALHOST_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".localhost";
     public static final String CONFIG_VIRTUAL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtual";
@@ -96,6 +94,9 @@ public class GovernanceConfig {
     public static final String CONFIG_ROUTER = CONFIG_AGENT_GOVERNANCE + ".router";
     public static final String CONFIG_ROUTER_SPRING = CONFIG_ROUTER + ".spring";
     public static final String CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES = CONFIG_ROUTER_SPRING + ".discovery.disables";
+
+    public static final String CONFIG_REGISTRY = CONFIG_AGENT_GOVERNANCE + ".registry";
+    public static final String CONFIG_REGISTRY_ENABLED = CONFIG_REGISTRY + ENABLED;
 
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();

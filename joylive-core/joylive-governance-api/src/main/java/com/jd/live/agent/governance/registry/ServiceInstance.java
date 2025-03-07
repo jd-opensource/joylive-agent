@@ -47,6 +47,8 @@ public class ServiceInstance implements Serializable {
 
     private int port;
 
+    private int weight = 100;
+
     private Map<String, String> metadata;
 
     private List<ServiceProtocol> protocols;
