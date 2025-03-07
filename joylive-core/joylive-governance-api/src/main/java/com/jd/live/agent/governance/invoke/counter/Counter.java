@@ -180,6 +180,8 @@ public class Counter {
 
     public void snapshot() {
         CounterSnapshot last = snapshot.get();
-        snapshot.set(new CounterSnapshot(this, last.getSucceededAverageElapsed()));
+        long succeeded = last.getSucceeded();
+        long succeededAverageElapsed = succeeded < 10 ? 0 : last.getSucceededAverageElapsed(succeeded);
+        snapshot.set(new CounterSnapshot(this, succeededAverageElapsed));
     }
 }

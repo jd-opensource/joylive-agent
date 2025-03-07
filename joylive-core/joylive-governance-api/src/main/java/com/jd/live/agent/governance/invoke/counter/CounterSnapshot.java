@@ -49,11 +49,22 @@ public class CounterSnapshot {
     }
 
     public long getSucceededAverageElapsed() {
-        long succeed = this.counter.getSucceeded() - this.succeededOffset;
-        if (succeed == 0) {
+        long succeed = counter.getSucceeded() - succeededOffset;
+        if (succeed <= 0) {
             return lastSucceededAverageElapsed;
         }
-        return (this.counter.getSucceededElapsed() - this.succeededElapsedOffset) / succeed;
+        return (counter.getSucceededElapsed() - succeededElapsedOffset) / succeed;
+    }
+
+    public long getSucceededAverageElapsed(long succeed) {
+        if (succeed <= 0) {
+            return lastSucceededAverageElapsed;
+        }
+        return (counter.getSucceededElapsed() - succeededElapsedOffset) / succeed;
+    }
+
+    public long getSucceeded() {
+        return counter.getSucceeded() - succeededOffset;
     }
 
     public long getEstimateResponse() {
