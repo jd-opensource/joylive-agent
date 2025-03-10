@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.springgateway.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.gateway.route.RouteDefinition;
@@ -40,7 +41,7 @@ public class RouteInterceptor extends InterceptorAdaptor {
         RouteDefinition definition = (RouteDefinition) ctx.getArguments()[0];
         URI uri = definition.getUri();
         if (SCHEMA_LB.equals(uri.getScheme())) {
-            registry.subscribe(uri.getHost());
+            registry.subscribe(uri.getHost(), (String) definition.getMetadata().get(Constants.LABEL_SERVICE_GROUP));
         }
     }
 }

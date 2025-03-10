@@ -36,10 +36,14 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
         super(application, registry);
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    protected void subscribe(String service, String group) {
+        registry.subscribe(service, group);
+    }
+
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
-        return (Map<String, String>) ((MethodContext) ctx).getResult();
+        return ((MethodContext) ctx).getResult();
     }
 
     @Override

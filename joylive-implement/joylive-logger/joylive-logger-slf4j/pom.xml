@@ -14,6 +14,7 @@
         <slf4j.version>2.0.12</slf4j.version>
         <logback.version>1.3.14</logback.version>
         <commons-logging.version>1.2</commons-logging.version>
+        <log4j-to-slf4j.version>2.24.3</log4j-to-slf4j.version>
     </properties>
 
     <dependencies>
@@ -33,6 +34,11 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j-to-slf4j.version}</version>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
@@ -50,6 +56,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.slf4j:*</include>
+                                    <include>org.apache.logging.log4j:*</include>
                                     <include>ch.qos.logback:*</include>
                                 </includes>
                             </artifactSet>
@@ -78,6 +85,10 @@
                                 <relocation>
                                     <pattern>org.apache.commons.logging</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.org.apache.commons.logging</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.logging</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.logging</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

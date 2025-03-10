@@ -31,6 +31,11 @@ public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<P
     }
 
     @Override
+    protected void subscribe(ProviderConfig<?> config) {
+        registry.register(config.getInterfaceId(), getGroup(config));
+    }
+
+    @Override
     protected ProviderConfig<?> getConfig(ExecutableContext ctx) {
         return ((ProviderBootstrap<?>) ctx.getTarget()).getProviderConfig();
     }

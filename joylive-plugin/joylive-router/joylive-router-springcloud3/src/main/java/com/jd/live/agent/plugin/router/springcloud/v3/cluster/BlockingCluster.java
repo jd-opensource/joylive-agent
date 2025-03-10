@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v3.response.DegradeHttpResponse;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
@@ -29,11 +30,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.lang.NonNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -158,7 +155,7 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     @Override
     protected BlockingClusterResponse createResponse(BlockingClusterRequest httpRequest, DegradeConfig degradeConfig) {
-        return new BlockingClusterResponse(new DegradeResponse(degradeConfig, httpRequest));
+        return new BlockingClusterResponse(new DegradeHttpResponse(degradeConfig, httpRequest));
     }
 
     @Override
@@ -166,69 +163,4 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         return new BlockingClusterResponse(error, predicate);
     }
 
-    /**
-     * A {@link ClientHttpResponse} implementation that uses {@link DegradeConfig} for response configuration.
-     */
-    private static class DegradeResponse implements ClientHttpResponse {
-        private final DegradeConfig degradeConfig;
-        private final BlockingClusterRequest httpRequest;
-        private final int length;
-        private final InputStream bodyStream;
-
-        DegradeResponse(DegradeConfig degradeConfig, BlockingClusterRequest httpRequest) {
-            this.degradeConfig = degradeConfig;
-            this.httpRequest = httpRequest;
-            this.length = degradeConfig.getBodyLength();
-            this.bodyStream = new ByteArrayInputStream(degradeConfig.getResponseBytes());
-        }
-
-        @NonNull
-        @Override
-        public HttpStatus getStatusCode() throws IOException {
-            try {
-                return HttpStatus.valueOf(degradeConfig.getResponseCode());
-            } catch (Throwable e) {
-                return HttpStatus.INTERNAL_SERVER_ERROR;
-            }
-        }
-
-        @Override
-        public int getRawStatusCode() throws IOException {
-            return degradeConfig.getResponseCode();
-        }
-
-        @NonNull
-        @Override
-        public String getStatusText() throws IOException {
-            return "";
-        }
-
-        @Override
-        public void close() {
-
-        }
-
-        @NonNull
-        @Override
-        public InputStream getBody() throws IOException {
-            return bodyStream;
-        }
-
-        @NonNull
-        @Override
-        public HttpHeaders getHeaders() {
-            HttpHeaders headers = new HttpHeaders();
-            Map<String, List<String>> requestHeaders = httpRequest.getHeaders();
-            if (requestHeaders != null) {
-                headers.putAll(requestHeaders);
-            }
-            Map<String, String> attributes = degradeConfig.getAttributes();
-            if (attributes != null) {
-                attributes.forEach(headers::add);
-            }
-            headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
-            headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
-            return headers;
-        }
-    }
 }

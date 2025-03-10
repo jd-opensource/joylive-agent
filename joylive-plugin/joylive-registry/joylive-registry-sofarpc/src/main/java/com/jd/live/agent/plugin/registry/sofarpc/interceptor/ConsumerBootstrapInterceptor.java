@@ -31,6 +31,11 @@ public class ConsumerBootstrapInterceptor extends AbstractBootstrapInterceptor<C
     }
 
     @Override
+    protected void subscribe(ConsumerConfig<?> config) {
+        registry.subscribe(config.getInterfaceId(), getGroup(config));
+    }
+
+    @Override
     protected ConsumerConfig<?> getConfig(ExecutableContext ctx) {
         return ((ConsumerBootstrap<?>) ctx.getTarget()).getConsumerConfig();
     }

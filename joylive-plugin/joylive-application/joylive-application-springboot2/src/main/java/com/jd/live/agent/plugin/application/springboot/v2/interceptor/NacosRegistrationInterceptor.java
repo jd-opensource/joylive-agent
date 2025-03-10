@@ -24,13 +24,9 @@ import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
+import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetector;
+import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetectorFactory;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import javax.management.Query;
-import java.lang.management.ManagementFactory;
-import java.util.Set;
 
 /**
  * NacosRegistrationInterceptor
@@ -63,50 +59,6 @@ public class NacosRegistrationInterceptor extends InterceptorAdaptor {
                 InnerListener.remove(this);
             }
         });
-    }
-
-    /**
-     * An interface that defines a method to get the port number.
-     */
-    private interface PortDetector {
-        /**
-         * Returns the port number.
-         *
-         * @return The port number as an Integer, or null if the port cannot be determined.
-         * @throws Throwable If an error occurs while trying to determine the port.
-         */
-        Integer getPort() throws Throwable;
-    }
-
-    /**
-     * A class that implements the PortDetector interface by using JMX to determine the port.
-     */
-    private static class JmxPortDetector implements PortDetector {
-
-        @Override
-        public Integer getPort() throws Throwable {
-            MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
-            Set<ObjectName> objectNames = beanServer.queryNames(new ObjectName("*:type=Connector,*"), Query.match(Query.attr("protocol"), Query.value("HTTP/1.1")));
-            String value = objectNames.isEmpty() ? null : objectNames.iterator().next().getKeyProperty("port");
-            return value == null ? null : Integer.valueOf(value);
-        }
-    }
-
-    /**
-     * A factory class that provides a PortDetector instance based on the given ConfigurableApplicationContext.
-     */
-    private static class PortDetectorFactory {
-
-        /**
-         * Returns a PortDetector instance based on the given ConfigurableApplicationContext.
-         *
-         * @param context The ConfigurableApplicationContext.
-         * @return A PortDetector instance.
-         */
-        public static PortDetector get(ConfigurableApplicationContext context) {
-            return new JmxPortDetector();
-        }
-
     }
 
 }

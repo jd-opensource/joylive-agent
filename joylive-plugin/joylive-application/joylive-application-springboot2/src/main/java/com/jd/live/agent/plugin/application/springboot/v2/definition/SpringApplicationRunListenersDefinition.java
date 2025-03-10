@@ -27,9 +27,11 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationEnvironmentPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationEnvironmentPreparedInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationRunListenersDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -52,6 +54,12 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
     @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
     private AppListener listener;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig config;
+
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
+
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
@@ -61,9 +69,9 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
                         () -> new ApplicationStartedInterceptor(listener)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
-                        () -> new ApplicationReadyInterceptor(listener)),
+                        () -> new ApplicationReadyInterceptor(listener, config, registry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
-                        () -> new ApplicationEnvironmentPreparedInterceptor(listener))
+                        () -> new ApplicationEnvironmentPreparedInterceptor(listener, config, registry, application))
         };
     }
 }

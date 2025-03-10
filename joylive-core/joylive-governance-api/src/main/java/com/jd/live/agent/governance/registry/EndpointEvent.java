@@ -29,7 +29,11 @@ public class EndpointEvent {
 
     private List<? extends Endpoint> endpoints;
 
-    private List<? extends Endpoint> adds;
+    public boolean isEmpty() {
+        return endpoints == null || endpoints.isEmpty();
+    }
 
-    private List<? extends Endpoint> removes;
+    public int size() {
+        return endpoints == null ? 0 : endpoints.size();
+    }
 }

@@ -53,7 +53,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
             application.labelRegistry(metadata::putIfAbsent, true);
             metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
         }
-        registry.subscribe(registration.getServiceId());
+        registry.register(registration.getServiceId());
         super.onEnter(ctx);
     }
 

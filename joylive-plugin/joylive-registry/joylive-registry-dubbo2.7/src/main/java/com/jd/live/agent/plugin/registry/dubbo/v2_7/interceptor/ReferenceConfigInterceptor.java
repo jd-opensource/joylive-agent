@@ -31,10 +31,14 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
         super(application, registry);
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    protected void subscribe(String service, String group) {
+        registry.register(service, group);
+    }
+
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
-        return (Map<String, String>) ctx.getArguments()[0];
+        return ctx.getArgument(0);
     }
 
     @Override

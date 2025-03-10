@@ -4,7 +4,7 @@ agent:
     retransformEnabled: true
     poolEnabled: true
     loggerEnabled: true
-    exporterEnabled: false
+    exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
     excludePrefixes: null
     excludeTypes: null
     excludeInterfaces: null

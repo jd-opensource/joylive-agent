@@ -46,6 +46,9 @@
                                     <include>commons-codec:*</include>
                                     <include>commons-io:*</include>
                                     <include>org.apache.httpcomponents:*</include>
+                                    <include>io.micrometer:*</include>
+                                    <include>org.hdrhistogram:*</include>
+                                    <include>org.latencyutils:*</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
@@ -84,6 +87,18 @@
                                 <relocation>
                                     <pattern>io.prometheus.client</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.io.prometheus.client</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.micrometer</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.micrometer</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.HdrHistogram</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.HdrHistogram</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.LatencyUtils</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.LatencyUtils</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

@@ -15,6 +15,9 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.governance.instance.Endpoint;
+
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -54,12 +57,42 @@ public interface Registry {
     void unregister(ServiceInstance instance);
 
     /**
-     * Subscribes a specific service policy based on its name.
+     * Subscribes to a specific service policy based on the service name.
      *
-     * @param service The service name of the policy to subscribe to.
+     * @param service The name of the service to register.
+     * @return A {@link CompletableFuture} that completes when the registration is successful.
+     */
+    default CompletableFuture<Void> register(String service) {
+        return register(service, null);
+    }
+
+    /**
+     * Subscribes to a specific service policy based on the service name and group.
+     *
+     * @param service The name of the service to register.
+     * @param group   The group to which the service belongs.
+     * @return A {@link CompletableFuture} that completes when the registration is successful.
+     */
+    CompletableFuture<Void> register(String service, String group);
+
+    /**
+     * Subscribes to a specific service policy based on the service name .
+     *
+     * @param service The name of the service whose policy is to be subscribed to.
      * @return A {@link CompletableFuture} that completes when the subscription is successful.
      */
-    CompletableFuture<Void> subscribe(String service);
+    default CompletableFuture<Void> subscribe(String service) {
+        return subscribe(service, (String) null);
+    }
+
+    /**
+     * Subscribes to a specific service policy based on the service name and group.
+     *
+     * @param service The name of the service whose policy is to be subscribed to.
+     * @param group   The group to which the service belongs.
+     * @return A {@link CompletableFuture} that completes when the subscription is successful.
+     */
+    CompletableFuture<Void> subscribe(String service, String group);
 
     /**
      * Subscribes to endpoint events for a specific service.
@@ -67,6 +100,38 @@ public interface Registry {
      * @param service  the service name to subscribe to
      * @param consumer the consumer that will receive endpoint events
      */
-    void subscribe(String service, Consumer<EndpointEvent> consumer);
+    default void subscribe(String service, Consumer<EndpointEvent> consumer) {
+        subscribe(service, null, consumer);
+    }
+
+    /**
+     * Subscribes to a specific service in the specified group and registers a consumer to handle endpoint events.
+     * This method allows the caller to receive notifications or updates related to the service's endpoints.
+     *
+     * @param service  the name of the service to subscribe to.
+     * @param group    the group to which the service belongs.
+     * @param consumer the consumer to handle endpoint events triggered by the subscription.
+     */
+    void subscribe(String service, String group, Consumer<EndpointEvent> consumer);
+
+    /**
+     * Retrieves endpoints for the specified service using the default group.
+     *
+     * @param service the name of the target service
+     * @return a list of endpoints associated with the service (never null)
+     */
+    default List<? extends Endpoint> getEndpoints(String service) {
+        return getEndpoints(service, null);
+    }
+
+    /**
+     * Retrieves endpoints for the specified service and group.
+     *
+     * @param service the name of the target service
+     * @param group   the cluster/group name (may be null for default group)
+     * @return a list of endpoints matching the service and group (never null)
+     */
+    List<? extends Endpoint> getEndpoints(String service, String group);
+
 }
 

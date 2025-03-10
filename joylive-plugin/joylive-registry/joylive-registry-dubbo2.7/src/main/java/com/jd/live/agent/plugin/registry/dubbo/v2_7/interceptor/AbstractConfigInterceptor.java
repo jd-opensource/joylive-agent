@@ -54,47 +54,46 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         String service = getService(config);
         Map<String, String> map = getContext(ctx);
         if (!isDubboSystemService(service)) {
-            register(service, config, map);
+            subscribe(service, config, map);
         }
     }
 
     /**
-     * Registers a service with the specified configuration and context.
-     * <p>
-     * This method registers a service with the application's label registry and sets up the necessary context for the service.
-     * The context is populated with the service group and registry type, which can be either "service", "all", or "interface".
-     * The method also subscribes to the policy supplier for the service or its application, depending on the registry type.
-     * </p>
+     * Subscribes to a specific service with the specified configuration and context.
      *
      * @param service the name of the service to register.
-     * @param config  the configuration object for the service.
+     * @param config  the configuration object for the service, containing details such as application name and group.
      * @param ctx     the context map to populate with the service group and registry type.
      */
-    private void register(String service, T config, Map<String, String> ctx) {
+    protected void subscribe(String service, T config, Map<String, String> ctx) {
         application.labelRegistry(ctx::putIfAbsent);
         int type = getRegistryType(config);
         switch (type) {
             case REGISTRY_TYPE_SERVICE:
                 ctx.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
-                registry.subscribe(config.getApplication().getName());
+                subscribe(config.getApplication().getName(), config.getGroup());
                 break;
             case REGISTRY_TYPE_ALL:
                 ctx.put(REGISTRY_TYPE_KEY, "all");
-                registry.subscribe(config.getApplication().getName());
-                registry.subscribe(service);
+                subscribe(config.getApplication().getName(), config.getGroup());
+                subscribe(service, config.getGroup());
             case REGISTRY_TYPE_INTERFACE:
             default:
-                registry.subscribe(service);
-
+                subscribe(service, config.getGroup());
         }
     }
 
     /**
+     * Subscribes to a specific service in the specified group.
+     * This method must be implemented by subclasses to define the subscription logic.
+     *
+     * @param service the name of the service to subscribe to.
+     * @param group   the group to which the service belongs.
+     */
+    protected abstract void subscribe(String service, String group);
+
+    /**
      * Gets the context map for the given executable context.
-     * <p>
-     * This method is called by the {@code register} method to get the context map for the service being registered.
-     * The context map is used to store the service group and registry type.
-     * </p>
      *
      * @param ctx the executable context for which to get the context map.
      * @return the context map for the given executable context.
@@ -103,9 +102,6 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     /**
      * Gets the service name from the given configuration object.
-     * <p>
-     * This method is called by the {@code register} method to get the name of the service being registered.
-     * </p>
      *
      * @param config the configuration object for the service.
      * @return the name of the service.
@@ -116,10 +112,6 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     /**
      * Gets the registry type for the given configuration object.
-     * <p>
-     * This method is called by the {@code register} method to determine the registry type for the service being registered.
-     * The registry type can be either "service", "all", or "interface".
-     * </p>
      *
      * @param config the configuration object for the service.
      * @return the registry type for the service.

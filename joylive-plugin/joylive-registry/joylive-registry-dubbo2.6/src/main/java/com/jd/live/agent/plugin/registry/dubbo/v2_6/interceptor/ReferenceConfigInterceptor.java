@@ -41,4 +41,14 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     protected String getService(ReferenceConfig<?> config) {
         return config.getInterface();
     }
+
+    @Override
+    protected String getGroup(ReferenceConfig<?> config) {
+        return config.getGroup();
+    }
+
+    @Override
+    protected void subscribe(String service, String group) {
+        registry.register(service, group);
+    }
 }

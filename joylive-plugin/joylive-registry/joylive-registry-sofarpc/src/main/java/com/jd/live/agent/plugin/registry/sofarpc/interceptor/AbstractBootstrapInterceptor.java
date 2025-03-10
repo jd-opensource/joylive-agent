@@ -44,8 +44,18 @@ public abstract class AbstractBootstrapInterceptor<T extends AbstractInterfaceCo
                 config.setParameter(key, value);
             }
         });
-        registry.subscribe(config.getInterfaceId());
+        subscribe(config);
     }
+
+    protected String getGroup(T config) {
+        String group = config.getGroup();
+        if (group != null && !group.isEmpty()) {
+            return group;
+        }
+        return config.getUniqueId();
+    }
+
+    protected abstract void subscribe(T config);
 
     protected abstract T getConfig(ExecutableContext ctx);
 }

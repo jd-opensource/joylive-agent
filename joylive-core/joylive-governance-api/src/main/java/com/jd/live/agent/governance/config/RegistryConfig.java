@@ -18,7 +18,9 @@ package com.jd.live.agent.governance.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -34,6 +36,25 @@ public class RegistryConfig {
     private boolean enabled;
 
     private List<RegistryClusterConfig> clusters;
+
+    private boolean hostServiceEnabled = true;
+
+    private Map<String, String> hostServices;
+
+    public String getService(String scheme, String host) {
+        if (host == null
+                || !hostServiceEnabled
+                || "lb".equalsIgnoreCase(scheme)
+                || hostServices == null
+                || hostServices.isEmpty()) {
+            return host;
+        }
+        return hostServices.get(host);
+    }
+
+    public String getService(URI uri) {
+        return uri == null ? null : getService(uri.getScheme(), uri.getHost());
+    }
 
 }
 

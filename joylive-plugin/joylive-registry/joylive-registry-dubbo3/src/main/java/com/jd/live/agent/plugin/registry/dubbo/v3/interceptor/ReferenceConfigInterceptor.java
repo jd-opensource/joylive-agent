@@ -33,6 +33,11 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
+    protected void subscribe(String service, String group) {
+        registry.register(service, group);
+    }
+
+    @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
         return ((MethodContext) ctx).getResult();
     }
