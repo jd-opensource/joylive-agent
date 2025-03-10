@@ -191,12 +191,27 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
      * @return The loaded class, wrapped in a ClassCache object.
      */
     private ClassCache findClass(String name, Object mutex, boolean resolve) {
-        ClassCache cache = caches.computeIfAbsent(name, n -> {
-            ClassCache result = new ClassCache(name, mutex, () -> findClass(n));
-            return result.getType() != null ? result : null;
-        });
-        if (cache != null && resolve) {
-            cache.resolve(this::resolveClass);
+        ClassCache cache = caches.get(name);
+        if (cache == null) {
+            ClassCache newCache = null;
+            synchronized (mutex) {
+                cache = caches.get(name);
+                if (cache == null) {
+                    try {
+                        Class<?> type = findClass(name);
+                        if (resolve) {
+                            resolveClass(type);
+                        }
+                        newCache = new ClassCache(name, mutex, type, resolve);
+                    } catch (ClassNotFoundException e) {
+                        return null;
+                    }
+                }
+            }
+            if (newCache != null) {
+                caches.put(name, newCache);
+                cache = newCache;
+            }
         }
         return cache;
     }
