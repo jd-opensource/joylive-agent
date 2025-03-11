@@ -25,9 +25,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnSpringEnabled
-@ConditionalOnClass(ConditionalOnSpringCloud4Enabled.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(ConditionalOnSpringCloud4Enabled.TYPE_WEIGHT_FUNCTION)
 @ConditionalComposite
 public @interface ConditionalOnSpringCloud4Enabled {
 
-    String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
+    String TYPE_WEIGHT_FUNCTION = "org.springframework.cloud.loadbalancer.core.WeightFunction";
 }

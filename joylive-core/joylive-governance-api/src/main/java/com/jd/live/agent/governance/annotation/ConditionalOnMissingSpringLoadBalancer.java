@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2.condition;
+package com.jd.live.agent.governance.annotation;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
+/**
+ * A conditional annotation that checks if a specific Spring Cloud class is missing from the classpath.
+ * This annotation is used to conditionally enable or disable certain configurations or components
+ * based on the absence of the specified Spring Cloud class.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringEnabled
-@ConditionalOnMissingClass(ConditionalOnSpringCloud2Enabled.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
-@ConditionalOnMissingClass(ConditionalOnSpringCloud2Enabled.TYPE_STICKY_SESSION_SUPPLIER)
+@ConditionalOnMissingClass(ConditionalOnMissingSpringLoadBalancer.TYPE_LOAD_BALANCED)
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud2Enabled {
+public @interface ConditionalOnMissingSpringLoadBalancer {
 
-    String TYPE_SERVICE_INSTANCE_LIST_SUPPLIER = "org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier";
-
-    String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
+    String TYPE_LOAD_BALANCED = "org.springframework.cloud.client.loadbalancer.LoadBalanced";
 }

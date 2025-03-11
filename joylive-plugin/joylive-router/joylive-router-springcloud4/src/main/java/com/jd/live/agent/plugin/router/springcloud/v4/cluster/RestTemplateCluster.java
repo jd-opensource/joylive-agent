@@ -19,10 +19,10 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.RestTemplateClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
@@ -41,7 +41,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @see AbstractClientCluster
  */
-public class RestTemplateCluster extends AbstractLiveCluster<RestTemplateClusterRequest, BlockingClusterResponse, Endpoint> {
+public class RestTemplateCluster extends AbstractLiveCluster<RestTemplateClusterRequest, BlockingClusterResponse, ServiceEndpoint> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -63,7 +63,7 @@ public class RestTemplateCluster extends AbstractLiveCluster<RestTemplateCluster
     }
 
     @Override
-    public CompletionStage<BlockingClusterResponse> invoke(RestTemplateClusterRequest request, Endpoint endpoint) {
+    public CompletionStage<BlockingClusterResponse> invoke(RestTemplateClusterRequest request, ServiceEndpoint endpoint) {
         try {
             ClientHttpResponse response = request.getRequest().execute(endpoint);
             return CompletableFuture.completedFuture(new BlockingClusterResponse(response));
@@ -77,10 +77,9 @@ public class RestTemplateCluster extends AbstractLiveCluster<RestTemplateCluster
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public CompletionStage<List<Endpoint>> route(RestTemplateClusterRequest request) {
-        return CompletableFuture.completedFuture((List<Endpoint>) request.getEndpoints());
+    public CompletionStage<List<ServiceEndpoint>> route(RestTemplateClusterRequest request) {
+        return CompletableFuture.completedFuture(request.getEndpoints());
     }
 
     @Override
@@ -99,7 +98,7 @@ public class RestTemplateCluster extends AbstractLiveCluster<RestTemplateCluster
     }
 
     @Override
-    public Throwable createException(Throwable throwable, RestTemplateClusterRequest request, Endpoint endpoint) {
+    public Throwable createException(Throwable throwable, RestTemplateClusterRequest request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 

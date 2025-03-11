@@ -35,7 +35,6 @@ import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.exception.RegistryException;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractRegistryService;
 import lombok.Getter;
@@ -204,7 +203,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
-    public void subscribe(String service, String group, Consumer<EndpointEvent> consumer) {
+    public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) {
         if (service == null || service.isEmpty()) {
             return;
         }
@@ -216,7 +215,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
-    public List<? extends Endpoint> getEndpoints(String service, String group) {
+    public List<ServiceEndpoint> getEndpoints(String service, String group) {
         if (service == null || service.isEmpty()) {
             return null;
         }
@@ -227,12 +226,12 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
-    public void update(String service, List<? extends Endpoint> endpoints) {
+    public void update(String service, List<ServiceEndpoint> instances) {
         if (service != null && !service.isEmpty()) {
             String name = getName(service, serviceConfig.getGroup(service));
             Subscription subscription = subscriptions.get(name);
             if (subscription != null) {
-                subscription.update(FRAMEWORK, null, new EndpointEvent(service, endpoints));
+                subscription.update(FRAMEWORK, null, new InstanceEvent(service, instances));
             }
         }
     }
@@ -493,15 +492,15 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         /**
          * The consumer that will receive endpoint events.
          */
-        private final List<Consumer<EndpointEvent>> consumers = new CopyOnWriteArrayList<>();
+        private final List<Consumer<InstanceEvent>> consumers = new CopyOnWriteArrayList<>();
 
-        private final Map<String, List<? extends Endpoint>> clustersEndpoints = new ConcurrentHashMap<>();
+        private final Map<String, List<ServiceEndpoint>> clustersEndpoints = new ConcurrentHashMap<>();
 
         /**
          * A map of endpoints for the service group, keyed by their addresses.
          */
         @Getter
-        private volatile List<? extends Endpoint> endpoints;
+        private volatile List<ServiceEndpoint> endpoints;
 
         private final Object mutex = new Object();
 
@@ -517,7 +516,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          *
          * @param consumer the consumer to add
          */
-        public void addConsumer(Consumer<EndpointEvent> consumer) {
+        public void addConsumer(Consumer<InstanceEvent> consumer) {
             if (consumer != null) {
                 synchronized (mutex) {
                     if (!consumers.contains(consumer)) {
@@ -547,13 +546,13 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
 
         /**
-         * Updates the list of endpoints for a specific service instance based on the provided {@link EndpointEvent}.
+         * Updates the list of endpoints for a specific service instance based on the provided {@link InstanceEvent}.
          *
          * @param clusterName  The name of the cluster or service instance being updated.
-         * @param event The {@link EndpointEvent} containing the updated endpoints and their size.
+         * @param event The {@link InstanceEvent} containing the updated endpoints and their size.
          *              If the size is 0, the endpoints for the specified name are removed; otherwise, they are updated.
          */
-        public void update(String clusterName, String serviceGroup, EndpointEvent event) {
+        public void update(String clusterName, String serviceGroup, InstanceEvent event) {
             if (!started.get() || event == null) {
                 return;
             }
@@ -564,19 +563,19 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                 if (!started.get()) {
                     return;
                 }
-                List<? extends Endpoint> ce = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getEndpoints());
+                List<ServiceEndpoint> ce = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
                 int capacity = endpoints == null ? 0 : endpoints.size();
                 capacity = capacity + size - (ce == null ? 0 : ce.size());
-                Map<String, Endpoint> merged = new HashMap<>(capacity);
+                Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
                 clustersEndpoints.forEach((cluster, endpoints) -> {
                     if (endpoints != null) {
                         endpoints.forEach(endpoint -> merged.put(endpoint.getAddress(), endpoint));
                     }
                 });
-                List<Endpoint> newEndpoints = new ArrayList<>(merged.values());
+                List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
                 this.endpoints = newEndpoints;
-                for (Consumer<EndpointEvent> consumer : consumers) {
-                    consumer.accept(new EndpointEvent(service, newEndpoints));
+                for (Consumer<InstanceEvent> consumer : consumers) {
+                    consumer.accept(new InstanceEvent(service, newEndpoints));
                 }
             }
         }
@@ -710,7 +709,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          * @param consumer The consumer to handle endpoint events.
          * @throws Exception if the subscription fails.
          */
-        public void subscribe(String service, String group, Consumer<EndpointEvent> consumer) throws Exception {
+        public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
             cluster.subscribe(service, group, consumer);
             done.set(true);
         }

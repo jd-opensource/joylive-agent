@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.http.HttpHeaders;
 
@@ -29,10 +29,10 @@ import java.util.Map;
 public class RestTemplateClusterRequest extends AbstractHttpOutboundRequest<RestTemplateHttpRequest> {
 
     private final String service;
-    private final List<? extends Endpoint> endpoints;
+    private final List<ServiceEndpoint> endpoints;
     private final HttpHeaders writeableHeaders;
 
-    public RestTemplateClusterRequest(RestTemplateHttpRequest request, String service, List<? extends Endpoint> endpoints) {
+    public RestTemplateClusterRequest(RestTemplateHttpRequest request, String service, List<ServiceEndpoint> endpoints) {
         super(request);
         this.service = service;
         this.endpoints = endpoints;
@@ -72,7 +72,7 @@ public class RestTemplateClusterRequest extends AbstractHttpOutboundRequest<Rest
         return writeableHeaders;
     }
 
-    public List<? extends Endpoint> getEndpoints() {
+    public List<ServiceEndpoint> getEndpoints() {
         return endpoints;
     }
 }

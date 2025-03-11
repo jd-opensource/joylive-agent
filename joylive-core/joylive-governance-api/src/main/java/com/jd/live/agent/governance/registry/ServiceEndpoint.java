@@ -16,24 +16,18 @@
 package com.jd.live.agent.governance.registry;
 
 import com.jd.live.agent.governance.instance.Endpoint;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-import java.util.List;
+import java.util.Map;
 
-@Getter
-@AllArgsConstructor
-public class EndpointEvent {
+/**
+ * Unified service endpoint definition combining discovery and connectivity aspects.
+ */
+public interface ServiceEndpoint extends Endpoint {
 
-    private String service;
-
-    private List<? extends Endpoint> endpoints;
-
-    public boolean isEmpty() {
-        return endpoints == null || endpoints.isEmpty();
-    }
-
-    public int size() {
-        return endpoints == null ? 0 : endpoints.size();
-    }
+    /**
+     * Extended metadata for service instance. Metadata typically includes:
+     *
+     * @return Immutable key-value pairs (empty map permitted)
+     */
+    Map<String, String> getMetadata();
 }

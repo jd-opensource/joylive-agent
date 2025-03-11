@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2.condition;
+package com.jd.live.agent.plugin.router.springcloud.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringEnabled
-@ConditionalOnMissingClass(ConditionalOnSpringCloud2Enabled.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
-@ConditionalOnMissingClass(ConditionalOnSpringCloud2Enabled.TYPE_STICKY_SESSION_SUPPLIER)
+@ConditionalOnSpringCloud4GovernanceEnabled
+@ConditionalOnRegistryEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud2Enabled {
+public @interface ConditionalOnSpringCloud4RegistryEnabled {
 
-    String TYPE_SERVICE_INSTANCE_LIST_SUPPLIER = "org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier";
-
-    String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
 }

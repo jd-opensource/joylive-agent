@@ -6,3 +6,5 @@ com.jd.live.agent.plugin.router.springcloud.v2.definition.BlockingClusterDefinit
 com.jd.live.agent.plugin.router.springcloud.v2.definition.RetryableBlockingClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v2.definition.ReactorLoadBalancerExchangeFilterFunctionDefinition
 com.jd.live.agent.plugin.router.springcloud.v2.definition.LoadBalancerExchangeFilterFunctionDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.SimpleDiscoveryClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v2.definition.SimpleReactiveDiscoveryClientDefinition

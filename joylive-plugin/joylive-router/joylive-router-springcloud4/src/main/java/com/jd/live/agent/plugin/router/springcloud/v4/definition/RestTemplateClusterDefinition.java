@@ -23,22 +23,16 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6RegistryEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.RestTemplateClusterInterceptor;
 
 /**
  * RestTemplateClusterDefinition
  */
 @Extension(value = "RestTemplateDefinition_v6")
-@ConditionalOnGovernanceEnabled
-@ConditionalOnSpringEnabled
-@ConditionalOnSpringCloudDisabled
-@ConditionalOnRegistryEnabled
+@ConditionalOnSpringWeb6RegistryEnabled
 @ConditionalOnClass(RestTemplateClusterDefinition.TYPE)
 @Injectable
 public class RestTemplateClusterDefinition extends PluginDefinitionAdapter {

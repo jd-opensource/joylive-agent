@@ -57,7 +57,7 @@ public interface RegistryService extends AutoCloseable {
      * @param service  The service name to subscribe to.
      * @param consumer The consumer that will receive endpoint events.
      */
-    void subscribe(String service, String group, Consumer<EndpointEvent> consumer) throws Exception;
+    void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception;
 
     /**
      * Unsubscribes from endpoint events for a specific service.
@@ -104,7 +104,7 @@ public interface RegistryService extends AutoCloseable {
         }
 
         @Override
-        public void subscribe(String service, String group, Consumer<EndpointEvent> consumer) throws Exception {
+        public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
 
         }
 

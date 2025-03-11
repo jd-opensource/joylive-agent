@@ -17,10 +17,10 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.io.UnsafeByteArrayOutputStream;
 import com.jd.live.agent.governance.exception.ServiceError;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.RestTemplateCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
@@ -83,7 +83,7 @@ public class RestTemplateHttpRequest implements ClientHttpRequest {
     public ClientHttpResponse execute() throws IOException {
         try {
             registry.subscribe(service).get(5000, TimeUnit.MILLISECONDS);
-            List<? extends Endpoint> endpoints = registry.getEndpoints(service);
+            List<ServiceEndpoint> endpoints = registry.getEndpoints(service);
             if (context.isFlowControlEnabled()) {
                 return request(endpoints);
             } else {
@@ -111,7 +111,7 @@ public class RestTemplateHttpRequest implements ClientHttpRequest {
      * @return HTTP response from specified endpoint
      * @throws IOException If request execution fails
      */
-    public ClientHttpResponse execute(Endpoint endpoint) throws IOException {
+    public ClientHttpResponse execute(ServiceEndpoint endpoint) throws IOException {
         URI u = newURI(uri, endpoint.getHost(), endpoint.getPort());
         ClientHttpRequest request = accessor.getRequestFactory().createRequest(u, method);
         request.getHeaders().putAll(headers);
@@ -156,7 +156,7 @@ public class RestTemplateHttpRequest implements ClientHttpRequest {
      * @throws Throwable Service-defined client errors or underlying exceptions
      * @see RestTemplateCluster  Cluster implementation handling load balancing/failover
      */
-    private ClientHttpResponse request(List<? extends Endpoint> endpoints) throws Throwable {
+    private ClientHttpResponse request(List<ServiceEndpoint> endpoints) throws Throwable {
         RestTemplateCluster cluster = RestTemplateCluster.INSTANCE;
         RestTemplateClusterRequest request = new RestTemplateClusterRequest(this, service, endpoints);
         HttpOutboundInvocation<RestTemplateClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
@@ -177,10 +177,10 @@ public class RestTemplateHttpRequest implements ClientHttpRequest {
      * @throws Throwable Routing failures or execution errors
      * @see InvocationContext#route  Custom routing logic implementation
      */
-    private ClientHttpResponse route(List<? extends Endpoint> endpoints) throws Throwable {
+    private ClientHttpResponse route(List<ServiceEndpoint> endpoints) throws Throwable {
         BlockingOutboundRequest request = new BlockingOutboundRequest(this, service);
         HttpOutboundInvocation<BlockingOutboundRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        Endpoint endpoint = context.route(invocation, endpoints);
+        ServiceEndpoint endpoint = context.route(invocation, endpoints);
         return execute(endpoint);
     }
 }

@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.registry;
 
-import com.jd.live.agent.governance.instance.Endpoint;
-
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -100,7 +98,7 @@ public interface Registry {
      * @param service  the service name to subscribe to
      * @param consumer the consumer that will receive endpoint events
      */
-    default void subscribe(String service, Consumer<EndpointEvent> consumer) {
+    default void subscribe(String service, Consumer<InstanceEvent> consumer) {
         subscribe(service, null, consumer);
     }
 
@@ -112,7 +110,7 @@ public interface Registry {
      * @param group    the group to which the service belongs.
      * @param consumer the consumer to handle endpoint events triggered by the subscription.
      */
-    void subscribe(String service, String group, Consumer<EndpointEvent> consumer);
+    void subscribe(String service, String group, Consumer<InstanceEvent> consumer);
 
     /**
      * Retrieves endpoints for the specified service using the default group.
@@ -120,7 +118,7 @@ public interface Registry {
      * @param service the name of the target service
      * @return a list of endpoints associated with the service (never null)
      */
-    default List<? extends Endpoint> getEndpoints(String service) {
+    default List<ServiceEndpoint> getEndpoints(String service) {
         return getEndpoints(service, null);
     }
 
@@ -131,7 +129,7 @@ public interface Registry {
      * @param group   the cluster/group name (may be null for default group)
      * @return a list of endpoints matching the service and group (never null)
      */
-    List<? extends Endpoint> getEndpoints(String service, String group);
+    List<ServiceEndpoint> getEndpoints(String service, String group);
 
 }
 

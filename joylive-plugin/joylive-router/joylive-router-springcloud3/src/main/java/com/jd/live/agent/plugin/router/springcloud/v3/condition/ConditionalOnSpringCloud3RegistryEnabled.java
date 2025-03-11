@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.plugin.router.springcloud.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
 
 import java.lang.annotation.*;
 
-/**
- * A conditional annotation that checks if a specific Spring Cloud class is missing from the classpath.
- * This annotation is used to conditionally enable or disable certain configurations or components
- * based on the absence of the specified Spring Cloud class.
- */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnMissingClass(ConditionalOnSpringCloudDisabled.TYPE_LOADBALANCED)
+@ConditionalOnSpringCloud3GovernanceEnabled
+@ConditionalOnRegistryEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringCloudDisabled {
+public @interface ConditionalOnSpringCloud3RegistryEnabled {
 
-    String TYPE_LOADBALANCED = "org.springframework.cloud.client.loadbalancer.LoadBalanced";
 }

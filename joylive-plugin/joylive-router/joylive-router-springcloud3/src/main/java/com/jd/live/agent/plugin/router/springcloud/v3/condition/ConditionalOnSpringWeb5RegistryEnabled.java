@@ -18,20 +18,26 @@ package com.jd.live.agent.plugin.router.springcloud.v3.condition;
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnMissingSpringLoadBalancer;
+import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringEnabled
-@ConditionalOnClass(ConditionalOnSpringCloud3Enabled.TYPE_STICKY_SESSION_SUPPLIER)
-@ConditionalOnMissingClass(ConditionalOnSpringCloud3Enabled.TYPE_WEIGHT_FUNCTION)
+@ConditionalOnRegistryEnabled
+@ConditionalOnGovernanceEnabled
+@ConditionalOnMissingSpringLoadBalancer
+@ConditionalOnClass(ConditionalOnSpringWeb5RegistryEnabled.TYPE_CLIENT_HTTP_REQUEST)
+@ConditionalOnMissingClass(ConditionalOnSpringWeb5RegistryEnabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud3Enabled {
+public @interface ConditionalOnSpringWeb5RegistryEnabled {
 
-    String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
+    // spring web 6
+    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
-    String TYPE_WEIGHT_FUNCTION = "org.springframework.cloud.loadbalancer.core.WeightFunction";
+    String TYPE_CLIENT_HTTP_REQUEST = "org.springframework.http.client.ClientHttpRequest";
+
 }
