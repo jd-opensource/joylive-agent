@@ -18,14 +18,13 @@ package com.jd.live.agent.plugin.router.springcloud.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.FeignCluster;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
 import feign.Client;
-import feign.Request;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,18 +47,18 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
         FeignCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCluster::new);
-        FeignClusterRequest request = new FeignClusterRequest((Request) arguments[0],
-                cluster.getLoadBalancerFactory(), (Request.Options) arguments[1]);
+        FeignClusterRequest request = new FeignClusterRequest(
+                ctx.getArgument(0),
+                ctx.getArgument(1),
+                cluster.getContext());
         HttpOutboundInvocation<FeignClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         FeignClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
-            mc.setThrowable(error.getThrowable());
+            mc.skipWithThrowable(error.getThrowable());
         } else {
-            mc.setResult(response.getResponse());
+            mc.skipWithResult(response.getResponse());
         }
-        mc.setSkip(true);
     }
 }

@@ -17,51 +17,41 @@ package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.FeignClusterContext;
 import feign.Request;
+import feign.Response;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMapAdapter;
 
+import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
+import static com.jd.live.agent.plugin.router.springcloud.v4.util.UriUtils.newURI;
 
 /**
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractClusterRequest}
  * to handle specifics of Feign requests such as options and cookie parsing.
- * <p>
- * This class encapsulates the details of a Feign request, including HTTP method, URI, headers, and cookies,
- * and provides utilities for parsing these elements from the Feign {@link Request}. It also integrates with
- * Spring's {@link LoadBalancerClientFactory} for load balancing capabilities.
  *
  * @since 1.0.0
  */
-public class FeignClusterRequest extends AbstractClusterRequest<Request> {
+public class FeignClusterRequest extends AbstractClusterRequest<Request, FeignClusterContext> {
 
     private final Request.Options options;
 
     private CacheObject<Map<String, Collection<String>>> writeableHeaders;
 
-    /**
-     * Constructs a new {@code FeignOutboundRequest} with the specified Feign request, load balancer client factory,
-     * and request options.
-     *
-     * @param request                   the Feign request
-     * @param loadBalancerClientFactory the factory to create a load balancer client
-     * @param options                   the options for the Feign request, such as timeouts
-     */
-    public FeignClusterRequest(Request request,
-                               ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerClientFactory,
-                               Request.Options options) {
-        super(request, URI.create(request.url()), loadBalancerClientFactory, null);
+    public FeignClusterRequest(Request request, Request.Options options, FeignClusterContext context) {
+        super(request, URI.create(request.url()), context);
         this.options = options;
     }
-
 
     @Override
     public HttpMethod getHttpMethod() {
@@ -96,20 +86,32 @@ public class FeignClusterRequest extends AbstractClusterRequest<Request> {
 
     @Override
     protected RequestData buildRequestData() {
-        Map<String, List<String>> cookies = getCookies();
+        // cookie is used only in RequestBasedStickySessionServiceInstanceListSupplier
+        // it's disabled by live interceptor
+        // so we can use null value to improve performance.
         return new RequestData(
                 org.springframework.http.HttpMethod.valueOf(request.httpMethod().name()), getURI(),
-                new HttpHeaders(new MultiValueMapAdapter<>(getHeaders())),
-                cookies == null ? null : new MultiValueMapAdapter<>(cookies), new HashMap<>());
-    }
-
-    public Request.Options getOptions() {
-        return options;
+                new HttpHeaders(new MultiValueMapAdapter<>(getHeaders())), null, null);
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return caseInsensitive(request.headers(), true);
+    }
+
+    /**
+     * Executes the HTTP request for a specific service instance.
+     *
+     * @param instance the {@link ServiceInstance} to which the request is directed
+     * @return the {@link Response} containing the response data
+     * @throws IOException if an I/O error occurs during the request execution
+     */
+    public Response execute(ServiceInstance instance) throws IOException {
+        String url = newURI(instance, uri).toString();
+        // TODO sticky session
+        Request req = Request.create(request.httpMethod(), url, request.headers(),
+                request.body(), request.charset(), request.requestTemplate());
+        return context.getDelegate().execute(req, options);
     }
 
     protected Map<String, Collection<String>> getWriteableHeaders() {

@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.annotation;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
@@ -32,7 +33,9 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnSpringEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ConditionalOnSpringGatewayEnabled.TYPE_ROUTE)
 @ConditionalComposite
 public @interface ConditionalOnSpringGatewayEnabled {
 
+    String TYPE_ROUTE = "org.springframework.cloud.gateway.route.Route";
 }

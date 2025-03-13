@@ -16,18 +16,18 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.beans.factory.ObjectProvider;
+import com.jd.live.agent.plugin.router.springcloud.v2.cluster.context.CloudClusterContext;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import reactor.core.publisher.Mono;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -36,18 +36,9 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
  * service instance discovery, and lifecycle management, making it suitable for handling
  * dynamic client requests in a distributed system.
  */
-public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
+public abstract class AbstractClusterRequest<T, C extends CloudClusterContext> extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
 
-    protected static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
-
-    protected static final Map<String, CacheObject<ServiceInstanceListSupplier>> SERVICE_INSTANCE_LIST_SUPPLIERS = new ConcurrentHashMap<>();
-
-    /**
-     * A factory for creating instances of {@code ReactiveLoadBalancer} for service instances.
-     * This factory is used to obtain a load balancer instance for the service associated with
-     * this request.
-     */
-    protected final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
+    protected final C context;
 
     /**
      * A lazy-initialized {@code ServiceInstanceListSupplier} object, responsible for providing
@@ -55,16 +46,10 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      */
     protected CacheObject<ServiceInstanceListSupplier> instanceSupplier;
 
-    /**
-     * Constructs a new ClientOutboundRequest with the specified parameters.
-     *
-     * @param request             The original client request to be processed.
-     * @param loadBalancerFactory A factory for creating instances of ReactiveLoadBalancer for service instances.
-     */
-    public AbstractClusterRequest(T request,
-                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory) {
+    public AbstractClusterRequest(T request, URI uri, C context) {
         super(request);
-        this.loadBalancerFactory = loadBalancerFactory;
+        this.uri = uri;
+        this.context = context;
     }
 
     @Override
@@ -80,35 +65,31 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
         }
     }
 
+    @Override
+    public RetryPolicy getDefaultRetryPolicy() {
+        RetryPolicy retryPolicy = context.getDefaultRetryPolicy();
+        return retryPolicy != null && retryPolicy.containsMethod(getMethod()) ? retryPolicy : null;
+    }
+
+    @Override
+    public Mono<List<ServiceInstance>> getInstances() {
+        ServiceInstanceListSupplier supplier = getInstanceSupplier();
+        if (supplier == null) {
+            return Mono.just(new ArrayList<>());
+        } else {
+            return supplier.get().next();
+        }
+    }
+
     /**
      * Returns a supplier of service instance lists.
      *
      * @return a supplier of service instance lists
      */
-    public ServiceInstanceListSupplier getInstanceSupplier() {
+    protected ServiceInstanceListSupplier getInstanceSupplier() {
         if (instanceSupplier == null) {
-            instanceSupplier = new CacheObject<>(buildServiceInstanceListSupplier());
+            instanceSupplier = new CacheObject<>(context.getServiceInstanceListSupplier(getService()));
         }
         return instanceSupplier.get();
-    }
-
-    /**
-     * Builds a supplier of service instances for load balancing. This supplier is responsible for providing
-     * a list of available service instances that the load balancer can use to distribute the incoming requests.
-     * The supplier is obtained from the load balancer instance if it provides one.
-     *
-     * @return A ServiceInstanceListSupplier that provides a list of available service instances, or null if the
-     * load balancer does not provide such a supplier.
-     */
-    private ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
-        return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(getService(), service -> {
-            ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
-            if (loadBalancer != null) {
-                ObjectProvider<ServiceInstanceListSupplier> provider = getValue(loadBalancer, FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-                return CacheObject.of(provider == null ? null : provider.getIfAvailable());
-            }
-            return CacheObject.of(null);
-        }).get();
-
     }
 }

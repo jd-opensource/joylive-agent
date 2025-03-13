@@ -92,7 +92,10 @@
             <unpack>false</unpack>
             <includes>
                 <include>com.jd.live:joylive-application-springboot2</include>
+                <include>com.jd.live:joylive-registry-springcloud2</include>
                 <include>com.jd.live:joylive-registry-springcloud3</include>
+                <include>com.jd.live:joylive-registry-springcloud4</include>
+                <include>com.jd.live:joylive-registry-springgateway2</include>
                 <include>com.jd.live:joylive-registry-springgateway3</include>
                 <include>com.jd.live:joylive-registry-springgateway4</include>
                 <include>com.jd.live:joylive-router-springweb5</include>

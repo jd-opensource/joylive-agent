@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * FeignClusterInterceptor
  *
- * @since 1.5.0
+ * @since 1.0.0
  */
 public class FeignClusterInterceptor extends InterceptorAdaptor {
 
@@ -51,12 +51,10 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
-        Request request = (Request) arguments[0];
+        Request request = ctx.getArgument(0);
         if (context.isFlowControlEnabled()) {
             FeignCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCluster::new);
-            FeignClusterRequest clusterRequest = new FeignClusterRequest(request,
-                    cluster.getLoadBalancerFactory(), (Request.Options) arguments[1]);
+            FeignClusterRequest clusterRequest = new FeignClusterRequest(request, ctx.getArgument(1), cluster.getContext());
             HttpOutboundInvocation<FeignClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
             FeignClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();

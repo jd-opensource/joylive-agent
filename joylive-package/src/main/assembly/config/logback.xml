@@ -52,7 +52,10 @@
 
     <logger name="com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler" level="${logger.advice.level}"/>
 
-    <logger name="com.jd.live.agent.governance.invoke.filter.RouteFilterChain" level="${logger.route.level}"/>
+    <logger name="com.jd.live.agent.governance.invoke.filter.RouteFilterChain" level="${logger.route.level}"
+            additivity="false">
+        <appender-ref ref="CONSOLE_APPENDER"/>
+    </logger>
 
     <root level="${logger.level}">
         <appender-ref ref="${LIVE_LOG_APPENDER:-ROLLING_APPENDER}"/>

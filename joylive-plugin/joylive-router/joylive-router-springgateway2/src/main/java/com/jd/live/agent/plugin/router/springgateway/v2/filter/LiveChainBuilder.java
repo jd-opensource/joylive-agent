@@ -16,18 +16,26 @@
 package com.jd.live.agent.plugin.router.springgateway.v2.filter;
 
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v2.util.RibbonLoadBalancerFactory;
 import com.jd.live.agent.plugin.router.springgateway.v2.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilterChain.DefaultGatewayFilterChain;
 import lombok.Getter;
+import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.cloud.client.loadbalancer.reactive.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.cloud.client.loadbalancer.reactive.Request;
+import org.springframework.cloud.client.loadbalancer.reactive.Response;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.route.Route;
+import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -36,8 +44,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 import static com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveRouteFilter.ROUTE_VERSION;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
@@ -58,6 +66,7 @@ public class LiveChainBuilder {
     private static final String SCHEME_REGEX = "[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*";
     private static final Pattern SCHEME_PATTERN = Pattern.compile(SCHEME_REGEX);
     private static final int WRITE_RESPONSE_FILTER_ORDER = -1;
+    private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
 
     /**
      * The invocation context for this filter configuration.
@@ -145,7 +154,7 @@ public class LiveChainBuilder {
                     String name = delegate.getClass().getName();
                     if (name.equals(TYPE_RETRY_FILTER)) {
                         // ignore retry
-                        retryConfig = getValue(delegate, FIELD_RETRY_CONFIG);
+                        retryConfig = getQuietly(delegate, FIELD_RETRY_CONFIG);
                     } else if (gatewayConfig.isPathFilter(name)) {
                         // ignore path filter
                         pathFilters.add(filter);
@@ -185,9 +194,10 @@ public class LiveChainBuilder {
      * @param target the target object
      * @return the list of global filters
      */
+    @SuppressWarnings("deprecation")
     private List<GatewayFilter> getGlobalFilters(Object target) {
         // this is sorted by order
-        List<GatewayFilter> filters = getValue(target, FIELD_GLOBAL_FILTERS);
+        List<GatewayFilter> filters = getQuietly(target, FIELD_GLOBAL_FILTERS);
         List<GatewayFilter> result = new ArrayList<>(filters.size());
         GatewayFilter delegate;
         GlobalFilter globalFilter;
@@ -198,9 +208,18 @@ public class LiveChainBuilder {
                 delegate = ((OrderedGatewayFilter) filter).getDelegate();
             }
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
-                globalFilter = getValue(delegate, FIELD_DELEGATE);
+                globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    clientFactory = getValue(globalFilter, FIELD_CLIENT_FACTORY);
+                    clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                } else if (globalFilter instanceof LoadBalancerClientFilter) {
+                    LoadBalancerClient client = getQuietly(globalFilter, "loadBalancer");
+                    if (client instanceof BlockingLoadBalancerClient) {
+                        clientFactory = getQuietly(client, "loadBalancerClientFactory");
+                    } else if (client.getClass().getName().equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
+                        clientFactory = new RibbonLoadBalancerFactory(getQuietly(client, "clientFactory"));
+                    } else {
+                        clientFactory = new SimpleLoadBalancerClientFactory(client);
+                    }
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);
@@ -243,5 +262,38 @@ public class LiveChainBuilder {
         uri = newURI(uri, routeUri.getScheme(), routeUri.getHost(), routeUri.getPort());
         attributes.put(GATEWAY_REQUEST_URL_ATTR, uri);
         return SCHEMA_LB.equals(scheme) || SCHEMA_LB.equals(schemePrefix);
+    }
+
+    @Getter
+    private static class SimpleLoadBalancerClientFactory implements ReactiveLoadBalancer.Factory<ServiceInstance> {
+        private final LoadBalancerClient client;
+
+        SimpleLoadBalancerClientFactory(LoadBalancerClient client) {
+            this.client = client;
+        }
+
+        @Override
+        public ReactiveLoadBalancer<ServiceInstance> getInstance(String serviceId) {
+            return new SimpleReactiveLoadBalancer(serviceId, client);
+        }
+    }
+
+    @Getter
+    private static class SimpleReactiveLoadBalancer implements ReactiveLoadBalancer<ServiceInstance> {
+
+        private final String serviceId;
+
+        private final LoadBalancerClient client;
+
+        SimpleReactiveLoadBalancer(String serviceId, LoadBalancerClient client) {
+            this.serviceId = serviceId;
+            this.client = client;
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public Publisher<Response<ServiceInstance>> choose(Request request) {
+            return Mono.just(new DefaultResponse(client.choose(serviceId)));
+        }
     }
 }

@@ -16,27 +16,26 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
+import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.beans.factory.ObjectProvider;
+import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.CloudClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v4.response.SpringClusterResponse;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.function.SingletonSupplier;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 import java.util.function.Consumer;
-
-import static com.jd.live.agent.core.util.type.ClassUtils.describe;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -45,22 +44,9 @@ import static com.jd.live.agent.core.util.type.ClassUtils.describe;
  * service instance discovery, and lifecycle management, making it suitable for handling
  * dynamic client requests in a distributed system.
  */
-public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
+public abstract class AbstractClusterRequest<T, C extends CloudClusterContext> extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
 
-    protected static final String FIELD_SERVICE_INSTANCE_LIST_SINGLETON_SUPPLIER = "serviceInstanceListSingletonSupplier";
-
-    protected static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
-
-    protected static final Map<String, Set<LoadBalancerLifecycle>> LOAD_BALANCER_LIFE_CYCLES = new ConcurrentHashMap<>();
-
-    protected static final Map<String, CacheObject<ServiceInstanceListSupplier>> SERVICE_INSTANCE_LIST_SUPPLIERS = new ConcurrentHashMap<>();
-
-    /**
-     * A factory for creating instances of {@code ReactiveLoadBalancer} for service instances.
-     * This factory is used to obtain a load balancer instance for the service associated with
-     * this request.
-     */
-    protected final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
+    protected final C context;
 
     /**
      * A {@code LoadBalancerProperties} object, containing configuration
@@ -73,6 +59,7 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      * processors for the load balancer. These processors provide hooks for custom logic at various
      * stages of the load balancing process.
      */
+    @SuppressWarnings("rawtypes")
     protected CacheObject<Set<LoadBalancerLifecycle>> lifecycles;
 
     /**
@@ -95,14 +82,12 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
 
     protected CacheObject<String> stickyId;
 
-    public AbstractClusterRequest(T request,
-                                  URI uri,
-                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
-                                  LoadBalancerProperties properties) {
+    public AbstractClusterRequest(T request, URI uri, C context) {
         super(request);
         this.uri = uri;
-        this.loadBalancerFactory = loadBalancerFactory;
-        this.properties = buildProperties(properties);
+        this.context = context;
+        // depend on url
+        this.properties = context.getLoadBalancerProperties(getService());
     }
 
     @Override
@@ -127,28 +112,124 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
     }
 
     @Override
-    public void lifecycles(Consumer<LoadBalancerLifecycle> consumer) {
+    public RetryPolicy getDefaultRetryPolicy() {
+        LoadBalancerProperties properties = getProperties();
+        LoadBalancerProperties.Retry retry = properties == null ? null : properties.getRetry();
+        if (retry != null && retry.isEnabled() && (getHttpMethod() == HttpMethod.GET || retry.isRetryOnAllOperations())) {
+            Set<String> statuses = new HashSet<>(retry.getRetryableStatusCodes().size());
+            retry.getRetryableStatusCodes().forEach(status -> statuses.add(String.valueOf(status)));
+            RetryPolicy retryPolicy = new RetryPolicy();
+            retryPolicy.setRetry(retry.getMaxRetriesOnNextServiceInstance());
+            retryPolicy.setInterval(retry.getBackoff().getMinBackoff().toMillis());
+            retryPolicy.setErrorCodes(statuses);
+            return retryPolicy;
+        }
+        return null;
+    }
+
+    @Override
+    public Mono<List<ServiceInstance>> getInstances() {
+        ServiceInstanceListSupplier supplier = getInstanceSupplier();
+        if (supplier == null) {
+            return Mono.just(new ArrayList<>());
+        } else {
+            return supplier.get(getLbRequest()).next();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void onStart() {
+        lifecycles(l -> l.onStart(getLbRequest()));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void onDiscard() {
+        lifecycles(l -> l.onComplete(new CompletionContext<>(
+                CompletionContext.Status.DISCARD, getLbRequest(), new EmptyResponse())));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void onStartRequest(SpringEndpoint endpoint) {
+        lifecycles(l -> l.onStartRequest(getLbRequest(),
+                endpoint == null ? new DefaultResponse(null) : endpoint.getResponse()));
+    }
+
+    @Override
+    @SuppressWarnings({"unchecked"})
+    public void onSuccess(SpringClusterResponse response, SpringEndpoint endpoint) {
+        HttpHeaders httpHeaders = response.getHttpHeaders();
+        HttpStatusCode httpStatus = response.getHttpStatus();
+        RequestData requestData = getRequestData();
+        MultiValueMap<String, ResponseCookie> cookies = null;
+        ResponseData responseData = new ResponseData(httpStatus, httpHeaders, cookies, requestData);
+
+        CompletionContext<Object, ServiceInstance, ?> ctx = new CompletionContext<>(
+                CompletionContext.Status.SUCCESS,
+                getLbRequest(),
+                endpoint.getResponse(),
+                responseData);
+        lifecycles(l -> l.onComplete(ctx));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void onError(Throwable throwable, SpringEndpoint endpoint) {
+        Response<ServiceInstance> response = endpoint == null ? new DefaultResponse(null) : endpoint.getResponse();
+        lifecycles(l -> l.onComplete(new CompletionContext<>(
+                CompletionContext.Status.FAILED,
+                throwable,
+                getLbRequest(),
+                response)));
+    }
+
+    /**
+     * Executes custom logic across the set of lifecycle processors associated with the load balancer,
+     * allowing for enhanced control and monitoring of the load balancing process.
+     *
+     * @param consumer A consumer that accepts {@code LoadBalancerLifecycle} instances for processing.
+     */
+    @SuppressWarnings("rawtypes")
+    protected void lifecycles(Consumer<LoadBalancerLifecycle> consumer) {
         Set<LoadBalancerLifecycle> lifecycles = getLifecycles();
         if (lifecycles != null && consumer != null) {
             lifecycles.forEach(consumer);
         }
     }
 
-    public Set<LoadBalancerLifecycle> getLifecycles() {
+    /**
+     * Retrieves lifecycle processors for load balancing
+     *
+     * @return Set of lifecycle processors
+     */
+    @SuppressWarnings("rawtypes")
+    protected Set<LoadBalancerLifecycle> getLifecycles() {
         if (lifecycles == null) {
-            lifecycles = new CacheObject<>(buildLifecycleProcessors());
+            lifecycles = new CacheObject<>(context.getLifecycleProcessors(getService()));
         }
         return lifecycles.get();
     }
 
-    public Request<?> getLbRequest() {
+    /**
+     * Gets the load balancer request
+     *
+     * @return The load balancer request
+     */
+    protected Request<?> getLbRequest() {
         if (lbRequest == null) {
             lbRequest = new CacheObject<>(buildLbRequest());
         }
         return lbRequest.get();
     }
 
-    public LoadBalancerProperties getProperties() {
+    /**
+     * Retrieves load balancing properties
+     *
+     * @return Load balancing properties
+     */
+    protected LoadBalancerProperties getProperties() {
         return properties;
     }
 
@@ -157,14 +238,19 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
      *
      * @return a supplier of service instance lists
      */
-    public ServiceInstanceListSupplier getInstanceSupplier() {
+    protected ServiceInstanceListSupplier getInstanceSupplier() {
         if (instanceSupplier == null) {
-            instanceSupplier = new CacheObject<>(buildServiceInstanceListSupplier());
+            instanceSupplier = new CacheObject<>(context.getServiceInstanceListSupplier(getService()));
         }
         return instanceSupplier.get();
     }
 
-    public RequestData getRequestData() {
+    /**
+     * Retrieves request data for load balancing
+     *
+     * @return Request data
+     */
+    protected RequestData getRequestData() {
         if (requestData == null) {
             requestData = new CacheObject<>(buildRequestData());
         }
@@ -181,34 +267,6 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
     protected abstract RequestData buildRequestData();
 
     /**
-     * Builds the LoadBalancerProperties based on the default properties and the LoadBalancerFactory.
-     *
-     * @param defaultProperties the default LoadBalancerProperties
-     * @return the built LoadBalancerProperties
-     */
-    protected LoadBalancerProperties buildProperties(LoadBalancerProperties defaultProperties) {
-        LoadBalancerProperties result = loadBalancerFactory == null ? null : loadBalancerFactory.getProperties(getService());
-        return result == null ? defaultProperties : result;
-    }
-
-    /**
-     * Constructs a set of lifecycle processors for the load balancer. These processors are responsible
-     * for providing custom logic that can be executed during various stages of the load balancing process,
-     * such as before and after choosing a server, and before and after the request is completed.
-     *
-     * @return A set of LoadBalancerLifecycle objects that are compatible with the current service and request/response types.
-     */
-    protected Set<LoadBalancerLifecycle> buildLifecycleProcessors() {
-        return LOAD_BALANCER_LIFE_CYCLES.computeIfAbsent(getService(), service -> loadBalancerFactory == null
-                ? new HashSet<>()
-                : LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
-                loadBalancerFactory.getInstances(service, LoadBalancerLifecycle.class),
-                RequestDataContext.class,
-                ResponseData.class,
-                ServiceInstance.class));
-    }
-
-    /**
      * Creates a new load balancer request object that encapsulates the original request data along with
      * any hints that may influence load balancing decisions. This object is used by the load balancer to
      * select an appropriate service instance based on the provided hints and other criteria.
@@ -221,49 +279,6 @@ public abstract class AbstractClusterRequest<T> extends AbstractHttpOutboundRequ
         String defaultHint = hints == null ? null : hints.getOrDefault("default", "default");
         String hint = hints == null ? null : hints.getOrDefault(getService(), defaultHint);
         return new DefaultRequest<>(new RequestDataContext(getRequestData(), hint));
-    }
-
-    /**
-     * Builds a supplier of service instances for load balancing. This supplier is responsible for providing
-     * a list of available service instances that the load balancer can use to distribute the incoming requests.
-     * The supplier is obtained from the load balancer instance if it provides one.
-     *
-     * @return A ServiceInstanceListSupplier that provides a list of available service instances, or null if the
-     * load balancer does not provide such a supplier.
-     */
-    protected ServiceInstanceListSupplier buildServiceInstanceListSupplier() {
-        return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(getService(), service -> {
-            ServiceInstanceListSupplier supplier = null;
-            ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(getService());
-            if (loadBalancer != null) {
-                supplier = getServiceInstanceListSupplier(loadBalancer);
-            }
-            return CacheObject.of(supplier);
-        }).get();
-
-    }
-
-    /**
-     * Retrieves the ServiceInstanceListSupplier provider from the given ReactiveLoadBalancer.
-     *
-     * @param loadBalancer the ReactiveLoadBalancer to retrieve the ServiceInstanceListSupplier provider from
-     * @return an instance of ServiceInstanceListSupplier
-     */
-    @SuppressWarnings("unchecked")
-    protected ServiceInstanceListSupplier getServiceInstanceListSupplier(ReactiveLoadBalancer<ServiceInstance> loadBalancer) {
-        FieldList fieldList = describe(loadBalancer.getClass()).getFieldList();
-        FieldDesc fieldDesc = fieldList.getField(FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-        if (fieldDesc != null) {
-            ObjectProvider<ServiceInstanceListSupplier> provider = (ObjectProvider<ServiceInstanceListSupplier>) fieldDesc.get(loadBalancer);
-            return provider == null ? null : provider.getIfAvailable();
-        } else {
-            fieldDesc = fieldList.getField(FIELD_SERVICE_INSTANCE_LIST_SINGLETON_SUPPLIER);
-            if (fieldDesc != null) {
-                SingletonSupplier<ServiceInstanceListSupplier> supplier = (SingletonSupplier<ServiceInstanceListSupplier>) fieldDesc.get(loadBalancer);
-                return supplier == null ? null : supplier.get();
-            }
-        }
-        return null;
     }
 
     /**

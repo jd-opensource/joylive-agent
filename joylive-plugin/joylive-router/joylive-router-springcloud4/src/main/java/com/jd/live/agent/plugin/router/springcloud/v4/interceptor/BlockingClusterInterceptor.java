@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.router.springcloud.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.BlockingCluster;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
@@ -55,18 +55,16 @@ public class BlockingClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
         BlockingCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCluster::new);
-        BlockingClusterRequest request = new BlockingClusterRequest((HttpRequest) arguments[0],
-                cluster.getLoadBalancerFactory(), (byte[]) arguments[1], (ClientHttpRequestExecution) arguments[2]);
+        BlockingClusterRequest request = new BlockingClusterRequest(ctx.getArgument(0),
+                ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
         HttpOutboundInvocation<BlockingClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
-            mc.setThrowable(error.getThrowable());
+            mc.skipWithThrowable(error.getThrowable());
         } else {
-            mc.setResult(response.getResponse());
+            mc.skipWithResult(response.getResponse());
         }
-        mc.setSkip(true);
     }
 }

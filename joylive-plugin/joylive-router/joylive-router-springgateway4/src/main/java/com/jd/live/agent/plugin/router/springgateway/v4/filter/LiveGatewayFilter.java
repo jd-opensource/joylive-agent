@@ -17,16 +17,17 @@ package com.jd.live.agent.plugin.router.springgateway.v4.filter;
 
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springgateway.v4.cluster.GatewayCluster;
+import com.jd.live.agent.plugin.router.springgateway.v4.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v4.response.GatewayClusterResponse;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -60,7 +61,7 @@ public class LiveGatewayFilter implements GatewayFilter {
     /**
      * The retry configuration for this filter.
      */
-    private final RetryGatewayFilterFactory.RetryConfig retryConfig;
+    private final RetryConfig retryConfig;
 
     /**
      * The index of this filter in the chain.
@@ -79,7 +80,7 @@ public class LiveGatewayFilter implements GatewayFilter {
     public LiveGatewayFilter(InvocationContext context,
                              GatewayConfig gatewayConfig,
                              GatewayCluster cluster,
-                             RetryGatewayFilterFactory.RetryConfig retryConfig,
+                             RetryConfig retryConfig,
                              int index) {
         this.context = context;
         this.gatewayConfig = gatewayConfig;
@@ -119,13 +120,12 @@ public class LiveGatewayFilter implements GatewayFilter {
      * @param chain    the GatewayFilterChain representing the remaining filters in the chain
      * @return a new OutboundInvocation instance
      */
-    private OutboundInvocation<GatewayClusterRequest> createInvocation(ServerWebExchange exchange,
-                                                                       GatewayFilterChain chain) {
+    private OutboundInvocation<GatewayClusterRequest> createInvocation(ServerWebExchange exchange, GatewayFilterChain chain) {
         boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        ReactiveLoadBalancer.Factory<ServiceInstance> factory = loadbalancer ? cluster.getClientFactory() : null;
-        GatewayClusterRequest request = new GatewayClusterRequest(exchange, factory, chain, gatewayConfig, retryConfig, index);
-        InvocationContext ic = loadbalancer ? context : new InvocationContext.HttpForwardContext(context);
-        return new OutboundInvocation.GatewayHttpOutboundInvocation<>(request, ic);
+        GatewayClusterContext ctx = loadbalancer ? cluster.getContext() : null;
+        GatewayClusterRequest request = new GatewayClusterRequest(exchange, ctx, chain, gatewayConfig, retryConfig, index);
+        InvocationContext ic = loadbalancer ? context : new HttpForwardContext(context);
+        return new GatewayHttpOutboundInvocation<>(request, ic);
     }
 
 }

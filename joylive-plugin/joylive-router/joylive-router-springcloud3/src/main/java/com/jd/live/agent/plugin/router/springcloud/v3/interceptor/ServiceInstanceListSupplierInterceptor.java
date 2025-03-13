@@ -65,6 +65,8 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final Set<String> disableDiscovery;
 
+    private final SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
+
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
         this.disableDiscovery = disableDiscovery == null ? new HashSet<>() : new HashSet<>(disableDiscovery);
@@ -135,12 +137,11 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {
             logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
-            SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
             Throwable throwable = thrower.createException(e, invocation.getRequest());
             if (throwable instanceof RuntimeException) {
                 throw (RuntimeException) throwable;
             } else {
-                throw SpringOutboundThrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+                throw thrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
             }
         }
     }

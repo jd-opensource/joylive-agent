@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * BlockingClusterInterceptor
  *
- * @since 1.5.0
+ * @since 1.0.0
  */
 public class BlockingClusterInterceptor extends InterceptorAdaptor {
 
@@ -57,14 +57,10 @@ public class BlockingClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
-        HttpRequest request = (HttpRequest) arguments[0];
+        HttpRequest request = ctx.getArgument(0);
         if (context.isFlowControlEnabled()) {
             BlockingCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCluster::new);
-            BlockingClusterRequest clusterRequest = new BlockingClusterRequest(request,
-                    cluster.getLoadBalancerFactory(),
-                    (byte[]) arguments[1],
-                    (ClientHttpRequestExecution) arguments[2]);
+            BlockingClusterRequest clusterRequest = new BlockingClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
             HttpOutboundInvocation<BlockingClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
             BlockingClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();

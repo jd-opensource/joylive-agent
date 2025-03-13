@@ -15,65 +15,67 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerLifecycle;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
-import org.springframework.cloud.client.loadbalancer.Request;
-import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v3.response.SpringClusterResponse;
+import org.springframework.cloud.client.ServiceInstance;
+import reactor.core.publisher.Mono;
 
-import java.util.function.Consumer;
+import java.util.List;
 
 /**
- * Defines the contract for an HTTP outbound request within a reactive microservices
- * architecture, focusing on integration with Spring Cloud's load balancing features.
+ * An interface that extends {@link HttpOutboundRequest} to provide additional methods
+ * for managing Spring Cloud cluster-related operations, such as retrieving service instances,
+ * handling lifecycle events, and defining retry policies.
  */
 public interface SpringClusterRequest extends HttpOutboundRequest {
 
     /**
-     * Retrieves the load balancer request object that encapsulates the original request
-     * data along with any hints that may influence load balancing decisions. This object
-     * is used by the load balancer to select an appropriate service instance based on the
-     * provided hints and other criteria.
+     * Retrieves a list of available service instances from the cluster.
      *
-     * @return A {@code Request<?>} object containing the context for the load balancing operation.
+     * @return a {@link Mono} emitting a list of {@link ServiceInstance} objects
      */
-    Request<?> getLbRequest();
+    Mono<List<ServiceInstance>> getInstances();
 
     /**
-     * Gets the properties associated with the load balancing operation. These properties
-     * may include configurations and hints that help tailor the load balancing behavior
-     * to the needs of the specific request or service.
-     *
-     * @return An instance of {@code LoadBalancerProperties} containing load balancing configuration.
+     * Callback method invoked when the request processing starts.
      */
-    LoadBalancerProperties getProperties();
+    void onStart();
 
     /**
-     * Obtains a supplier of service instances for load balancing. This supplier is responsible
-     * for providing a list of available service instances that the load balancer can use to
-     * distribute incoming requests. The implementation of this method is crucial for enabling
-     * dynamic service discovery and selection.
-     *
-     * @return A {@code ServiceInstanceListSupplier} that provides a list of available service instances.
+     * Callback method invoked when the request is discarded.
      */
-    ServiceInstanceListSupplier getInstanceSupplier();
+    void onDiscard();
 
     /**
-     * Retrieves the request data that will be used by the load balancer to make service instance
-     * selection decisions. This data typically includes the original request information and any
-     * additional metadata or hints relevant to load balancing.
+     * Callback method invoked when a request is initiated for a specific endpoint.
      *
-     * @return An instance of {@code RequestData} representing the data of the original request.
+     * @param endpoint the {@link SpringEndpoint} associated with the request
      */
-    RequestData getRequestData();
+    void onStartRequest(SpringEndpoint endpoint);
 
     /**
-     * Executes custom logic across the set of lifecycle processors associated with the load balancer,
-     * allowing for enhanced control and monitoring of the load balancing process.
+     * Callback method invoked when the request is successfully processed.
      *
-     * @param consumer A consumer that accepts {@code LoadBalancerLifecycle} instances for processing.
+     * @param response the {@link SpringClusterResponse} containing the response data
+     * @param endpoint the {@link SpringEndpoint} associated with the request
      */
-    void lifecycles(Consumer<LoadBalancerLifecycle> consumer);
+    void onSuccess(SpringClusterResponse response, SpringEndpoint endpoint);
+
+    /**
+     * Callback method invoked when an error occurs during request processing.
+     *
+     * @param throwable the exception that caused the error
+     * @param endpoint  the {@link SpringEndpoint} associated with the request
+     */
+    void onError(Throwable throwable, SpringEndpoint endpoint);
+
+    /**
+     * Retrieves the default retry policy for the request.
+     *
+     * @return the default {@link RetryPolicy} instance
+     */
+    RetryPolicy getDefaultRetryPolicy();
 }
 

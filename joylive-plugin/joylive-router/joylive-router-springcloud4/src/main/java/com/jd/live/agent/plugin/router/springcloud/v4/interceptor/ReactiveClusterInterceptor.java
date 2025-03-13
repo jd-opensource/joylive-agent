@@ -24,9 +24,7 @@ import com.jd.live.agent.plugin.router.springcloud.v4.cluster.ReactiveCluster;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.ReactiveClusterResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
-import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.ExchangeFunction;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -51,16 +49,18 @@ public class ReactiveClusterInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
-        ReactiveCluster cluster = clusters.computeIfAbsent((LoadBalancedExchangeFilterFunction) ctx.getTarget(), ReactiveCluster::new);
-        ReactiveClusterRequest request = new ReactiveClusterRequest((ClientRequest) arguments[0],
-                cluster.getLoadBalancerFactory(), (ExchangeFunction) arguments[1]);
+        LoadBalancedExchangeFilterFunction filter = (LoadBalancedExchangeFilterFunction) ctx.getTarget();
+        ReactiveCluster cluster = clusters.computeIfAbsent(filter, ReactiveCluster::new);
+        ReactiveClusterRequest request = new ReactiveClusterRequest(
+                ctx.getArgument(0),
+                ctx.getArgument(1),
+                cluster.getContext());
         HttpOutboundInvocation<ReactiveClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);
         CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
         Mono<ClientResponse> mono = Mono.fromFuture(future);
-        mc.setResult(mono);
-        mc.setSkip(true);
+        mc.skipWithResult(mono);
     }
 }

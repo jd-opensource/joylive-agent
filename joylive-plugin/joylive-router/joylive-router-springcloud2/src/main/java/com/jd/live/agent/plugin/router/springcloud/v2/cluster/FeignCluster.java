@@ -20,73 +20,47 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.plugin.router.springcloud.v2.cluster.context.FeignClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2.response.FeignClusterResponse;
-import com.jd.live.agent.plugin.router.springcloud.v2.util.LoadBalancerUtil;
-import com.jd.live.agent.plugin.router.springcloud.v2.util.UriUtils;
 import feign.Client;
-import feign.Request;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.http.HttpHeaders;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import static com.jd.live.agent.plugin.router.springcloud.v2.response.FeignClusterResponse.create;
 
 /**
  * A cluster implementation for Feign clients that manages a group of servers and provides load balancing and failover capabilities.
  *
  * @see AbstractClientCluster
  */
-public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, FeignClusterResponse> {
+public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, FeignClusterResponse, FeignClusterContext> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
             "java.util.concurrent.TimeoutException",
-            "org.springframework.cloud.client.loadbalancer.RetryableStatusCodeException"
+            "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
     ));
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private static final String FIELD_DELEGATE = "delegate";
-
-    private static final String[] FIELD_CLIENT_FACTORIES = {"loadBalancerClient", "lbClientFactory"};
-
-    private static final String[] FIELD_RETRY_PROPERTIES = {
-            "loadBalancedRetryFactory.retryProperties",
-            "lbClientFactory.loadBalancedRetryFactory.retryProperties"
-    };
-
-    private final Client client;
-
-    private final Client delegate;
-
-    private final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
-
-    public FeignCluster(Client client) {
-        this.client = client;
-        this.delegate = getValue(client, FIELD_DELEGATE);
-        Object loadBalancerClient = getValue(client, FIELD_CLIENT_FACTORIES, null);
-        this.loadBalancerFactory = LoadBalancerUtil.getFactory(loadBalancerClient);
-        this.defaultRetryPolicy = createRetryPolicy(getValue(client, FIELD_RETRY_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties));
+    public FeignCluster(FeignClusterContext context) {
+        super(context);
     }
 
-    public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
-        return loadBalancerFactory;
+    public FeignCluster(Client client) {
+        super(new FeignClusterContext(client));
     }
 
     @Override
     public CompletionStage<FeignClusterResponse> invoke(FeignClusterRequest request, SpringEndpoint endpoint) {
         try {
-            Request req = request.getRequest();
-            String url = UriUtils.newURI(endpoint.getInstance(), request.getURI()).toString();
-            req = Request.create(req.httpMethod(), url, req.headers(), req.body(), req.charset(), req.requestTemplate());
-            feign.Response response = delegate.execute(req, request.getOptions());
+            feign.Response response = request.execute(endpoint.getInstance());
             return CompletableFuture.completedFuture(new FeignClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
@@ -100,22 +74,7 @@ public class FeignCluster extends AbstractClientCluster<FeignClusterRequest, Fei
 
     @Override
     protected FeignClusterResponse createResponse(FeignClusterRequest request, DegradeConfig degradeConfig) {
-        Request feignRequest = request.getRequest();
-        byte[] data = degradeConfig.getResponseBytes();
-        Map<String, Collection<String>> headers = new HashMap<>(feignRequest.headers());
-        if (degradeConfig.getAttributes() != null) {
-            degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
-        }
-        headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
-        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
-
-        return new FeignClusterResponse(feign.Response.builder()
-                .status(degradeConfig.getResponseCode())
-                .body(data)
-                .headers(headers)
-                .request(feignRequest)
-                .requestTemplate(feignRequest.requestTemplate())
-                .build());
+        return create(request.getRequest(), degradeConfig);
     }
 
     @Override

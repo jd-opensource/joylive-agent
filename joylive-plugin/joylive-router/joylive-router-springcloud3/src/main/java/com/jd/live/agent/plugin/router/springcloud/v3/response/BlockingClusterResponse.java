@@ -40,7 +40,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
  *
  * @since 1.0.0
  */
-public class BlockingClusterResponse extends AbstractHttpOutboundResponse<ClientHttpResponse> {
+public class BlockingClusterResponse extends AbstractHttpOutboundResponse<ClientHttpResponse> implements SpringClusterResponse {
 
     private static final Logger logger = LoggerFactory.getLogger(BlockingClusterResponse.class);
 
@@ -57,8 +57,8 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     @Override
     public String getCode() {
         try {
-            Integer code = response != null ? response.getRawStatusCode() : null;
-            return code == null ? null : code.toString();
+            int code = response != null ? response.getRawStatusCode() : INTERNAL_SERVER_ERROR.value();
+            return Integer.toString(code);
         } catch (IOException e) {
             return String.valueOf(INTERNAL_SERVER_ERROR.value());
         }
@@ -91,6 +91,29 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     @Override
     public List<String> getHeaders(String key) {
         return response == null || key == null ? null : response.getHeaders().get(key);
+    }
+
+    @Override
+    public int getStatusCode() {
+        try {
+            return response == null ? INTERNAL_SERVER_ERROR.value() : response.getRawStatusCode();
+        } catch (IOException e) {
+            return INTERNAL_SERVER_ERROR.value();
+        }
+    }
+
+    @Override
+    public HttpStatus getHttpStatus() {
+        try {
+            return response == null ? INTERNAL_SERVER_ERROR : response.getStatusCode();
+        } catch (IOException e) {
+            return INTERNAL_SERVER_ERROR;
+        }
+    }
+
+    @Override
+    public HttpHeaders getHttpHeaders() {
+        return response == null ? new HttpHeaders() : response.getHeaders();
     }
 
     @Override

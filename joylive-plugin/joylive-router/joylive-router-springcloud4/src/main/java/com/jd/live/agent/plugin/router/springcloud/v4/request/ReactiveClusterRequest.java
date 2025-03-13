@@ -16,15 +16,22 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.ReactiveClusterContext;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClientRequestTransformer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
+import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
+
+import static com.jd.live.agent.plugin.router.springcloud.v4.util.UriUtils.newURI;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -33,23 +40,16 @@ import java.util.Map;
  * service instance discovery, and lifecycle management, making it suitable for handling
  * dynamic client requests in a distributed system.
  */
-public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest> {
+public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest, ReactiveClusterContext> {
 
     private final ExchangeFunction next;
 
     private final HttpHeaders writeableHeaders;
 
-    /**
-     * Constructs a new ClientOutboundRequest with the specified parameters.
-     *
-     * @param request             The original client request to be processed.
-     * @param loadBalancerFactory A factory for creating instances of ReactiveLoadBalancer for service instances.
-     * @param next                The next processing step in the request handling pipeline.
-     */
     public ReactiveClusterRequest(ClientRequest request,
-                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
-                                  ExchangeFunction next) {
-        super(request, request.url(), loadBalancerFactory, null);
+                                  ExchangeFunction next,
+                                  ReactiveClusterContext context) {
+        super(request, request.url(), context);
         this.next = next;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
     }
@@ -97,5 +97,52 @@ public class ReactiveClusterRequest extends AbstractClusterRequest<ClientRequest
     @Override
     protected Map<String, List<String>> parseCookies() {
         return request.cookies();
+    }
+
+    /**
+     * Executes the HTTP request for a specific service instance and returns a reactive {@link ClientResponse}.
+     *
+     * @param instance the {@link ServiceInstance} to which the request is directed
+     * @return a {@link Mono} emitting the {@link ClientResponse} containing the response data
+     */
+    public Mono<ClientResponse> exchange(ServiceInstance instance) {
+        ClientRequest newRequest = createRequest(instance);
+        return next.exchange(newRequest);
+    }
+
+    /**
+     * Builds a new {@link ClientRequest} tailored for a specific {@link ServiceInstance}, incorporating sticky session
+     * configurations and potential transformations.
+     *
+     * @param serviceInstance The {@link ServiceInstance} to which the request should be directed.
+     * @return A new {@link ClientRequest} instance, modified to target the specified {@link ServiceInstance} and
+     * potentially transformed by any configured {@link LoadBalancerClientRequestTransformer}s.
+     */
+    private ClientRequest createRequest(ServiceInstance serviceInstance) {
+        LoadBalancerProperties properties = getProperties();
+        LoadBalancerProperties.StickySession stickySession = properties == null ? null : properties.getStickySession();
+        String instanceIdCookieName = stickySession == null ? null : stickySession.getInstanceIdCookieName();
+        boolean addServiceInstanceCookie = stickySession != null && stickySession.isAddServiceInstanceCookie();
+        URI originalUrl = request.url();
+        ClientRequest result = ClientRequest
+                .create(request.method(), newURI(serviceInstance, originalUrl))
+                .headers(headers -> headers.addAll(request.headers()))
+                .cookies(cookies -> {
+                    cookies.addAll(request.cookies());
+                    // todo how to use this sticky session
+                    if (!(instanceIdCookieName == null || instanceIdCookieName.isEmpty()) && addServiceInstanceCookie) {
+                        cookies.add(instanceIdCookieName, serviceInstance.getInstanceId());
+                    }
+                })
+                .attributes(attributes -> attributes.putAll(request.attributes()))
+                .body(request.body())
+                .build();
+        List<LoadBalancerClientRequestTransformer> transformers = context.getTransformers();
+        if (transformers != null) {
+            for (LoadBalancerClientRequestTransformer transformer : transformers) {
+                result = transformer.transformRequest(result, serviceInstance);
+            }
+        }
+        return result;
     }
 }

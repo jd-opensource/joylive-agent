@@ -25,8 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.registry.springcloud.v3.condition.ConditionalOnSpringCloud3GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInterceptor;
 
 /**
@@ -37,7 +37,7 @@ import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.RegistryInte
  */
 @Injectable
 @Extension(value = "ServiceRegistryDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnGovernanceEnabled
+@ConditionalOnSpringCloud3GovernanceEnabled
 @ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_REGISTRY)
 public class RegistryDefinition extends PluginDefinitionAdapter {
 

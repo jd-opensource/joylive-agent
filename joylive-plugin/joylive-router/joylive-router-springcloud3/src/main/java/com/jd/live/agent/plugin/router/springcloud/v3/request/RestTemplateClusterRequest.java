@@ -29,13 +29,15 @@ import java.util.Map;
 public class RestTemplateClusterRequest extends AbstractHttpOutboundRequest<RestTemplateHttpRequest> {
 
     private final String service;
-    private final List<ServiceEndpoint> endpoints;
+
+    private final List<ServiceEndpoint> instances;
+
     private final HttpHeaders writeableHeaders;
 
-    public RestTemplateClusterRequest(RestTemplateHttpRequest request, String service, List<ServiceEndpoint> endpoints) {
+    public RestTemplateClusterRequest(RestTemplateHttpRequest request, String service, List<ServiceEndpoint> instances) {
         super(request);
         this.service = service;
-        this.endpoints = endpoints;
+        this.instances = instances;
         this.uri = request.getURI();
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
@@ -72,7 +74,7 @@ public class RestTemplateClusterRequest extends AbstractHttpOutboundRequest<Rest
         return writeableHeaders;
     }
 
-    public List<ServiceEndpoint> getEndpoints() {
-        return endpoints;
+    public List<ServiceEndpoint> getInstances() {
+        return instances;
     }
 }

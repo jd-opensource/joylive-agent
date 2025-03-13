@@ -6,5 +6,4 @@ com.jd.live.agent.plugin.router.springcloud.v3.definition.RetryableFeignClusterD
 com.jd.live.agent.plugin.router.springcloud.v3.definition.BlockingClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.RetryableBlockingClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.RestTemplateClusterDefinition
-com.jd.live.agent.plugin.router.springcloud.v3.definition.SimpleDiscoveryClientDefinition
-com.jd.live.agent.plugin.router.springcloud.v3.definition.SimpleReactiveDiscoveryClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v3.definition.WebClientClusterDefinition

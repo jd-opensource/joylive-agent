@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.springgateway.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringGatewayEnabled;
@@ -30,10 +31,13 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnSpringGatewayEnabled
 @ConditionalOnReactive
+@ConditionalOnClass(ConditionalOnSpringGateway3Enabled.TYPE_STICKY_SESSION_SUPPLIER)
 @ConditionalOnMissingClass(ConditionalOnSpringGateway3Enabled.TYPE_HTTP_HTTP_STATUS_CODE)
 @ConditionalComposite
 public @interface ConditionalOnSpringGateway3Enabled {
 
+    // spring gateway 4
     String TYPE_HTTP_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
-
+    // spring gateway 3/4
+    String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
 }

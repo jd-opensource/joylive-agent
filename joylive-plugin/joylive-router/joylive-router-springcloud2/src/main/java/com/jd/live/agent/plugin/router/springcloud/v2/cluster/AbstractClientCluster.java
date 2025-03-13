@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2.cluster;
 
-import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -23,19 +22,18 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v2.exception.StatusThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2.exception.ThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2.request.SpringClusterRequest;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -49,44 +47,45 @@ import java.util.concurrent.CompletionStage;
  */
 public abstract class AbstractClientCluster<
         R extends SpringClusterRequest,
-        O extends OutboundResponse>
+        O extends OutboundResponse,
+        C extends CloudClusterContext>
         extends AbstractLiveCluster<R, O, SpringEndpoint> {
 
-    protected RetryPolicy defaultRetryPolicy;
+    protected final C context;
 
-    protected final SpringOutboundThrower<R> thrower = new SpringOutboundThrower<>();
+    protected final SpringOutboundThrower<R> thrower;
+
+    public AbstractClientCluster(C context) {
+        this(context, StatusThrowerFactory.INSTANCE);
+    }
+
+    public AbstractClientCluster(C context, ThrowerFactory factory) {
+        this.context = context;
+        this.thrower = new SpringOutboundThrower<>(factory);
+    }
 
     @Override
     public ClusterPolicy getDefaultPolicy(R request) {
-        if (defaultRetryPolicy != null && defaultRetryPolicy.containsMethod(request.getHttpMethod().name())) {
-            return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, defaultRetryPolicy);
-        }
-        return new ClusterPolicy(ClusterInvoker.TYPE_FAILFAST);
+        RetryPolicy retryPolicy = isRetryable() ? request.getDefaultRetryPolicy() : null;
+        return new ClusterPolicy(retryPolicy == null ? ClusterInvoker.TYPE_FAILFAST : ClusterInvoker.TYPE_FAILOVER, retryPolicy);
     }
 
     /**
-     * Creates a RetryPolicy based on the provided LoadBalancerRetryProperties.
+     * Retrieves the current context instance.
      *
-     * @param properties the LoadBalancerRetryProperties object containing the retry configuration
-     * @return a RetryPolicy instance, or null if retry is not enabled
+     * @return the context instance of type {@code C}
      */
-    protected RetryPolicy createRetryPolicy(LoadBalancerRetryProperties properties) {
-        if (properties == null || !properties.isEnabled()) {
-            return null;
-        }
-        RetryPolicy retryPolicy = new RetryPolicy();
-        Set<Integer> codes = properties.getRetryableStatusCodes();
-        Set<String> statuses = new HashSet<>(codes.size());
-        codes.forEach(status -> statuses.add(String.valueOf(status)));
-        retryPolicy.setRetry(properties.getMaxRetriesOnNextServiceInstance());
-        retryPolicy.setInterval(properties.getBackoff().getMinBackoff().toMillis());
-        retryPolicy.setErrorCodes(statuses);
-        if (!properties.isRetryOnAllOperations()) {
-            Set<String> methods = new HashSet<>(1);
-            methods.add(HttpMethod.GET.name());
-            retryPolicy.setMethods(methods);
-        }
-        return retryPolicy;
+    public C getContext() {
+        return context;
+    }
+
+    /**
+     * Determines if the current context supports retry operations.
+     *
+     * @return {@code true} if the operation is retryable; {@code false} otherwise
+     */
+    public boolean isRetryable() {
+        return context.isRetryable();
     }
 
     /**
@@ -98,22 +97,17 @@ public abstract class AbstractClientCluster<
     @Override
     public CompletionStage<List<SpringEndpoint>> route(R request) {
         CompletableFuture<List<SpringEndpoint>> future = new CompletableFuture<>();
-        ServiceInstanceListSupplier supplier = request.getInstanceSupplier();
-        if (supplier == null) {
-            future.complete(new ArrayList<>());
-        } else {
-            Mono<List<ServiceInstance>> mono = supplier.get().next();
-            mono.subscribe(
-                    v -> {
-                        List<SpringEndpoint> endpoints = new ArrayList<>();
-                        if (v != null) {
-                            v.forEach(i -> endpoints.add(new SpringEndpoint(i)));
-                        }
-                        future.complete(endpoints);
-                    },
-                    future::completeExceptionally
-            );
-        }
+        Mono<List<ServiceInstance>> mono = request.getInstances();
+        mono.subscribe(
+                v -> {
+                    List<SpringEndpoint> endpoints = new ArrayList<>();
+                    if (v != null) {
+                        v.forEach(i -> endpoints.add(new SpringEndpoint(i)));
+                    }
+                    future.complete(endpoints);
+                },
+                future::completeExceptionally
+        );
         return future;
     }
 

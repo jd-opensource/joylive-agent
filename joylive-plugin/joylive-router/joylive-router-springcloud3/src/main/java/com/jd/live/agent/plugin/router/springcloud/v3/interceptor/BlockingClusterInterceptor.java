@@ -55,21 +55,16 @@ public class BlockingClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
         BlockingCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCluster::new);
-        BlockingClusterRequest request = new BlockingClusterRequest((HttpRequest) arguments[0],
-                cluster.getLoadBalancerFactory(),
-                cluster.getLoadBalancerProperties(),
-                (byte[]) arguments[1],
-                (ClientHttpRequestExecution) arguments[2]);
+        BlockingClusterRequest request = new BlockingClusterRequest(ctx.getArgument(0),
+                ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
         HttpOutboundInvocation<BlockingClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
-            mc.setThrowable(error.getThrowable());
+            mc.skipWithThrowable(error.getThrowable());
         } else {
-            mc.setResult(response.getResponse());
+            mc.skipWithResult(response.getResponse());
         }
-        mc.setSkip(true);
     }
 }

@@ -25,7 +25,6 @@ import com.jd.live.agent.plugin.router.springcloud.v3.cluster.FeignCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
 import feign.Client;
-import feign.Request;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,18 +47,18 @@ public class FeignClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = ctx.getArguments();
         FeignCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCluster::new);
-        FeignClusterRequest request = new FeignClusterRequest((Request) arguments[0],
-                cluster.getLoadBalancerFactory(), cluster.getLoadBalancerProperties(), (Request.Options) arguments[1]);
+        FeignClusterRequest request = new FeignClusterRequest(
+                ctx.getArgument(0),
+                ctx.getArgument(1),
+                cluster.getContext());
         HttpOutboundInvocation<FeignClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         FeignClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
-            mc.setThrowable(error.getThrowable());
+            mc.skipWithThrowable(error.getThrowable());
         } else {
-            mc.setResult(response.getResponse());
+            mc.skipWithResult(response.getResponse());
         }
-        mc.setSkip(true);
     }
 }

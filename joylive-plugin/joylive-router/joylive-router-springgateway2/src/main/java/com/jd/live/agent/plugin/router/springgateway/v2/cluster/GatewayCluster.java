@@ -17,93 +17,62 @@ package com.jd.live.agent.plugin.router.springgateway.v2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
-import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v2.cluster.AbstractClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v2.util.UriUtils;
+import com.jd.live.agent.plugin.router.springgateway.v2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.HttpHeadersParser;
 import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
-import com.jd.live.agent.plugin.router.springgateway.v2.util.UriUtils;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.lang.NonNull;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 @Getter
-public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest, GatewayClusterResponse> {
+public class GatewayCluster extends AbstractClientCluster<
+        GatewayClusterRequest,
+        GatewayClusterResponse,
+        GatewayClusterContext> {
 
-    private final ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
-
-    private final Propagation propagation;
-
-    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory, Propagation propagation) {
-        this.clientFactory = clientFactory;
-        this.propagation = propagation;
+    public GatewayCluster(GatewayClusterContext context) {
+        super(context);
     }
 
-    @Override
-    public ClusterPolicy getDefaultPolicy(GatewayClusterRequest request) {
-        RetryConfig retryConfig = request.getRetryConfig();
-        if (retryConfig != null && retryConfig.getRetries() > 0) {
-            List<HttpMethod> methods = retryConfig.getMethods();
-            if (methods.isEmpty() || methods.contains(request.getRequest().getMethod())) {
-                RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
-                Set<String> statuses = new HashSet<>(16);
-                retryConfig.getStatuses().forEach(status -> statuses.add(String.valueOf(status.value())));
-                Set<HttpStatus.Series> series = new HashSet<>(retryConfig.getSeries());
-                if (!series.isEmpty()) {
-                    for (HttpStatus status : HttpStatus.values()) {
-                        if (series.contains(status.series())) {
-                            statuses.add(String.valueOf(status.value()));
-                        }
-                    }
-                }
-                Set<String> exceptions = new HashSet<>();
-                retryConfig.getExceptions().forEach(e -> exceptions.add(e.getName()));
-
-                RetryPolicy retryPolicy = new RetryPolicy();
-                retryPolicy.setRetry(retryConfig.getRetries());
-                retryPolicy.setInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
-                retryPolicy.setErrorCodes(statuses);
-                retryPolicy.setExceptions(exceptions);
-                return new ClusterPolicy(ClusterInvoker.TYPE_FAILOVER, retryPolicy);
-            }
-        }
-        return new ClusterPolicy(ClusterInvoker.TYPE_FAILFAST);
+    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory, Propagation propagation) {
+        super(new GatewayClusterContext(clientFactory, propagation));
     }
 
     @Override
@@ -111,8 +80,10 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
-            Consumer<ServerHttpRequest.Builder> header = b -> b.headers(headers ->
-                    propagation.write(RequestContext.get(), new HttpHeadersParser(headers)));
+            Propagation propagation = context.getPropagation();
+            Carrier carrier = RequestContext.get();
+            Consumer<ServerHttpRequest.Builder> header = b -> b.headers(
+                    headers -> propagation.write(carrier, new HttpHeadersParser(headers)));
             ServerWebExchange.Builder builder = request.getExchange().mutate().request(header);
             // decorate response to remove exception header and get body
             BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);
@@ -161,22 +132,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
 
     @Override
     protected GatewayClusterResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
-        ServerHttpResponse response = httpRequest.getExchange().getResponse();
-        ServerHttpRequest request = httpRequest.getExchange().getRequest();
-
-        DataBuffer buffer = response.bufferFactory().wrap(degradeConfig.getResponseBytes());
-        HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
-        headers.putAll(request.getHeaders());
-        Map<String, String> attributes = degradeConfig.getAttributes();
-        if (attributes != null) {
-            attributes.forEach(headers::add);
-        }
-        response.setRawStatusCode(degradeConfig.getResponseCode());
-        response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
-        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
-
-        response.writeWith(Flux.just(buffer)).subscribe();
-        return new GatewayClusterResponse(response);
+        return GatewayClusterResponse.create(httpRequest, degradeConfig);
     }
 
     @Override
@@ -218,6 +174,7 @@ public class GatewayCluster extends AbstractClientCluster<GatewayClusterRequest,
                         DataBufferFactory bufferFactory = bufferFactory();
                         byte[] data = new byte[dataBuffer.readableByteCount()];
                         dataBuffer.read(data);
+                        // must release the buffer
                         DataBufferUtils.release(dataBuffer);
                         String res = new String(data, StandardCharsets.UTF_8);
                         exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, res);

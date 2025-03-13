@@ -109,7 +109,7 @@ public class NacosRegistry implements RegistryService {
         namingService.subscribe(service, getGroup(group), event -> {
             if (event instanceof NamingEvent) {
                 NamingEvent e = (NamingEvent) event;
-                consumer.accept(new InstanceEvent(service, convert(e.getInstances(), NacosInstance::new)));
+                consumer.accept(new InstanceEvent(service, convert(e.getInstances(), NacosEndpoint::new)));
             }
         });
     }

@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppBootstrapContext;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppEnvironment;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * An interceptor that adds a Configurator-based PropertySource to the ConfigurableEnvironment
@@ -51,7 +52,9 @@ public class ApplicationEnvironmentPreparedInterceptor extends InterceptorAdapto
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppBootstrapContext context = new SpringAppBootstrapContext();
-        SpringAppEnvironment environment = new SpringAppEnvironment(ctx.getArgument(1));
+        Object[] arguments = ctx.getArguments();
+        ConfigurableEnvironment env = (ConfigurableEnvironment) (arguments.length > 1 ? arguments[1] : arguments[0]);
+        SpringAppEnvironment environment = new SpringAppEnvironment(env);
         if (config.getRegistryConfig().isEnabled()) {
             // subscribe policy
             registry.register(application.getService().getName(), application.getService().getGroup());

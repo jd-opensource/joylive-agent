@@ -16,11 +16,13 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.plugin.router.springcloud.v2.cluster.context.BlockingClusterContext;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -31,7 +33,7 @@ import java.util.Map;
  *
  * @see AbstractClusterRequest for the base functionality
  */
-public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> {
+public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest, BlockingClusterContext> {
 
     /**
      * The body of the HTTP request.
@@ -45,20 +47,11 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
 
     private final HttpHeaders writeableHeaders;
 
-    /**
-     * Constructs a new {@code BlockingRouteRequest} with the specified request details and load balancing context.
-     *
-     * @param request             The original HTTP request.
-     * @param loadBalancerFactory The factory to obtain a load balancer instance for routing decisions.
-     * @param body                The body of the request as a byte array.
-     * @param execution           The execution context for processing the request.
-     */
     public BlockingClusterRequest(HttpRequest request,
-                                  ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
                                   byte[] body,
-                                  ClientHttpRequestExecution execution) {
-        super(request, loadBalancerFactory);
-        this.uri = request.getURI();
+                                  ClientHttpRequestExecution execution,
+                                  BlockingClusterContext context) {
+        super(request, request.getURI(), context);
         this.body = body;
         this.execution = execution;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
@@ -85,17 +78,20 @@ public class BlockingClusterRequest extends AbstractClusterRequest<HttpRequest> 
         }
     }
 
-    public byte[] getBody() {
-        return body;
-    }
-
-    public ClientHttpRequestExecution getExecution() {
-        return execution;
-    }
-
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return writeableHeaders;
     }
 
+    /**
+     * Executes the HTTP request for a specific service instance and returns the response.
+     *
+     * @param instance the {@link ServiceInstance} to which the request is directed
+     * @return the {@link ClientHttpResponse} containing the response data
+     * @throws Exception if an error occurs during the request execution
+     */
+    public ClientHttpResponse execute(ServiceInstance instance) throws Exception {
+        LoadBalancerRequest<ClientHttpResponse> lbRequest = context.getRequestFactory().createRequest(request, body, execution);
+        return lbRequest.apply(instance);
+    }
 }

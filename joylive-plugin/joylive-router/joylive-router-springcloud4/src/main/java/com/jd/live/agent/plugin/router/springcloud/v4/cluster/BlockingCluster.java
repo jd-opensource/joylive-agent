@@ -19,13 +19,11 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.BlockingClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.DegradeHttpResponse;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.*;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
@@ -35,20 +33,18 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
-
 /**
  * The {@code BlockingCluster} class extends {@code AbstractClientCluster} to provide a blocking
  * mechanism for handling HTTP requests, integrating load balancing and retry logic. It utilizes
  * Spring Cloud's load balancing capabilities to distribute requests across service instances and
  * supports configurable retry mechanisms for handling transient failures.
- * <p>
- * This class is designed to work within a microservices architecture, leveraging Spring Cloud's
- * infrastructure components to facilitate resilient and scalable service-to-service communication.
  *
  * @see AbstractClientCluster
  */
-public class BlockingCluster extends AbstractClientCluster<BlockingClusterRequest, BlockingClusterResponse> {
+public class BlockingCluster extends AbstractClientCluster<
+        BlockingClusterRequest,
+        BlockingClusterResponse,
+        BlockingClusterContext> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -58,56 +54,19 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private static final String FIELD_REQUEST_FACTORY = "requestFactory";
+    public BlockingCluster(BlockingClusterContext context) {
+        super(context);
+    }
 
-    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancer.loadBalancerClientFactory";
-
-    /**
-     * An interceptor for HTTP requests, used to apply additional processing or modification
-     * to requests before they are executed.
-     */
-    private final ClientHttpRequestInterceptor interceptor;
-
-    /**
-     * A factory for creating load-balanced {@code LoadBalancerRequest} instances, supporting
-     * the dynamic selection of service instances based on load.
-     */
-    private final LoadBalancerRequestFactory requestFactory;
-
-    /**
-     * A factory for creating {@code ReactiveLoadBalancer} instances for service discovery
-     * and load balancing.
-     */
-    private final ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
-
-    /**
-     * Constructs a {@code BlockingCluster} with the specified HTTP request interceptor.
-     * Initializes the {@code requestFactory} and {@code loadBalancerFactory} fields by
-     * reflectively accessing the interceptor's fields.
-     *
-     * @param interceptor the HTTP request interceptor to be used by this cluster
-     */
     public BlockingCluster(ClientHttpRequestInterceptor interceptor) {
-        this.interceptor = interceptor;
-        this.requestFactory = getValue(interceptor, FIELD_REQUEST_FACTORY);
-        this.loadBalancerFactory = getValue(interceptor, new String[]{FIELD_LOAD_BALANCER_CLIENT_FACTORY}, v -> v instanceof ReactiveLoadBalancer.Factory);
-    }
-
-    public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
-        return loadBalancerFactory;
-    }
-
-    @Override
-    protected boolean isRetryable() {
-        return interceptor instanceof RetryLoadBalancerInterceptor;
+        super(new BlockingClusterContext(interceptor));
     }
 
     @Override
     public CompletionStage<BlockingClusterResponse> invoke(BlockingClusterRequest request, SpringEndpoint endpoint) {
         // TODO sticky session
         try {
-            LoadBalancerRequest<ClientHttpResponse> lbRequest = requestFactory.createRequest(request.getRequest(), request.getBody(), request.getExecution());
-            ClientHttpResponse response = lbRequest.apply(endpoint.getInstance());
+            ClientHttpResponse response = request.execute(endpoint.getInstance());
             return CompletableFuture.completedFuture(new BlockingClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
@@ -119,18 +78,9 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
         return RETRY_PREDICATE;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(BlockingClusterResponse response, BlockingClusterRequest request, SpringEndpoint endpoint) {
-        try {
-            ResponseData data = new ResponseData(response.getResponse(), new RequestData(request.getRequest()));
-            request.lifecycles(l -> l.onComplete(new CompletionContext<>(
-                    CompletionContext.Status.SUCCESS,
-                    request.getLbRequest(),
-                    endpoint.getResponse(),
-                    data)));
-        } catch (Throwable ignore) {
-        }
+        request.onSuccess(response, endpoint);
     }
 
     @Override
@@ -142,4 +92,5 @@ public class BlockingCluster extends AbstractClientCluster<BlockingClusterReques
     protected BlockingClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new BlockingClusterResponse(error, predicate);
     }
+
 }

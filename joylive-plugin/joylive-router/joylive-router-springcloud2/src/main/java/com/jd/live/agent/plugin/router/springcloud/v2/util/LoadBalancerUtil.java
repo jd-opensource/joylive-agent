@@ -15,10 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2.util;
 
+import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * A utility class for retrieving the ReactiveLoadBalancer.Factory from a LoadBalancerClient instance.
@@ -44,12 +50,37 @@ public class LoadBalancerUtil {
         }
         String name = client.getClass().getName();
         if (name.equals(TYPE_BLOCKING_LOAD_BALANCER_CLIENT)) {
-            return getValue(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+            return getQuietly(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
         } else if (name.equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
-            return new RibbonLoadBalancerFactory(getValue(client, FIELD_CLIENT_FACTORY));
+            return new RibbonLoadBalancerFactory(getQuietly(client, FIELD_CLIENT_FACTORY));
         } else if (name.equals(TYPE_CACHING_SPRING_LOAD_BALANCER_FACTORY)) {
-            return new RibbonLoadBalancerFactory(getValue(client, FIELD_FACTORY));
+            return new RibbonLoadBalancerFactory(getQuietly(client, FIELD_FACTORY));
         }
         return null;
+    }
+
+    /**
+     * Creates a RetryPolicy based on the provided LoadBalancerRetryProperties.
+     *
+     * @param properties the LoadBalancerRetryProperties object containing the retry configuration
+     * @return a RetryPolicy instance, or null if retry is not enabled
+     */
+    public static RetryPolicy getDefaultRetryPolicy(LoadBalancerRetryProperties properties) {
+        if (properties == null || !properties.isEnabled()) {
+            return null;
+        }
+        RetryPolicy retryPolicy = new RetryPolicy();
+        Set<Integer> codes = properties.getRetryableStatusCodes();
+        Set<String> statuses = new HashSet<>(codes.size());
+        codes.forEach(status -> statuses.add(String.valueOf(status)));
+        retryPolicy.setRetry(properties.getMaxRetriesOnNextServiceInstance());
+        retryPolicy.setInterval(properties.getBackoff().getMinBackoff().toMillis());
+        retryPolicy.setErrorCodes(statuses);
+        if (!properties.isRetryOnAllOperations()) {
+            Set<String> methods = new HashSet<>(1);
+            methods.add(HttpMethod.GET.name());
+            retryPolicy.setMethods(methods);
+        }
+        return retryPolicy;
     }
 }

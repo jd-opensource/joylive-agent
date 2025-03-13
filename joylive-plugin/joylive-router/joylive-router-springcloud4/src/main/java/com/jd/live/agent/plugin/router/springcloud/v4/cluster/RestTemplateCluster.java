@@ -27,6 +27,7 @@ import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundTh
 import com.jd.live.agent.plugin.router.springcloud.v4.request.RestTemplateClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.DegradeHttpResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
 
 import java.util.Arrays;
@@ -74,12 +75,12 @@ public class RestTemplateCluster extends AbstractLiveCluster<RestTemplateCluster
 
     @Override
     protected BlockingClusterResponse createResponse(RestTemplateClusterRequest request) {
-        return null;
+        return createResponse(request, DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build());
     }
 
     @Override
     public CompletionStage<List<ServiceEndpoint>> route(RestTemplateClusterRequest request) {
-        return CompletableFuture.completedFuture(request.getEndpoints());
+        return CompletableFuture.completedFuture(request.getInstances());
     }
 
     @Override
