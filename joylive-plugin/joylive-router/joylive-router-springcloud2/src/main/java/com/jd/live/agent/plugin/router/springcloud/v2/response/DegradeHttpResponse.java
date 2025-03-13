@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v2.response;
 
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
-import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingCloudClusterRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
@@ -33,11 +33,11 @@ import java.util.Map;
  */
 public class DegradeHttpResponse implements ClientHttpResponse {
     private final DegradeConfig degradeConfig;
-    private final BlockingClusterRequest httpRequest;
+    private final BlockingCloudClusterRequest httpRequest;
     private final int length;
     private final InputStream bodyStream;
 
-    public DegradeHttpResponse(DegradeConfig degradeConfig, BlockingClusterRequest httpRequest) {
+    public DegradeHttpResponse(DegradeConfig degradeConfig, BlockingCloudClusterRequest httpRequest) {
         this.degradeConfig = degradeConfig;
         this.httpRequest = httpRequest;
         this.length = degradeConfig.getBodyLength();

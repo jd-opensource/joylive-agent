@@ -24,12 +24,12 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.Request;
-import com.jd.live.agent.plugin.router.springcloud.v2.cluster.AbstractClientCluster;
+import com.jd.live.agent.plugin.router.springcloud.v2.cluster.AbstractCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2.util.UriUtils;
 import com.jd.live.agent.plugin.router.springgateway.v2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2.filter.LiveGatewayFilterChain;
-import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2.request.HttpHeadersParser;
 import com.jd.live.agent.plugin.router.springgateway.v2.response.GatewayClusterResponse;
 import lombok.Getter;
@@ -62,8 +62,8 @@ import java.util.function.Consumer;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 @Getter
-public class GatewayCluster extends AbstractClientCluster<
-        GatewayClusterRequest,
+public class GatewayCluster extends AbstractCloudCluster<
+        GatewayCloudClusterRequest,
         GatewayClusterResponse,
         GatewayClusterContext> {
 
@@ -76,7 +76,7 @@ public class GatewayCluster extends AbstractClientCluster<
     }
 
     @Override
-    public CompletionStage<GatewayClusterResponse> invoke(GatewayClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, SpringEndpoint endpoint) {
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
@@ -104,7 +104,7 @@ public class GatewayCluster extends AbstractClientCluster<
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onStartRequest(GatewayClusterRequest request, SpringEndpoint endpoint) {
+    public void onStartRequest(GatewayCloudClusterRequest request, SpringEndpoint endpoint) {
         if (endpoint != null) {
             ServiceInstance instance = endpoint.getInstance();
             ServerWebExchange exchange = request.getExchange();
@@ -131,7 +131,7 @@ public class GatewayCluster extends AbstractClientCluster<
     }
 
     @Override
-    protected GatewayClusterResponse createResponse(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
+    protected GatewayClusterResponse createResponse(GatewayCloudClusterRequest httpRequest, DegradeConfig degradeConfig) {
         return GatewayClusterResponse.create(httpRequest, degradeConfig);
     }
 

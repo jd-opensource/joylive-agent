@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2.response.SpringClusterResponse;
-import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v2.request.GatewayCloudClusterRequest;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -104,14 +104,14 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     }
 
     /**
-     * Creates a {@link GatewayClusterResponse} based on the provided {@link GatewayClusterRequest} and {@link DegradeConfig}.
+     * Creates a {@link GatewayClusterResponse} based on the provided {@link GatewayCloudClusterRequest} and {@link DegradeConfig}.
      * This method configures the response with the specified status code, headers, and content, and writes the response body.
      *
-     * @param httpRequest   the {@link GatewayClusterRequest} containing the original request and exchange information
+     * @param httpRequest   the {@link GatewayCloudClusterRequest} containing the original request and exchange information
      * @param degradeConfig the {@link DegradeConfig} containing the response configuration (e.g., status code, headers, content)
      * @return a new {@link GatewayClusterResponse} representing the degraded response
      */
-    public static GatewayClusterResponse create(GatewayClusterRequest httpRequest, DegradeConfig degradeConfig) {
+    public static GatewayClusterResponse create(GatewayCloudClusterRequest httpRequest, DegradeConfig degradeConfig) {
         ServerHttpResponse response = httpRequest.getExchange().getResponse();
         ServerHttpRequest request = httpRequest.getExchange().getRequest();
 

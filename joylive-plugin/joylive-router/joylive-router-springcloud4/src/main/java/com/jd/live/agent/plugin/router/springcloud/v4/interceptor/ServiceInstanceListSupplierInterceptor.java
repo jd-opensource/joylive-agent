@@ -30,7 +30,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.RequestDataOutboundRequest;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.Request;
@@ -158,7 +158,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         if (context instanceof RequestDataContext) {
             return createOutlet(createOutboundRequest((RequestDataContext) context));
         } else if (request instanceof HttpRequest) {
-            return createOutlet(new BlockingOutboundRequest((HttpRequest) request, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
+            return createOutlet(new BlockingCloudOutboundRequest((HttpRequest) request, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
         }
         return null;
     }

@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.DegradeHttpRequest;
-import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveCloudClusterRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
@@ -112,7 +112,7 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
      * @param degradeConfig Degrade configuration, containing response code, body length, body content, and headers.
      * @return The constructed response object.
      */
-    public static ReactiveClusterResponse create(ReactiveClusterRequest request, DegradeConfig degradeConfig) {
+    public static ReactiveClusterResponse create(ReactiveCloudClusterRequest request, DegradeConfig degradeConfig) {
         ExchangeStrategies strategies;
         try {
             ExchangeFunction next = request.getNext();

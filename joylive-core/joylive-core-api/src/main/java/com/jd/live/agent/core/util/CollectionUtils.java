@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.core.util;
 
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -39,7 +39,7 @@ public class CollectionUtils {
 
     private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
 
-    private static final FieldDesc MAP_FIELD = ClassUtils.describe(UNMODIFIED_MAP_CLASS).getFieldList().getField("m");
+    private static final UnsafeFieldAccessor MAP_FIELD = UnsafeFieldAccessorFactory.getQuietly(UNMODIFIED_MAP_CLASS, "m");
 
     /**
      * Looks up indices in the list of values where the predicate evaluates to true.
@@ -639,7 +639,7 @@ public class CollectionUtils {
         if (sources == null) {
             return null;
         }
-        if (sources.getClass() == UNMODIFIED_MAP_CLASS) {
+        if (sources.getClass() == UNMODIFIED_MAP_CLASS && MAP_FIELD != null) {
             sources = (Map<K, V>) MAP_FIELD.get(sources);
         }
         return sources;

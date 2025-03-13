@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboun
 import com.jd.live.agent.plugin.router.springgateway.v4.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v4.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v4.response.GatewayClusterResponse;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -95,7 +95,7 @@ public class LiveGatewayFilter implements GatewayFilter {
         if (route == null) {
             return chain.filter(exchange);
         }
-        OutboundInvocation<GatewayClusterRequest> invocation = createInvocation(exchange, chain);
+        OutboundInvocation<GatewayCloudClusterRequest> invocation = createInvocation(exchange, chain);
         CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
         CompletableFuture<Void> result = new CompletableFuture<>();
         response.whenComplete((v, t) -> {
@@ -120,10 +120,10 @@ public class LiveGatewayFilter implements GatewayFilter {
      * @param chain    the GatewayFilterChain representing the remaining filters in the chain
      * @return a new OutboundInvocation instance
      */
-    private OutboundInvocation<GatewayClusterRequest> createInvocation(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private OutboundInvocation<GatewayCloudClusterRequest> createInvocation(ServerWebExchange exchange, GatewayFilterChain chain) {
         boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
         GatewayClusterContext ctx = loadbalancer ? cluster.getContext() : null;
-        GatewayClusterRequest request = new GatewayClusterRequest(exchange, ctx, chain, gatewayConfig, retryConfig, index);
+        GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, ctx, chain, gatewayConfig, retryConfig, index);
         InvocationContext ic = loadbalancer ? context : new HttpForwardContext(context);
         return new GatewayHttpOutboundInvocation<>(request, ic);
     }

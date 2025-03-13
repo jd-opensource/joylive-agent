@@ -30,8 +30,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2.request.FeignOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingCloudOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2.request.FeignCloudOutboundRequest;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.Request;
 import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
@@ -148,9 +148,9 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         Object request = RequestContext.removeAttribute(Carrier.ATTRIBUTE_REQUEST);
         String serviceName = RequestContext.removeAttribute(Carrier.ATTRIBUTE_SERVICE_ID);
         if (request instanceof HttpRequest) {
-            return createOutlet(new BlockingOutboundRequest((HttpRequest) request, serviceName));
+            return createOutlet(new BlockingCloudOutboundRequest((HttpRequest) request, serviceName));
         } else if (request instanceof feign.Request) {
-            return createOutlet(new FeignOutboundRequest((feign.Request) request, serviceName));
+            return createOutlet(new FeignCloudOutboundRequest((feign.Request) request, serviceName));
         }
         return null;
     }
