@@ -134,10 +134,9 @@ public class LiveChainBuilder {
     private LiveRouteFilter createRouteFilter(Route route, long version) {
         List<GatewayFilter> routeFilters = route.getFilters();
         List<GatewayFilter> pathFilters = new ArrayList<>(4);
-        List<GatewayFilter> filters = globalFilters;
+        List<GatewayFilter> filters = new ArrayList<>(globalFilters);
         RetryGatewayFilterFactory.RetryConfig retryConfig = null;
         if (!routeFilters.isEmpty()) {
-            filters = new ArrayList<>(globalFilters);
             GatewayFilter delegate;
             for (GatewayFilter filter : routeFilters) {
                 delegate = filter instanceof OrderedGatewayFilter ? ((OrderedGatewayFilter) filter).getDelegate() : null;
