@@ -86,7 +86,7 @@ public class LiveChainBuilder {
 
     private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
-    private final Map<Route, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
+    private final Map<String, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new FilterConfig instance with the specified parameters.
@@ -113,10 +113,10 @@ public class LiveChainBuilder {
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
         long version = ROUTE_VERSION.get();
         // get filter from cache
-        LiveRouteFilter routeFilter = routeFilters.computeIfAbsent(route, r -> createRouteFilter(r, version));
+        LiveRouteFilter routeFilter = routeFilters.computeIfAbsent(route.getId(), r -> createRouteFilter(route, version));
         if (routeFilter.getVersion() != version) {
             // route is changed. so remove from cache
-            routeFilters.remove(route);
+            routeFilters.remove(route.getId());
         }
 
         boolean loadbalancer = pareURI(exchange, route, routeFilter.getPathFilters());
