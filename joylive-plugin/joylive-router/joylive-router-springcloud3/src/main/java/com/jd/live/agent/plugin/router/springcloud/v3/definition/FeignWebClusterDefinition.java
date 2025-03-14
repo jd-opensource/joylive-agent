@@ -57,7 +57,7 @@ public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public FeignWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE);
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
                         () -> new FeignWebClusterInterceptor(context, registry))
