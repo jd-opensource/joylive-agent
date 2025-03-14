@@ -16,10 +16,11 @@
 package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 
-import java.lang.reflect.Method;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * FeignClientFactoryBeanInterceptor
@@ -34,15 +35,12 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        try {
-            // Compatible with lower versions, using reflection to get values.
-            Object factoryBean = ctx.getTarget();
-            Method getNameMethod = factoryBean.getClass().getDeclaredMethod("getName");
-            getNameMethod.setAccessible(true);
-            String name = (String) getNameMethod.invoke(factoryBean);
+        // Compatible with lower versions, using reflection to get values.
+        Object factoryBean = ctx.getTarget();
+        UnsafeFieldAccessor accessor = getQuietly(factoryBean.getClass(), "name");
+        if (accessor != null) {
+            String name = (String) accessor.get(factoryBean);
             registry.subscribe(name);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to access FeignClientFactoryBean", e);
         }
     }
 }
