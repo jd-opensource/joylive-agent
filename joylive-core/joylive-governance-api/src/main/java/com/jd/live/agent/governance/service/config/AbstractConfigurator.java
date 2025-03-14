@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.service.config;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ConfigParser;
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
@@ -29,6 +30,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -78,7 +80,10 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
     @Override
     public Object getProperty(String name) {
         ConfigCache cache = ref.get();
-        return cache == null || name == null || name.isEmpty() ? null : cache.get(name);
+        if (cache == null || name == null || name.isEmpty()) {
+            return null;
+        }
+        return new ValuePath(name).get(cache.getData());
     }
 
     @Override
@@ -149,88 +154,70 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
      * @param subscription The configuration subscription associated with the update.
      */
     protected void onUpdate(Map<String, Object> newValues, ConfigSubscription<T> subscription) {
-        Map<String, Object> oldValues = subscription.getConfig();
-        // TODO handle yaml & properties && @ConfigurationProperties
-        // mail.defaultRecipients[0]=admin@mail.com
-        // mail.defaultRecipients[1]=owner@mail.com
-        // avoid concurrent merge
+        ConfigParser parser = subscription.getParser();
+        Map<String, Object> newNestedValue = parser.isFlatted() ? CollectionUtils.cascade(newValues) : newValues;
+        Map<String, Object> oldNestedValues = getNestedConfig(subscription);
+
         synchronized (mutex) {
-            size = size + newValues.size() - (oldValues == null ? 0 : oldValues.size());
+            size = size + newNestedValue.size() - (oldNestedValues == null ? 0 : oldNestedValues.size());
             subscription.setConfig(newValues);
-            // merge all configs
+
             Map<String, Object> newer;
             if (subscriptions.size() == 1) {
-                newer = newValues;
+                newer = newNestedValue;
             } else {
                 newer = new HashMap<>(size);
                 for (ConfigSubscription<T> ns : subscriptions) {
-                    oldValues = ns.getConfig();
-                    if (oldValues != null) {
-                        newer.putAll(oldValues);
+                    Map<String, Object> config = getNestedConfig(ns);
+                    if (config != null) {
+                        newer.putAll(config);
                     }
                 }
             }
+
             ConfigCache oldCache = ref.get();
             ConfigCache newCache = new ConfigCache(newer, version.incrementAndGet());
             ref.set(newCache);
-            // publish update
+
+            // Notify listeners based on their paths
             Map<String, Object> older = oldCache == null ? null : oldCache.getData();
-            int counter = 0;
-            // TODO compare value by listener name to match prefix listener
-            // @ConfigurationProperties(prefix="mail")
-            counter += onUpdate(newer, older, newCache.getVersion());
-            counter += onDelete(older, newer, newCache.getVersion());
-            if (counter > 0) {
-                // publish all
-                publish(new ConfigEvent(EventType.UPDATE, SYSTEM_ALL, null, newCache.getVersion()));
-            }
+            notifyListeners(older, newer, newCache.getVersion());
         }
     }
 
-    /**
-     * Handles the deletion of properties from the configuration.
-     *
-     * @param older   The older configuration.
-     * @param newer   The newer configuration.
-     * @param version The version number of the configuration.
-     * @return The number of properties that were deleted.
-     */
-    protected int onDelete(Map<String, Object> older, Map<String, Object> newer, long version) {
+    protected void notifyListeners(Map<String, Object> older, Map<String, Object> newer, Long version) {
         int counter = 0;
-        if (older != null) {
-            for (Map.Entry<String, Object> entry : older.entrySet()) {
-                String key = entry.getKey();
-                if (!newer.containsKey(key)) {
-                    counter++;
-                    publish(new ConfigEvent(EventType.DELETE, key, null, version));
-                }
+        // For each listener, check if its path is affected by the changes
+        for (NameListener listener : listeners.values()) {
+            String name = listener.getName();
+            if (SYSTEM_ALL.equals(name)) {
+                continue;
+            }
+
+            Object newValue = listener.getPath().get(newer);
+            Object oldValue = older != null ? listener.getPath().get(older) : null;
+
+            if (newValue == null && oldValue != null) {
+                counter++;
+                publish(new ConfigEvent(EventType.DELETE, name, null, version));
+            } else if (!Objects.equals(newValue, oldValue)) {
+                counter++;
+                publish(new ConfigEvent(EventType.UPDATE, name, newValue, version));
             }
         }
-        return counter;
+
+        if (counter > 0) {
+            // Notify system-wide listeners
+            publish(new ConfigEvent(EventType.UPDATE, SYSTEM_ALL, null, version));
+        }
     }
 
-    /**
-     * Handles the update of properties in the configuration.
-     *
-     * @param newer   The newer configuration.
-     * @param older   The older configuration.
-     * @param version The version number of the configuration.
-     * @return The number of properties that were updated.
-     */
-    protected int onUpdate(Map<String, Object> newer, Map<String, Object> older, long version) {
-        int counter = 0;
-        if (newer != null) {
-            for (Map.Entry<String, Object> entry : newer.entrySet()) {
-                String key = entry.getKey();
-                Object value = entry.getValue();
-                Object old = older == null ? null : older.get(key);
-                if (value != null && !value.equals(old)) {
-                    counter++;
-                    publish(new ConfigEvent(EventType.UPDATE, key, value, version));
-                }
-            }
+    private Map<String, Object> getNestedConfig(ConfigSubscription<T> subscription) {
+        Map<String, Object> config = subscription.getConfig();
+        if (config != null && subscription.getParser().isFlatted()) {
+            return CollectionUtils.cascade(config);
         }
-        return counter;
+        return config;
     }
 
     protected static class NameListener {

@@ -25,7 +25,9 @@ import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.Configurator;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -99,35 +101,126 @@ public class SpringConfigRefresher {
             String beanName = entry.getKey();
             Object bean = entry.getValue();
             if (config.isEnabled(beanName, bean)) {
-                // TODO handle @ConfigurationProperties
                 ClassDesc describe = ClassUtils.describe(bean.getClass());
+                Set<String> configurationPropertiesFields = new HashSet<>();
+                processConfigurationProperties(configurator, bean, describe, configurationPropertiesFields);
                 Set<Method> setters = new HashSet<>();
-                addFieldListener(configurator, bean, describe, setters);
-                addMethodListener(configurator, bean, describe, setters);
+                addFieldListener(configurator, bean, describe, setters, configurationPropertiesFields);
+                addMethodListener(configurator, bean, describe, setters, configurationPropertiesFields);
             }
         }
     }
 
+    private void processConfigurationProperties(Configurator configurator, Object bean, ClassDesc describe,
+                                                Set<String> configurationPropertiesFields) {
+        ConfigurationProperties classAnnotation = org.springframework.util.ClassUtils
+                .getUserClass(bean).getAnnotation(ConfigurationProperties.class);
+        if (classAnnotation != null) {
+            String prefix = classAnnotation.prefix();
+            if (prefix.isEmpty()) {
+                prefix = classAnnotation.value();
+            }
+            handleConfigurationPropertiesBean(configurator, bean, describe, prefix, configurationPropertiesFields);
+        }
+
+        describe.getMethodList().forEach(method -> {
+            ConfigurationProperties methodAnnotation = method.getAnnotation(ConfigurationProperties.class);
+            if (methodAnnotation != null && method.getReturnType() != void.class) {
+                String prefix = methodAnnotation.prefix();
+                if (prefix.isEmpty()) {
+                    prefix = methodAnnotation.value();
+                }
+                try {
+                    Bean beanAnnotation = method.getAnnotation(Bean.class);
+                    String methodBeanName = null;
+                    if (beanAnnotation != null) {
+                        String[] names = beanAnnotation.name();
+                        if (names.length > 0 && !names[0].isEmpty()) {
+                            methodBeanName = names[0];
+                        } else {
+                            String[] values = beanAnnotation.value();
+                            if (values.length > 0 && !values[0].isEmpty()) {
+                                methodBeanName = values[0];
+                            }
+                        }
+                    }
+                    if (methodBeanName == null) {
+                        methodBeanName = method.getName();
+                    }
+                    Object methodBean = context.containsBean(methodBeanName)
+                            ? context.getBean(methodBeanName)
+                            : method.invoke(bean);
+                    if (methodBean != null) {
+                        ClassDesc methodBeanDesc = ClassUtils.describe(methodBean.getClass());
+                        handleConfigurationPropertiesBean(configurator, methodBean, methodBeanDesc, prefix, new HashSet<>());
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to process @ConfigurationProperties on method " + method.getName(), e);
+                }
+            }
+        });
+    }
+
+    private void handleConfigurationPropertiesBean(Configurator configurator, Object bean, ClassDesc describe,
+                                                   String prefix, Set<String> configurationPropertiesFields) {
+        if (prefix == null || prefix.isEmpty()) {
+            return;
+        }
+
+        describe.getFieldList().forEach(field -> {
+            String propertyPath = buildPropertyPath(prefix, field.getName());
+            Method setter = field.getSetter();
+            if (setter != null) {
+                configurationPropertiesFields.add(field.getName());
+                configurator.addListener(propertyPath, event -> {
+                    if (event.getType() == UPDATE) {
+                        try {
+                            field.set(bean, convert(event.getValue(), field.getType()));
+                            return true;
+                        } catch (Throwable e) {
+                            logger.error("Failed to update config " + propertyPath +
+                                    ", by set field " + field.getName() +
+                                    " of class " + bean.getClass(), e);
+                        }
+                    }
+                    return false;
+                });
+            }
+        });
+    }
+
+    private String buildPropertyPath(String prefix, String fieldName) {
+        return prefix.endsWith(".") ? prefix + fieldName : prefix + "." + fieldName;
+    }
+
     /**
-     * Adds a method listener to the given ConfigCenter instance for the specified bean and method.
+     * Adds a field listener to the given ConfigCenter instance for the specified bean and field.
      *
      * @param configurator The Configurator instance to which the listener will be added.
-     * @param bean         The bean for which the method listener will be added.
+     * @param bean         The bean for which the field listener will be added.
      * @param describe     The ClassDesc object describing the bean's class.
      * @param setters      A set of methods that are already registered as setters.
+     * @param configurationPropertiesFields A set of fields thar are already listened
      */
-    private void addMethodListener(Configurator configurator, Object bean, ClassDesc describe, Set<Method> setters) {
-        describe.getMethodList().forEach(method -> {
-            if (!setters.contains(method) && method.getParameterCount() == 1) {
-                String key = getMethodKey(method);
+    private void addFieldListener(Configurator configurator, Object bean, ClassDesc describe,
+                                  Set<Method> setters, Set<String> configurationPropertiesFields) {
+        describe.getFieldList().forEach(field -> {
+            if (!configurationPropertiesFields.contains(field.getName())) {
+                String key = getFieldKey(field);
                 if (key != null) {
+                    Method setter = field.getSetter();
+                    if (setter != null) {
+                        setters.add(setter);
+                    }
                     configurator.addListener(key, event -> {
                         if (event.getType() == UPDATE) {
                             try {
-                                method.invoke(bean, convert(event.getValue(), method.getParameters()[0].getType()));
+                                field.set(bean, convert(event.getValue(), field.getType()));
                                 return true;
                             } catch (Throwable e) {
-                                logger.error("Failed to update config " + key + " by invoking method " + method.getName() + " of class " + bean.getClass(), e);
+                                logger.error("Failed to update config " + key +
+                                        " by set field " + field.getName() +
+                                        " of class " + bean.getClass(), e);
                             }
                         }
                         return false;
@@ -138,34 +231,47 @@ public class SpringConfigRefresher {
     }
 
     /**
-     * Adds a field listener to the given ConfigCenter instance for the specified bean and field.
+     * Adds a method listener to the given ConfigCenter instance for the specified bean and method.
      *
      * @param configurator The Configurator instance to which the listener will be added.
-     * @param bean         The bean for which the field listener will be added.
+     * @param bean         The bean for which the method listener will be added.
      * @param describe     The ClassDesc object describing the bean's class.
      * @param setters      A set of methods that are already registered as setters.
+     * @param configurationPropertiesFields A set of fields thar are already listened
      */
-    private void addFieldListener(Configurator configurator, Object bean, ClassDesc describe, Set<Method> setters) {
-        describe.getFieldList().forEach(field -> {
-            String key = getFieldKey(field);
-            if (key != null) {
-                Method setter = field.getSetter();
-                if (setter != null) {
-                    setters.add(setter);
-                }
-                configurator.addListener(key, event -> {
-                    if (event.getType() == UPDATE) {
-                        try {
-                            field.set(bean, convert(event.getValue(), field.getType()));
-                            return true;
-                        } catch (Throwable e) {
-                            logger.error("Failed to update config " + key + ", by set field " + field.getName() + " of class " + bean.getClass(), e);
-                        }
+    private void addMethodListener(Configurator configurator, Object bean, ClassDesc describe,
+                                   Set<Method> setters, Set<String> configurationPropertiesFields) {
+        describe.getMethodList().forEach(method -> {
+            if (!setters.contains(method) && method.getParameterCount() == 1) {
+                String fieldName = getFieldNameFromSetter(method);
+                if (fieldName == null || !configurationPropertiesFields.contains(fieldName)) {
+                    String key = getMethodKey(method);
+                    if (key != null) {
+                        configurator.addListener(key, event -> {
+                            if (event.getType() == UPDATE) {
+                                try {
+                                    method.invoke(bean, convert(event.getValue(), method.getParameters()[0].getType()));
+                                    return true;
+                                } catch (Throwable e) {
+                                    logger.error("Failed to update config " + key +
+                                            " by invoking method " + method.getName() +
+                                            " of class " + bean.getClass(), e);
+                                }
+                            }
+                            return false;
+                        });
                     }
-                    return false;
-                });
+                }
             }
         });
+    }
+
+    private String getFieldNameFromSetter(Method method) {
+        String name = method.getName();
+        if (name.startsWith("set") && name.length() > 3) {
+            return Character.toLowerCase(name.charAt(3)) + name.substring(4);
+        }
+        return null;
     }
 
     /**
