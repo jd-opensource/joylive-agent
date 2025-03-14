@@ -32,7 +32,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnSpringEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_SPRING_GATEWAY_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ConditionalOnSpringGatewayEnabled.TYPE_ROUTE)
 @ConditionalComposite
 public @interface ConditionalOnSpringGatewayEnabled {

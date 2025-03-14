@@ -28,7 +28,7 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnOnlyRouteEnabled
 @ConditionalOnMqEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_KAFKA_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_KAFKA_ENABLED, matchIfMissing = true)
 @ConditionalComposite
 public @interface ConditionalOnKafkaAnyRouteEnabled {
 

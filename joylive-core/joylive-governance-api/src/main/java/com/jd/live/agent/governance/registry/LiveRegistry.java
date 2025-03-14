@@ -198,7 +198,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     @Override
     public CompletableFuture<Void> subscribe(String service, String group) {
         group = group == null ? serviceConfig.getGroup(service) : group;
-        subscribe(service, group, null);
+        // subscribe instance
+        subscribe(service, group, (Consumer<InstanceEvent>) null);
+        // subscribe govern policy
         return policySupplier.subscribe(service, group);
     }
 

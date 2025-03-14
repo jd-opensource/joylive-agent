@@ -35,60 +35,57 @@ import org.springframework.http.HttpStatus;
  *
  * @see AbstractOutboundThrower
  */
-public class SpringOutboundThrower<R extends HttpOutboundRequest> extends AbstractOutboundThrower<R, Endpoint> implements ThrowerFactory {
+public class SpringOutboundThrower<T extends Throwable, R extends HttpOutboundRequest>
+        extends AbstractOutboundThrower<R, Endpoint> implements ThrowerFactory<T, R> {
 
-    private final ThrowerFactory factory;
+    private final ThrowerFactory<T, R> factory;
 
-    public SpringOutboundThrower() {
-        this(StatusThrowerFactory.INSTANCE);
-    }
-
-    public SpringOutboundThrower(ThrowerFactory factory) {
-        this.factory = factory == null ? StatusThrowerFactory.INSTANCE : factory;
+    public SpringOutboundThrower(ThrowerFactory<T, R> factory) {
+        this.factory = factory;
     }
 
     @Override
-    protected NestedRuntimeException createUnReadyException(RejectUnreadyException exception, R request) {
+    protected T createUnReadyException(RejectUnreadyException exception, R request) {
         String message = exception.getMessage() == null ? "The cluster is not ready. " : exception.getMessage();
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, message);
+        return createException(request, HttpStatus.SERVICE_UNAVAILABLE, message);
     }
 
     @Override
-    protected NestedRuntimeException createLiveException(LiveException exception, R request, Endpoint endpoint) {
-        return createException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
+    protected T createLiveException(LiveException exception, R request, Endpoint endpoint) {
+        return createException(request, HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
 
     @Override
-    protected NestedRuntimeException createFaultException(FaultException exception, R request) {
+    protected T createFaultException(FaultException exception, R request) {
         HttpStatus status = HttpStatus.resolve(exception.getCode());
         status = status == null ? HttpStatus.SERVICE_UNAVAILABLE : status;
-        return createException(status, exception.getMessage(), exception);
+        return createException(request, status, exception.getMessage(), exception);
     }
 
     @Override
-    protected NestedRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
+    protected T createCircuitBreakException(RejectCircuitBreakException exception, R request) {
+        return createException(request, HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
     }
 
     @Override
-    protected NestedRuntimeException createNoProviderException(RejectNoProviderException exception, R request) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE,
+    protected T createNoProviderException(RejectNoProviderException exception, R request) {
+        return createException(request, HttpStatus.SERVICE_UNAVAILABLE,
                 "LoadBalancer does not contain an instance for the service " + request.getService());
     }
 
     @Override
-    protected NestedRuntimeException createRejectException(RejectException exception, R request) {
-        return createException(HttpStatus.FORBIDDEN, exception.getMessage());
+    protected T createRejectException(RejectException exception, R request) {
+        return createException(request, HttpStatus.FORBIDDEN, exception.getMessage());
     }
 
     @Override
-    protected NestedRuntimeException createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    protected T createRetryExhaustedException(RetryExhaustedException exception, OutboundInvocation<R> invocation) {
+        return createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
     }
 
     @Override
-    protected NestedRuntimeException createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<R> invocation) {
-        return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    protected T createRetryTimeoutException(RetryTimeoutException exception, OutboundInvocation<R> invocation) {
+        return createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
     }
 
     /**
@@ -98,12 +95,12 @@ public class SpringOutboundThrower<R extends HttpOutboundRequest> extends Abstra
      * @param message the error message
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    protected NestedRuntimeException createException(HttpStatus status, String message) {
-        return createException(status, message, null);
+    protected T createException(R request, HttpStatus status, String message) {
+        return createException(request, status, message, null);
     }
 
     @Override
-    public NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
-        return factory.createException(status, message, throwable);
+    public T createException(R request, HttpStatus status, String message, Throwable throwable) {
+        return factory.createException(request, status, message, throwable);
     }
 }

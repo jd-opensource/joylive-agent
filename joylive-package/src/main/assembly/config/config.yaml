@@ -130,8 +130,7 @@ agent:
     interval: 100
     timeout: 5000
   switch:
-    live:
-      enabled: ${CONFIG_LIVE_ENABLED:false}
+    govern:
       mq: ${CONFIG_LIVE_MQ_ENABLED:false}
       dubbo: true
       grpc: true
@@ -140,6 +139,8 @@ agent:
       spring: true
       phevos: true
       rocketmq: true
+    live:
+      enabled: ${CONFIG_LIVE_ENABLED:false}
     lane:
       enabled: ${CONFIG_LANE_ENABLED:${CONFIG_FLOW_CONTROL_ENABLED}}
     transmission:
@@ -165,6 +166,7 @@ agent:
       enabled: true
   governance:
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
+    springCloud: ${CONFIG_SPRING_CLOUD}
     service:
       localFirst: ${CONFIG_LOCAL_FIRST:true}
       localFirstMode: ${CONFIG_LOCAL_FIRST_MODE:CELL}
@@ -291,7 +293,7 @@ agent:
           - com.jd.live.agent.shaded.
           - org.apache.catalina.core.ContainerBase$
           - org.apache.catalina.core.StandardServer$$Lambda$
-    configcenter:
+    configCenter:
       type: ${CONFIG_CENTER_TYPE:nacos}
       address: ${CONFIG_CENTER_ADDRESS:}
       username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}

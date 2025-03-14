@@ -19,7 +19,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnMissingSpringLoadBalancer;
+import com.jd.live.agent.governance.annotation.ConditionalOnNotSpringCloud;
 import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
 
 import java.lang.annotation.*;
@@ -29,7 +29,7 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnRegistryEnabled
 @ConditionalOnGovernanceEnabled
-@ConditionalOnMissingSpringLoadBalancer
+@ConditionalOnNotSpringCloud
 @ConditionalOnClass(ConditionalOnSpringWeb5RegistryEnabled.TYPE_CLIENT_HTTP_REQUEST)
 @ConditionalOnMissingClass(ConditionalOnSpringWeb5RegistryEnabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite

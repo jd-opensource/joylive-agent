@@ -15,23 +15,30 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.exception;
 
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import org.springframework.core.NestedRuntimeException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 /**
  * A factory interface for creating instances of {@link NestedRuntimeException}.
+ * This interface is designed to provide a flexible way to create custom exceptions
+ * based on the provided HTTP request, status, message, and throwable.
+ *
+ * @param <T> the type of the exception to be created, which must extend {@link NestedRuntimeException}
+ * @param <R> the type of the HTTP outbound request, which must extend {@link HttpOutboundRequest}
  */
-public interface ThrowerFactory {
+public interface ThrowerFactory<T extends Throwable, R extends HttpOutboundRequest> {
 
     /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
+     * Creates an instance of {@link NestedRuntimeException} using the provided HTTP request, status, message, and throwable.
      *
+     * @param request   the HTTP outbound request associated with the error
      * @param status    the HTTP status code of the error
-     * @param message   the error message
-     * @param throwable the exception
-     * @return an {@link NestedRuntimeException} instance with the specified details
+     * @param message   the error message describing the issue
+     * @param throwable the cause of the exception
+     * @return an instance of {@link NestedRuntimeException} with the specified details
      */
-    NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable);
+    T createException(R request, HttpStatus status, String message, Throwable throwable);
 
 }
+

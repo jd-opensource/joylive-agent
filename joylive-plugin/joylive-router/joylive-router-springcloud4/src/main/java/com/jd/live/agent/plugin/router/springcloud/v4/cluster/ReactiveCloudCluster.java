@@ -20,7 +20,7 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.ReactiveClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.WebClientThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.reactive.WebClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.ReactiveClusterResponse;
@@ -57,11 +57,11 @@ public class ReactiveCloudCluster extends AbstractCloudCluster<
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     public ReactiveCloudCluster(ReactiveClusterContext context) {
-        super(context, WebClientThrowerFactory.INSTANCE);
+        super(context, new WebClientThrowerFactory<>());
     }
 
     public ReactiveCloudCluster(LoadBalancedExchangeFilterFunction filterFunction) {
-        super(new ReactiveClusterContext(filterFunction), WebClientThrowerFactory.INSTANCE);
+        super(new ReactiveClusterContext(filterFunction), new WebClientThrowerFactory<>());
     }
 
     @Override

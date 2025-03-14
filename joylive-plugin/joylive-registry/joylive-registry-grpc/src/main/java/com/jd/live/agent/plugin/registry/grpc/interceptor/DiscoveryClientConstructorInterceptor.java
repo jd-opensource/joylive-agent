@@ -22,10 +22,6 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 /**
  * DiscoveryClientConstructorInterceptor
  */
@@ -49,15 +45,10 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
             registry.subscribe(serviceId);
         } else {
             // gRPC is triggered on the first request
-            try {
-                registry.subscribe(serviceId).get(5000, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException ignore) {
-            } catch (ExecutionException e) {
-                Throwable cause = e.getCause() != null ? e.getCause() : e;
-                logger.warn("Failed to get governance policy for " + serviceId + ", caused by " + cause.getMessage(), cause);
-            } catch (TimeoutException e) {
-                logger.warn("Failed to get governance policy for " + serviceId + ", caused by it's timeout.");
-            }
+            registry.subscribe(serviceId, (message, e) -> {
+                logger.warn(message, e);
+                return null;
+            });
         }
     }
 }

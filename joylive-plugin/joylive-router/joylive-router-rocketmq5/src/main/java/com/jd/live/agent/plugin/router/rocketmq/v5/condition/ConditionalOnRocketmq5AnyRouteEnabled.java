@@ -29,7 +29,7 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnOnlyRouteEnabled
 @ConditionalOnMqEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ROCKETMQ_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_ROCKETMQ_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ConditionalOnRocketmq5AnyRouteEnabled.TYPE_ACK_CALLBACK)
 @ConditionalComposite
 public @interface ConditionalOnRocketmq5AnyRouteEnabled {

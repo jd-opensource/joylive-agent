@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboun
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.RequestDataOutboundRequest;
@@ -38,8 +39,8 @@ import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
 import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;
@@ -65,7 +66,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final Set<String> disableDiscovery;
 
-    private final SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
+    private final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
@@ -137,12 +138,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {
             logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
-            Throwable throwable = thrower.createException(e, invocation.getRequest());
-            if (throwable instanceof RuntimeException) {
-                throw (RuntimeException) throwable;
-            } else {
-                throw thrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
-            }
+            throw (NestedRuntimeException) thrower.createException(e, invocation.getRequest());
         }
     }
 

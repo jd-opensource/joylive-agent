@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2.exception;
+package com.jd.live.agent.plugin.router.springcloud.v3.exception.reactive;
 
-import org.springframework.core.NestedRuntimeException;
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.ThrowerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.nio.charset.StandardCharsets;
@@ -25,12 +27,10 @@ import java.nio.charset.StandardCharsets;
 /**
  * A concrete implementation of {@link ThrowerFactory} that creates exceptions specifically
  */
-public class WebClientThrowerFactory implements ThrowerFactory {
-
-    public static final ThrowerFactory INSTANCE = new WebClientThrowerFactory();
+public class WebClientThrowerFactory<R extends HttpOutboundRequest> implements ThrowerFactory<WebClientException, R> {
 
     @Override
-    public NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+    public WebClientException createException(R request, HttpStatus status, String message, Throwable throwable) {
         if (throwable instanceof WebClientResponseException) {
             return (WebClientResponseException) throwable;
         }

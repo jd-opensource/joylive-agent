@@ -24,11 +24,12 @@ import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v4.exception.ThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.SpringClusterRequest;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 
@@ -53,13 +54,13 @@ public abstract class AbstractCloudCluster<
 
     protected final C context;
 
-    protected final SpringOutboundThrower<R> thrower;
+    protected final SpringOutboundThrower<? extends NestedRuntimeException, R> thrower;
 
     public AbstractCloudCluster(C context) {
-        this(context, StatusThrowerFactory.INSTANCE);
+        this(context, new StatusThrowerFactory<>());
     }
 
-    public AbstractCloudCluster(C context, ThrowerFactory factory) {
+    public AbstractCloudCluster(C context, ThrowerFactory<? extends NestedRuntimeException, R> factory) {
         this.context = context;
         this.thrower = new SpringOutboundThrower<>(factory);
     }

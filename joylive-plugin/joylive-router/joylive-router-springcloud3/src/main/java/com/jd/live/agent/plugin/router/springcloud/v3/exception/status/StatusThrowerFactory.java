@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v4.exception;
+package com.jd.live.agent.plugin.router.springcloud.v3.exception.status;
 
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.ThrowerFactory;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,12 +25,10 @@ import org.springframework.web.server.ResponseStatusException;
  * A concrete implementation of {@link ThrowerFactory} that creates exceptions specifically
  * for handling HTTP status codes, typically used in Spring WebFlux applications.
  */
-public class StatusThrowerFactory implements ThrowerFactory {
-
-    public static final ThrowerFactory INSTANCE = new StatusThrowerFactory();
+public class StatusThrowerFactory<R extends HttpOutboundRequest> implements ThrowerFactory<NestedRuntimeException, R> {
 
     @Override
-    public NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
+    public NestedRuntimeException createException(R request, HttpStatus status, String message, Throwable throwable) {
         if (throwable instanceof ResponseStatusException) {
             return (ResponseStatusException) throwable;
         }

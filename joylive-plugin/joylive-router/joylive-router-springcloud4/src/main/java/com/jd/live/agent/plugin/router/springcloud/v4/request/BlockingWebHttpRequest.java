@@ -35,9 +35,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
@@ -81,22 +78,13 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     @Override
     @NonNull
     public ClientHttpResponse execute() throws IOException {
+        IOException throwable = registry.subscribe(service, (message, e) -> new IOException(message, e));
+        if (throwable != null) {
+            throw throwable;
+        }
         try {
-            registry.subscribe(service).get(5000, TimeUnit.MILLISECONDS);
             List<ServiceEndpoint> endpoints = registry.getEndpoints(service);
-            if (context.isFlowControlEnabled()) {
-                return request(endpoints);
-            } else {
-                return route(endpoints);
-            }
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new IOException("Failed to get governance policy for " + service + ", caused by " + cause.getMessage(), cause);
-        } catch (TimeoutException e) {
-            throw new IOException("Failed to get governance policy for " + service + ", caused by it's timeout.", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Failed to execute request, the request is interrupted", e);
+            return context.isFlowControlEnabled() ? request(endpoints) : route(endpoints);
         } catch (IOException | NestedRuntimeException e) {
             throw e;
         } catch (Throwable e) {

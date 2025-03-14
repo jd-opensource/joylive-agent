@@ -100,7 +100,9 @@ public class MultiLinkedMap<K, V> extends MultiMapAdapter<K, V>  // new public b
      */
     public MultiLinkedMap(Map<K, ? extends Collection<V>> other, Supplier<Map<K, List<V>>> creator, boolean zeroCopy) {
         super(creator.get());
-        other.forEach((key, value) -> setAll(key, value, zeroCopy));
+        if (other != null) {
+            other.forEach((key, value) -> setAll(key, value, zeroCopy));
+        }
     }
 
     /**
@@ -180,7 +182,7 @@ public class MultiLinkedMap<K, V> extends MultiMapAdapter<K, V>  // new public b
      * @return a new MultiMap with case-insensitive keys
      */
     public static MultiMap<String, String> caseInsensitive(Map<String, Collection<String>> other, boolean zeroCopy) {
-        return new MultiLinkedMap<>(other, () -> new CaseInsensitiveLinkedMap<>(other.size()), zeroCopy);
+        return new MultiLinkedMap<>(other, () -> new CaseInsensitiveLinkedMap<>(other != null ? other.size() : 16), zeroCopy);
     }
 
 }

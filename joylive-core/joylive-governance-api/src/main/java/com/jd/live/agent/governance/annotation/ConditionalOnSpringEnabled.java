@@ -30,7 +30,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_SPRING_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_SPRING_ENABLED, matchIfMissing = true)
 @ConditionalComposite
 public @interface ConditionalOnSpringEnabled {
 

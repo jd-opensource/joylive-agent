@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboun
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.RequestDataOutboundRequest;
@@ -38,6 +39,7 @@ import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
 import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
@@ -65,7 +67,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final Set<String> disableDiscovery;
 
-    private final SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
+    private final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
@@ -141,7 +143,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             if (throwable instanceof RuntimeException) {
                 throw (RuntimeException) throwable;
             } else {
-                throw thrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+                throw thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
             }
         }
     }

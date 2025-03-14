@@ -30,7 +30,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_DUBBO_ENABLED, matchIfMissing = true)
 @ConditionalComposite
 public @interface ConditionalOnDubboEnabled {
 

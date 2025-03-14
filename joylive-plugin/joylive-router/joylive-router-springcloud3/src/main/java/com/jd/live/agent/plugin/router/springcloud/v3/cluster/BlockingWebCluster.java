@@ -24,9 +24,11 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingWebClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.DegradeHttpResponse;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
 
@@ -51,7 +53,7 @@ public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRe
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    protected final SpringOutboundThrower<BlockingWebClusterRequest> thrower = new SpringOutboundThrower<>();
+    private final SpringOutboundThrower<NestedRuntimeException, BlockingWebClusterRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
     public static final BlockingWebCluster INSTANCE = new BlockingWebCluster();
 

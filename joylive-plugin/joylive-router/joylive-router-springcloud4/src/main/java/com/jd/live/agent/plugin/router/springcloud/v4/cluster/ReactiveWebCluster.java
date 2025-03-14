@@ -24,11 +24,12 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.WebClientThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.reactive.WebClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveWebClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.ReactiveClusterResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClientException;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,7 +49,7 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRe
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    protected final SpringOutboundThrower<ReactiveWebClusterRequest> thrower = new SpringOutboundThrower<>(WebClientThrowerFactory.INSTANCE);
+    private final SpringOutboundThrower<WebClientException, ReactiveWebClusterRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
 
     public static final ReactiveWebCluster INSTANCE = new ReactiveWebCluster();
 

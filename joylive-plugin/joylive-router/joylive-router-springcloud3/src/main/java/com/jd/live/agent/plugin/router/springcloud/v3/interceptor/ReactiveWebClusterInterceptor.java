@@ -25,8 +25,6 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveWebCluster;
-import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v3.exception.WebClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveWebClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
@@ -37,9 +35,6 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * WebClientClusterInterceptor
@@ -51,8 +46,6 @@ public class ReactiveWebClusterInterceptor extends InterceptorAdaptor {
     private final Registry registry;
 
     private final RegistryConfig config;
-
-    private final SpringOutboundThrower<ReactiveCloudOutboundRequest> thrower = new SpringOutboundThrower(WebClientThrowerFactory.INSTANCE);
 
     public ReactiveWebClusterInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
@@ -90,23 +83,8 @@ public class ReactiveWebClusterInterceptor extends InterceptorAdaptor {
      * @return Response mono or error flow
      */
     private Mono<ClientResponse> subscribe(String service) {
-        try {
-            registry.subscribe(service).get(5000, TimeUnit.MILLISECONDS);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            String errorMessage = "Failed to get governance policy for " + service + ", caused by " + cause.getMessage();
-            return Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage).build());
-        } catch (TimeoutException e) {
-            String errorMessage = "Failed to get governance policy for " + service + ", caused by it's timeout.";
-            return Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage).build());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            String errorMessage = "Failed to execute request, the request is interrupted";
-            return Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage).build());
-        } catch (Throwable e) {
-            return Mono.error(e);
-        }
-        return null;
+        return registry.subscribe(service, (message, e) ->
+                Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(message).build()));
     }
 
     /**
