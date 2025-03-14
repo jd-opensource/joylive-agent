@@ -15,9 +15,7 @@
  */
 package com.jd.live.agent.governance.annotation;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.extension.annotation.Conditional;
 
 import java.lang.annotation.*;
 
@@ -29,11 +27,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnMissingClass(ConditionalOnNotSpringCloud.TYPE_LOAD_BALANCED)
-@ConditionalOnProperty(value = "agent.governance.springCloud", matchIfMissing = true)
-@ConditionalComposite
+@Conditional(value = "com.jd.live.agent.governance.condition.OnNotSpringCloudCondition", dependOnLoader = true)
 public @interface ConditionalOnNotSpringCloud {
-
-    String TYPE_LOAD_BALANCED = "org.springframework.cloud.client.loadbalancer.LoadBalanced";
 
 }
