@@ -18,7 +18,8 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
-import org.springframework.cloud.openfeign.FeignClientFactoryBean;
+
+import java.lang.reflect.Method;
 
 /**
  * FeignClientFactoryBeanInterceptor
@@ -33,7 +34,15 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        FeignClientFactoryBean factoryBean = (FeignClientFactoryBean) ctx.getTarget();
-        registry.subscribe(factoryBean.getName());
+        try {
+            // Compatible with lower versions, using reflection to get values.
+            Object factoryBean = ctx.getTarget();
+            Method getNameMethod = factoryBean.getClass().getDeclaredMethod("getName");
+            getNameMethod.setAccessible(true);
+            String name = (String) getNameMethod.invoke(factoryBean);
+            registry.subscribe(name);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to access FeignClientFactoryBean", e);
+        }
     }
 }
