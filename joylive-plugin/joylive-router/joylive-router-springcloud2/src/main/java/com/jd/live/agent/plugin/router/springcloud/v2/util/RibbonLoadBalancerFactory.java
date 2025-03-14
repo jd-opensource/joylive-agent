@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2.util;
 
-import com.jd.live.agent.core.util.type.FieldDesc;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.netflix.loadbalancer.ILoadBalancer;
 import com.netflix.loadbalancer.Server;
 import org.springframework.cloud.client.ServiceInstance;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.describe;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * A factory for creating instances of a reactive load balancer that uses the Ribbon client.
@@ -55,7 +55,7 @@ public class RibbonLoadBalancerFactory implements ReactiveLoadBalancer.Factory<S
      * An inner class that supplies a list of service instances using the Ribbon client.
      */
     private static class RibbonServiceInstanceListSupplier implements ServiceInstanceListSupplier {
-        public static final String FIELD_METADATA = "metadata";
+        private static final String FIELD_METADATA = "metadata";
         private final String serviceId;
         private final ILoadBalancer loadBalancer;
 
@@ -77,10 +77,10 @@ public class RibbonLoadBalancerFactory implements ReactiveLoadBalancer.Factory<S
             Function<Server, Map<String, String>> metadataFunc = null;
             for (Server server : servers) {
                 if (metadataFunc == null) {
-                    FieldDesc fieldDesc = describe(server.getClass()).getFieldList().getField(FIELD_METADATA);
-                    metadataFunc = fieldDesc == null ? s -> null : s -> (Map<String, String>) fieldDesc.get(s);
+                    UnsafeFieldAccessor accessor = getQuietly(server.getClass(), FIELD_METADATA);
+                    metadataFunc = accessor == null ? s -> null : s -> (Map<String, String>) accessor.get(s);
                 }
-                instances.add(new RibbonServiceInstance(serviceId, server, metadataFunc));
+                instances.add(new RibbonServiceInstance(serviceId, server, metadataFunc.apply(server)));
             }
             return Flux.just(instances);
         }
@@ -90,17 +90,18 @@ public class RibbonLoadBalancerFactory implements ReactiveLoadBalancer.Factory<S
      * An inner class that represents a service instance using the Ribbon client.
      */
     private static class RibbonServiceInstance implements ServiceInstance {
+
         private final String serviceId;
         private final Server server;
         private final URI uri;
         private final Map<String, String> metadata;
 
-        RibbonServiceInstance(String serviceId, Server server, Function<Server, Map<String, String>> metadataFunc) {
+        RibbonServiceInstance(String serviceId, Server server, Map<String, String> metadata) {
             this.serviceId = serviceId;
             this.server = server;
             String scheme = server.getScheme() == null || server.getScheme().isEmpty() ? "http" : server.getScheme();
             this.uri = URI.create(scheme + "://" + server.getHost() + ":" + server.getPort());
-            this.metadata = metadataFunc.apply(server);
+            this.metadata = metadata;
         }
 
         @Override
