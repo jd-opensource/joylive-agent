@@ -164,7 +164,7 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
 
             Map<String, Object> newer;
             if (subscriptions.size() == 1) {
-                newer = newValues;
+                newer = newNestedValue;
             } else {
                 newer = new HashMap<>(size);
                 for (ConfigSubscription<T> ns : subscriptions) {
