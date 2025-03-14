@@ -109,7 +109,10 @@ joylive-service-nacos
     org.apache.http -> com.jd.live.agent.shaded.org.apache.http
     org.apache.commons.codec -> com.jd.live.agent.shaded.org.apache.commons.codec
     org.apache.commons.io -> com.jd.live.agent.shaded.org.apache.commons.io
+    org.LatencyUtils -> com.jd.live.agent.shaded.org.LatencyUtils
+    org.HdrHistogram -> com.jd.live.agent.shaded.org.HdrHistogram
     io.prometheus.client -> com.jd.live.agent.shaded.io.prometheus.client
+    io.micrometer -> com.jd.live.agent.shaded.io.micrometer
 joylive-service-apollo
     com.ctrip.framework.apollo -> com.jd.live.agent.shaded.com.ctrip.framework.apollo
     org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j

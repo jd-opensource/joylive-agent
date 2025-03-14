@@ -24,7 +24,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_GRPC_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_GOVERN_GRPC_ENABLED, matchIfMissing = true)
 @ConditionalComposite
 public @interface ConditionalOnGrpcEnabled {
 

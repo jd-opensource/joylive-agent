@@ -40,7 +40,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
  *
  * @since 1.0.0
  */
-public class BlockingClusterResponse extends AbstractHttpOutboundResponse<ClientHttpResponse> {
+public class BlockingClusterResponse extends AbstractHttpOutboundResponse<ClientHttpResponse> implements SpringClusterResponse {
 
     private static final Logger logger = LoggerFactory.getLogger(BlockingClusterResponse.class);
 
@@ -57,8 +57,8 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     @Override
     public String getCode() {
         try {
-            HttpStatusCode status = response == null ? null : response.getStatusCode();
-            return status == null ? null : String.valueOf(status.value());
+            HttpStatusCode status = response == null ? INTERNAL_SERVER_ERROR : response.getStatusCode();
+            return String.valueOf(status.value());
         } catch (IOException e) {
             return String.valueOf(INTERNAL_SERVER_ERROR.value());
         }
@@ -91,6 +91,29 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     @Override
     public List<String> getHeaders(String key) {
         return response == null || key == null ? null : response.getHeaders().get(key);
+    }
+
+    @Override
+    public int getStatusCode() {
+        try {
+            return response == null ? INTERNAL_SERVER_ERROR.value() : response.getStatusCode().value();
+        } catch (IOException e) {
+            return INTERNAL_SERVER_ERROR.value();
+        }
+    }
+
+    @Override
+    public HttpStatusCode getHttpStatus() {
+        try {
+            return response == null ? INTERNAL_SERVER_ERROR : response.getStatusCode();
+        } catch (IOException e) {
+            return INTERNAL_SERVER_ERROR;
+        }
+    }
+
+    @Override
+    public HttpHeaders getHttpHeaders() {
+        return response.getHeaders();
     }
 
     @Override
@@ -144,5 +167,4 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
         }
 
     }
-
 }

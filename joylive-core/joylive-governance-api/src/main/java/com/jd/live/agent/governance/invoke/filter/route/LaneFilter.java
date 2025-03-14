@@ -47,11 +47,11 @@ public class LaneFilter implements RouteFilter {
         // Retrieve the current route target
         RouteTarget target = invocation.getRouteTarget();
         LaneMetadata metadata = invocation.getLaneMetadata();
-        String targetSpaceId = metadata.getTargetSpaceId();
-        String targetLaneId = metadata.getTargetLaneId();
-        LaneSpace targetSpace = metadata.getTargetSpace();
-        String defaultSpaceId = metadata.getDefaultSpaceId();
-        String defaultLaneId = metadata.getDefaultLaneId();
+        String targetSpaceId = metadata == null ? null : metadata.getTargetSpaceId();
+        String targetLaneId = metadata == null ? null : metadata.getTargetLaneId();
+        LaneSpace targetSpace = metadata == null ? null : metadata.getTargetSpace();
+        String defaultSpaceId = metadata == null ? null : metadata.getDefaultSpaceId();
+        String defaultLaneId = metadata == null ? null : metadata.getDefaultLaneId();
 
         // Check if a target lane is specified
         if (targetSpace != null) {

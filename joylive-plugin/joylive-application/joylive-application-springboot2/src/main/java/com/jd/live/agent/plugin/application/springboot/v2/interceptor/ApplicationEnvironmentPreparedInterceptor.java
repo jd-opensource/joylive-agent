@@ -17,10 +17,14 @@ package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppBootstrapContext;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppEnvironment;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * An interceptor that adds a Configurator-based PropertySource to the ConfigurableEnvironment
@@ -32,14 +36,29 @@ public class ApplicationEnvironmentPreparedInterceptor extends InterceptorAdapto
 
     private final AppListener listener;
 
-    public ApplicationEnvironmentPreparedInterceptor(AppListener listener) {
+    private final GovernanceConfig config;
+
+    private final Registry registry;
+
+    private final Application application;
+
+    public ApplicationEnvironmentPreparedInterceptor(AppListener listener, GovernanceConfig config, Registry registry, Application application) {
         this.listener = listener;
+        this.config = config;
+        this.registry = registry;
+        this.application = application;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppBootstrapContext context = new SpringAppBootstrapContext();
-        SpringAppEnvironment environment = new SpringAppEnvironment(ctx.getArgument(1));
+        Object[] arguments = ctx.getArguments();
+        ConfigurableEnvironment env = (ConfigurableEnvironment) (arguments.length > 1 ? arguments[1] : arguments[0]);
+        SpringAppEnvironment environment = new SpringAppEnvironment(env);
+        if (config.getRegistryConfig().isEnabled()) {
+            // subscribe policy
+            registry.register(application.getService().getName(), application.getService().getGroup());
+        }
         InnerListener.foreach(l -> l.onEnvironmentPrepared(context, environment));
         listener.onEnvironmentPrepared(context, environment);
     }

@@ -21,6 +21,8 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.Response;
 
+import java.util.Map;
+
 public class SpringEndpoint extends AbstractEndpoint {
 
     private static final String STATE_HANGUP = "hangup";
@@ -54,7 +56,8 @@ public class SpringEndpoint extends AbstractEndpoint {
 
     @Override
     public String getLabel(String key) {
-        return instance.getMetadata().get(key);
+        Map<String, String> metadata = instance.getMetadata();
+        return metadata == null ? null : metadata.get(key);
     }
 
     @Override

@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
 import static com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveRouteFilter.ROUTE_VERSION;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
@@ -144,7 +144,7 @@ public class LiveChainBuilder {
                     String name = delegate.getClass().getName();
                     if (name.equals(TYPE_RETRY_FILTER)) {
                         // ignore retry
-                        retryConfig = getValue(delegate, FIELD_RETRY_CONFIG);
+                        retryConfig = getQuietly(delegate, FIELD_RETRY_CONFIG);
                     } else if (gatewayConfig.isPathFilter(name)) {
                         // ignore path filter
                         pathFilters.add(filter);
@@ -186,7 +186,7 @@ public class LiveChainBuilder {
      */
     private List<GatewayFilter> getGlobalFilters(Object target) {
         // this is sorted by order
-        List<GatewayFilter> filters = getValue(target, FIELD_GLOBAL_FILTERS);
+        List<GatewayFilter> filters = getQuietly(target, FIELD_GLOBAL_FILTERS);
         List<GatewayFilter> result = new ArrayList<>(filters.size());
         GatewayFilter delegate;
         GlobalFilter globalFilter;
@@ -197,9 +197,9 @@ public class LiveChainBuilder {
                 delegate = ((OrderedGatewayFilter) filter).getDelegate();
             }
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
-                globalFilter = getValue(delegate, FIELD_DELEGATE);
+                globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    clientFactory = getValue(globalFilter, FIELD_CLIENT_FACTORY);
+                    clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);

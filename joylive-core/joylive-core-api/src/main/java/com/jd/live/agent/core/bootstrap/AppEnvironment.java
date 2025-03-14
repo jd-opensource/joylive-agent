@@ -35,4 +35,6 @@ public interface AppEnvironment {
      * @param propertySource The property source to add.
      */
     void addLast(AppPropertySource propertySource);
+
+    String getProperty(String name);
 }

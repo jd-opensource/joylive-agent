@@ -31,7 +31,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
@@ -67,7 +67,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                     labelHeaders(ex, headers::set);
                 }).doOnSuccess(result -> {
                     if (result != null) {
-                        Function<Throwable, Mono<HandlerResult>> exceptionHandler = getValue(result, FIELD_EXCEPTION_HANDLER);
+                        Function<Throwable, Mono<HandlerResult>> exceptionHandler = getQuietly(result, FIELD_EXCEPTION_HANDLER);
                         result.setExceptionHandler(ex -> {
                             HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
                             labelHeaders(ex, headers::set);

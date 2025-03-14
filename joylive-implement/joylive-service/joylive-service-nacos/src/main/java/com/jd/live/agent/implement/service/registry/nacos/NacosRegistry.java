@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.service.registry.nacos;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -24,7 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
-import com.jd.live.agent.governance.registry.EndpointEvent;
+import com.jd.live.agent.governance.registry.InstanceEvent;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.governance.registry.ServiceInstance;
@@ -34,6 +35,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static com.jd.live.agent.core.util.CollectionUtils.convert;
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
@@ -94,26 +96,27 @@ public class NacosRegistry implements RegistryService {
 
     @Override
     public void register(String service, String group, ServiceInstance instance) throws Exception {
-        namingService.registerInstance(service, group, toInstance(instance));
+        namingService.registerInstance(service, getGroup(group), toInstance(instance));
     }
 
     @Override
     public void unregister(String service, String group, ServiceInstance instance) throws Exception {
-        namingService.deregisterInstance(service, group, toInstance(instance));
+        namingService.deregisterInstance(service, getGroup(group), toInstance(instance));
     }
 
     @Override
-    public void subscribe(String service, String group, Consumer<EndpointEvent> consumer) throws Exception {
-        namingService.subscribe(service, group, event -> {
+    public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
+        namingService.subscribe(service, getGroup(group), event -> {
             if (event instanceof NamingEvent) {
                 NamingEvent e = (NamingEvent) event;
+                consumer.accept(new InstanceEvent(service, convert(e.getInstances(), NacosEndpoint::new)));
             }
         });
     }
 
     @Override
     public void unsubscribe(String service, String group) throws Exception {
-        namingService.unsubscribe(service, group, event -> {
+        namingService.unsubscribe(service, getGroup(group), event -> {
 
         });
     }
@@ -127,5 +130,9 @@ public class NacosRegistry implements RegistryService {
         result.setMetadata(instance.getMetadata() == null ? null : new HashMap<>(instance.getMetadata()));
         result.setWeight(instance.getWeight());
         return result;
+    }
+
+    private String getGroup(String group) {
+        return group == null || group.isEmpty() ? Constants.DEFAULT_GROUP : group;
     }
 }

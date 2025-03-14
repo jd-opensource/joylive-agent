@@ -29,13 +29,15 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboun
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v2.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2.instance.SpringEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2.request.FeignOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2.request.BlockingCloudOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2.request.FeignCloudOutboundRequest;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.Request;
 import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
@@ -51,7 +53,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  * ServiceInstanceListSupplierInterceptor
  *
  * @author Zhiguo.Chen
- * @since 1.5.0
+ * @since 1.0.0
  */
 public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
@@ -62,6 +64,8 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     private final InvocationContext context;
 
     private final Set<String> disableDiscovery;
+
+    private final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
@@ -127,12 +131,11 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             return Collections.singletonList(endpoint.getInstance());
         } catch (Throwable e) {
             logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
-            SpringOutboundThrower<HttpOutboundRequest> thrower = new SpringOutboundThrower<>();
             Throwable throwable = thrower.createException(e, invocation.getRequest());
             if (throwable instanceof RuntimeException) {
                 throw (RuntimeException) throwable;
             } else {
-                throw SpringOutboundThrower.createException(HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+                throw thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
             }
         }
     }
@@ -147,9 +150,9 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         Object request = RequestContext.removeAttribute(Carrier.ATTRIBUTE_REQUEST);
         String serviceName = RequestContext.removeAttribute(Carrier.ATTRIBUTE_SERVICE_ID);
         if (request instanceof HttpRequest) {
-            return createOutlet(new BlockingOutboundRequest((HttpRequest) request, serviceName));
+            return createOutlet(new BlockingCloudOutboundRequest((HttpRequest) request, serviceName));
         } else if (request instanceof feign.Request) {
-            return createOutlet(new FeignOutboundRequest((feign.Request) request, serviceName));
+            return createOutlet(new FeignCloudOutboundRequest((feign.Request) request, serviceName));
         }
         return null;
     }

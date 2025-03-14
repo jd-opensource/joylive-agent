@@ -16,11 +16,11 @@
 package com.jd.live.agent.plugin.registry.nacos.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.Map;
@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class NacosEndpoint extends AbstractAttributes implements Endpoint {
+public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
     /**
      * The instance associated with this endpoint.
@@ -45,6 +45,11 @@ public class NacosEndpoint extends AbstractAttributes implements Endpoint {
     }
 
     @Override
+    public String getId() {
+        return instance.getInstanceId();
+    }
+
+    @Override
     public String getHost() {
         return instance.getIp();
     }
@@ -52,6 +57,11 @@ public class NacosEndpoint extends AbstractAttributes implements Endpoint {
     @Override
     public int getPort() {
         return instance.getPort();
+    }
+
+    @Override
+    public Map<String, String> getMetadata() {
+        return instance.getMetadata();
     }
 
     @Override

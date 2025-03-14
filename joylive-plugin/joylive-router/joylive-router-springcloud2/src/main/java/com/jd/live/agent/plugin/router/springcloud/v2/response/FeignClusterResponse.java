@@ -22,23 +22,26 @@ import com.jd.live.agent.core.util.IOUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import feign.Request;
 import feign.Response;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.util.CollectionUtils.toMultiValueMap;
 
 /**
  * FeignOutboundResponse
  *
  * @since 1.0.0
  */
-public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response> {
+public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response> implements SpringClusterResponse {
 
     private static final Logger logger = LoggerFactory.getLogger(FeignClusterResponse.class);
 
@@ -54,7 +57,7 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
 
     @Override
     public String getCode() {
-        return response == null ? null : String.valueOf(response.status());
+        return Integer.toString(response == null ? INTERNAL_SERVER_ERROR.value() : response.status());
     }
 
     @Override
@@ -106,6 +109,21 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
     }
 
     @Override
+    public int getStatusCode() {
+        return response == null ? INTERNAL_SERVER_ERROR.value() : response.status();
+    }
+
+    @Override
+    public HttpStatus getHttpStatus() {
+        return response == null ? INTERNAL_SERVER_ERROR : HttpStatus.resolve(response.status());
+    }
+
+    @Override
+    public HttpHeaders getHttpHeaders() {
+        return response == null ? new HttpHeaders() : new HttpHeaders(toMultiValueMap(getHeaders()));
+    }
+
+    @Override
     protected Map<String, List<String>> parseCookies() {
         return HttpUtils.parseCookie(getHeaders(HttpHeaders.COOKIE));
     }
@@ -118,4 +136,30 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
         }
         return caseInsensitive(headers, true);
     }
+
+    /**
+     * Creates degraded response using fallback configuration
+     *
+     * @param request       Original Feign request
+     * @param degradeConfig Fallback settings including response body/headers
+     * @return Preconfigured fallback response wrapper
+     */
+    public static FeignClusterResponse create(Request request, DegradeConfig degradeConfig) {
+        byte[] data = degradeConfig.getResponseBytes();
+        Map<String, Collection<String>> headers = new HashMap<>(request.headers());
+        if (degradeConfig.getAttributes() != null) {
+            degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
+        }
+        headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
+        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
+
+        return new FeignClusterResponse(Response.builder()
+                .status(degradeConfig.getResponseCode())
+                .body(data)
+                .headers(headers)
+                .request(request)
+                .requestTemplate(request.requestTemplate())
+                .build());
+    }
+
 }

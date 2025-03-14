@@ -15,11 +15,23 @@
  */
 package com.jd.live.agent.bootstrap.util.type;
 
+import java.util.function.Predicate;
+
 /**
  * An interface that combines the functionality of both {@link ObjectGetter} and {@link ObjectSetter}.
  * It allows for both retrieving and setting values on a target object.
  */
 public interface ObjectAccessor extends ObjectGetter, ObjectSetter {
-    // This interface inherits all methods from ObjectGetter and ObjectSetter.
+    /**
+     * Retrieves a value from the specified target object.
+     *
+     * @param target    the target object
+     * @param predicate an optional predicate to filter the result
+     * @return The value retrieved from the target object.
+     */
+    default Object get(Object target, Predicate<Object> predicate) {
+        Object result = get(target);
+        return result != null && (predicate == null || predicate.test(result)) ? result : null;
+    }
 }
 

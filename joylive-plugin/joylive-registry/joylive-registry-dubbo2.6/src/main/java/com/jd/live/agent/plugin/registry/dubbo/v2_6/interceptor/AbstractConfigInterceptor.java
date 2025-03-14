@@ -47,16 +47,40 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         String service = getService(config);
         if (!isDubboSystemService(service)) {
             application.labelRegistry(map::putIfAbsent);
-            subscribe(service);
+            subscribe(service, getService(config));
         }
     }
 
+    /**
+     * Retrieves the context associated with the given {@link ExecutableContext}.
+     *
+     * @param ctx The execution context from which to retrieve the context.
+     * @return A map containing key-value pairs representing the context.
+     */
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
 
+    /**
+     * Retrieves the service name from the provided configuration object.
+     *
+     * @param config The configuration object from which to extract the service name.
+     * @return The name of the service.
+     */
     protected abstract String getService(T config);
 
-    protected void subscribe(String service) {
-        registry.subscribe(service);
-    }
+    /**
+     * Retrieves the group name from the provided configuration object.
+     *
+     * @param config The configuration object from which to extract the group name.
+     * @return The name of the group.
+     */
+    protected abstract String getGroup(T config);
+
+    /**
+     * Subscribes to a specific service in the specified group.
+     *
+     * @param service The name of the service to subscribe to.
+     * @param group   The group to which the service belongs.
+     */
+    protected abstract void subscribe(String service, String group);
 
 }

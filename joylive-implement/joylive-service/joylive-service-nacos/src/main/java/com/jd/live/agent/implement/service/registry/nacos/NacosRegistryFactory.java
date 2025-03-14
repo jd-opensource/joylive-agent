@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.service.registry.nacos;
 
+import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
@@ -44,6 +45,7 @@ public class NacosRegistryFactory implements RegistryFactory, ExtensionInitializ
     @Override
     public void initialize() {
         // init payload registry in repack mode.
+        SnapShotSwitch.setIsSnapShot(false);
         PayloadRegistry.init();
         NacosAbilityManagerHolder.getInstance();
     }

@@ -20,11 +20,21 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
+import com.jd.live.agent.plugin.router.springcloud.v4.response.SpringClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v4.request.GatewayCloudClusterRequest;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -32,7 +42,7 @@ import java.util.function.Supplier;
  *
  * @since 1.0.0
  */
-public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerHttpResponse> {
+public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerHttpResponse> implements SpringClusterResponse {
 
     private final CacheObject<String> body;
 
@@ -75,5 +85,49 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     @Override
     public List<String> getHeaders(String key) {
         return response == null || key == null ? null : response.getHeaders().get(key);
+    }
+
+    @Override
+    public int getStatusCode() {
+        HttpStatusCode code = response == null ? null : response.getStatusCode();
+        return code == null ? HttpStatus.INTERNAL_SERVER_ERROR.value() : code.value();
+    }
+
+    @Override
+    public HttpStatusCode getHttpStatus() {
+        HttpStatusCode code = response == null ? null : response.getStatusCode();
+        return code == null ? HttpStatus.INTERNAL_SERVER_ERROR : code;
+    }
+
+    @Override
+    public HttpHeaders getHttpHeaders() {
+        return response == null ? new HttpHeaders() : response.getHeaders();
+    }
+
+    /**
+     * Creates a {@link GatewayClusterResponse} based on the provided {@link GatewayCloudClusterRequest} and {@link DegradeConfig}.
+     * This method configures the response with the specified status code, headers, and content, and writes the response body.
+     *
+     * @param httpRequest   the {@link GatewayCloudClusterRequest} containing the original request and exchange information
+     * @param degradeConfig the {@link DegradeConfig} containing the response configuration (e.g., status code, headers, content)
+     * @return a new {@link GatewayClusterResponse} representing the degraded response
+     */
+    public static GatewayClusterResponse create(GatewayCloudClusterRequest httpRequest, DegradeConfig degradeConfig) {
+        ServerHttpResponse response = httpRequest.getExchange().getResponse();
+        ServerHttpRequest request = httpRequest.getExchange().getRequest();
+
+        DataBuffer buffer = response.bufferFactory().wrap(degradeConfig.getResponseBytes());
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
+        headers.putAll(request.getHeaders());
+        Map<String, String> attributes = degradeConfig.getAttributes();
+        if (attributes != null) {
+            attributes.forEach(headers::add);
+        }
+        response.setRawStatusCode(degradeConfig.getResponseCode());
+        response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
+        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+
+        response.writeWith(Flux.just(buffer)).subscribe();
+        return new GatewayClusterResponse(response);
     }
 }

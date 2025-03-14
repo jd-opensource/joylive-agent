@@ -24,8 +24,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.registry.springcloud.v3.condition.ConditionalOnSpringCloud3GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientConstructorInterceptor;
 import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientGetInterceptor;
 
@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryCli
  */
 @Injectable
 @Extension(value = "DiscoveryClientDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnGovernanceEnabled
+@ConditionalOnSpringCloud3GovernanceEnabled
 @ConditionalOnClass(DiscoveryClientDefinition.TYPE_DISCOVERY_CLIENT)
 public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
 

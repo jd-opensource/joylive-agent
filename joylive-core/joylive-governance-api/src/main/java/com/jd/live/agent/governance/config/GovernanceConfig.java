@@ -46,6 +46,7 @@ public class GovernanceConfig {
     protected static final String ENABLED = ".enabled";
     protected static final String CONFIG_SWITCH = "agent.switch";
     protected static final String CONFIG_SWITCH_LIVE = CONFIG_SWITCH + ".live";
+    protected static final String CONFIG_SWITCH_GOVERN = CONFIG_SWITCH + ".govern";
     protected static final String CONFIG_SWITCH_LANE = CONFIG_SWITCH + ".lane";
     protected static final String CONFIG_SWITCH_CONFIG_CENTER = CONFIG_SWITCH + ".configcenter";
     protected static final String CONFIG_SWITCH_FLOW_CONTROL = CONFIG_SWITCH + ".flowcontrol";
@@ -61,17 +62,19 @@ public class GovernanceConfig {
     public static final String CONFIG_CLASSLOADER_SPRING_BOOT_ENABLED = CONFIG_SWITCH_CLASSLOADER + ".springboot";
 
     public static final String CONFIG_LIVE_ENABLED = CONFIG_SWITCH_LIVE + ENABLED;
-    public static final String CONFIG_LIVE_DUBBO_ENABLED = CONFIG_SWITCH_LIVE + ".dubbo";
-    public static final String CONFIG_LIVE_GRPC_ENABLED = CONFIG_SWITCH_LIVE + ".grpc";
-    public static final String CONFIG_LIVE_SOFARPC_ENABLED = CONFIG_SWITCH_LIVE + ".sofarpc";
-    public static final String CONFIG_LIVE_JSF_ENABLED = CONFIG_SWITCH_LIVE + ".jsf";
-    public static final String CONFIG_LIVE_SPRING_ENABLED = CONFIG_SWITCH_LIVE + ".spring";
-    public static final String CONFIG_LIVE_SPRING_GATEWAY_ENABLED = CONFIG_SWITCH_LIVE + ".springgateway";
-    public static final String CONFIG_LIVE_PHEVOS_ENABLED = CONFIG_SWITCH_LIVE + ".phevos";
-    public static final String CONFIG_LIVE_MQ_ENABLED = CONFIG_SWITCH_LIVE + ".mq";
-    public static final String CONFIG_LIVE_ROCKETMQ_ENABLED = CONFIG_SWITCH_LIVE + ".rocketmq";
-    public static final String CONFIG_LIVE_KAFKA_ENABLED = CONFIG_SWITCH_LIVE + ".kafka";
-    public static final String CONFIG_LIVE_PULSAR_ENABLED = CONFIG_SWITCH_LIVE + ".pulsar";
+
+    public static final String CONFIG_GOVERN_ENABLED = CONFIG_SWITCH_GOVERN + ENABLED;
+    public static final String CONFIG_GOVERN_DUBBO_ENABLED = CONFIG_GOVERN_ENABLED + ".dubbo";
+    public static final String CONFIG_GOVERN_GRPC_ENABLED = CONFIG_GOVERN_ENABLED + ".grpc";
+    public static final String CONFIG_GOVERN_SOFARPC_ENABLED = CONFIG_GOVERN_ENABLED + ".sofarpc";
+    public static final String CONFIG_GOVERN_JSF_ENABLED = CONFIG_GOVERN_ENABLED + ".jsf";
+    public static final String CONFIG_GOVERN_SPRING_ENABLED = CONFIG_GOVERN_ENABLED + ".spring";
+    public static final String CONFIG_GOVERN_SPRING_GATEWAY_ENABLED = CONFIG_GOVERN_ENABLED + ".springgateway";
+    public static final String CONFIG_GOVERN_PHEVOS_ENABLED = CONFIG_GOVERN_ENABLED + ".phevos";
+    public static final String CONFIG_GOVERN_MQ_ENABLED = CONFIG_GOVERN_ENABLED + ".mq";
+    public static final String CONFIG_GOVERN_ROCKETMQ_ENABLED = CONFIG_GOVERN_ENABLED + ".rocketmq";
+    public static final String CONFIG_GOVERN_KAFKA_ENABLED = CONFIG_GOVERN_ENABLED + ".kafka";
+    public static final String CONFIG_GOVERN_PULSAR_ENABLED = CONFIG_GOVERN_ENABLED + ".pulsar";
 
     public static final String CONFIG_LANE_ENABLED = CONFIG_SWITCH_LANE + ENABLED;
 
@@ -113,7 +116,7 @@ public class GovernanceConfig {
     @Config("transmission")
     private TransmitConfig transmitConfig = new TransmitConfig();
 
-    @Config("configcenter")
+    @Config("configCenter")
     private ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
 
     @Config

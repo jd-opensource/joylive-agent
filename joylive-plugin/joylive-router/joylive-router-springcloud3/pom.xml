@@ -55,5 +55,10 @@
             <version>${openfeign.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <!--fix compile error-->
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
     </dependencies>
 </project>

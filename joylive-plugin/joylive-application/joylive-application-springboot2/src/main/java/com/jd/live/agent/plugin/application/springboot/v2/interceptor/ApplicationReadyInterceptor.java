@@ -16,23 +16,154 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener;
+import com.jd.live.agent.core.instance.AppService;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
+import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetector;
+import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetectorFactory;
+import org.springframework.boot.SpringBootVersion;
+import org.springframework.boot.web.context.WebServerApplicationContext;
+import org.springframework.boot.web.server.WebServer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ApplicationReadyInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
-    public ApplicationReadyInterceptor(AppListener listener) {
+    private final GovernanceConfig config;
+
+    private final Registry registry;
+
+    private final Application application;
+
+    public ApplicationReadyInterceptor(AppListener listener, GovernanceConfig config, Registry registry, Application application) {
         this.listener = listener;
+        this.config = config;
+        this.registry = registry;
+        this.application = application;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
+        if (config.getRegistryConfig().isEnabled()) {
+            registry.register(createInstance(context.getContext(), application.getService()));
+        }
         InnerListener.foreach(l -> l.onReady(context));
         listener.onReady(context);
+    }
+
+    /**
+     * Creates a service instance with configuration derived from the application context.
+     * Automatically detects host and port (using multiple strategies), collects application
+     * labels as metadata, and embeds framework version information.
+     *
+     * @param context    Application context for environment and port detection
+     * @param appService Service metadata provider
+     * @return Configured service instance ready for registration
+     */
+    private ServiceInstance createInstance(ConfigurableApplicationContext context, AppService appService) {
+        ConfigurableEnvironment environment = context.getEnvironment();
+        String address = environment.getProperty("server.address");
+        address = address == null || address.isEmpty() ? Ipv4.getLocalIp() : address;
+        ServiceInstance instance = new ServiceInstance();
+        instance.setInstanceId(application.getInstance());
+        instance.setNamespace(appService.getNamespace());
+        instance.setService(appService.getName());
+        instance.setGroup(appService.getGroup());
+        instance.setHost(address);
+        instance.setPort(getPort(context));
+        Map<String, String> metadata = new HashMap<>();
+        application.labelRegistry(metadata::putIfAbsent, true);
+        metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
+        instance.setMetadata(metadata);
+        return instance;
+    }
+
+    /**
+     * Detects server port using prioritized strategies:
+     * 1. WebServer port for Servlet contexts
+     * 2. PortDetector plugin mechanism
+     * 3. server.port property fallback
+     * Enforces valid port range (1-65535) and handles parsing errors (default:8080)
+     *
+     * @param context Application context for port detection
+     * @return Validated port number
+     */
+    private int getPort(ConfigurableApplicationContext context) {
+        if (context instanceof WebServerApplicationContext) {
+            return getPortByWebServer((WebServerApplicationContext) context);
+        } else {
+            Integer port = getPortByDetector(context);
+            if (port != null) {
+                return port;
+            }
+
+            return getPortByEnvironment(context);
+        }
+    }
+
+    /**
+     * Retrieves port directly from embedded WebServer instance (Servlet contexts only)
+     *
+     * @param context Web-enabled application context
+     * @return Actual bound port from web server
+     */
+    private int getPortByWebServer(WebServerApplicationContext context) {
+        WebServer webServer = context.getWebServer();
+        return webServer.getPort();
+    }
+
+    /**
+     * Extracts port from environment properties with validation.
+     * Handles missing/invalid values by falling back to 8080.
+     *
+     * @param context Application context containing environment
+     * @return Validated port number from configuration
+     */
+    private Integer getPortByEnvironment(ConfigurableApplicationContext context) {
+        ConfigurableEnvironment environment = context.getEnvironment();
+        String serverPort = environment.getProperty("server.port");
+        serverPort = serverPort == null || serverPort.isEmpty() ? "8080" : serverPort;
+        int port;
+        try {
+            port = Integer.parseInt(serverPort);
+            port = port > 65535 || port <= 0 ? 8080 : port;
+        } catch (NumberFormatException e) {
+            port = 8080;
+        }
+        return port;
+    }
+
+    /**
+     * Attempts port detection through plugin mechanism.
+     * Silently ignores detector failures to allow fallback strategies.
+     *
+     * @param context Application context for detector initialization
+     * @return Detected port or null if unavailable
+     */
+    private Integer getPortByDetector(ConfigurableApplicationContext context) {
+        PortDetector detector = PortDetectorFactory.get(context);
+        Integer port;
+        try {
+            port = detector.getPort();
+            if (port != null) {
+                return port;
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 }

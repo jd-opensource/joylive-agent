@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
@@ -26,12 +25,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnSpringEnabled
-@ConditionalOnClass(ConditionalOnSpringCloud3Enabled.TYPE_STICKY_SESSION_SUPPLIER)
-@ConditionalOnMissingClass(ConditionalOnSpringCloud3Enabled.TYPE_HTTP_STATUS_CODE)
+@ConditionalOnClass(ConditionalOnSpringCloud3Enabled.TYPE_HINT_REQUEST_CONTEXT)
+@ConditionalOnClass(ConditionalOnSpringCloud3Enabled.TYPE_SPRING_CLOUD_APPLICATION)
 @ConditionalComposite
 public @interface ConditionalOnSpringCloud3Enabled {
 
-    String TYPE_STICKY_SESSION_SUPPLIER = "org.springframework.cloud.loadbalancer.core.RequestBasedStickySessionServiceInstanceListSupplier";
+    String TYPE_HINT_REQUEST_CONTEXT = "org.springframework.cloud.client.loadbalancer.HintRequestContext";
 
-    String TYPE_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
+    String TYPE_SPRING_CLOUD_APPLICATION = "org.springframework.cloud.client.SpringCloudApplication";
 }

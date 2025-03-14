@@ -15,8 +15,9 @@
  */
 package com.jd.live.agent.governance.registry;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -54,12 +55,117 @@ public interface Registry {
     void unregister(ServiceInstance instance);
 
     /**
-     * Subscribes a specific service policy based on its name.
+     * Subscribes to a specific service policy based on the service name.
      *
-     * @param service The service name of the policy to subscribe to.
+     * @param service The name of the service to register.
+     * @return A {@link CompletableFuture} that completes when the registration is successful.
+     */
+    default CompletableFuture<Void> register(String service) {
+        return register(service, null);
+    }
+
+    /**
+     * Subscribes to a specific service policy based on the service name and group.
+     *
+     * @param service The name of the service to register.
+     * @param group   The group to which the service belongs.
+     * @return A {@link CompletableFuture} that completes when the registration is successful.
+     */
+    CompletableFuture<Void> register(String service, String group);
+
+    /**
+     * Subscribes to a specific service policy based on the service name .
+     *
+     * @param service The name of the service whose policy is to be subscribed to.
      * @return A {@link CompletableFuture} that completes when the subscription is successful.
      */
-    CompletableFuture<Void> subscribe(String service);
+    default CompletableFuture<Void> subscribe(String service) {
+        return subscribe(service, (String) null);
+    }
+
+    /**
+     * Subscribes to a specific service policy based on the service name and group.
+     *
+     * @param service The name of the service whose policy is to be subscribed to.
+     * @param group   The group to which the service belongs.
+     * @return A {@link CompletableFuture} that completes when the subscription is successful.
+     */
+    CompletableFuture<Void> subscribe(String service, String group);
+
+    /**
+     * Subscribes to the specified service and attempts to retrieve its governance policy.
+     * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
+     *
+     * @param <T>           the type of the result returned by the error function
+     * @param service       the name of the service to subscribe to
+     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
+     */
+    default <T> T subscribe(String service, BiFunction<String, Throwable, T> errorFunction) {
+        return subscribe(service, null, 5000, TimeUnit.MILLISECONDS, errorFunction);
+    }
+
+    /**
+     * Subscribes to the specified service and attempts to retrieve its governance policy.
+     * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
+     *
+     * @param <T>           the type of the result returned by the error function
+     * @param service       the name of the service to subscribe to
+     * @param timeout       the maximum time to wait for the subscription to complete
+     * @param unit          the time unit of the timeout parameter
+     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
+     */
+    default <T> T subscribe(String service, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
+        return subscribe(service, null, timeout, unit, errorFunction);
+    }
+
+    /**
+     * Subscribes to the specified service and group, and attempts to retrieve its governance policy.
+     * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
+     *
+     * @param <T>           the type of the result returned by the error function
+     * @param service       the name of the service to subscribe to
+     * @param group         the group associated with the service (optional, can be {@code null})
+     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
+     */
+    default <T> T subscribe(String service, String group, BiFunction<String, Throwable, T> errorFunction) {
+        return subscribe(service, null, 5000, TimeUnit.MILLISECONDS, errorFunction);
+    }
+
+    /**
+     * Subscribes to the specified service and group, and attempts to retrieve its governance policy.
+     * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
+     *
+     * @param <T>           the type of the result returned by the error function
+     * @param service       the name of the service to subscribe to
+     * @param group         the group associated with the service (optional, can be {@code null})
+     * @param timeout       the maximum time to wait for the subscription to complete
+     * @param unit          the time unit of the timeout parameter
+     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
+     */
+    default <T> T subscribe(String service, String group, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
+        try {
+            subscribe(service, group).get(timeout, unit);
+            return null;
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            String errorMessage = "Failed to get governance policy for " + service + ", caused by " + cause.getMessage();
+            return errorFunction.apply(errorMessage, cause);
+        } catch (TimeoutException e) {
+            String errorMessage = "Failed to get governance policy for " + service + ", caused by it's timeout.";
+            return errorFunction.apply(errorMessage, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            String errorMessage = "Failed to get governance policy for " + service + ", caused by it's interrupted";
+            return errorFunction.apply(errorMessage, e);
+        } catch (Throwable e) {
+            String errorMessage = "Failed to get governance policy for " + service + ", caused by " + e.getMessage();
+            return errorFunction.apply(errorMessage, e);
+        }
+    }
 
     /**
      * Subscribes to endpoint events for a specific service.
@@ -67,6 +173,38 @@ public interface Registry {
      * @param service  the service name to subscribe to
      * @param consumer the consumer that will receive endpoint events
      */
-    void subscribe(String service, Consumer<EndpointEvent> consumer);
+    default void subscribe(String service, Consumer<InstanceEvent> consumer) {
+        subscribe(service, null, consumer);
+    }
+
+    /**
+     * Subscribes to a specific service in the specified group and registers a consumer to handle endpoint events.
+     * This method allows the caller to receive notifications or updates related to the service's endpoints.
+     *
+     * @param service  the name of the service to subscribe to.
+     * @param group    the group to which the service belongs.
+     * @param consumer the consumer to handle endpoint events triggered by the subscription.
+     */
+    void subscribe(String service, String group, Consumer<InstanceEvent> consumer);
+
+    /**
+     * Retrieves endpoints for the specified service using the default group.
+     *
+     * @param service the name of the target service
+     * @return a list of endpoints associated with the service (never null)
+     */
+    default List<ServiceEndpoint> getEndpoints(String service) {
+        return getEndpoints(service, null);
+    }
+
+    /**
+     * Retrieves endpoints for the specified service and group.
+     *
+     * @param service the name of the target service
+     * @param group   the cluster/group name (may be null for default group)
+     * @return a list of endpoints matching the service and group (never null)
+     */
+    List<ServiceEndpoint> getEndpoints(String service, String group);
+
 }
 

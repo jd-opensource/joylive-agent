@@ -497,6 +497,18 @@ public abstract class HttpUtils {
      *
      * @param uri  the original URI object
      * @param host the host component of the new URI
+     * @param port the port component of the new URI
+     * @return a new URI object with the specified components
+     */
+    public static URI newURI(URI uri, String host, Integer port) {
+        return newURI(uri, null, host, port, null);
+    }
+
+    /**
+     * Creates a new URI object with the specified components.
+     *
+     * @param uri  the original URI object
+     * @param host the host component of the new URI
      * @return a new URI object with the specified components
      */
     public static URI newURI(URI uri, String host) {

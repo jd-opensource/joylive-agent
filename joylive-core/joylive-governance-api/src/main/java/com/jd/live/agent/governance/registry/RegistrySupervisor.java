@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.registry;
 
-import com.jd.live.agent.governance.instance.Endpoint;
-
 import java.util.List;
 
 /**
@@ -25,12 +23,12 @@ import java.util.List;
 public interface RegistrySupervisor extends Registry {
 
     /**
-     * Updates the endpoints for a specific service group in the registry.
+     * Updates the instances for a specific service group in the registry.
      *
      * @param service   the service
-     * @param endpoints the new list of endpoints for the service group
+     * @param instances the new list of instances for the service group
      */
-    void update(String service, List<? extends Endpoint> endpoints);
+    void update(String service, List<ServiceEndpoint> instances);
 
     /**
      * Checks if the registry is subscribed to a specific service.

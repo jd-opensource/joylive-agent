@@ -43,7 +43,12 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected void subscribe(String service) {
-        super.subscribe(service);
+    protected String getGroup(ServiceConfig<?> config) {
+        return config.getGroup();
+    }
+
+    @Override
+    protected void subscribe(String service, String group) {
+        registry.subscribe(service, group);
     }
 }

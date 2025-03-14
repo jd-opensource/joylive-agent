@@ -39,6 +39,11 @@ public class SpringAppEnvironment implements AppEnvironment {
         environment.getPropertySources().addLast(new ConfiguratorSource(propertySource));
     }
 
+    @Override
+    public String getProperty(String name) {
+        return environment.getProperty(name);
+    }
+
     /**
      * A PropertySource implementation that wraps a Configurator instance and provides access to its
      * configuration properties.

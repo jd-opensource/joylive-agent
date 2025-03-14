@@ -25,14 +25,16 @@ import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.AppService;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.exception.RegistryException;
-import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractRegistryService;
 import lombok.Getter;
@@ -63,8 +65,16 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     private static final Logger logger = LoggerFactory.getLogger(LiveRegistry.class);
 
+    private static final String FRAMEWORK = "framework";
+
     @Inject(RegistryConfig.COMPONENT_REGISTRY_CONFIG)
     private RegistryConfig registryConfig;
+
+    @Inject(RegistryConfig.COMPONENT_REGISTRY_CONFIG)
+    private ServiceConfig serviceConfig;
+
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
@@ -144,49 +154,86 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     @Override
     public void register(ServiceInstance instance, Callable<Void> doRegister) {
-        if (instance != null) {
-            String service = instance.getService();
-            Registration registration = registrations.computeIfAbsent(service, name -> createRegistration(instance, doRegister));
-            if (ready.get()) {
-                // delay register
-                registration.register();
-            } else {
-                logger.info("Delay registering instance {}:{} to {} until application is ready",
-                        instance.getHost(), instance.getPort(),
-                        instance.getService());
-            }
+        if (instance == null) {
+            return;
+        }
+        if (instance.getGroup() == null) {
+            instance.setGroup(application.getService().getGroup());
+        }
+        String name = getName(instance.getService(), instance.getGroup());
+        Registration registration = registrations.computeIfAbsent(name, n -> createRegistration(n, instance, doRegister));
+        if (ready.get()) {
+            registration.register();
+        } else {
+            // delay register
+            logger.info("Delay registering instance {}:{} to {} until application is ready",
+                    instance.getHost(), instance.getPort(),
+                    instance.getService());
         }
     }
 
     @Override
     public void unregister(ServiceInstance instance) {
-        if (instance != null) {
-            Registration registration = registrations.remove(instance.getService());
-            if (registration != null) {
-                registration.unregister();
-            }
+        if (instance == null) {
+            return;
+        }
+        if (instance.getGroup() == null) {
+            instance.setGroup(application.getService().getGroup());
+        }
+        String name = getName(instance.getService(), instance.getGroup());
+        Registration registration = registrations.remove(name);
+        if (registration != null) {
+            registration.unregister();
         }
     }
 
     @Override
-    public CompletableFuture<Void> subscribe(String service) {
-        return policySupplier.subscribe(service);
+    public CompletableFuture<Void> register(String service, String group) {
+        AppService appService = application.getService();
+        service = service == null ? appService.getName() : service;
+        group = group == null ? appService.getGroup() : group;
+        return policySupplier.subscribe(service, group);
     }
 
     @Override
-    public void subscribe(String service, Consumer<EndpointEvent> consumer) {
-        if (service != null && !service.isEmpty() && consumer != null) {
-            Subscription subscription = subscriptions.computeIfAbsent(service, Subscription::new);
-            subscription.addConsumer(consumer);
+    public CompletableFuture<Void> subscribe(String service, String group) {
+        group = group == null ? serviceConfig.getGroup(service) : group;
+        // subscribe instance
+        subscribe(service, group, (Consumer<InstanceEvent>) null);
+        // subscribe govern policy
+        return policySupplier.subscribe(service, group);
+    }
+
+    @Override
+    public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) {
+        if (service == null || service.isEmpty()) {
+            return;
         }
+        String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
+        String name = getName(service, targetGroup);
+        Subscription subscription = subscriptions.computeIfAbsent(name, s -> createSubscription(s, targetGroup));
+        subscription.addConsumer(consumer);
+        subscription.subscribe();
     }
 
     @Override
-    public void update(String service, List<? extends Endpoint> endpoints) {
+    public List<ServiceEndpoint> getEndpoints(String service, String group) {
+        if (service == null || service.isEmpty()) {
+            return null;
+        }
+        String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
+        String name = getName(service, targetGroup);
+        Subscription subscription = subscriptions.get(name);
+        return subscription == null ? null : subscription.getEndpoints();
+    }
+
+    @Override
+    public void update(String service, List<ServiceEndpoint> instances) {
         if (service != null && !service.isEmpty()) {
-            Subscription subscription = subscriptions.get(service);
+            String name = getName(service, serviceConfig.getGroup(service));
+            Subscription subscription = subscriptions.get(name);
             if (subscription != null) {
-                subscription.update(endpoints);
+                subscription.update(FRAMEWORK, null, new InstanceEvent(service, instances));
             }
         }
     }
@@ -201,7 +248,14 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         source.add(Registry.COMPONENT_REGISTRY, this);
     }
 
-    private static void startCluster(RegistryService registry) throws Exception {
+    private static String getName(String service, String group) {
+        if (group == null || group.isEmpty()) {
+            return service;
+        }
+        return service + "@" + group;
+    }
+
+    private void startCluster(RegistryService registry) throws Exception {
         try {
             registry.start();
             logger.info("Success starting registry: {}", registry.getName());
@@ -234,26 +288,46 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     /**
      * Creates a new {@link Registration} object based on the provided service instance and registration action.
-     * If the registration action ({@code doRegister}) is null, the existing registries are used.
-     * If the registries list is null, a new list is created with the provided registration action and existing registries.
      *
+     * @param name       The name of the registration.
      * @param instance   The service instance to be registered.
      * @param doRegister A {@link Callable} representing the registration action. If null, the existing registries are used.
      * @return A new {@link Registration} object containing the service instance, registries, publisher, registry configuration, and timer.
      */
-    private Registration createRegistration(ServiceInstance instance, Callable<Void> doRegister) {
+    private Registration createRegistration(String name, ServiceInstance instance, Callable<Void> doRegister) {
         // violate
-        List<RegistryService> services = registries;
-        List<ClusterRegistry> result = new ArrayList<>(services == null ? 1 : services.size() + 1);
+        List<RegistryService> clusters = registries;
+        List<ClusterRegistration> values = new ArrayList<>(clusters == null ? 1 : clusters.size() + 1);
         if (doRegister != null) {
-            result.add(new ClusterRegistry(new FrameworkRegistryService(doRegister)));
+            values.add(new ClusterRegistration(new FrameworkRegistryService(doRegister)));
         }
-        if (services != null) {
-            for (RegistryService service : services) {
-                result.add(new ClusterRegistry(service));
+        if (clusters != null) {
+            for (RegistryService cluster : clusters) {
+                values.add(new ClusterRegistration(cluster));
             }
         }
-        return new Registration(instance, result, timer);
+        return new Registration(name, instance, values, timer);
+    }
+
+    /**
+     * Creates a subscription for the specified service and group by initializing a list of {@link ClusterOperation} instances
+     * from the available {@link RegistryService} clusters. The subscription is then constructed with the service, group,
+     * cluster registries, and a timer.
+     *
+     * @param service the name of the service to subscribe to.
+     * @param group   the group to which the service belongs.
+     * @return a new {@link Subscription} instance containing the service, group, cluster registries, and timer.
+     */
+    private Subscription createSubscription(String service, String group) {
+        // violate
+        List<RegistryService> clusters = registries;
+        List<ClusterSubscription> values = new ArrayList<>(clusters == null ? 0 : clusters.size());
+        if (clusters != null) {
+            for (RegistryService cluster : clusters) {
+                values.add(new ClusterSubscription(cluster));
+            }
+        }
+        return new Subscription(service, group, values, timer);
     }
 
     /**
@@ -262,16 +336,16 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     private static class Registration {
 
         /**
-         * The service to which the instance belongs.
+         * The name of the registration.
          */
-        private final String service;
+        private final String name;
 
         /**
          * The service instance being registered.
          */
         private final ServiceInstance instance;
 
-        private final List<ClusterRegistry> clusters;
+        private final List<ClusterRegistration> clusters;
 
         /**
          * A timer used to schedule heartbeat and registration delays.
@@ -288,12 +362,13 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private final AtomicBoolean registered = new AtomicBoolean(false);
 
-        Registration(ServiceInstance instance,
-                     List<ClusterRegistry> clusters,
+        Registration(String name,
+                     ServiceInstance instance,
+                     List<ClusterRegistration> clusters,
                      Timer timer) {
-            this.clusters = clusters;
-            this.service = instance.getService();
+            this.name = name;
             this.instance = instance;
+            this.clusters = clusters;
             this.timer = timer;
         }
 
@@ -332,7 +407,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private void delayRegister() {
             long delay = 1000 + (long) (Math.random() * 2000.0);
-            timer.delay("register-" + service, delay, this::doRegister);
+            timer.delay("register-" + name, delay, this::doRegister);
         }
 
         /**
@@ -341,19 +416,19 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         private void doRegister() {
             if (started.get()) {
                 int counter = 0;
-                for (ClusterRegistry cluster : clusters) {
-                    if (!cluster.isRegistered()) {
+                for (ClusterRegistration cluster : clusters) {
+                    if (!cluster.isDone()) {
                         String group = cluster.getGroup(instance.getGroup());
                         try {
                             cluster.register(instance.getService(), group, instance);
                             logger.info("Success registering instance {}:{} to {}@{} at {}",
                                     instance.getHost(), instance.getPort(),
-                                    instance.getService(), group, cluster);
+                                    instance.getService(), group, cluster.getName());
                             counter++;
                         } catch (Exception e) {
                             logger.error("Failed to register instance {}:{} to {}@{} at {}, caused by {}",
                                     instance.getHost(), instance.getPort(),
-                                    instance.getService(), group, cluster, e.getMessage(), e);
+                                    instance.getService(), group, cluster.getName(), e.getMessage(), e);
                         }
                     } else {
                         counter++;
@@ -369,18 +444,18 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          * Performs the actual unregister of the service instance.
          */
         private void doUnregister() {
-            for (ClusterRegistry cluster : clusters) {
-                if (cluster.isRegistered()) {
+            for (ClusterRegistration cluster : clusters) {
+                if (cluster.isDone()) {
                     String group = cluster.getGroup(instance.getGroup());
                     try {
                         cluster.unregister(instance.getService(), group, instance);
                         logger.info("Success unregistering instance {}:{} to {}@{} at {}",
                                 instance.getHost(), instance.getPort(),
-                                instance.getService(), group, cluster);
+                                instance.getService(), group, cluster.getName());
                     } catch (Exception e) {
                         logger.error("Failed to unregister instance {}:{} to {}@{} at {}, caused by {}",
                                 instance.getHost(), instance.getPort(),
-                                instance.getService(), group, cluster, e.getMessage(), e);
+                                instance.getService(), group, cluster.getName(), e.getMessage(), e);
                     }
                 }
             }
@@ -397,23 +472,45 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private final String service;
 
+        private final String group;
+
+        private final List<ClusterSubscription> clusters;
+
+        /**
+         * A timer used to schedule heartbeat and registration delays.
+         */
+        private final Timer timer;
+
+        /**
+         * An atomic boolean indicating whether the registration has been started.
+         */
+        private final AtomicBoolean started = new AtomicBoolean(true);
+
+        /**
+         * An atomic boolean indicating whether the registration has been completed.
+         */
+        private final AtomicBoolean subscribed = new AtomicBoolean(false);
+
         /**
          * The consumer that will receive endpoint events.
          */
-        private final List<Consumer<EndpointEvent>> consumers = new CopyOnWriteArrayList<>();
+        private final List<Consumer<InstanceEvent>> consumers = new CopyOnWriteArrayList<>();
+
+        private final Map<String, List<ServiceEndpoint>> clustersEndpoints = new ConcurrentHashMap<>();
 
         /**
          * A map of endpoints for the service group, keyed by their addresses.
          */
-        private Map<String, Endpoint> endpoints;
+        @Getter
+        private volatile List<ServiceEndpoint> endpoints;
 
-        /**
-         * Creates a new subscription for the specified service.
-         *
-         * @param service the service to subscribe to
-         */
-        Subscription(String service) {
+        private final Object mutex = new Object();
+
+        Subscription(String service, String group, List<ClusterSubscription> clusters, Timer timer) {
             this.service = service;
+            this.group = group;
+            this.clusters = clusters;
+            this.timer = timer;
         }
 
         /**
@@ -421,61 +518,125 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          *
          * @param consumer the consumer to add
          */
-        public synchronized void addConsumer(Consumer<EndpointEvent> consumer) {
-            if (consumer != null && !consumers.contains(consumer)) {
-                consumers.add(consumer);
+        public void addConsumer(Consumer<InstanceEvent> consumer) {
+            if (consumer != null) {
+                synchronized (mutex) {
+                    if (!consumers.contains(consumer)) {
+                        consumers.add(consumer);
+                    }
+                }
             }
         }
 
         /**
-         * Updates the endpoints for the service group and notifies the consumer of any changes.
-         *
-         * @param endpoints the new list of endpoints for the service group
+         * Subscribes to the service if it has not already been subscribed.
          */
-        public synchronized void update(List<? extends Endpoint> endpoints) {
-            Map<String, Endpoint> newEndpoints = new HashMap<>();
-            Map<String, Endpoint> oldEndpoints = this.endpoints;
-            List<Endpoint> adds = new ArrayList<>();
-            List<Endpoint> removes = new ArrayList<>();
-            if (endpoints != null) {
-                for (Endpoint endpoint : endpoints) {
-                    String address = endpoint.getAddress();
-                    if (oldEndpoints == null || !oldEndpoints.containsKey(address)) {
-                        adds.add(endpoint);
-                    }
-                    newEndpoints.put(address, endpoint);
+        public void subscribe() {
+            if (subscribed.compareAndSet(false, true)) {
+                // allow clusters is empty.
+                if (clusters != null && !clusters.isEmpty()) {
+                    doSubscribe();
                 }
             }
-            if (oldEndpoints != null) {
-                oldEndpoints.forEach((k, v) -> {
-                    if (!newEndpoints.containsKey(k)) {
-                        removes.add(v);
+        }
+
+        /**
+         * Stops the registration process.
+         */
+        public void stop() {
+            started.set(false);
+        }
+
+        /**
+         * Updates the list of endpoints for a specific service instance based on the provided {@link InstanceEvent}.
+         *
+         * @param clusterName  The name of the cluster or service instance being updated.
+         * @param event The {@link InstanceEvent} containing the updated endpoints and their size.
+         *              If the size is 0, the endpoints for the specified name are removed; otherwise, they are updated.
+         */
+        public void update(String clusterName, String serviceGroup, InstanceEvent event) {
+            if (!started.get() || event == null) {
+                return;
+            }
+            int size = event.size();
+            String name = serviceGroup == null ? getName(service, group) : serviceGroup;
+            logger.info("Service instance count is changed to {}, {} at {}", size, name, clusterName);
+            synchronized (mutex) {
+                if (!started.get()) {
+                    return;
+                }
+                List<ServiceEndpoint> ce = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
+                int capacity = endpoints == null ? 0 : endpoints.size();
+                capacity = capacity + size - (ce == null ? 0 : ce.size());
+                Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
+                clustersEndpoints.forEach((cluster, endpoints) -> {
+                    if (endpoints != null) {
+                        endpoints.forEach(endpoint -> merged.put(endpoint.getAddress(), endpoint));
                     }
                 });
+                List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
+                this.endpoints = newEndpoints;
+                for (Consumer<InstanceEvent> consumer : consumers) {
+                    consumer.accept(new InstanceEvent(service, newEndpoints));
+                }
             }
-            this.endpoints = newEndpoints;
-            logger.info("Service instance is changed, service={}, adds={}, removes={}", service, adds.size(), removes.size());
-            for (Consumer<EndpointEvent> consumer : consumers) {
-                consumer.accept(new EndpointEvent(service, endpoints, adds, removes));
+        }
+
+        /**
+         * Delays the register process by a random amount of time.
+         */
+        private void delaySubscribe() {
+            long delay = 1000 + (long) (Math.random() * 2000.0);
+            timer.delay("subscribe-" + service, delay, this::doSubscribe);
+        }
+
+        /**
+         * Performs the actual register of the service instance.
+         */
+        private void doSubscribe() {
+            if (started.get()) {
+                int counter = 0;
+                for (ClusterSubscription cluster : clusters) {
+                    if (!cluster.isDone()) {
+                        String group = cluster.getGroup(this.group);
+                        String name = getName(service, group);
+                        try {
+                            cluster.subscribe(service, group, e -> update(cluster.getName(), name, e));
+                            logger.info("Success subscribing {} at {}", name, cluster.getName());
+                            counter++;
+                        } catch (Exception e) {
+                            logger.error("Failed to subscribe {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
+                        }
+                    } else {
+                        counter++;
+                    }
+                }
+                if (counter != clusters.size()) {
+                    delaySubscribe();
+                }
             }
         }
     }
 
     /**
-     * Represents a registration of a service to a cluster, tracking the registration status and retry attempts.
-     * This class is used to manage the lifecycle of a service registration within a cluster.
+     * Abstract base class for cluster operations. Provides common functionality for managing
+     * operations on a {@link RegistryService} cluster, including retry logic and completion status.
      */
-    private static class ClusterRegistry {
+    private abstract static class ClusterOperation {
 
         @Getter
-        private final RegistryService cluster;
+        protected final RegistryService cluster;
 
-        private final AtomicBoolean registered = new AtomicBoolean(false);
+        protected final AtomicBoolean done = new AtomicBoolean(false);
 
-        private final AtomicLong retry = new AtomicLong(0);
+        protected final AtomicLong retry = new AtomicLong(0);
 
-        ClusterRegistry(RegistryService cluster) {
+        ClusterOperation(RegistryService cluster) {
             this.cluster = cluster;
+        }
+
+        public String getName() {
+            return cluster.getName();
         }
 
         public String getGroup(String defaultGroup) {
@@ -483,12 +644,12 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             return config == null ? defaultGroup : config.getGroup(defaultGroup);
         }
 
-        public boolean isRegistered() {
-            return registered.get();
+        public boolean isDone() {
+            return done.get();
         }
 
-        public void setRegistered(boolean registered) {
-            this.registered.set(registered);
+        public void setDone(boolean done) {
+            this.done.set(done);
         }
 
         public long getRetry() {
@@ -499,6 +660,18 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             retry.incrementAndGet();
         }
 
+    }
+
+    /**
+     * Handles registration and unregistration of service instances with a {@link RegistryService} cluster.
+     * Extends {@link ClusterOperation} to manage the lifecycle of service instances.
+     */
+    private static class ClusterRegistration extends ClusterOperation {
+
+        ClusterRegistration(RegistryService cluster) {
+            super(cluster);
+        }
+
         /**
          * Registers a service instance with the registry.
          *
@@ -506,7 +679,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         public void register(String service, String group, ServiceInstance instance) throws Exception {
             cluster.register(service, group, instance);
-            registered.set(true);
+            done.set(true);
         }
 
         /**
@@ -516,7 +689,43 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         public void unregister(String service, String group, ServiceInstance instance) throws Exception {
             cluster.unregister(service, group, instance);
-            registered.set(false);
+            done.set(false);
+        }
+    }
+
+    /**
+     * Handles subscription and unsubscription to endpoint events for a {@link RegistryService} cluster.
+     * Extends {@link ClusterOperation} to manage event listening for specific services.
+     */
+    private static class ClusterSubscription extends ClusterOperation {
+
+        ClusterSubscription(RegistryService cluster) {
+            super(cluster);
+        }
+
+        /**
+         * Subscribes to endpoint events for a specific service and group.
+         *
+         * @param service  The service name to subscribe to.
+         * @param group    The group associated with the service.
+         * @param consumer The consumer to handle endpoint events.
+         * @throws Exception if the subscription fails.
+         */
+        public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
+            cluster.subscribe(service, group, consumer);
+            done.set(true);
+        }
+
+        /**
+         * Unsubscribes from endpoint events for a specific service and group.
+         *
+         * @param service The service name to unsubscribe from.
+         * @param group   The group associated with the service.
+         * @throws Exception if the unsubscription fails.
+         */
+        public void unsubscribe(String service, String group) throws Exception {
+            cluster.unsubscribe(service, group);
+            done.set(false);
         }
     }
 
@@ -534,7 +743,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
         @Override
         public String getName() {
-            return "framework";
+            return FRAMEWORK;
         }
 
         @Override

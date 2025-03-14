@@ -21,11 +21,11 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
 import org.springframework.cloud.client.loadbalancer.Response;
 
+import java.util.Map;
+
 import static com.jd.live.agent.core.Constants.LABEL_STATE;
 
 public class SpringEndpoint extends AbstractEndpoint {
-
-    public static final String KEY_SERVICE_ENDPOINT = "x-service-endpoint";
 
     private final ServiceInstance instance;
 
@@ -54,7 +54,8 @@ public class SpringEndpoint extends AbstractEndpoint {
 
     @Override
     public String getLabel(String key) {
-        return instance.getMetadata().get(key);
+        Map<String, String> metadata = instance.getMetadata();
+        return metadata == null ? null : metadata.get(key);
     }
 
     @Override

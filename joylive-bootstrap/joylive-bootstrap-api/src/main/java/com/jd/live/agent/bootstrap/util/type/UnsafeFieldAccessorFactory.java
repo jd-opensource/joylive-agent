@@ -21,6 +21,7 @@ import lombok.Getter;
 import java.lang.reflect.Field;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A factory class that provides access to a specific field of an object.
@@ -127,6 +128,74 @@ public class UnsafeFieldAccessorFactory {
             }
         }
         return getAccessor(clazz.getDeclaredField(field), defaultFunc);
+    }
+
+    /**
+     * Retrieves the value of the specified field from the target object quietly.
+     * If the target object or the field name is null or empty, or if the field does not exist, returns null.
+     *
+     * @param target The target object from which to retrieve the field value.
+     * @param field  The name of the field to retrieve.
+     * @return The value of the specified field, or null if the field does not exist or the target object is null.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getQuietly(Object target, String field) {
+        return (T) getQuietly(target, field, null);
+    }
+
+    /**
+     * Retrieves the value of the specified field from the target object quietly, filtered by the given predicate.
+     * If the target object or the field name is null or empty, or if the field does not exist, returns null.
+     *
+     * @param <T>       The type of the field value.
+     * @param target    The target object from which to retrieve the field value.
+     * @param field     The name of the field to retrieve.
+     * @param predicate A predicate to filter the field value. If the predicate returns false, the method returns null.
+     * @return The value of the specified field, or null if the field does not exist, the target object is null, or the predicate returns false.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getQuietly(Object target, String field, Predicate<Object> predicate) {
+        if (target == null || field == null || field.isEmpty()) {
+            return null;
+        }
+        try {
+            UnsafeFieldAccessor accessor = getAccessor(target.getClass(), field);
+            return accessor == null ? null : (T) accessor.get(target, predicate);
+        } catch (NoSuchFieldException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves the value of a nested property from the given target object, applying an optional predicate to filter the result.
+     *
+     * @param <T>        the type of the property value
+     * @param target     the target object
+     * @param properties an array of property names, representing the path to the desired property
+     * @param predicate  an optional predicate to filter the result
+     * @return the value of the property, or null if the property does not exist, is inaccessible, or does not pass the predicate test
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getQuietly(Object target, String[] properties, Predicate<Object> predicate) {
+        if (target == null || properties == null || properties.length == 0) {
+            return null;
+        }
+        Object value;
+        int pos;
+        String name;
+        for (String fieldName : properties) {
+            value = target;
+            while (fieldName != null && !fieldName.isEmpty() && value != null) {
+                pos = fieldName.indexOf('.');
+                name = pos > 0 ? fieldName.substring(0, pos) : fieldName;
+                fieldName = pos > 0 ? fieldName.substring(pos + 1) : null;
+                value = getQuietly(value, name);
+            }
+            if (value != null && (predicate == null || predicate.test(value))) {
+                return (T) value;
+            }
+        }
+        return null;
     }
 
     /**
