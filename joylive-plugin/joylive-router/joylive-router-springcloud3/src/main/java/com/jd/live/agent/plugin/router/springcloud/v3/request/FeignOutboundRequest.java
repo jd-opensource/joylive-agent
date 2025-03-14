@@ -47,7 +47,12 @@ public interface FeignOutboundRequest extends HttpOutboundRequest {
      */
     static Request createRequest(URI uri, Request request, Endpoint endpoint) {
         URI newUri = HttpUtils.newURI(uri, endpoint.getHost(), endpoint.getPort());
-        return Request.create(request.httpMethod(), newUri.toString(), request.headers(), Request.Body.create(request.body()), null);
+        return Request.create(
+                request.httpMethod(),
+                newUri.toString(),
+                request.headers(),
+                Request.Body.create(request.body()),
+                request.requestTemplate());
     }
 
 }

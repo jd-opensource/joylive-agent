@@ -8,3 +8,4 @@ com.jd.live.agent.plugin.router.springcloud.v3.definition.BlockingRetryableCloud
 com.jd.live.agent.plugin.router.springcloud.v3.definition.BlockingWebClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.ReactiveWebClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v3.definition.FeignWebClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v3.definition.FeignRetryerDefinition
