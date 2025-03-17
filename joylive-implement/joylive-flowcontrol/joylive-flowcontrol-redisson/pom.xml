@@ -12,7 +12,7 @@
     <artifactId>joylive-flowcontrol-redisson</artifactId>
 
     <properties>
-        <redisson.version>3.41.0</redisson.version>
+        <redisson.version>3.45.0</redisson.version>
     </properties>
 
     <dependencies>
