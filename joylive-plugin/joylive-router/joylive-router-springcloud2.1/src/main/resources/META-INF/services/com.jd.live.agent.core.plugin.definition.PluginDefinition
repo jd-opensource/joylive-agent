@@ -1,0 +1,6 @@
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.BlockingCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.BlockingRetryableCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.FeignCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactorCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactiveCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ServiceInstanceSupplierDefinition

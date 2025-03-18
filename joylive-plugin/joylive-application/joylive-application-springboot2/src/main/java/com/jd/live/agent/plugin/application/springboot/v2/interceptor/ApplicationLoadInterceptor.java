@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
+import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 import org.springframework.boot.SpringApplication;
 
 public class ApplicationLoadInterceptor extends InterceptorAdaptor {
@@ -36,7 +37,10 @@ public class ApplicationLoadInterceptor extends InterceptorAdaptor {
         SpringApplication application = (SpringApplication) mc.getTarget();
         ClassLoader classLoader = application.getClassLoader();
         Class<?> mainClass = mc.getResult();
-        InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
-        listener.onLoading(classLoader, mainClass);
+        // fix for spring boot 2.1, it will trigger twice.
+        AppLifecycle.load(() -> {
+            InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
+            listener.onLoading(classLoader, mainClass);
+        });
     }
 }

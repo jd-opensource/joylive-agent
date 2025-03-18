@@ -133,11 +133,11 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-grpc</artifactId>
+            <artifactId>joylive-registry-springcloud2.1</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-springcloud2</artifactId>
+            <artifactId>joylive-registry-springcloud2.2</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -146,6 +146,22 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-registry-springcloud4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-springgateway2.1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-springgateway2.2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-springgateway3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-springgateway4</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -165,6 +181,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-registry-nacos</artifactId>
         </dependency>
         <dependency>
@@ -177,7 +197,11 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-router-springcloud2</artifactId>
+            <artifactId>joylive-router-springcloud2.1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-router-springcloud2.2</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -189,19 +213,11 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-springgateway2</artifactId>
+            <artifactId>joylive-router-springgateway2.1</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-springgateway3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-springgateway4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-router-springgateway2</artifactId>
+            <artifactId>joylive-router-springgateway2.2</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

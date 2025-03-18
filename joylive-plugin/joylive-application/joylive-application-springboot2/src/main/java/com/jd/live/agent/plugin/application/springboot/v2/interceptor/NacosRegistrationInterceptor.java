@@ -24,8 +24,8 @@ import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
-import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetector;
-import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetectorFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
