@@ -25,6 +25,8 @@ import com.jd.live.agent.core.util.type.ValuePath;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.template.Template.evaluate;
+
 @Injectable
 @Extension("SpringEnvSupplier")
 public class SpringEnvSupplier extends AbstractEnvSupplier {
@@ -82,7 +84,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @return the resolved configuration value as a String
      */
     private String getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
-        return Template.parse(getConfig(configs, key)).evaluate(env);
+        return evaluate(getConfig(configs, key), env, false);
     }
 
     /**
