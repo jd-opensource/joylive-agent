@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util.type;
 
 import com.jd.live.agent.bootstrap.util.type.ObjectGetter;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import lombok.Getter;
 
 import java.lang.reflect.Array;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
@@ -153,10 +155,6 @@ public class ValuePath implements ObjectGetter {
      * This method first checks if the target object is of type Map, and if so,
      * it obtains the property value using key-value retrieval. If the target object
      * is not a Map, it attempts to retrieve the property value using reflection.
-     * The reflection part utilizes a custom utility class, ClassUtils, to obtain
-     * information about the target object's class and field descriptors, and then
-     * accesses the property value through the field descriptor. If the target class
-     * or field does not meet the required conditions, null is returned.
      *
      * @param target   The target object from which to retrieve the property value,
      *                 which can be a Map or any other Java object.
@@ -169,9 +167,9 @@ public class ValuePath implements ObjectGetter {
         }
         Class<?> type = target.getClass();
         if (ENTITY_PREDICATE.test(type)) {
-            FieldDesc fieldDesc = ClassUtils.describe(type).getFieldList().getField(property);
-            if (fieldDesc != null) {
-                return fieldDesc.get(target);
+            UnsafeFieldAccessor accessor = getQuietly(type, property);
+            if (accessor != null) {
+                return accessor.get(target);
             }
         }
         return null;
@@ -179,9 +177,6 @@ public class ValuePath implements ObjectGetter {
 
     /**
      * Retrieves an item from an array at the specified index.
-     * This method attempts to parse the index as an integer and then checks if it is within the bounds of the array.
-     * If the index is valid, it returns the item at that index. If the index is invalid or if any exception occurs
-     * during the parsing of the index (e.g., if the index is not a valid integer), the method returns null.
      *
      * @param result The array from which to retrieve an item. This object should be an array type.
      * @param index  The index of the item to retrieve, represented as a String.
@@ -199,10 +194,6 @@ public class ValuePath implements ObjectGetter {
 
     /**
      * Retrieves an item from a list at the specified index.
-     * This method attempts to parse the index as an integer and then checks if it is within the bounds of the list.
-     * If the index is valid, it returns the item at that index from the list. If the index is invalid or if any
-     * exception occurs during the parsing of the index (e.g., if the index is not a valid integer), the method
-     * returns null to indicate the failure to retrieve an item.
      *
      * @param target The list from which to retrieve an item. This should be an instance of List.
      * @param index  The index of the item to retrieve, represented as a String. This index will be parsed into an integer.

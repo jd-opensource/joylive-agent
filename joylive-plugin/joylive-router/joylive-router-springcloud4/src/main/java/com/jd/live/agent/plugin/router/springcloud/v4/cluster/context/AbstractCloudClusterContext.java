@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster.context;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.cache.CacheObject;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import org.springframework.util.function.SingletonSupplier;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,6 +29,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * Abstract implementation of CloudClusterContext for load balancing and service instance management
@@ -44,8 +46,6 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
 
     @SuppressWarnings("rawtypes")
     private static final Map<String, Set<LoadBalancerLifecycle>> LOAD_BALANCER_LIFE_CYCLES = new ConcurrentHashMap<>();
-
-    private static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
 
     protected ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
@@ -81,8 +81,13 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
             ServiceInstanceListSupplier supplier = null;
             ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(n);
             if (loadBalancer != null) {
-                ObjectProvider<ServiceInstanceListSupplier> provider = UnsafeFieldAccessorFactory.getQuietly(loadBalancer, FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-                supplier = provider == null ? null : provider.getIfAvailable();
+                ObjectProvider<ServiceInstanceListSupplier> objectProvider = getQuietly(loadBalancer, "serviceInstanceListSupplierProvider");
+                if (objectProvider != null) {
+                    supplier = objectProvider.getIfAvailable();
+                } else {
+                    SingletonSupplier<ServiceInstanceListSupplier> provider = getQuietly(loadBalancer, "serviceInstanceListSingletonSupplier");
+                    supplier = provider == null ? null : provider.get();
+                }
             }
             return CacheObject.of(supplier);
         }).get();

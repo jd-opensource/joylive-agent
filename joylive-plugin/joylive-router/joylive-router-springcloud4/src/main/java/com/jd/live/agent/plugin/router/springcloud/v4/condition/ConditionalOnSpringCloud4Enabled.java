@@ -16,22 +16,19 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringEnabled
-@ConditionalOnClass(ConditionalOnSpringCloud4Enabled.TYPE_HINT_REQUEST_CONTEXT)
+@ConditionalOnSpringCloudEnabled
 @ConditionalOnMissingClass(ConditionalOnSpringCloud4Enabled.TYPE_SPRING_CLOUD_APPLICATION)
 @ConditionalComposite
 public @interface ConditionalOnSpringCloud4Enabled {
 
-    String TYPE_HINT_REQUEST_CONTEXT = "org.springframework.cloud.client.loadbalancer.HintRequestContext";
-
+    // spring cloud 2/3
     String TYPE_SPRING_CLOUD_APPLICATION = "org.springframework.cloud.client.SpringCloudApplication";
 }

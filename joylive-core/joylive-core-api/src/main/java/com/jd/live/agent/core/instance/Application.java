@@ -46,6 +46,11 @@ public class Application {
     public static final String KEY_APPLICATION_NAME = "APPLICATION_NAME";
 
     /**
+     * Constant for the application service port.
+     */
+    public static final String KEY_APPLICATION_SERVICE_PORT = "APPLICATION_SERVICE_PORT";
+
+    /**
      * Constant for the application instance configuration key.
      */
     public static final String CONFIG_APP_INSTANCE = "app.instance";

@@ -20,6 +20,7 @@ import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
+import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 
 public class ApplicationStartedInterceptor extends InterceptorAdaptor {
 
@@ -32,7 +33,10 @@ public class ApplicationStartedInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
-        InnerListener.foreach(l -> l.onStarted(context));
-        listener.onStarted(context);
+        // fix for spring boot 2.1, it will trigger twice.
+        AppLifecycle.started(() -> {
+            InnerListener.foreach(l -> l.onStarted(context));
+            listener.onStarted(context);
+        });
     }
 }
