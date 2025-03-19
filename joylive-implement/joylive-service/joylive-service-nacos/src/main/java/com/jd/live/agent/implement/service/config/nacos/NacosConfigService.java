@@ -37,7 +37,7 @@ import static com.jd.live.agent.implement.service.config.nacos.client.NacosClien
 
 @Injectable
 @ConditionalOnConfigCenterEnabled
-@ConditionalOnProperty(name = "agent.governance.configcenter.type", value = "nacos")
+@ConditionalOnProperty(name = "agent.governance.configCenter.type", value = "nacos")
 @Extension("NacosConfigService")
 public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
 

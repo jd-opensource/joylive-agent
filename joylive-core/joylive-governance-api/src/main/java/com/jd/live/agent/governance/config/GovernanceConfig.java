@@ -48,7 +48,7 @@ public class GovernanceConfig {
     protected static final String CONFIG_SWITCH_LIVE = CONFIG_SWITCH + ".live";
     protected static final String CONFIG_SWITCH_GOVERN = CONFIG_SWITCH + ".govern";
     protected static final String CONFIG_SWITCH_LANE = CONFIG_SWITCH + ".lane";
-    protected static final String CONFIG_SWITCH_CONFIG_CENTER = CONFIG_SWITCH + ".configcenter";
+    protected static final String CONFIG_SWITCH_CONFIG_CENTER = CONFIG_SWITCH + ".configCenter";
     protected static final String CONFIG_SWITCH_FLOW_CONTROL = CONFIG_SWITCH + ".flowcontrol";
     protected static final String CONFIG_SWITCH_PROTECT = CONFIG_SWITCH + ".protect";
     protected static final String CONFIG_SWITCH_TRANSMISSION = CONFIG_SWITCH + ".transmission";

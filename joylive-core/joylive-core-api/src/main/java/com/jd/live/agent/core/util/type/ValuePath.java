@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.core.util.type.ClassUtils.describe;
 import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
@@ -33,7 +35,7 @@ import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
  */
 public class ValuePath implements ObjectGetter {
 
-    private static final Map<String, ValuePath> VALUE_PATHS = new ConcurrentHashMap<>();
+    private static final Map<String, ValuePath> VALUE_PATHS = new ConcurrentHashMap<>(1024);
 
     @Getter
     protected final String path;
@@ -63,16 +65,6 @@ public class ValuePath implements ObjectGetter {
         this.paths = parse(path);
     }
 
-    /**
-     * Creates a new ValuePath instance with the specified path.
-     *
-     * @param path the path to the value
-     * @return a new ValuePath instance
-     */
-    public static ValuePath of(String path) {
-        return VALUE_PATHS.computeIfAbsent(path, ValuePath::new);
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public Object get(Object target) {
@@ -92,6 +84,27 @@ public class ValuePath implements ObjectGetter {
             index++;
         }
         return result;
+    }
+
+    /**
+     * Creates a new ValuePath instance with the specified path.
+     *
+     * @param path the path to the value
+     * @return a new ValuePath instance
+     */
+    public static ValuePath of(String path) {
+        return VALUE_PATHS.computeIfAbsent(path, ValuePath::new);
+    }
+
+    /**
+     * Retrieves a value from the specified target object.
+     *
+     * @param target The target object from which the value is to be retrieved.
+     * @param path   The path to the value
+     * @return The value retrieved from the target object.
+     */
+    public static Object get(Object target, String path) {
+        return target == null || path == null || path.isEmpty() ? null : of(path).get(target);
     }
 
     /**
@@ -153,10 +166,6 @@ public class ValuePath implements ObjectGetter {
      * This method first checks if the target object is of type Map, and if so,
      * it obtains the property value using key-value retrieval. If the target object
      * is not a Map, it attempts to retrieve the property value using reflection.
-     * The reflection part utilizes a custom utility class, ClassUtils, to obtain
-     * information about the target object's class and field descriptors, and then
-     * accesses the property value through the field descriptor. If the target class
-     * or field does not meet the required conditions, null is returned.
      *
      * @param target   The target object from which to retrieve the property value,
      *                 which can be a Map or any other Java object.
@@ -169,9 +178,9 @@ public class ValuePath implements ObjectGetter {
         }
         Class<?> type = target.getClass();
         if (ENTITY_PREDICATE.test(type)) {
-            FieldDesc fieldDesc = ClassUtils.describe(type).getFieldList().getField(property);
+            FieldDesc fieldDesc = describe(type).getFieldList().getField(property);
             if (fieldDesc != null) {
-                return fieldDesc.get(target);
+                return getQuietly(target, fieldDesc.getField());
             }
         }
         return null;

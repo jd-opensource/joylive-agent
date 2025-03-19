@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.service.config;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ConfigParser;
-import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent;
 import com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType;
@@ -38,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.CollectionUtils.cascade;
 import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
 
 /**
@@ -80,10 +80,7 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
     @Override
     public Object getProperty(String name) {
         ConfigCache cache = ref.get();
-        if (cache == null || name == null || name.isEmpty()) {
-            return null;
-        }
-        return new ValuePath(name).get(cache.getData());
+        return ValuePath.get(cache == null ? null : cache.getData(), name);
     }
 
     @Override
@@ -155,12 +152,12 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
      */
     protected void onUpdate(Map<String, Object> newValues, ConfigSubscription<T> subscription) {
         ConfigParser parser = subscription.getParser();
-        Map<String, Object> newNestedValue = parser.isFlatted() ? CollectionUtils.cascade(newValues) : newValues;
-        Map<String, Object> oldNestedValues = getNestedConfig(subscription);
+        Map<String, Object> newNestedValue = parser.isFlatted() ? cascade(newValues) : newValues;
+        Map<String, Object> oldNestedValues = subscription.getConfig();
 
         synchronized (mutex) {
             size = size + newNestedValue.size() - (oldNestedValues == null ? 0 : oldNestedValues.size());
-            subscription.setConfig(newValues);
+            subscription.setConfig(newNestedValue);
 
             Map<String, Object> newer;
             if (subscriptions.size() == 1) {
@@ -168,7 +165,7 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
             } else {
                 newer = new HashMap<>(size);
                 for (ConfigSubscription<T> ns : subscriptions) {
-                    Map<String, Object> config = getNestedConfig(ns);
+                    Map<String, Object> config = ns.getConfig();
                     if (config != null) {
                         newer.putAll(config);
                     }
@@ -185,6 +182,15 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
         }
     }
 
+    /**
+     * Notifies registered listeners about changes between two configurations represented by {@code older} and {@code newer} maps.
+     * This method compares the values of each listener's configured path in the two maps and publishes appropriate {@link ConfigEvent}
+     * for changes detected (e.g., updates or deletions). If any changes are detected, it also notifies system-wide listeners.
+     *
+     * @param older   The older configuration map representing the previous state. Can be {@code null} if no previous state exists.
+     * @param newer   The newer configuration map representing the current state. Must not be {@code null}.
+     * @param version The version of the configuration change, used to track the sequence of updates.
+     */
     protected void notifyListeners(Map<String, Object> older, Map<String, Object> newer, Long version) {
         int counter = 0;
         // For each listener, check if its path is affected by the changes
@@ -212,14 +218,11 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
         }
     }
 
-    private Map<String, Object> getNestedConfig(ConfigSubscription<T> subscription) {
-        Map<String, Object> config = subscription.getConfig();
-        if (config != null && subscription.getParser().isFlatted()) {
-            return CollectionUtils.cascade(config);
-        }
-        return config;
-    }
-
+    /**
+     * A protected inner class representing a listener associated with a specific configuration name.
+     * This class manages a list of {@link SynchronousListener} instances and provides methods to add, remove,
+     * and notify listeners when a configuration change event occurs.
+     */
     protected static class NameListener {
 
         @Getter
@@ -232,7 +235,7 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
 
         NameListener(String name) {
             this.name = name;
-            this.path = new ValuePath(name);
+            this.path = ValuePath.of(name);
         }
 
         public void addListener(SynchronousListener listener) {
