@@ -15,13 +15,14 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.util.LoadBalancerUtil;
 import feign.Client;
+import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
+import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext.createFactory;
 
 /**
  * A concrete implementation of cluster context specifically designed for Feign clients,
@@ -31,7 +32,7 @@ public class FeignClusterContext extends AbstractCloudClusterContext {
 
     private static final String FIELD_DELEGATE = "delegate";
 
-    private static final String[] FIELD_CLIENT_FACTORIES = {"loadBalancerClient", "lbClientFactory"};
+    private static final String FIELD_LOAD_BALANCER_CLIENT = "loadBalancerClient";
 
     private static final String[] FIELD_RETRY_PROPERTIES = {
             "loadBalancedRetryFactory.retryProperties",
@@ -40,25 +41,16 @@ public class FeignClusterContext extends AbstractCloudClusterContext {
 
     private final Client client;
 
+    @Getter
     private final Client delegate;
-
-    private final RetryPolicy defaultRetryPolicy;
 
     public FeignClusterContext(Client client) {
         this.client = client;
         this.delegate = getQuietly(client, FIELD_DELEGATE);
-        Object loadBalancerClient = getQuietly(client, FIELD_CLIENT_FACTORIES, null);
-        this.loadBalancerFactory = LoadBalancerUtil.getFactory(loadBalancerClient);
+        BlockingLoadBalancerClient loadBalancerClient = getQuietly(client, FIELD_LOAD_BALANCER_CLIENT);
+        this.registryFactory = createFactory(loadBalancerClient);
         LoadBalancerRetryProperties retryProperties = getQuietly(client, FIELD_RETRY_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties);
-        this.defaultRetryPolicy = LoadBalancerUtil.getDefaultRetryPolicy(retryProperties);
-    }
-
-    public Client getDelegate() {
-        return delegate;
-    }
-
-    public RetryPolicy getDefaultRetryPolicy() {
-        return defaultRetryPolicy;
+        this.defaultRetryPolicy = getDefaultRetryPolicy(retryProperties);
     }
 
     @Override

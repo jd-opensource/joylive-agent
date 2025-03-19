@@ -16,24 +16,30 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context;
 
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.AbstractCloudClusterContext;
 import lombok.Getter;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 
 @Getter
 public class GatewayClusterContext extends AbstractCloudClusterContext {
 
     private final Propagation propagation;
 
-    public GatewayClusterContext(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory, Propagation propagation) {
-        this.loadBalancerFactory = clientFactory;
+    public GatewayClusterContext(ServiceRegistryFactory registryFactory, Propagation propagation) {
+        this.registryFactory = registryFactory;
         this.propagation = propagation;
     }
 
     @Override
     public boolean isRetryable() {
         return true;
+    }
+
+    @Override
+    public RetryPolicy getDefaultRetryPolicy(String service) {
+        // The RetryPolicy is provided by the Request.
+        return null;
     }
 
 }

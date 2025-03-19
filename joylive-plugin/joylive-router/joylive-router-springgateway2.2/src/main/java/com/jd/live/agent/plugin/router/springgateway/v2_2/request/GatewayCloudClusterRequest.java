@@ -23,20 +23,15 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.Gatewa
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
 import java.net.URI;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
@@ -55,7 +50,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     private final GatewayConfig gatewayConfig;
 
-    private final RetryConfig retryConfig;
+    private final RetryPolicy retryPolicy;
 
     private final int index;
 
@@ -65,12 +60,12 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
                                       GatewayClusterContext context,
                                       GatewayFilterChain chain,
                                       GatewayConfig gatewayConfig,
-                                      RetryConfig retryConfig,
+                                      RetryPolicy retryPolicy,
                                       int index) {
         super(exchange.getRequest(), getURI(exchange), context);
         this.exchange = exchange;
         this.chain = chain;
-        this.retryConfig = retryConfig;
+        this.retryPolicy = retryPolicy;
         this.gatewayConfig = gatewayConfig;
         this.index = index;
         this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
@@ -113,7 +108,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public String getForwardHostExpression() {
         String result = null;
-        if (context.getLoadBalancerFactory() != null) {
+        if (context.getRegistryFactory() != null) {
             Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
             Map<String, Object> metadata = route == null ? null : route.getMetadata();
             result = metadata == null ? null : (String) metadata.get(GatewayConfig.KEY_HOST_EXPRESSION);
@@ -129,7 +124,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     @Override
     public boolean isInstanceSensitive() {
-        return context.getLoadBalancerFactory() != null;
+        return context.getRegistryFactory() != null;
     }
 
     @Override
@@ -142,35 +137,8 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
         return writeableHeaders;
     }
 
-    @Override
     public RetryPolicy getDefaultRetryPolicy() {
-        RetryConfig retryConfig = getRetryConfig();
-        if (retryConfig != null && retryConfig.getRetries() > 0) {
-            List<org.springframework.http.HttpMethod> methods = retryConfig.getMethods();
-            if (methods.isEmpty() || methods.contains(request.getMethod())) {
-                RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
-                Set<String> statuses = new HashSet<>(16);
-                retryConfig.getStatuses().forEach(status -> statuses.add(String.valueOf(status.value())));
-                Set<HttpStatus.Series> series = new HashSet<>(retryConfig.getSeries());
-                if (!series.isEmpty()) {
-                    for (HttpStatus status : HttpStatus.values()) {
-                        if (series.contains(status.series())) {
-                            statuses.add(String.valueOf(status.value()));
-                        }
-                    }
-                }
-                Set<String> exceptions = new HashSet<>();
-                retryConfig.getExceptions().forEach(e -> exceptions.add(e.getName()));
-
-                RetryPolicy retryPolicy = new RetryPolicy();
-                retryPolicy.setRetry(retryConfig.getRetries());
-                retryPolicy.setInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
-                retryPolicy.setErrorCodes(statuses);
-                retryPolicy.setExceptions(exceptions);
-                return retryPolicy;
-            }
-        }
-        return null;
+        return retryPolicy;
     }
 
     private static URI getURI(ServerWebExchange exchange) {

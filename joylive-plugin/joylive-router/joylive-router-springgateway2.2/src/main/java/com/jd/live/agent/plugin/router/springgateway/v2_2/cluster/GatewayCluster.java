@@ -22,10 +22,14 @@ import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.AbstractCloudCluster;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.util.UriUtils;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveGatewayFilterChain;
@@ -34,8 +38,6 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.request.HttpHeadersPar
 import com.jd.live.agent.plugin.router.springgateway.v2_2.response.GatewayClusterResponse;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -71,12 +73,18 @@ public class GatewayCluster extends AbstractCloudCluster<
         super(context);
     }
 
-    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory, Propagation propagation) {
-        super(new GatewayClusterContext(clientFactory, propagation));
+    public GatewayCluster(ServiceRegistryFactory registryFactory, Propagation propagation) {
+        super(new GatewayClusterContext(registryFactory, propagation));
     }
 
     @Override
-    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, SpringEndpoint endpoint) {
+    public ClusterPolicy getDefaultPolicy(GatewayCloudClusterRequest request) {
+        RetryPolicy retryPolicy = request.getDefaultRetryPolicy();
+        return new ClusterPolicy(retryPolicy == null ? ClusterInvoker.TYPE_FAILFAST : ClusterInvoker.TYPE_FAILOVER, retryPolicy);
+    }
+
+    @Override
+    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, InstanceEndpoint endpoint) {
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
@@ -104,9 +112,8 @@ public class GatewayCluster extends AbstractCloudCluster<
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onStartRequest(GatewayCloudClusterRequest request, SpringEndpoint endpoint) {
+    public void onStartRequest(GatewayCloudClusterRequest request, InstanceEndpoint endpoint) {
         if (endpoint != null) {
-            ServiceInstance instance = endpoint.getInstance();
             ServerWebExchange exchange = request.getExchange();
             Map<String, Object> attributes = exchange.getAttributes();
 
@@ -117,13 +124,13 @@ public class GatewayCluster extends AbstractCloudCluster<
 
             // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
             // if the loadbalancer doesn't provide one.
-            String overrideScheme = instance.isSecure() ? "https" : "http";
+            String overrideScheme = endpoint.isSecure() ? "https" : "http";
 
             String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
             if (schemePrefix != null) {
                 overrideScheme = request.getURI().getScheme();
             }
-            URI requestUrl = UriUtils.newURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
+            URI requestUrl = UriUtils.newURI(new DelegatingServiceInstance(endpoint, overrideScheme), uri);
 
             attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
         }

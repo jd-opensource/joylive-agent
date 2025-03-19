@@ -15,54 +15,49 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
-import com.jd.live.agent.plugin.router.springcloud.v2_2.util.LoadBalancerUtil;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
+import lombok.Getter;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClientRequestTransformer;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
 import java.util.List;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext.createFactory;
 
 /**
  * A concrete implementation of cluster context tailored for reactive programming,
  * extending {@link AbstractCloudClusterContext}.
  */
+@Getter
 public class ReactiveClusterContext extends AbstractCloudClusterContext {
 
-    private static final String FIELD_LOAD_BALANCER = "loadBalancerClient";
-
+    private static final String FIELD_LOAD_BALANCER_CLIENT = "loadBalancerClient";
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
-
     private static final String FIELD_TRANSFORMERS = "transformers";
-
     private static final String FIELD_RETRY_PROPERTIES = "retryProperties";
-
-    private final ExchangeFilterFunction filterFunction;
 
     private final List<LoadBalancerClientRequestTransformer> transformers;
 
     public ReactiveClusterContext(ExchangeFilterFunction filterFunction) {
-        this.filterFunction = filterFunction;
-        LoadBalancerClient client = getQuietly(filterFunction, FIELD_LOAD_BALANCER);
-        /*
-          If client is not null, it indicates that the currently intercepted class is LoadBalancerExchangeFilterFunction;
-          otherwise, the intercepted class is ReactorLoadBalancerExchangeFilterFunction.
-         */
-        this.loadBalancerFactory = client != null ? LoadBalancerUtil.getFactory(client) : getQuietly(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
-        this.transformers = getQuietly(filterFunction, FIELD_TRANSFORMERS);
+        // LoadBalancerExchangeFilterFunction.loadBalancerClient
+        LoadBalancerClient client = getQuietly(filterFunction, FIELD_LOAD_BALANCER_CLIENT);
+        if (client != null) {
+            this.registryFactory = createFactory(client);
+        } else {
+            // LoadBalancerExchangeFilterFunction.loadBalancerFactory
+            ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory = getQuietly(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
+            if (loadBalancerFactory != null) {
+                this.registryFactory = service -> new SpringServiceRegistry(service, loadBalancerFactory);
+            }
+        }
         LoadBalancerRetryProperties retryProperties = filterFunction instanceof RetryableLoadBalancerExchangeFilterFunction ? getQuietly(filterFunction, FIELD_RETRY_PROPERTIES) : null;
-        this.defaultRetryPolicy = LoadBalancerUtil.getDefaultRetryPolicy(retryProperties);
+        this.defaultRetryPolicy = getDefaultRetryPolicy(retryProperties);
+        this.transformers = getQuietly(filterFunction, FIELD_TRANSFORMERS);
     }
-
-    public ExchangeFilterFunction getFilterFunction() {
-        return filterFunction;
-    }
-
-    public List<LoadBalancerClientRequestTransformer> getTransformers() {
-        return transformers;
-    }
-
 }

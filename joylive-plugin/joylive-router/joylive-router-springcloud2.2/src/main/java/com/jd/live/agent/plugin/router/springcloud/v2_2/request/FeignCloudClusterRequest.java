@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.FeignClusterContext;
 import feign.Request;
@@ -43,7 +42,7 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
 
     private final Request.Options options;
 
-    private CacheObject<Map<String, Collection<String>>> writeableHeaders;
+    private Map<String, Collection<String>> writeableHeaders;
 
     public FeignCloudClusterRequest(Request request, Request.Options options, FeignClusterContext context) {
         super(request, URI.create(request.url()), context);
@@ -77,7 +76,12 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            getWriteableHeaders().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            if (writeableHeaders == null) {
+                writeableHeaders = modifiedMap(request.headers());
+                if (writeableHeaders != null) {
+                    writeableHeaders.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+                }
+            }
         }
     }
 
@@ -94,18 +98,14 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
      * @throws IOException if an I/O error occurs during the request execution
      */
     public Response execute(ServiceInstance instance) throws IOException {
-        String url = newURI(instance, uri).toString();
-        // TODO sticky session
-        Request req = Request.create(request.httpMethod(), url, request.headers(),
-                request.body(), request.charset(), request.requestTemplate());
+        Request req = Request.create(
+                request.httpMethod(),
+                newURI(instance, uri).toString(),
+                request.headers(),
+                request.body(),
+                request.charset(),
+                request.requestTemplate());
         return context.getDelegate().execute(req, options);
-    }
-
-    protected Map<String, Collection<String>> getWriteableHeaders() {
-        if (writeableHeaders == null) {
-            writeableHeaders = new CacheObject<>(modifiedMap(request.headers()));
-        }
-        return writeableHeaders.get();
     }
 
 }

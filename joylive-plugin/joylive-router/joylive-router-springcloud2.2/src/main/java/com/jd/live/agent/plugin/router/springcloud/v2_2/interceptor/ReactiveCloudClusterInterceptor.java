@@ -17,9 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.ReactiveCloudCluster;
@@ -40,35 +37,30 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.0.0
  */
-public class ReactiveCloudClusterInterceptor extends InterceptorAdaptor {
-
-    private final InvocationContext context;
+public class ReactiveCloudClusterInterceptor extends AbstractCloudClusterInterceptor<ClientRequest> {
 
     private final Map<ExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
 
     public ReactiveCloudClusterInterceptor(InvocationContext context) {
-        this.context = context;
+        super(context);
     }
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
+    protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         ClientRequest request = ctx.getArgument(0);
-        if (context.isFlowControlEnabled()) {
-            ExchangeFilterFunction filter = (ExchangeFilterFunction) ctx.getTarget();
-            ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, ReactiveCloudCluster::new);
-            ReactiveCloudClusterRequest clusterRequest = new ReactiveCloudClusterRequest(request, ctx.getArgument(1), cluster.getContext());
-            HttpOutboundInvocation<ReactiveCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
-            CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);
-            CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
-            Mono<ClientResponse> mono = Mono.fromFuture(future);
-            mc.skipWithResult(mono);
-        } else {
-            // only for live & lane
-            String serviceName = request.url().getHost();
-            RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceName);
-            RequestContext.setAttribute(Carrier.ATTRIBUTE_REQUEST, request);
-        }
+        ExchangeFilterFunction filter = (ExchangeFilterFunction) ctx.getTarget();
+        ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, ReactiveCloudCluster::new);
+        ReactiveCloudClusterRequest clusterRequest = new ReactiveCloudClusterRequest(request, ctx.getArgument(1), cluster.getContext());
+        HttpOutboundInvocation<ReactiveCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
+        CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);
+        CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
+        Mono<ClientResponse> mono = Mono.fromFuture(future);
+        mc.skipWithResult(mono);
+    }
+
+    @Override
+    protected String getServiceName(ClientRequest request) {
+        return request.url().getHost();
     }
 }

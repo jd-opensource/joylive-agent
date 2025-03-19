@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import feign.Request;
@@ -38,7 +37,7 @@ public class FeignCloudOutboundRequest extends AbstractHttpOutboundRequest<Reque
 
     private final String serviceId;
 
-    private CacheObject<Map<String, Collection<String>>> writeableHeaders;
+    private Map<String, Collection<String>> writeableHeaders;
 
     public FeignCloudOutboundRequest(Request request, String serviceId) {
         super(request);
@@ -78,7 +77,12 @@ public class FeignCloudOutboundRequest extends AbstractHttpOutboundRequest<Reque
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            getWriteableHeaders().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            if (writeableHeaders == null) {
+                writeableHeaders = modifiedMap(request.headers());
+                if (writeableHeaders != null) {
+                    writeableHeaders.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+                }
+            }
         }
     }
 
@@ -87,10 +91,4 @@ public class FeignCloudOutboundRequest extends AbstractHttpOutboundRequest<Reque
         return caseInsensitive(request.headers(), true);
     }
 
-    protected Map<String, Collection<String>> getWriteableHeaders() {
-        if (writeableHeaders == null) {
-            writeableHeaders = new CacheObject<>(modifiedMap(request.headers()));
-        }
-        return writeableHeaders.get();
-    }
 }

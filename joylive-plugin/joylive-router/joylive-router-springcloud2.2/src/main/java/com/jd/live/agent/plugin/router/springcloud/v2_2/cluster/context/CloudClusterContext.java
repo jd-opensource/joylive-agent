@@ -17,18 +17,30 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
 import com.jd.live.agent.governance.invoke.cluster.ClusterContext;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import com.jd.live.agent.governance.registry.ServiceRegistry;
 
 public interface CloudClusterContext extends ClusterContext {
 
-    RetryPolicy getDefaultRetryPolicy();
+    /**
+     * Retrieves the default retry policy for the specified service.
+     * The retry policy defines the rules for retrying failed requests to the service,
+     * such as the number of retries, backoff strategy, and conditions under which retries should be attempted.
+     *
+     * @param service the name of the service for which the retry policy is being retrieved
+     * @return the default {@link RetryPolicy} instance for the specified service
+     */
+    default RetryPolicy getDefaultRetryPolicy(String service) {
+        return null;
+    }
 
     /**
-     * Obtains service instance provider for discovery operations
+     * Retrieves a {@link ServiceRegistry} for the specified service name.
+     * The service registry is used to manage and discover instances of the service
+     * within the cloud cluster.
      *
-     * @param service Target service identifier/name
-     * @return Supplier of available service instances
+     * @param service the name of the service for which the registry is being retrieved
+     * @return a {@link ServiceRegistry} instance for the specified service
      */
-    ServiceInstanceListSupplier getServiceInstanceListSupplier(String service);
+    ServiceRegistry getServiceRegistry(String service);
 
 }

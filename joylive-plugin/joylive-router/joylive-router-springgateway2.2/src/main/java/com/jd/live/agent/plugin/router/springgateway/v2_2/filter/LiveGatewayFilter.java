@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
@@ -27,14 +28,20 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.request.GatewayCloudCl
 import com.jd.live.agent.plugin.router.springgateway.v2_2.response.GatewayClusterResponse;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
@@ -61,7 +68,7 @@ public class LiveGatewayFilter implements GatewayFilter {
     /**
      * The retry configuration for this filter.
      */
-    private final RetryConfig retryConfig;
+    private final RetryPolicy retryPolicy;
 
     /**
      * The index of this filter in the chain.
@@ -85,7 +92,7 @@ public class LiveGatewayFilter implements GatewayFilter {
         this.context = context;
         this.gatewayConfig = gatewayConfig;
         this.cluster = cluster;
-        this.retryConfig = retryConfig;
+        this.retryPolicy = getRetryPolicy(retryConfig);
         this.index = index;
     }
 
@@ -123,9 +130,33 @@ public class LiveGatewayFilter implements GatewayFilter {
     private OutboundInvocation<GatewayCloudClusterRequest> createInvocation(ServerWebExchange exchange, GatewayFilterChain chain) {
         boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
         GatewayClusterContext ctx = loadbalancer ? cluster.getContext() : null;
-        GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, ctx, chain, gatewayConfig, retryConfig, index);
+        GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, ctx, chain, gatewayConfig, retryPolicy, index);
         InvocationContext ic = loadbalancer ? context : new HttpForwardContext(context);
         return new GatewayHttpOutboundInvocation<>(request, ic);
+    }
+
+    private static RetryPolicy getRetryPolicy(RetryConfig retryConfig) {
+        if (retryConfig != null && retryConfig.getRetries() > 0) {
+            Set<String> statuses = new HashSet<>(16);
+            retryConfig.getStatuses().forEach(status -> statuses.add(String.valueOf(status.value())));
+            Set<HttpStatus.Series> series = new HashSet<>(retryConfig.getSeries());
+            if (!series.isEmpty()) {
+                for (HttpStatus status : HttpStatus.values()) {
+                    if (series.contains(status.series())) {
+                        statuses.add(String.valueOf(status.value()));
+                    }
+                }
+            }
+            RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
+            RetryPolicy retryPolicy = new RetryPolicy();
+            retryPolicy.setRetry(retryConfig.getRetries());
+            retryPolicy.setInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
+            retryPolicy.setMethods(new HashSet<>(toList(retryConfig.getMethods(), HttpMethod::name)));
+            retryPolicy.setErrorCodes(statuses);
+            retryPolicy.setExceptions(new HashSet<>(toList(retryConfig.getExceptions(), Class::getName)));
+            return retryPolicy;
+        }
+        return null;
     }
 
 }

@@ -15,12 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import org.springframework.cloud.client.ServiceInstance;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 /**
  * An interface that extends {@link HttpOutboundRequest} to provide additional methods
@@ -29,18 +24,5 @@ import java.util.List;
  */
 public interface SpringClusterRequest extends HttpOutboundRequest {
 
-    /**
-     * Retrieves a list of available service instances from the cluster.
-     *
-     * @return a {@link Mono} emitting a list of {@link ServiceInstance} objects
-     */
-    Mono<List<ServiceInstance>> getInstances();
-
-    /**
-     * Retrieves the default retry policy for the request.
-     *
-     * @return the default {@link RetryPolicy} instance
-     */
-    RetryPolicy getDefaultRetryPolicy();
 }
 

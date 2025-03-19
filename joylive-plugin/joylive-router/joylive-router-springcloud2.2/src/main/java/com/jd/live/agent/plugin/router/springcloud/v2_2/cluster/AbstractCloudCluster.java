@@ -15,28 +15,34 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster;
 
+import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.ThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.status.StatusThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.SpringClusterRequest;
-import org.springframework.cloud.client.ServiceInstance;
+import lombok.Getter;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpStatus;
-import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Provides an abstract base for implementing client clusters that can send requests and receive responses from
@@ -50,8 +56,25 @@ public abstract class AbstractCloudCluster<
         R extends SpringClusterRequest,
         O extends OutboundResponse,
         C extends CloudClusterContext>
-        extends AbstractLiveCluster<R, O, SpringEndpoint> {
+        extends AbstractLiveCluster<R, O, InstanceEndpoint> {
 
+    protected static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
+            "java.io.IOException",
+            "java.util.concurrent.TimeoutException",
+            "java.net.ConnectException",
+            "java.net.SocketTimeoutException",
+            "org.apache.http.conn.ConnectTimeoutException",
+            "org.apache.http.NoHttpResponseException",
+            "org.apache.http.conn.ConnectionPoolTimeoutException",
+            "org.apache.http.ConnectionClosedException",
+            "org.apache.http.conn.HttpHostConnectException"
+    ));
+
+    protected static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
+
+    protected final Map<String, CacheObject<RetryPolicy>> retryPolicies = new ConcurrentHashMap<>();
+
+    @Getter
     protected final C context;
 
     protected final SpringOutboundThrower<? extends NestedRuntimeException, R> thrower;
@@ -67,17 +90,11 @@ public abstract class AbstractCloudCluster<
 
     @Override
     public ClusterPolicy getDefaultPolicy(R request) {
-        RetryPolicy retryPolicy = isRetryable() ? request.getDefaultRetryPolicy() : null;
+        CacheObject<RetryPolicy> cacheObject = !isRetryable()
+                ? null
+                : retryPolicies.computeIfAbsent(request.getService(), s -> new CacheObject<>(context.getDefaultRetryPolicy(s)));
+        RetryPolicy retryPolicy = cacheObject == null ? null : cacheObject.get();
         return new ClusterPolicy(retryPolicy == null ? ClusterInvoker.TYPE_FAILFAST : ClusterInvoker.TYPE_FAILOVER, retryPolicy);
-    }
-
-    /**
-     * Retrieves the current context instance.
-     *
-     * @return the context instance of type {@code C}
-     */
-    public C getContext() {
-        return context;
     }
 
     /**
@@ -89,27 +106,24 @@ public abstract class AbstractCloudCluster<
         return context.isRetryable();
     }
 
-    /**
-     * Discover the service instances for the requested service.
-     *
-     * @param request The outbound request to be routed.
-     * @return ServiceInstance list
-     */
     @Override
-    public CompletionStage<List<SpringEndpoint>> route(R request) {
-        CompletableFuture<List<SpringEndpoint>> future = new CompletableFuture<>();
-        Mono<List<ServiceInstance>> mono = request.getInstances();
-        mono.subscribe(
-                v -> {
-                    List<SpringEndpoint> endpoints = new ArrayList<>();
-                    if (v != null) {
-                        v.forEach(i -> endpoints.add(new SpringEndpoint(i)));
-                    }
-                    future.complete(endpoints);
-                },
-                future::completeExceptionally
-        );
-        return future;
+    public ErrorPredicate getRetryPredicate() {
+        return RETRY_PREDICATE;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public CompletionStage<List<InstanceEndpoint>> route(R request) {
+        ServiceRegistry registry = context.getServiceRegistry(request.getService());
+        List<ServiceEndpoint> endpoints = registry.getEndpoints();
+        if (endpoints == null || endpoints.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        } else if (endpoints.get(0) instanceof InstanceEndpoint) {
+            return CompletableFuture.completedFuture((List) endpoints);
+        } else {
+            List<InstanceEndpoint> instances = toList(endpoints, e -> new SpringEndpoint(request.getService(), e));
+            return CompletableFuture.completedFuture(instances);
+        }
     }
 
     @Override
@@ -118,7 +132,7 @@ public abstract class AbstractCloudCluster<
     }
 
     @Override
-    public Throwable createException(Throwable throwable, R request, SpringEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, R request, InstanceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 

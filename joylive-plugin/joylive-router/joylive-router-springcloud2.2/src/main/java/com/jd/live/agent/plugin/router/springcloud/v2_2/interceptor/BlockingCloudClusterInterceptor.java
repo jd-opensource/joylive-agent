@@ -17,9 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.context.RequestContext;
-import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
@@ -27,7 +24,6 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.BlockingCloudClu
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.BlockingClusterResponse;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import java.util.Map;
@@ -38,42 +34,32 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.0.0
  */
-public class BlockingCloudClusterInterceptor extends InterceptorAdaptor {
-
-    private final InvocationContext context;
+public class BlockingCloudClusterInterceptor extends AbstractCloudClusterInterceptor<HttpRequest> {
 
     private final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
 
     public BlockingCloudClusterInterceptor(InvocationContext context) {
-        this.context = context;
+        super(context);
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * @param ctx The execution context of the method being intercepted.
-     * @see org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor#intercept(HttpRequest, byte[], ClientHttpRequestExecution)
-     */
     @Override
-    public void onEnter(ExecutableContext ctx) {
+    protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         HttpRequest request = ctx.getArgument(0);
-        if (context.isFlowControlEnabled()) {
-            BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCloudCluster::new);
-            BlockingCloudClusterRequest clusterRequest = new BlockingCloudClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
-            HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
-            BlockingClusterResponse response = cluster.request(invocation);
-            ServiceError error = response.getError();
-            if (error != null && !error.isServerError()) {
-                mc.skipWithThrowable(error.getThrowable());
-            } else {
-                mc.skipWithResult(response.getResponse());
-            }
+        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCloudCluster::new);
+        BlockingCloudClusterRequest clusterRequest = new BlockingCloudClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
+        HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
+        BlockingClusterResponse response = cluster.request(invocation);
+        ServiceError error = response.getError();
+        if (error != null && !error.isServerError()) {
+            mc.skipWithThrowable(error.getThrowable());
         } else {
-            // only for live & lane
-            String serviceName = request.getURI().getHost();
-            RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceName);
-            RequestContext.setAttribute(Carrier.ATTRIBUTE_REQUEST, request);
+            mc.skipWithResult(response.getResponse());
         }
+    }
+
+    @Override
+    protected String getServiceName(HttpRequest request) {
+        return request.getURI().getHost();
     }
 }

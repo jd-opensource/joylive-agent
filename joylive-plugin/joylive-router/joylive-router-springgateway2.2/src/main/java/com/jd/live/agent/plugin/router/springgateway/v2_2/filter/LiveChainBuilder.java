@@ -16,10 +16,11 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.filter;
 
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.util.RibbonLoadBalancerFactory;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveGatewayFilterChain.DefaultGatewayFilterChain;
+import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveGatewayFilterChain.DefaultGatewayFilterChain;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.client.ServiceInstance;
@@ -31,7 +32,7 @@ import org.springframework.cloud.client.loadbalancer.reactive.Response;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
+import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
@@ -46,6 +47,7 @@ import java.util.regex.Pattern;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext.createFactory;
 import static com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveRouteFilter.ROUTE_VERSION;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
@@ -93,7 +95,7 @@ public class LiveChainBuilder {
      */
     private final GatewayCluster cluster;
 
-    private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
+    private ServiceRegistryFactory registryFactory;
 
     private final Map<String, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
@@ -109,7 +111,7 @@ public class LiveChainBuilder {
         this.gatewayConfig = gatewayConfig;
         this.target = target;
         this.globalFilters = getGlobalFilters(target);
-        this.cluster = new GatewayCluster(clientFactory, context.getPropagation());
+        this.cluster = new GatewayCluster(registryFactory, context.getPropagation());
     }
 
     /**
@@ -207,18 +209,14 @@ public class LiveChainBuilder {
                 delegate = ((OrderedGatewayFilter) filter).getDelegate();
             }
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
+
                 globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                    LoadBalancerClientFactory clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                    registryFactory = service -> new SpringServiceRegistry(service, clientFactory);
                 } else if (globalFilter instanceof LoadBalancerClientFilter) {
                     LoadBalancerClient client = getQuietly(globalFilter, "loadBalancer");
-                    if (client instanceof BlockingLoadBalancerClient) {
-                        clientFactory = getQuietly(client, "loadBalancerClientFactory");
-                    } else if (client.getClass().getName().equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
-                        clientFactory = new RibbonLoadBalancerFactory(getQuietly(client, "clientFactory"));
-                    } else {
-                        clientFactory = new SimpleLoadBalancerClientFactory(client);
-                    }
+                    registryFactory = createFactory(client);
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);

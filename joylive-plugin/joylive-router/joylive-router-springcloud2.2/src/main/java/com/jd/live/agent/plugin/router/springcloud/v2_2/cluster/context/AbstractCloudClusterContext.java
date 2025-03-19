@@ -15,17 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import com.jd.live.agent.governance.registry.ServiceRegistry;
+import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import lombok.Getter;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Abstract implementation of CloudClusterContext for load balancing and service instance management
@@ -33,47 +31,49 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
  */
 public abstract class AbstractCloudClusterContext implements CloudClusterContext {
 
-    private static final Map<String, CacheObject<ServiceInstanceListSupplier>> SERVICE_INSTANCE_LIST_SUPPLIERS = new ConcurrentHashMap<>();
-
-    private static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
-
-    protected ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
+    @Getter
+    protected ServiceRegistryFactory registryFactory;
 
     protected RetryPolicy defaultRetryPolicy;
 
-    public AbstractCloudClusterContext() {
-    }
-
-    public AbstractCloudClusterContext(ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory, RetryPolicy defaultRetryPolicy) {
-        this.loadBalancerFactory = loadBalancerFactory;
-        this.defaultRetryPolicy = defaultRetryPolicy;
-    }
-
-    public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
-        return loadBalancerFactory;
-    }
-
     @Override
     public boolean isRetryable() {
-        return getDefaultRetryPolicy() != null;
+        return defaultRetryPolicy != null;
     }
 
     @Override
-    public RetryPolicy getDefaultRetryPolicy() {
+    public RetryPolicy getDefaultRetryPolicy(String service) {
         return defaultRetryPolicy;
     }
 
     @Override
-    public ServiceInstanceListSupplier getServiceInstanceListSupplier(String service) {
-        return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(service, n -> {
-            ServiceInstanceListSupplier supplier = null;
-            ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(n);
-            if (loadBalancer != null) {
-                ObjectProvider<ServiceInstanceListSupplier> provider = getQuietly(loadBalancer, FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-                supplier = provider == null ? null : provider.getIfAvailable();
-            }
-            return CacheObject.of(supplier);
-        }).get();
+    public ServiceRegistry getServiceRegistry(String service) {
+        return registryFactory == null ? null : registryFactory.getServiceRegistry(service);
+    }
+
+    /**
+     * Creates a RetryPolicy based on the provided LoadBalancerRetryProperties.
+     *
+     * @param properties the LoadBalancerRetryProperties object containing the retry configuration
+     * @return a RetryPolicy instance, or null if retry is not enabled
+     */
+    protected static RetryPolicy getDefaultRetryPolicy(LoadBalancerRetryProperties properties) {
+        if (properties == null || !properties.isEnabled()) {
+            return null;
+        }
+        RetryPolicy retryPolicy = new RetryPolicy();
+        Set<Integer> codes = properties.getRetryableStatusCodes();
+        Set<String> statuses = new HashSet<>(codes.size());
+        codes.forEach(status -> statuses.add(String.valueOf(status)));
+        retryPolicy.setRetry(properties.getMaxRetriesOnNextServiceInstance());
+        retryPolicy.setInterval(properties.getBackoff().getMinBackoff().toMillis());
+        retryPolicy.setErrorCodes(statuses);
+        if (!properties.isRetryOnAllOperations()) {
+            Set<String> methods = new HashSet<>(1);
+            methods.add(HttpMethod.GET.name());
+            retryPolicy.setMethods(methods);
+        }
+        return retryPolicy;
     }
 
 }

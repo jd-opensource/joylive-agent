@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -70,7 +71,7 @@ public abstract class AbstractCloudCluster<
             "org.apache.http.conn.HttpHostConnectException"
     ));
 
-    protected static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
+    protected static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
     @Getter
     protected final C context;
@@ -111,7 +112,7 @@ public abstract class AbstractCloudCluster<
         return context.isRetryable();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public CompletionStage<List<InstanceEndpoint>> route(R request) {
         ServiceRegistry registry = context.getServiceRegistry(request.getService());

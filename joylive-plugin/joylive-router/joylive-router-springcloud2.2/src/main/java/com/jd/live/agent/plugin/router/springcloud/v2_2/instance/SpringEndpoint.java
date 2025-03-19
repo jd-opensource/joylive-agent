@@ -17,31 +17,57 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.instance;
 
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.DefaultResponse;
-import org.springframework.cloud.client.loadbalancer.Response;
 
+import java.net.URI;
 import java.util.Map;
 
-public class SpringEndpoint extends AbstractEndpoint {
+/**
+ * A concrete implementation of {@link AbstractEndpoint} that also implements the {@link InstanceEndpoint} interface.
+ * This class provides functionality for managing and interacting with service endpoints in a Spring-based environment.
+ * It combines the features of both {@link AbstractEndpoint} and {@link InstanceEndpoint} to offer a comprehensive
+ * solution for handling service endpoints and instances.
+ */
+public class SpringEndpoint extends AbstractEndpoint implements InstanceEndpoint {
 
     private static final String STATE_HANGUP = "hangup";
     private static final String STATE_SUSPEND = "suspend";
     private static final String LABEL_STATE = "state";
 
+    private final String service;
+
     private final ServiceInstance instance;
 
-    private final Response<ServiceInstance> response;
-
     public SpringEndpoint(ServiceInstance instance) {
+        this.service = instance.getServiceId();
         this.instance = instance;
-        this.response = new DefaultResponse(instance);
+    }
+
+    public SpringEndpoint(String service, ServiceInstance instance) {
+        this.service = service;
+        this.instance = instance;
+    }
+
+    public SpringEndpoint(String service, ServiceEndpoint endpoint) {
+        this.service = service;
+        this.instance = endpoint instanceof ServiceInstance ? (ServiceInstance) endpoint : new EndpointInstance(endpoint);
     }
 
     @Override
     public String getId() {
         String result = instance.getInstanceId();
         return result != null ? result : getAddress();
+    }
+
+    @Override
+    public String getServiceId() {
+        return service;
+    }
+
+    @Override
+    public String getService() {
+        return service;
     }
 
     @Override
@@ -55,9 +81,18 @@ public class SpringEndpoint extends AbstractEndpoint {
     }
 
     @Override
-    public String getLabel(String key) {
-        Map<String, String> metadata = instance.getMetadata();
-        return metadata == null ? null : metadata.get(key);
+    public URI getUri() {
+        return instance.getUri();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return instance.isSecure();
+    }
+
+    @Override
+    public Map<String, String> getMetadata() {
+        return instance.getMetadata();
     }
 
     @Override
@@ -71,11 +106,47 @@ public class SpringEndpoint extends AbstractEndpoint {
         return EndpointState.HEALTHY;
     }
 
-    public ServiceInstance getInstance() {
-        return instance;
-    }
+    /**
+     * A private static inner class that implements the {@link ServiceInstance} interface.
+     * This class represents a specific instance of a service endpoint, providing functionality
+     * to manage and interact with the instance. It is designed to be used internally within
+     * its enclosing class.
+     */
+    private static class EndpointInstance implements ServiceInstance {
+        private final ServiceEndpoint endpoint;
 
-    public Response<ServiceInstance> getResponse() {
-        return response;
+        EndpointInstance(ServiceEndpoint endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public String getServiceId() {
+            return endpoint.getService();
+        }
+
+        @Override
+        public String getHost() {
+            return endpoint.getHost();
+        }
+
+        @Override
+        public int getPort() {
+            return endpoint.getPort();
+        }
+
+        @Override
+        public boolean isSecure() {
+            return endpoint.isSecure();
+        }
+
+        @Override
+        public URI getUri() {
+            return endpoint.getUri();
+        }
+
+        @Override
+        public Map<String, String> getMetadata() {
+            return endpoint.getMetadata();
+        }
     }
 }

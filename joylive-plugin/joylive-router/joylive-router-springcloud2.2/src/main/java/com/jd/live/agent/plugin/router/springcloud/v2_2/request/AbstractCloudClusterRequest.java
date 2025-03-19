@@ -16,18 +16,13 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.CloudClusterContext;
-import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -63,33 +58,5 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
         } else {
             return super.getCookie(key);
         }
-    }
-
-    @Override
-    public RetryPolicy getDefaultRetryPolicy() {
-        RetryPolicy retryPolicy = context.getDefaultRetryPolicy();
-        return retryPolicy != null && retryPolicy.containsMethod(getMethod()) ? retryPolicy : null;
-    }
-
-    @Override
-    public Mono<List<ServiceInstance>> getInstances() {
-        ServiceInstanceListSupplier supplier = getInstanceSupplier();
-        if (supplier == null) {
-            return Mono.just(new ArrayList<>());
-        } else {
-            return supplier.get().next();
-        }
-    }
-
-    /**
-     * Returns a supplier of service instance lists.
-     *
-     * @return a supplier of service instance lists
-     */
-    protected ServiceInstanceListSupplier getInstanceSupplier() {
-        if (instanceSupplier == null) {
-            instanceSupplier = new CacheObject<>(context.getServiceInstanceListSupplier(getService()));
-        }
-        return instanceSupplier.get();
     }
 }

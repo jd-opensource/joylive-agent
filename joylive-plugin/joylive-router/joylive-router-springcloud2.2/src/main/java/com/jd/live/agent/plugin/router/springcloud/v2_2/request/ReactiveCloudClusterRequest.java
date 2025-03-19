@@ -43,9 +43,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
 
     private final HttpHeaders writeableHeaders;
 
-    public ReactiveCloudClusterRequest(ClientRequest request,
-                                       ExchangeFunction next,
-                                       ReactiveClusterContext context) {
+    public ReactiveCloudClusterRequest(ClientRequest request, ExchangeFunction next, ReactiveClusterContext context) {
         super(request, request.url(), context);
         this.next = next;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());

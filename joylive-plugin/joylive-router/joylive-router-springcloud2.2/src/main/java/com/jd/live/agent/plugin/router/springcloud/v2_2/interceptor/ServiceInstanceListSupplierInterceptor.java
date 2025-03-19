@@ -42,11 +42,11 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
@@ -128,7 +128,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         try {
             invocation.setInstances(toList(instances, SpringEndpoint::new));
             SpringEndpoint endpoint = context.route(invocation);
-            return Collections.singletonList(endpoint.getInstance());
+            return singletonList(endpoint);
         } catch (Throwable e) {
             logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
             Throwable throwable = thrower.createException(e, invocation.getRequest());

@@ -15,12 +15,17 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.util.LoadBalancerUtil;
+import com.jd.live.agent.governance.registry.ServiceRegistry;
+import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.RibbonServiceRegistry;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
+import lombok.Getter;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
@@ -31,37 +36,55 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
  */
 public class BlockingClusterContext extends AbstractCloudClusterContext {
 
+    private static final String TYPE_BLOCKING_LOAD_BALANCER_CLIENT = "org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient";
+    private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
+
     private static final String FIELD_REQUEST_FACTORY = "requestFactory";
-
     private static final String FIELD_LOAD_BALANCER = "loadBalancer";
-
+    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
     private static final String FIELD_LB_PROPERTIES = "lbProperties";
+    private static final String FIELD_CLIENT_FACTORY = "clientFactory";
 
     private final ClientHttpRequestInterceptor interceptor;
 
+    @Getter
     private final LoadBalancerRequestFactory requestFactory;
-
-    private final RetryPolicy defaultRetryPolicy;
 
     public BlockingClusterContext(ClientHttpRequestInterceptor interceptor) {
         this.interceptor = interceptor;
         this.requestFactory = getQuietly(interceptor, FIELD_REQUEST_FACTORY);
-        LoadBalancerClient client = getQuietly(interceptor, FIELD_LOAD_BALANCER);
-        this.loadBalancerFactory = LoadBalancerUtil.getFactory(client);
+        this.registryFactory = createFactory(getQuietly(interceptor, FIELD_LOAD_BALANCER));
         LoadBalancerRetryProperties retryProperties = getQuietly(interceptor, FIELD_LB_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties);
-        this.defaultRetryPolicy = LoadBalancerUtil.getDefaultRetryPolicy(retryProperties);
-    }
-
-    public LoadBalancerRequestFactory getRequestFactory() {
-        return requestFactory;
-    }
-
-    public RetryPolicy getDefaultRetryPolicy() {
-        return defaultRetryPolicy;
+        this.defaultRetryPolicy = getDefaultRetryPolicy(retryProperties);
     }
 
     @Override
     public boolean isRetryable() {
         return interceptor instanceof RetryLoadBalancerInterceptor;
+    }
+
+    /**
+     * Creates a factory for generating {@link ServiceRegistry} instances based on the type of {@link LoadBalancerClient}.
+     * This method determines the appropriate factory implementation by inspecting the class name of the provided client.
+     *
+     * @param client the {@link LoadBalancerClient} used to determine the factory type
+     * @return a {@link ServiceRegistryFactory} that creates a {@link ServiceRegistry} for a given service name, or {@code null} if the client is not supported
+     */
+    public static ServiceRegistryFactory createFactory(LoadBalancerClient client) {
+        if (client == null) {
+            return null;
+        }
+        String name = client.getClass().getName();
+        if (name.equals(TYPE_BLOCKING_LOAD_BALANCER_CLIENT)) {
+            // BlockingLoadBalancerClient.loadBalancerClientFactory
+            // LoadBalancerClientFactory
+            ReactiveLoadBalancer.Factory<ServiceInstance> factory = getQuietly(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+            return service -> new SpringServiceRegistry(service, factory);
+        } else if (name.equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
+            // RibbonLoadBalancerClient.clientFactory
+            // SpringClientFactory
+            return service -> new RibbonServiceRegistry(service, getQuietly(client, FIELD_CLIENT_FACTORY));
+        }
+        return null;
     }
 }

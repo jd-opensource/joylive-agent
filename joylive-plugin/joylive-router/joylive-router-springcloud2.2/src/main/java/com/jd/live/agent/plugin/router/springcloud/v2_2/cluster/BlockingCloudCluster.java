@@ -20,16 +20,13 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.DegradeHttpResponse;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -46,14 +43,6 @@ public class BlockingCloudCluster extends AbstractCloudCluster<
         BlockingClusterResponse,
         BlockingClusterContext> {
 
-    private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
-            "java.io.IOException",
-            "java.util.concurrent.TimeoutException",
-            "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
-    ));
-
-    private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
-
     public BlockingCloudCluster(BlockingClusterContext context) {
         super(context);
     }
@@ -63,19 +52,14 @@ public class BlockingCloudCluster extends AbstractCloudCluster<
     }
 
     @Override
-    public CompletionStage<BlockingClusterResponse> invoke(BlockingCloudClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<BlockingClusterResponse> invoke(BlockingCloudClusterRequest request, InstanceEndpoint endpoint) {
         // TODO sticky session
         try {
-            ClientHttpResponse response = request.execute(endpoint.getInstance());
+            ClientHttpResponse response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new BlockingClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
         }
-    }
-
-    @Override
-    public ErrorPredicate getRetryPredicate() {
-        return RETRY_PREDICATE;
     }
 
     @Override

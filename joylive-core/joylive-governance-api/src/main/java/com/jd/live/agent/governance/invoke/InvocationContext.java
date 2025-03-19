@@ -57,6 +57,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
@@ -105,9 +106,6 @@ public interface InvocationContext {
 
     /**
      * Checks if the governance context is ready.
-     * <p>
-     * This default implementation checks if the application's status is {@code AppStatus.READY}.
-     * </p>
      *
      * @return {@code true} if the governance context is ready, {@code false} otherwise
      */
@@ -205,13 +203,6 @@ public interface InvocationContext {
 
     /**
      * Retrieves a {@link ClusterInvoker} based on the cluster policy associated with the provided service invocation.
-     * <p>
-     * This method determines the appropriate {@link ClusterInvoker} to use for a given service invocation by examining
-     * the service's metadata to extract a cluster policy. The type of cluster policy (if any) guides the selection
-     * of a suitable {@link ClusterInvoker} from the context. If the invocation or its associated policies are not
-     * specified (i.e., {@code null}), or if no specific {@link ClusterInvoker} is defined for the policy type, a
-     * default {@link ClusterInvoker} is returned from the context.
-     * </p>
      *
      * @param invocation    The service invocation object, which may contain metadata about the service and its policies.
      *                      This parameter can be {@code null}.
@@ -221,20 +212,31 @@ public interface InvocationContext {
      * cluster policy. If no specific policy is found, a default invoker is returned.
      */
     default <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, ClusterPolicy defaultPolicy) {
+        return getClusterInvoker(invocation, () -> defaultPolicy);
+    }
+
+    /**
+     * Retrieves a {@link ClusterInvoker} based on the cluster policy associated with the provided service invocation.
+     * This method evaluates the cluster policy from the service metadata of the invocation or falls back to a default
+     * policy if no specific policy is defined.
+     *
+     * @param <R>            The type of the outbound request.
+     * @param invocation     The service invocation object, which may contain metadata about the service and its policies.
+     *                       This parameter can be {@code null}.
+     * @param policySupplier A supplier that provides the default cluster policy if no policy is found in the service metadata.
+     * @return A {@link ClusterInvoker} that is best suited to handle the service request based on the defined
+     * cluster policy. If no specific policy is found, a default invoker is returned.
+     */
+    default <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, Supplier<ClusterPolicy> policySupplier) {
         ServicePolicy servicePolicy = invocation == null ? null : invocation.getServiceMetadata().getServicePolicy();
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
-        clusterPolicy = servicePolicy == null ? defaultPolicy : clusterPolicy;
+        clusterPolicy = servicePolicy == null ? policySupplier.get() : clusterPolicy;
         String name = clusterPolicy == null ? null : clusterPolicy.getType();
         return getOrDefaultClusterInvoker(name);
     }
 
     /**
      * Retrieves an array of inbound filters.
-     * <p>
-     * Inbound filters are applied to requests as they are received by the service. These filters can perform
-     * various tasks such as logging, authentication, and request validation. The order in the array may determine
-     * the order in which these filters are applied.
-     * </p>
      *
      * @return An array of {@link InboundFilter} instances that are configured for the service. The list may be empty
      * if no inbound filters are configured.
@@ -243,11 +245,6 @@ public interface InvocationContext {
 
     /**
      * Retrieves an array of outbound filters.
-     * <p>
-     * Route filters are used to determine how requests are routed within the service or to external services.
-     * They can be used for tasks such as load balancing, service discovery, and request redirection. The order
-     * in the array can influence the priority of routing decisions.
-     * </p>
      *
      * @return An array of {@link RouteFilter} instances that are used for routing decisions. The list may be empty
      * if no route filters are configured.
@@ -264,12 +261,6 @@ public interface InvocationContext {
 
     /**
      * Processes an inbound invocation through a chain of configured inbound filters.
-     * <p>
-     * Similar to the {@code outbound} method, this method facilitates the processing of inbound requests
-     * through a series of filters. These filters can perform various tasks such as authentication, logging,
-     * validation, and more, according to the needs of the application. The inbound filters are executed in
-     * the sequence they are arranged in the {@link InboundFilterChain}.
-     * </p>
      *
      * @param <R>        the type of the inbound request extending {@link InboundRequest}.
      * @param invocation the inbound invocation context containing the request to be processed along
@@ -282,11 +273,6 @@ public interface InvocationContext {
 
     /**
      * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object.
-     * <p>
-     * This method is similar to the other {@code inbound} method, but it also allows you to specify a callable object
-     * that will be invoked after all the filters have been processed. This can be useful if you need to perform some
-     * additional processing or logic after the filters have run.
-     * </p>
      *
      * @param <R>        the type of the inbound request extending {@link InboundRequest}.
      * @param invocation the inbound invocation context containing the request to be processed along
@@ -319,11 +305,6 @@ public interface InvocationContext {
     /**
      * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object asynchronously,
      * then applies a function to the result.
-     * <p>
-     * This method is similar to the other {@code inbound} methods, but it also allows you to specify a function that will be applied
-     * to the result of the callable object. This can be useful if you need to transform the result or perform some additional
-     * processing based on the result.
-     * </p>
      *
      * @param <R>        the type of the inbound request extending {@link InboundRequest}.
      * @param <T>        the type of the result returned by the function.
@@ -347,10 +328,6 @@ public interface InvocationContext {
 
     /**
      * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object synchronously.
-     * <p>
-     * This method is similar to the {@code inbound} method, but it blocks until the inbound invocation and the callable object
-     * have completed. It returns the result of the callable object, or throws any exception that occurred during the processing.
-     * </p>
      *
      * @param <R>        the type of the inbound request extending {@link InboundRequest}.
      * @param invocation the inbound invocation context containing the request to be processed along
@@ -383,11 +360,6 @@ public interface InvocationContext {
     /**
      * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object synchronously,
      * then applies a function to the result and the inbound request.
-     * <p>
-     * This method is similar to the other {@code inward} method, but it also allows you to specify a function that will be applied
-     * to the result of the callable object and the inbound request. This can be useful if you need to transform the result or
-     * perform some additional processing based on the inbound request.
-     * </p>
      *
      * @param <R>        the type of the inbound request extending {@link InboundRequest}.
      * @param <T>        the type of the result returned by the function.
@@ -591,6 +563,16 @@ public interface InvocationContext {
         }
 
         @Override
+        public Location getLocation() {
+            return delegate.getLocation();
+        }
+
+        @Override
+        public boolean isGovernReady() {
+            return delegate.isGovernReady();
+        }
+
+        @Override
         public boolean isLiveEnabled() {
             return delegate.isLiveEnabled();
         }
@@ -676,9 +658,13 @@ public interface InvocationContext {
         }
 
         @Override
-        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation,
-                                                                            ClusterPolicy defaultPolicy) {
+        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, ClusterPolicy defaultPolicy) {
             return delegate.getClusterInvoker(invocation, defaultPolicy);
+        }
+
+        @Override
+        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, Supplier<ClusterPolicy> policySupplier) {
+            return delegate.getClusterInvoker(invocation, policySupplier);
         }
 
         @Override
@@ -687,7 +673,35 @@ public interface InvocationContext {
         }
 
         @Override
-        public <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
+        public <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation, Callable<Object> callable) {
+            return delegate.inbound(invocation, callable);
+        }
+
+        @Override
+        public <R extends InboundRequest, T> T inbound(InboundInvocation<R> invocation, Callable<Object> callable, Function<CompletionStage<Object>, T> function) {
+            return delegate.inbound(invocation, callable, function);
+        }
+
+        @Override
+        public <R extends InboundRequest> Object inward(InboundInvocation<R> invocation, Callable<Object> callable) throws Throwable {
+            return delegate.inward(invocation, callable);
+        }
+
+        @Override
+        public <R extends InboundRequest, T> T inward(InboundInvocation<R> invocation, Callable<Object> callable, Function<Object, T> function) {
+            return delegate.inward(invocation, callable, function);
+        }
+
+        @Override
+        public <R extends OutboundRequest,
+                O extends OutboundResponse,
+                E extends Endpoint> CompletionStage<O> outbound(OutboundInvocation<R> invocation, E endpoint, Callable<Object> callable) {
+            return delegate.outbound(invocation, endpoint, callable);
+        }
+
+        @Override
+        public <R extends OutboundRequest,
+                E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
             return delegate.route(invocation, instances, (RouteFilter[]) null);
         }
 
@@ -698,7 +712,8 @@ public interface InvocationContext {
         }
 
         @Override
-        public <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
+        public <R extends OutboundRequest,
+                E extends Endpoint> E route(OutboundInvocation<R> invocation) {
             return delegate.route(invocation, null, (RouteFilter[]) null);
         }
 

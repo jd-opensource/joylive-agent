@@ -17,18 +17,14 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.FeignClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.FeignClusterResponse;
 import feign.Client;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -41,14 +37,6 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_2.response.FeignClu
  */
 public class FeignCloudCluster extends AbstractCloudCluster<FeignCloudClusterRequest, FeignClusterResponse, FeignClusterContext> {
 
-    private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
-            "java.io.IOException",
-            "java.util.concurrent.TimeoutException",
-            "org.springframework.cloud.client.loadbalancer.reactive.RetryableStatusCodeException"
-    ));
-
-    private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
-
     public FeignCloudCluster(FeignClusterContext context) {
         super(context);
     }
@@ -58,18 +46,13 @@ public class FeignCloudCluster extends AbstractCloudCluster<FeignCloudClusterReq
     }
 
     @Override
-    public CompletionStage<FeignClusterResponse> invoke(FeignCloudClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<FeignClusterResponse> invoke(FeignCloudClusterRequest request, InstanceEndpoint endpoint) {
         try {
-            feign.Response response = request.execute(endpoint.getInstance());
+            feign.Response response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new FeignClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
         }
-    }
-
-    @Override
-    public ErrorPredicate getRetryPredicate() {
-        return RETRY_PREDICATE;
     }
 
     @Override
