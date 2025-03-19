@@ -66,7 +66,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         if (port != null && !port.isEmpty()) {
             try {
                 Integer.parseInt(port);
-                env.put(Application.KEY_APPLICATION_SERVICE_PORT, name);
+                env.put(Application.KEY_APPLICATION_SERVICE_PORT, port);
             } catch (NumberFormatException ignored) {
                 env.remove(Application.KEY_APPLICATION_SERVICE_PORT);
             }
