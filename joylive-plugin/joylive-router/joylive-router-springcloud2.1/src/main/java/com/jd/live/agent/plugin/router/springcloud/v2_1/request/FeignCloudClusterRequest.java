@@ -31,6 +31,7 @@ import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
+import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.FeignUtils.withRequestTemplate;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.newURI;
 
 /**
@@ -93,15 +94,11 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
      * @return the {@link Response} containing the response data
      * @throws IOException if an I/O error occurs during the request execution
      */
+    @SuppressWarnings("deprecation")
     public Response execute(ServiceInstance instance) throws IOException {
-        // TODO sticky session
-        Request req = Request.create(
-                request.httpMethod(),
-                newURI(instance, uri).toString(),
-                request.headers(),
-                request.body(),
-                request.charset(),
-                request.requestTemplate());
+        Request req = withRequestTemplate()
+                ? Request.create(request.httpMethod(), newURI(instance, uri).toString(), request.headers(), request.body(), request.charset(), request.requestTemplate())
+                : Request.create(request.httpMethod(), newURI(instance, uri).toString(), request.headers(), request.body(), request.charset());
         return context.getDelegate().execute(req, options);
     }
 

@@ -19,11 +19,9 @@ import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.type.ValuePath;
 
 import java.util.Map;
-import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.template.Template.evaluate;
 
@@ -40,12 +38,6 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     private static final String RESOURCE_SPRINGBOOT_APPLICATION_YAML = "application.yaml";
 
     private static final String RESOURCE_SPRINGBOOT_APPLICATION_YML = "application.yml";
-
-    private static final ValuePath APP_PATH = new ValuePath(KEY_SPRING_APPLICATION_NAME);
-
-    private static final ValuePath PORT_PATH = new ValuePath(KEY_SPRING_SERVER_PORT);
-
-    private static final Predicate<String> VARIABLE = v -> v.startsWith("${") && v.endsWith("}");
 
     public SpringEnvSupplier() {
         super(RESOURCE_SPRINGBOOT_APPLICATION_PROPERTIES,
