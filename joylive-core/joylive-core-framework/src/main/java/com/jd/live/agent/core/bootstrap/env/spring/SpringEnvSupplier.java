@@ -19,8 +19,8 @@ import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.type.ValuePath;
-import lombok.Getter;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -75,8 +75,6 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
 
     /**
      * Retrieves a configuration value from the provided configuration map and resolves any placeholders using the environment map.
-     * This method combines the functionality of {@link #getConfig(Map, String)} and {@link #resolve(Map, String)} to simplify
-     * the process of fetching and resolving configuration values.
      *
      * @param configs a map containing configuration key-value pairs
      * @param env     a map containing environment variables or other context-specific values
@@ -84,7 +82,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @return the resolved configuration value as a String
      */
     private String getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
-        return resolve(env, getConfig(configs, key)).toString();
+        return Template.parse(getConfig(configs, key)).evaluate(env);
     }
 
     /**
@@ -102,58 +100,5 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
             name = (String) path.get(configs);
         }
         return name;
-    }
-
-    /**
-     * Resolves any placeholders in the provided expression using the environment map.
-     * If the expression contains placeholders in the format "${...}", they are evaluated and replaced
-     * using the environment map. If no placeholders are present, the original expression is returned.
-     *
-     * @param env        a map containing environment variables or other context-specific values
-     * @param expression the expression to resolve, which may contain placeholders
-     * @return the resolved value as a String
-     */
-    private ResolveResult resolve(Map<String, Object> env, String expression) {
-        // TODO move to Template
-        if (VARIABLE.test(expression)) {
-            String key = expression.substring(2, expression.length() - 1);
-            String defaultValue = null;
-
-            int pos = key.indexOf(':');
-            if (pos >= 0) {
-                defaultValue = key.substring(pos + 1);
-                key = key.substring(0, pos);
-            }
-            String value = key.isEmpty() ? null : (String) env.get(key);
-            if ((value == null || value.isEmpty()) && defaultValue != null && !defaultValue.isEmpty()) {
-                ResolveResult result = resolve(env, defaultValue);
-                if (result.isResolved()) {
-                    return result;
-                }
-            }
-            if (value != null) {
-                return new ResolveResult(value, true);
-            }
-            return new ResolveResult(expression, false);
-        }
-        return new ResolveResult(expression, true);
-    }
-
-    @Getter
-    static class ResolveResult {
-
-        private final String value;
-
-        private final boolean resolved;
-
-        ResolveResult(String value, boolean resolved) {
-            this.value = value;
-            this.resolved = resolved;
-        }
-
-        @Override
-        public String toString() {
-            return value;
-        }
     }
 }
