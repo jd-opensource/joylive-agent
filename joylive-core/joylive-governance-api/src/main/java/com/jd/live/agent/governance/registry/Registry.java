@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 /**
  * An interface that defines the methods for registering and unregistering service instances with a registry.
  */
-public interface Registry {
+public interface Registry extends ServiceRegistryFactory {
 
     /**
      * The name of the registry component.
@@ -204,7 +204,27 @@ public interface Registry {
      * @param group   the cluster/group name (may be null for default group)
      * @return a list of endpoints matching the service and group (never null)
      */
-    List<ServiceEndpoint> getEndpoints(String service, String group);
+    default List<ServiceEndpoint> getEndpoints(String service, String group) {
+        ServiceRegistry registry = getServiceRegistry(service, group);
+        return registry == null ? null : registry.getEndpoints();
+    }
+
+    @Override
+    default ServiceRegistry getServiceRegistry(String service) {
+        return getServiceRegistry(service, null);
+    }
+
+    /**
+     * Retrieves the {@link ServiceRegistry} for the specified service name and group.
+     * Implementations of this method should return the appropriate registry based on
+     * the provided service name and group. If the group is {@code null}, the default
+     * group should be used.
+     *
+     * @param service the name of the service for which the registry is being retrieved
+     * @param group   the group name associated with the service (can be {@code null})
+     * @return the {@link ServiceRegistry} associated with the specified service name and group
+     */
+    ServiceRegistry getServiceRegistry(String service, String group);
 
 }
 

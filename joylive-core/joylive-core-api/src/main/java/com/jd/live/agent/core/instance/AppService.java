@@ -62,6 +62,8 @@ public class AppService {
 
     private Integer warmupDuration;
 
+    private Integer port;
+
     /**
      * Metadata associated with the service.
      */

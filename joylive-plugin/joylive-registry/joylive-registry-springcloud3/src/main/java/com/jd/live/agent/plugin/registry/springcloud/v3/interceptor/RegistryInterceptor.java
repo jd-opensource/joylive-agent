@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
@@ -40,13 +39,8 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         super(application, registry);
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * @see org.springframework.cloud.client.serviceregistry.ServiceRegistry#register(Registration)
-     */
     @Override
-    public void onEnter(ExecutableContext ctx) {
+    protected void beforeRegister(MethodContext ctx) {
         Registration registration = (Registration) ctx.getArguments()[0];
         Map<String, String> metadata = registration.getMetadata();
         if (metadata != null) {
@@ -54,7 +48,6 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
             metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
         }
         registry.register(registration.getServiceId());
-        super.onEnter(ctx);
     }
 
     @Override
@@ -63,7 +56,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = registration.getMetadata();
         metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
         return ServiceInstance.builder()
-                .type("spring-cloud.v3")
+                .type("spring-cloud-v3")
                 .service(registration.getServiceId())
                 .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
                 .host(registration.getHost())

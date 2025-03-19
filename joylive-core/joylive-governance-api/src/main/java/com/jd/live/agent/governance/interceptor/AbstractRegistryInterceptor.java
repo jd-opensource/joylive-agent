@@ -40,6 +40,7 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
+        beforeRegister(mc);
         if (application.getStatus() == AppStatus.STARTING) {
             ServiceInstance instance = getInstance(mc);
             if (instance != null) {
@@ -52,6 +53,23 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
         }
     }
 
+    /**
+     * A hook method that is executed before registering a method context.
+     *
+     * @param ctx the {@link MethodContext} that is about to be registered, containing
+     *            information about the method and its execution context
+     */
+    protected void beforeRegister(MethodContext ctx) {
+
+    }
+
+
+    /**
+     * Retrieves a service instance associated with the provided method context.
+     *
+     * @param ctx the {@link MethodContext} for which to retrieve the service instance
+     * @return the {@link ServiceInstance} associated with the method context
+     */
     protected abstract ServiceInstance getInstance(MethodContext ctx);
 
 }

@@ -27,8 +27,9 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
-import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetector;
-import com.jd.live.agent.plugin.application.springboot.v2.uti.port.PortDetectorFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.boot.web.server.WebServer;
@@ -58,11 +59,14 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
-        if (config.getRegistryConfig().isEnabled()) {
-            registry.register(createInstance(context.getContext(), application.getService()));
-        }
-        InnerListener.foreach(l -> l.onReady(context));
-        listener.onReady(context);
+        // fix for spring boot 2.1, it will trigger twice.
+        AppLifecycle.ready(() -> {
+            if (config.getRegistryConfig().isEnabled()) {
+                registry.register(createInstance(context.getContext(), application.getService()));
+            }
+            InnerListener.foreach(l -> l.onReady(context));
+            listener.onReady(context);
+        });
     }
 
     /**

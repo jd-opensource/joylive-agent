@@ -25,6 +25,8 @@ public interface ClusterContext {
      *
      * @return {@code true} if the operation is retryable; {@code false} otherwise.
      */
-    boolean isRetryable();
+    default boolean isRetryable() {
+        return false;
+    }
 
 }

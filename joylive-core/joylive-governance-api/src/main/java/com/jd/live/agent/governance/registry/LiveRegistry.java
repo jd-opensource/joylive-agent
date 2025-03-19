@@ -217,14 +217,13 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
-    public List<ServiceEndpoint> getEndpoints(String service, String group) {
+    public ServiceRegistry getServiceRegistry(String service, String group) {
         if (service == null || service.isEmpty()) {
             return null;
         }
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
-        Subscription subscription = subscriptions.get(name);
-        return subscription == null ? null : subscription.getEndpoints();
+        return subscriptions.get(name);
     }
 
     @Override
@@ -465,13 +464,15 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     /**
      * A private static class that represents a subscription to endpoint events for a specific service group.
      */
-    private static class Subscription {
+    private static class Subscription implements ServiceRegistry {
 
         /**
          * The service group that this subscription is for.
          */
+        @Getter
         private final String service;
 
+        @Getter
         private final String group;
 
         private final List<ClusterSubscription> clusters;

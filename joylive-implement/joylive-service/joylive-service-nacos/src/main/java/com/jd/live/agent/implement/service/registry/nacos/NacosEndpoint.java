@@ -50,6 +50,11 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
     }
 
     @Override
+    public String getService() {
+        return instance.getServiceName();
+    }
+
+    @Override
     public String getHost() {
         return instance.getIp();
     }

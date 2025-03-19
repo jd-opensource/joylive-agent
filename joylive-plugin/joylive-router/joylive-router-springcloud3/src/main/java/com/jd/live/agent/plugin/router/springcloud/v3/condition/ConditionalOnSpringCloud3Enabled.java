@@ -17,20 +17,22 @@ package com.jd.live.agent.plugin.router.springcloud.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringEnabled
+@ConditionalOnSpringCloudEnabled
 @ConditionalOnClass(ConditionalOnSpringCloud3Enabled.TYPE_HINT_REQUEST_CONTEXT)
 @ConditionalOnClass(ConditionalOnSpringCloud3Enabled.TYPE_SPRING_CLOUD_APPLICATION)
 @ConditionalComposite
 public @interface ConditionalOnSpringCloud3Enabled {
 
+    // spring cloud 3+
     String TYPE_HINT_REQUEST_CONTEXT = "org.springframework.cloud.client.loadbalancer.HintRequestContext";
 
+    // spring cloud 2/3
     String TYPE_SPRING_CLOUD_APPLICATION = "org.springframework.cloud.client.SpringCloudApplication";
 }
