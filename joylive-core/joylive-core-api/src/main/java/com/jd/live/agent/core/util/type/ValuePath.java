@@ -16,7 +16,6 @@
 package com.jd.live.agent.core.util.type;
 
 import com.jd.live.agent.bootstrap.util.type.ObjectGetter;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import lombok.Getter;
 
 import java.lang.reflect.Array;
@@ -27,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.core.util.type.ClassUtils.describe;
 import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
@@ -35,7 +35,7 @@ import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
  */
 public class ValuePath implements ObjectGetter {
 
-    private static final Map<String, ValuePath> VALUE_PATHS = new ConcurrentHashMap<>();
+    private static final Map<String, ValuePath> VALUE_PATHS = new ConcurrentHashMap<>(1024);
 
     @Getter
     protected final String path;
@@ -65,16 +65,6 @@ public class ValuePath implements ObjectGetter {
         this.paths = parse(path);
     }
 
-    /**
-     * Creates a new ValuePath instance with the specified path.
-     *
-     * @param path the path to the value
-     * @return a new ValuePath instance
-     */
-    public static ValuePath of(String path) {
-        return VALUE_PATHS.computeIfAbsent(path, ValuePath::new);
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public Object get(Object target) {
@@ -94,6 +84,27 @@ public class ValuePath implements ObjectGetter {
             index++;
         }
         return result;
+    }
+
+    /**
+     * Creates a new ValuePath instance with the specified path.
+     *
+     * @param path the path to the value
+     * @return a new ValuePath instance
+     */
+    public static ValuePath of(String path) {
+        return VALUE_PATHS.computeIfAbsent(path, ValuePath::new);
+    }
+
+    /**
+     * Retrieves a value from the specified target object.
+     *
+     * @param target The target object from which the value is to be retrieved.
+     * @param path   The path to the value
+     * @return The value retrieved from the target object.
+     */
+    public static Object get(Object target, String path) {
+        return target == null || path == null || path.isEmpty() ? null : of(path).get(target);
     }
 
     /**
@@ -167,9 +178,9 @@ public class ValuePath implements ObjectGetter {
         }
         Class<?> type = target.getClass();
         if (ENTITY_PREDICATE.test(type)) {
-            UnsafeFieldAccessor accessor = getQuietly(type, property);
-            if (accessor != null) {
-                return accessor.get(target);
+            FieldDesc fieldDesc = describe(type).getFieldList().getField(property);
+            if (fieldDesc != null) {
+                return getQuietly(target, fieldDesc.getField());
             }
         }
         return null;
@@ -177,6 +188,9 @@ public class ValuePath implements ObjectGetter {
 
     /**
      * Retrieves an item from an array at the specified index.
+     * This method attempts to parse the index as an integer and then checks if it is within the bounds of the array.
+     * If the index is valid, it returns the item at that index. If the index is invalid or if any exception occurs
+     * during the parsing of the index (e.g., if the index is not a valid integer), the method returns null.
      *
      * @param result The array from which to retrieve an item. This object should be an array type.
      * @param index  The index of the item to retrieve, represented as a String.
@@ -194,6 +208,10 @@ public class ValuePath implements ObjectGetter {
 
     /**
      * Retrieves an item from a list at the specified index.
+     * This method attempts to parse the index as an integer and then checks if it is within the bounds of the list.
+     * If the index is valid, it returns the item at that index from the list. If the index is invalid or if any
+     * exception occurs during the parsing of the index (e.g., if the index is not a valid integer), the method
+     * returns null to indicate the failure to retrieve an item.
      *
      * @param target The list from which to retrieve an item. This should be an instance of List.
      * @param index  The index of the item to retrieve, represented as a String. This index will be parsed into an integer.

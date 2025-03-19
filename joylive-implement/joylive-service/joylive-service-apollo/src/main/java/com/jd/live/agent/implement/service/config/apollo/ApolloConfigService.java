@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Injectable
 @ConditionalOnConfigCenterEnabled
-@ConditionalOnProperty(name = "agent.governance.configcenter.type", value = "apollo")
+@ConditionalOnProperty(name = "agent.governance.configCenter.type", value = "apollo")
 @Extension("ApolloConfigService")
 public class ApolloConfigService extends AbstractConfigService<ApolloClientApi> {
 

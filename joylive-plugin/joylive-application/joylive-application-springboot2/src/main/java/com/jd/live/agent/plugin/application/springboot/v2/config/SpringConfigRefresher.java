@@ -18,20 +18,27 @@ package com.jd.live.agent.plugin.application.springboot.v2.config;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.config.RefreshConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.config.Configurator;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ClassUtils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.type.ClassUtils.describe;
 import static com.jd.live.agent.governance.subscription.config.ConfigEvent.EventType.UPDATE;
 import static com.jd.live.agent.governance.subscription.config.ConfigListener.SYSTEM_ALL;
 
@@ -89,9 +96,12 @@ public class SpringConfigRefresher {
     }
 
     /**
-     * Adds bean listeners to the given ConfigCenter instance for all beans in the application context.
+     * Adds bean listeners to the given Configurator instance for all beans in the application context.
+     * This method processes beans based on their annotations and configuration settings, adding listeners for
+     * fields and methods annotated with {@link ConfigurationProperties} or {@link Value}.
      *
-     * @param configurator The Configurator instance to which the listener will be added.
+     * @param configurator The Configurator instance to which the listeners will be added.
+     * @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
      */
     private void addBeanListener(Configurator configurator, RefreshConfig config) {
         Map<String, Object> beans = BeanFactoryUtils.beansOfTypeIncludingAncestors(context, Object.class);
@@ -99,83 +109,278 @@ public class SpringConfigRefresher {
             String beanName = entry.getKey();
             Object bean = entry.getValue();
             if (config.isEnabled(beanName, bean)) {
-                // TODO handle @ConfigurationProperties
-                ClassDesc describe = ClassUtils.describe(bean.getClass());
+                Class<?> beanClass = getOriginType(bean);
+                ClassDesc describe = describe(beanClass);
                 Set<Method> setters = new HashSet<>();
-                addFieldListener(configurator, bean, describe, setters);
-                addMethodListener(configurator, bean, describe, setters);
+                boolean configurationPropertiesBean = processTypeConfigurationProperties(configurator, config, bean, describe);
+                if (!configurationPropertiesBean) {
+                    processMethodConfigurationProperties(configurator, config, bean, describe, setters);
+                    processFieldValueAnnotation(configurator, config, bean, describe, setters);
+                    processMethodValueAnnotation(configurator, config, bean, describe, setters);
+                }
             }
         }
     }
 
     /**
-     * Adds a method listener to the given ConfigCenter instance for the specified bean and method.
+     * Processes the {@link ConfigurationProperties} annotation at the class level for the given bean.
+     * If the annotation is present, it adds a configuration properties listener for the bean.
      *
-     * @param configurator The Configurator instance to which the listener will be added.
-     * @param bean         The bean for which the method listener will be added.
-     * @param describe     The ClassDesc object describing the bean's class.
-     * @param setters      A set of methods that are already registered as setters.
+     * @param configurator The configurator to add listeners to.
+     * @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean to process.
+     * @param describe     The class description of the bean.
+     * @return {@code true} if the annotation is found and processed, {@code false} otherwise.
      */
-    private void addMethodListener(Configurator configurator, Object bean, ClassDesc describe, Set<Method> setters) {
-        describe.getMethodList().forEach(method -> {
-            if (!setters.contains(method) && method.getParameterCount() == 1) {
-                String key = getMethodKey(method);
-                if (key != null) {
-                    configurator.addListener(key, event -> {
-                        if (event.getType() == UPDATE) {
+    private boolean processTypeConfigurationProperties(Configurator configurator, RefreshConfig config, Object bean, ClassDesc describe) {
+        ConfigurationProperties typeAnnotation = describe.getType().getAnnotation(ConfigurationProperties.class);
+        if (typeAnnotation != null) {
+            addConfigurationPropertiesListener(configurator, config, bean, describe, typeAnnotation);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Processes the {@link ConfigurationProperties} annotation at the method level for the given bean.
+     * If the annotation is present and the method is a valid bean method, it adds a configuration properties listener.
+     *
+     * @param configurator The configurator to add listeners to.
+     * @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean to process.
+     * @param describe     The class description of the bean.
+     * @param methods      A set of methods already processed to avoid duplicates.
+     */
+    private void processMethodConfigurationProperties(Configurator configurator, RefreshConfig config, Object bean, ClassDesc describe, Set<Method> methods) {
+        // only process the method in type with @Configuration annotation.
+        Configuration configuration = describe.getType().getAnnotation(Configuration.class);
+        if (configuration != null) {
+            describe.getMethodList().forEach(method -> {
+                if (!methods.contains(method)) {
+                    ConfigurationProperties methodAnnotation = method.getAnnotation(ConfigurationProperties.class);
+                    if (methodAnnotation != null && method.getReturnType() != void.class) {
+                        Bean beanAnnotation = method.getAnnotation(Bean.class);
+                        String beanName = getBeanName(beanAnnotation, method);
+                        if (context.containsBean(beanName)) {
                             try {
-                                method.invoke(bean, convert(event.getValue(), method.getParameters()[0].getType()));
-                                return true;
-                            } catch (Throwable e) {
-                                logger.error("Failed to update config " + key + " by invoking method " + method.getName() + " of class " + bean.getClass(), e);
+                                methods.add(method);
+                                Object targetBean = context.getBean(beanName);
+                                addConfigurationPropertiesListener(configurator, config, targetBean, describe(bean.getClass()), methodAnnotation);
+                            } catch (BeansException ignored) {
                             }
                         }
-                        return false;
-                    });
-                }
-            }
-        });
-    }
-
-    /**
-     * Adds a field listener to the given ConfigCenter instance for the specified bean and field.
-     *
-     * @param configurator The Configurator instance to which the listener will be added.
-     * @param bean         The bean for which the field listener will be added.
-     * @param describe     The ClassDesc object describing the bean's class.
-     * @param setters      A set of methods that are already registered as setters.
-     */
-    private void addFieldListener(Configurator configurator, Object bean, ClassDesc describe, Set<Method> setters) {
-        describe.getFieldList().forEach(field -> {
-            String key = getFieldKey(field);
-            if (key != null) {
-                Method setter = field.getSetter();
-                if (setter != null) {
-                    setters.add(setter);
-                }
-                configurator.addListener(key, event -> {
-                    if (event.getType() == UPDATE) {
-                        try {
-                            field.set(bean, convert(event.getValue(), field.getType()));
-                            return true;
-                        } catch (Throwable e) {
-                            logger.error("Failed to update config " + key + ", by set field " + field.getName() + " of class " + bean.getClass(), e);
-                        }
                     }
-                    return false;
-                });
+                }
+            });
+        }
+    }
+
+    /**
+     * Processes fields annotated with {@link Value} for the given bean.
+     * Adds listeners for fields with valid keys and setters.
+     *
+     * @param configurator The configurator to add listeners to.
+     *                     @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean to process.
+     * @param describe     The class description of the bean.
+     * @param methods      A set of methods already processed to avoid duplicates.
+     */
+    private void processFieldValueAnnotation(Configurator configurator,
+                                             RefreshConfig config,
+                                             Object bean,
+                                             ClassDesc describe,
+                                             Set<Method> methods) {
+        describe.getFieldList().forEach(field -> {
+            if (isValid(field.getField())) {
+                String key = getFieldKey(field);
+                if (key != null && config.isEnabled(key)) {
+                    Method setter = field.getSetter();
+                    if (setter == null || methods.add(setter)) {
+                        addFieldListener(configurator, config, bean, field, key);
+                    }
+                }
             }
         });
     }
 
     /**
-     * Returns the configuration key associated with the given field.
+     * Processes methods annotated with {@link Value} for the given bean.
+     * Adds listeners for methods with valid keys and single parameters.
      *
-     * @param field The field for which the configuration key is to be retrieved.
-     * @return The configuration key, or null if no key is found.
+     * @param configurator The configurator to add listeners to.
+     * @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean to process.
+     * @param describe     The class description of the bean.
+     * @param methods      A set of methods already processed to avoid duplicates.
+     */
+    private void processMethodValueAnnotation(Configurator configurator,
+                                              RefreshConfig config,
+                                              Object bean,
+                                              ClassDesc describe,
+                                              Set<Method> methods) {
+        describe.getMethodList().forEach(method -> {
+            if (isValid(method)) {
+                String key = getMethodKey(method);
+                if (key != null && config.isEnabled(key) && methods.add(method)) {
+                    addMethodListener(configurator, config, bean, method, key);
+                }
+            }
+        });
+    }
+
+    /**
+     * Adds a configuration properties listener for the given bean and annotation.
+     * Processes all fields of the bean and adds listeners for each field with a valid key.
+     *
+     * @param configurator The configurator to add listeners to.
+     *                     @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean to process.
+     * @param describe     The class description of the bean.
+     * @param annotation   The {@link ConfigurationProperties} annotation.
+     */
+    private void addConfigurationPropertiesListener(Configurator configurator,
+                                                    RefreshConfig config,
+                                                    Object bean,
+                                                    ClassDesc describe,
+                                                    ConfigurationProperties annotation) {
+        if (annotation != null) {
+            String prefix = annotation.prefix().isEmpty() ? annotation.value() : annotation.prefix();
+            describe.getFieldList().forEach(field -> {
+                if (isValid(field.getField())) {
+                    String key = getFieldKey(field, prefix, true);
+                    if (key != null && config.isEnabled(key)) {
+                        addFieldListener(configurator, config, bean, field, key);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Adds a listener for a specific field of the bean.
+     * Updates the field value when a configuration update event occurs.
+     *
+     * @param configurator The configurator to add listeners to.
+     * @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean containing the field.
+     * @param field        The field to listen for updates.
+     * @param key          The configuration key associated with the field.
+     */
+    private void addFieldListener(Configurator configurator, RefreshConfig config, Object bean, FieldDesc field, String key) {
+        configurator.addListener(key, event -> {
+            if (event.getType() == UPDATE) {
+                try {
+                    Object value = convert(event.getValue(), field.getType());
+                    field.set(bean, value);
+                    return true;
+                } catch (Throwable e) {
+                    logger.error("Failed to update config " + key +
+                            " by set field " + field.getName() +
+                            " of class " + bean.getClass(), e);
+                }
+            }
+            return false;
+        });
+    }
+
+    /**
+     * Adds a listener for a specific method of the bean.
+     * Invokes the method with the updated value when a configuration update event occurs.
+     *
+     * @param configurator The configurator to add listeners to.
+     * @param config       The {@link RefreshConfig} instance used to check if the bean is enabled for configuration updates.
+     * @param bean         The bean containing the method.
+     * @param method       The method to listen for updates.
+     * @param key          The configuration key associated with the method.
+     */
+    private void addMethodListener(Configurator configurator, RefreshConfig config, Object bean, Method method, String key) {
+        configurator.addListener(key, event -> {
+            if (event.getType() == UPDATE) {
+                try {
+                    Object value = convert(event.getValue(), method.getParameters()[0].getType());
+                    method.invoke(bean, value);
+                    return true;
+                } catch (Throwable e) {
+                    logger.error("Failed to update config " + key +
+                            " by invoking method " + method.getName() +
+                            " of class " + bean.getClass(), e);
+                }
+            }
+            return false;
+        });
+    }
+
+    private boolean isValid(Method method) {
+        return !Modifier.isStatic(method.getModifiers())
+                && method.getParameterCount() == 1
+                && method.getReturnType() == void.class;
+    }
+
+    private boolean isValid(Field field) {
+        return !Modifier.isStatic(field.getModifiers()) && !Modifier.isFinal(field.getModifiers());
+    }
+
+    /**
+     * Retrieves the bean name based on the provided {@link Bean} annotation and method.
+     * If the {@link Bean} annotation specifies a non-empty name or value, it is used as the bean name.
+     * If no valid name is found in the annotation, the method name is used as the bean name.
+     *
+     * @param bean   The {@link Bean} annotation associated with the method. Can be {@code null}.
+     * @param method The method for which the bean name is being retrieved. Must not be {@code null}.
+     * @return The bean name derived from the annotation or the method name if no valid name is found in the annotation.
+     */
+    private String getBeanName(Bean bean, Method method) {
+        String beanName = null;
+        if (bean != null) {
+            String[] names = bean.name();
+            names = names.length > 0 ? names : bean.value();
+            for (String name : names) {
+                if (!name.isEmpty()) {
+                    beanName = name;
+                    break;
+                }
+            }
+        }
+        if (beanName == null) {
+            beanName = method.getName();
+        }
+        return beanName;
+    }
+
+    private Class<?> getOriginType(Object bean) {
+        return ClassUtils.getUserClass(bean);
+    }
+
+    /**
+     * Returns the configuration key for the given field. Delegates to {@link #getFieldKey(FieldDesc, String, boolean)} with {@code prefix} as {@code null} and {@code isConfig} as {@code false}.
+     *
+     * @param field The field to retrieve the key for. Must not be {@code null}.
+     * @return The configuration key, or {@code null} if no key is found.
      */
     private String getFieldKey(FieldDesc field) {
-        return getKey(field.getAnnotation(Value.class));
+        return getFieldKey(field, null, false);
+    }
+
+    /**
+     * Retrieves the configuration key for the given field. Uses the {@link Value} annotation's value as the key.
+     * If the key is empty or {@code null}, and {@code isConfig} is {@code true}, the field's name is used as the key.
+     * The key is prefixed with the provided {@code prefix} if it is not {@code null} or empty.
+     *
+     * @param field    The field to retrieve the key for. Must not be {@code null}.
+     * @param prefix   The prefix to prepend to the key. Can be {@code null} or empty.
+     * @param isConfig If {@code true}, falls back to the field name if no key is found in the annotation.
+     * @return The configuration key, prefixed if applicable.
+     */
+    private String getFieldKey(FieldDesc field, String prefix, boolean isConfig) {
+        String name = getKey(field.getAnnotation(Value.class));
+        name = (name == null || name.isEmpty()) && isConfig ? field.getName() : name;
+        if (prefix == null || prefix.isEmpty()) {
+            return name;
+        } else if (prefix.equals(".")) {
+            return prefix + name;
+        } else {
+            return prefix + "." + name;
+        }
     }
 
     /**

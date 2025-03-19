@@ -150,7 +150,7 @@ agent:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
-    configcenter:
+    configCenter:
       enabled: ${CONFIG_CENTER_ENABLED:false}
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
@@ -302,6 +302,8 @@ agent:
         beanEnabled: ${CONFIG_CENTER_REFRESH_BEAN_ENABLED:true}
         beanNames: ${CONFIG_CENTER_REFRESH_BEAN_NAMES:}
         beanClassPrefixes: ${CONFIG_CENTER_REFRESH_BEAN_CLASS_PREFIXES:}
+        ignoreKeys: ${CONFIG_CENTER_REFRESH_IGNORE_KEYS:spring.application.name}
+        ignoreKeyPrefixes: ${CONFIG_CENTER_REFRESH_IGNORE_KEY_PREFIXES:}
       names: ${CONFIG_CENTER_NAMES:}
       name:
         namespace: ${CONFIG_CENTER_NAMESPACE:public}

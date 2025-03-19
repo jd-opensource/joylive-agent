@@ -19,6 +19,8 @@ import com.jd.live.agent.bootstrap.exception.ReflectException;
 import lombok.Getter;
 
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -31,6 +33,8 @@ public class UnsafeFieldAccessorFactory {
     private static Function<Field, UnsafeFieldAccessor> unsafeFieldFunc;
 
     private static BiFunction<Class<?>, String, UnsafeFieldAccessor> unsafeNameFunc;
+
+    private static final Map<Class<?>, BiFunction<Object, UnsafeFieldAccessor, Object>> getters = new ConcurrentHashMap<>();
 
     static {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
@@ -53,6 +57,15 @@ public class UnsafeFieldAccessorFactory {
                 System.out.println("Unable to use unsafe to fast access field");
             }
         }
+
+        getters.put(int.class, (o, accessor) -> accessor.getInt(o));
+        getters.put(long.class, (o, accessor) -> accessor.getLong(o));
+        getters.put(short.class, (o, accessor) -> accessor.getShort(o));
+        getters.put(byte.class, (o, accessor) -> accessor.getByte(o));
+        getters.put(double.class, (o, accessor) -> accessor.getDouble(o));
+        getters.put(float.class, (o, accessor) -> accessor.getFloat(o));
+        getters.put(boolean.class, (o, accessor) -> accessor.getBoolean(o));
+        getters.put(char.class, (o, accessor) -> accessor.getChar(o));
     }
 
     /**
@@ -139,8 +152,29 @@ public class UnsafeFieldAccessorFactory {
      * @return The value of the specified field, or null if the field does not exist or the target object is null.
      */
     @SuppressWarnings("unchecked")
+    public static <T> T getQuietly(Object target, Field field) {
+        if (target == null || field == null) {
+            return null;
+        }
+        try {
+            UnsafeFieldAccessor accessor = getAccessor(field);
+            BiFunction<Object, UnsafeFieldAccessor, Object> getter = getters.get(field.getType());
+            return getter == null ? (T) accessor.get(target) : (T) getter.apply(target, accessor);
+        } catch (InternalError e) {
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves the value of the specified field from the target object quietly.
+     * If the target object or the field name is null or empty, or if the field does not exist, returns null.
+     *
+     * @param target The target object from which to retrieve the field value.
+     * @param field  The name of the field to retrieve.
+     * @return The value of the specified field, or null if the field does not exist or the target object is null.
+     */
     public static <T> T getQuietly(Object target, String field) {
-        return (T) getQuietly(target, field, null);
+        return getQuietly(target, field, null);
     }
 
     /**

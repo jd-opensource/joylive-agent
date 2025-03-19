@@ -32,6 +32,10 @@ public class RefreshConfig {
 
     private Set<String> beanClassPrefixes;
 
+    private Set<String> ignoreKeys;
+
+    private Set<String> ignoreKeyPrefixes;
+
     public boolean isEnabled(String beanName, Object bean) {
         if (beanName != null && beanNames != null && !beanNames.isEmpty() && !beanName.isEmpty() && !beanNames.contains(beanName)) {
             return false;
@@ -43,6 +47,19 @@ public class RefreshConfig {
                 }
             }
             return false;
+        }
+        return true;
+    }
+
+    public boolean isEnabled(String key) {
+        if (ignoreKeys != null && !ignoreKeys.isEmpty() && ignoreKeys.contains(key)) {
+            return false;
+        } else if (ignoreKeyPrefixes != null && !ignoreKeyPrefixes.isEmpty()) {
+            for (String prefix : ignoreKeyPrefixes) {
+                if (key.startsWith(prefix)) {
+                    return false;
+                }
+            }
         }
         return true;
     }
