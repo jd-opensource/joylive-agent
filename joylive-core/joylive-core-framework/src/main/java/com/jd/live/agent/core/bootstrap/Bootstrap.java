@@ -86,7 +86,6 @@ import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND
 
 /**
  * Bootstrap is the main entry point for the agent's lifecycle management.
- *
  */
 public class Bootstrap implements AgentLifecycle {
     private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
@@ -292,10 +291,12 @@ public class Bootstrap implements AgentLifecycle {
             publisher.offer(AgentEvent.onAgentReady("Success starting LiveAgent."));
         } catch (Throwable e) {
             // TODO Close resource
-            publisher.offer(
-                    AgentEvent.onAgentFailure(e instanceof InitializeException
-                            ? e.getMessage()
-                            : "Failed to install plugin. caused by " + e.getMessage(), e));
+            if (publisher != null) {
+                publisher.offer(
+                        AgentEvent.onAgentFailure(e instanceof InitializeException
+                                ? e.getMessage()
+                                : "Failed to install plugin. caused by " + e.getMessage(), e));
+            }
             logger.error(e.getMessage(), e);
             if (serviceManager != null) {
                 serviceManager.stop();
@@ -717,7 +718,7 @@ public class Bootstrap implements AgentLifecycle {
     /**
      * Logs an exception and optionally shuts down the application if not in dynamic mode.
      *
-     * @param message the message to log
+     * @param message   the message to log
      * @param throwable the exception to log
      */
     private void onException(String message, Throwable throwable) {

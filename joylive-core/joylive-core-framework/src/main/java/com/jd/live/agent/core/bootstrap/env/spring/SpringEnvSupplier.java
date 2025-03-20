@@ -91,7 +91,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         String name = (String) configs.get(key);
         if (name == null) {
             ValuePath path = new ValuePath(key);
-            name = (String) path.get(configs);
+            name = String.valueOf(path.get(configs));
         }
         return name;
     }
