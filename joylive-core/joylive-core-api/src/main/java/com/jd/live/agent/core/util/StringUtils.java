@@ -565,13 +565,13 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the collection
      * is null or empty, an empty string is returned.
      */
-    public static String join(Iterable<String> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
+    public static String join(Iterable<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values == null) {
             return EMPTY;
         } else if (values instanceof List) {
-            return joinList((List<String>) values, separator, prefix, suffix, singleSurrounding);
+            return joinList((List<?>) values, separator, prefix, suffix, singleSurrounding);
         } else if (values instanceof Collection) {
-            return joinCollection((Collection<String>) values, separator, prefix, suffix, singleSurrounding);
+            return joinCollection((Collection<?>) values, separator, prefix, suffix, singleSurrounding);
         }
         return joinIterable(values, separator, prefix, suffix, singleSurrounding);
     }
@@ -591,12 +591,13 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the list
      * is null or empty, an empty string is returned.
      */
-    private static String joinList(List<String> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
+    private static String joinList(List<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values.isEmpty()) {
             return EMPTY;
         } else if (values.size() == 1) {
-            String value = values.get(0);
-            return singleSurrounding ? prefix + value + suffix : value;
+            Object value = values.get(0);
+            String str = value.toString();
+            return singleSurrounding ? prefix + str + suffix : str;
         }
         return joinIterable(values, separator, prefix, suffix, singleSurrounding);
     }
@@ -616,12 +617,13 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the collection
      * is null or empty, an empty string is returned.
      */
-    private static String joinCollection(Collection<String> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
+    private static String joinCollection(Collection<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values.isEmpty()) {
             return EMPTY;
         } else if (values.size() == 1) {
-            String value = values.iterator().next();
-            return singleSurrounding ? prefix + value + suffix : value;
+            Object value = values.iterator().next();
+            String str = value.toString();
+            return singleSurrounding ? prefix + str + suffix : str;
         }
         return joinIterable(values, separator, prefix, suffix, singleSurrounding);
     }
@@ -641,18 +643,20 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the iterable
      * is null or empty, an empty string is returned.
      */
-    private static String joinIterable(Iterable<String> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
+    private static String joinIterable(Iterable<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
         int left = prefix == 0 ? 0 : 1;
         int right = suffix == 0 ? 0 : 1;
         int counter = 0;
         StringBuilder sb = new StringBuilder();
         sb.append(left == 0 ? "" : prefix);
-        for (String string : values) {
-            if (!isEmpty(string)) {
+        String str;
+        for (Object value : values) {
+            str = value.toString();
+            if (!isEmpty(str)) {
                 if (counter++ > 0) {
                     sb.append(separator);
                 }
-                sb.append(string);
+                sb.append(str);
             }
         }
         sb.append(right == 0 ? "" : suffix);

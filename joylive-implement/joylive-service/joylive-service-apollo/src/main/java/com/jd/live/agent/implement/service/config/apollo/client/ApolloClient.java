@@ -22,7 +22,6 @@ import com.ctrip.framework.apollo.core.ApolloClientSystemConsts;
 import com.ctrip.framework.apollo.core.ConfigConsts;
 import com.ctrip.framework.apollo.enums.PropertyChangeType;
 import com.ctrip.framework.apollo.model.ConfigFileChangeEvent;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 
 import static com.jd.live.agent.implement.service.config.apollo.client.ApolloProperties.KEY_ENV;
@@ -51,15 +50,12 @@ public class ApolloClient implements ApolloClientApi {
         setProperty(ApolloClientSystemConsts.APOLLO_LABEL, properties.getLabel());
         setProperty(ApolloClientSystemConsts.APP_ID, properties.getUsername());
         setProperty(ApolloClientSystemConsts.APOLLO_ACCESS_KEY_SECRET, properties.getPassword());
-        URI uri = URI.parse(properties.getAddress());
-        String schema = uri.getSchema();
-        if (schema == null || schema.isEmpty()) {
-            setProperty(ApolloClientSystemConsts.APOLLO_CONFIG_SERVICE, uri.schema("http").toString());
-        } else if ("meta".equalsIgnoreCase(schema)) {
-            setProperty(ConfigConsts.APOLLO_META_KEY, uri.schema("http").toString());
-        } else {
-            setProperty(ApolloClientSystemConsts.APOLLO_CONFIG_SERVICE, uri.toString());
-        }
+        ApolloAddress address = ApolloAddress.parse(properties.getAddress());
+        setProperty(address.getType() == AddressType.META_SERVER
+                        ? ConfigConsts.APOLLO_META_KEY
+                        : ApolloClientSystemConsts.APOLLO_CONFIG_SERVICE,
+                address.getAddress());
+
         ApolloNameFormat format = properties.getFormat();
         client = ConfigService.getConfigFile(format.getName(), format.getFormat());
     }
@@ -90,5 +86,13 @@ public class ApolloClient implements ApolloClientApi {
         if (value != null && !value.isEmpty()) {
             System.setProperty(key, value);
         }
+    }
+
+    private static class Address {
+
+        private String type;
+
+        private String url;
+
     }
 }
