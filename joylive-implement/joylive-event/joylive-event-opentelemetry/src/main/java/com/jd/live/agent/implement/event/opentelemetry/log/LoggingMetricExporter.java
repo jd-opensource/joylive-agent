@@ -27,9 +27,11 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class LoggingMetricExporter implements MetricExporter {
+
     private static final Logger logger = LoggerFactory.getLogger(LoggingMetricExporter.class);
 
-    private final AtomicBoolean isShutdown = new AtomicBoolean();
+    private final AtomicBoolean started = new AtomicBoolean(true);
+
     private final AggregationTemporality aggregationTemporality;
 
     /**
@@ -58,39 +60,31 @@ public final class LoggingMetricExporter implements MetricExporter {
 
     @Override
     public CompletableResultCode export(Collection<MetricData> metrics) {
-        if (isShutdown.get()) {
+        if (!started.get()) {
             return CompletableResultCode.ofFailure();
         }
-
-        logger.info("Received a collection of " + metrics.size() + " metrics for export.");
-        for (MetricData metricData : metrics) {
-            logger.info("metric: " + metricData);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Received a collection of {} metrics for export.", metrics.size());
+            for (MetricData metric : metrics) {
+                logger.debug("metric: {}", metric);
+            }
         }
         return CompletableResultCode.ofSuccess();
     }
 
-    /**
-     * Flushes the data.
-     *
-     * @return the result of the operation
-     */
     @Override
     public CompletableResultCode flush() {
-        CompletableResultCode resultCode = new CompletableResultCode();
-        return resultCode.succeed();
+        return CompletableResultCode.ofSuccess();
     }
 
     @Override
     public CompletableResultCode shutdown() {
-        if (!isShutdown.compareAndSet(false, true)) {
-            logger.info("Calling shutdown() multiple times.");
-            return CompletableResultCode.ofSuccess();
-        }
-        return flush();
+        started.set(false);
+        return CompletableResultCode.ofSuccess();
     }
 
     @Override
     public String toString() {
-        return "LoggingMetricExporter{}";
+        return "LoggingMetricExporter";
     }
 }

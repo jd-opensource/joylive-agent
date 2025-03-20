@@ -111,10 +111,10 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
      */
     private boolean isExcludedThreadFactoryType(Class<?> type) {
         if (threadConfig.isExcludedTask(type)) {
-            logger.info("Disable transmission in threads of factory " + type.getName());
+            logger.info("Disable transmission in threads of factory {}@{} loaded by {}", type.getName(), System.identityHashCode(type), type.getClassLoader());
             return true;
         }
-        logger.info("Enable transmission in threads of factory " + type.getName());
+        logger.info("Enable transmission in threads of factory {}@{} loaded by {}", type.getName(), System.identityHashCode(type), type.getClassLoader());
         return false;
     }
 
@@ -139,10 +139,10 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
      */
     private boolean isExcludeTaskType(Class<?> type) {
         if (threadConfig.isExcludedTask(type)) {
-            logger.info("Disable transmission in task " + type.getName());
+            logger.info("Disable transmission in task {}@{} loaded by {}", type.getName(), System.identityHashCode(type), type.getClassLoader());
             return true;
         }
-        logger.info("Enable transmission in task " + type.getName());
+        logger.info("Enable transmission in task {}@{} loaded by {}", type.getName(), System.identityHashCode(type), type.getClassLoader());
         return false;
     }
 
@@ -166,10 +166,10 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
      */
     private boolean isExcludeExecutorType(Class<?> type) {
         if (threadConfig.isExcludedExecutor(type)) {
-            logger.info("Disable transmission in executor " + type.getName());
+            logger.info("Disable transmission in executor {}@{} loaded by {}", type.getName(), System.identityHashCode(type), type.getClassLoader());
             return true;
         }
-        logger.info("Enable transmission in executor " + type.getName());
+        logger.info("Enable transmission in executor {}@{} loaded by {}", type.getName(), System.identityHashCode(type), type.getClassLoader());
         return false;
     }
 
