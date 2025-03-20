@@ -5,8 +5,9 @@
 1. Added support for Spring Cloud Greenwich, currently supporting Spring Cloud Greenwich/Hoxton/2020/2021/2022/2023/2024.
 2. Added support for multi-registry registration.
 3. Added support for registering Spring Boot applications, converting them into microservices.
-4. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
-5. Fixed other issues and improved stability.
+4. Added support for maximum circuit breaker instance ratio
+5. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
+6. Fixed other issues and improved stability.
 
 ## 1.6.0
 
