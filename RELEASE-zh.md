@@ -1,5 +1,13 @@
 # 发布历史
 
+## 1.7.0-SNAPSHOT
+
+1. 新增支持 Spring cloud greenwich，当前已经支持Spring cloud Greenwich/Hoxton/2020/2021/2022/2023/2024
+2. 新增支持多注册中心注册
+3. 新增支持 Spring boot 应用的注册，转换成微服务应用
+4. 完善动态配置注入，支持对带有@ConfigurationProperties注解的对象的字段进行注入
+5. 修复其它问题和稳定性提升
+
 ## 1.6.0
 
 1. 新增支持 Spring cloud 2024，当前已经支持Spring cloud Hoxton/2020/2021/2022/2023/2024

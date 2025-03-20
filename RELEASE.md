@@ -1,5 +1,13 @@
 # Release History
 
+## 1.7.0-SNAPSHOT
+
+1. Added support for Spring Cloud Greenwich, currently supporting Spring Cloud Greenwich/Hoxton/2020/2021/2022/2023/2024.
+2. Added support for multi-registry registration.
+3. Added support for registering Spring Boot applications, converting them into microservices.
+4. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
+5. Fixed other issues and improved stability.
+
 ## 1.6.0
 
 1. Added support for Spring Cloud 2024. Currently, Spring Cloud Hoxton/2020/2021/2022/2023/2024 are supported.
