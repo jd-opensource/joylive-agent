@@ -51,6 +51,11 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
     }
 
     @Override
+    public boolean acquireWhen(int instances) {
+        return getPolicy().isProtectMode(instances) || acquire();
+    }
+
+    @Override
     public void release() {
         if (started.get()) {
             doRelease();

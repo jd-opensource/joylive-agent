@@ -28,6 +28,15 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPoli
 public interface CircuitBreaker extends Licensee<CircuitBreakPolicy>, CircuitBreakInspector {
 
     /**
+     * Attempts to acquire a permit from the circuit breaker based on the number of instances.
+     * The behavior of this method is determined by the underlying circuit breaker policy.
+     *
+     * @param instances The number of instances to evaluate for permit acquisition.
+     * @return {@code true} if a permit is successfully acquired, {@code false} otherwise.
+     */
+    boolean acquireWhen(int instances);
+
+    /**
      * Releases the acquired permit.
      */
     default void release() {
