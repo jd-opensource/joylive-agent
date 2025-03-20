@@ -76,7 +76,8 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @return the resolved configuration value as a String
      */
     private String getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
-        return evaluate(getConfig(configs, key), env, false);
+        String config = getConfig(configs, key);
+        return config == null || config.isEmpty() ? config : evaluate(config, env, false);
     }
 
     /**
@@ -90,8 +91,8 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     private String getConfig(Map<String, Object> configs, String key) {
         String name = (String) configs.get(key);
         if (name == null) {
-            ValuePath path = new ValuePath(key);
-            name = String.valueOf(path.get(configs));
+            Object obj = ValuePath.get(configs, key);
+            name = obj == null ? null : obj.toString();
         }
         return name;
     }
