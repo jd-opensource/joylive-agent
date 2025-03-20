@@ -38,9 +38,19 @@ public class ApolloAddress {
     private static final String SCHEMA_META = "meta";
 
     /**
+     * Schema identifier for Meta Server addresses.
+     */
+    private static final String SCHEMA_METAS = "metas";
+
+    /**
      * Schema identifier for HTTP addresses.
      */
     private static final String SCHEMA_HTTP = "http";
+
+    /**
+     * Schema identifier for HTTPS addresses.
+     */
+    private static final String SCHEMA_HTTPS = "https";
 
     /**
      * The type of the address, which indicates the role or purpose of the address.
@@ -84,6 +94,9 @@ public class ApolloAddress {
             String schema = uri.getSchema();
             if (SCHEMA_META.equalsIgnoreCase(schema)) {
                 metaServer = uri.schema(SCHEMA_HTTP);
+                break;
+            } else if (SCHEMA_METAS.equalsIgnoreCase(schema)) {
+                metaServer = uri.schema(SCHEMA_HTTPS);
                 break;
             } else if (schema == null || schema.isEmpty()) {
                 configServers.add(uri.schema(SCHEMA_HTTP));
