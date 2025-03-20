@@ -291,13 +291,13 @@ public class Bootstrap implements AgentLifecycle {
             publisher.offer(AgentEvent.onAgentReady("Success starting LiveAgent."));
         } catch (Throwable e) {
             // TODO Close resource
+            logger.error(e.getMessage(), e);
             if (publisher != null) {
                 publisher.offer(
                         AgentEvent.onAgentFailure(e instanceof InitializeException
                                 ? e.getMessage()
                                 : "Failed to install plugin. caused by " + e.getMessage(), e));
             }
-            logger.error(e.getMessage(), e);
             if (serviceManager != null) {
                 serviceManager.stop();
             }
