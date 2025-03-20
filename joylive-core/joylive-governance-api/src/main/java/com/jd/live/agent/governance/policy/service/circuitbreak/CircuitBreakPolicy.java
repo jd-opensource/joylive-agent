@@ -46,6 +46,7 @@ public class CircuitBreakPolicy extends PolicyId
     public static final int DEFAULT_ALLOWED_CALLS_IN_HALF_OPEN_STATE = 10;
     public static final int DEFAULT_SLIDING_WINDOW_SIZE = 100;
     public static final int DEFAULT_MIN_CALLS_THRESHOLD = 10;
+    public static final int DEFAULT_OUTLIER_MAX_PERCENT = 50;
     public static final int DEFAULT_RECOVER_DURATION = 1000 * 15;
     public static final int DEFAULT_MAX_WAIT_DURATION_IN_HALF_OPEN_STATE = 0;
     public static final int DEFAULT_RECOVER_PHASE = 10;
@@ -87,6 +88,9 @@ public class CircuitBreakPolicy extends PolicyId
      */
     @Setter
     private Integer minCallsThreshold;
+
+    @Setter
+    private Integer outlierMaxPercent;
 
     /**
      * Code policy
@@ -219,6 +223,10 @@ public class CircuitBreakPolicy extends PolicyId
         return minCallsThreshold == null || minCallsThreshold <= 0 ? DEFAULT_MIN_CALLS_THRESHOLD : minCallsThreshold;
     }
 
+    public int getOutlierMaxPercent() {
+        return outlierMaxPercent == null || outlierMaxPercent <= 0 ? DEFAULT_OUTLIER_MAX_PERCENT : Math.min(outlierMaxPercent, 100);
+    }
+
     public float getFailureRateThreshold() {
         return failureRateThreshold == null || failureRateThreshold <= 0 ? DEFAULT_FAILURE_RATE_THRESHOLD : Math.min(failureRateThreshold, 100);
     }
@@ -281,6 +289,9 @@ public class CircuitBreakPolicy extends PolicyId
         }
         if (minCallsThreshold == null) {
             minCallsThreshold = source.minCallsThreshold;
+        }
+        if (outlierMaxPercent == null) {
+            outlierMaxPercent = source.outlierMaxPercent;
         }
         if (codePolicy == null) {
             codePolicy = source.codePolicy == null ? null : source.codePolicy.clone();
@@ -350,6 +361,17 @@ public class CircuitBreakPolicy extends PolicyId
     @Override
     public boolean containsException(Set<String> classNames) {
         return ErrorPolicy.containsException(classNames, exceptions);
+    }
+
+    /**
+     * Determines whether the system should be in protect mode based on the number of instances and the configured outlier ratio.
+     *
+     * @param instances The number of instances to evaluate.
+     * @return {@code true} if protect mode should be enabled, {@code false} otherwise.
+     */
+    public boolean isProtectMode(int instances) {
+        double ratio = getOutlierMaxPercent();
+        return ratio > 0 && inspectors.size() >= Math.ceil(instances * ratio / 100);
     }
 
     /**

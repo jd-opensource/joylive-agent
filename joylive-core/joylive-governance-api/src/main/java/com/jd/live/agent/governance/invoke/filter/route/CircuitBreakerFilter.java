@@ -34,6 +34,7 @@ import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
+import com.jd.live.agent.governance.invoke.permission.Licensee;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
 import static com.jd.live.agent.governance.util.Predicates.isError;
@@ -106,7 +108,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             // add listener before acquire permit
             invocation.addListener(new CircuitBreakerListener(this::getCircuitBreaker, errorParsers, breakers, instancePolicies));
             // acquire service permit
-            acquire(invocation, breakers);
+            acquire(breakers, Licensee::acquire, invocation);
             // filter broken instance
             filterHealthy(invocation, instancePolicies);
         }
@@ -220,8 +222,8 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
      * @param invocation      the outbound invocation.
      * @param circuitBreakers the list of circuit breakers.
      */
-    private static void acquire(OutboundInvocation<?> invocation, List<CircuitBreaker> circuitBreakers) {
-        acquire(circuitBreakers, breaker -> {
+    private static void acquire(List<CircuitBreaker> circuitBreakers, Predicate<CircuitBreaker> predicate, OutboundInvocation<?> invocation) {
+        acquire(circuitBreakers, predicate, breaker -> {
             DegradeConfig config = breaker.getPolicy().getDegradeConfig();
             if (config == null) {
                 invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejected the request.");
@@ -232,22 +234,25 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
     }
 
     /**
-     * Acquires permits from the list of circuit breakers.
+     * Acquires permits from the list of circuit breakers using the provided predicate.
      * If acquiring a permit from any circuit breaker fails, it rolls back all previously acquired permits
      * and executes the provided fallback action.
      *
-     * @param circuitBreakers the list of circuit breakers
-     * @param fallback        the fallback action to be executed if acquiring a permit fails, may be {@code null}
-     * @return {@code true} if permits were successfully acquired from all circuit breakers, {@code false} otherwise
+     * @param circuitBreakers The list of circuit breakers from which to acquire permits.
+     * @param predicate       The predicate used to test whether a permit can be acquired from a circuit breaker.
+     * @param fallback        The fallback action to execute if acquiring a permit fails. May be {@code null}.
+     * @return {@code true} if permits were successfully acquired from all circuit breakers, {@code false} otherwise.
      */
-    private static boolean acquire(List<CircuitBreaker> circuitBreakers, Consumer<CircuitBreaker> fallback) {
+    private static boolean acquire(List<CircuitBreaker> circuitBreakers,
+                                   Predicate<CircuitBreaker> predicate,
+                                   Consumer<CircuitBreaker> fallback) {
         if (!recover(circuitBreakers, fallback)) {
             // not acquire permits
             return false;
         }
         int acquires = 0;
         for (CircuitBreaker circuitBreaker : circuitBreakers) {
-            if (!circuitBreaker.acquire()) {
+            if (!predicate.test(circuitBreaker)) {
                 // failed to acquire permits
                 rollback(circuitBreakers, acquires);
                 if (fallback != null) {
@@ -361,8 +366,10 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 }
                 int size = circuitBreakers.size();
                 if (size > index) {
+                    int instances = invocation.getRouteTarget().size();
+                    Predicate<CircuitBreaker> predicate = breaker -> breaker.acquireWhen(instances);
                     // acquire from instance circuit breaker
-                    if (!acquire(circuitBreakers.subList(index, size), null)) {
+                    if (!acquire(circuitBreakers.subList(index, size), predicate, (Consumer<CircuitBreaker>) null)) {
                         // failed to acquire, rollback circuit breakers
                         circuitBreakers = circuitBreakers.subList(0, index);
                         return false;
