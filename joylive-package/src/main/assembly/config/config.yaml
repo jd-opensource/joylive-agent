@@ -313,18 +313,21 @@ agent:
       enabled: ${CONFIG_REGISTRY_ENABLED:false}
       clusters:
         - type: ${CONFIG_REGISTRY_TYPE_FIRST:nacos}
+          mode: ${CONFIG_REGISTRY_MODE_FIRST:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_FIRST}
           username: ${CONFIG_REGISTRY_USERNAME_FIRST:nacos}
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:nacos}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST}
           group: ${CONFIG_REGISTRY_GROUP_FIRST}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
+          mode: ${CONFIG_REGISTRY_MODE_SECOND:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_SECOND}
           username: ${CONFIG_REGISTRY_USERNAME_SECOND:nacos}
           password: ${CONFIG_REGISTRY_PASSWORD_SECOND:nacos}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND}
           group: ${CONFIG_REGISTRY_GROUP_SECOND}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
+          mode: ${CONFIG_REGISTRY_MODE_THIRD:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_THIRD}
           username: ${CONFIG_REGISTRY_USERNAME_THIRD:nacos}
           password: ${CONFIG_REGISTRY_PASSWORD_THIRD:nacos}

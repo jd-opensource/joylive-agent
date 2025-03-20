@@ -19,6 +19,8 @@ public class RegistryClusterConfig {
 
     private String group;
 
+    private RegistryMode mode = RegistryMode.FULL;
+
     public boolean validate() {
         return type != null && !type.isEmpty() && address != null && !address.isEmpty();
     }

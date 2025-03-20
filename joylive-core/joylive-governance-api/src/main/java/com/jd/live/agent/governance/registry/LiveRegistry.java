@@ -33,6 +33,7 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
+import com.jd.live.agent.governance.config.RegistryMode;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.exception.RegistryException;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -279,10 +280,16 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
      */
     private void onApplicationStop() {
         ready.set(false);
+
         for (Registration registration : registrations.values()) {
             registration.stop();
         }
         registrations.clear();
+
+        for (Subscription subscription : subscriptions.values()) {
+            subscription.stop();
+        }
+        subscriptions.clear();
     }
 
     /**
@@ -413,29 +420,33 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          * Performs the actual register of the service instance.
          */
         private void doRegister() {
-            if (started.get()) {
-                int counter = 0;
-                for (ClusterRegistration cluster : clusters) {
+            if (!started.get()) {
+                return;
+            }
+            int counter = 0;
+            int dones = 0;
+            for (ClusterRegistration cluster : clusters) {
+                if (cluster.getConfig().getMode().isRegister()) {
+                    counter++;
                     if (!cluster.isDone()) {
                         String group = cluster.getGroup(instance.getGroup());
+                        String name = getName(instance.getService(), group);
                         try {
                             cluster.register(instance.getService(), group, instance);
-                            logger.info("Success registering instance {}:{} to {}@{} at {}",
-                                    instance.getHost(), instance.getPort(),
-                                    instance.getService(), group, cluster.getName());
-                            counter++;
+                            logger.info("Success registering instance {}:{} to {} at {}",
+                                    instance.getHost(), instance.getPort(), name, cluster.getName());
+                            dones++;
                         } catch (Exception e) {
-                            logger.error("Failed to register instance {}:{} to {}@{} at {}, caused by {}",
-                                    instance.getHost(), instance.getPort(),
-                                    instance.getService(), group, cluster.getName(), e.getMessage(), e);
+                            logger.error("Failed to register instance {}:{} to {} at {}, caused by {}",
+                                    instance.getHost(), instance.getPort(), name, cluster.getName(), e.getMessage(), e);
                         }
                     } else {
-                        counter++;
+                        dones++;
                     }
                 }
-                if (counter != clusters.size()) {
-                    delayRegister();
-                }
+            }
+            if (dones != counter) {
+                delayRegister();
             }
         }
 
@@ -444,17 +455,16 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         private void doUnregister() {
             for (ClusterRegistration cluster : clusters) {
-                if (cluster.isDone()) {
+                if (cluster.getConfig().getMode().isRegister() && cluster.isDone()) {
                     String group = cluster.getGroup(instance.getGroup());
+                    String name = getName(instance.getService(), group);
                     try {
                         cluster.unregister(instance.getService(), group, instance);
-                        logger.info("Success unregistering instance {}:{} to {}@{} at {}",
-                                instance.getHost(), instance.getPort(),
-                                instance.getService(), group, cluster.getName());
+                        logger.info("Success unregistering instance {}:{} to {} at {}",
+                                instance.getHost(), instance.getPort(), name, cluster.getName());
                     } catch (Exception e) {
-                        logger.error("Failed to unregister instance {}:{} to {}@{} at {}, caused by {}",
-                                instance.getHost(), instance.getPort(),
-                                instance.getService(), group, cluster.getName(), e.getMessage(), e);
+                        logger.error("Failed to unregister instance {}:{} to {} at {}, caused by {}",
+                                instance.getHost(), instance.getPort(), name, cluster.getName(), e.getMessage(), e);
                     }
                 }
             }
@@ -546,6 +556,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          */
         public void stop() {
             started.set(false);
+            doUnsubscribe();
         }
 
         /**
@@ -592,28 +603,51 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
 
         /**
-         * Performs the actual register of the service instance.
+         * Performs the actual subscription of the service.
          */
         private void doSubscribe() {
-            if (started.get()) {
-                int counter = 0;
-                for (ClusterSubscription cluster : clusters) {
+            if (!started.get()) {
+                return;
+            }
+            int counter = 0;
+            int dones = 0;
+            for (ClusterSubscription cluster : clusters) {
+                if (cluster.getConfig().getMode().isSubscribe()) {
+                    counter++;
                     if (!cluster.isDone()) {
                         String group = cluster.getGroup(this.group);
                         String name = getName(service, group);
                         try {
                             cluster.subscribe(service, group, e -> update(cluster.getName(), name, e));
                             logger.info("Success subscribing {} at {}", name, cluster.getName());
-                            counter++;
+                            dones++;
                         } catch (Exception e) {
                             logger.error("Failed to subscribe {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
                         }
                     } else {
-                        counter++;
+                        dones++;
                     }
                 }
-                if (counter != clusters.size()) {
-                    delaySubscribe();
+            }
+            if (dones != counter) {
+                delaySubscribe();
+            }
+        }
+
+        /**
+         * Performs the actual unsubscription of the service.
+         */
+        private void doUnsubscribe() {
+            for (ClusterSubscription cluster : clusters) {
+                if (cluster.getConfig().getMode().isSubscribe() && cluster.isDone()) {
+                    String group = cluster.getGroup(this.group);
+                    String name = getName(service, group);
+                    try {
+                        cluster.unsubscribe(service, group);
+                        logger.info("Success unsubscribing {} at {}", name, cluster.getName());
+                    } catch (Exception e) {
+                        logger.error("Failed to unsubscribe {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
+                    }
                 }
             }
         }
@@ -659,6 +693,10 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
         public void addRetry() {
             retry.incrementAndGet();
+        }
+
+        public RegistryClusterConfig getConfig() {
+            return cluster.getConfig();
         }
 
     }
@@ -738,8 +776,11 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
         private final Callable<Void> callback;
 
+        private final RegistryClusterConfig config = new RegistryClusterConfig();
+
         FrameworkRegistryService(Callable<Void> callback) {
             this.callback = callback;
+            config.setMode(RegistryMode.FULL);
         }
 
         @Override
@@ -750,6 +791,11 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         @Override
         public void register(String service, String group, ServiceInstance instance) throws Exception {
             callback.call();
+        }
+
+        @Override
+        public RegistryClusterConfig getConfig() {
+            return config;
         }
     }
 }

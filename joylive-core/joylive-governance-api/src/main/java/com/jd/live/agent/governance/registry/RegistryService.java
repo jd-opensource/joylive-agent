@@ -25,8 +25,21 @@ import java.util.function.Consumer;
  */
 public interface RegistryService extends AutoCloseable {
 
+    /**
+     * Retrieves the name of the registry service.
+     *
+     * @return The name of the registry service as a string. This value should uniquely identify
+     * the registry service instance.
+     */
     String getName();
 
+    /**
+     * Retrieves the configuration of the registry cluster associated with this service.
+     *
+     * @return The {@link RegistryClusterConfig} object representing the configuration of the
+     *         registry cluster. This includes settings such as cluster nodes, connection details,
+     *         and other relevant parameters.
+     */
     RegistryClusterConfig getConfig();
 
     /**
