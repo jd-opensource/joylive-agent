@@ -26,10 +26,12 @@ import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.function.Function;
 
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * A client for interacting with the Nacos configuration service.
@@ -47,8 +49,9 @@ public class NacosClient implements NacosClientApi {
     @Override
     public void connect() throws NacosException {
         Properties properties = new Properties();
-        URI uri = URI.parse(config.getUrl());
-        properties.put(PropertyKeyConst.SERVER_ADDR, uri.getAddress());
+        List<URI> uris = toList(split(config.getUrl(), SEMICOLON_COMMA), URI::parse);
+        String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
+        properties.put(PropertyKeyConst.SERVER_ADDR, address);
         if (!isEmpty(config.getNamespace()) && !DEFAULT_NAMESPACE.equals(config.getNamespace())) {
             properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
         }
