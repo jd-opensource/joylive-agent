@@ -16,8 +16,8 @@
 package com.jd.live.agent.governance.invoke.filter;
 
 /**
- * A marker interface indicating that an RouteFilter can handle forward request.
+ * A marker interface indicating that an RouteFilter can handle live request.
  */
-public interface Forwardable {
+public interface LiveFilter {
 
 }

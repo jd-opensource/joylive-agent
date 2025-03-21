@@ -24,9 +24,13 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
+import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.filter.*;
@@ -254,12 +258,12 @@ public interface InvocationContext {
     RouteFilter[] getRouteFilters();
 
     /**
-     * Retrieves an array of forward filters.
+     * Retrieves an array of live filters.
      *
      * @return An array of {@link RouteFilter} instances that are used for routing decisions. The list may be empty
      * if no route filters are configured.
      */
-    RouteFilter[] getForwardFilters();
+    RouteFilter[] getLiveFilters();
 
     /**
      * Retrieves an array of outbound filters.
@@ -657,8 +661,8 @@ public interface InvocationContext {
         }
 
         @Override
-        public RouteFilter[] getForwardFilters() {
-            return delegate.getForwardFilters();
+        public RouteFilter[] getLiveFilters() {
+            return delegate.getLiveFilters();
         }
 
         @Override
@@ -748,12 +752,12 @@ public interface InvocationContext {
     }
 
     /**
-     * An {@code HttpForwardInvocationContext} extends {@code InvocationContextDelegate} to specifically handle
+     * An {@code GatewayForwardContext} extends {@code DelegateContext} to specifically handle
      * the routing of HTTP requests
      *
      * @see DelegateContext
      */
-    class HttpForwardContext extends DelegateContext {
+    class GatewayForwardContext extends DelegateContext {
 
         private static final String KEY_UNIT = "unit";
 
@@ -763,55 +767,105 @@ public interface InvocationContext {
 
         private static final Map<String, Template> TEMPLATES = new ConcurrentHashMap<>();
 
+        private final boolean liveEnabled;
+
         /**
          * Constructs an {@code HttpForwardInvocationContext} with the specified delegate context.
          *
          * @param delegate The delegate {@code InvocationContext} to which this context adds additional functionality.
          */
-        public HttpForwardContext(InvocationContext delegate) {
+        public GatewayForwardContext(InvocationContext delegate, boolean liveEnabled) {
             super(delegate);
+            this.liveEnabled = liveEnabled;
         }
 
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+            if (!liveEnabled) {
+                return null;
+            }
             try {
                 HttpForwardRequest request = (HttpForwardRequest) invocation.getRequest();
-                // handle forward filter.
+                // handle live filter.
                 invocation.setInstances(new ArrayList<>(0));
-                RouteFilter[] forwards = getForwardFilters();
+                RouteFilter[] forwards = getLiveFilters();
                 if (forwards != null && forwards.length > 0) {
                     RouteFilterChain chain = new RouteFilterChain.Chain(forwards);
                     chain.filter(invocation);
-                    // change host
-                    RouteTarget target = invocation.getRouteTarget();
-                    UnitRoute unitRoute = target.getUnitRoute();
-                    CellRoute cellRoute = target.getCellRoute();
-                    Unit unit = unitRoute == null ? null : unitRoute.getUnit();
-                    Cell cell = cellRoute == null ? null : cellRoute.getCell();
-                    if (unit != null && cell != null) {
-                        String host = request.getHost();
-                        String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
-                        if (unitHost == null) {
-                            unitHost = request.getForwardHostExpression();
-                        }
-                        if (unitHost != null) {
-                            Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
-                            if (template.getVariables() > 0) {
-                                Map<String, Object> context = new HashMap<>();
-                                context.put(KEY_UNIT, unit.getHostPrefix());
-                                context.put(KEY_CELL, cell.getHostPrefix());
-                                context.put(KEY_HOST, host);
-                                unitHost = template.evaluate(context);
-                            }
-                            request.forward(unitHost);
-                        }
-                    }
+                    forward(invocation, request);
                 }
                 return null;
             } catch (RejectException e) {
                 invocation.onReject(e);
                 throw e;
+            }
+        }
+
+        /**
+         * Forwards an outbound request by determining the appropriate failover host based on the route target,
+         * unit, and cell information. If a valid failover host is found, the request is forwarded to that host;
+         * otherwise, the request is rejected with an appropriate fault.
+         *
+         * @param <R>        the type of outbound request, which must extend {@link OutboundRequest}
+         * @param invocation the outbound invocation containing the request and route target
+         * @param request    the HTTP forward request to be processed
+         */
+        private <R extends OutboundRequest> void forward(OutboundInvocation<R> invocation, HttpForwardRequest request) {
+            // change host
+            RouteTarget target = invocation.getRouteTarget();
+            UnitRoute unitRoute = target.getUnitRoute();
+            CellRoute cellRoute = target.getCellRoute();
+            Unit unit = unitRoute == null ? null : unitRoute.getUnit();
+            Cell cell = cellRoute == null ? null : cellRoute.getCell();
+            String host = request.getHost();
+            String failoverHost = null;
+            if (unit != null || cell != null) {
+                String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
+                if (unitHost == null) {
+                    unitHost = request.getForwardHostExpression();
+                }
+                if (unitHost != null) {
+                    Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
+                    if (template.getVariables() > 0) {
+                        Map<String, Object> context = new HashMap<>();
+                        context.put(KEY_UNIT, unit == null ? "" : unit.getHostPrefix());
+                        context.put(KEY_CELL, cell == null ? "" : cell.getHostPrefix());
+                        context.put(KEY_HOST, host);
+                        failoverHost = template.evaluate(context);
+                    } else {
+                        failoverHost = unitHost;
+                    }
+                }
+            }
+            if (failoverHost != null) {
+                request.forward(failoverHost);
+            } else {
+                rejectFailover(invocation);
+            }
+        }
+
+        /**
+         * Rejects the outbound request with an appropriate fault based on the unit or cell failover action.
+         * If a unit failover action is present, the request is rejected with a unit fault; otherwise,
+         * if a cell failover action is present, the request is rejected with a cell fault.
+         *
+         * @param <R>        the type of outbound request, which must extend {@link OutboundRequest}
+         * @param invocation the outbound invocation containing the request
+         */
+        private <R extends OutboundRequest> void rejectFailover(OutboundInvocation<R> invocation) {
+            Carrier carrier = RequestContext.get();
+            if (carrier == null) {
+                return;
+            }
+            UnitAction unitAction = carrier.getAttribute(Carrier.ATTRIBUTE_FAILOVER_UNIT);
+            if (unitAction != null && unitAction.getType() != UnitActionType.FORWARD) {
+                invocation.reject(FaultType.UNIT, unitAction.getMessage());
+            } else {
+                CellAction cellAction = carrier.getAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL);
+                if (cellAction != null && cellAction.getType() != CellActionType.FORWARD) {
+                    invocation.reject(FaultType.CELL, cellAction.getMessage());
+                }
             }
         }
 
@@ -825,7 +879,7 @@ public interface InvocationContext {
          * @param unit             The unit associated with the request, if any.
          * @return The resolved host for the unit, or {@code null} if it cannot be resolved.
          */
-        protected String getUnitHost(String host, GovernancePolicy governancePolicy, Unit unit) {
+        private String getUnitHost(String host, GovernancePolicy governancePolicy, Unit unit) {
             Domain domain = governancePolicy == null ? null : governancePolicy.getDomain(host);
             DomainPolicy domainPolicy = domain == null ? null : domain.getPolicy();
             if (domainPolicy != null) {

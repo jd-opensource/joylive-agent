@@ -42,7 +42,7 @@ import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.counter.CounterManager;
-import com.jd.live.agent.governance.invoke.filter.Forwardable;
+import com.jd.live.agent.governance.invoke.filter.LiveFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
@@ -163,7 +163,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private OutboundFilter[] outboundFilters;
 
     @Getter
-    private RouteFilter[] forwardFilters;
+    private RouteFilter[] liveFilters;
 
     @Getter
     @Inject
@@ -296,8 +296,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Override
     public void initialize() {
-        List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof Forwardable ? filter : null);
-        forwardFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
+        List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
+        liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
 
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);

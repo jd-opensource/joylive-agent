@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v2_1.filter;
 
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.GatewayForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
@@ -106,7 +106,8 @@ public class LiveGatewayFilter implements GatewayFilter {
             return chain.filter(exchange);
         }
         boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        return loadbalancer ? request(exchange, chain) : forward(exchange, chain);
+        // TODO route has no metadata, so liveEnabled is always false
+        return loadbalancer ? request(exchange, chain) : forward(exchange, chain, false);
     }
 
     /**
@@ -139,13 +140,14 @@ public class LiveGatewayFilter implements GatewayFilter {
     /**
      * Forwards the request by creating a {@link GatewayForwardRequest} and routing it through the context.
      *
-     * @param exchange the {@link ServerWebExchange} representing the current HTTP request and response
-     * @param chain    the {@link GatewayFilterChain} to proceed with the filter chain
+     * @param exchange    the {@link ServerWebExchange} representing the current HTTP request and response
+     * @param chain       the {@link GatewayFilterChain} to proceed with the filter chain
+     * @param liveEnabled a boolean flag indicating whether live routing features are enabled
      * @return a {@link Mono} that completes when the request is forwarded, or emits an error if an exception occurs
      */
-    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain, boolean liveEnabled) {
         GatewayForwardRequest request = new GatewayForwardRequest(exchange, gatewayConfig);
-        HttpForwardContext ctx = new HttpForwardContext(context);
+        GatewayForwardContext ctx = new GatewayForwardContext(context, liveEnabled);
         try {
             ctx.route(new GatewayHttpForwardInvocation<>(request, ctx));
             return chain.filter(exchange);

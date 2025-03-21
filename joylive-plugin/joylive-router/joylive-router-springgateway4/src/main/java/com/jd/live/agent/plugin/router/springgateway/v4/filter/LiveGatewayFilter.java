@@ -15,9 +15,10 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v4.filter;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.GatewayForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
@@ -103,8 +104,9 @@ public class LiveGatewayFilter implements GatewayFilter {
         if (route == null) {
             return chain.filter(exchange);
         }
+        String liveEnabled = (String) route.getMetadata().get(Constants.GATEWAY_ROUTE_LIVE_ENABLED);
         boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        return loadbalancer ? request(exchange, chain) : forward(exchange, chain);
+        return loadbalancer ? request(exchange, chain) : forward(exchange, chain, !"false".equalsIgnoreCase(liveEnabled));
     }
 
     /**
@@ -137,13 +139,14 @@ public class LiveGatewayFilter implements GatewayFilter {
     /**
      * Forwards the request by creating a {@link GatewayForwardRequest} and routing it through the context.
      *
-     * @param exchange the {@link ServerWebExchange} representing the current HTTP request and response
-     * @param chain    the {@link GatewayFilterChain} to proceed with the filter chain
+     * @param exchange    the {@link ServerWebExchange} representing the current HTTP request and response
+     * @param chain       the {@link GatewayFilterChain} to proceed with the filter chain
+     * @param liveEnabled a boolean flag indicating whether live routing features are enabled
      * @return a {@link Mono} that completes when the request is forwarded, or emits an error if an exception occurs
      */
-    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain, boolean liveEnabled) {
         GatewayForwardRequest request = new GatewayForwardRequest(exchange, gatewayConfig);
-        HttpForwardContext ctx = new HttpForwardContext(context);
+        GatewayForwardContext ctx = new GatewayForwardContext(context, liveEnabled);
         try {
             ctx.route(new GatewayHttpForwardInvocation<>(request, ctx));
             return chain.filter(exchange);

@@ -25,7 +25,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
-import com.jd.live.agent.governance.invoke.filter.Forwardable;
+import com.jd.live.agent.governance.invoke.filter.LiveFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
@@ -55,7 +55,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 @Injectable
 @Extension(value = "UnitFilter", order = RouteFilter.ORDER_LIVE_UNIT)
 @ConditionalOnLiveEnabled
-public class UnitFilter implements RouteFilter, Forwardable {
+public class UnitFilter implements RouteFilter, LiveFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {

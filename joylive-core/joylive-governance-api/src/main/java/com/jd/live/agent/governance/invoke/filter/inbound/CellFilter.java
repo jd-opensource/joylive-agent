@@ -54,6 +54,11 @@ public class CellFilter implements InboundFilter {
             if (cellAction.getType() == CellActionType.FAILOVER) {
                 Carrier carrier = invocation.getRequest().getOrCreateCarrier();
                 carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL, cellAction);
+                Application application = invocation.getContext().getApplication();
+                if (application.getService().isGateway()) {
+                    // gateway inbound request
+                    invocation.setCellAction(new CellAction(CellActionType.FORWARD));
+                }
             }
         }
         return chain.filter(invocation);
@@ -61,9 +66,8 @@ public class CellFilter implements InboundFilter {
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
         LiveMetadata metadata = invocation.getLiveMetadata();
-        Application application = invocation.getContext().getApplication();
-        if (metadata.isLocalLiveless() || application.getService().isGateway()) {
-            // liveless or gateway inbound request
+        if (metadata.isLocalLiveless()) {
+            // liveless
             return new CellAction(CellActionType.FORWARD);
         }
         UnitRule rule = metadata.getRule();
