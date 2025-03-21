@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v2_1.request;
+package com.jd.live.agent.plugin.router.springgateway.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.request.AbstractCloudClusterRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2_1.cluster.context.GatewayClusterContext;
-import com.jd.live.agent.plugin.router.springgateway.v2_1.config.GatewayConfig;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.plugin.router.springgateway.v4.config.GatewayConfig;
 import lombok.Getter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -33,40 +31,27 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
- * GatewayOutboundRequest
+ * GatewayForwardRequest
  *
- * @since 1.0.0
+ * @since 1.7.0
  */
 @Getter
-public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<ServerHttpRequest, GatewayClusterContext> {
+public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttpRequest> {
 
     private final ServerWebExchange exchange;
 
-    private final GatewayFilterChain chain;
-
     private final GatewayConfig gatewayConfig;
-
-    private final RetryPolicy retryPolicy;
-
-    private final int index;
 
     private final HttpHeaders writeableHeaders;
 
-    public GatewayCloudClusterRequest(ServerWebExchange exchange,
-                                      GatewayClusterContext context,
-                                      GatewayFilterChain chain,
-                                      GatewayConfig gatewayConfig,
-                                      RetryPolicy retryPolicy,
-                                      int index) {
-        super(exchange.getRequest(), getURI(exchange), context);
+    public GatewayForwardRequest(ServerWebExchange exchange, GatewayConfig gatewayConfig) {
+        super(exchange.getRequest());
+        this.uri = getURI(exchange);
         this.exchange = exchange;
-        this.chain = chain;
-        this.retryPolicy = retryPolicy;
         this.gatewayConfig = gatewayConfig;
-        this.index = index;
-        this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
@@ -104,8 +89,22 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     }
 
     @Override
+    public String getForwardHostExpression() {
+        Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
+        Map<String, Object> metadata = route == null ? null : route.getMetadata();
+        String result = metadata == null ? null : (String) metadata.get(GatewayConfig.KEY_HOST_EXPRESSION);
+        result = result == null && gatewayConfig != null ? gatewayConfig.getHostExpression() : result;
+        return result;
+    }
+
+    @Override
+    public void forward(String host) {
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, HttpUtils.newURI(uri, host));
+    }
+
+    @Override
     public boolean isInstanceSensitive() {
-        return context != null && context.getRegistryFactory() != null;
+        return false;
     }
 
     @Override
@@ -116,10 +115,6 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return writeableHeaders;
-    }
-
-    public RetryPolicy getDefaultRetryPolicy() {
-        return retryPolicy;
     }
 
     private static URI getURI(ServerWebExchange exchange) {

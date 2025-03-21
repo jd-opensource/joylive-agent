@@ -42,7 +42,7 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
-import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -58,6 +58,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
@@ -252,6 +254,14 @@ public interface InvocationContext {
     RouteFilter[] getRouteFilters();
 
     /**
+     * Retrieves an array of forward filters.
+     *
+     * @return An array of {@link RouteFilter} instances that are used for routing decisions. The list may be empty
+     * if no route filters are configured.
+     */
+    RouteFilter[] getForwardFilters();
+
+    /**
      * Retrieves an array of outbound filters.
      *
      * @return An array of {@link OutboundFilter} instances that are used for outbound request modification. The list may be empty
@@ -413,13 +423,7 @@ public interface InvocationContext {
      */
     default <R extends OutboundRequest,
             E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
-        List<E> endpoints = instances == null ? new ArrayList<>() : new ArrayList<>(instances.size());
-        if (instances != null) {
-            for (P instance : instances) {
-                endpoints.add(converter.apply(instance));
-            }
-        }
-        return route(invocation, endpoints, (RouteFilter[]) null);
+        return route(invocation, toList(instances, converter), (RouteFilter[]) null);
     }
 
     /**
@@ -653,13 +657,19 @@ public interface InvocationContext {
         }
 
         @Override
+        public RouteFilter[] getForwardFilters() {
+            return delegate.getForwardFilters();
+        }
+
+        @Override
         public OutboundFilter[] getOutboundFilters() {
             return delegate.getOutboundFilters();
         }
 
         @Override
         public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, ClusterPolicy defaultPolicy) {
-            return delegate.getClusterInvoker(invocation, defaultPolicy);
+            // call this method
+            return getClusterInvoker(invocation, () -> defaultPolicy);
         }
 
         @Override
@@ -669,7 +679,8 @@ public interface InvocationContext {
 
         @Override
         public <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation) {
-            return delegate.inbound(invocation);
+            // call this method
+            return inbound(invocation, null);
         }
 
         @Override
@@ -702,19 +713,21 @@ public interface InvocationContext {
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
-            return delegate.route(invocation, instances, (RouteFilter[]) null);
+            // call this method.
+            return route(invocation, instances, (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
-            return InvocationContext.super.route(invocation, instances, converter);
+            return route(invocation, toList(instances, converter), (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-            return delegate.route(invocation, null, (RouteFilter[]) null);
+            // call this method.
+            return route(invocation, null, (RouteFilter[]) null);
         }
 
         @Override
@@ -762,35 +775,44 @@ public interface InvocationContext {
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
-            E result = super.route(invocation, instances, filters);
-            if (invocation.getRequest() instanceof HttpOutboundRequest) {
-                HttpOutboundRequest request = (HttpOutboundRequest) invocation.getRequest();
-                RouteTarget target = invocation.getRouteTarget();
-                UnitRoute unitRoute = target.getUnitRoute();
-                CellRoute cellRoute = target.getCellRoute();
-                Unit unit = unitRoute == null ? null : unitRoute.getUnit();
-                Cell cell = cellRoute == null ? null : cellRoute.getCell();
-                if (unit != null && cell != null) {
-                    String host = request.getHost();
-                    String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
-                    if (unitHost == null) {
-                        unitHost = request.getForwardHostExpression();
-                    }
-                    if (unitHost != null) {
-                        Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
-                        if (template.getVariables() > 0) {
-                            Map<String, Object> context = new HashMap<>();
-                            context.put(KEY_UNIT, unit.getHostPrefix());
-                            context.put(KEY_CELL, cell.getHostPrefix());
-                            context.put(KEY_HOST, host);
-                            unitHost = template.evaluate(context);
+            try {
+                HttpForwardRequest request = (HttpForwardRequest) invocation.getRequest();
+                // handle forward filter.
+                invocation.setInstances(new ArrayList<>(0));
+                RouteFilter[] forwards = getForwardFilters();
+                if (forwards != null && forwards.length > 0) {
+                    RouteFilterChain chain = new RouteFilterChain.Chain(forwards);
+                    chain.filter(invocation);
+                    // change host
+                    RouteTarget target = invocation.getRouteTarget();
+                    UnitRoute unitRoute = target.getUnitRoute();
+                    CellRoute cellRoute = target.getCellRoute();
+                    Unit unit = unitRoute == null ? null : unitRoute.getUnit();
+                    Cell cell = cellRoute == null ? null : cellRoute.getCell();
+                    if (unit != null && cell != null) {
+                        String host = request.getHost();
+                        String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
+                        if (unitHost == null) {
+                            unitHost = request.getForwardHostExpression();
                         }
-                        request.forward(unitHost);
+                        if (unitHost != null) {
+                            Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
+                            if (template.getVariables() > 0) {
+                                Map<String, Object> context = new HashMap<>();
+                                context.put(KEY_UNIT, unit.getHostPrefix());
+                                context.put(KEY_CELL, cell.getHostPrefix());
+                                context.put(KEY_HOST, host);
+                                unitHost = template.evaluate(context);
+                            }
+                            request.forward(unitHost);
+                        }
                     }
                 }
+                return null;
+            } catch (RejectException e) {
+                invocation.onReject(e);
+                throw e;
             }
-
-            return result;
         }
 
         /**

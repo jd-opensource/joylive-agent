@@ -326,12 +326,6 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
     /**
      * Represents an abstract base class for outbound HTTP requests.
-     * <p>
-     * This class is tailored for handling requests sent from a service to another service or component. It inherits from
-     * {@link AbstractHttpRequest}, leveraging common HTTP functionalities such as URI parsing, header and query parameter management,
-     * and cookie handling. By implementing the {@link HttpOutboundRequest} interface, it specifies its role in representing
-     * outbound HTTP communication.
-     * </p>
      *
      * @param <T> The type of the original request object this class wraps.
      */
@@ -353,5 +347,19 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
         public Set<ErrorPolicy> removeErrorPolicies() {
             return removeAttribute(KEY_ERROR_POLICY);
         }
+    }
+
+    /**
+     * Represents an abstract base class for forward HTTP requests.
+     *
+     * @param <T> The type of the original request object this class wraps.
+     */
+    public abstract static class AbstractHttpForwardRequest<T> extends AbstractHttpOutboundRequest<T>
+            implements HttpForwardRequest {
+
+        public AbstractHttpForwardRequest(T request) {
+            super(request);
+        }
+
     }
 }

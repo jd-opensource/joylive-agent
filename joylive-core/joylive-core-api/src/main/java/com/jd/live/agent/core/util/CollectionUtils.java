@@ -184,12 +184,13 @@ public class CollectionUtils {
 
     /**
      * Converts an iterable to a List by applying a transformation function to each element.
+     * The resulting list contains the transformed elements, excluding any null values produced by the function.
      *
-     * @param <T>      the type of elements in the iterable
+     * @param <T>      the type of elements in the input iterable
      * @param <V>      the type of elements in the resulting list
-     * @param iterable the iterable to convert
-     * @param function the function to apply to each element of the iterable
-     * @return a List containing the transformed elements from the iterable, or null if the iterable or function is null
+     * @param iterable the iterable to convert; may be null, in which case the method returns null
+     * @param function the function to apply to each element of the iterable; must not be null
+     * @return a List containing the transformed elements from the iterable, or null if the input iterable is null
      */
     public static <T, V> List<V> toList(Iterable<T> iterable, Function<T, V> function) {
         if (function == null) {
@@ -208,13 +209,15 @@ public class CollectionUtils {
     }
 
     /**
-     * Converts an iterable to a List by applying a transformation function to each element.
+     * Converts an array to a List by applying a transformation function to each element.
+     * The resulting list contains the transformed elements, excluding any null values produced by the function.
      *
-     * @param <T>      the type of elements in the iterable
+     * @param <T>      the type of elements in the input array
      * @param <V>      the type of elements in the resulting list
-     * @param arrays   the array to convert
-     * @param function the function to apply to each element of the iterable
-     * @return a List containing the transformed elements from the iterable, or null if the iterable or function is null
+     * @param arrays   the array to convert; may be null, in which case the method returns null
+     * @param function the function to apply to each element of the array; must not be null
+     * @return a List containing the transformed elements from the array, or null if the input array is null
+     * @throws IllegalArgumentException if the provided function is null
      */
     public static <T, V> List<V> toList(T[] arrays, Function<T, V> function) {
         if (function == null) {
@@ -224,7 +227,10 @@ public class CollectionUtils {
         }
         List<V> result = new ArrayList<>(arrays.length);
         for (T t : arrays) {
-            result.add(function.apply(t));
+            V apply = function.apply(t);
+            if (apply != null) {
+                result.add(apply);
+            }
         }
         return result;
     }
@@ -606,26 +612,6 @@ public class CollectionUtils {
         if (writeIndex < size) {
             objects.subList(writeIndex, size).clear();
         }
-    }
-
-    /**
-     * Converts a list of source objects into a list of target objects using the provided converter function.
-     *
-     * @param <S>       The type of source objects.
-     * @param <T>       The type of target objects.
-     * @param sources   The list of source objects to convert.
-     * @param converter The function to convert each source object into a target object.
-     * @return A list of target objects.
-     */
-    public static <S, T> List<T> convert(List<S> sources, Function<S, T> converter) {
-        if (sources == null || converter == null) {
-            return new ArrayList<>();
-        }
-        List<T> result = new ArrayList<>(sources.size());
-        for (S instance : sources) {
-            result.add(converter.apply(instance));
-        }
-        return result;
     }
 
     /**

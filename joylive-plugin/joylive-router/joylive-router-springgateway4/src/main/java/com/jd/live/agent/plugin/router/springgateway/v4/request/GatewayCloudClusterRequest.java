@@ -31,7 +31,6 @@ import org.springframework.cloud.client.loadbalancer.CompletionContext.Status;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
-import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
@@ -110,23 +109,6 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
-    }
-
-    @Override
-    public String getForwardHostExpression() {
-        String result = null;
-        if (context == null || context.getLoadBalancerFactory() == null) {
-            Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
-            Map<String, Object> metadata = route == null ? null : route.getMetadata();
-            result = metadata == null ? null : (String) metadata.get(GatewayConfig.KEY_HOST_EXPRESSION);
-            result = result == null && gatewayConfig != null ? gatewayConfig.getHostExpression() : result;
-        }
-        return result;
-    }
-
-    @Override
-    public void forward(String host) {
-        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, HttpUtils.newURI(uri, host));
     }
 
     @Override
