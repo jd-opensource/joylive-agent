@@ -38,7 +38,6 @@ import java.util.regex.Pattern;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
-import static com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveRouteFilter.ROUTE_VERSION;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 /**
@@ -111,17 +110,9 @@ public class LiveChainBuilder {
      */
     public GatewayFilterChain chain(ServerWebExchange exchange) {
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
-        long version = ROUTE_VERSION.get();
-        // get filter from cache
-        LiveRouteFilter routeFilter = routeFilters.computeIfAbsent(route.getId(), r -> createRouteFilter(route, version));
-        if (routeFilter.getVersion() != version) {
-            // route is changed. so remove from cache
-            routeFilters.remove(route.getId());
-        }
-
-        boolean loadbalancer = pareURI(exchange, route, routeFilter.getPathFilters());
-
-        return new DefaultGatewayFilterChain(routeFilter.getFilters(), loadbalancer);
+        LiveRouteFilter filter = LiveRoutes.get(route.getId()).getOrCreate(this::createRouteFilter);
+        boolean loadbalancer = pareURI(exchange, route, filter.getPathFilters());
+        return new DefaultGatewayFilterChain(filter.getFilters(), loadbalancer);
     }
 
     /**

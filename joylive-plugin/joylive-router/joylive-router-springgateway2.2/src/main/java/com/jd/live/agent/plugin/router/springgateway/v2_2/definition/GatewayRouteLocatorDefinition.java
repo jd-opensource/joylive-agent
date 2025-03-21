@@ -23,25 +23,33 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.condition.ConditionalOnSpringGateway2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayRouteConstructorInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayRouteLocatorInterceptor;
 
 /**
  * GatewayRouteDefinition
  *
- * @since 1.6.0
+ * @since 1.7.0
  */
-@Extension(value = "GatewayRouteDefinition_v2.2")
+@Extension(value = "GatewayRouteLocatorDefinition_v2.2")
 @ConditionalOnSpringGateway2FlowControlEnabled
-@ConditionalOnClass(GatewayRouteDefinition.TYPE_ROUTE)
+@ConditionalOnClass(GatewayRouteLocatorDefinition.TYPE)
 @Injectable
-public class GatewayRouteDefinition extends PluginDefinitionAdapter {
+public class GatewayRouteLocatorDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_ROUTE = "org.springframework.cloud.gateway.route.Route";
+    protected static final String TYPE = "org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator";
 
-    public GatewayRouteDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_ROUTE);
+    private static final String METHOD = "combinePredicates";
+
+    private static final String[] ARGUMENTS = {
+            "org.springframework.cloud.gateway.route.RouteDefinition",
+    };
+
+    public GatewayRouteLocatorDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), GatewayRouteConstructorInterceptor::new)
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        GatewayRouteLocatorInterceptor::new)
         };
     }
 }

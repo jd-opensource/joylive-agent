@@ -23,7 +23,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.condition.ConditionalOnSpringGateway2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayRouteConstructorInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayRouteRefreshInterceptor;
 
 /**
  * GatewayRouteDefinition
@@ -32,16 +32,16 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayRou
  */
 @Extension(value = "GatewayRouteDefinition_v2.2")
 @ConditionalOnSpringGateway2FlowControlEnabled
-@ConditionalOnClass(GatewayRouteDefinition.TYPE_ROUTE)
+@ConditionalOnClass(GatewayRouteRefreshDefinition.TYPE_REFRESH_ROUTES_EVENT)
 @Injectable
-public class GatewayRouteDefinition extends PluginDefinitionAdapter {
+public class GatewayRouteRefreshDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_ROUTE = "org.springframework.cloud.gateway.route.Route";
+    protected static final String TYPE_REFRESH_ROUTES_EVENT = "org.springframework.cloud.gateway.event.RefreshRoutesEvent";
 
-    public GatewayRouteDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_ROUTE);
+    public GatewayRouteRefreshDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_REFRESH_ROUTES_EVENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), GatewayRouteConstructorInterceptor::new)
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), GatewayRouteRefreshInterceptor::new)
         };
     }
 }
