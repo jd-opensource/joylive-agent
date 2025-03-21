@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v3.filter;
 
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
@@ -140,7 +141,7 @@ public class LiveGatewayFilter implements GatewayFilter {
      */
     private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
         GatewayForwardRequest request = new GatewayForwardRequest(exchange, gatewayConfig);
-        OutboundInvocation<GatewayForwardRequest> invocation = new GatewayHttpForwardInvocation<>(request, context);
+        OutboundInvocation<GatewayForwardRequest> invocation = new GatewayHttpForwardInvocation<>(request, new HttpForwardContext(context));
         try {
             context.route(invocation);
             return chain.filter(exchange);
