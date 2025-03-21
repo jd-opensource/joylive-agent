@@ -143,9 +143,9 @@ public class LiveGatewayFilter implements GatewayFilter {
      */
     private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
         GatewayForwardRequest request = new GatewayForwardRequest(exchange, gatewayConfig);
-        OutboundInvocation<GatewayForwardRequest> invocation = new GatewayHttpForwardInvocation<>(request, new HttpForwardContext(context));
+        HttpForwardContext ctx = new HttpForwardContext(context);
         try {
-            context.route(invocation);
+            ctx.route(new GatewayHttpForwardInvocation<>(request, ctx));
             return chain.filter(exchange);
         } catch (Exception e) {
             return Mono.error(thrower.createException(e, request));

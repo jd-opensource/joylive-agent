@@ -59,6 +59,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
  * It provides methods to retrieve various configurations and functional interfaces that are relevant to the invocation
@@ -421,13 +423,7 @@ public interface InvocationContext {
      */
     default <R extends OutboundRequest,
             E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
-        List<E> endpoints = instances == null ? new ArrayList<>() : new ArrayList<>(instances.size());
-        if (instances != null) {
-            for (P instance : instances) {
-                endpoints.add(converter.apply(instance));
-            }
-        }
-        return route(invocation, endpoints, (RouteFilter[]) null);
+        return route(invocation, toList(instances, converter), (RouteFilter[]) null);
     }
 
     /**
@@ -672,7 +668,8 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, ClusterPolicy defaultPolicy) {
-            return delegate.getClusterInvoker(invocation, defaultPolicy);
+            // call this method
+            return getClusterInvoker(invocation, () -> defaultPolicy);
         }
 
         @Override
@@ -682,7 +679,8 @@ public interface InvocationContext {
 
         @Override
         public <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation) {
-            return delegate.inbound(invocation);
+            // call this method
+            return inbound(invocation, null);
         }
 
         @Override
@@ -715,19 +713,21 @@ public interface InvocationContext {
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
-            return delegate.route(invocation, instances, (RouteFilter[]) null);
+            // call this method.
+            return route(invocation, instances, (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
-            return InvocationContext.super.route(invocation, instances, converter);
+            return route(invocation, toList(instances, converter), (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-            return delegate.route(invocation, null, (RouteFilter[]) null);
+            // call this method.
+            return route(invocation, null, (RouteFilter[]) null);
         }
 
         @Override
