@@ -115,7 +115,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public String getForwardHostExpression() {
         String result = null;
-        if (context.getLoadBalancerFactory() != null) {
+        if (context == null || context.getLoadBalancerFactory() == null) {
             Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
             Map<String, Object> metadata = route == null ? null : route.getMetadata();
             result = metadata == null ? null : (String) metadata.get(GatewayConfig.KEY_HOST_EXPRESSION);
@@ -131,7 +131,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     @Override
     public boolean isInstanceSensitive() {
-        return context.getLoadBalancerFactory() != null;
+        return context != null && context.getLoadBalancerFactory() != null;
     }
 
     @Override

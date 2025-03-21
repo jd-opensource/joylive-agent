@@ -87,7 +87,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
         this.uri = uri;
         this.context = context;
         // depend on url
-        this.properties = context.getLoadBalancerProperties(getService());
+        this.properties = context == null ? null : context.getLoadBalancerProperties(getService());
     }
 
     @Override
@@ -208,7 +208,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     @SuppressWarnings("rawtypes")
     protected Set<LoadBalancerLifecycle> getLifecycles() {
         if (lifecycles == null) {
-            lifecycles = new CacheObject<>(context.getLifecycleProcessors(getService()));
+            lifecycles = new CacheObject<>(context == null ? null : context.getLifecycleProcessors(getService()));
         }
         return lifecycles.get();
     }
@@ -241,7 +241,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
      */
     protected ServiceInstanceListSupplier getInstanceSupplier() {
         if (instanceSupplier == null) {
-            instanceSupplier = new CacheObject<>(context.getServiceInstanceListSupplier(getService()));
+            instanceSupplier = new CacheObject<>(context == null ? null : context.getServiceInstanceListSupplier(getService()));
         }
         return instanceSupplier.get();
     }

@@ -106,7 +106,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public String getForwardHostExpression() {
         String result = null;
-        if (context.getRegistryFactory() != null) {
+        if (context == null || context.getRegistryFactory() == null) {
             result = gatewayConfig != null ? gatewayConfig.getHostExpression() : result;
         }
         return result;
@@ -119,7 +119,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     @Override
     public boolean isInstanceSensitive() {
-        return context.getRegistryFactory() != null;
+        return context != null && context.getRegistryFactory() != null;
     }
 
     @Override
