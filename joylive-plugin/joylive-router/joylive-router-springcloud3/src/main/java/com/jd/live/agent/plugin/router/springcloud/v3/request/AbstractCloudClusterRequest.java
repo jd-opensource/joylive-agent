@@ -85,8 +85,8 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
         super(request);
         this.uri = uri;
         this.context = context;
-        // depend on url, context maybe null in spring cloud gateway
-        this.properties = context == null ? null : context.getLoadBalancerProperties(getService());
+        // depend on url
+        this.properties = context.getLoadBalancerProperties(getService());
     }
 
     @Override
@@ -166,7 +166,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
             org.springframework.http.HttpStatus httpStatus = response.getHttpStatus();
             RequestData requestData = getRequestData();
             MultiValueMap<String, ResponseCookie> cookies = null;
-            boolean useRawStatusCodeInResponseData = context == null || context.isUseRawStatusCodeInResponseData(getProperties());
+            boolean useRawStatusCodeInResponseData = context.isUseRawStatusCodeInResponseData(getProperties());
             res = useRawStatusCodeInResponseData || httpStatus == null
                     ? new ResponseData(httpHeaders, cookies, requestData, statusCode)
                     : new ResponseData(httpStatus, httpHeaders, cookies, requestData);
@@ -216,7 +216,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     @SuppressWarnings("rawtypes")
     protected Set<LoadBalancerLifecycle> getLifecycles() {
         if (lifecycles == null) {
-            lifecycles = new CacheObject<>(context == null ? null : context.getLifecycleProcessors(getService()));
+            lifecycles = new CacheObject<>(context.getLifecycleProcessors(getService()));
         }
         return lifecycles.get();
     }
@@ -249,7 +249,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
      */
     protected ServiceInstanceListSupplier getInstanceSupplier() {
         if (instanceSupplier == null) {
-            instanceSupplier = new CacheObject<>(context == null ? null : context.getServiceInstanceListSupplier(getService()));
+            instanceSupplier = new CacheObject<>(context.getServiceInstanceListSupplier(getService()));
         }
         return instanceSupplier.get();
     }

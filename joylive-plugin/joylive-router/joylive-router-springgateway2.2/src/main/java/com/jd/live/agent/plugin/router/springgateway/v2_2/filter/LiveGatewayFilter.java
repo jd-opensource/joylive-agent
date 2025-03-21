@@ -17,20 +17,22 @@ package com.jd.live.agent.plugin.router.springgateway.v2_2.filter;
 
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.request.GatewayCloudClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.request.GatewayForwardRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.response.GatewayClusterResponse;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebExchange;
@@ -75,6 +77,9 @@ public class LiveGatewayFilter implements GatewayFilter {
      */
     private final int index;
 
+    private final SpringOutboundThrower<NestedRuntimeException, GatewayForwardRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
+
+
     /**
      * Constructs a new LiveFilter instance with the specified parameters.
      *
@@ -102,7 +107,20 @@ public class LiveGatewayFilter implements GatewayFilter {
         if (route == null) {
             return chain.filter(exchange);
         }
-        OutboundInvocation<GatewayCloudClusterRequest> invocation = createInvocation(exchange, chain);
+        boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
+        return loadbalancer ? request(exchange, chain) : forward(exchange, chain);
+    }
+
+    /**
+     * Handles the request by creating a {@link GatewayCloudClusterRequest}
+     *
+     * @param exchange the {@link ServerWebExchange} representing the current HTTP request and response
+     * @param chain    the {@link GatewayFilterChain} to proceed with the filter chain
+     * @return a {@link Mono} that completes when the request processing is finished, or exceptionally if an error occurs
+     */
+    private Mono<Void> request(ServerWebExchange exchange, GatewayFilterChain chain) {
+        GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, cluster.getContext(), chain, gatewayConfig, retryPolicy, index);
+        OutboundInvocation<GatewayCloudClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, context);
         CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
         CompletableFuture<Void> result = new CompletableFuture<>();
         response.whenComplete((v, t) -> {
@@ -121,18 +139,21 @@ public class LiveGatewayFilter implements GatewayFilter {
     }
 
     /**
-     * Creates a new OutboundInvocation instance for the specified ServerWebExchange and GatewayFilterChain.
+     * Forwards the request by creating a {@link GatewayForwardRequest} and routing it through the context.
      *
-     * @param exchange the ServerWebExchange representing the incoming request
-     * @param chain    the GatewayFilterChain representing the remaining filters in the chain
-     * @return a new OutboundInvocation instance
+     * @param exchange the {@link ServerWebExchange} representing the current HTTP request and response
+     * @param chain    the {@link GatewayFilterChain} to proceed with the filter chain
+     * @return a {@link Mono} that completes when the request is forwarded, or emits an error if an exception occurs
      */
-    private OutboundInvocation<GatewayCloudClusterRequest> createInvocation(ServerWebExchange exchange, GatewayFilterChain chain) {
-        boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        GatewayClusterContext ctx = loadbalancer ? cluster.getContext() : null;
-        GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, ctx, chain, gatewayConfig, retryPolicy, index);
-        InvocationContext ic = loadbalancer ? context : new HttpForwardContext(context);
-        return new GatewayHttpOutboundInvocation<>(request, ic);
+    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
+        GatewayForwardRequest request = new GatewayForwardRequest(exchange, gatewayConfig);
+        OutboundInvocation<GatewayForwardRequest> invocation = new OutboundInvocation.GatewayHttpForwardInvocation<>(request, context);
+        try {
+            context.route(invocation);
+            return chain.filter(exchange);
+        } catch (Exception e) {
+            return Mono.error(thrower.createException(e, request));
+        }
     }
 
     private static RetryPolicy getRetryPolicy(RetryConfig retryConfig) {

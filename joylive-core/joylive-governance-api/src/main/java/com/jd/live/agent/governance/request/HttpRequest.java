@@ -162,19 +162,26 @@ public interface HttpRequest extends ServiceRequest, Portable {
 
     /**
      * Defines an interface for outbound HTTP requests.
-     * <p>
-     * This interface represents HTTP requests that are sent by a service.
-     * </p>
      *
      * @since 1.0.0
      */
     interface HttpOutboundRequest extends HttpRequest, OutboundRequest {
 
+
+    }
+
+    /**
+     * Defines an interface for forward HTTP requests.
+     *
+     * @since 1.7.0
+     */
+    interface HttpForwardRequest extends HttpOutboundRequest {
+
         /**
          * Retrieves an expression that describes the target host for this request.
          *
          * @return A {@link String} representing the host expression for this request, or {@code null} if no expression
-         *         is defined.
+         * is defined.
          */
         default String getForwardHostExpression() {
             return null;
@@ -190,5 +197,6 @@ public interface HttpRequest extends ServiceRequest, Portable {
         }
 
     }
+
 }
 

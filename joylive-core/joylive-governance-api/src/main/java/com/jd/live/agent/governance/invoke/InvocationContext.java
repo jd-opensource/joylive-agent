@@ -42,7 +42,7 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
-import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -250,6 +250,14 @@ public interface InvocationContext {
      * if no route filters are configured.
      */
     RouteFilter[] getRouteFilters();
+
+    /**
+     * Retrieves an array of forward filters.
+     *
+     * @return An array of {@link RouteFilter} instances that are used for routing decisions. The list may be empty
+     * if no route filters are configured.
+     */
+    RouteFilter[] getForwardFilters();
 
     /**
      * Retrieves an array of outbound filters.
@@ -653,6 +661,11 @@ public interface InvocationContext {
         }
 
         @Override
+        public RouteFilter[] getForwardFilters() {
+            return delegate.getForwardFilters();
+        }
+
+        @Override
         public OutboundFilter[] getOutboundFilters() {
             return delegate.getOutboundFilters();
         }
@@ -762,35 +775,44 @@ public interface InvocationContext {
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
-            E result = super.route(invocation, instances, filters);
-            if (invocation.getRequest() instanceof HttpOutboundRequest) {
-                HttpOutboundRequest request = (HttpOutboundRequest) invocation.getRequest();
-                RouteTarget target = invocation.getRouteTarget();
-                UnitRoute unitRoute = target.getUnitRoute();
-                CellRoute cellRoute = target.getCellRoute();
-                Unit unit = unitRoute == null ? null : unitRoute.getUnit();
-                Cell cell = cellRoute == null ? null : cellRoute.getCell();
-                if (unit != null && cell != null) {
-                    String host = request.getHost();
-                    String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
-                    if (unitHost == null) {
-                        unitHost = request.getForwardHostExpression();
-                    }
-                    if (unitHost != null) {
-                        Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
-                        if (template.getVariables() > 0) {
-                            Map<String, Object> context = new HashMap<>();
-                            context.put(KEY_UNIT, unit.getHostPrefix());
-                            context.put(KEY_CELL, cell.getHostPrefix());
-                            context.put(KEY_HOST, host);
-                            unitHost = template.evaluate(context);
+            try {
+                HttpForwardRequest request = (HttpForwardRequest) invocation.getRequest();
+                // handle forward filter.
+                invocation.setInstances(new ArrayList<>(0));
+                RouteFilter[] forwards = getForwardFilters();
+                if (forwards != null && forwards.length > 0) {
+                    RouteFilterChain chain = new RouteFilterChain.Chain(forwards);
+                    chain.filter(invocation);
+                    // change host
+                    RouteTarget target = invocation.getRouteTarget();
+                    UnitRoute unitRoute = target.getUnitRoute();
+                    CellRoute cellRoute = target.getCellRoute();
+                    Unit unit = unitRoute == null ? null : unitRoute.getUnit();
+                    Cell cell = cellRoute == null ? null : cellRoute.getCell();
+                    if (unit != null && cell != null) {
+                        String host = request.getHost();
+                        String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
+                        if (unitHost == null) {
+                            unitHost = request.getForwardHostExpression();
                         }
-                        request.forward(unitHost);
+                        if (unitHost != null) {
+                            Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
+                            if (template.getVariables() > 0) {
+                                Map<String, Object> context = new HashMap<>();
+                                context.put(KEY_UNIT, unit.getHostPrefix());
+                                context.put(KEY_CELL, cell.getHostPrefix());
+                                context.put(KEY_HOST, host);
+                                unitHost = template.evaluate(context);
+                            }
+                            request.forward(unitHost);
+                        }
                     }
                 }
+                return null;
+            } catch (RejectException e) {
+                invocation.onReject(e);
+                throw e;
             }
-
-            return result;
         }
 
         /**

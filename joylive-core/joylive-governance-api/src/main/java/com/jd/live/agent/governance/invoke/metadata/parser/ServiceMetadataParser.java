@@ -339,4 +339,21 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             return metadata.copyWith(policy);
         }
     }
+
+    /**
+     * A parser implementation for extracting and building {@link ServiceMetadata} related to gateway forwarding request.
+     */
+    public static class GatewayForwardServiceMetadataParser implements ServiceParser {
+
+        private final ServiceConfig serviceConfig;
+
+        public GatewayForwardServiceMetadataParser(ServiceConfig serviceConfig) {
+            this.serviceConfig = serviceConfig;
+        }
+
+        @Override
+        public ServiceMetadata parse() {
+            return ServiceMetadata.builder().serviceConfig(serviceConfig).build();
+        }
+    }
 }

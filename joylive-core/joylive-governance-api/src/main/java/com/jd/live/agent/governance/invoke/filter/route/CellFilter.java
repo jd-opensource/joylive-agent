@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.UnitAction;
 import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
+import com.jd.live.agent.governance.invoke.filter.Forwardable;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
@@ -53,7 +54,7 @@ import java.util.function.Function;
  */
 @Extension(value = "CellFilter", order = RouteFilter.ORDER_LIVE_CELL)
 @ConditionalOnGovernanceEnabled
-public class CellFilter implements RouteFilter {
+public class CellFilter implements RouteFilter, Forwardable {
 
     @Override
     public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {

@@ -35,7 +35,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static com.jd.live.agent.core.util.CollectionUtils.convert;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
@@ -109,7 +109,7 @@ public class NacosRegistry implements RegistryService {
         namingService.subscribe(service, getGroup(group), event -> {
             if (event instanceof NamingEvent) {
                 NamingEvent e = (NamingEvent) event;
-                consumer.accept(new InstanceEvent(service, convert(e.getInstances(), NacosEndpoint::new)));
+                consumer.accept(new InstanceEvent(service, toList(e.getInstances(), NacosEndpoint::new)));
             }
         });
     }

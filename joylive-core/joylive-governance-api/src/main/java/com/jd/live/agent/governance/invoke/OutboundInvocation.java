@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.Ou
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.RpcOutboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LiveParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayForwardServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayOutboundServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.OutboundServiceMetadataParser;
 import com.jd.live.agent.governance.policy.live.Cell;
@@ -335,6 +336,43 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         protected ServiceParser createServiceParser() {
             return new GatewayOutboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
                     context.getApplication(), governancePolicy);
+        }
+
+        @Override
+        protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
+            return super.configure(builder).componentType(ComponentType.GATEWAY);
+        }
+
+    }
+
+    /**
+     * A specialized implementation of {@link HttpOutboundInvocation} for handling HTTP forwarding requests in a gateway context.
+     * This class extends {@link HttpOutboundInvocation} and provides additional functionality specific to gateway roles,
+     * service metadata parsing, and traffic event configuration.
+     *
+     * @param <T> the type of HTTP outbound request, which must extend {@link HttpOutboundRequest}
+     */
+    public static class GatewayHttpForwardInvocation<T extends HttpOutboundRequest> extends HttpOutboundInvocation<T> {
+
+        public GatewayHttpForwardInvocation(T request, InvocationContext context) {
+            super(request, context);
+        }
+
+        public GatewayHttpForwardInvocation(T request, Invocation<?> invocation) {
+            super(request, invocation);
+        }
+
+        @Override
+        public GatewayRole getGateway() {
+            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
+                return GatewayRole.FRONTEND;
+            }
+            return GatewayRole.BACKEND;
+        }
+
+        @Override
+        protected ServiceParser createServiceParser() {
+            return new GatewayForwardServiceMetadataParser(context.getGovernanceConfig().getServiceConfig());
         }
 
         @Override
