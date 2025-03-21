@@ -154,6 +154,21 @@ public class URI {
         }
     }
 
+    public String getAddress(boolean withSchema) {
+        if (!withSchema && schema == null) {
+            return getAddress();
+        }
+        StringBuilder sb = new StringBuilder(64);
+        if (schema != null) {
+            sb.append(schema).append("://");
+        }
+        sb.append(host);
+        if (port != null) {
+            sb.append(":").append(port);
+        }
+        return sb.toString();
+    }
+
     /**
      * Retrieves the value of a specific query parameter.
      *

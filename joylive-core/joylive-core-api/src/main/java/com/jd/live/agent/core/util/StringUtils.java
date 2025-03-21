@@ -537,6 +537,16 @@ public class StringUtils {
 
     /**
      * Joins an array of values into a single string with a specified separator.
+     *
+     * @param values The array of values to join.
+     * @return A string that consists of the input values separated by the specified separator.
+     */
+    public static String join(String[] values) {
+        return join(values, CHAR_COMMA);
+    }
+
+    /**
+     * Joins an array of values into a single string with a specified separator.
      * This method will skip any empty values.
      *
      * @param values   The array of values to join.
@@ -547,7 +557,47 @@ public class StringUtils {
         if (values == null || values.length == 0) {
             return EMPTY;
         }
-        return join(Arrays.asList(values), separator, (char) 0, (char) 0, false);
+        return join(Arrays.asList(values), null, separator, (char) 0, (char) 0, false);
+    }
+
+    /**
+     * Joins a collection of values into a single string with a comma separator.
+     *
+     * @param <T>    The type of the values to be joined.
+     * @param values The iterable collection of values to join. Can be null or empty.
+     * @return A string that consists of the input values separated by the specified separator.
+     * If all values are empty or the iterable is null or empty, an empty string is returned.
+     */
+    public static <T> String join(Iterable<T> values) {
+        return join(values, null, CHAR_COMMA, (char) 0, (char) 0, false);
+    }
+
+    /**
+     * Joins a collection of values into a single string with a specified separator.
+     *
+     * @param <T>       The type of the values to be joined.
+     * @param values    The iterable collection of values to join. Can be null or empty.
+     * @param separator The separator to use between each string.
+     * @return A string that consists of the input values separated by the specified separator.
+     * If all values are empty or the iterable is null or empty, an empty string is returned.
+     */
+    public static <T> String join(Iterable<T> values, char separator) {
+        return join(values, null, separator, (char) 0, (char) 0, false);
+    }
+
+    /**
+     * Joins a collection of values into a single string with a specified separator.
+     *
+     * @param <T>       The type of the values to be joined.
+     * @param values    The iterable collection of values to join. Can be null or empty.
+     * @param converter A function to convert each value to a string. If null, the
+     *                  default {@link Object#toString()} method is used.
+     * @param separator The separator to use between each string.
+     * @return A string that consists of the input values separated by the specified separator.
+     * If all values are empty or the iterable is null or empty, an empty string is returned.
+     */
+    public static <T> String join(Iterable<T> values, Function<T, String> converter, char separator) {
+        return join(values, converter, separator, (char) 0, (char) 0, false);
     }
 
     /**
@@ -565,77 +615,22 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the collection
      * is null or empty, an empty string is returned.
      */
-    public static String join(Iterable<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
-        if (values == null) {
-            return EMPTY;
-        } else if (values instanceof List) {
-            return joinList((List<?>) values, separator, prefix, suffix, singleSurrounding);
-        } else if (values instanceof Collection) {
-            return joinCollection((Collection<?>) values, separator, prefix, suffix, singleSurrounding);
-        }
-        return joinIterable(values, separator, prefix, suffix, singleSurrounding);
-    }
-
-    /**
-     * Joins a list of values into a single string with a specified separator.
-     * This method will skip any empty values.
-     *
-     * @param values            The list of values to join.
-     * @param separator         The separator to use between each string.
-     * @param prefix            The prefix to add at the beginning of the resulting string.
-     * @param suffix            The suffix to add at the end of the resulting string.
-     * @param singleSurrounding A flag to determine whether to include the prefix and suffix
-     *                          when there is only one non-empty value. If true, the prefix and
-     *                          suffix are included; if false, they are not.
-     * @return A string that consists of the input values separated by the specified separator,
-     * enclosed by the specified prefix and suffix. If all values are empty or the list
-     * is null or empty, an empty string is returned.
-     */
-    private static String joinList(List<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
-        if (values.isEmpty()) {
-            return EMPTY;
-        } else if (values.size() == 1) {
-            Object value = values.get(0);
-            String str = value.toString();
-            return singleSurrounding ? prefix + str + suffix : str;
-        }
-        return joinIterable(values, separator, prefix, suffix, singleSurrounding);
+    public static <T> String join(Iterable<T> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
+        return join(values, null, separator, prefix, suffix, singleSurrounding);
     }
 
     /**
      * Joins a collection of values into a single string with a specified separator.
-     * This method will skip any empty values.
      *
-     * @param values            The collection of values to join.
+     * @param <T>               The type of the values to be joined.
+     * @param values            The iterable of values to join. Can be null or empty.
+     * @param converter         A function to convert each value to a string. If null, the
+     *                          default {@link Object#toString()} method is used.
      * @param separator         The separator to use between each string.
      * @param prefix            The prefix to add at the beginning of the resulting string.
+     *                          Use {@code '\0'} to skip adding a prefix.
      * @param suffix            The suffix to add at the end of the resulting string.
-     * @param singleSurrounding A flag to determine whether to include the prefix and suffix
-     *                          when there is only one non-empty value. If true, the prefix and
-     *                          suffix are included; if false, they are not.
-     * @return A string that consists of the input values separated by the specified separator,
-     * enclosed by the specified prefix and suffix. If all values are empty or the collection
-     * is null or empty, an empty string is returned.
-     */
-    private static String joinCollection(Collection<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
-        if (values.isEmpty()) {
-            return EMPTY;
-        } else if (values.size() == 1) {
-            Object value = values.iterator().next();
-            String str = value.toString();
-            return singleSurrounding ? prefix + str + suffix : str;
-        }
-        return joinIterable(values, separator, prefix, suffix, singleSurrounding);
-    }
-
-    /**
-     * Joins an iterable of values into a single string with a specified separator.
-     * This method will skip any empty values.
-     *
-     * @param values            The iterable of values to join.
-     * @param separator         The separator to use between each string.
-     * @param prefix            The prefix to add at the beginning of the resulting string.
-     * @param suffix            The suffix to add at the end of the resulting string.
+     *                          Use {@code '\0'} to skip adding a suffix.
      * @param singleSurrounding A flag to determine whether to include the prefix and suffix
      *                          when there is only one non-empty value. If true, the prefix and
      *                          suffix are included; if false, they are not.
@@ -643,15 +638,105 @@ public class StringUtils {
      * enclosed by the specified prefix and suffix. If all values are empty or the iterable
      * is null or empty, an empty string is returned.
      */
-    private static String joinIterable(Iterable<?> values, char separator, char prefix, char suffix, boolean singleSurrounding) {
+    public static <T> String join(Iterable<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
+        if (values == null) {
+            return EMPTY;
+        } else if (values instanceof List) {
+            return joinList((List<T>) values, converter, separator, prefix, suffix, singleSurrounding);
+        } else if (values instanceof Collection) {
+            return joinCollection((Collection<T>) values, converter, separator, prefix, suffix, singleSurrounding);
+        }
+        return joinIterable(values, converter, separator, prefix, suffix, singleSurrounding);
+    }
+
+    /**
+     * Joins a list of values into a single string with a specified separator.
+     *
+     * @param <T>                The type of the values to be joined.
+     * @param values             The list of values to join. Can be null or empty.
+     * @param converter          A function to convert each value to a string. If null, the
+     *                           default {@link Object#toString()} method is used.
+     * @param separator          The separator to use between each string.
+     * @param prefix             The prefix to add at the beginning of the resulting string.
+     *                           Use {@code '\0'} to skip adding a prefix.
+     * @param suffix             The suffix to add at the end of the resulting string.
+     *                           Use {@code '\0'} to skip adding a suffix.
+     * @param singleSurrounding  A flag to determine whether to include the prefix and suffix
+     *                           when there is only one non-empty value. If true, the prefix and
+     *                           suffix are included; if false, they are not.
+     * @return A string that consists of the input values separated by the specified separator,
+     *         enclosed by the specified prefix and suffix. If all values are empty or the list
+     *         is null or empty, an empty string is returned.
+     */
+    private static <T> String joinList(List<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
+        if (values.isEmpty()) {
+            return EMPTY;
+        } else if (values.size() == 1) {
+            Object value = values.get(0);
+            String str = value.toString();
+            return singleSurrounding ? prefix + str + suffix : str;
+        }
+        return joinIterable(values, converter, separator, prefix, suffix, singleSurrounding);
+    }
+
+    /**
+     * Joins a collection of values into a single string with a specified separator.
+     *
+     * @param <T>                The type of the values to be joined.
+     * @param values             The collection of values to join. Can be null or empty.
+     * @param converter          A function to convert each value to a string. If null, the
+     *                           default {@link Object#toString()} method is used.
+     * @param separator          The separator to use between each string.
+     * @param prefix             The prefix to add at the beginning of the resulting string.
+     *                           Use {@code '\0'} to skip adding a prefix.
+     * @param suffix             The suffix to add at the end of the resulting string.
+     *                           Use {@code '\0'} to skip adding a suffix.
+     * @param singleSurrounding  A flag to determine whether to include the prefix and suffix
+     *                           when there is only one non-empty value. If true, the prefix and
+     *                           suffix are included; if false, they are not.
+     * @return A string that consists of the input values separated by the specified separator,
+     *         enclosed by the specified prefix and suffix. If all values are empty or the collection
+     *         is null or empty, an empty string is returned.
+     */
+    private static <T> String joinCollection(Collection<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
+        if (values.isEmpty()) {
+            return EMPTY;
+        } else if (values.size() == 1) {
+            Object value = values.iterator().next();
+            String str = value.toString();
+            return singleSurrounding ? prefix + str + suffix : str;
+        }
+        return joinIterable(values, converter, separator, prefix, suffix, singleSurrounding);
+    }
+
+    /**
+     * Joins an iterable of values into a single string with a specified separator.
+     *
+     * @param <T>               The type of the values to be joined.
+     * @param values            The iterable of values to join. Can be null or empty.
+     * @param converter         A function to convert each value to a string. If null, the
+     *                          default {@link Object#toString()} method is used.
+     * @param separator         The separator to use between each string.
+     * @param prefix            The prefix to add at the beginning of the resulting string.
+     *                          Use {@code '\0'} to skip adding a prefix.
+     * @param suffix            The suffix to add at the end of the resulting string.
+     *                          Use {@code '\0'} to skip adding a suffix.
+     * @param singleSurrounding A flag to determine whether to include the prefix and suffix
+     *                          when there is only one non-empty value. If true, the prefix and
+     *                          suffix are included; if false, they are not.
+     * @return A string that consists of the input values separated by the specified separator,
+     * enclosed by the specified prefix and suffix. If all values are empty or the iterable
+     * is null or empty, an empty string is returned.
+     */
+    private static <T> String joinIterable(Iterable<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
         int left = prefix == 0 ? 0 : 1;
         int right = suffix == 0 ? 0 : 1;
         int counter = 0;
         StringBuilder sb = new StringBuilder();
-        sb.append(left == 0 ? "" : prefix);
+        sb.append(left == 0 ? EMPTY : prefix);
         String str;
-        for (Object value : values) {
-            str = value.toString();
+        for (T value : values) {
+            str = converter == null ? value.toString() : converter.apply(value);
             if (!isEmpty(str)) {
                 if (counter++ > 0) {
                     sb.append(separator);
@@ -659,7 +744,7 @@ public class StringUtils {
                 sb.append(str);
             }
         }
-        sb.append(right == 0 ? "" : suffix);
+        sb.append(right == 0 ? EMPTY : suffix);
         switch (counter) {
             case 0:
                 return EMPTY;

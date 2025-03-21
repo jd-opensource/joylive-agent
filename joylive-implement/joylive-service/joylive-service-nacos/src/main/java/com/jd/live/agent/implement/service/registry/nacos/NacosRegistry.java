@@ -31,12 +31,14 @@ import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.convert;
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * An implementation of the {@link Registry} interface specifically for Nacos.
@@ -72,7 +74,9 @@ public class NacosRegistry implements RegistryService {
     public void start() throws Exception {
         if (started.compareAndSet(false, true)) {
             Properties properties = new Properties();
-            properties.put(PropertyKeyConst.SERVER_ADDR, config.getAddress());
+            List<URI> uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
+            String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
+            properties.put(PropertyKeyConst.SERVER_ADDR, address);
             if (!isEmpty(config.getNamespace())) {
                 properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
             }
