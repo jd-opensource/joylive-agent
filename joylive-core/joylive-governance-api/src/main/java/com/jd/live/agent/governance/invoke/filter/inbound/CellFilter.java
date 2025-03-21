@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.CellAction;
@@ -60,8 +61,9 @@ public class CellFilter implements InboundFilter {
 
     protected <T extends InboundRequest> CellAction cellAction(InboundInvocation<T> invocation) {
         LiveMetadata metadata = invocation.getLiveMetadata();
-        if (metadata.isLocalLiveless()) {
-            // liveless
+        Application application = invocation.getContext().getApplication();
+        if (metadata.isLocalLiveless() || application.getService().isGateway()) {
+            // liveless or gateway inbound request
             return new CellAction(CellActionType.FORWARD);
         }
         UnitRule rule = metadata.getRule();
