@@ -17,8 +17,8 @@ package com.jd.live.agent.governance.instance.counter.internal;
 
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.instance.counter.Counter;
-import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import com.jd.live.agent.governance.instance.counter.EndpointCounter;
+import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
@@ -65,7 +65,15 @@ public class InternalEndpointCounter implements EndpointCounter {
 
     private String getKey(URI uri) {
         String method = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
-        return method == null || method.isEmpty() ? uri.getPath() : uri.getPath() + "?method=" + method;
+        String path = uri.getPath();
+        if (path == null || path.isEmpty()) {
+            path = "";
+        } else {
+            while (path.charAt(path.length() - 1) == '/') {
+                path = path.substring(0, path.length() - 1);
+            }
+        }
+        return method == null || method.isEmpty() ? path : path + "?method=" + method;
     }
 
 }
