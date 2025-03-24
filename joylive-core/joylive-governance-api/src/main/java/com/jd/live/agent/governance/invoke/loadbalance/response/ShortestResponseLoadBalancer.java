@@ -47,8 +47,6 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
     @Override
     protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         ServiceRequest request = invocation.getRequest();
-        Random random = request.getRandom();
-        random(endpoints, policy, random);
         // Number of invokers
         int length = endpoints.size();
         // Estimated shortest response time of all invokers
@@ -105,6 +103,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
             return candidates[shortestIndexes[0]];
         }
         int index;
+        Random random = request.getRandom();
         if (!sameWeight && totalWeight > 0) {
             weight = random.nextInt(totalWeight);
             for (int i = 0; i < shortestCount; i++) {

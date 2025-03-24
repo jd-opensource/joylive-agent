@@ -32,7 +32,6 @@ import com.jd.live.agent.governance.request.ServiceRequest;
 import lombok.Getter;
 
 import java.util.List;
-import java.util.Random;
 
 /**
  * A load balancer implementation that selects endpoints based on their weighted response times.
@@ -51,8 +50,6 @@ public class WeightResponseLoadBalancer extends AbstractLoadBalancer {
     @Override
     protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         ServiceRequest request = invocation.getRequest();
-        Random random = request.getRandom();
-        random(endpoints, policy, random);
         URI uri = invocation.getServiceMetadata().getUri();
         CounterManager counterManager = invocation.getContext().getCounterManager();
         ServiceCounter serviceCounter = counterManager.getOrCreateCounter(request.getService(), request.getGroup());
@@ -84,7 +81,7 @@ public class WeightResponseLoadBalancer extends AbstractLoadBalancer {
                 candidates[i].reweight(avg);
             }
         }
-        return RandomWeight.elect(candidates, random);
+        return RandomWeight.elect(candidates, request.getRandom());
     }
 
     @Getter

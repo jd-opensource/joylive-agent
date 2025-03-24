@@ -25,7 +25,6 @@ import java.util.Random;
 
 /**
  * Abstract implementation of the {@link LoadBalancer} interface.
- * This class provides a base implementation for the elect method and requires subclasses to implement the {@link #doElect(List, Invocation)} method.
  *
  * @since 1.0.0
  */
@@ -38,6 +37,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer {
         } else if (endpoints.size() == 1) {
             return new Candidate<>(endpoints.get(0), 0);
         }
+        random(endpoints, policy, invocation.getRandom());
         return doElect(endpoints, policy, invocation);
     }
 

@@ -50,8 +50,6 @@ public class RandomWeightLoadBalancer extends AbstractLoadBalancer {
     @Override
     protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         ServiceRequest request = invocation.getRequest();
-        random(endpoints, policy, request.getRandom());
-
         // Use the RandomWeight utility to select an endpoint based on the weights.
         return RandomWeight.elect(endpoints, e -> e.reweight(request), invocation.getRandom());
     }
