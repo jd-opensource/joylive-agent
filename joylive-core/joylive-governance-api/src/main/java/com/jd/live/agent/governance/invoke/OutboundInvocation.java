@@ -258,6 +258,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      */
     protected TrafficEventBuilder configure(TrafficEventBuilder builder, Endpoint endpoint) {
         return configure(builder)
+                .targetLane(endpoint == null ? null : endpoint.getLane())
                 .targetUnit(endpoint == null ? null : endpoint.getUnit())
                 .targetCell(endpoint == null ? null : endpoint.getCell());
     }

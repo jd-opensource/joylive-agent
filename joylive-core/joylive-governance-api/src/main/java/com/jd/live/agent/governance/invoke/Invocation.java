@@ -319,7 +319,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         Cell localCell = liveMetadata == null ? null : liveMetadata.getLocalCell();
         LaneSpace laneSpace = laneMetadata == null ? null : laneMetadata.getTargetSpace();
         Lane localLane = laneMetadata == null ? null : laneMetadata.getLocalLane();
-        Lane targetLane = laneMetadata == null ? null : laneMetadata.getTargetLane();
         URI uri = policyId == null ? null : policyId.getUri();
         return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).
                 unitRuleId(unitRule == null ? null : unitRule.getId()).
@@ -327,7 +326,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
                 localCell(localCell == null ? null : localCell.getCode()).
                 laneSpaceId(laneSpace == null ? null : laneSpace.getId()).
                 localLane(localLane == null ? null : localLane.getCode()).
-                targetLane(targetLane == null ? null : targetLane.getCode()).
                 policyId(policyId == null ? null : policyId.getId()).
                 service(uri == null ? null : uri.getHost()).
                 group(uri == null ? null : uri.getParameter(PolicyId.KEY_SERVICE_GROUP)).
