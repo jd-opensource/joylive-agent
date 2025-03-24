@@ -19,8 +19,8 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.counter.Counter;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.counter.Counter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
@@ -43,9 +43,9 @@ public class CounterFilter implements OutboundFilter {
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
-        Counter counter = endpoint == null ? null : endpoint.getAttribute(Endpoint.ATTRIBUTE_COUNTER);
+        Counter counter = invocation.getRequest().getAttribute(Endpoint.ATTRIBUTE_COUNTER);
         if (counter != null) {
-            counter.getService().tryClean(invocation.getInstances());
+            counter.getParent().getParent().tryClean(invocation.getInstances());
             if (!counter.begin(0)) {
                 return Futures.future(FaultType.LIMIT.reject("Has reached the maximum number of active requests."));
             }

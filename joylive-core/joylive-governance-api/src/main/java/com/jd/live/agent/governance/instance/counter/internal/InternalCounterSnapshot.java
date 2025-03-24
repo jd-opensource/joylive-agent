@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.counter;
+package com.jd.live.agent.governance.instance.counter.internal;
+
+import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.instance.counter.CounterSnapshot;
+import lombok.Getter;
 
 /**
  * A class that represents a snapshot of the Counter class's state at a specific point in time. It allows you to
  * calculate the estimated response time for the system based on the current number of active requests and the
  * average elapsed time for successful requests.
  */
-public class CounterSnapshot {
+public class InternalCounterSnapshot implements CounterSnapshot {
 
     /**
      * The Counter instance from which this snapshot was taken.
      */
+    @Getter
     private final Counter counter;
     /**
      * The offset of the number of successful requests at the time this snapshot was taken.
@@ -37,17 +42,18 @@ public class CounterSnapshot {
 
     private final long lastSucceededAverageElapsed;
 
-    public CounterSnapshot(Counter counter) {
+    public InternalCounterSnapshot(Counter counter) {
         this(counter, 0);
     }
 
-    public CounterSnapshot(final Counter counter, final long lastSucceededAverageElapsed) {
+    public InternalCounterSnapshot(final Counter counter, final long lastSucceededAverageElapsed) {
         this.counter = counter;
         this.succeededOffset = counter.getSucceeded();
         this.succeededElapsedOffset = counter.getSucceededElapsed();
         this.lastSucceededAverageElapsed = lastSucceededAverageElapsed;
     }
 
+    @Override
     public long getSucceededAverageElapsed() {
         long succeed = counter.getSucceeded() - succeededOffset;
         if (succeed <= 0) {
@@ -56,6 +62,7 @@ public class CounterSnapshot {
         return (counter.getSucceededElapsed() - succeededElapsedOffset) / succeed;
     }
 
+    @Override
     public long getSucceededAverageElapsed(long succeed) {
         if (succeed <= 0) {
             return lastSucceededAverageElapsed;
@@ -63,12 +70,15 @@ public class CounterSnapshot {
         return (counter.getSucceededElapsed() - succeededElapsedOffset) / succeed;
     }
 
+    @Override
     public long getSucceeded() {
         return counter.getSucceeded() - succeededOffset;
     }
 
+    @Override
     public long getEstimateResponse() {
         int active = this.counter.getActive() + 1;
         return getSucceededAverageElapsed() * active;
     }
+
 }

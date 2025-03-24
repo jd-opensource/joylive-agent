@@ -7,6 +7,7 @@ import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancerAdapter;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 
 import java.util.List;
 
@@ -30,9 +31,9 @@ class SofaRpcLoadBalancer extends LoadBalancerAdapter {
     }
 
     @Override
-    public <T extends Endpoint> Candidate<T> elect(List<T> endpoints, Invocation<?> invocation) {
+    public <T extends Endpoint> Candidate<T> elect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         long loadBalanceStartTime = System.nanoTime();
-        Candidate<T> candidate = super.elect(endpoints, invocation);
+        Candidate<T> candidate = super.elect(endpoints, policy, invocation);
         RpcInvokeContext.getContext().put(RpcConstants.INTERNAL_KEY_CLIENT_BALANCER_TIME_NANO,
                 System.nanoTime() - loadBalanceStartTime);
         return candidate;

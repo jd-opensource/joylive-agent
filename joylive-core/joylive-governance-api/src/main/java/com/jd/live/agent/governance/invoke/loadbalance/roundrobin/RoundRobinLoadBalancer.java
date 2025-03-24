@@ -26,6 +26,7 @@ import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -63,7 +64,7 @@ public class RoundRobinLoadBalancer extends AbstractLoadBalancer {
     private final AtomicLong global = new AtomicLong(0);
 
     @Override
-    public <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
+    public <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         AtomicLong counter = global;
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
@@ -78,6 +79,11 @@ public class RoundRobinLoadBalancer extends AbstractLoadBalancer {
         // Ensure the index is within the bounds of the endpoints list.
         int index = (int) (count % endpoints.size());
         return new Candidate<>(endpoints.get(index), index);
+    }
+
+    @Override
+    protected <T extends Endpoint> void random(List<T> endpoints, LoadBalancePolicy policy, Random random) {
+        // This method is not used in the RoundRobinLoadBalancer.
     }
 }
 

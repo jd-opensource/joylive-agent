@@ -58,7 +58,7 @@ public class FaultInjectionFilter implements OutboundFilter {
                 if (faultPolicy.match(invocation)) {
                     FaultInjection injection = faultInjections.get(faultPolicy.getType());
                     if (injection != null) {
-                        injection.acquire(faultPolicy);
+                        injection.acquire(faultPolicy, invocation.getRandom());
                     }
                 }
             }

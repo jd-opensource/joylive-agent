@@ -75,7 +75,8 @@ public class TagRouteFilter implements RouteFilter {
         RouteTarget target = invocation.getRouteTarget();
         for (TagRule rule : policy.getTagRules()) {
             if (rule.match(invocation)) {
-                TagDestination destination = RandomWeight.choose(rule.getDestinations(), TagDestination::getWeight);
+                TagDestination destination = RandomWeight.choose(rule.getDestinations(),
+                        TagDestination::getWeight, invocation.getRandom());
                 if (destination != null) {
                     target.filter(destination::match);
                 }

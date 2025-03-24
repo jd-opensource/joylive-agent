@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 /**
@@ -108,12 +107,13 @@ public class CellFilter implements RouteFilter, LiveFilter {
                               Function<String, Integer> thresholdFunc) {
         UnitGroup unitGroup = target.getUnitGroup();
         Election election = sponsor(invocation, target.getUnitRoute(), localFirst, unitGroup, thresholdFunc);
+        OutboundRequest request = invocation.getRequest();
         if (!election.isOver()) {
-            randomWeight(election);
+            randomWeight(request, election);
         }
         if (election.isMutable()) {
             // Attempt to failover if not in the allow list
-            failover(election, invocation.getContext().getLocation());
+            failover(request, election, invocation.getContext().getLocation());
         }
         Candidate winner = election.getWinner();
         CellRoute cellRoute = winner == null ? null : winner.getCellRoute();
@@ -125,7 +125,7 @@ public class CellFilter implements RouteFilter, LiveFilter {
             // cluster first
             String cluster = localFirst == LocalFirstMode.CLUSTER ? invocation.getContext().getLocation().getCluster() : null;
             if (cluster != null && !cluster.isEmpty() && !endpoints.isEmpty()) {
-                endpoints = routeCluster(endpoints, cell, cluster, thresholdFunc);
+                endpoints = routeCluster(request, endpoints, cell, cluster, thresholdFunc);
             }
             target.setEndpoints(endpoints);
             return true;
@@ -136,16 +136,19 @@ public class CellFilter implements RouteFilter, LiveFilter {
     /**
      * Routes the given endpoints within a cluster, applying a local-first strategy.
      *
-     * @param endpoints     the list of endpoints to route
-     * @param cell          the cell to which the endpoints belong
-     * @param cluster       the name of the cluster to route within
-     * @param thresholdFunc a function that takes a cell code and returns the threshold for local-first routing
-     * @return the filtered list of endpoints
+     * @param <T>           The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request       The outbound request containing context information, including a random number generator.
+     * @param endpoints     The list of endpoints to route.
+     * @param cell          The cell to which the endpoints belong.
+     * @param cluster       The name of the cluster to route within.
+     * @param thresholdFunc A function that takes a cell code and returns the threshold for local-first routing.
+     * @return The filtered list of endpoints, prioritizing those in the specified cluster but potentially including others to meet the threshold.
      */
-    private List<? extends Endpoint> routeCluster(List<? extends Endpoint> endpoints,
-                                                  Cell cell,
-                                                  String cluster,
-                                                  Function<String, Integer> thresholdFunc) {
+    private <T extends OutboundRequest> List<? extends Endpoint> routeCluster(T request,
+                                                                              List<? extends Endpoint> endpoints,
+                                                                              Cell cell,
+                                                                              String cluster,
+                                                                              Function<String, Integer> thresholdFunc) {
         Integer threshold = thresholdFunc.apply(cell.getCode());
         List<Endpoint> clusters = new ArrayList<>(endpoints.size() / 2);
         List<Endpoint> others = new ArrayList<>(endpoints.size() / 2);
@@ -164,7 +167,7 @@ public class CellFilter implements RouteFilter, LiveFilter {
                 // threshold=3, shortage=2
                 int shortage = threshold - size;
                 // 0,1,2
-                int random = ThreadLocalRandom.current().nextInt(threshold);
+                int random = request.getRandom().nextInt(threshold);
                 if (random >= shortage) {
                     // 2
                     return clusters;
@@ -259,7 +262,7 @@ public class CellFilter implements RouteFilter, LiveFilter {
                 }
             }
         } else {
-            int random = ThreadLocalRandom.current().nextInt(threshold);
+            int random = invocation.getRandom().nextInt(threshold);
             int shortage = threshold;
             for (List<Endpoint> candidate : candidates) {
                 shortage = shortage - candidate.size();
@@ -381,15 +384,12 @@ public class CellFilter implements RouteFilter, LiveFilter {
 
     /**
      * Selects a winner randomly from the list of candidates based on their weights.
-     * The probability of a candidate being chosen is proportional to its weight.
-     * If there are no candidates, no action is taken. If there is only one candidate,
-     * that candidate is set as the winner. Otherwise, a random number is generated within
-     * the range of the total weights, and the winner is selected based on the cumulative
-     * weight range that includes the random number.
      *
-     * @param election The election object containing the current state of the election.
+     * @param <T>      The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request  The outbound request containing context information, including a random number generator.
+     * @param election The election object containing the current state of the election, including the list of candidates and their weights.
      */
-    private void randomWeight(Election election) {
+    private <T extends OutboundRequest> void randomWeight(T request, Election election) {
         List<Candidate> candidates = election.getCandidates();
         switch (candidates.size()) {
             case 0:
@@ -401,10 +401,10 @@ public class CellFilter implements RouteFilter, LiveFilter {
                 break;
             default:
                 if (election.getWeights() == 0) {
-                    election.setWinner(candidates.get(ThreadLocalRandom.current().nextInt(candidates.size())));
+                    election.setWinner(candidates.get(request.getRandom().nextInt(candidates.size())));
                 } else {
                     // Generate a random number within the range of the total weights.
-                    int random = ThreadLocalRandom.current().nextInt(election.getWeights());
+                    int random = request.getRandom().nextInt(election.getWeights());
                     int range = 0;
 
                     // Iterate through the candidates and calculate the cumulative weight range.
@@ -423,14 +423,13 @@ public class CellFilter implements RouteFilter, LiveFilter {
 
     /**
      * Handles failover logic in case the current winner of the election does not meet the required threshold.
-     * If the current winner's instance count is below the threshold, this method searches for other candidates
-     * that have instances above their own threshold and have more instances than the current winner.
-     * If suitable candidates are found, a random failover may occur based on a calculated failover ratio.
      *
-     * @param election The election object containing the current state of the election.
-     * @param location The current location.
+     * @param <T>       The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request   The outbound request containing context information, including a random number generator.
+     * @param election  The election object containing the current state of the election.
+     * @param location  The current location, used to sort candidates by cloud.
      */
-    private void failover(Election election, Location location) {
+    private <T extends OutboundRequest> void failover(T request, Election election, Location location) {
         // If there's only one candidate or fewer, there's no failover needed.
         if (election.size() <= 1) {
             return;
@@ -462,12 +461,12 @@ public class CellFilter implements RouteFilter, LiveFilter {
         // If there are potential targets, calculate the failover ratio.
         if (redundants > 0) {
             // sort by cloud
-            sortByCloud(targets, location);
+            sortByCloud(request, targets, location);
             if (shortage + redundants < threshold) {
                 threshold = winner.getInstance() + redundants;
                 shortage = redundants;
             }
-            int random = ThreadLocalRandom.current().nextInt(threshold);
+            int random = request.getRandom().nextInt(threshold);
             if (random < shortage) {
                 // Find the candidate to failover to based on the random number.
                 for (Candidate candidate : targets) {
@@ -484,10 +483,12 @@ public class CellFilter implements RouteFilter, LiveFilter {
     /**
      * Sorts the given list of candidates based on their cloud label, giving priority to candidates with a matching cloud label.
      *
+     * @param <T>        The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request    The outbound request containing context information, including a random number generator.
      * @param candidates The list of candidates to sort.
      * @param location   The location object containing the cloud label to match against.
      */
-    private void sortByCloud(List<Candidate> candidates, Location location) {
+    private <T extends OutboundRequest> void sortByCloud(T request, List<Candidate> candidates, Location location) {
         String cloud = location.getCloud();
         if (cloud != null && !cloud.isEmpty()) {
             // prefer local cloud
@@ -495,16 +496,16 @@ public class CellFilter implements RouteFilter, LiveFilter {
                 String cloud1 = o1.getCloud();
                 String cloud2 = o2.getCloud();
                 if (cloud.equals(cloud1)) {
-                    return cloud.equals(cloud2) ? randomOrder() : -1;
+                    return cloud.equals(cloud2) ? randomOrder(request) : -1;
                 } else {
-                    return cloud.equals(cloud2) ? 1 : randomOrder();
+                    return cloud.equals(cloud2) ? 1 : randomOrder(request);
                 }
             });
         }
     }
 
-    private int randomOrder() {
-        return ThreadLocalRandom.current().nextInt(2) < 1 ? -1 : 1;
+    private <T extends OutboundRequest> int randomOrder(T request) {
+        return request.getRandom().nextInt(2) < 1 ? -1 : 1;
     }
 
 
