@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.instance.GatewayRole;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
@@ -27,8 +28,6 @@ import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.Servic
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayForwardServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayOutboundServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.OutboundServiceMetadataParser;
-import com.jd.live.agent.governance.policy.live.Cell;
-import com.jd.live.agent.governance.policy.live.Unit;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.RpcRequest.RpcOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -148,7 +147,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         if (endpoint != null) {
             request.addAttempt(endpoint.getId());
         }
-        onForwardEvent();
+        onForwardEvent(endpoint);
         if (listeners != null) {
             listeners.forEach(listener -> listener.onForward(endpoint, this));
         }
@@ -220,13 +219,47 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         return routeTarget;
     }
 
+    /**
+     * Handles a forward event.
+     */
+    protected void onForwardEvent(Endpoint endpoint) {
+        publish(TrafficEvent.builder().actionType(TrafficEvent.ActionType.FORWARD).requests(1), endpoint);
+    }
+
+    /**
+     * Publishes a live event to a specified publisher using a configured live event builder.
+     *
+     * @param builder  The live event builder used to configure and build the live event. If {@code null}, no action is taken.
+     * @param endpoint The endpoint associated with the live event. This parameter is currently unused in the method.
+     */
+    protected void publish(TrafficEventBuilder builder, Endpoint endpoint) {
+        if (builder != null) {
+            TrafficEvent event = configure(builder, endpoint).build();
+            if (event != null) {
+                context.publish(event);
+            }
+        }
+    }
+
     @Override
     protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        Unit targetUnit = routeTarget == null ? null : routeTarget.getUnit();
-        Cell targetCell = routeTarget == null ? null : routeTarget.getCell();
-        return super.configure(builder).componentType(ComponentType.SERVICE).direction(Direction.OUTBOUND).
-                targetUnit(targetUnit == null ? null : targetUnit.getCode()).
-                targetCell(targetCell == null ? null : targetCell.getCode());
+        return super.configure(builder).componentType(ComponentType.SERVICE).direction(Direction.OUTBOUND);
+    }
+
+    /**
+     * Configures a live event builder with details from the current invocation context and associated metadata.
+     * This method populates the builder with information such as live space, unit rule, local unit, local cell,
+     * lane space, local lane, target lane, policy ID, and service-related details extracted from the URI.
+     * If any metadata or URI is null, the corresponding fields in the builder are set to null.
+     *
+     * @param builder  The live event builder to configure. Must not be null.
+     * @param endpoint The endpoint associated with the current invocation. Used to provide additional context.
+     * @return The configured live event builder, populated with relevant details from the invocation context.
+     */
+    protected TrafficEventBuilder configure(TrafficEventBuilder builder, Endpoint endpoint) {
+        return configure(builder)
+                .targetUnit(endpoint == null ? null : endpoint.getUnit())
+                .targetCell(endpoint == null ? null : endpoint.getCell());
     }
 
     /**
@@ -305,7 +338,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
             return super.configure(builder).componentType(ComponentType.GATEWAY);
         }
-
     }
 
     /**
@@ -342,7 +374,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
             return super.configure(builder).componentType(ComponentType.GATEWAY);
         }
-
     }
 
     /**
@@ -376,9 +407,8 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
 
         @Override
-        protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
+        protected TrafficEventBuilder configure(TrafficEventBuilder builder, Endpoint endpoint) {
             return super.configure(builder).componentType(ComponentType.GATEWAY);
         }
-
     }
 }
