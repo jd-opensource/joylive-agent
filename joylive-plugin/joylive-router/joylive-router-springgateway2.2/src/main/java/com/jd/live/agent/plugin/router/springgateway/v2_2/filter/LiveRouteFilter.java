@@ -20,18 +20,12 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.route.Route;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A class representing a live filter for a route.
  */
 @Getter
 public class LiveRouteFilter {
-
-    /**
-     * The global route version counter.
-     */
-    public static final AtomicLong ROUTE_VERSION = new AtomicLong(0);
 
     /**
      * The route associated with this live filter.

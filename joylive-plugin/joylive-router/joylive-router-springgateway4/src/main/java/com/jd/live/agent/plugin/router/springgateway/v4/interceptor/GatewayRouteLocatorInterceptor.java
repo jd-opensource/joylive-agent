@@ -16,20 +16,24 @@
 package com.jd.live.agent.plugin.router.springgateway.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-
-import static com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveRouteFilter.ROUTE_VERSION;
+import com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveRoutePredicate;
+import com.jd.live.agent.plugin.router.springgateway.v4.filter.LiveRoutes;
+import org.springframework.cloud.gateway.handler.AsyncPredicate;
+import org.springframework.cloud.gateway.route.RouteDefinition;
+import org.springframework.web.server.ServerWebExchange;
 
 /**
- * GatewayRouteInterceptor
- *
- * @since 1.6.0
+ * GatewayRouteLocatorInterceptor
  */
-public class GatewayRouteInterceptor extends InterceptorAdaptor {
+public class GatewayRouteLocatorInterceptor extends InterceptorAdaptor {
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        // update version to remove route filter cache
-        ROUTE_VERSION.incrementAndGet();
+    public void onSuccess(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
+        RouteDefinition routeDefinition = mc.getArgument(0);
+        AsyncPredicate<ServerWebExchange> predicate = mc.getResult();
+        mc.setResult(new LiveRoutePredicate(predicate, routeDefinition, LiveRoutes.getVersion()));
     }
 }

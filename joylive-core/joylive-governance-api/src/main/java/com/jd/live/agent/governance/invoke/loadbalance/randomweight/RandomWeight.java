@@ -18,7 +18,7 @@ package com.jd.live.agent.governance.invoke.loadbalance.randomweight;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -28,108 +28,98 @@ public class RandomWeight {
 
     /**
      * Randomly selects an element from a list based on weights determined by a weight function.
+     * The probability of an element being selected is proportional to its weight.
      *
+     * @param <T>        The generic type of the elements in the list.
      * @param targets    The list of elements to select from.
      * @param weightFunc A function that provides the weight for each element.
-     * @param <T>        The generic type of the elements.
-     * @return The selected element, or null if the list is empty or only contains elements with non-positive weights.
+     * @param random     A random number generator used for the weighted selection process.
+     * @return The selected element, or {@code null} if the list is empty, null, or contains only elements with non-positive weights.
      */
-    public static <T> T choose(List<T> targets, Function<T, Integer> weightFunc) {
-        Candidate<T> candidate = elect(targets, weightFunc);
+    public static <T> T choose(List<T> targets, Function<T, Integer> weightFunc, Random random) {
+        Candidate<T> candidate = elect(targets, weightFunc, random);
         return candidate == null ? null : candidate.getTarget();
-    }
-
-    /**
-     * Randomly selects an element from a list based on weights determined by a weight function, given the total weight.
-     *
-     * @param targets    The list of elements to select from.
-     * @param weightFunc A function that provides the weight for each element.
-     * @param weights    The total weight of all elements.
-     * @param <T>        The generic type of the elements.
-     * @return The selected element, or null if the list is empty or only contains elements with non-positive weights.
-     */
-    public static <T> T choose(List<T> targets, Function<T, Integer> weightFunc, int weights) {
-        int size = targets == null ? 0 : targets.size();
-        switch (size) {
-            case 0:
-                return null;
-            case 1:
-                return targets.get(0);
-            default:
-                if (weights > 0) {
-                    int weight = 0;
-                    int random = ThreadLocalRandom.current().nextInt(weights);
-                    for (T target : targets) {
-                        weight += Math.max(weightFunc.apply(target), 0);
-                        if (weight >= random) {
-                            return target;
-                        }
-                    }
-                }
-                return targets.get(ThreadLocalRandom.current().nextInt(targets.size()));
-        }
     }
 
     /**
      * Randomly selects an element from a list based on weights determined by a weight function.
      *
+     * @param <T>        The generic type of the elements in the list.
      * @param targets    The list of elements to select from.
-     * @param weightFunc A function that provides the weight for each element.
-     * @param <T>        The generic type of the elements.
-     * @return The elected candidate, or null if the list is empty or null
+     * @param weightFunc A function that provides the weight for each element in the list.
+     * @param random     A random number generator used for the weighted selection process.
+     * @return The elected candidate, or {@code null} if the list is empty or {@code null}.
      */
-    public static <T> Candidate<T> elect(List<T> targets, Function<T, Integer> weightFunc) {
-        int size = targets == null ? 0 : targets.size();
+    @SuppressWarnings("unchecked")
+    public static <T> Candidate<T> elect(List<T> targets, Function<T, Integer> weightFunc, Random random) {
+        Candidate<T>[] candidates = new Candidate[targets == null ? 0 : targets.size()];
+        if (targets != null) {
+            int index = 0;
+            for (T target : targets) {
+                candidates[index] = new Candidate<>(target, index, weightFunc.apply(target));
+                index++;
+            }
+        }
+        return elect(candidates, random);
+    }
+
+    /**
+     * Elects a candidate from the provided array of candidates based on their weights.
+     * This method implements a weighted random selection algorithm to choose a candidate.
+     *
+     * @param <T>        The type of the candidate.
+     * @param candidates The array of candidates to elect from.
+     * @param random     A random number generator used for the weighted selection process.
+     * @return The elected candidate, or {@code null} if the candidates array is {@code null} or empty.
+     * @throws IllegalArgumentException If any candidate in the array is {@code null}.
+     */
+    public static <T> Candidate<T> elect(Candidate<T>[] candidates, Random random) {
+        int size = candidates == null ? 0 : candidates.length;
         switch (size) {
             case 0:
                 return null;
             case 1:
-                return new Candidate<>(targets.get(0), 0);
+                return candidates[0];
             default:
                 int totalWeight = 0;
                 int halfWeight = 0;
-                int half = size / 2;
-                int pos = 0;
+                int half = (int) Math.ceil(size * 1.0 / 2) - 1;
 
                 boolean uniformWeights = true;
-                int firstWeight = -1;
-                int weight;
+                int firstWeight = candidates[0].getWeight();
 
                 // Calculate total weight and check for uniform weights
-                for (T target : targets) {
-                    weight = Math.max(weightFunc.apply(target), 0);
-                    totalWeight += weight;
-                    if (++pos == half) {
+                Candidate<T> candidate;
+                for (int i = 0; i < size; i++) {
+                    candidate = candidates[i];
+                    totalWeight += candidate.getWeight();
+                    if (i == half) {
                         halfWeight = totalWeight;
                     }
-                    if (pos == 1) {
-                        firstWeight = weight;
-                    } else if (weight != firstWeight) {
+                    if (uniformWeights && candidate.getWeight() != firstWeight) {
                         uniformWeights = false;
                     }
                 }
 
                 // If weights are uniform or total weight is zero, select randomly
                 if (uniformWeights || totalWeight <= 0) {
-                    int index = ThreadLocalRandom.current().nextInt(targets.size());
-                    return new Candidate<>(targets.get(index), index);
+                    int index = random.nextInt(size);
+                    return candidates[index];
                 }
 
                 // Select based on weight
-                int random = ThreadLocalRandom.current().nextInt(totalWeight);
-                int start = random >= halfWeight ? half : 0;
-                int cumulativeWeight = start == 0 ? 0 : halfWeight;
-                List<T> halfTargets = start == 0 ? targets : targets.subList(start, targets.size());
-                for (T target : halfTargets) {
-                    cumulativeWeight += Math.max(weightFunc.apply(target), 0);
-                    if (cumulativeWeight >= random) {
-                        return new Candidate<>(target, start);
+                int randomWeight = random.nextInt(totalWeight);
+                int start = randomWeight >= halfWeight ? half : 0;
+                int weight = start == 0 ? 0 : halfWeight;
+                for (int i = start; i < size; i++) {
+                    candidate = candidates[i];
+                    weight += candidate.getWeight();
+                    if (weight >= randomWeight) {
+                        return candidate;
                     }
-                    start++;
                 }
                 // Fallback, though this should not be reached
-                int fallbackIndex = ThreadLocalRandom.current().nextInt(targets.size());
-                return new Candidate<>(targets.get(fallbackIndex), fallbackIndex);
+                return candidates[random.nextInt(size)];
         }
     }
 }

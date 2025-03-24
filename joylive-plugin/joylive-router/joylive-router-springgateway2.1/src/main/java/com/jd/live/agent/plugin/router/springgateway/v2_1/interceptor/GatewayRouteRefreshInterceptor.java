@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.interceptor;
+package com.jd.live.agent.plugin.router.springgateway.v2_1.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-
-import static com.jd.live.agent.plugin.router.springgateway.v3.filter.LiveRouteFilter.ROUTE_VERSION;
+import com.jd.live.agent.plugin.router.springgateway.v2_1.filter.LiveRoutes;
 
 /**
  * GatewayRouteInterceptor
  *
- * @since 1.6.0
+ * @since 1.7.0
  */
-public class GatewayRouteInterceptor extends InterceptorAdaptor {
+public class GatewayRouteRefreshInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         // update version to remove route filter cache
-        ROUTE_VERSION.incrementAndGet();
+        LiveRoutes.incVersion();
     }
 }

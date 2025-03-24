@@ -21,7 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.fault.FaultInjection;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 /**
  * A fault injection implementation that introduces delays in the request processing.
@@ -34,10 +34,8 @@ public class DelayFaultInjection implements FaultInjection {
     private static final Logger logger = LoggerFactory.getLogger(DelayFaultInjection.class);
 
     @Override
-    public void acquire(FaultInjectionPolicy policy) {
-        if (policy.getDelayTimeMs() > 0 &&
-                (policy.getPercent() <= 0
-                        || ThreadLocalRandom.current().nextInt(100) < policy.getPercent())) {
+    public void acquire(FaultInjectionPolicy policy, Random random) {
+        if (policy.getDelayTimeMs() > 0 && (policy.getPercent() <= 0 || random.nextInt(100) < policy.getPercent())) {
             try {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Start delaying request by fault injection, delay time is " + policy.getDelayTimeMs() + "ms.");

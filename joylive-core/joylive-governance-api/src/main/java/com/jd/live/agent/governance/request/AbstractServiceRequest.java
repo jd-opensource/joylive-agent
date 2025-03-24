@@ -21,7 +21,9 @@ import com.jd.live.agent.governance.context.bag.Carrier;
 import lombok.Getter;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Provides an abstract base class for service requests.*
@@ -49,6 +51,8 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
     protected long startTime;
 
     protected Carrier carrier;
+
+    protected Random random;
 
     /**
      * Constructs an instance of {@code AbstractServiceRequest} with the original request object.
@@ -99,5 +103,12 @@ public abstract class AbstractServiceRequest<T> extends AbstractAttributes imple
         return carrier;
     }
 
+    @Override
+    public Random getRandom() {
+        if (random == null) {
+            random = ThreadLocalRandom.current();
+        }
+        return random;
+    }
 }
 

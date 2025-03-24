@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.counter;
+package com.jd.live.agent.governance.instance.counter.internal;
 
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.counter.EndpointCounter;
+import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import lombok.Getter;
 
 import java.util.HashSet;
@@ -33,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * that service. It also provides methods to schedule and take snapshots of these counters, and to clean up counters
  * for endpoints that are no longer in use.
  */
-public class ServiceCounter {
+public class InternalServiceCounter implements ServiceCounter {
 
     private static final int DELAY_CLEAN = 1000;
 
@@ -52,26 +54,20 @@ public class ServiceCounter {
 
     private long cleanTime;
 
-    private final Map<String, EndpointCounter> counters = new ConcurrentHashMap<>();
+    private final Map<String, InternalEndpointCounter> counters = new ConcurrentHashMap<>();
 
     private final AtomicBoolean clean = new AtomicBoolean(false);
 
-    public ServiceCounter(String name, Timer timer) {
+    public InternalServiceCounter(String name, Timer timer) {
         this.name = name;
         this.timer = timer;
         this.cleanTime = System.currentTimeMillis();
         scheduleSnapshot();
     }
 
-    /**
-     * Returns the Counter instance associated with the specified endpoint, creating a new one if it doesn't
-     * already exist.
-     *
-     * @param endpoint The endpoint for which to retrieve the Counter.
-     * @return The Counter instance.
-     */
-    public EndpointCounter getOrCreate(String endpoint) {
-        return counters.computeIfAbsent(endpoint, e -> new EndpointCounter(e, this));
+    @Override
+    public EndpointCounter getOrCreateCounter(String id) {
+        return counters.computeIfAbsent(id, e -> new InternalEndpointCounter(e, this));
     }
 
     /**
@@ -105,8 +101,8 @@ public class ServiceCounter {
             }
         }
         long time = System.currentTimeMillis();
-        for (Map.Entry<String, EndpointCounter> entry : counters.entrySet()) {
-            EndpointCounter counter = entry.getValue();
+        for (Map.Entry<String, InternalEndpointCounter> entry : counters.entrySet()) {
+            InternalEndpointCounter counter = entry.getValue();
             if (!exists.contains(entry.getKey()) && time - counter.getAccessTime() > KEEP_TIME) {
                 counters.remove(entry.getKey());
             }
@@ -129,7 +125,7 @@ public class ServiceCounter {
      * Takes a snapshot of all counters for this service.
      */
     private void snapshot() {
-        for (EndpointCounter counter : counters.values()) {
+        for (InternalEndpointCounter counter : counters.values()) {
             counter.snapshot();
         }
     }

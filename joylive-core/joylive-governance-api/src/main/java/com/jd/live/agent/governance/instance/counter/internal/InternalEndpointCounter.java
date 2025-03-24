@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.counter;
+package com.jd.live.agent.governance.instance.counter.internal;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.instance.counter.EndpointCounter;
+import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,12 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A class that represents a counter for a specific endpoint.
  */
-public class EndpointCounter {
+public class InternalEndpointCounter implements EndpointCounter {
 
     @Getter
     private final String name;
 
-    private final ServiceCounter service;
+    @Getter
+    private final ServiceCounter parent;
 
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
 
@@ -39,21 +43,15 @@ public class EndpointCounter {
     @Setter
     private long accessTime;
 
-    public EndpointCounter(String name, ServiceCounter service) {
+    public InternalEndpointCounter(String name, ServiceCounter parent) {
         this.name = name;
-        this.service = service;
+        this.parent = parent;
         this.accessTime = System.currentTimeMillis();
     }
 
-    /**
-     * Returns the Counter instance associated with the specified URI, creating a new one if it doesn't
-     * already exist.
-     *
-     * @param uri The URI for which to retrieve the Counter.
-     * @return The Counter instance.
-     */
-    public Counter getOrCreate(URI uri) {
-        return counters.computeIfAbsent(getMethodKey(uri), n -> new Counter(service));
+    @Override
+    public Counter getOrCreateCounter(URI uri) {
+        return counters.computeIfAbsent(getKey(uri), n -> new InternalCounter(this));
     }
 
     /**
@@ -65,9 +63,19 @@ public class EndpointCounter {
         }
     }
 
-    private String getMethodKey(URI uri) {
+    private String getKey(URI uri) {
         String method = uri.getParameter(PolicyId.KEY_SERVICE_METHOD);
-        return method == null || method.isEmpty() ? uri.getPath() : uri.getPath() + "?method=" + method;
+        String path = uri.getPath();
+        if (path == null || path.isEmpty()) {
+            path = "";
+        } else {
+            int pos = path.length() - 1;
+            while (pos >= 0 && path.charAt(pos) == '/') {
+                pos--;
+            }
+            path = pos < 0 ? "" : path.substring(0, pos + 1);
+        }
+        return method == null || method.isEmpty() ? path : path + "?method=" + method;
     }
 
 }

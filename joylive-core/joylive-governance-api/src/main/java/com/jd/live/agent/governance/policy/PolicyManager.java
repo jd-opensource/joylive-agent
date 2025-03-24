@@ -39,9 +39,10 @@ import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
+import com.jd.live.agent.governance.instance.counter.CounterManager;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
-import com.jd.live.agent.governance.invoke.counter.CounterManager;
+import com.jd.live.agent.governance.instance.counter.internal.InternalCounterManager;
 import com.jd.live.agent.governance.invoke.filter.LiveFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
@@ -301,7 +302,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);
-        counterManager = new CounterManager(timer);
+        counterManager = new InternalCounterManager(timer);
         propagation = buildPropagation();
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {

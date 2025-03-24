@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.List;
@@ -33,19 +34,24 @@ import java.util.List;
  *
  * @since 1.0.0
  */
-@Extension(value = RandomWeightLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_RANDOM_WEIGHT)
+@Extension(value = {RandomWeightLoadBalancer.RANDOM, RandomWeightLoadBalancer.RANDOM_WEIGHT}, order = LoadBalancer.ORDER_RANDOM_WEIGHT)
 public class RandomWeightLoadBalancer extends AbstractLoadBalancer {
 
     /**
      * The name assigned to this load balancer.
      */
-    public static final String LOAD_BALANCER_NAME = "RANDOM";
+    protected static final String RANDOM = "RANDOM";
+
+    /**
+     * The name assigned to this load balancer.
+     */
+    protected static final String RANDOM_WEIGHT = "RANDOM_WEIGHT";
 
     @Override
-    protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
+    protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         ServiceRequest request = invocation.getRequest();
         // Use the RandomWeight utility to select an endpoint based on the weights.
-        return RandomWeight.elect(endpoints, e -> e.reweight(request));
+        return RandomWeight.elect(endpoints, e -> e.reweight(request), invocation.getRandom());
     }
 }
 

@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.invoke.loadbalance;
 import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 
 import java.util.List;
 
@@ -46,26 +47,22 @@ public interface LoadBalancer {
     int ORDER_SHORTEST_RESPONSE = ORDER_ROUND_ROBIN + 1;
 
     /**
-     * Chooses an endpoint from the list based on the invocation.
-     *
-     * @param <T>        the type of the endpoint
-     * @param endpoints  the list of endpoints to choose from
-     * @param invocation the invocation context
-     * @return the chosen endpoint, or null if the list is empty or null
+     * Order value for weight-response strategy.
      */
-    default <T extends Endpoint> T choose(List<T> endpoints, Invocation<?> invocation) {
-        Candidate<T> candidate = elect(endpoints, invocation);
-        return candidate == null ? null : candidate.getTarget();
-    }
+    int ORDER_WEIGHT_RESPONSE = ORDER_SHORTEST_RESPONSE + 1;
 
     /**
-     * Elects a candidate endpoint from the list based on the invocation.
+     * Elects a candidate endpoint from the list based on the invocation context and the specified load balancing policy.
+     * The method selects an endpoint according to the rules defined by the provided policy and the current invocation.
+     * If the list of endpoints is empty or null, this method returns {@code null}.
      *
-     * @param <T>        the type of the endpoint
-     * @param endpoints  the list of endpoints to elect from
-     * @param invocation the invocation context
-     * @return the elected candidate, or null if the list is empty or null
+     * @param <T>        The type of the endpoint, which must extend {@link Endpoint}.
+     * @param endpoints  The list of endpoints to elect from.
+     * @param policy     The load balancing policy used to determine the selection strategy.
+     * @param invocation The invocation context, which provides additional information for the selection process.
+     * @return The elected candidate endpoint, or {@code null} if the list is empty or null.
      */
-    <T extends Endpoint> Candidate<T> elect(List<T> endpoints, Invocation<?> invocation);
+    <T extends Endpoint> Candidate<T> elect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation);
+
 }
 

@@ -55,6 +55,8 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
      */
     private String policyType;
 
+    private Integer maxCandidates;
+
     /**
      * sticky type
      */
@@ -91,6 +93,9 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
         }
         if (stickyType == null) {
             stickyType = source.stickyType;
+        }
+        if (maxCandidates == null) {
+            maxCandidates = source.maxCandidates;
         }
     }
 

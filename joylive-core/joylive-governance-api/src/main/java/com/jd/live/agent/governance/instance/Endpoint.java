@@ -17,9 +17,13 @@ package com.jd.live.agent.governance.instance;
 
 import com.jd.live.agent.bootstrap.util.Attributes;
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.instance.counter.EndpointCounter;
+import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
@@ -510,4 +514,24 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     default boolean match(TagCondition source) {
         return source == null || source.match(getLabels(source.getKey()));
     }
+
+    /**
+     * Retrieves a {@link Counter} instance associated with the specified {@link ServiceCounter}, URI, and access time.
+     * This method ensures that a counter is always available for tracking metrics or statistics related to the specified endpoint.
+     * If the {@link ServiceCounter} or URI is {@code null}, this method returns {@code null}.
+     *
+     * @param serviceCounter the {@link ServiceCounter} instance used to manage counters for services
+     * @param uri            the URI of the service endpoint for which the counter is retrieved
+     * @param time           the access time to set, typically in milliseconds since the epoch (January 1, 1970, 00:00:00 GMT)
+     * @return the {@link Counter} instance associated with the specified URI, or {@code null} if {@link ServiceCounter} or URI is {@code null}
+     */
+    default Counter getCounter(ServiceCounter serviceCounter, URI uri, long time) {
+        if (serviceCounter == null || uri == null) {
+            return null;
+        }
+        EndpointCounter endpointCounter = serviceCounter.getOrCreateCounter(getId());
+        endpointCounter.setAccessTime(time);
+        return endpointCounter.getOrCreateCounter(uri);
+    }
+
 }

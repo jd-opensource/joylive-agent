@@ -37,11 +37,7 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.governance.invoke.Invocation.*;
@@ -215,14 +211,14 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         int shortage = threshold - target.getInstances();
         if (shortage > 0) {
             // failover other unit
-            ThreadLocalRandom localRandom = ThreadLocalRandom.current();
-            if (localRandom.nextInt(threshold) < shortage) {
-                int random = localRandom.nextInt(remaining);
+            Random random = invocation.getRandom();
+            if (random.nextInt(threshold) < shortage) {
+                int randomWeight = random.nextInt(remaining);
                 int weight = 0;
                 for (int j = 1; j < candidates.size(); j++) {
                     Candidate failoverTarget = candidates.get(j);
                     weight += failoverTarget.getInstances();
-                    if (weight > random) {
+                    if (weight > randomWeight) {
                         return RouteTarget.forward(group, failoverTarget.getUnit(), failoverTarget.getRoute());
                     }
                 }
@@ -268,7 +264,7 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         } else if (metadata.getTargetCenter() != null) {
             return getPreferUnitsWithCenter(metadata, route, builder);
         } else {
-            return getPreferUnitsWithoutCenter(metadata, route, builder, units);
+            return getPreferUnitsWithoutCenter(invocation.getRequest(), metadata, route, builder, units);
         }
     }
 
@@ -300,21 +296,30 @@ public class UnitFilter implements RouteFilter, LiveFilter {
 
     /**
      * Determines the preferred units for the election process when no center unit is specified.
+     * This method selects a local unit as the primary candidate and randomly selects additional
+     * units from the available list to build election candidates. If the local unit is not available,
+     * it falls back to the first unit in the list. The method ensures that at least one candidate
+     * is added to the election result.
      *
-     * @param metadata The live metadata associated with the request.
-     * @param route  The target unit route determined by the routing logic.
-     * @param builder      The candidate builder used to build election candidates.
-     * @param units        The list of available units to consider for the election.
-     * @return An election object containing the preferred units for the election.
+     * @param <T>       The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request   The outbound request containing context information for the election.
+     * @param metadata  The live metadata associated with the request, providing access to the target local unit.
+     * @param route     The target unit route determined by the routing logic, used to resolve the local unit if not provided by metadata.
+     * @param builder   The candidate builder used to construct election candidates from units.
+     * @param units     The list of available units to consider for the election.
+     * @return An {@link Election} object containing the preferred units for the election, never {@code null}.
      */
-    private Election getPreferUnitsWithoutCenter(final LiveMetadata metadata, final UnitRoute route,
-                                                 final CandidateBuilder builder, final List<Unit> units) {
+    private <T extends OutboundRequest> Election getPreferUnitsWithoutCenter(final T request,
+                                                                             final LiveMetadata metadata,
+                                                                             final UnitRoute route,
+                                                                             final CandidateBuilder builder,
+                                                                             final List<Unit> units) {
         Election result = new Election();
         Unit localUnit = metadata.getTargetLocalUnit();
         localUnit = localUnit == null && route != null ? route.getUnit() : localUnit;
         Candidate localCandidate = builder.build(localUnit);
         result.add(localCandidate, Candidate::isAvailable);
-        int random = ThreadLocalRandom.current().nextInt(units.size());
+        int random = request.getRandom().nextInt(units.size());
         int i = random;
         Unit unit;
         while (i < units.size()) {
