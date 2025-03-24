@@ -104,9 +104,11 @@ public class LiveGatewayFilter implements GatewayFilter {
         if (route == null) {
             return chain.filter(exchange);
         }
-        String liveEnabled = (String) route.getMetadata().get(Constants.GATEWAY_ROUTE_LIVE_ENABLED);
+        Object enabled = route.getMetadata().get(Constants.GATEWAY_ROUTE_LIVE_ENABLED);
+        enabled = enabled == null ? Boolean.TRUE : enabled;
+        boolean liveEnabled = enabled instanceof Boolean ? (Boolean) enabled : !"false".equalsIgnoreCase(enabled.toString());
         boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        return loadbalancer ? request(exchange, chain) : forward(exchange, chain, !"false".equalsIgnoreCase(liveEnabled));
+        return loadbalancer ? request(exchange, chain) : forward(exchange, chain, liveEnabled);
     }
 
     /**
