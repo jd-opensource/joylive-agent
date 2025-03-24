@@ -15,40 +15,33 @@
  */
 package com.jd.live.agent.core.util.option;
 
-import java.util.Map;
+import java.util.Properties;
 
 /**
- * Options represented as a Map.
+ * Options represented as a Properties.
  */
-public class MapOption extends AbstractOption {
-    /**
-     * The map containing options.
-     */
-    protected Map<String, ?> map;
+public class PropertiesOption extends AbstractOption {
 
-    /**
-     * Constructs a new MapOption with the specified map.
-     *
-     * @param map A map containing option keys and values.
-     */
-    public MapOption(Map<String, ?> map) {
-        this.map = map;
+    protected Properties properties;
+
+    public PropertiesOption(Properties properties) {
+        this.properties = properties;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getObject(final String key) {
-        return map == null ? null : (T) map.get(key);
+        return properties == null ? null : (T) properties.get(key);
     }
 
     /**
-     * Factory method to create a MapOption from a given map.
+     * Factory method to create a PropertiesOption from a given properties.
      *
-     * @param map A map containing option keys and values.
-     * @return An Option instance backed by the given map.
+     * @param properties A properties containing option keys and values.
+     * @return An Option instance backed by the given properties.
      */
-    public static Option of(Map<String, ?> map) {
-        return new MapOption(map);
+    public static Option of(Properties properties) {
+        return new PropertiesOption(properties);
     }
 
 }

@@ -22,7 +22,7 @@ import com.jd.live.agent.core.inject.InjectorFactory;
 import com.jd.live.agent.core.inject.jbind.*;
 import com.jd.live.agent.core.inject.jbind.converter.BestSelector;
 import com.jd.live.agent.core.inject.jbind.supplier.JInjectionContext.JEmbedInjectionContext;
-import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.EnvironmentOption;
 import com.jd.live.agent.core.util.option.Option;
 
 import java.util.List;
@@ -54,7 +54,7 @@ public class JInjectorFactory implements InjectorFactory {
     public Injection create(ExtensionManager extensionManager, Option environment, ClassLoader classLoader, boolean embed) {
         if (extensionManager == null)
             return null;
-        environment = environment == null ? MapOption.environment() : environment;
+        environment = environment == null ? new EnvironmentOption() : environment;
         classLoader = classLoader == null ? JInjectorFactory.class.getClassLoader() : classLoader;
         List<ConverterSupplier> converterSuppliers = extensionManager.getOrLoadExtensible(ConverterSupplier.class, classLoader).getExtensions();
         List<Converter.FundamentalConverter> fundamentalConverters = extensionManager.getOrLoadExtensible(Converter.FundamentalConverter.class, classLoader).getExtensions();
