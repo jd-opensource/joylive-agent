@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.loadbalance;
 
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.Invocation;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class LoadBalancerAdapter implements LoadBalancer {
     }
 
     @Override
-    public <T extends Endpoint> Candidate<T> elect(List<T> endpoints, Invocation<?> invocation) {
-        return delegate.elect(endpoints, invocation);
+    public <T extends Endpoint> Candidate<T> elect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
+        return delegate.elect(endpoints, policy, invocation);
     }
 }

@@ -27,6 +27,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -226,6 +227,18 @@ public class RouteTarget {
     }
 
     /**
+     * Filters the endpoints list to reduce its size to a specified maximum size.
+     *
+     * @param maxSize The maximum size to which the endpoints list should be reduced.
+     * @param random  A random number generator used to determine the start position for filtering.
+     * @return The size of the filtered endpoints list, which will be {@code maxSize} if the original size was larger,
+     * or the original size if it was already less than or equal to {@code maxSize}.
+     */
+    public int filter(int maxSize, Random random) {
+        return filter(endpoints, maxSize, random);
+    }
+
+    /**
      * Creates a new list containing elements from the original list that match the given predicate.
      *
      * @param predicate The predicate to use for filtering. If null, the method returns the original list.
@@ -316,6 +329,43 @@ public class RouteTarget {
      */
     public static int filter(List<? extends Endpoint> endpoints, Predicate<Endpoint> predicate) {
         return filter(endpoints, predicate, 0, false);
+    }
+
+    /**
+     * Filters the endpoints list to reduce its size to a specified maximum size.
+     * The filtering process uses a random start position and a calculated interval to select a subset of endpoints.
+     * If the current size of the endpoints list is less than or equal to the specified maximum size,
+     * the list remains unchanged, and the current size is returned.
+     *
+     * @param <T>       The type of the endpoints, which must extend {@link Endpoint}.
+     * @param endpoints The list of endpoints to filter. If {@code null}, it is treated as an empty list.
+     * @param maxSize   The maximum size to which the endpoints list should be reduced.
+     * @param random    A random number generator used to determine the start position for filtering.
+     * @return The size of the filtered endpoints list, which will be {@code maxSize} if the original size was larger,
+     * or the original size if it was already less than or equal to {@code maxSize}.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends Endpoint> int filter(List<T> endpoints, int maxSize, Random random) {
+        int size = endpoints == null ? 0 : endpoints.size();
+        if (maxSize >= size) {
+            return size;
+        }
+        int start = random.nextInt(size);
+        int interval = (int) (size * 1.0D / maxSize);
+        int greaters = Math.min((size - 1 - start) / interval, maxSize - 1);
+        int lowers = maxSize - greaters - 1;
+        int maxPos = start + interval * greaters;
+        int minPos = start - lowers * interval;
+
+        int writeIndex = 0;
+        List<Endpoint> targets = (List<Endpoint>) endpoints;
+        // Traverse the list with readIndex to improve performance.
+        for (int readIndex = minPos; readIndex <= maxPos; ) {
+            targets.set(writeIndex++, targets.get(readIndex));
+            readIndex += interval;
+        }
+        targets.subList(writeIndex, size).clear();
+        return maxSize;
     }
 
     /**

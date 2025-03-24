@@ -46,7 +46,6 @@ import com.jd.live.agent.governance.response.ServiceResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -223,7 +222,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
      * @param circuitBreakers the list of circuit breakers.
      */
     private static void acquire(List<CircuitBreaker> circuitBreakers, Predicate<CircuitBreaker> predicate, OutboundInvocation<?> invocation) {
-        acquire(circuitBreakers, predicate, breaker -> {
+        acquire(invocation.getRequest(), circuitBreakers, predicate, breaker -> {
             DegradeConfig config = breaker.getPolicy().getDegradeConfig();
             if (config == null) {
                 invocation.reject(FaultType.CIRCUIT_BREAK, "The traffic circuit break policy rejected the request.");
@@ -235,18 +234,23 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
     /**
      * Acquires permits from the list of circuit breakers using the provided predicate.
-     * If acquiring a permit from any circuit breaker fails, it rolls back all previously acquired permits
-     * and executes the provided fallback action.
+     * This method iterates through the list of circuit breakers and attempts to acquire a permit
+     * for each one using the specified predicate. If acquiring a permit from any circuit breaker fails,
+     * it rolls back all previously acquired permits and executes the provided fallback action.
      *
-     * @param circuitBreakers The list of circuit breakers from which to acquire permits.
-     * @param predicate       The predicate used to test whether a permit can be acquired from a circuit breaker.
+     * @param <T>             The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request         The outbound request containing context information for the operation.
+     * @param circuitBreakers The list of circuit breakers from which to acquire permits. Must not be {@code null}.
+     * @param predicate       The predicate used to test whether a permit can be acquired from a circuit breaker. Must not be {@code null}.
      * @param fallback        The fallback action to execute if acquiring a permit fails. May be {@code null}.
-     * @return {@code true} if permits were successfully acquired from all circuit breakers, {@code false} otherwise.
+     * @return                {@code true} if permits were successfully acquired from all circuit breakers, {@code false} otherwise.
+     * @throws NullPointerException If {@code circuitBreakers} or {@code predicate} is {@code null}.
      */
-    private static boolean acquire(List<CircuitBreaker> circuitBreakers,
-                                   Predicate<CircuitBreaker> predicate,
-                                   Consumer<CircuitBreaker> fallback) {
-        if (!recover(circuitBreakers, fallback)) {
+    private static <T extends OutboundRequest> boolean acquire(T request,
+                                                               List<CircuitBreaker> circuitBreakers,
+                                                               Predicate<CircuitBreaker> predicate,
+                                                               Consumer<CircuitBreaker> fallback) {
+        if (!recover(request, circuitBreakers, fallback)) {
             // not acquire permits
             return false;
         }
@@ -287,18 +291,19 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
     }
 
     /**
-     * Attempts to recover a circuit breaker from a list of circuit breakers.
-     * It selects the circuit breaker with the lowest recovery weight
-     * and applies a fallback action if the random condition is met.
+     * Attempts to recover from a circuit breaker state by evaluating the recovery phase of the provided circuit breakers.
+     * If any circuit breaker is in the recovery phase, this method checks the recovery ratio and determines whether
+     * to proceed with recovery or execute the fallback action based on a random threshold.
      *
-     * @param circuitBreakers A list of circuit breakers to evaluate for recovery.
-     * @param fallback        A consumer that defines the fallback action to be taken
-     *                        if a circuit breaker is selected for recovery.
-     * @return {@code true} if no circuit breaker is selected for recovery or
-     * if the random condition is not met; {@code false} if a circuit
-     * breaker is selected and the fallback action is applied.
+     * @param <T>             The type of the outbound request, extending {@link OutboundRequest}.
+     * @param request         The outbound request containing context information, including a random number generator.
+     * @param circuitBreakers The list of circuit breakers to evaluate for recovery.
+     * @param fallback        The fallback action to execute if recovery is not allowed. May be {@code null}.
+     * @return {@code true} if recovery is allowed and no fallback is executed, {@code false} otherwise.
      */
-    private static boolean recover(List<CircuitBreaker> circuitBreakers, Consumer<CircuitBreaker> fallback) {
+    private static <T extends OutboundRequest> boolean recover(T request,
+                                                               List<CircuitBreaker> circuitBreakers,
+                                                               Consumer<CircuitBreaker> fallback) {
         CircuitBreaker minBreaker = null;
         Double ratio;
         Double minRatio = null;
@@ -316,7 +321,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
         }
         if (minBreaker != null) {
             int threshold = (int) (minRatio * 10000);
-            if (ThreadLocalRandom.current().nextInt(10000) >= threshold) {
+            if (request.getRandom().nextInt(10000) >= threshold) {
                 if (fallback != null) {
                     fallback.accept(minBreaker);
                 }
@@ -369,7 +374,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                     int instances = invocation.getRouteTarget().size();
                     Predicate<CircuitBreaker> predicate = breaker -> breaker.acquireWhen(instances);
                     // acquire from instance circuit breaker
-                    if (!acquire(circuitBreakers.subList(index, size), predicate, (Consumer<CircuitBreaker>) null)) {
+                    if (!acquire(invocation.getRequest(), circuitBreakers.subList(index, size), predicate, null)) {
                         // failed to acquire, rollback circuit breakers
                         circuitBreakers = circuitBreakers.subList(0, index);
                         return false;

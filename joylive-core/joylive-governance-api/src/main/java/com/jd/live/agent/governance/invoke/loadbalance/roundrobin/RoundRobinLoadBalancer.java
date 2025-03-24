@@ -63,7 +63,7 @@ public class RoundRobinLoadBalancer extends AbstractLoadBalancer {
     private final AtomicLong global = new AtomicLong(0);
 
     @Override
-    public <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
+    public <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
         AtomicLong counter = global;
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();

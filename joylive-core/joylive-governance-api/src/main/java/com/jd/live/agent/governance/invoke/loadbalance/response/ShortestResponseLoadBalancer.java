@@ -25,10 +25,11 @@ import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
+import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 /**
  * A load balancer that selects the endpoint with the shortest response time for an outbound request.
@@ -44,7 +45,10 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
+    protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
+        ServiceRequest request = invocation.getRequest();
+        Random random = request.getRandom();
+        random(endpoints, policy, random);
         // Number of invokers
         int length = endpoints.size();
         // Estimated shortest response time of all invokers
@@ -62,7 +66,6 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         // Every shortest response invoker has the same weight value?
         boolean sameWeight = true;
 
-        ServiceRequest request = invocation.getRequest();
         URI uri = invocation.getServiceMetadata().getUri();
         CounterManager counterManager = invocation.getContext().getCounterManager();
         ServiceCounter serviceCounter = counterManager.getOrCreateCounter(request.getService(), request.getGroup());
@@ -103,7 +106,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         }
         int index;
         if (!sameWeight && totalWeight > 0) {
-            weight = ThreadLocalRandom.current().nextInt(totalWeight);
+            weight = random.nextInt(totalWeight);
             for (int i = 0; i < shortestCount; i++) {
                 index = shortestIndexes[i];
                 weight -= candidates[index].getWeight();
@@ -112,7 +115,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
                 }
             }
         }
-        index = ThreadLocalRandom.current().nextInt(shortestCount);
+        index = random.nextInt(shortestCount);
         return candidates[shortestIndexes[index]];
     }
 

@@ -49,16 +49,20 @@ public class LoadBalanceFilter implements RouteFilter {
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         RouteTarget target = invocation.getRouteTarget();
-        if (!target.isEmpty()) {
+        int size = target.size();
+        if (size > 0) {
             List<? extends Endpoint> prefers = preferSticky(target, invocation);
             if (prefers != null && !prefers.isEmpty()) {
                 target.setEndpoints(prefers);
             } else {
-                LoadBalancer loadBalancer = getLoadBalancer(invocation);
+                ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+                LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+                String policyType = loadBalancePolicy == null ? null : loadBalancePolicy.getPolicyType();
+                LoadBalancer loadBalancer = invocation.getContext().getOrDefaultLoadBalancer(policyType);
                 target.choose(endpoints -> {
                     List<? extends Endpoint> backends = endpoints;
                     do {
-                        Candidate<? extends Endpoint> candidate = loadBalancer.elect(backends, invocation);
+                        Candidate<? extends Endpoint> candidate = loadBalancer.elect(backends, loadBalancePolicy, invocation);
                         Endpoint backend = candidate == null ? null : candidate.getTarget();
                         if (backend == null) {
                             return null;
@@ -103,19 +107,6 @@ public class LoadBalanceFilter implements RouteFilter {
             }
         }
         return null;
-    }
-
-    /**
-     * Retrieves the appropriate load balancer based on the service policy of the current invocation.
-     *
-     * @param invocation The current outbound invocation.
-     * @return The load balancer to use for load balancing.
-     */
-    private LoadBalancer getLoadBalancer(OutboundInvocation<?> invocation) {
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
-        String policyType = loadBalancePolicy == null ? null : loadBalancePolicy.getPolicyType();
-        return invocation.getContext().getOrDefaultLoadBalancer(policyType);
     }
 
 }

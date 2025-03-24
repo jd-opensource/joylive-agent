@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -223,6 +224,13 @@ public interface ServiceRequest extends Request {
     default void degrade(FaultType type, String reason, DegradeConfig config) {
         throw type.degrade(reason, config);
     }
+
+    /**
+     * Returns an instance of {@link Random} for generating random values.
+     *
+     * @return a {@link Random} instance, never {@code null}.
+     */
+    Random getRandom();
 
     /**
      * Defines an interface for inbound service requests.

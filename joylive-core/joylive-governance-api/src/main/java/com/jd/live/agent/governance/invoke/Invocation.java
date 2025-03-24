@@ -46,6 +46,7 @@ import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
 
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Abstract class for an invocation, encapsulating the context and metadata required for processing a service request.
@@ -166,6 +167,10 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
 
     public GatewayRole getGateway() {
         return GatewayRole.NONE;
+    }
+
+    public Random getRandom() {
+        return request.getRandom();
     }
 
     /**

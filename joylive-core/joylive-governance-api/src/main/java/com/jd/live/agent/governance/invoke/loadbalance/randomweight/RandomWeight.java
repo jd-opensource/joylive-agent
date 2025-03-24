@@ -18,7 +18,7 @@ package com.jd.live.agent.governance.invoke.loadbalance.randomweight;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -28,27 +28,30 @@ public class RandomWeight {
 
     /**
      * Randomly selects an element from a list based on weights determined by a weight function.
+     * The probability of an element being selected is proportional to its weight.
      *
+     * @param <T>        The generic type of the elements in the list.
      * @param targets    The list of elements to select from.
      * @param weightFunc A function that provides the weight for each element.
-     * @param <T>        The generic type of the elements.
-     * @return The selected element, or null if the list is empty or only contains elements with non-positive weights.
+     * @param random     A random number generator used for the weighted selection process.
+     * @return The selected element, or {@code null} if the list is empty, null, or contains only elements with non-positive weights.
      */
-    public static <T> T choose(List<T> targets, Function<T, Integer> weightFunc) {
-        Candidate<T> candidate = elect(targets, weightFunc);
+    public static <T> T choose(List<T> targets, Function<T, Integer> weightFunc, Random random) {
+        Candidate<T> candidate = elect(targets, weightFunc, random);
         return candidate == null ? null : candidate.getTarget();
     }
 
     /**
      * Randomly selects an element from a list based on weights determined by a weight function.
      *
+     * @param <T>        The generic type of the elements in the list.
      * @param targets    The list of elements to select from.
-     * @param weightFunc A function that provides the weight for each element.
-     * @param <T>        The generic type of the elements.
-     * @return The elected candidate, or null if the list is empty or null
+     * @param weightFunc A function that provides the weight for each element in the list.
+     * @param random     A random number generator used for the weighted selection process.
+     * @return The elected candidate, or {@code null} if the list is empty or {@code null}.
      */
     @SuppressWarnings("unchecked")
-    public static <T> Candidate<T> elect(List<T> targets, Function<T, Integer> weightFunc) {
+    public static <T> Candidate<T> elect(List<T> targets, Function<T, Integer> weightFunc, Random random) {
         Candidate<T>[] candidates = new Candidate[targets == null ? 0 : targets.size()];
         if (targets != null) {
             int index = 0;
@@ -57,19 +60,20 @@ public class RandomWeight {
                 index++;
             }
         }
-        return elect(candidates);
+        return elect(candidates, random);
     }
 
     /**
      * Elects a candidate from the provided array of candidates based on their weights.
      * This method implements a weighted random selection algorithm to choose a candidate.
      *
-     * @param <T>        the type of the candidate
-     * @param candidates the array of candidates to elect from
-     * @return the elected candidate, or {@code null} if the candidates array is {@code null} or empty
-     * @throws IllegalArgumentException if any candidate in the array is {@code null}
+     * @param <T>        The type of the candidate.
+     * @param candidates The array of candidates to elect from.
+     * @param random     A random number generator used for the weighted selection process.
+     * @return The elected candidate, or {@code null} if the candidates array is {@code null} or empty.
+     * @throws IllegalArgumentException If any candidate in the array is {@code null}.
      */
-    public static <T> Candidate<T> elect(Candidate<T>[] candidates) {
+    public static <T> Candidate<T> elect(Candidate<T>[] candidates, Random random) {
         int size = candidates == null ? 0 : candidates.length;
         switch (size) {
             case 0:
@@ -99,23 +103,23 @@ public class RandomWeight {
 
                 // If weights are uniform or total weight is zero, select randomly
                 if (uniformWeights || totalWeight <= 0) {
-                    int index = ThreadLocalRandom.current().nextInt(size);
+                    int index = random.nextInt(size);
                     return candidates[index];
                 }
 
                 // Select based on weight
-                int random = ThreadLocalRandom.current().nextInt(totalWeight);
-                int start = random >= halfWeight ? half : 0;
+                int randomWeight = random.nextInt(totalWeight);
+                int start = randomWeight >= halfWeight ? half : 0;
                 int weight = start == 0 ? 0 : halfWeight;
                 for (int i = start; i < size; i++) {
                     candidate = candidates[i];
                     weight += candidate.getWeight();
-                    if (weight >= random) {
+                    if (weight >= randomWeight) {
                         return candidate;
                     }
                 }
                 // Fallback, though this should not be reached
-                return candidates[ThreadLocalRandom.current().nextInt(size)];
+                return candidates[random.nextInt(size)];
         }
     }
 }
