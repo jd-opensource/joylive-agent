@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.counter;
+package com.jd.live.agent.governance.instance.counter.internal;
 
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.instance.counter.ServiceCounter;
+import com.jd.live.agent.governance.instance.counter.CounterManager;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,28 +25,28 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A class that manages a collection of Counter instances.
  */
-public class CounterManager {
+public class InternalCounterManager implements CounterManager {
 
     private final Timer timer;
 
-    // service&group/endpoint/path&method
     private final Map<String, ServiceCounter> counter = new ConcurrentHashMap<>();
 
-    public CounterManager(Timer timer) {
+    public InternalCounterManager(Timer timer) {
         this.timer = timer;
     }
 
-    public ServiceCounter getOrCreate(URI uri) {
-        return counter.computeIfAbsent(getServiceKey(uri), n -> new ServiceCounter(n, timer));
+    @Override
+    public ServiceCounter getOrCreateCounter(String service, String group) {
+        return counter.computeIfAbsent(getKey(service, group), n -> new InternalServiceCounter(n, timer));
     }
 
-    public ServiceCounter get(URI uri) {
-        return counter.get(getServiceKey(uri));
+    @Override
+    public ServiceCounter getCounter(String service, String group) {
+        return counter.get(getKey(service, group));
     }
 
-    private String getServiceKey(URI uri) {
-        String group = uri.getParameter(PolicyId.KEY_SERVICE_GROUP);
-        return group == null || group.isEmpty() ? uri.getHost() : uri.getHost() + "?group=" + group;
+    private String getKey(String service, String group) {
+        return group == null || group.isEmpty() ? service : service + "?group=" + group;
     }
 
 }

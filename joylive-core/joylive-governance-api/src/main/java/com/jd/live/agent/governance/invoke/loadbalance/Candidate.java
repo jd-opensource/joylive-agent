@@ -15,20 +15,34 @@
  */
 package com.jd.live.agent.governance.invoke.loadbalance;
 
+import com.jd.live.agent.governance.instance.counter.Counter;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
 public class Candidate<T> {
 
-    private T target;
+    protected final T target;
 
-    private int index;
+    protected final int index;
+
+    protected final Counter counter;
+
+    @Setter
+    protected Integer weight;
 
     public Candidate(T target, int index) {
-        this.target = target;
-        this.index = index;
+        this(target, index, null, null);
     }
 
+    public Candidate(T target, int index, Integer weight) {
+        this(target, index, null, weight);
+    }
+
+    public Candidate(T target, int index, Counter counter, Integer weight) {
+        this.target = target;
+        this.index = index;
+        this.counter = counter;
+        this.weight = weight;
+    }
 }

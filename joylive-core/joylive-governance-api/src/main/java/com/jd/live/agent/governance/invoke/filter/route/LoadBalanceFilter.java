@@ -63,6 +63,9 @@ public class LoadBalanceFilter implements RouteFilter {
                         if (backend == null) {
                             return null;
                         } else if (invocation.onElect(backend)) {
+                            if (candidate.getCounter() != null) {
+                                invocation.getRequest().setAttribute(Endpoint.ATTRIBUTE_COUNTER, candidate.getCounter());
+                            }
                             return Collections.singletonList(backend);
                         }
                         backends = backends == endpoints ? new ArrayList<>(endpoints) : backends;

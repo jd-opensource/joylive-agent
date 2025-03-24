@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.invoke.counter;
+package com.jd.live.agent.governance.instance.counter.internal;
 
 import com.jd.live.agent.core.util.AtomicUtils;
+import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.instance.counter.EndpointCounter;
 import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * It's from org.apache.dubbo.rpc.RpcStatus
  */
-public class Counter {
+public class InternalCounter implements Counter {
 
     /**
      * The number of active requests.
@@ -66,28 +68,32 @@ public class Counter {
     /**
      * The current snapshot of the counter's state.
      */
-    private final AtomicReference<CounterSnapshot> snapshot = new AtomicReference<>(new CounterSnapshot(this));
+    private final AtomicReference<InternalCounterSnapshot> snapshot = new AtomicReference<>(new InternalCounterSnapshot(this));
 
     @Getter
-    private final ServiceCounter service;
+    private final EndpointCounter parent;
 
-    protected Counter(ServiceCounter service) {
-        this.service = service;
+    public InternalCounter(EndpointCounter parent) {
+        this.parent = parent;
     }
 
+    @Override
     public boolean begin(int max) {
         int maxValue = (max <= 0) ? Integer.MAX_VALUE : max;
         return AtomicUtils.increment(active, (older, newer) -> older != Integer.MAX_VALUE && newer <= maxValue);
     }
 
+    @Override
     public void success(long elapsed) {
         end(elapsed, true);
     }
 
+    @Override
     public void fail(long elapsed) {
         end(elapsed, false);
     }
 
+    @Override
     public void end(long elapsed, boolean succeeded) {
         active.decrementAndGet();
         total.incrementAndGet();
@@ -103,18 +109,22 @@ public class Counter {
         }
     }
 
+    @Override
     public int getActive() {
         return active.get();
     }
 
+    @Override
     public long getTotal() {
         return total.longValue();
     }
 
+    @Override
     public long getTotalElapsed() {
         return totalElapsed.get();
     }
 
+    @Override
     public long getAverageElapsed() {
         long total = getTotal();
         if (total == 0) {
@@ -123,18 +133,22 @@ public class Counter {
         return getTotalElapsed() / total;
     }
 
+    @Override
     public long getMaxElapsed() {
         return maxElapsed.get();
     }
 
+    @Override
     public int getFailed() {
         return failed.get();
     }
 
+    @Override
     public long getFailedElapsed() {
         return failedElapsed.get();
     }
 
+    @Override
     public long getFailedAverageElapsed() {
         long failed = getFailed();
         if (failed == 0) {
@@ -143,18 +157,22 @@ public class Counter {
         return getFailedElapsed() / failed;
     }
 
+    @Override
     public long getFailedMaxElapsed() {
         return failedMaxElapsed.get();
     }
 
+    @Override
     public long getSucceeded() {
         return getTotal() - getFailed();
     }
 
+    @Override
     public long getSucceededElapsed() {
         return getTotalElapsed() - getFailedElapsed();
     }
 
+    @Override
     public long getSucceededAverageElapsed() {
         long succeeded = getSucceeded();
         if (succeeded == 0) {
@@ -163,10 +181,12 @@ public class Counter {
         return getSucceededElapsed() / succeeded;
     }
 
+    @Override
     public long getSucceededMaxElapsed() {
         return succeededMaxElapsed.get();
     }
 
+    @Override
     public long getAverageTps() {
         if (getTotalElapsed() >= 1000L) {
             return getTotal() / (getTotalElapsed() / 1000L);
@@ -174,14 +194,16 @@ public class Counter {
         return getTotal();
     }
 
-    public CounterSnapshot getSnapshot() {
+    @Override
+    public InternalCounterSnapshot getSnapshot() {
         return snapshot.get();
     }
 
+    @Override
     public void snapshot() {
-        CounterSnapshot last = snapshot.get();
+        InternalCounterSnapshot last = snapshot.get();
         long succeeded = last.getSucceeded();
         long succeededAverageElapsed = succeeded < 10 ? 0 : last.getSucceededAverageElapsed(succeeded);
-        snapshot.set(new CounterSnapshot(this, succeededAverageElapsed));
+        snapshot.set(new InternalCounterSnapshot(this, succeededAverageElapsed));
     }
 }

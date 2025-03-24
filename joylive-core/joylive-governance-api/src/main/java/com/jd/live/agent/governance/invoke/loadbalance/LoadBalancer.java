@@ -46,6 +46,11 @@ public interface LoadBalancer {
     int ORDER_SHORTEST_RESPONSE = ORDER_ROUND_ROBIN + 1;
 
     /**
+     * Order value for weight-response strategy.
+     */
+    int ORDER_WEIGHT_RESPONSE = ORDER_SHORTEST_RESPONSE + 1;
+
+    /**
      * Chooses an endpoint from the list based on the invocation.
      *
      * @param <T>        the type of the endpoint
@@ -55,7 +60,13 @@ public interface LoadBalancer {
      */
     default <T extends Endpoint> T choose(List<T> endpoints, Invocation<?> invocation) {
         Candidate<T> candidate = elect(endpoints, invocation);
-        return candidate == null ? null : candidate.getTarget();
+        if (candidate == null) {
+            return null;
+        }
+        if (candidate.getCounter() != null) {
+            invocation.getRequest().setAttribute(Endpoint.ATTRIBUTE_COUNTER, candidate.getCounter());
+        }
+        return candidate.getTarget();
     }
 
     /**

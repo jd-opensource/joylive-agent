@@ -18,11 +18,10 @@ package com.jd.live.agent.governance.invoke.loadbalance.response;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.instance.counter.CounterManager;
+import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import com.jd.live.agent.governance.invoke.Invocation;
-import com.jd.live.agent.governance.invoke.counter.Counter;
-import com.jd.live.agent.governance.invoke.counter.CounterManager;
-import com.jd.live.agent.governance.invoke.counter.EndpointCounter;
-import com.jd.live.agent.governance.invoke.counter.ServiceCounter;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -43,6 +42,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
      */
     public static final String LOAD_BALANCER_NAME = "SHORTEST_RESPONSE";
 
+    @SuppressWarnings("unchecked")
     @Override
     protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, Invocation<?> invocation) {
         // Number of invokers
@@ -54,7 +54,7 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         // The index of invokers having the same estimated shortest response time
         int[] shortestIndexes = new int[length];
         // the weight of every invoker
-        int[] weights = new int[length];
+        Candidate<T>[] candidates = new Candidate[length];
         // The sum of the warmup weights of all the shortest response  invokers
         int totalWeight = 0;
         // The weight of the first shortest response invokers
@@ -62,25 +62,25 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         // Every shortest response invoker has the same weight value?
         boolean sameWeight = true;
 
-        CounterManager counterManager = invocation.getContext().getCounterManager();
         ServiceRequest request = invocation.getRequest();
         URI uri = invocation.getServiceMetadata().getUri();
-        ServiceCounter serviceCounter = counterManager.getOrCreate(uri);
+        CounterManager counterManager = invocation.getContext().getCounterManager();
+        ServiceCounter serviceCounter = counterManager.getOrCreateCounter(request.getService(), request.getGroup());
         long accessTime = System.currentTimeMillis();
+        T endpoint;
+        Counter counter;
+        long estimateResponse;
+        int weight;
         // Filter out all the shortest response invokers
         for (int i = 0; i < length; i++) {
-            T endpoint = endpoints.get(i);
-
-            EndpointCounter endpointCounter = serviceCounter.getOrCreate(endpoint.getId());
-            endpointCounter.setAccessTime(accessTime);
-            Counter counter = endpointCounter.getOrCreate(uri);
-            endpoint.setAttribute(Endpoint.ATTRIBUTE_COUNTER, counter);
+            endpoint = endpoints.get(i);
+            counter = endpoint.getCounter(serviceCounter, uri, accessTime);
 
             // Calculate the estimated response time from the product of active connections and succeeded average
             // elapsed time.
-            long estimateResponse = counter.getSnapshot().getEstimateResponse();
-            int weight = endpoint.reweight(request);
-            weights[i] = weight;
+            estimateResponse = counter.getSnapshot().getEstimateResponse();
+            weight = endpoint.reweight(request);
+            candidates[i] = new Candidate<>(endpoint, i, counter, weight);
             // Same as LeastActiveLoadBalance
             if (estimateResponse < shortestResponse) {
                 shortestResponse = estimateResponse;
@@ -99,20 +99,21 @@ public class ShortestResponseLoadBalancer extends AbstractLoadBalancer {
         }
 
         if (shortestCount == 1) {
-            return new Candidate<>(endpoints.get(shortestIndexes[0]), shortestIndexes[0]);
+            return candidates[shortestIndexes[0]];
         }
+        int index;
         if (!sameWeight && totalWeight > 0) {
-            int offsetWeight = ThreadLocalRandom.current().nextInt(totalWeight);
+            weight = ThreadLocalRandom.current().nextInt(totalWeight);
             for (int i = 0; i < shortestCount; i++) {
-                int shortestIndex = shortestIndexes[i];
-                offsetWeight -= weights[shortestIndex];
-                if (offsetWeight < 0) {
-                    return new Candidate<>(endpoints.get(shortestIndex), shortestIndex);
+                index = shortestIndexes[i];
+                weight -= candidates[index].getWeight();
+                if (weight < 0) {
+                    return candidates[index];
                 }
             }
         }
-        int index = ThreadLocalRandom.current().nextInt(shortestCount);
-        return new Candidate<>(endpoints.get(shortestIndexes[index]), shortestIndexes[index]);
+        index = ThreadLocalRandom.current().nextInt(shortestCount);
+        return candidates[shortestIndexes[index]];
     }
 
 }
