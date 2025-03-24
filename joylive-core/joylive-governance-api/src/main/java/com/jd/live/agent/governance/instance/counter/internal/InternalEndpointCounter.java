@@ -69,9 +69,11 @@ public class InternalEndpointCounter implements EndpointCounter {
         if (path == null || path.isEmpty()) {
             path = "";
         } else {
-            while (path.charAt(path.length() - 1) == '/') {
-                path = path.substring(0, path.length() - 1);
+            int pos = path.length() - 1;
+            while (pos >= 0 && path.charAt(pos) == '/') {
+                pos--;
             }
+            path = pos < 0 ? "" : path.substring(0, pos + 1);
         }
         return method == null || method.isEmpty() ? path : path + "?method=" + method;
     }
