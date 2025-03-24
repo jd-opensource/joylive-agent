@@ -34,13 +34,18 @@ import java.util.List;
  *
  * @since 1.0.0
  */
-@Extension(value = RandomWeightLoadBalancer.LOAD_BALANCER_NAME, order = LoadBalancer.ORDER_RANDOM_WEIGHT)
+@Extension(value = {RandomWeightLoadBalancer.RANDOM, RandomWeightLoadBalancer.RANDOM_WEIGHT}, order = LoadBalancer.ORDER_RANDOM_WEIGHT)
 public class RandomWeightLoadBalancer extends AbstractLoadBalancer {
 
     /**
      * The name assigned to this load balancer.
      */
-    public static final String LOAD_BALANCER_NAME = "RANDOM";
+    protected static final String RANDOM = "RANDOM";
+
+    /**
+     * The name assigned to this load balancer.
+     */
+    protected static final String RANDOM_WEIGHT = "RANDOM_WEIGHT";
 
     @Override
     protected <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
