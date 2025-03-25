@@ -57,7 +57,7 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_LANE_SPACE;
+        return PolicyWatcher.TYPE_LANE_POLICY;
     }
 
     @Override

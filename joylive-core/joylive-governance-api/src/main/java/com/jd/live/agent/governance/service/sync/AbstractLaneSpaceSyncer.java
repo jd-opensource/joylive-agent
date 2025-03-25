@@ -41,7 +41,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_LANE_SPACE;
+        return PolicyWatcher.TYPE_LANE_POLICY;
     }
 
     @Override

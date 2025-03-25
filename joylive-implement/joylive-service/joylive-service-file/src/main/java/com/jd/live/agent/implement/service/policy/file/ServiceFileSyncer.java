@@ -57,7 +57,7 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_SERVICE_SPACE;
+        return PolicyWatcher.TYPE_SERVICE_POLICY;
     }
 
     @Override

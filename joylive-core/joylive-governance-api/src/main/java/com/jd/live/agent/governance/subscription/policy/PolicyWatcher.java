@@ -21,19 +21,19 @@ package com.jd.live.agent.governance.subscription.policy;
 public interface PolicyWatcher {
 
     /**
-     * A constant representing the type of configuration space for live space.
+     * A constant representing the live space policy.
      */
-    String TYPE_LIVE_SPACE = "liveSpace";
+    String TYPE_LIVE_POLICY = "live";
 
     /**
-     * A constant representing the type of configuration space for service space.
+     * A constant representing the service space policy.
      */
-    String TYPE_SERVICE_SPACE = "serviceSpace";
+    String TYPE_SERVICE_POLICY = "service";
 
     /**
-     * A constant representing the type of configuration space for lane space.
+     * A constant representing the lane space policy.
      */
-    String TYPE_LANE_SPACE = "laneSpace";
+    String TYPE_LANE_POLICY = "lane";
 
     /**
      * Adds a listener for configuration updates of the specified type.

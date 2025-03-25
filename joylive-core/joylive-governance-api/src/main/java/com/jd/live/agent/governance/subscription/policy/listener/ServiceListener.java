@@ -134,7 +134,7 @@ public class ServiceListener extends AbstractListener<Service> {
      * @param subscription The policy subscription to subscribe to.
      */
     private void subscribe(PolicySubscription subscription) {
-        if (subscription != null && PolicyWatcher.TYPE_SERVICE_SPACE.equals(subscription.getType())) {
+        if (subscription != null && PolicyWatcher.TYPE_SERVICE_POLICY.equals(subscription.getType())) {
             String name = subscription.getName();
             PolicySubscription old = subscribers.putIfAbsent(name, subscription);
             if (old != null && old != subscription) {

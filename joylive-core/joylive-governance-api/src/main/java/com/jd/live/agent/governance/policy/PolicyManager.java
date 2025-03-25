@@ -262,7 +262,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             return CompletableFuture.completedFuture(null);
         }
         namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
-        return subscribe(new PolicySubscription(service, namespace, TYPE_SERVICE_SPACE, serviceSyncers));
+        return subscribe(new PolicySubscription(service, namespace, TYPE_SERVICE_POLICY, serviceSyncers));
     }
 
     @Override
@@ -287,9 +287,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                     for (int i = 0; i < futures.size(); i++) {
                         if (!futures.get(i).isDone()) {
                             PolicySubscription subscription = subscriptions.get(i);
-                            logger.error("It's timeout to fetch {}@{} of {} governance policy by {}.",
-                                    subscription.getName(), subscription.getNamespace(),
-                                    subscription.getType(), subscription.getUnCompletedSyncers());
+                            logger.error("It's timeout to fetch {} {} governance policy by {}.",
+                                    subscription.getFullName(), subscription.getType(), subscription.getUnCompletedSyncers());
                         }
                     }
                     error = "It's timeout to fetch governance policy.";
@@ -331,9 +330,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             }
         });
 
-        policyWatcherSupervisor.addListener(TYPE_LIVE_SPACE, new LiveSpaceListener(this, objectParser));
-        policyWatcherSupervisor.addListener(TYPE_LANE_SPACE, new LaneSpaceListener(this, objectParser));
-        policyWatcherSupervisor.addListener(TYPE_SERVICE_SPACE, new ServiceListener(this, objectParser, policyPublisher));
+        policyWatcherSupervisor.addListener(TYPE_LIVE_POLICY, new LiveSpaceListener(this, objectParser));
+        policyWatcherSupervisor.addListener(TYPE_LANE_POLICY, new LaneSpaceListener(this, objectParser));
+        policyWatcherSupervisor.addListener(TYPE_SERVICE_POLICY, new ServiceListener(this, objectParser, policyPublisher));
     }
 
     @Override
@@ -381,7 +380,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     /**
      * Computes a list of policy service names by inspecting the available services from the service supervisor.
-     * Only services of type {@link PolicyService} with a policy type of {@link PolicyWatcher#TYPE_SERVICE_SPACE} are included.
+     * Only services of type {@link PolicyService} with a policy type of {@link PolicyWatcher#TYPE_SERVICE_POLICY} are included.
      *
      * @return A list of policy service names that match the criteria.
      */
@@ -392,7 +391,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             for (PolicyWatcher service : watchers) {
                 if (service instanceof PolicyService) {
                     PolicyService configService = (PolicyService) service;
-                    if (TYPE_SERVICE_SPACE.equals(configService.getType())) {
+                    if (TYPE_SERVICE_POLICY.equals(configService.getType())) {
                         result.add(configService.getName());
                     }
                 }
@@ -416,7 +415,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                 warmups.add(name);
             }
             if (!warmups.isEmpty()) {
-                warmups.forEach(o -> subscribe(new PolicySubscription(o, namespace, TYPE_SERVICE_SPACE, serviceSyncers)));
+                warmups.forEach(o -> subscribe(new PolicySubscription(o, namespace, TYPE_SERVICE_POLICY, serviceSyncers)));
             }
         }
     }

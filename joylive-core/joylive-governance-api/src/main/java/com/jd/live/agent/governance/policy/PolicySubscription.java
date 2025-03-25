@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.policy.service.ServiceName;
 import lombok.Getter;
 
@@ -37,9 +39,13 @@ import java.util.stream.Collectors;
 @Getter
 public class PolicySubscription implements ServiceName {
 
+    private static final Logger logger = LoggerFactory.getLogger(PolicySubscription.class);
+
     private final String name;
 
     private final String namespace;
+
+    private final String fullName;
 
     private final String type;
 
@@ -64,6 +70,7 @@ public class PolicySubscription implements ServiceName {
     public PolicySubscription(String name, String namespace, String type, List<String> syncers) {
         this.name = name;
         this.namespace = namespace;
+        this.fullName = namespace == null || namespace.isEmpty() ? name : name + "@@" + namespace;
         this.type = type;
         this.syncers = syncers == null || syncers.isEmpty() ? null
                 : syncers.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));
@@ -82,6 +89,7 @@ public class PolicySubscription implements ServiceName {
         }
         AtomicBoolean done = syncers.get(syncer);
         if (done != null && done.compareAndSet(false, true)) {
+            logger.error("Success fetching {} {} governance policy by {}.", fullName, type, syncer);
             if (counter.decrementAndGet() == 0) {
                 SyncState sr = state.get();
                 if ((sr == null || !sr.isSuccess()) && state.compareAndSet(sr, new SyncState(true))) {
@@ -156,6 +164,7 @@ public class PolicySubscription implements ServiceName {
     }
 
     private void onComplete(Consumer<CompletableFuture<Void>> consumer) {
+        logger.error("Complete fetching {} {} governance policy.", fullName, type);
         synchronized (mutex) {
             futures.forEach(consumer);
             futures.clear();

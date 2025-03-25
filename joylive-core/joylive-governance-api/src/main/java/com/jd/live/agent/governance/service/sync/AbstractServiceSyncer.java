@@ -73,7 +73,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_SERVICE_SPACE;
+        return PolicyWatcher.TYPE_SERVICE_POLICY;
     }
 
     @Override
@@ -327,7 +327,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      */
     protected void addTask(PolicySubscription task, Predicate<PolicySubscription> predicate) {
         if (task != null
-                && PolicyWatcher.TYPE_SERVICE_SPACE.equals(task.getType())
+                && PolicyWatcher.TYPE_SERVICE_POLICY.equals(task.getType())
                 && isStarted()
                 && (predicate == null || predicate.test(task))) {
             subscribers.add(task);

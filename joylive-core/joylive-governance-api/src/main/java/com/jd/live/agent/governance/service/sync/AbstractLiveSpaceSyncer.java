@@ -41,7 +41,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_LIVE_SPACE;
+        return PolicyWatcher.TYPE_LIVE_POLICY;
     }
 
     @Override

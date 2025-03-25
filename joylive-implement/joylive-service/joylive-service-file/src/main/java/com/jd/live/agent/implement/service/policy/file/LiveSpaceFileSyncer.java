@@ -57,7 +57,7 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_LIVE_SPACE;
+        return PolicyWatcher.TYPE_LIVE_POLICY;
     }
 
     @Override
