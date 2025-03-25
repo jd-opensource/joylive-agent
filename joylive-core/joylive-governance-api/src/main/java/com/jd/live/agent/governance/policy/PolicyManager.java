@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Event;
@@ -40,11 +42,11 @@ import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.instance.counter.CounterManager;
+import com.jd.live.agent.governance.instance.counter.internal.InternalCounterManager;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
-import com.jd.live.agent.governance.instance.counter.internal.InternalCounterManager;
-import com.jd.live.agent.governance.invoke.filter.LiveFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
+import com.jd.live.agent.governance.invoke.filter.LiveFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -79,6 +81,8 @@ import static com.jd.live.agent.governance.subscription.policy.PolicyWatcher.*;
 @Injectable
 @Extension(value = "PolicyManager", order = InjectSourceSupplier.ORDER_POLICY_MANAGER)
 public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, ExtensionInitializer, InvocationContext, ServiceSupervisorAware {
+
+    private static final Logger logger = LoggerFactory.getLogger(PolicyManager.class);
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
@@ -269,16 +273,28 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Override
     public void waitReady() {
         if (!subscriptions.isEmpty()) {
+            List<PolicySubscription> subscriptions = new ArrayList<>(this.subscriptions.values());
             List<CompletableFuture<Void>> futures = new ArrayList<>(subscriptions.size());
-            subscriptions.forEach((k, v) -> futures.add(v.watch()));
+            subscriptions.forEach(subscription -> futures.add(subscription.watch()));
             try {
                 Futures.allOf(futures).get(governanceConfig.getInitializeTimeout(), TimeUnit.MILLISECONDS);
                 systemPublisher.offer(AgentEvent.onServicePolicyReady("Application service policies are ready."));
             } catch (Throwable e) {
                 Throwable cause = e instanceof ExecutionException ? e.getCause() : null;
                 cause = cause != null ? cause : e;
-                String error = cause instanceof TimeoutException ? "It's timeout to fetch governance policy." :
-                        "Failed to fetch governance policy. caused by " + cause.getMessage();
+                String error;
+                if (cause instanceof TimeoutException) {
+                    for (int i = 0; i < futures.size(); i++) {
+                        if (!futures.get(i).isDone()) {
+                            PolicySubscription subscription = subscriptions.get(i);
+                            logger.error("It's timeout to fetch {}@{} of {} governance policy.", subscription.getName(),
+                                    subscription.getNamespace(), subscription.getType());
+                        }
+                    }
+                    error = "It's timeout to fetch governance policy.";
+                } else {
+                    error = "Failed to fetch governance policy. caused by " + cause.getMessage();
+                }
                 systemPublisher.offer(AgentEvent.onServicePolicyFailure(error, cause));
             }
         }
