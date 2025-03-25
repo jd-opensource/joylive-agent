@@ -33,7 +33,6 @@ import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LivePa
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayInboundServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.InboundServiceMetadataParser;
-import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.live.Place;
@@ -184,17 +183,9 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         }
 
         @Override
-        protected PolicyId parsePolicyId() {
-            if (domainPolicy != null && liveMetadata != null) {
-                return ((LiveDomainMetadata) liveMetadata).getPolicyId();
-            }
-            return super.parsePolicyId();
-        }
-
-        @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
             TrafficEventBuilder result = super.configure(builder);
-            return liveMetadata == null ? result : result.variable(((LiveDomainMetadata) liveMetadata).getBizVariable());
+            return liveMetadata == null ? result : result.liveVariable(((LiveDomainMetadata) liveMetadata).getBizVariable());
         }
     }
 

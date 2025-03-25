@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
+import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser;
@@ -94,9 +95,14 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     protected LaneMetadata laneMetadata;
 
     /**
-     * The policy id for this invocation
+     * The service policy id for this invocation
      */
-    protected PolicyId policyId;
+    protected PolicyId servciePolicyId;
+
+    /**
+     * The live policy id for this invocation
+     */
+    protected PolicyId livePolicyId;
 
     /**
      * Constructs a new Invocation object.
@@ -129,7 +135,8 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         this.serviceMetadata = liveMetadata == null ? serviceMetadata : serviceParser.configure(serviceMetadata, liveMetadata.getRule());
         this.liveMetadata = liveParser == null ? null : liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
         this.laneMetadata = laneParser == null ? null : laneParser.parse();
-        this.policyId = parsePolicyId();
+        this.livePolicyId = parseLivePolicyId();
+        this.servciePolicyId = parseServicePolicyId();
     }
 
     /**
@@ -161,8 +168,12 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      *
      * @return the parsed policy ID
      */
-    protected PolicyId parsePolicyId() {
+    protected PolicyId parseServicePolicyId() {
         return serviceMetadata.getServicePolicy();
+    }
+
+    protected PolicyId parseLivePolicyId() {
+        return liveMetadata instanceof LiveDomainMetadata ? ((LiveDomainMetadata) liveMetadata).getPolicyId() : null;
     }
 
     public GatewayRole getGateway() {
@@ -324,18 +335,22 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         Cell localCell = liveMetadata == null ? null : liveMetadata.getLocalCell();
         LaneSpace laneSpace = laneMetadata == null ? null : laneMetadata.getTargetSpace();
         Lane localLane = laneMetadata == null ? null : laneMetadata.getLocalLane();
-        URI uri = policyId == null ? null : policyId.getUri();
+        URI servcieUri = servciePolicyId == null ? null : servciePolicyId.getUri();
+        URI liveUri = livePolicyId == null ? null : livePolicyId.getUri();
         return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).
                 unitRuleId(unitRule == null ? null : unitRule.getId()).
                 localUnit(localUnit == null ? null : localUnit.getCode()).
                 localCell(localCell == null ? null : localCell.getCode()).
+                liveDomain(liveUri == null ? null : liveUri.getHost()).
+                livePath(liveUri == null ? null : liveUri.getPath()).
+                liveVariable(liveMetadata == null ? null : liveMetadata.getVariable()).
                 laneSpaceId(laneSpace == null ? null : laneSpace.getId()).
                 localLane(localLane == null ? null : localLane.getCode()).
-                policyId(policyId == null ? null : policyId.getId()).
-                service(uri == null ? null : uri.getHost()).
-                group(uri == null ? null : uri.getParameter(PolicyId.KEY_SERVICE_GROUP)).
-                path(uri == null ? null : uri.getPath()).
-                method(uri == null ? null : uri.getParameter(PolicyId.KEY_SERVICE_METHOD));
+                policyId(servciePolicyId == null ? null : servciePolicyId.getId()).
+                service(servcieUri == null ? null : servcieUri.getHost()).
+                group(servcieUri == null ? null : servcieUri.getParameter(PolicyId.KEY_SERVICE_GROUP)).
+                path(servcieUri == null ? null : servcieUri.getPath()).
+                method(servcieUri == null ? null : servcieUri.getParameter(PolicyId.KEY_SERVICE_METHOD));
     }
 
     /**

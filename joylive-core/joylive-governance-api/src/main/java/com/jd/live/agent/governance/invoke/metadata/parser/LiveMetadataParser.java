@@ -345,10 +345,13 @@ public abstract class LiveMetadataParser implements LiveParser {
                 carrier.setCargo(Constants.LABEL_LIVE_SPACE_ID, liveSpace.getId());
                 carrier.setCargo(Constants.LABEL_RULE_ID, unitRule.getId());
                 carrier.setCargo(Constants.LABEL_VARIABLE, metadata.getVariable());
+                // not transmission
+                carrier.setAttribute(Constants.LABEL_LIVE_POLICY_ID, metadata.getPolicyId());
             } else {
                 carrier.removeCargo(Constants.LABEL_LIVE_SPACE_ID);
                 carrier.removeCargo(Constants.LABEL_RULE_ID);
                 carrier.removeCargo(Constants.LABEL_VARIABLE);
+                carrier.removeAttribute(Constants.LABEL_LIVE_POLICY_ID);
             }
         }
     }

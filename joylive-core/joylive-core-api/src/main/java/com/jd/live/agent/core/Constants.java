@@ -46,6 +46,8 @@ public interface Constants {
      */
     String LABEL_VARIABLE = LABEL_LIVE_PREFIX + "uid";
 
+    String LABEL_LIVE_POLICY_ID = LABEL_LIVE_PREFIX + "policy-id";
+
     /**
      * Constant for the label cell.
      */

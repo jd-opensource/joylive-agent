@@ -34,9 +34,11 @@ public class TrafficEvent {
 
     public static final String KEY_LIVE_RULE_ID = "live_ruleId";
 
-    public static final String KEY_LANE_SPACE_ID = "lane_spaceId";
+    public static final String KEY_LIVE_DOMAIN = "live_domain";
 
-    public static final String KEY_LANE_RULE_ID = "lane_ruleId";
+    public static final String KEY_LIVE_PATH = "live_path";
+
+    public static final String KEY_LIVE_VARIABLE = "live_variable";
 
     public static final String KEY_LOCAL_UNIT = "local_unit";
 
@@ -50,6 +52,10 @@ public class TrafficEvent {
 
     public static final String KEY_TARGET_CELL = "target_cell";
 
+    public static final String KEY_LANE_SPACE_ID = "lane_spaceId";
+
+    public static final String KEY_LANE_RULE_ID = "lane_ruleId";
+
     public static final String KEY_TARGET_LANE = "target_lane";
 
     public static final String KEY_APPLICATION = "application";
@@ -61,8 +67,6 @@ public class TrafficEvent {
     public static final String KEY_SERVICE_PATH = "service_path";
 
     public static final String KEY_SERVICE_METHOD = "service_method";
-
-    public static final String KEY_SERVICE_VARIABLE = "service_variable";
 
     public static final String KEY_SERVICE_POLICY_ID = "service_policyId";
 
@@ -113,16 +117,6 @@ public class TrafficEvent {
     private final String unitRuleId;
 
     /**
-     * The ID of the lane space associated with the event.
-     */
-    private final String laneSpaceId;
-
-    /**
-     * The ID of the lane rule associated with the event.
-     */
-    private final String laneRuleId;
-
-    /**
      * The local unit involved in the traffic event.
      */
     private final String localUnit;
@@ -146,6 +140,25 @@ public class TrafficEvent {
      * The target cell where the traffic is destined.
      */
     private final String targetCell;
+
+    private final String liveDomain;
+
+    private final String livePath;
+
+    /**
+     * The variable associated with the traffic event.
+     */
+    private final String liveVariable;
+
+    /**
+     * The ID of the lane space associated with the event.
+     */
+    private final String laneSpaceId;
+
+    /**
+     * The ID of the lane rule associated with the event.
+     */
+    private final String laneRuleId;
 
     /**
      * The target lane where the traffic is destined.
@@ -171,11 +184,6 @@ public class TrafficEvent {
      * The method that was called or is associated with the traffic event.
      */
     private final String method;
-
-    /**
-     * The variable associated with the traffic event.
-     */
-    private final String variable;
 
     /**
      * The unique id of policy uri which representing the path where the policy takes effect. such as: <br/>

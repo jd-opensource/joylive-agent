@@ -62,21 +62,27 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
 
     private static final AttributeKey<String> ATTRIBUTE_LIVE_RULE_ID = AttributeKey.stringKey(KEY_LIVE_RULE_ID);
 
-    private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
-
-    private static final AttributeKey<String> ATTRIBUTE_LANE_RULE_ID = AttributeKey.stringKey(KEY_LANE_RULE_ID);
-
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_UNIT = AttributeKey.stringKey(KEY_LOCAL_UNIT);
 
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_CELL = AttributeKey.stringKey(KEY_LOCAL_CELL);
-
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
 
     private static final AttributeKey<String> ATTRIBUTE_LOCAL_IP = AttributeKey.stringKey(KEY_LOCAL_IP);
 
     private static final AttributeKey<String> ATTRIBUTE_TARGET_UNIT = AttributeKey.stringKey(KEY_TARGET_UNIT);
 
     private static final AttributeKey<String> ATTRIBUTE_TARGET_CELL = AttributeKey.stringKey(KEY_TARGET_CELL);
+
+    private static final AttributeKey<String> ATTRIBUTE_LIVE_DOMAIN = AttributeKey.stringKey(KEY_LIVE_DOMAIN);
+
+    private static final AttributeKey<String> ATTRIBUTE_LIVE_PATH = AttributeKey.stringKey(KEY_LIVE_PATH);
+
+    private static final AttributeKey<String> ATTRIBUTE_LIVE_VARIABLE = AttributeKey.stringKey(KEY_LIVE_VARIABLE);
+
+    private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
+
+    private static final AttributeKey<String> ATTRIBUTE_LANE_RULE_ID = AttributeKey.stringKey(KEY_LANE_RULE_ID);
+
+    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
 
     private static final AttributeKey<String> ATTRIBUTE_TARGET_LANE = AttributeKey.stringKey(KEY_TARGET_LANE);
 
@@ -89,8 +95,6 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
     private static final AttributeKey<String> ATTRIBUTE_SERVICE_PATH = AttributeKey.stringKey(KEY_SERVICE_PATH);
 
     private static final AttributeKey<String> ATTRIBUTE_SERVICE_METHOD = AttributeKey.stringKey(KEY_SERVICE_METHOD);
-
-    private static final AttributeKey<String> ATTRIBUTE_SERVICE_VARIABLE = AttributeKey.stringKey(KEY_SERVICE_VARIABLE);
 
     private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
 
@@ -164,20 +168,22 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
         builder.put(ATTRIBUTE_APPLICATION, application.getName()).
                 put(ATTRIBUTE_LIVE_SPACE_ID, trafficEvent.getLiveSpaceId()).
                 put(ATTRIBUTE_LIVE_RULE_ID, trafficEvent.getUnitRuleId()).
-                put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
-                put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
                 put(ATTRIBUTE_LOCAL_UNIT, trafficEvent.getLocalUnit()).
                 put(ATTRIBUTE_LOCAL_CELL, trafficEvent.getLocalCell()).
-                put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
                 put(ATTRIBUTE_TARGET_UNIT, trafficEvent.getTargetUnit()).
                 put(ATTRIBUTE_TARGET_CELL, trafficEvent.getTargetCell()).
+                put(ATTRIBUTE_LIVE_DOMAIN, trafficEvent.getLiveDomain()).
+                put(ATTRIBUTE_LIVE_PATH, trafficEvent.getLivePath()).
+                put(ATTRIBUTE_LIVE_VARIABLE, trafficEvent.getLiveVariable()).
+                put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
+                put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
+                put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
                 put(ATTRIBUTE_TARGET_LANE, trafficEvent.getTargetLane()).
                 put(ATTRIBUTE_SERVICE_POLICY_ID, trafficEvent.getPolicyId()).
                 put(ATTRIBUTE_SERVICE_NAME, trafficEvent.getService()).
                 put(ATTRIBUTE_SERVICE_GROUP, trafficEvent.getGroup()).
                 put(ATTRIBUTE_SERVICE_PATH, trafficEvent.getPath()).
                 put(ATTRIBUTE_SERVICE_METHOD, trafficEvent.getMethod()).
-                put(ATTRIBUTE_SERVICE_VARIABLE, trafficEvent.getVariable()).
                 put(ATTRIBUTE_REJECT_TYPE, trafficEvent.getRejectTypeName()).
                 put(ATTRIBUTE_LOCAL_IP, event.getIp());
         if (trafficEvent.getPolicyTags() != null) {

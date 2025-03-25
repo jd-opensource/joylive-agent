@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
@@ -28,6 +30,7 @@ import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.Servic
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayForwardServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayOutboundServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.OutboundServiceMetadataParser;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.RpcRequest.RpcOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -96,6 +99,15 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     protected LiveParser createLiveParser() {
         return new OutboundLiveMetadataParser(request, context.getGovernanceConfig().getLiveConfig(),
                 context.getApplication(), governancePolicy);
+    }
+
+    @Override
+    protected PolicyId parseLivePolicyId() {
+        PolicyId policyId = super.parseLivePolicyId();
+        if (policyId == null) {
+            policyId = RequestContext.getAttribute(Constants.LABEL_LIVE_POLICY_ID);
+        }
+        return policyId;
     }
 
     @Override
