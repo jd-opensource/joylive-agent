@@ -15,7 +15,8 @@
  */
 package com.jd.live.agent.core.bootstrap.resource.tomcat;
 
-import com.jd.live.agent.core.bootstrap.resource.BootResourcer;
+import com.jd.live.agent.core.bootstrap.resource.BootResource;
+import com.jd.live.agent.core.bootstrap.resource.BootResourceLoader;
 import com.jd.live.agent.core.extension.annotation.Extension;
 
 import java.io.File;
@@ -26,14 +27,17 @@ import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_CLASSPATH;
+import static com.jd.live.agent.core.util.StringUtils.concat;
+
 /**
  * A class that implements the ResourceFinder interface by searching for resources in a Tomcat web application.
  */
-@Extension(value = "TomcatBootResourcer", order = BootResourcer.ORDER_TOMCAT)
-public class TomcatBootResourcer implements BootResourcer {
+@Extension(value = "TomcatBootResourceLoader", order = BootResourceLoader.ORDER_TOMCAT)
+public class TomcatBootResourceLoader implements BootResourceLoader {
 
     @Override
-    public InputStream getResource(String resource) throws IOException {
+    public InputStream getResource(BootResource resource) throws IOException {
         File workingDirectory = new File(System.getProperty("user.dir"));
         if (workingDirectory.getName().equals("bin")) {
             workingDirectory = workingDirectory.getParentFile();
@@ -46,18 +50,28 @@ public class TomcatBootResourcer implements BootResourcer {
             }
         }
         if (webappDirectory.exists()) {
-            String name = "WEB-INF/classes/" + resource;
+            String[] paths = resource.withPath()
+                    ? new String[]{concat(resource.getPath(), resource.getPath(), "/")}
+                    : new String[]{"WEB-INF/classes/" + resource.getName(), "WEB-INF/classes/config/" + resource.getName()};
             File[] files = webappDirectory.listFiles();
             if (files != null) {
                 for (File file : files) {
-                    InputStream inputStream = getInputStream(file, name, webappDirectory);
-                    if (inputStream != null) {
-                        return inputStream;
+                    for (String path : paths) {
+                        InputStream inputStream = getInputStream(file, path, webappDirectory);
+                        if (inputStream != null) {
+                            return inputStream;
+                        }
                     }
+
                 }
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean support(String schema) {
+        return schema == null || schema.isEmpty() || SCHEMA_CLASSPATH.equals(schema);
     }
 
     /**

@@ -763,15 +763,7 @@ public class StringUtils {
      * @return The concatenated URL.
      */
     public static String url(String url, String path) {
-        if (path == null || path.isEmpty()) {
-            return url;
-        } else if (url == null) {
-            return path;
-        } else if (url.endsWith("/")) {
-            return url + (path.startsWith("/") ? path.substring(1) : path);
-        } else {
-            return url + (path.startsWith("/") ? path : "/" + path);
-        }
+        return concat(url, path, "/");
     }
 
     /**
@@ -790,6 +782,27 @@ public class StringUtils {
             result = url(result, path);
         }
         return result;
+    }
+
+    /**
+     * Concatenates two strings with a specified separator, ensuring proper handling of edge cases.
+     *
+     * @param source    The source string to concatenate. Can be null or empty.
+     * @param target    The target string to concatenate. Can be null or empty.
+     * @param separator The separator to use between the source and target strings. Must not be null.
+     * @return The concatenated string, or the non-null/non-empty input string if one of the inputs is null or empty.
+     * @throws IllegalArgumentException If the separator is null.
+     */
+    public static String concat(String source, String target, String separator) {
+        if (target == null || target.isEmpty()) {
+            return source;
+        } else if (source == null) {
+            return target;
+        } else if (source.endsWith(separator)) {
+            return source + (target.startsWith(separator) ? target.substring(1) : target);
+        } else {
+            return source + (target.startsWith(separator) ? target : separator + target);
+        }
     }
 
     /**

@@ -23,18 +23,26 @@ import java.io.InputStream;
 /**
  * An interface for finding resources.
  */
-@Extensible("BootResourcer")
-public interface BootResourcer {
+@Extensible("BootResourceLoader")
+public interface BootResourceLoader {
 
-    int ORDER_CLASSLOADER = 0;
+    int ORDER_CLASSPATH = 0;
 
-    int ORDER_TOMCAT = 10;
+    int ORDER_TOMCAT = ORDER_CLASSPATH + 10;
+
+    int ORDER_FILE = ORDER_TOMCAT + 10;
 
     /**
      * Finds the resource with the given name and returns its input stream.
+     * The resource is identified by the provided {@link BootResource} object.
+     * If the resource cannot be found, this method returns {@code null}.
      *
-     * @param resource The name of the resource to find.
-     * @return The input stream of the resource, or null if the resource could not be found.
+     * @param resource The {@link BootResource} object representing the resource to find.
+     * @return An {@link InputStream} for reading the resource, or {@code null} if the resource could not be found.
+     * @throws IOException If an I/O error occurs while attempting to access the resource.
      */
-    InputStream getResource(String resource) throws IOException;
+    InputStream getResource(BootResource resource) throws IOException;
+
+    boolean support(String schema);
+
 }

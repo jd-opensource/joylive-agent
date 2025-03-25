@@ -476,14 +476,31 @@ public class LiveAgent {
          * @return A map with system properties and environment variables.
          */
         private static Map<String, Object> createEnv() {
+            // in line with Spring’s ordering
             // Create a new HashMap to store the environment variables and system properties.
-            Map<String, Object> result = new HashMap<>();
+            // Add all environment variables to the map.
+            Map<String, Object> result = new HashMap<>(System.getenv());
             // Add all system properties to the map.
             for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
                 result.put(entry.getKey().toString(), entry.getValue());
             }
-            // Add all environment variables to the map.
-            result.putAll(System.getenv());
+            // Add argument properties to the map.
+            String command = System.getProperty("sun.java.command");
+            if (command != null && !command.isEmpty()) {
+                String[] args = command.split(" ");
+                for (String arg : args) {
+                    if (arg.startsWith("--")) {
+                        int index = arg.indexOf('=');
+                        if (index > 2) {
+                            String key = arg.substring(2, index);
+                            String value = arg.substring(index + 1);
+                            if (!value.isEmpty()) {
+                                result.put(key, value);
+                            }
+                        }
+                    }
+                }
+            }
             // Return the map containing both system properties and environment variables.
             return result;
         }

@@ -19,11 +19,11 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier;
-import com.jd.live.agent.core.bootstrap.resource.BootResourcer;
+import com.jd.live.agent.core.bootstrap.resource.BootResource;
+import com.jd.live.agent.core.bootstrap.resource.BootResourceLoader;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.StringUtils;
 
 import java.io.*;
 import java.util.HashMap;
@@ -38,38 +38,24 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigEnvSupplier.class);
 
-    private final String[] resources;
-
-    private final static String[] PREFIX = new String[]{"", "BOOT-INF/classes/", "WEB-INF/classes/"};
-
     @Inject
     private Map<String, ConfigParser> parsers;
 
     @Inject
-    private List<BootResourcer> resourcers;
+    private List<BootResourceLoader> loaders;
 
     /**
-     * Constructs an AbstractEnvSupplier with the specified resources.
+     * Loads configurations from the specified resources.
      *
-     * @param resources the resource paths to load configuration from.
+     * @param resources The paths of the resources to load configurations from.
+     * @return A {@link Map} containing the loaded configurations, or {@code null} if no configurations could be loaded.
      */
-    public AbstractEnvSupplier(String... resources) {
-        this.resources = resources;
-    }
-
-    /**
-     * Retrieves the configuration by iterating through the resources and prefixes.
-     *
-     * @return a map containing the configuration, or null if no configuration is found.
-     */
-    protected Map<String, Object> loadConfigs() {
+    protected Map<String, Object> loadConfigs(String... resources) {
         if (resources != null) {
             for (String resource : resources) {
-                for (String prefix : PREFIX) {
-                    Map<String, Object> result = loadConfigs(resource, prefix);
-                    if (result != null) {
-                        return result;
-                    }
+                Map<String, Object> result = loadConfigs(new BootResource(null, null, resource));
+                if (result != null) {
+                    return result;
                 }
             }
         }
@@ -77,18 +63,32 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
     }
 
     /**
-     * Retrieves the configuration for a specific resource and prefix.
+     * Loads configurations from the specified resources.
      *
-     * @param resource the resource path.
-     * @param prefix   the prefix to be added to the resource path.
-     * @return a map containing the configuration, or null if no configuration is found.
+     * @param resources The resource to load configurations from.
+     * @return A {@link Map} containing the loaded configurations, or {@code null} if no configurations could be loaded.
      */
-    protected Map<String, Object> loadConfigs(String resource, String prefix) {
-        resource = prefix != null && !prefix.isEmpty() && !resource.startsWith(prefix)
-                ? StringUtils.url(prefix, resource)
-                : resource;
-        int pos = resource.lastIndexOf('.');
-        String ext = pos > 0 ? resource.substring(pos + 1) : "";
+    protected Map<String, Object> loadConfigs(BootResource... resources) {
+        if (resources != null) {
+            for (BootResource resource : resources) {
+                Map<String, Object> result = loadConfigs(resource);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Loads configurations from the specified {@link BootResource}.
+     *
+     * @param resource The {@link BootResource} to load configurations from.
+     * @return A {@link Map} containing the loaded configurations, or {@code null} if the resource could not be parsed.
+     */
+    protected Map<String, Object> loadConfigs(BootResource resource) {
+
+        String ext = resource.getExtension();
         ConfigParser parser = parsers.get(ext);
         if (parser != null) {
             InputStream stream = getResource(resource);
@@ -108,15 +108,22 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
         return null;
     }
 
-    protected InputStream getResource(String resource) {
-        for (BootResourcer resourcer : resourcers) {
-            try {
-                InputStream stream = resourcer.getResource(resource);
-                if (stream != null) {
-                    return stream;
+    /**
+     * Retrieves an {@link InputStream} for the specified {@link BootResource}.
+     *
+     * @param resource The {@link BootResource} to retrieve the input stream for.
+     * @return An {@link InputStream} for the resource, or {@code null} if the resource could not be accessed.
+     */
+    protected InputStream getResource(BootResource resource) {
+        for (BootResourceLoader loader : loaders) {
+            if (loader.support(resource.getSchema())) {
+                try {
+                    InputStream stream = loader.getResource(resource);
+                    if (stream != null) {
+                        return stream;
+                    }
+                } catch (IOException ignored) {
                 }
-            } catch (IOException e) {
-                return null;
             }
         }
         return null;

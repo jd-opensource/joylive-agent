@@ -27,13 +27,9 @@ public class ConfigEnvSupplier extends AbstractEnvSupplier {
 
     private static final String RESOURCE_LIVE_AGENT_PROPERTIES = "live-agent.properties";
 
-    public ConfigEnvSupplier() {
-        super(RESOURCE_LIVE_AGENT_PROPERTIES);
-    }
-
     @Override
     public void process(Map<String, Object> env) {
-        Map<String, Object> map = loadConfigs();
+        Map<String, Object> map = loadConfigs(RESOURCE_LIVE_AGENT_PROPERTIES);
         if (map != null) {
             map.forEach(env::putIfAbsent);
         }
