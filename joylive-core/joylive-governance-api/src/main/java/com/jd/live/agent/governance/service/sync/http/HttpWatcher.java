@@ -183,6 +183,7 @@ public class HttpWatcher implements AutoCloseable {
         application.labelSync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
+        conn.setReadTimeout((int) config.getTimeout());
     }
 
     /**
