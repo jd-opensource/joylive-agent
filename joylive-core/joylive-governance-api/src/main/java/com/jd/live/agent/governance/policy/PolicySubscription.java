@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.policy;
 import com.jd.live.agent.governance.policy.service.ServiceName;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -140,6 +141,18 @@ public class PolicySubscription implements ServiceName {
             }
         }
         return future;
+    }
+
+    public List<String> getUnCompletedSyncers() {
+        List<String> unComplete = new ArrayList<>();
+        if (syncers != null) {
+            syncers.forEach((k, v) -> {
+                if (!v.get()) {
+                    unComplete.add(k);
+                }
+            });
+        }
+        return unComplete;
     }
 
     private void onComplete(Consumer<CompletableFuture<Void>> consumer) {

@@ -287,8 +287,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                     for (int i = 0; i < futures.size(); i++) {
                         if (!futures.get(i).isDone()) {
                             PolicySubscription subscription = subscriptions.get(i);
-                            logger.error("It's timeout to fetch {}@{} of {} governance policy.", subscription.getName(),
-                                    subscription.getNamespace(), subscription.getType());
+                            logger.error("It's timeout to fetch {}@{} of {} governance policy by {}.",
+                                    subscription.getName(), subscription.getNamespace(),
+                                    subscription.getType(), subscription.getUnCompletedSyncers());
                         }
                     }
                     error = "It's timeout to fetch governance policy.";
