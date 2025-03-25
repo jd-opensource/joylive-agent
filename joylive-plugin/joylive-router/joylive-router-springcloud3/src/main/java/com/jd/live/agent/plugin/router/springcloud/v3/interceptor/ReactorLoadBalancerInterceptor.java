@@ -54,6 +54,6 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
      * an "empty" {@code LazyObject<String>} is returned.
      */
     private LazyObject<String> getServiceId(ReactorLoadBalancer<?> loadBalancer) {
-        return LazyObject.of(getQuietly(loadBalancer, FIELD_SERVICE_ID));
+        return LazyObject.of((String) getQuietly(loadBalancer, FIELD_SERVICE_ID));
     }
 }

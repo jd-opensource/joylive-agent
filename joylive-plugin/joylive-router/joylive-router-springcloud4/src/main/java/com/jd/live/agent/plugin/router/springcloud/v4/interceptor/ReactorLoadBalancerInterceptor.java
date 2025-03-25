@@ -25,7 +25,7 @@ import org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.getValue;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * ReactorLoadBalancerInterceptor
@@ -54,6 +54,6 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
      * an "empty" {@code LazyObject<String>} is returned.
      */
     private LazyObject<String> getServiceId(ReactorLoadBalancer<?> loadBalancer) {
-        return LazyObject.of((String) getValue(loadBalancer, FIELD_SERVICE_ID));
+        return LazyObject.of((String) getQuietly(loadBalancer, FIELD_SERVICE_ID));
     }
 }
