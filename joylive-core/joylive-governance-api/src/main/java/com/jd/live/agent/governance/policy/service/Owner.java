@@ -15,6 +15,10 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,7 +26,9 @@ import java.util.Set;
  * Represents an entity responsible for managing a set of owners in synchronization. It provides functionality
  * to add, remove, and check the presence of owners within a collection.
  */
-public class Owner {
+@Getter
+@Setter
+public class Owner implements Serializable {
 
     /**
      * A set of strings representing the unique identifiers for each owner.

@@ -53,7 +53,7 @@ public class Service extends PolicyOwner implements ServiceName {
 
     @Getter
     @Setter
-    private long version;
+    private long version = 1;
 
     @Getter
     @Setter

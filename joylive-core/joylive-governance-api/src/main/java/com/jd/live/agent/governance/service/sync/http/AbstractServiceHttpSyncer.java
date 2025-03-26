@@ -15,19 +15,16 @@
  */
 package com.jd.live.agent.governance.service.sync.http;
 
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.service.Service;
-import com.jd.live.agent.governance.service.sync.AbstractServiceSyncer;
-import com.jd.live.agent.governance.service.sync.Subscription;
+import com.jd.live.agent.governance.service.sync.*;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
-import com.jd.live.agent.governance.service.sync.SyncResponse;
-import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 
 import java.io.IOException;
@@ -62,6 +59,7 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
             K key = subscription.getKey();
             try {
                 SyncResponse<Service> response = getService(subscription, config);
+                saveConfig(response, parser, subscription.getKey().getName());
                 subscription.onUpdate(response);
             } catch (IOException e) {
                 subscription.onUpdate(new SyncResponse<>(e));
@@ -118,5 +116,19 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
         application.labelSync(conn::setRequestProperty);
         conn.setRequestProperty("Accept", "application/json");
         conn.setConnectTimeout((int) config.getTimeout());
+    }
+
+    /**
+     * Saves sync response data to a local configuration file if the response is successful.
+     *
+     * @param response the sync response to process.
+     * @param parser   the object parser used to serialize response data.
+     * @param name     the filename to use for saving the configuration.
+     */
+    protected void saveConfig(SyncResponse<Service> response, ObjectParser parser, String name) {
+        // save config to local file
+        if (response.getStatus() == SyncStatus.SUCCESS) {
+            saveConfig(response.getData(), parser, getDirectory(), name);
+        }
     }
 }

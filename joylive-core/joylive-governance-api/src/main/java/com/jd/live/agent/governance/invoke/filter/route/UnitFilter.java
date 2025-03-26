@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.invoke.filter.route;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
@@ -55,8 +53,6 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 @ConditionalOnLiveEnabled
 public class UnitFilter implements RouteFilter, LiveFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(UnitFilter.class);
-
     @Override
     public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {
         RouteTarget target = route(invocation);
@@ -82,10 +78,6 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         UnitPolicy policy = rule == null ? UnitPolicy.NONE : invocation.getServiceMetadata().getUnitPolicy();
         switch (policy) {
             case NONE:
-                if (logger.isDebugEnabled()) {
-                    T request = invocation.getRequest();
-                    logger.debug("Unit policy is NONE, service={}, group={}, path={}", request.getService(), request.getGroup(), request.getPath());
-                }
                 // None live
                 return routeNone(invocation);
             case CENTER:

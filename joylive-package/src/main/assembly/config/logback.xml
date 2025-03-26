@@ -66,12 +66,6 @@
         <appender-ref ref="CONSOLE_APPENDER"/>
     </logger>
 
-    <logger name="com.jd.live.agent.governance.invoke.filter.route.UnitFilter"
-            level="${logger.unitFilter.level}"
-            additivity="false">
-        <appender-ref ref="CONSOLE_APPENDER"/>
-    </logger>
-
     <root level="${logger.level}">
         <appender-ref ref="${LIVE_LOG_APPENDER:-ROLLING_APPENDER}"/>
     </root>
