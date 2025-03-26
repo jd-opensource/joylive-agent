@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.CellAction;
@@ -32,6 +33,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_ESCAPE;
 import static com.jd.live.agent.governance.invoke.Invocation.FAILOVER_CELL_NOT_ACCESSIBLE;
 
@@ -77,12 +79,26 @@ public class CellFilter implements InboundFilter {
         Unit localUnit = metadata.getLocalUnit();
         Cell localCell = metadata.getLocalCell();
         String variable = metadata.getVariable();
-        UnitRoute unitRoute = localUnit == null ? null : rule.getUnitRoute(localUnit.getCode());
+        UnitRoute unitRoute;
         CellRoute cellRoute = null;
+        Location location = invocation.getContext().getApplication().getLocation();
+        if (localUnit == null) {
+            // one unit.
+            unitRoute = rule.size() == 1 && isEmpty(location.getUnit()) ? rule.getUnitRoutes().get(0) : null;
+        } else {
+            unitRoute = rule.getUnitRoute(localUnit.getCode());
+        }
         if (unitRoute != null) {
+            // allow list
             cellRoute = unitRoute.getCellRouteByVariable(variable);
             if (cellRoute == null) {
-                cellRoute = localCell == null ? null : unitRoute.getCellRoute(localCell.getCode());
+                // one cell
+                if (localCell == null && unitRoute.size() == 1 && isEmpty(location.getCell())) {
+                    cellRoute = unitRoute.getCells().get(0);
+                    localCell = cellRoute.getCell();
+                } else if (localCell != null) {
+                    cellRoute = unitRoute.getCellRoute(localCell.getCode());
+                }
             } else if (cellRoute.getCell() != localCell) {
                 return new CellAction(CellActionType.FAILOVER, invocation.getError(FAILOVER_CELL_ESCAPE));
             }

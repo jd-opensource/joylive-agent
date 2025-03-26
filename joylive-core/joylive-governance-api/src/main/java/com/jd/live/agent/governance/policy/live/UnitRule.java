@@ -26,6 +26,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @ToString
@@ -144,6 +145,14 @@ public class UnitRule {
 
     public int size() {
         return unitRoutes == null ? 0 : unitRoutes.size();
+    }
+
+    public List<Unit> getUnits() {
+        List<Unit> result = new ArrayList<>(4);
+        if (unitRoutes != null) {
+            unitRoutes.forEach(unitRoute -> result.add(unitRoute.getUnit()));
+        }
+        return result;
     }
 
     public boolean isFailover(String unit) {

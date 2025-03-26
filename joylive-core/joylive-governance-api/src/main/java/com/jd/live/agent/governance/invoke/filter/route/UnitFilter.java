@@ -137,9 +137,16 @@ public class UnitFilter implements RouteFilter, LiveFilter {
      */
     private RouteTarget routeCenter(final OutboundInvocation<?> invocation) {
         LiveMetadata metadata = invocation.getLiveMetadata();
-        Unit unit = metadata.getTargetCenter();
         UnitRule rule = metadata.getRule();
-        UnitRoute route = unit == null || rule == null ? null : rule.getUnitRoute(unit.getCode());
+        Unit unit = metadata.getTargetCenter();
+        UnitRoute route = null;
+        if (unit != null) {
+            route = rule == null ? null : rule.getUnitRoute(unit.getCode());
+        } else if (rule != null && rule.size() == 1) {
+            // one unit
+            route = rule.getUnitRoutes().get(0);
+            unit = route.getUnit();
+        }
         if (unit == null) {
             return RouteTarget.reject(invocation.getError(REJECT_NO_CENTER));
         } else if (!invocation.isAccessible(unit)) {
@@ -238,6 +245,8 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         UnitRule rule = liveMetadata.getRule();
         if (rule == null) {
             return null;
+        } else if (rule.size() == 1) {
+            return rule.getUnitRoutes().get(0);
         }
         String variable = liveMetadata.getVariable();
         UnitFunction func = invocation.getContext().getUnitFunction(rule.getVariableFunction());
@@ -255,7 +264,8 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         UnitRoute route = getUnitRoute(invocation);
         LiveMetadata metadata = invocation.getLiveMetadata();
         LiveSpace liveSpace = metadata.getTargetSpace();
-        List<Unit> units = liveSpace == null ? null : liveSpace.getUnits();
+        UnitRule rule = metadata.getRule();
+        List<Unit> units = rule != null ? rule.getUnits() : (liveSpace == null ? null : liveSpace.getUnits());
         CandidateBuilder builder = new CandidateBuilder(invocation, group);
         if (units == null || units.isEmpty()) {
             return new Election();

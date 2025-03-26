@@ -88,7 +88,7 @@ public class UnitFilter implements InboundFilter {
         } else if (unitPolicy == UnitPolicy.NONE) {
             return onNone(invocation);
         } else if (unitPolicy == UnitPolicy.CENTER) {
-            return onCenter(invocation);
+            return onCenter(invocation, rule);
         } else if (unitPolicy == UnitPolicy.PREFER_LOCAL_UNIT) {
             return onPreferLocal(invocation);
         } else if (variable == null || variable.isEmpty()) {
@@ -148,7 +148,7 @@ public class UnitFilter implements InboundFilter {
         Unit local = invocation.getLiveMetadata().getLocalUnit();
         UnitRoute unitRoute = rule.getUnitRoute(local.getCode());
         UnitFunction unitFunc = invocation.getContext().getUnitFunction(rule.getVariableFunction());
-        if (!rule.contains(unitRoute, variable, unitFunc)) {
+        if (rule.size() > 1 && !rule.contains(unitRoute, variable, unitFunc)) {
             return new UnitAction(UnitActionType.FAILOVER, invocation.getError(FAILOVER_UNIT_ESCAPE));
         }
         return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
@@ -164,7 +164,11 @@ public class UnitFilter implements InboundFilter {
      */
     private <T extends InboundRequest> UnitAction onMissingVariable(InboundInvocation<T> invocation, UnitRule rule) {
         Unit local = invocation.getLiveMetadata().getLocalUnit();
-        if (rule.getVariableMissingAction() == VariableMissingAction.CENTER) {
+        if (rule.size() == 1) {
+            // one unit
+            return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD, null) :
+                    new UnitAction(UnitActionType.REJECT, invocation.getError(REJECT_UNIT_NOT_ACCESSIBLE));
+        } else if (rule.getVariableMissingAction() == VariableMissingAction.CENTER) {
             if (local.getType() != UnitType.CENTER) {
                 return new UnitAction(UnitActionType.FAILOVER_CENTER, invocation.getError(FAILOVER_CENTER_NO_VARIABLE));
             }
@@ -198,11 +202,12 @@ public class UnitFilter implements InboundFilter {
      * Handles the case when the center option is enabled.
      *
      * @param invocation the inbound invocation
+     * @param rule       the unit rule to apply
      * @return a UnitAction indicating the action to take
      */
-    private <T extends InboundRequest> UnitAction onCenter(InboundInvocation<T> invocation) {
+    private <T extends InboundRequest> UnitAction onCenter(InboundInvocation<T> invocation, UnitRule rule) {
         Unit local = invocation.getLiveMetadata().getLocalUnit();
-        if (local.getType() == UnitType.CENTER) {
+        if (local.getType() == UnitType.CENTER || rule.size() == 1) {
             return invocation.isAccessible(local) ? new UnitAction(UnitActionType.FORWARD) :
                     new UnitAction(UnitActionType.REJECT, invocation.getError(FAILOVER_UNIT_NOT_ACCESSIBLE));
         } else {
