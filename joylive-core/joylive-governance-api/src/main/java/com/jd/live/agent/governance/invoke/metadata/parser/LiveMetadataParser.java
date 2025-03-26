@@ -417,7 +417,7 @@ public abstract class LiveMetadataParser implements LiveParser {
         @Override
         protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
             // gateway: inbound -> outbound
-            return super.configure(builder).policyId(RequestContext.getAttribute(Constants.LABEL_LIVE_POLICY_ID));
+            return super.configure(builder).policyId(RequestContext.removeAttribute(Constants.LABEL_LIVE_POLICY_ID));
         }
 
         @Override
