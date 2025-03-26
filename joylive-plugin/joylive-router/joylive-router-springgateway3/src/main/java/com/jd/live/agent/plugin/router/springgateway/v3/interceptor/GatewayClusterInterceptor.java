@@ -49,7 +49,6 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-
         RequestContext.setAttribute(Carrier.ATTRIBUTE_GATEWAY, Boolean.TRUE);
 
         Object target = ctx.getTarget();
@@ -61,6 +60,5 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         mc.skipWithResult(chain.filter(exchange));
     }
-
 
 }
