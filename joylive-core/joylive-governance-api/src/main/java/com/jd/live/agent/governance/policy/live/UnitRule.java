@@ -147,7 +147,7 @@ public class UnitRule {
         return unitRoutes == null ? 0 : unitRoutes.size();
     }
 
-    public List<Unit> getUnits() {
+    public List<Unit> getAllUnits() {
         List<Unit> result = new ArrayList<>(4);
         if (unitRoutes != null) {
             unitRoutes.forEach(unitRoute -> result.add(unitRoute.getUnit()));

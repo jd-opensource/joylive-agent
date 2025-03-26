@@ -265,7 +265,7 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         LiveMetadata metadata = invocation.getLiveMetadata();
         LiveSpace liveSpace = metadata.getTargetSpace();
         UnitRule rule = metadata.getRule();
-        List<Unit> units = rule != null ? rule.getUnits() : (liveSpace == null ? null : liveSpace.getUnits());
+        List<Unit> units = rule != null ? rule.getAllUnits() : (liveSpace == null ? null : liveSpace.getUnits());
         CandidateBuilder builder = new CandidateBuilder(invocation, group);
         if (units == null || units.isEmpty()) {
             return new Election();
