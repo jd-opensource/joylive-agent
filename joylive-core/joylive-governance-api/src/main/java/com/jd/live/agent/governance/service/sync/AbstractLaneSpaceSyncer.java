@@ -15,15 +15,15 @@
  */
 package com.jd.live.agent.governance.service.sync;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
-import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 
 import java.io.StringReader;
 import java.util.*;
@@ -61,6 +61,13 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     protected void stopSync() {
         Close.instance().closeIfExists(spaceListSyncer, Syncer::close);
         super.stopSync();
+    }
+
+    /**
+     * Get the filename for space id.
+     */
+    protected String getFileName(String spaceId) {
+        return "lane-" + spaceId + ".json";
     }
 
     /**
@@ -216,10 +223,11 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     /**
      * Parses a configuration string into a list of ApiSpace objects.
      *
-     * @param config The configuration string to parse.
+     * @param key    the key associated with this configuration.
+     * @param config the configuration string to parse.
      * @return A list of ApiSpace objects.
      */
-    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(K key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
@@ -229,12 +237,13 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     }
 
     /**
-     * Parses a configuration string into a LiveSpace object.
+     * Parses a configuration string into a {@link LaneSpace} object wrapped in a {@link SyncResponse}.
      *
-     * @param config The configuration string to parse.
-     * @return A LiveSpace object, or null if the configuration is empty.
+     * @param key    the key associated with this configuration.
+     * @param config the configuration string to parse.
+     * @return a {@link SyncResponse} containing either:
      */
-    protected SyncResponse<LaneSpace> parseSpace(String config) {
+    protected SyncResponse<LaneSpace> parseSpace(K key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }

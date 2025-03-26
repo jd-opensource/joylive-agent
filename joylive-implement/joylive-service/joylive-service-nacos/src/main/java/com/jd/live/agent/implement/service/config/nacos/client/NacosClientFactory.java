@@ -26,8 +26,8 @@ import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public abstract class NacosClientFactory {
 
@@ -70,7 +70,7 @@ public abstract class NacosClientFactory {
         }
 
         @Override
-        public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> parser) {
+        public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(BiFunction<K, String, SyncResponse<T>> parser) {
             return api.createSyncer(parser);
         }
     }

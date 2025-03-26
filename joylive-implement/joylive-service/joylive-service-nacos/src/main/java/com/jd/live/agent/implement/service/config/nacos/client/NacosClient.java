@@ -28,7 +28,7 @@ import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
@@ -87,14 +87,15 @@ public class NacosClient implements NacosClientApi {
     }
 
     @Override
-    public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> parser) {
+    public <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(BiFunction<K, String, SyncResponse<T>> parser) {
         return subscription -> {
             try {
-                subscribe(subscription.getKey().getDataId(), subscription.getKey().getGroup(), new AbstractListener() {
+                K key = subscription.getKey();
+                subscribe(key.getDataId(), key.getGroup(), new AbstractListener() {
                     // TODO executor
                     @Override
                     public void receiveConfigInfo(String configInfo) {
-                        subscription.onUpdate(parser.apply(configInfo));
+                        subscription.onUpdate(parser.apply(key, configInfo));
                     }
                 });
             } catch (Throwable e) {

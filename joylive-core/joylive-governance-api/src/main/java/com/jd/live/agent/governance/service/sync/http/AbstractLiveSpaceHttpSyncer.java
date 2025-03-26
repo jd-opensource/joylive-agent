@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.service.sync.http;
 
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -105,7 +106,7 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
     }
 
     @Override
-    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(HttpLiveSpaceKey key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
@@ -115,17 +116,32 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
     }
 
     @Override
-    protected SyncResponse<LiveSpace> parseSpace(String config) {
+    protected SyncResponse<LiveSpace> parseSpace(HttpLiveSpaceKey key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
         ApiResponse<LiveSpace> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<LiveSpace>>() {
         });
+        saveConfig(response, parser, getFileName(key.getId()));
         return response.asSyncResponse();
     }
 
     protected HttpWatcher creatWatcher() {
         return new HttpWatcher(getType(), getSyncConfig(), application);
+    }
+
+    /**
+     * Saves API response data to a local configuration file if the response is successful.
+     *
+     * @param response the API response to process (must not be {@code null})
+     * @param parser   the object parser used to serialize response data (must not be {@code null})
+     * @param name     the filename to use for saving the configuration (must not be {@code null} or empty)
+     */
+    private void saveConfig(ApiResponse<LiveSpace> response, ObjectParser parser, String name) {
+        // save config to local file
+        if (response.getError() == null) {
+            saveConfig(response, parser, AgentPath.DIR_POLICY_LIVE, name);
+        }
     }
 
     @Getter

@@ -58,6 +58,14 @@ public class AgentPath {
 
     public static final String FILE_BOOTSTRAP = "bootstrap.properties";
 
+    public static final String DIR_POLICY_LIVE = "policy/live/";
+
+    public static final String DIR_POLICY_LANE = "policy/lane/";
+
+    public static final String DIR_POLICY_SERVICE = "policy/service/";
+
+    public static final String DIR_POLICY_LIVE_SERVICE = "policy/service/live/";
+
     public static final String COMPONENT_AGENT_PATH = "agentPath";
 
     private final File root;

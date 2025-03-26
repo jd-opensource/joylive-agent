@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * A class that watches for changes to HTTP resources and notifies listeners of those changes.
@@ -194,13 +194,13 @@ public class HttpWatcher implements AutoCloseable {
      * @param <T>      The type of the data to synchronize.
      * @return A new Syncer instance.
      */
-    public <K extends HttpSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> function) {
+    public <K extends HttpSyncKey, T> Syncer<K, T> createSyncer(BiFunction<K, String, SyncResponse<T>> function) {
         return subscription -> {
             try {
                 subscribe(subscription.getKey(), event -> {
                     switch (event.getType()) {
                         case UPDATE:
-                            subscription.onUpdate(function.apply(event.getData()));
+                            subscription.onUpdate(function.apply(subscription.getKey(), event.getData()));
                             break;
                         case DELETE:
                             subscription.onUpdate(new SyncResponse<>(SyncStatus.NOT_FOUND, null));

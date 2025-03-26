@@ -17,25 +17,26 @@ package com.jd.live.agent.governance.service.sync;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
-import com.jd.live.agent.governance.subscription.policy.PolicyListener;
-import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
-import com.jd.live.agent.governance.config.SyncConfig;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.core.thread.NamedThreadFactory;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Waiter;
 import com.jd.live.agent.core.util.template.Template;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
-import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.Service;
+import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyListener;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 
 import java.io.StringReader;
 import java.util.List;
@@ -341,12 +342,24 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @param config The configuration string to parse.
      * @return A Service object representing the parsed configuration, or null if the configuration string is null or empty.
      */
-    protected SyncResponse<Service> parse(String config) {
+    protected SyncResponse<Service> parse(K key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
+        saveConfig(config, getDirectory(), getFileName(key.getName()));
         Service service = parser.read(new StringReader(config), Service.class);
         return new SyncResponse<>(SyncStatus.SUCCESS, service);
+    }
+
+    protected String getDirectory() {
+        return AgentPath.DIR_POLICY_SERVICE;
+    }
+
+    /**
+     * Get the filename for service.
+     */
+    protected String getFileName(String service) {
+        return service + ".json";
     }
 
 }

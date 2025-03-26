@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public interface NacosClientApi extends ConfigClientApi {
 
@@ -57,5 +57,5 @@ public interface NacosClientApi extends ConfigClientApi {
      * @param <T>    The type of the object returned by the parser function.
      * @return A new Syncer object that can be used to synchronize data between Nacos and a local cache.
      */
-    <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(Function<String, SyncResponse<T>> parser);
+    <K extends NacosSyncKey, T> Syncer<K, T> createSyncer(BiFunction<K, String, SyncResponse<T>> parser);
 }

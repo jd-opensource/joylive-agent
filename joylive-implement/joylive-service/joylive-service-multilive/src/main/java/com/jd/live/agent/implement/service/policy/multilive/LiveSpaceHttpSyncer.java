@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.implement.service.policy.multilive;
 
-import com.jd.live.agent.governance.config.SyncConfig;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.SyncStatus;
@@ -56,7 +59,7 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
     }
 
     @Override
-    protected SyncResponse<List<ApiSpace>> parseSpaceList(String config) {
+    protected SyncResponse<List<ApiSpace>> parseSpaceList(HttpLiveSpaceKey key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
@@ -66,12 +69,31 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
     }
 
     @Override
-    protected SyncResponse<LiveSpace> parseSpace(String config) {
+    protected SyncResponse<LiveSpace> parseSpace(HttpLiveSpaceKey key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
         ApiResponse<ApiResult<LiveSpace>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<ApiResult<LiveSpace>>>() {
         });
+        saveConfig(response, parser, getFileName(key.getId()));
         return response.asSyncResponse(ApiResult::asSyncResponse);
     }
+
+    /**
+     * Saves API response data to a local configuration file if the response is successful.
+     *
+     * @param response the API response to process (must not be {@code null})
+     * @param parser   the object parser used to serialize response data (must not be {@code null})
+     * @param name     the filename to use for saving the configuration (must not be {@code null} or empty)
+     */
+    private <T> void saveConfig(ApiResponse<ApiResult<T>> response, ObjectParser parser, String name) {
+        // save config to local file
+        if (response.getError() == null) {
+            ApiResult<?> result = response.getResult();
+            if (response.getStatus() == HttpStatus.OK) {
+                saveConfig(result.getData(), parser, AgentPath.DIR_POLICY_LIVE, name);
+            }
+        }
+    }
+
 }

@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.policy.multilive;
 
-import com.jd.live.agent.governance.config.SyncConfig;
+import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -24,8 +24,8 @@ import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.PolicySubscription;
-import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
@@ -33,6 +33,7 @@ import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 
 import java.io.IOException;
@@ -76,5 +77,10 @@ public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey>
                 reader -> jsonParser.read(reader, new TypeReference<ApiResponse<ApiResult<Service>>>() {
                 }));
         return ApiResponse.from(response).asSyncResponse(ApiResult::asSyncResponse);
+    }
+
+    @Override
+    protected String getDirectory() {
+        return AgentPath.DIR_POLICY_LIVE_SERVICE;
     }
 }
