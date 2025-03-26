@@ -218,6 +218,16 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
+    public boolean isSubscribed(String service, String group) {
+        if (service == null || service.isEmpty()) {
+            return false;
+        }
+        group = group == null ? serviceConfig.getGroup(service) : group;
+        String name = getName(service, group);
+        return subscriptions.containsKey(name);
+    }
+
+    @Override
     public ServiceRegistry getServiceRegistry(String service, String group) {
         if (service == null || service.isEmpty()) {
             return null;

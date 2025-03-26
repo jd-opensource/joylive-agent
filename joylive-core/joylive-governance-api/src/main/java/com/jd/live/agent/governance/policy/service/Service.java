@@ -179,6 +179,7 @@ public class Service extends PolicyOwner implements ServiceName {
      * Caches the service and its groups, ensuring they are up to date.
      */
     public void cache() {
+        getOrCreateDefaultGroup();
         supplement();
         if (groups != null) {
             groups.forEach(ServiceGroup::cache);

@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.springcloud.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.openfeign.FeignClientFactoryBean;
@@ -24,6 +26,8 @@ import org.springframework.cloud.openfeign.FeignClientFactoryBean;
  * FeignClientFactoryBeanInterceptor
  */
 public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(FeignClientFactoryBeanInterceptor.class);
 
     private final Registry registry;
 
@@ -34,6 +38,8 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         FeignClientFactoryBean factoryBean = (FeignClientFactoryBean) ctx.getTarget();
-        registry.subscribe(factoryBean.getName());
+        String name = factoryBean.getName();
+        registry.subscribe(name);
+        logger.info("Found feign client consumer, service: {}", name);
     }
 }

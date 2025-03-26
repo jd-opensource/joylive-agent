@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 import com.alipay.sofa.rpc.bootstrap.ConsumerBootstrap;
 import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
 
@@ -26,13 +28,18 @@ import com.jd.live.agent.governance.registry.Registry;
  */
 public class ConsumerBootstrapInterceptor extends AbstractBootstrapInterceptor<ConsumerConfig<?>> {
 
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerBootstrapInterceptor.class);
+
     public ConsumerBootstrapInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
     @Override
     protected void subscribe(ConsumerConfig<?> config) {
-        registry.subscribe(config.getInterfaceId(), getGroup(config));
+        String service = config.getInterfaceId();
+        String group = getGroup(config);
+        registry.subscribe(service, group);
+        logger.info("Found sofa rpc consumer, service: {}, group: {}", service, group);
     }
 
     @Override

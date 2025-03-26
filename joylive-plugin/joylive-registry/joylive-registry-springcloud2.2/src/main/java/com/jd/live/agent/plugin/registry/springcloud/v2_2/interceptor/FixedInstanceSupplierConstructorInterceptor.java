@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.springcloud.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.RegistrySupervisor;
@@ -35,6 +37,8 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class FixedInstanceSupplierConstructorInterceptor extends InterceptorAdaptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(FixedInstanceSupplierConstructorInterceptor.class);
+
     private final RegistrySupervisor registry;
 
     public FixedInstanceSupplierConstructorInterceptor(RegistrySupervisor registry) {
@@ -48,6 +52,7 @@ public class FixedInstanceSupplierConstructorInterceptor extends InterceptorAdap
         List<ServiceInstance> instances = ctx.getArgument(1);
         // subscribe policy
         registry.subscribe(service);
+        logger.info("Found fixed instance supplier consumer, service: {}", service);
         UnsafeFieldAccessor accessor = getQuietly(FixedServiceInstanceListSupplier.class, "instances");
         if (accessor != null) {
             // subscribe instances

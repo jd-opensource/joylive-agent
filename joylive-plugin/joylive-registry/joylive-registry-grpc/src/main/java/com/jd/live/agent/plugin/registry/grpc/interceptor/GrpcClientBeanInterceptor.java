@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.grpc.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -24,6 +26,8 @@ import net.devh.boot.grpc.client.inject.GrpcClient;
  * GrpcClientBeanInterceptor
  */
 public class GrpcClientBeanInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(GrpcClientBeanInterceptor.class);
 
     private final Registry registry;
 
@@ -34,6 +38,8 @@ public class GrpcClientBeanInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         GrpcClient grpcClient = ctx.getArgument(2);
-        registry.subscribe(grpcClient.value());
+        String service = grpcClient.value();
+        registry.subscribe(service);
+        logger.info("Found grpc consumer, service: {}", service);
     }
 }

@@ -93,6 +93,26 @@ public interface Registry extends ServiceRegistryFactory {
     CompletableFuture<Void> subscribe(String service, String group);
 
     /**
+     * Checks if currently subscribed to the specified service without considering any consumer group.
+     *
+     * @param service the service name to check subscription for (must not be {@code null})
+     * @return {@code true} if subscribed to the service, {@code false} otherwise
+     * @see #isSubscribed(String, String)
+     */
+    default boolean isSubscribed(String service) {
+        return isSubscribed(service, null);
+    }
+
+    /**
+     * Checks if currently subscribed to the specified service and optional consumer group.
+     *
+     * @param service the service name to check subscription for (must not be {@code null})
+     * @param group   the consumer group to check (may be {@code null})
+     * @return {@code true} if subscribed to the service (and group, if specified), {@code false} otherwise
+     */
+    boolean isSubscribed(String service, String group);
+
+    /**
      * Subscribes to the specified service and attempts to retrieve its governance policy.
      * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
      *

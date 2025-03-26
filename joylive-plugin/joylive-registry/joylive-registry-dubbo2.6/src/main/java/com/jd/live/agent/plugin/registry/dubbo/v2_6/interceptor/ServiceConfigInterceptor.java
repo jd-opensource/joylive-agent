@@ -17,6 +17,8 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor;
 
 import com.alibaba.dubbo.config.ServiceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
 
@@ -26,6 +28,8 @@ import java.util.Map;
  * ServiceConfigInterceptor
  */
 public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceConfig<?>> {
+
+    private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
 
     public ServiceConfigInterceptor(Application application, Registry registry) {
         super(application, registry);
@@ -49,6 +53,7 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
 
     @Override
     protected void subscribe(String service, String group) {
-        registry.subscribe(service, group);
+        registry.register(service, group);
+        logger.info("Found dubbo provider, service: {}, group: {}", service, group);
     }
 }

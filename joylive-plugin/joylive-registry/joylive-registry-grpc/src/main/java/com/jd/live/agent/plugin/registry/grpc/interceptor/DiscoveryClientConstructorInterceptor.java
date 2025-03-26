@@ -50,5 +50,6 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
                 return null;
             });
         }
+        logger.info("Found grpc consumer, service: {}", serviceId);
     }
 }

@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.springgateway.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -30,6 +32,8 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
  * RouteInterceptor
  */
 public class RouteInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(RouteInterceptor.class);
 
     private static final String SCHEMA_LB = "lb";
 
@@ -48,7 +52,11 @@ public class RouteInterceptor extends InterceptorAdaptor {
         if (SCHEMA_LB.equals(uri.getScheme())) {
             // the getMetadata method is not exists in spring cloud greenwich
             String group = accessor == null ? null : (String) definition.getMetadata().get(Constants.LABEL_SERVICE_GROUP);
-            registry.subscribe(uri.getHost(), group);
+            String service = uri.getHost();
+            if (!registry.isSubscribed(service, group)) {
+                registry.subscribe(service, group);
+                logger.info("Found spring cloud gateway consumer, service: {}, group: {}", service, group);
+            }
         }
     }
 }

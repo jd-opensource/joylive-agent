@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.springcloud.v2_1.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
@@ -26,6 +28,8 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
  * FeignClientFactoryBeanInterceptor
  */
 public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(FeignClientFactoryBeanInterceptor.class);
 
     private final Registry registry;
 
@@ -41,6 +45,7 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
         if (accessor != null) {
             String name = (String) accessor.get(factoryBean);
             registry.subscribe(name);
+            logger.info("Found feign client consumer, service: {}", name);
         }
     }
 }

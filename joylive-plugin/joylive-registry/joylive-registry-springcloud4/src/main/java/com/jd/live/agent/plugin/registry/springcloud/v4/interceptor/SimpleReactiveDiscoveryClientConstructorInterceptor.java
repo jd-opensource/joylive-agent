@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.springcloud.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.client.discovery.simple.reactive.SimpleReactiveDiscoveryClient;
@@ -24,6 +26,8 @@ import org.springframework.cloud.client.discovery.simple.reactive.SimpleReactive
  * SimpleDiscoveryClientConstructorInterceptor
  */
 public class SimpleReactiveDiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(SimpleReactiveDiscoveryClientConstructorInterceptor.class);
 
     private final Registry registry;
 
@@ -34,6 +38,9 @@ public class SimpleReactiveDiscoveryClientConstructorInterceptor extends Interce
     @Override
     public void onSuccess(ExecutableContext ctx) {
         SimpleReactiveDiscoveryClient client = (SimpleReactiveDiscoveryClient) ctx.getTarget();
-        client.getServices().subscribe(registry::register);
+        client.getServices().subscribe(service -> {
+            registry.register(service);
+            logger.info("Found simple reactive discovery client provider, service: {}", service);
+        });
     }
 }

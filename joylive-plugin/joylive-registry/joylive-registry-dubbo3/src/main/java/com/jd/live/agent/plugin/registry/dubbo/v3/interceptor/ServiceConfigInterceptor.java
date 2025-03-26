@@ -17,6 +17,8 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.ApplicationConfig;
@@ -32,13 +34,16 @@ import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGIST
  */
 public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceConfig<?>> {
 
+    private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
+
     public ServiceConfigInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
     @Override
     protected void subscribe(String service, String group) {
-        registry.subscribe(service, group);
+        registry.register(service, group);
+        logger.info("Found dubbo provider, service: {}, group: {}", service, group);
     }
 
     @Override

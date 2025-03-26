@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
@@ -35,6 +37,8 @@ import java.util.Map;
  */
 public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(RegistryInterceptor.class);
+
     public RegistryInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
@@ -47,7 +51,9 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
             application.labelRegistry(metadata::putIfAbsent, true);
             metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
         }
-        registry.register(registration.getServiceId());
+        String serviceId = registration.getServiceId();
+        registry.register(serviceId);
+        logger.info("Found spring cloud provider, service: {}", serviceId);
     }
 
     @Override
