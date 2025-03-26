@@ -333,6 +333,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         policyWatcherSupervisor.addListener(TYPE_LIVE_POLICY, new LiveSpaceListener(this, objectParser));
         policyWatcherSupervisor.addListener(TYPE_LANE_POLICY, new LaneSpaceListener(this, objectParser));
         policyWatcherSupervisor.addListener(TYPE_SERVICE_POLICY, new ServiceListener(this, objectParser, policyPublisher));
+
+        if (!(flowControlEnabled || laneEnabled || liveEnabled)) {
+            logger.warn("No governance is enabled, please check the configuration.");
+        }
+
     }
 
     @Override
