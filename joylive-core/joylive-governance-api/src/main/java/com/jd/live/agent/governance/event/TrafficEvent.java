@@ -30,6 +30,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class TrafficEvent {
 
+    public static final String KEY_COMPONENT_TYPE = "component_type";
+
     public static final String KEY_LIVE_SPACE_ID = "live_spaceId";
 
     public static final String KEY_LIVE_RULE_ID = "live_ruleId";
@@ -223,15 +225,25 @@ public class TrafficEvent {
      * An enumeration representing the type of component that generates the traffic event.
      */
     public enum ComponentType {
+
         /**
-         * Represents a network gateway component.
+         * Represents a network frontend gateway component.
          */
-        GATEWAY,
+        FRONTEND_GATEWAY,
+
+        /**
+         * Represents a network backend gateway component.
+         */
+        BACKEND_GATEWAY,
 
         /**
          * Represents a service component.
          */
-        SERVICE
+        SERVICE;
+
+        public boolean isGateway() {
+            return this == FRONTEND_GATEWAY || this == BACKEND_GATEWAY;
+        }
     }
 
     /**

@@ -247,7 +247,10 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            return super.configure(builder).componentType(ComponentType.GATEWAY);
+            GatewayRole role = context.getApplication().getService().getGateway();
+            return super.configure(builder).componentType(role == GatewayRole.FRONTEND
+                    ? ComponentType.FRONTEND_GATEWAY
+                    : ComponentType.BACKEND_GATEWAY);
         }
     }
 }

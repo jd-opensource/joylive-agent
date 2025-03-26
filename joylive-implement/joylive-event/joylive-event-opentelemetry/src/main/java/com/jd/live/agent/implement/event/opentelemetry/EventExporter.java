@@ -56,6 +56,8 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
 
     private static final String REQUESTS = "requests";
 
+    private static final AttributeKey<String> ATTRIBUTE_COMPONENT_TYPE = AttributeKey.stringKey(KEY_COMPONENT_TYPE);
+
     private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
 
     private static final AttributeKey<String> ATTRIBUTE_LIVE_SPACE_ID = AttributeKey.stringKey(KEY_LIVE_SPACE_ID);
@@ -141,11 +143,11 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
             for (Event<TrafficEvent> event : events) {
                 trafficEvent = event.getData();
                 Attributes attributes = attributes(event);
-                if (config.isGatewayEnabled() && trafficEvent.getComponentType() == ComponentType.GATEWAY && trafficEvent.getDirection() == Direction.INBOUND) {
+                if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.INBOUND) {
                     gatewayInbounds.add(trafficEvent.getRequests(), attributes);
                     counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayInboundForwards : gatewayInboundRejects;
                     counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isGatewayEnabled() && trafficEvent.getComponentType() == ComponentType.GATEWAY && trafficEvent.getDirection() == Direction.OUTBOUND) {
+                } else if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.OUTBOUND) {
                     gatewayOutbounds.add(trafficEvent.getRequests(), attributes);
                     counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayOutboundForwards : gatewayOutboundRejects;
                     counter.add(trafficEvent.getRequests(), attributes);
@@ -165,7 +167,8 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
     private Attributes attributes(Event<TrafficEvent> event) {
         TrafficEvent trafficEvent = event.getData();
         AttributesBuilder builder = Attributes.builder();
-        builder.put(ATTRIBUTE_APPLICATION, application.getName()).
+        builder.put(ATTRIBUTE_COMPONENT_TYPE, trafficEvent.getComponentType().name()).
+                put(ATTRIBUTE_APPLICATION, application.getName()).
                 put(ATTRIBUTE_LIVE_SPACE_ID, trafficEvent.getLiveSpaceId()).
                 put(ATTRIBUTE_LIVE_RULE_ID, trafficEvent.getUnitRuleId()).
                 put(ATTRIBUTE_LOCAL_UNIT, trafficEvent.getLocalUnit()).
