@@ -89,7 +89,7 @@ public class PolicySubscription implements ServiceName {
         }
         AtomicBoolean done = syncers.get(syncer);
         if (done != null && done.compareAndSet(false, true)) {
-            logger.error("Success fetching {} {} governance policy by {}.", fullName, type, syncer);
+            logger.info("Success fetching {} {} governance policy by {}.", fullName, type, syncer);
             if (counter.decrementAndGet() == 0) {
                 SyncState sr = state.get();
                 if ((sr == null || !sr.isSuccess()) && state.compareAndSet(sr, new SyncState(true))) {
@@ -164,7 +164,7 @@ public class PolicySubscription implements ServiceName {
     }
 
     private void onComplete(Consumer<CompletableFuture<Void>> consumer) {
-        logger.error("Complete fetching {} {} governance policy.", fullName, type);
+        logger.info("Complete fetching {} {} governance policy.", fullName, type);
         synchronized (mutex) {
             futures.forEach(consumer);
             futures.clear();
