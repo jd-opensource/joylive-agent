@@ -38,8 +38,6 @@ public class TrafficEvent {
 
     public static final String KEY_LIVE_PATH = "live_path";
 
-    public static final String KEY_LIVE_VARIABLE = "live_variable";
-
     public static final String KEY_LIVE_BIZ_VARIABLE = "live_bizVariable";
 
     public static final String KEY_LOCAL_UNIT = "local_unit";
@@ -146,11 +144,6 @@ public class TrafficEvent {
     private final String liveDomain;
 
     private final String livePath;
-
-    /**
-     * The variable associated with the traffic event.
-     */
-    private final String liveVariable;
 
     private final String liveBizVariable;
 

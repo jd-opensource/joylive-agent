@@ -107,8 +107,7 @@ public class LiveMetadata {
         builder = builder.liveSpaceId(targetSpaceId)
                 .unitRuleId(ruleId)
                 .localUnit(localUnit == null ? null : localUnit.getCode())
-                .localCell(localCell == null ? null : localCell.getCode())
-                .liveVariable(variable);
+                .localCell(localCell == null ? null : localCell.getCode());
         URI uri = policyId == null ? null : policyId.getUri();
         if (uri != null) {
             builder = builder.liveDomain(uri.getHost()).livePath(uri.getPath());
