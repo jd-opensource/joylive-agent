@@ -17,8 +17,6 @@ package com.jd.live.agent.plugin.registry.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.loadbalancer.core.DiscoveryClientServiceInstanceListSupplier;
@@ -36,8 +34,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DiscoveryClientGetInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(DiscoveryClientGetInterceptor.class);
-
     private final Registry registry;
 
     public DiscoveryClientGetInterceptor(Registry registry) {
@@ -54,8 +50,8 @@ public class DiscoveryClientGetInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ServiceInstanceListSupplier supplier = (ServiceInstanceListSupplier) mc.getTarget();
         String serviceId = supplier.getServiceId();
+        // TODO improve performance
         CompletableFuture<Void> future = registry.subscribe(serviceId);
-        logger.info("Found discovery client consumer, service: {}", serviceId);
         if (!future.isDone() || future.isCompletedExceptionally()) {
             mc.setResult(Flux.error(HttpClientErrorException.create(
                     HttpStatus.INTERNAL_SERVER_ERROR,

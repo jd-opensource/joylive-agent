@@ -41,6 +41,7 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
         String serviceId = supplier.getServiceId();
         // Built at runtime, cannot intercept and obtain the required service during the startup phase
         // restTemplate.getForObject("http://service-provider/echo/" + str, String.class)
+        logger.info("Found discovery client consumer, service: {}", serviceId);
         registry.subscribe(serviceId, (message, e) -> {
             logger.warn(message, e);
             return null;
