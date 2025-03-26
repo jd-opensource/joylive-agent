@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.*;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.instance.Location;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
@@ -27,7 +26,6 @@ import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
-import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser;
@@ -37,10 +35,9 @@ import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LivePa
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.lane.Lane;
-import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.live.FaultType;
+import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.policy.live.Place;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
@@ -95,16 +92,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     protected LaneMetadata laneMetadata;
 
     /**
-     * The service policy id for this invocation
-     */
-    protected PolicyId servciePolicyId;
-
-    /**
-     * The live policy id for this invocation
-     */
-    protected PolicyId livePolicyId;
-
-    /**
      * Constructs a new Invocation object.
      */
     protected Invocation() {
@@ -135,8 +122,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         this.serviceMetadata = liveMetadata == null ? serviceMetadata : serviceParser.configure(serviceMetadata, liveMetadata.getRule());
         this.liveMetadata = liveParser == null ? null : liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
         this.laneMetadata = laneParser == null ? null : laneParser.parse();
-        this.livePolicyId = parseLivePolicyId();
-        this.servciePolicyId = parseServicePolicyId();
     }
 
     /**
@@ -161,19 +146,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     protected LaneParser createLaneParser() {
         return new LaneMetadataParser(request, context.getGovernanceConfig().getLaneConfig(),
                 context.getApplication(), governancePolicy);
-    }
-
-    /**
-     * Parses the policy ID from the service metadata.
-     *
-     * @return the parsed policy ID
-     */
-    protected PolicyId parseServicePolicyId() {
-        return serviceMetadata.getServicePolicy();
-    }
-
-    protected PolicyId parseLivePolicyId() {
-        return liveMetadata instanceof LiveDomainMetadata ? ((LiveDomainMetadata) liveMetadata).getPolicyId() : null;
     }
 
     public GatewayRole getGateway() {
@@ -329,28 +301,16 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @return The configured live event builder.
      */
     protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        LiveSpace liveSpace = liveMetadata == null ? null : liveMetadata.getTargetSpace();
-        UnitRule unitRule = liveMetadata == null ? null : liveMetadata.getRule();
-        Unit localUnit = liveMetadata == null ? null : liveMetadata.getLocalUnit();
-        Cell localCell = liveMetadata == null ? null : liveMetadata.getLocalCell();
-        LaneSpace laneSpace = laneMetadata == null ? null : laneMetadata.getTargetSpace();
-        Lane localLane = laneMetadata == null ? null : laneMetadata.getLocalLane();
-        URI servcieUri = servciePolicyId == null ? null : servciePolicyId.getUri();
-        URI liveUri = livePolicyId == null ? null : livePolicyId.getUri();
-        return builder.liveSpaceId(liveSpace == null ? null : liveSpace.getId()).
-                unitRuleId(unitRule == null ? null : unitRule.getId()).
-                localUnit(localUnit == null ? null : localUnit.getCode()).
-                localCell(localCell == null ? null : localCell.getCode()).
-                liveDomain(liveUri == null ? null : liveUri.getHost()).
-                livePath(liveUri == null ? null : liveUri.getPath()).
-                liveVariable(liveMetadata == null ? null : liveMetadata.getVariable()).
-                laneSpaceId(laneSpace == null ? null : laneSpace.getId()).
-                localLane(localLane == null ? null : localLane.getCode()).
-                policyId(servciePolicyId == null ? null : servciePolicyId.getId()).
-                service(servcieUri == null ? null : servcieUri.getHost()).
-                group(servcieUri == null ? null : servcieUri.getParameter(PolicyId.KEY_SERVICE_GROUP)).
-                path(servcieUri == null ? null : servcieUri.getPath()).
-                method(servcieUri == null ? null : servcieUri.getParameter(PolicyId.KEY_SERVICE_METHOD));
+        if (liveMetadata != null) {
+            builder = liveMetadata.configure(builder);
+        }
+        if (laneMetadata != null) {
+            builder = laneMetadata.configure(builder);
+        }
+        if (serviceMetadata != null) {
+            builder = serviceMetadata.configure(builder);
+        }
+        return builder;
     }
 
     /**

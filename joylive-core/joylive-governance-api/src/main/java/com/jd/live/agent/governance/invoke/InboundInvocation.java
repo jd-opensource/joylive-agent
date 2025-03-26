@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
-import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.GatewayInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.HttpInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.GatewayInboundLiveMetadataParser;
@@ -182,11 +181,6 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
                     context.getApplication(), governancePolicy, domainPolicy, this);
         }
 
-        @Override
-        protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            TrafficEventBuilder result = super.configure(builder);
-            return liveMetadata == null ? result : result.liveVariable(((LiveDomainMetadata) liveMetadata).getBizVariable());
-        }
     }
 
     /**

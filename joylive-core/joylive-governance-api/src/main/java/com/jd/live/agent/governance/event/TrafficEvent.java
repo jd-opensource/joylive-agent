@@ -40,6 +40,8 @@ public class TrafficEvent {
 
     public static final String KEY_LIVE_VARIABLE = "live_variable";
 
+    public static final String KEY_LIVE_BIZ_VARIABLE = "live_bizVariable";
+
     public static final String KEY_LOCAL_UNIT = "local_unit";
 
     public static final String KEY_LOCAL_CELL = "local_cell";
@@ -149,6 +151,8 @@ public class TrafficEvent {
      * The variable associated with the traffic event.
      */
     private final String liveVariable;
+
+    private final String liveBizVariable;
 
     /**
      * The ID of the lane space associated with the event.

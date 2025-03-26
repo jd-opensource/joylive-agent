@@ -4,6 +4,7 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.LiveConfig;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
@@ -411,6 +412,12 @@ public abstract class LiveMetadataParser implements LiveParser {
                                           Application application,
                                           GovernancePolicy governancePolicy) {
             super(request, liveConfig, application, governancePolicy);
+        }
+
+        @Override
+        protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
+            // gateway: inbound -> outbound
+            return super.configure(builder).policyId(RequestContext.getAttribute(Constants.LABEL_LIVE_POLICY_ID));
         }
 
         @Override

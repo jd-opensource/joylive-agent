@@ -1,6 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
-import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -44,10 +44,10 @@ public class LiveDomainMetadata extends LiveMetadata {
      */
     private String bizVariable;
 
-    /**
-     * The policy identifier associated with the live domain.
-     */
-    private PolicyId policyId;
+    @Override
+    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
+        return super.configure(builder).liveBizVariable(bizVariable);
+    }
 
     private static final class LiveDomainMetadataBuilderImpl extends LiveDomainMetadataBuilder<LiveDomainMetadata, LiveDomainMetadataBuilderImpl> {
     }

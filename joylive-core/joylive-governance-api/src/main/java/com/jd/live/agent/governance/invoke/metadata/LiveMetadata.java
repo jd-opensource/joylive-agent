@@ -1,6 +1,9 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.LiveConfig;
+import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.Cell;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.Unit;
@@ -55,6 +58,11 @@ public class LiveMetadata {
      */
     private String variable;
 
+    /**
+     * The policy identifier associated with the live domain.
+     */
+    private PolicyId policyId;
+
     public boolean isLocalLiveless() {
         return localSpace == null;
     }
@@ -85,6 +93,27 @@ public class LiveMetadata {
 
     public Cell getTargetLocalCell() {
         return targetSpace == null ? null : targetSpace.getLocalCell();
+    }
+
+    /**
+     * Configures a live event builder with details from the current invocation context.
+     *
+     * @param builder The live event builder to configure.
+     * @return The configured live event builder.
+     */
+    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
+        Unit localUnit = getLocalUnit();
+        Cell localCell = getLocalCell();
+        builder = builder.liveSpaceId(targetSpaceId)
+                .unitRuleId(ruleId)
+                .localUnit(localUnit == null ? null : localUnit.getCode())
+                .localCell(localCell == null ? null : localCell.getCode())
+                .liveVariable(variable);
+        URI uri = policyId == null ? null : policyId.getUri();
+        if (uri != null) {
+            builder = builder.liveDomain(uri.getHost()).livePath(uri.getPath());
+        }
+        return builder;
     }
 
     private static final class LiveMetadataBuilderImpl extends LiveMetadataBuilder<LiveMetadata, LiveMetadataBuilderImpl> {

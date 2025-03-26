@@ -2,6 +2,8 @@ package com.jd.live.agent.governance.invoke.metadata;
 
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
@@ -106,6 +108,24 @@ public class ServiceMetadata implements Cloneable {
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
         StickyType stickyType = loadBalancePolicy == null ? StickyType.NONE : loadBalancePolicy.getStickyType();
         return stickyType == null ? StickyType.NONE : stickyType;
+    }
+
+    /**
+     * Configures a live event builder with details from the current invocation context.
+     *
+     * @param builder The live event builder to configure.
+     * @return The configured live event builder.
+     */
+    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
+        builder = builder.policyId(servicePolicy == null ? null : servicePolicy.getId());
+        URI uri = servicePolicy == null ? null : servicePolicy.getUri();
+        if (uri != null) {
+            builder = builder.service(uri.getHost())
+                    .group(uri.getParameter(PolicyId.KEY_SERVICE_GROUP))
+                    .path(uri.getPath())
+                    .method(uri.getParameter(PolicyId.KEY_SERVICE_METHOD));
+        }
+        return builder;
     }
 
     /**

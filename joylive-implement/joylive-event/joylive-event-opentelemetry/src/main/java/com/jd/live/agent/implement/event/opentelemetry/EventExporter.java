@@ -78,6 +78,8 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
 
     private static final AttributeKey<String> ATTRIBUTE_LIVE_VARIABLE = AttributeKey.stringKey(KEY_LIVE_VARIABLE);
 
+    private static final AttributeKey<String> ATTRIBUTE_LIVE_BIZ_VARIABLE = AttributeKey.stringKey(KEY_LIVE_BIZ_VARIABLE);
+
     private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
 
     private static final AttributeKey<String> ATTRIBUTE_LANE_RULE_ID = AttributeKey.stringKey(KEY_LANE_RULE_ID);
@@ -175,6 +177,7 @@ public class EventExporter implements Subscription<TrafficEvent>, ExtensionIniti
                 put(ATTRIBUTE_LIVE_DOMAIN, trafficEvent.getLiveDomain()).
                 put(ATTRIBUTE_LIVE_PATH, trafficEvent.getLivePath()).
                 put(ATTRIBUTE_LIVE_VARIABLE, trafficEvent.getLiveVariable()).
+                put(ATTRIBUTE_LIVE_BIZ_VARIABLE, trafficEvent.getLiveBizVariable()).
                 put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
                 put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
                 put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
