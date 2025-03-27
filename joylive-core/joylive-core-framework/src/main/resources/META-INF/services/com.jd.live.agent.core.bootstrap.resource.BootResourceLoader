@@ -1,3 +1,4 @@
 com.jd.live.agent.core.bootstrap.resource.loader.ClasspathBootResourceLoader
 com.jd.live.agent.core.bootstrap.resource.file.FileBootResourceLoader
 com.jd.live.agent.core.bootstrap.resource.tomcat.TomcatBootResourceLoader
+com.jd.live.agent.core.bootstrap.resource.tongweb.TongwebBootResourceLoader
