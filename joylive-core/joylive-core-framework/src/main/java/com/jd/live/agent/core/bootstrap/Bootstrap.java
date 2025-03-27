@@ -35,6 +35,7 @@ import com.jd.live.agent.core.event.EventBus;
 import com.jd.live.agent.core.event.EventHandler.EventProcessor;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.Subscription;
+import com.jd.live.agent.core.exception.EnhanceException;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.extension.ExtensionDesc;
@@ -81,6 +82,7 @@ import java.io.Reader;
 import java.lang.instrument.Instrumentation;
 import java.security.CodeSource;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.core.extension.condition.ConditionMatcher.DEPEND_ON_LOADER;
 
@@ -221,6 +223,8 @@ public class Bootstrap implements AgentLifecycle {
 
     private Shutdown shutdown;
 
+    private final AtomicBoolean installed = new AtomicBoolean(false);
+
     /**
      * Constructs a new Bootstrap instance.
      *
@@ -281,8 +285,9 @@ public class Bootstrap implements AgentLifecycle {
             if (pluginManager.install(dynamic)) {
                 publisher.offer(AgentEvent.onAgentEnhanceReady("Success installing all plugins."));
             } else {
-                publisher.offer(AgentEvent.onAgentEnhanceFailure("Failed to install plugin.", null));
+                throw new EnhanceException("Failed to install plugin.");
             }
+            installed.set(true);
             serviceManager.start().join();
             shutdown = new Shutdown();
             shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
@@ -291,11 +296,12 @@ public class Bootstrap implements AgentLifecycle {
             publisher.offer(AgentEvent.onAgentReady("Success starting LiveAgent."));
         } catch (Throwable e) {
             // TODO Close resource
-            String error = e instanceof InitializeException
-                    ? e.getMessage()
-                    : "Failed to install plugin. caused by " + e.getMessage();
+            String error = "Agent is not successfully installed, caused by " + e.getMessage();
             if (publisher != null) {
-                publisher.offer(AgentEvent.onAgentFailure(error, e));
+                AgentEvent event = e instanceof EnhanceException
+                        ? AgentEvent.onAgentEnhanceFailure(error, e)
+                        : AgentEvent.onAgentFailure(error, e);
+                publisher.offer(event);
             } else {
                 onException(error, e);
             }
@@ -344,7 +350,7 @@ public class Bootstrap implements AgentLifecycle {
     public void execute(String command, Map<String, Object> args) {
         if (commandManager == null) {
             //only throw initialize exception without error stack to agent.
-            throw new InitializeException("Agent is not successfully installed");
+            throw new InitializeException("CommandManager is not initialized.");
         } else if (command == null || command.isEmpty()) {
             //only throw initialize exception without error stack to agent.
             throw new InitializeException("Command is empty.");
@@ -721,7 +727,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private void onException(String message, Throwable throwable) {
         logger.error(message, throwable);
-        if (agentConfig != null && agentConfig.getEnhanceConfig().isShutdownOnError()) {
+        boolean shutdownOnError = agentConfig != null && agentConfig.getEnhanceConfig().isShutdownOnError();
+        if (shutdownOnError && installed.get()) {
             logger.info("Shutdown.....");
             System.exit(1);
         }
