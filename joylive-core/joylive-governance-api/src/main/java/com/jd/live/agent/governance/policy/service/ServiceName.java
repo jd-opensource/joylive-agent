@@ -34,8 +34,44 @@ public interface ServiceName {
      */
     String getName();
 
+    /**
+     * Gets unique name using current namespace and name.
+     */
     default String getUniqueName() {
-        String namespace = getNamespace();
-        return namespace == null || namespace.isEmpty() ? getName() : getName() + "@" + namespace;
+        return getUniqueName(getNamespace(), getName(), null);
+    }
+
+    /**
+     * Generates a unique identifier from namespace and name.
+     * Delegates to {@link #getUniqueName(String, String, String)} without group.
+     *
+     * @param name      Base name (non-null, non-empty)
+     * @param namespace Optional namespace (null/empty means default)
+     * @return Formatted unique name
+     * @see #getUniqueName(String, String, String)
+     */
+    static String getUniqueName(String namespace, String name) {
+        return getUniqueName(namespace, name, null);
+    }
+
+    /**
+     * Generates hierarchical unique identifier with format rules:
+     * - No group/namespace → name
+     * - Namespace only → name@@namespace
+     * - Group only → name@group
+     * - Both → name@group@namespace
+     *
+     * @param namespace Optional namespace (null/empty means default)
+     * @param group     Optional group name (null/empty skips)
+     * @param name      Base name (non-null, non-empty)
+     * @return Formatted unique name
+     */
+    static String getUniqueName(String namespace, String name, String group) {
+        if (group == null || group.isEmpty()) {
+            return namespace == null || namespace.isEmpty() ? name : name + "@@" + namespace;
+        } else if (namespace == null || namespace.isEmpty()) {
+            return name + "@" + group;
+        }
+        return name + "@" + group + "@" + namespace;
     }
 }

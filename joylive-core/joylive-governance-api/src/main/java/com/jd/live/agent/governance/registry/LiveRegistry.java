@@ -52,6 +52,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
+
 /**
  * {@code LiveRegistry} is an implementation of {@link Registry} that manages the registration and unregistration
  * of service instances.
@@ -227,6 +229,11 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
+    public boolean isReady(String namespace, String service) {
+        return policySupplier.isReady(namespace, service);
+    }
+
+    @Override
     public ServiceRegistry getServiceRegistry(String service, String group) {
         if (service == null || service.isEmpty()) {
             return null;
@@ -258,10 +265,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     private static String getName(String service, String group) {
-        if (group == null || group.isEmpty()) {
-            return service;
-        }
-        return service + "@" + group;
+        return getUniqueName(null, service, group);
     }
 
     private void startCluster(RegistryService registry) throws Exception {

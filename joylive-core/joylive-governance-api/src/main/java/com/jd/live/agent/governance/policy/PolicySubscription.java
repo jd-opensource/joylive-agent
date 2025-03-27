@@ -70,7 +70,7 @@ public class PolicySubscription implements ServiceName {
     public PolicySubscription(String name, String namespace, String type, List<String> syncers) {
         this.name = name;
         this.namespace = namespace;
-        this.fullName = namespace == null || namespace.isEmpty() ? name : name + "@@" + namespace;
+        this.fullName = ServiceName.getUniqueName(namespace, name);
         this.type = type;
         this.syncers = syncers == null || syncers.isEmpty() ? null
                 : syncers.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));
@@ -149,6 +149,17 @@ public class PolicySubscription implements ServiceName {
             }
         }
         return future;
+    }
+
+    /**
+     * Checks if the current state indicates readiness for operation.
+     *
+     * @return {@code true} if the current state exists and represents a successful state,
+     * {@code false} otherwise
+     */
+    public boolean isReady() {
+        SyncState syncState = state.get();
+        return syncState != null && syncState.isSuccess();
     }
 
     public List<String> getUnCompletedSyncers() {

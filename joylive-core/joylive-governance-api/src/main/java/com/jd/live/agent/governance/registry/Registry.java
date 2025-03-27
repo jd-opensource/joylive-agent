@@ -93,26 +93,6 @@ public interface Registry extends ServiceRegistryFactory {
     CompletableFuture<Void> subscribe(String service, String group);
 
     /**
-     * Checks if currently subscribed to the specified service without considering any consumer group.
-     *
-     * @param service the service name to check subscription for (must not be {@code null})
-     * @return {@code true} if subscribed to the service, {@code false} otherwise
-     * @see #isSubscribed(String, String)
-     */
-    default boolean isSubscribed(String service) {
-        return isSubscribed(service, null);
-    }
-
-    /**
-     * Checks if currently subscribed to the specified service and optional consumer group.
-     *
-     * @param service the service name to check subscription for (must not be {@code null})
-     * @param group   the consumer group to check (may be {@code null})
-     * @return {@code true} if subscribed to the service (and group, if specified), {@code false} otherwise
-     */
-    boolean isSubscribed(String service, String group);
-
-    /**
      * Subscribes to the specified service and attempts to retrieve its governance policy.
      * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
      *
@@ -206,6 +186,47 @@ public interface Registry extends ServiceRegistryFactory {
      * @param consumer the consumer to handle endpoint events triggered by the subscription.
      */
     void subscribe(String service, String group, Consumer<InstanceEvent> consumer);
+
+    /**
+     * Checks if currently subscribed to the specified service without considering any consumer group.
+     *
+     * @param service the service name to check subscription for (must not be {@code null})
+     * @return {@code true} if subscribed to the service, {@code false} otherwise
+     * @see #isSubscribed(String, String)
+     */
+    default boolean isSubscribed(String service) {
+        return isSubscribed(service, null);
+    }
+
+    /**
+     * Checks if currently subscribed to the specified service and optional consumer group.
+     *
+     * @param service the service name to check subscription for (must not be {@code null})
+     * @param group   the consumer group to check (may be {@code null})
+     * @return {@code true} if subscribed to the service (and group, if specified), {@code false} otherwise
+     */
+    boolean isSubscribed(String service, String group);
+
+    /**
+     * Checks if the specified service policy is ready in the default namespace.
+     *
+     * @param service the name of the service to check (must not be {@code null} or empty)
+     * @return {@code true} if the service is ready in the default namespace,
+     * {@code false} otherwise
+     */
+    default boolean isReady(String service) {
+        return isReady(null, service);
+    }
+
+    /**
+     * Checks if the specified service policy in the given namespace is ready for operation.
+     *
+     * @param namespace the namespace containing the service (may be {@code null} for default namespace)
+     * @param service   the name of the service to check (must not be {@code null} or empty)
+     * @return {@code true} if the service exists and is ready in the specified namespace,
+     * {@code false} otherwise
+     */
+    boolean isReady(String namespace, String service);
 
     /**
      * Retrieves endpoints for the specified service using the default group.

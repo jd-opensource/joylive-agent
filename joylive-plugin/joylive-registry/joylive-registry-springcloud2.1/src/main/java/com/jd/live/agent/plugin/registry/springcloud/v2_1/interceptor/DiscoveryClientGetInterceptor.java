@@ -26,7 +26,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * DiscoveryClientGetInterceptor
@@ -44,12 +43,10 @@ public class DiscoveryClientGetInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ServiceInstanceSupplier supplier = (ServiceInstanceSupplier) mc.getTarget();
         String serviceId = supplier.getServiceId();
-        CompletableFuture<Void> future = registry.subscribe(serviceId);
-        // TODO improve performance
-        if (!future.isDone() || future.isCompletedExceptionally()) {
+        if (!registry.isReady(serviceId)) {
             mc.setResult(Flux.error(HttpClientErrorException.create(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Governance policy is not synchronized.",
+                    "Governance policy is not synchronized. service=" + serviceId,
                     new HttpHeaders(),
                     new byte[0],
                     StandardCharsets.UTF_8)));

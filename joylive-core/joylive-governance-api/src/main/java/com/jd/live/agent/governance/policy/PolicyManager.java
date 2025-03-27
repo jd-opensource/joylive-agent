@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
 import static com.jd.live.agent.governance.subscription.policy.PolicyWatcher.*;
 
 /**
@@ -266,6 +267,17 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     }
 
     @Override
+    public boolean isReady(String namespace, String service) {
+        if (service == null || service.isEmpty()) {
+            return false;
+        }
+        namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
+        String fullName = getUniqueName(namespace, service);
+        PolicySubscription subscription = subscriptions.get(fullName);
+        return subscription != null && subscription.isReady();
+    }
+
+    @Override
     public List<PolicySubscription> getSubscriptions() {
         return Collections.unmodifiableList(new ArrayList<>(subscriptions.values()));
     }
@@ -431,7 +443,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      * @param subscriber The {@link PolicySubscription} to be subscribed.
      */
     protected CompletableFuture<Void> subscribe(PolicySubscription subscriber) {
-        PolicySubscription exist = subscriptions.putIfAbsent(subscriber.getName(), subscriber);
+        PolicySubscription exist = subscriptions.putIfAbsent(subscriber.getFullName(), subscriber);
         if (exist == null) {
             // notify syncer by event bus.
             policyPublisher.offer(subscriber);

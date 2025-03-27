@@ -21,6 +21,8 @@ import lombok.Setter;
 
 import java.util.Objects;
 
+import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
+
 @Getter
 @Setter
 public class ConfigName {
@@ -72,18 +74,7 @@ public class ConfigName {
     @Override
     public String toString() {
         if (fullName == null) {
-            boolean withProfile = profile != null && !profile.isEmpty();
-            boolean withNamespace = namespace != null && !namespace.isEmpty();
-            String configName = name == null ? "" : name;
-            if (withProfile && withNamespace) {
-                fullName = configName + "@" + profile + "@" + namespace;
-            } else if (withNamespace) {
-                fullName = configName + "@@" + namespace;
-            } else if (withProfile) {
-                fullName = configName + "@" + profile;
-            } else {
-                fullName = configName;
-            }
+            fullName = getUniqueName(namespace, name, profile);
         }
         return fullName;
     }

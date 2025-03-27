@@ -59,5 +59,26 @@ public interface PolicySupplier {
      * @return A {@link CompletableFuture} that completes when the subscription is successful.
      */
     CompletableFuture<Void> subscribe(String namespace, String service);
+
+    /**
+     * Checks if the specified service policy is ready in the default namespace.
+     *
+     * @param service the name of the service to check (must not be {@code null} or empty)
+     * @return {@code true} if the service is ready in the default namespace,
+     * {@code false} otherwise
+     */
+    default boolean isReady(String service) {
+        return isReady(null, service);
+    }
+
+    /**
+     * Checks if the specified service policy in the given namespace is ready for operation.
+     *
+     * @param namespace the namespace containing the service (may be {@code null} for default namespace)
+     * @param service   the name of the service to check (must not be {@code null} or empty)
+     * @return {@code true} if the service exists and is ready in the specified namespace,
+     * {@code false} otherwise
+     */
+    boolean isReady(String namespace, String service);
 }
 
