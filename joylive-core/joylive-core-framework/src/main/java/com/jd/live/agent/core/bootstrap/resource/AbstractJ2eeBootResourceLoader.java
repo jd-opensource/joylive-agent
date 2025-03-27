@@ -103,9 +103,7 @@ public abstract class AbstractJ2eeBootResourceLoader implements BootResourceLoad
      * @throws IOException If an I/O error occurs while trying to read the resource.
      */
     private InputStream getInputStream(File file, String name, File webappDirectory) throws IOException {
-        if (file.isFile() && file.getName().toLowerCase().endsWith(".war")) {
-            return getInputStream(file, name);
-        } else if (file.isDirectory()) {
+        if (file.isDirectory()) {
             File resourceFile = new File(file, name);
             return !resourceFile.exists() ? null : Files.newInputStream(resourceFile.toPath());
         }
