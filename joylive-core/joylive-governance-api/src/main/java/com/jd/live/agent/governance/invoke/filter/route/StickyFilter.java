@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundListener;
@@ -42,24 +42,28 @@ public class StickyFilter implements RouteFilter {
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         StickyType stickyType = invocation.getServiceMetadata().getStickyType();
+        T request = invocation.getRequest();
+        Carrier carrier = request.getCarrier();
         if (stickyType != StickyType.NONE) {
             RouteTarget target = invocation.getRouteTarget();
             // Get the sticky ID from the request, if available
-            String id = invocation.getRequest().getStickyId();
+            String id = request.getStickyId();
             // first remove sticky id from context
-            String ctxId = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
+
+            String ctxId = carrier == null ? null : carrier.removeAttribute(Request.KEY_STICKY_ID);
             final String stickyId = id != null && !id.isEmpty() ? id : ctxId;
             // If a sticky ID is available, filter the targets to only include the one with the sticky ID
             if (stickyId != null && !stickyId.isEmpty()) {
                 if (stickyType == StickyType.FIXED) {
                     target.filter(endpoint -> stickyId.equals(endpoint.getId()), 1);
                 } else {
-                    RequestContext.setAttribute(Request.KEY_STICKY_ID, stickyId);
+                    carrier = carrier != null ? carrier : request.getOrCreateCarrier();
+                    carrier.setAttribute(Request.KEY_STICKY_ID, stickyId);
                 }
             }
             invocation.addListener(new StickyListener());
-        } else {
-            RequestContext.removeAttribute(Request.KEY_STICKY_ID);
+        } else if (carrier != null) {
+            carrier.removeAttribute(Request.KEY_STICKY_ID);
         }
         chain.filter(invocation);
     }

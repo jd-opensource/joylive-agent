@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
@@ -207,7 +206,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         protected void parsePolicy() {
             if (context.getApplication().getService().isFrontGateway()) {
                 // remove rule id at frontend gateway
-                Carrier carrier = RequestContext.get();
+                Carrier carrier = request.getCarrier();
                 if (carrier != null) {
                     carrier.removeCargo(Constants.LABEL_LIVE_SPACE_ID);
                     carrier.removeCargo(Constants.LABEL_RULE_ID);

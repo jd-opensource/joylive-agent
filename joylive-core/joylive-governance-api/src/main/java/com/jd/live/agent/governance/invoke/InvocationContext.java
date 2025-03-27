@@ -24,7 +24,6 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -854,7 +853,7 @@ public interface InvocationContext {
          * @param invocation the outbound invocation containing the request
          */
         private <R extends OutboundRequest> void rejectFailover(OutboundInvocation<R> invocation) {
-            Carrier carrier = RequestContext.get();
+            Carrier carrier = invocation.getRequest().getCarrier();
             if (carrier == null) {
                 return;
             }

@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
@@ -91,7 +91,8 @@ public class LoadBalanceFilter implements RouteFilter {
      */
     private List<? extends Endpoint> preferSticky(RouteTarget target, OutboundInvocation<?> invocation) {
         // preferred sticky id
-        String id = RequestContext.removeAttribute(Request.KEY_STICKY_ID);
+        Carrier carrier = invocation.getRequest().getCarrier();
+        String id = carrier == null ? null : carrier.removeAttribute(Request.KEY_STICKY_ID);
         if (id != null && !id.isEmpty()) {
             Iterator<? extends Endpoint> iterator = target.getEndpoints().iterator();
             Endpoint endpoint;

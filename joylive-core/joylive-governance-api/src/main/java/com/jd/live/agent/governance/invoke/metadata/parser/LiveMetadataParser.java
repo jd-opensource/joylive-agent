@@ -4,7 +4,6 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.config.LiveConfig;
-import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.invoke.metadata.LiveDomainMetadata;
@@ -417,7 +416,8 @@ public abstract class LiveMetadataParser implements LiveParser {
         @Override
         protected LiveMetadataBuilder<?, ?> configure(LiveMetadataBuilder<?, ?> builder) {
             // gateway: inbound -> outbound
-            return super.configure(builder).policyId(RequestContext.removeAttribute(Constants.LABEL_LIVE_POLICY_ID));
+            Carrier carrier = request.getCarrier();
+            return super.configure(builder).policyId(carrier == null ? null : carrier.removeAttribute(Constants.LABEL_LIVE_POLICY_ID));
         }
 
         @Override
