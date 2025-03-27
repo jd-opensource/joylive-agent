@@ -30,7 +30,9 @@ public interface BootResourceLoader {
 
     int ORDER_TOMCAT = ORDER_CLASSPATH + 10;
 
-    int ORDER_FILE = ORDER_TOMCAT + 10;
+    int ORDER_TONG_WEB = ORDER_TOMCAT + 10;
+
+    int ORDER_FILE = ORDER_TONG_WEB + 10;
 
     /**
      * Finds the resource with the given name and returns its input stream.
