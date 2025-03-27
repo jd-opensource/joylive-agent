@@ -91,10 +91,7 @@ public class PolicySubscription implements ServiceName {
         if (done != null && done.compareAndSet(false, true)) {
             logger.info("Success fetching {} {} governance policy by {}.", fullName, type, syncer);
             if (counter.decrementAndGet() == 0) {
-                SyncState sr = state.get();
-                if ((sr == null || !sr.isSuccess()) && state.compareAndSet(sr, new SyncState(true))) {
-                    onComplete(future -> future.complete(null));
-                }
+                completeAndRun(() -> onComplete(future -> future.complete(null)));
             }
             return true;
         }
@@ -107,16 +104,13 @@ public class PolicySubscription implements ServiceName {
      * @return true if the synchronization process was successfully completed, false otherwise.
      */
     public boolean complete() {
-        SyncState sr = state.get();
-        if ((sr == null || !sr.isSuccess()) && state.compareAndSet(sr, new SyncState(true))) {
+        return completeAndRun(() -> {
             if (syncers != null) {
                 syncers.forEach((k, v) -> v.compareAndSet(false, true));
             }
             counter.set(0);
             onComplete(future -> future.complete(null));
-            return true;
-        }
-        return false;
+        });
     }
 
     /**
@@ -174,6 +168,34 @@ public class PolicySubscription implements ServiceName {
         return unComplete;
     }
 
+    /**
+     * Atomically completes the current operation and executes the given action if successful.
+     *
+     * @param runnable the action to execute upon successful completion (may be null)
+     * @return true if state transition was successful, false if already completed
+     */
+    private boolean completeAndRun(Runnable runnable) {
+        while (true) {
+            SyncState sr = state.get();
+            if ((sr == null || !sr.isSuccess())) {
+                if (state.compareAndSet(sr, new SyncState(true))) {
+                    if (runnable != null) {
+                        runnable.run();
+                    }
+                    return true;
+                }
+            } else {
+                return false;
+            }
+        }
+
+    }
+
+    /**
+     * Handles completion of governance policy fetching by processing all pending futures.
+     *
+     * @param consumer the callback to apply to each pending future
+     */
     private void onComplete(Consumer<CompletableFuture<Void>> consumer) {
         logger.info("Complete fetching {} {} governance policy.", fullName, type);
         synchronized (mutex) {

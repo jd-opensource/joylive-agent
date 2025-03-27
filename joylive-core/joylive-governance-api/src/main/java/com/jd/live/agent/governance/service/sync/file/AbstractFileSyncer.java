@@ -17,8 +17,6 @@ package com.jd.live.agent.governance.service.sync.file;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
 import com.jd.live.agent.core.event.FileEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -27,6 +25,8 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.service.sync.AbstractSyncer;
 import com.jd.live.agent.governance.service.sync.Subscription;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -144,7 +144,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
     }
 
     protected PolicyEvent createEvent(T data) {
-        return new PolicyEvent(EventType.UPDATE_ALL, "", data, getType(), getName());
+        return new PolicyEvent(EventType.UPDATE_ALL, getName(), data, getType(), getName());
     }
 
     /**

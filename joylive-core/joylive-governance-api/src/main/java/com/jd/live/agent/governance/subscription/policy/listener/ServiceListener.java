@@ -25,6 +25,8 @@ import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
 import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,9 +38,7 @@ public class ServiceListener extends AbstractListener<Service> {
 
     private final Map<String, PolicySubscription> subscribers = new ConcurrentHashMap<>();
 
-    private Set<String> loadedServices = new HashSet<>();
-
-    private boolean loadedAll = false;
+    private final Map<String, PolicyLoader> loaders = new HashMap<>();
 
     private final Object mutex = new Object();
 
@@ -104,18 +104,24 @@ public class ServiceListener extends AbstractListener<Service> {
     }
 
     @Override
-    protected synchronized void onSuccess(PolicyEvent event) {
+    protected void onSuccess(PolicyEvent event) {
         ServiceEvent se = (ServiceEvent) event;
-        Set<String> loaded = new HashSet<>(se.getLoadedServices());
         synchronized (mutex) {
-            loaded.addAll(loadedServices);
-            loadedServices = loaded;
-            loadedAll = loadedAll || event.getType() == EventType.UPDATE_ALL;
-            subscribers.forEach((key, value) -> {
-                if (loadedAll || loaded.contains(key)) {
-                    value.complete(event.getWatcher());
+            PolicyLoader loader = loaders.computeIfAbsent(event.getWatcher(), PolicyLoader::new);
+            Set<String> names = se.getLoadedServices();
+            if (event.getType() == EventType.UPDATE_ALL && !loader.isLoaded()) {
+                loader.setLoaded(true);
+            }
+            if (names != null) {
+                for (String name : names) {
+                    if (loader.addLoaded(name)) {
+                        PolicySubscription subscription = subscribers.get(name);
+                        if (subscription != null) {
+                            subscription.complete(event.getWatcher());
+                        }
+                    }
                 }
-            });
+            }
         }
     }
 
@@ -148,11 +154,40 @@ public class ServiceListener extends AbstractListener<Service> {
                 });
             } else {
                 synchronized (mutex) {
-                    if (loadedAll || loadedServices.contains(name)) {
-                        subscription.complete();
+                    for (PolicyLoader loader : loaders.values()) {
+                        if (loader.isLoaded(name)) {
+                            subscription.complete(loader.getName());
+                        }
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Helper class for loading and tracking policy states.
+     */
+    private static class PolicyLoader {
+
+        @Getter
+        private final String name;
+
+        @Getter
+        @Setter
+        private boolean loaded;
+
+        private final Set<String> loadedServices = new HashSet<>();
+
+        PolicyLoader(String name) {
+            this.name = name;
+        }
+
+        public boolean addLoaded(String name) {
+            return loadedServices.add(name);
+        }
+
+        public boolean isLoaded(String name) {
+            return loaded || loadedServices.contains(name);
         }
     }
 
