@@ -157,7 +157,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @return the configuration value as a String, or null if not found
      */
     private String getConfig(Map<String, Object> configs, String key) {
-        String name = (String) configs.get(key);
+        String name = configs == null ? null : (String) configs.get(key);
         if (name == null) {
             Object obj = ValuePath.get(configs, key);
             name = obj == null ? null : obj.toString();
