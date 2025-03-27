@@ -45,8 +45,7 @@
                             <Boot-Class-Path>${project.build.finalName}.jar</Boot-Class-Path>
                         </manifestEntries>
                         <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
+                            <addClasspath>false</addClasspath>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <mainClass>com.jd.live.agent.bootstrap.AgentLoader</mainClass>
                         </manifest>
