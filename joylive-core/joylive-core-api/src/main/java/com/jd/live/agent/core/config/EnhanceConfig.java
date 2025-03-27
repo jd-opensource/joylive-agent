@@ -66,6 +66,8 @@ public class EnhanceConfig {
      */
     private Set<String> edgeClasses;
 
+    private boolean shutdownOnError;
+
     public boolean isExclude(Class<?> type) {
         String name = type.getName();
         if (excludeTypes != null) {

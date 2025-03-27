@@ -291,15 +291,13 @@ public class Bootstrap implements AgentLifecycle {
             publisher.offer(AgentEvent.onAgentReady("Success starting LiveAgent."));
         } catch (Throwable e) {
             // TODO Close resource
-            logger.error(e.getMessage(), e);
+            String error = e instanceof InitializeException
+                    ? e.getMessage()
+                    : "Failed to install plugin. caused by " + e.getMessage();
             if (publisher != null) {
-                publisher.offer(
-                        AgentEvent.onAgentFailure(e instanceof InitializeException
-                                ? e.getMessage()
-                                : "Failed to install plugin. caused by " + e.getMessage(), e));
-            }
-            if (serviceManager != null) {
-                serviceManager.stop();
+                publisher.offer(AgentEvent.onAgentFailure(error, e));
+            } else {
+                onException(error, e);
             }
         }
     }
@@ -723,7 +721,7 @@ public class Bootstrap implements AgentLifecycle {
      */
     private void onException(String message, Throwable throwable) {
         logger.error(message, throwable);
-        if (!dynamic) {
+        if (agentConfig != null && agentConfig.getEnhanceConfig().isShutdownOnError()) {
             logger.info("Shutdown.....");
             System.exit(1);
         }

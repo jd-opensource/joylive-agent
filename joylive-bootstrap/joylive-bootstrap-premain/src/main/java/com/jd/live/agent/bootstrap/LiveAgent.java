@@ -402,11 +402,9 @@ public class LiveAgent {
                 String message = e.getMessage();
                 message = message == null ? e.getTargetException().getMessage() : message;
                 logger.log(Level.SEVERE, "Failed to install agent. caused by " + message);
-                System.exit(1);
             } catch (Throwable e) {
                 // Log any other exceptions that occurred during the installation process and exit.
                 logger.log(Level.SEVERE, "Failed to install agent. caused by " + e.getMessage(), e);
-                System.exit(1);
             }
             // If the installation fails, return null.
             return null;
