@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.bootstrap.util.Exclusion;
 import com.jd.live.agent.bootstrap.util.option.ConfigResolver;
 
 import java.io.*;
@@ -30,9 +31,12 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.jar.*;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -135,7 +139,7 @@ public class LiveAgent {
             InstallContext ctx = InstallContext.parse(arguments, instrumentation, dynamic);
             shutdownOnError = ctx.shutdownOnError;
             if (ctx.isInJavaToolOptions()) {
-                if (ctx.bootClass == null || ctx.isExcludeApp()) {
+                if (ctx.isExcluded()) {
                     // logger.log(Level.INFO, "[LiveAgent] the agent will exit when excluding main class " + ctx.bootClass.name);
                     return;
                 } else {
@@ -214,7 +218,7 @@ public class LiveAgent {
         private String command;
         private boolean shutdownOnError;
         private BootClass bootClass;
-        private Set<String> excludeApps;
+        private Exclusion exclusion;
 
         /**
          * Parses the installation arguments and returns an InstallArg object.
@@ -251,7 +255,7 @@ public class LiveAgent {
             arg.shutdownOnError = isShutdownOnError(arg.configuration);
 
             // Exclude apps
-            arg.excludeApps = getExcludeApps(arg.configuration);
+            arg.exclusion = getExcludeApps(arg.configuration);
             return arg;
         }
 
@@ -306,10 +310,8 @@ public class LiveAgent {
          *
          * @return true if the main class is excluded, false otherwise.
          */
-        public boolean isExcludeApp() {
-            return bootClass != null && (bootClass.isJdkTool()
-                    || excludeApps.contains(bootClass.name)
-                    || excludeApps.contains(bootClass.className));
+        public boolean isExcluded() {
+            return bootClass == null || bootClass.isExclude(exclusion::isExclude);
         }
 
         /**
@@ -590,19 +592,27 @@ public class LiveAgent {
          * @param env The environment function used to retrieve configuration values.
          * @return A set of strings representing the excluded applications.
          */
-        private static Set<String> getExcludeApps(Function<String, Object> env) {
-            Set<String> excludeApps = new HashSet<>();
+        private static Exclusion getExcludeApps(Function<String, Object> env) {
+            Exclusion result = new Exclusion();
             String config = (String) env.apply(EXCLUDE_APP);
             if (config != null) {
                 String[] values = config.split(ARRAY_DELIMITER_PATTERN);
                 for (String value : values) {
                     value = value.trim();
                     if (!value.isEmpty()) {
-                        excludeApps.add(value.trim());
+                        if (value.endsWith("/") || value.endsWith(".")) {
+                            result.addPrefix(value);
+                        } else if (value.endsWith("*")) {
+                            if (value.length() > 1) {
+                                result.addPrefix(value.substring(0, value.length() - 1));
+                            }
+                        } else {
+                            result.addName(value);
+                        }
                     }
                 }
             }
-            return excludeApps;
+            return result;
         }
 
     }
@@ -626,17 +636,31 @@ public class LiveAgent {
         }
 
         /**
+         * Determines if this class should be excluded based on the provided predicate.
+         *
+         * @param predicate the condition to test against class names (must not be null)
+         * @return true if the class should be excluded according to the above rules
+         */
+        public boolean isExclude(Predicate<String> predicate) {
+            if (isJdkTool() || predicate.test(name)) {
+                return true;
+            }
+            return module != null && predicate.test(className);
+        }
+
+        /**
          * Checks if the boot class belongs to a JDK tool.
          *
          * @return true if the boot class belongs to a JDK tool, false otherwise.
          */
-        public boolean isJdkTool() {
+        private boolean isJdkTool() {
             return module != null && module.startsWith("jdk.")
                     || className != null && (className.startsWith("sun.")
                     || className.startsWith("com.sun.")
                     || className.startsWith("jdk.")
             );
         }
+
     }
 
     private static class LogHandler extends Handler {
