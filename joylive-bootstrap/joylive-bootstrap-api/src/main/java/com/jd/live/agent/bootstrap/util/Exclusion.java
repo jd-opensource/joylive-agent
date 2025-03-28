@@ -26,12 +26,28 @@ public class Exclusion {
     /**
      * Set of exact names to exclude (case-sensitive)
      */
-    private final Set<String> names = new HashSet<>(20);
+    private final Set<String> names;
 
     /**
      * Set of name prefixes to exclude (case-sensitive)
      */
-    private final Set<String> prefixes = new HashSet<>(10);
+    private final Set<String> prefixes;
+
+    private final boolean nullable;
+
+    public Exclusion() {
+        this(null, null, false);
+    }
+
+    public Exclusion(boolean nullable) {
+        this(null, null, nullable);
+    }
+
+    public Exclusion(Set<String> names, Set<String> prefixes, boolean nullable) {
+        this.names = names == null ? new HashSet<>(20) : names;
+        this.prefixes = prefixes == null ? new HashSet<>(10) : prefixes;
+        this.nullable = nullable;
+    }
 
     /**
      * Adds an exact name to the exclusion list
@@ -58,7 +74,9 @@ public class Exclusion {
      * @return true if the class should be excluded, based on:
      */
     public boolean isExclude(String name) {
-        if (name == null || names.contains(name)) {
+        if (name == null) {
+            return !nullable;
+        } else if (names.contains(name)) {
             return true;
         }
         for (String prefix : prefixes) {
