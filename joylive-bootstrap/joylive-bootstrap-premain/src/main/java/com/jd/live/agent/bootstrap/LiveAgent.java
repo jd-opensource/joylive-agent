@@ -598,18 +598,7 @@ public class LiveAgent {
             if (config != null) {
                 String[] values = config.split(ARRAY_DELIMITER_PATTERN);
                 for (String value : values) {
-                    value = value.trim();
-                    if (!value.isEmpty()) {
-                        if (value.endsWith("/") || value.endsWith(".")) {
-                            result.addPrefix(value);
-                        } else if (value.endsWith("*")) {
-                            if (value.length() > 1) {
-                                result.addPrefix(value.substring(0, value.length() - 1));
-                            }
-                        } else {
-                            result.addName(value);
-                        }
-                    }
+                    result.addClassName(value);
                 }
             }
             return result;
