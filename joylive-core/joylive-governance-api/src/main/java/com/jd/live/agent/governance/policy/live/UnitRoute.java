@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy.live;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
+import com.jd.live.agent.bootstrap.util.Inclusion.InclusionType;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
@@ -62,20 +64,8 @@ public class UnitRoute {
 
     private final transient Cache<String, CellRoute> cellRouteCache = new MapCache<>(new ListBuilder<>(() -> cells, CellRoute::getCode));
 
-    public boolean isAllow(String variable) {
-        return allows != null && allows.contains(variable);
-    }
-
-    public boolean isPrefix(String variable) {
-        if (prefixes != null) {
-            // TODO Use prefix trie
-            for (String p : prefixes) {
-                if (variable.startsWith(p)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    public InclusionType allow(String variable) {
+        return Inclusion.execute(allows, prefixes, false, variable, null);
     }
 
     public boolean contains(int value) {

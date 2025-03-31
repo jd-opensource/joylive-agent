@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
 import lombok.Getter;
@@ -82,22 +83,7 @@ public class TransmitConfig {
          * @return {@code true} if the executor name is excluded, {@code false} otherwise.
          */
         public boolean isExcludedExecutor(String name) {
-            return name != null && (excludeExecutors.contains(name) || isExcludedExecutorPrefix(name));
-        }
-
-        /**
-         * Checks if the given executor name matches any excluded prefix.
-         *
-         * @param name The name of the executor to check.
-         * @return {@code true} if the executor name starts with any excluded prefix, {@code false} otherwise.
-         */
-        private boolean isExcludedExecutorPrefix(String name) {
-            for (String prefix : excludeExecutorPrefixes) {
-                if (name.startsWith(prefix)) {
-                    return true;
-                }
-            }
-            return false;
+            return Inclusion.test(excludeExecutors, excludeExecutorPrefixes, false, name);
         }
 
         /**
@@ -117,22 +103,7 @@ public class TransmitConfig {
          * @return {@code true} if the task name is excluded or matches any excluded prefix, {@code false} otherwise.
          */
         public boolean isExcludedTask(String name) {
-            return name != null && (excludeTasks.contains(name) || isExcludedTaskPrefix(name));
-        }
-
-        /**
-         * Checks if the given task name matches any excluded prefix.
-         *
-         * @param name The name of the task to check.
-         * @return {@code true} if the task name starts with any excluded prefix, {@code false} otherwise.
-         */
-        private boolean isExcludedTaskPrefix(String name) {
-            for (String prefix : excludeTaskPrefixes) {
-                if (name.startsWith(prefix)) {
-                    return true;
-                }
-            }
-            return false;
+            return Inclusion.test(excludeTasks, excludeTaskPrefixes, false, name);
         }
 
     }

@@ -193,7 +193,7 @@ public class SpringConfigRefresher {
         describe.getFieldList().forEach(field -> {
             if (isValid(field.getField())) {
                 String key = getFieldKey(field);
-                if (key != null && config.isEnabled(key)) {
+                if (config.isEnabled(key)) {
                     Method setter = field.getSetter();
                     if (setter == null || methods.add(setter)) {
                         addFieldListener(configurator, config, bean, field, key);
@@ -221,7 +221,7 @@ public class SpringConfigRefresher {
         describe.getMethodList().forEach(method -> {
             if (isValid(method)) {
                 String key = getMethodKey(method);
-                if (key != null && config.isEnabled(key) && methods.add(method)) {
+                if (config.isEnabled(key) && methods.add(method)) {
                     addMethodListener(configurator, config, bean, method, key);
                 }
             }
@@ -248,7 +248,7 @@ public class SpringConfigRefresher {
             describe.getFieldList().forEach(field -> {
                 if (isValid(field.getField())) {
                     String key = getFieldKey(field, prefix, true);
-                    if (key != null && config.isEnabled(key)) {
+                    if (config.isEnabled(key)) {
                         addFieldListener(configurator, config, bean, field, key);
                     }
                 }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.live;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.parser.json.DeserializeConverter;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
@@ -204,25 +205,10 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
      * @return <code>true</code> if the method is write-protected, otherwise <code>false</code>.
      */
     public boolean isWriteProtect(String methodName) {
-        if (writeProtect == null || !writeProtect || methodName == null || methodName.isEmpty()) {
+        if (writeProtect == null || !writeProtect) {
             return false;
         }
-        boolean allowList = false;
-        if (methods != null && !methods.isEmpty()) {
-            allowList = true;
-            if (methods.contains(methodName)) {
-                return true;
-            }
-        }
-        if (methodPrefixes != null && !methodPrefixes.isEmpty()) {
-            allowList = true;
-            for (String methodPrefix : methodPrefixes) {
-                if (methodName.startsWith(methodPrefix)) {
-                    return true;
-                }
-            }
-        }
-        return !allowList;
+        return Inclusion.test(methods, methodPrefixes, true, methodName);
     }
 
     public ServiceLivePolicy clone() {

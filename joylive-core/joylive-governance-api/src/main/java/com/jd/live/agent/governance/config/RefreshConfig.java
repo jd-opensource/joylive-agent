@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -37,31 +38,11 @@ public class RefreshConfig {
     private Set<String> ignoreKeyPrefixes;
 
     public boolean isEnabled(String beanName, Object bean) {
-        if (beanName != null && beanNames != null && !beanNames.isEmpty() && !beanName.isEmpty() && !beanNames.contains(beanName)) {
-            return false;
-        } else if (bean != null && beanClassPrefixes != null && !beanClassPrefixes.isEmpty()) {
-            String className = bean.getClass().getName();
-            for (String prefix : beanClassPrefixes) {
-                if (className.startsWith(prefix)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        return true;
+        return Inclusion.test(beanNames, beanClassPrefixes, true, beanName, n -> bean.getClass().getName());
     }
 
     public boolean isEnabled(String key) {
-        if (ignoreKeys != null && !ignoreKeys.isEmpty() && ignoreKeys.contains(key)) {
-            return false;
-        } else if (ignoreKeyPrefixes != null && !ignoreKeyPrefixes.isEmpty()) {
-            for (String prefix : ignoreKeyPrefixes) {
-                if (key.startsWith(prefix)) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return key != null && !Inclusion.test(ignoreKeys, ignoreKeyPrefixes, false, key);
     }
 
     public boolean isEmpty() {

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.live;
 
+import com.jd.live.agent.bootstrap.util.Inclusion.InclusionType;
 import com.jd.live.agent.core.parser.json.DeserializeConverter;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
@@ -115,11 +116,13 @@ public class UnitRule {
         } else {
             int value = function == null ? -1 : function.compute(variable, modulo);
             UnitRoute result = null;
+            InclusionType inclusionType;
             for (UnitRoute unitRoute : unitRoutes) {
                 // Prioritize whitelists, then prefix whitelists, followed by ranges.
-                if (unitRoute.isAllow(variable)) {
+                inclusionType = unitRoute.allow(variable);
+                if (inclusionType == InclusionType.INCLUDE_EXACTLY) {
                     return unitRoute;
-                } else if (unitRoute.isPrefix(variable)) {
+                } else if (inclusionType == InclusionType.INCLUDE_OTHER) {
                     result = unitRoute;
                 } else if (result == null && unitRoute.contains(value)) {
                     result = unitRoute;
@@ -138,8 +141,7 @@ public class UnitRule {
      * @return true if the unit route contains the variable and function, false otherwise
      */
     public boolean contains(UnitRoute route, String variable, UnitFunction function) {
-        return route != null && (route.isAllow(variable)
-                || route.isPrefix(variable)
+        return route != null && (route.allow(variable) != InclusionType.EXCLUDE
                 || (function != null && route.contains(function.compute(variable, modulo))));
     }
 

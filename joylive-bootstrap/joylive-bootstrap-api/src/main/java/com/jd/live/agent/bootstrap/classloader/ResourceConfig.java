@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.bootstrap.classloader;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
+import com.jd.live.agent.bootstrap.util.Inclusion.InclusionType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -120,38 +122,18 @@ public class ResourceConfig {
         if (name == null) {
             return false;
         } else {
-            String extension = "";
             int pos = name.lastIndexOf('.');
-            if (pos > 0) {
-                extension = name.substring(pos + 1);
-            }
-            return contains(configResources, configExtensions, name, extension::equalsIgnoreCase);
+            String extension = pos > 0 ? name.substring(pos + 1) : "";
+            return Inclusion.execute(configResources, configExtensions, false, name, extension::equalsIgnoreCase, null) != InclusionType.EXCLUDE;
         }
     }
 
     public boolean isParent(String name) {
-        return name != null && contains(parentResources, parentPrefixes, name, name::startsWith);
+        return Inclusion.test(parentResources, parentPrefixes, false, name);
     }
 
     public boolean isIsolation(String name) {
-        return name != null && contains(isolationResources, isolationPrefixes, name, name::startsWith);
-    }
-
-    protected boolean contains(Set<String> resources, Set<String> others,
-                               String name, Function<String, Boolean> func) {
-        boolean result = false;
-        if (resources != null) {
-            result = resources.contains(name);
-        }
-        if (!result && others != null) {
-            for (String other : others) {
-                result = !other.isEmpty() && func.apply(other);
-                if (result) {
-                    break;
-                }
-            }
-        }
-        return result;
+        return Inclusion.test(isolationResources, isolationPrefixes, false, name);
     }
 
     protected Set<String> parse(Function<String, Object> env, String key) {

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.cluster;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
@@ -165,25 +166,7 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
      * @return true if the method name should be retried, false otherwise.
      */
     public boolean containsMethod(String methodName) {
-        if (methodName == null || methodName.isEmpty()) {
-            return false;
-        }
-        boolean allowList = false;
-        if (methods != null && !methods.isEmpty()) {
-            allowList = true;
-            if (methods.contains(methodName)) {
-                return true;
-            }
-        }
-        if (methodPrefixes != null && !methodPrefixes.isEmpty()) {
-            allowList = true;
-            for (String methodPrefix : methodPrefixes) {
-                if (methodName.startsWith(methodPrefix)) {
-                    return true;
-                }
-            }
-        }
-        return !allowList;
+        return Inclusion.test(methods, methodPrefixes, true, methodName);
     }
 
     public void cache() {
