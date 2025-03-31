@@ -57,11 +57,6 @@ public class EnhanceConfig {
      */
     private Set<String> excludeClassLoaders;
 
-    /**
-     * handle java module
-     */
-    private Set<String> edgeClasses;
-
     private boolean shutdownOnError;
 
     public boolean isExclude(Class<?> type) {

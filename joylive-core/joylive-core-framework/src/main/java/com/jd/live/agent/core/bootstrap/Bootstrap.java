@@ -189,6 +189,7 @@ public class Bootstrap implements AgentLifecycle {
     /**
      * Subscription, handling the event.
      */
+    @SuppressWarnings("rawtypes")
     private List<Subscription> subscriptions;
 
     /**
@@ -678,6 +679,7 @@ public class Bootstrap implements AgentLifecycle {
      * Subscribes all available subscriptions to their respective topics on the event bus.
      * Retrieves subscriptions from the extension manager and adds handlers to the event bus.
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void subscribe() {
         if (subscriptions != null) {
             for (Subscription subscription : subscriptions) {
@@ -686,6 +688,7 @@ public class Bootstrap implements AgentLifecycle {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private List<Subscription> createSubscriptions() {
         return extensionManager.getOrLoadExtensible(Subscription.class, classLoaderManager.getCoreImplLoader()).getExtensions();
     }
