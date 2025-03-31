@@ -15,20 +15,20 @@
  */
 package com.jd.live.agent.core.inject.jbind.supplier;
 
-import com.jd.live.agent.bootstrap.util.option.ValueResolver;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.jbind.Sourcer;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.template.Template;
 
 import java.util.Map;
 
 public class JConfigSourcer implements Sourcer {
     private final String key;
-    private final ValueResolver resolver;
+    private final Option option;
 
-    public JConfigSourcer(String key, Option environment) {
+    public JConfigSourcer(String key, Option option) {
         this.key = key;
-        this.resolver = new ValueResolver(environment);
+        this.option = option;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class JConfigSourcer implements Sourcer {
         }
         if (result instanceof String) {
             // handle expression language. such as ${ENV_1:123}
-            result = resolver.parse((String) result);
+            result = Template.evaluate((String) result, option);
         }
         return result;
     }

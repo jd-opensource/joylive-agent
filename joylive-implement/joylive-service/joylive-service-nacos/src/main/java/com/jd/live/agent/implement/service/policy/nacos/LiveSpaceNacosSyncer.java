@@ -95,7 +95,7 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
     protected NacosLiveSpaceKey createSpaceKey(String spaceId) {
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
-        String dataId = template.evaluate(context);
+        String dataId = template.render(context);
         return new NacosLiveSpaceKey(spaceId, dataId, syncConfig.getNacos().getLiveSpaceGroup());
     }
 

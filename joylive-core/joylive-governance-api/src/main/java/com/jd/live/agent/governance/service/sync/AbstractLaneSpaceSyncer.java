@@ -261,7 +261,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     protected String getKey(String spaceId) {
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
-        return template.evaluate(context);
+        return template.render(context);
     }
 
 }

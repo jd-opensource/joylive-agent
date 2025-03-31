@@ -85,7 +85,7 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
         context.put(SPACE, key.getNamespace());
         context.put(SERVICE_NAME, key.getName());
         context.put(SERVICE_VERSION, String.valueOf(subscription.getVersion()));
-        String uri = template.evaluate(context);
+        String uri = template.render(context);
         return getResponse(config, uri);
     }
 

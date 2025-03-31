@@ -95,7 +95,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
     protected NacosLaneSpaceKey createSpaceKey(String spaceId) {
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
-        String dataId = template.evaluate(context);
+        String dataId = template.render(context);
         return new NacosLaneSpaceKey(spaceId, dataId, syncConfig.getNacos().getLaneSpaceGroup());
     }
 

@@ -831,7 +831,7 @@ public interface InvocationContext {
                         context.put(KEY_UNIT, unit == null ? "" : unit.getHostPrefix());
                         context.put(KEY_CELL, cell == null ? "" : cell.getHostPrefix());
                         context.put(KEY_HOST, host);
-                        failoverHost = template.evaluate(context);
+                        failoverHost = template.render(context);
                     } else {
                         failoverHost = unitHost;
                     }

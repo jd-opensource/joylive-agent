@@ -33,7 +33,7 @@ public class TemplateTest {
         context.put("group", "test");
 
         Template template = new Template("${unit}-${cell}-${group}", 48);
-        String value = template.evaluate(context);
+        Object value = template.evaluate(context);
         Assertions.assertEquals("bj-lf-test", value);
 
         Unit unit = new Unit();

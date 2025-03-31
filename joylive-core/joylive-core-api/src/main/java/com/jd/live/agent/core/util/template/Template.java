@@ -74,7 +74,7 @@ public class Template implements Evaluator {
     }
 
     @Override
-    public String evaluate(Map<String, Object> context) {
+    public Object evaluate(Object context) {
         return evaluate(context, true);
     }
 
@@ -82,49 +82,22 @@ public class Template implements Evaluator {
      * Evaluates the template using the provided context. If {@code nullable} is true,
      * missing variables are treated as null; otherwise, they are treated as empty strings.
      *
-     * @param context  the map containing variable values
+     * @param context  the object containing variable values
      * @param nullable whether to allow null values for missing variables
-     * @return the evaluated string
+     * @return the evaluated result
      */
-    public String evaluate(Map<String, Object> context, boolean nullable) {
-        StringBuilder builder = new StringBuilder(capacity <= 0 ? 16 : capacity);
-        EvalContext ctx = new EvalContext(context, nullable);
-        String value;
-        for (Section section : sections) {
-            value = section.evaluate(ctx);
-            if (value != null) {
-                builder.append(value);
-            }
-        }
-        return builder.toString();
-    }
-
-    /**
-     * Evaluates the template using the provided key-value pairs, with optional null value handling.
-     *
-     * @param nullable whether to allow null values for missing variables
-     * @param args     the key-value pairs (e.g., "key1", "value1", "key2", "value2")
-     * @return the evaluated string
-     */
-    public String evaluate(boolean nullable, String... args) {
-        Map<String, Object> context = new HashMap<>();
-        if (args != null) {
-            int len = args.length / 2;
-            for (int i = 0; i < len; i++) {
-                context.put(args[i * 2], args[i * 2 + 1]);
-            }
-        }
-        return evaluate(context, nullable);
+    public Object evaluate(Object context, boolean nullable) {
+        return doEvaluate(new EvalContext(context, nullable), sections);
     }
 
     /**
      * Evaluates the given expression using the provided context, allowing null values by default.
      *
      * @param expression the expression to evaluate
-     * @param context    the map containing variable values
-     * @return the evaluated string
+     * @param context    the object containing variable values
+     * @return the evaluated result
      */
-    public static String evaluate(String expression, Map<String, Object> context) {
+    public static Object evaluate(String expression, Object context) {
         return evaluate(expression, context, true);
     }
 
@@ -132,11 +105,11 @@ public class Template implements Evaluator {
      * Evaluates the given expression using the provided context, with optional null value handling.
      *
      * @param expression the expression to evaluate
-     * @param context    the map containing variable values
+     * @param context    the object containing variable values
      * @param nullable   whether to allow null values for missing variables
-     * @return the evaluated string
+     * @return the evaluated result
      */
-    public static String evaluate(String expression, Map<String, Object> context, boolean nullable) {
+    public static Object evaluate(String expression, Object context, boolean nullable) {
         return parse(expression).evaluate(context, nullable);
     }
 
@@ -145,7 +118,7 @@ public class Template implements Evaluator {
      *
      * @param expression the expression to evaluate
      * @param args       the key-value pairs (e.g., "key1", "value1", "key2", "value2")
-     * @return the evaluated string
+     * @return the evaluated result
      */
     public static String evaluate(String expression, String... args) {
         return evaluate(expression, true, args);
@@ -157,10 +130,33 @@ public class Template implements Evaluator {
      * @param expression the expression to evaluate
      * @param nullable   whether to allow null values for missing variables
      * @param args       the key-value pairs (e.g., "key1", "value1", "key2", "value2")
-     * @return the evaluated string
+     * @return the evaluated result
      */
     public static String evaluate(String expression, boolean nullable, String... args) {
-        return parse(expression).evaluate(nullable, args);
+        Map<String, Object> context = context(args);
+        Object result = parse(expression).evaluate(context, nullable);
+        return result == null ? null : result.toString();
+    }
+
+    /**
+     * Creates a context map from alternating key-value pairs.
+     * <p>
+     * Example usage: {@code context("name", "value", "id", 123)} creates
+     * a map with two entries.
+     *
+     * @param args alternating key-value pairs (keys must be Strings, values can be any Object).
+     *             If null or odd-length array, trailing elements are ignored.
+     * @return a new map containing the key-value pairs (never null)
+     */
+    public static Map<String, Object> context(String... args) {
+        Map<String, Object> context = new HashMap<>();
+        if (args != null) {
+            int len = args.length / 2;
+            for (int i = 0; i < len; i++) {
+                context.put(args[i * 2], args[i * 2 + 1]);
+            }
+        }
+        return context;
     }
 
     /**
@@ -285,7 +281,9 @@ public class Template implements Evaluator {
                 return pos;
             } else if (chars[i] == ':') {
                 // Start of the default value
-                pos[1] = i + 1;
+                if (pos[1] == -1) {
+                    pos[1] = i + 1;
+                }
                 i++;
             } else {
                 i++;
@@ -373,6 +371,40 @@ public class Template implements Evaluator {
         }
     }
 
+    /**
+     * Evaluates a list of sections in the given context and returns the combined result.
+     *
+     * @param context  the evaluation context containing variables and state (never null)
+     * @param sections the sections to evaluate (null treated as empty list)
+     * @return evaluation result which can be:
+     * <ul>
+     *   <li>null for empty input or all null results</li>
+     *   <li>direct section result for single section</li>
+     *   <li>concatenated string for multiple sections</li>
+     * </ul>
+     */
+    private static Object doEvaluate(EvalContext context, List<Section> sections) {
+        int size = sections == null ? 0 : sections.size();
+        switch (size) {
+            case 0:
+                return null;
+            case 1:
+                return sections.get(0).evaluate(context);
+            default:
+                int count = 0;
+                Object value;
+                StringBuilder builder = new StringBuilder(64);
+                for (Section section : sections) {
+                    value = section.evaluate(context);
+                    if (value != null) {
+                        count++;
+                        builder.append(value);
+                    }
+                }
+                return count == 0 ? null : builder.toString();
+        }
+    }
+
     @Getter
     @AllArgsConstructor
     private static class Position {
@@ -419,7 +451,7 @@ public class Template implements Evaluator {
     @AllArgsConstructor
     private static class EvalContext {
 
-        private final Map<String, Object> context;
+        private final Object context;
 
         private final boolean nullable;
 
@@ -432,7 +464,7 @@ public class Template implements Evaluator {
 
         Position getPosition();
 
-        String evaluate(EvalContext context);
+        Object evaluate(EvalContext context);
 
         default boolean isEmpty() {
             Position position = getPosition();
@@ -463,11 +495,11 @@ public class Template implements Evaluator {
         }
 
         @Override
-        public String evaluate(EvalContext context) {
+        public Object evaluate(EvalContext context) {
             boolean nullable = context.isNullable();
-            String result = variable == null ? null : variable.evaluate(context);
-            if (result == null || result.isEmpty()) {
-                String candidate;
+            Object result = variable == null ? null : variable.evaluate(context);
+            if (result == null || (result instanceof String && ((String) result).isEmpty())) {
+                Object candidate;
                 if (defaultValue == null) {
                     candidate = null;
                 } else {
@@ -498,7 +530,7 @@ public class Template implements Evaluator {
 
         private final String expression;
 
-        private String variable;
+        private final String variable;
 
         private String prefix;
 
@@ -530,19 +562,21 @@ public class Template implements Evaluator {
         }
 
         @Override
-        public String evaluate(EvalContext context) {
+        public Object evaluate(EvalContext context) {
             Object obj = getter == null ? null : getter.get(context.getContext());
-            String result = obj == null ? null : obj.toString();
-            if (result == null || result.isEmpty()) {
-                return result;
+            if (obj == null) {
+                return null;
             } else if (prefix == null && suffix == null) {
-                return result;
-            } else if (prefix != null && suffix != null) {
-                return prefix + result + suffix;
-            } else if (prefix != null) {
-                return prefix + result;
+                return obj;
             } else {
-                return result + suffix;
+                String result = obj.toString();
+                if (prefix != null && suffix != null) {
+                    return prefix + result + suffix;
+                } else if (prefix != null) {
+                    return prefix + result;
+                } else {
+                    return result + suffix;
+                }
             }
         }
 
@@ -571,20 +605,8 @@ public class Template implements Evaluator {
         }
 
         @Override
-        public String evaluate(EvalContext context) {
-            if (sections == null || sections.isEmpty()) {
-                return "";
-            }
-            int count = 0;
-            StringBuilder builder = new StringBuilder(64);
-            for (Section section : sections) {
-                String value = section.evaluate(context);
-                if (value != null) {
-                    count++;
-                    builder.append(value);
-                }
-            }
-            return count == 0 ? null : builder.toString();
+        public Object evaluate(EvalContext context) {
+            return doEvaluate(context, sections);
         }
 
         @Override
@@ -609,7 +631,7 @@ public class Template implements Evaluator {
         }
 
         @Override
-        public String evaluate(EvalContext context) {
+        public Object evaluate(EvalContext context) {
             return value;
         }
 

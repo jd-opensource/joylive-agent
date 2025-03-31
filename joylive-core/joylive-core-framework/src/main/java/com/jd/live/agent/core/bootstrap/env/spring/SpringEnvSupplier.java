@@ -53,11 +53,13 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     public void process(Map<String, Object> env) {
         BootResource[] resources = getResources(env);
         Map<String, Object> configs = loadConfigs(resources);
-        String name = getConfigAndResolve(configs, env, KEY_SPRING_APPLICATION_NAME);
+        Object value = getConfigAndResolve(configs, env, KEY_SPRING_APPLICATION_NAME);
+        String name = value == null ? null : value.toString();
         if (name != null && !name.isEmpty()) {
             env.put(Application.KEY_APPLICATION_NAME, name);
         }
-        String port = getConfigAndResolve(configs, env, KEY_SPRING_SERVER_PORT);
+        value = getConfigAndResolve(configs, env, KEY_SPRING_SERVER_PORT);
+        String port = value == null ? null : value.toString();
         if (port != null && !port.isEmpty()) {
             try {
                 Integer.parseInt(port);
@@ -142,10 +144,10 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @param key     the key for the configuration value to retrieve and resolve
      * @return the resolved configuration value as a String
      */
-    private String getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
-        String config = (String) env.get(key);
-        config = config == null || config.isEmpty() ? getConfig(configs, key) : config;
-        return config == null || config.isEmpty() ? config : evaluate(config, env, false);
+    private Object getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
+        Object config = env.get(key);
+        config = config == null || (config instanceof String && ((String) config).isEmpty()) ? getConfig(configs, key) : config;
+        return config == null || (config instanceof String && ((String) config).isEmpty()) ? config : evaluate(config.toString(), env, false);
     }
 
     /**
@@ -156,12 +158,11 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @param key     the key for the configuration value to retrieve
      * @return the configuration value as a String, or null if not found
      */
-    private String getConfig(Map<String, Object> configs, String key) {
-        String name = configs == null ? null : (String) configs.get(key);
-        if (name == null) {
-            Object obj = ValuePath.get(configs, key);
-            name = obj == null ? null : obj.toString();
+    private Object getConfig(Map<String, Object> configs, String key) {
+        Object result = configs == null ? null : configs.get(key);
+        if (result == null) {
+            result = ValuePath.get(configs, key);
         }
-        return name;
+        return result;
     }
 }

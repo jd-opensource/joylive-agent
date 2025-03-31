@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import com.jd.live.agent.bootstrap.util.option.ValueSupplier;
 import com.jd.live.agent.bootstrap.util.type.ObjectGetter;
 import lombok.Getter;
 
@@ -73,7 +74,13 @@ public class ValuePath implements ObjectGetter {
         for (PropertyPath propertyPath : paths) {
             result = getObject(target, propertyPath);
             if (result == null) {
-                result = index == 0 && paths.size() > 1 && target instanceof Map ? ((Map<String, Object>) target).get(path) : null;
+                if (index == 0 && paths.size() > 1) {
+                    if (target instanceof Map) {
+                        result = ((Map<String, Object>) target).get(path);
+                    } else if (target instanceof ValueSupplier) {
+                        result = ((ValueSupplier) target).getObject(path);
+                    }
+                }
                 return result;
             } else if (index == paths.size() - 1) {
                 return result;
@@ -150,12 +157,15 @@ public class ValuePath implements ObjectGetter {
     protected Object getObject(Object target, PropertyPath path) {
         Object result = target == null || path.isEmpty() ? null : getProperty(target, path.getField());
         if (result != null && path.isIndexed()) {
+            String index = path.getIndex();
             if (result instanceof Map) {
-                result = ((Map<?, ?>) result).get(path.getIndex());
+                result = ((Map<?, ?>) result).get(index);
+            } else if (result instanceof ValueSupplier) {
+                result = ((ValueSupplier) result).getObject(index);
             } else if (result instanceof List<?>) {
-                result = getListItem((List<?>) result, path.getIndex());
+                result = getListItem((List<?>) result, index);
             } else if (result.getClass().isArray()) {
-                result = getArrayItem(result, path.getIndex());
+                result = getArrayItem(result, index);
             }
         }
         return result;
@@ -175,6 +185,8 @@ public class ValuePath implements ObjectGetter {
     protected Object getProperty(Object target, String property) {
         if (target instanceof Map) {
             return ((Map<?, ?>) target).get(property);
+        } else if (target instanceof ValueSupplier) {
+            return ((ValueSupplier) target).getObject(property);
         }
         Class<?> type = target.getClass();
         if (ENTITY_PREDICATE.test(type)) {

@@ -1,5 +1,6 @@
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.util.URI;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,7 +23,14 @@ public class RegistryClusterConfig {
     private RegistryMode mode = RegistryMode.FULL;
 
     public boolean validate() {
-        return type != null && !type.isEmpty() && address != null && !address.isEmpty();
+        if (type == null || type.isEmpty()) {
+            return false;
+        } else if (address == null || address.isEmpty()) {
+            return false;
+        }
+        URI uri = URI.parse(address);
+        String host = uri.getHost();
+        return host != null && host.isEmpty();
     }
 
     public String getGroup(String defaultGroup) {

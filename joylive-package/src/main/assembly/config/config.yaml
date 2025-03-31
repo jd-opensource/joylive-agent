@@ -316,7 +316,7 @@ agent:
       clusters:
         - type: ${CONFIG_REGISTRY_TYPE_FIRST:nacos}
           mode: ${CONFIG_REGISTRY_MODE_FIRST:FULL}
-          address: ${CONFIG_REGISTRY_ADDRESS_FIRST}
+          address: ${CONFIG_REGISTRY_ADDRESS_FIRST:${REGISTRY_INTERNAL_HOST}:${REGISTRY_INTERNAL_HTTP_PORT:8848}}
           username: ${CONFIG_REGISTRY_USERNAME_FIRST:nacos}
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:nacos}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST}

@@ -89,7 +89,7 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
         Map<String, Object> context = new HashMap<>();
         context.put("name", subscriber.getName());
         context.put("space", application.getService().getNamespace());
-        String dataId = template.evaluate(context);
+        String dataId = template.render(context);
         return new NacosServiceKey(subscriber, dataId, syncConfig.getNacos().getLiveSpaceGroup());
     }
 

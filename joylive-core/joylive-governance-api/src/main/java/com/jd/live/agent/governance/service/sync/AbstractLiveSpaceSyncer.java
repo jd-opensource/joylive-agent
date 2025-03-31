@@ -263,7 +263,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
     protected String getKey(String spaceId) {
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
-        return template.evaluate(context);
+        return template.render(context);
     }
 
 }

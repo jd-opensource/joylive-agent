@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.template.Template;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static com.jd.live.agent.core.util.template.Template.context;
 import static com.jd.live.agent.core.util.template.Template.evaluate;
 
 public class TemplateTest {
@@ -32,9 +33,9 @@ public class TemplateTest {
     @Test
     void testTemplate() {
         Template template = Template.parse("Value: ${a:prefix-${b:${c:e}-suffix}} hello");
-        Assertions.assertEquals("Value: A hello", template.evaluate(false, "a", "A", "b", "B", "c", "C"));
-        Assertions.assertEquals("Value: prefix-B hello", template.evaluate(false, "b", "B", "c", "C"));
-        Assertions.assertEquals("Value: prefix-C-suffix hello", template.evaluate(false, "c", "C"));
+        Assertions.assertEquals("Value: A hello", template.evaluate(context("a", "A", "b", "B", "c", "C"), false));
+        Assertions.assertEquals("Value: prefix-B hello", template.evaluate(context("b", "B", "c", "C"), false));
+        Assertions.assertEquals("Value: prefix-C-suffix hello", template.evaluate(context("c", "C"), false));
         Assertions.assertEquals("Value: prefix-e-suffix hello", template.evaluate(false));
     }
 
@@ -54,14 +55,20 @@ public class TemplateTest {
     void testServerPort() {
         String expression = "server.port=${SERVER_PORT:${random.int[11000,11999]}}";
         Template template = Template.parse(expression);
-        Assertions.assertEquals("server.port=8080", template.evaluate(false, "SERVER_PORT", "8080"));
-        Assertions.assertEquals(expression, template.evaluate(false));
+        Assertions.assertEquals("server.port=8080", template.evaluate(context("SERVER_PORT", "8080"), false));
+        Assertions.assertEquals(expression, template.evaluate(context(), false));
     }
 
     @Test
     void testPrefix() {
         Template template = Template.parse("${topic}${'_unit_'unit}${'_lane_'lane}");
-        Assertions.assertEquals("order_unit_unit1", template.evaluate(true, "topic", "order", "unit", "unit1"));
-        Assertions.assertEquals("order_unit_unit1${'_lane_'lane}", template.evaluate(false, "topic", "order", "unit", "unit1"));
+        Assertions.assertEquals("order_unit_unit1", template.evaluate(context("topic", "order", "unit", "unit1"), true));
+        Assertions.assertEquals("order_unit_unit1${'_lane_'lane}", template.evaluate(context("topic", "order", "unit", "unit1"), false));
+    }
+
+    @Test
+    void testRegistry() {
+        String expression = "${A:${B}:${C:8848}}";
+        Assertions.assertEquals("localhost:8848", evaluate(expression, false, "B", "localhost"));
     }
 }

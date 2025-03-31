@@ -88,7 +88,7 @@ public abstract class AbstractLaneSpaceHttpSyncer extends AbstractLaneSpaceSynce
                 Map<String, Object> context = new HashMap<>(2);
                 context.put(SPACE_ID, spaceId);
                 context.put(SPACE_VERSION, subscription == null ? 0 : subscription.getVersion());
-                return template.evaluate(context);
+                return template.render(context);
             }
         });
     }

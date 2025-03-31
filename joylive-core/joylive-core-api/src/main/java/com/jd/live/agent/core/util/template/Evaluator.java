@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.core.util.template;
 
-import java.util.Map;
-
 /**
  * An interface defining the contract for evaluating expressions or scripts in a given context.
  */
@@ -26,7 +24,18 @@ public interface Evaluator {
      * Evaluates an expression or script based on the provided context.
      *
      * @param context A map containing context variables that may be used during the evaluation.
-     * @return The result of the evaluation as a String.
+     * @return The result of the evaluation.
      */
-    String evaluate(Map<String, Object> context);
+    Object evaluate(Object context);
+
+    /**
+     * Evaluates an object context and returns the result as a string.
+     *
+     * @param context the context object to evaluate
+     * @return string representation of the evaluation result
+     */
+    default String render(Object context) {
+        Object result = evaluate(context);
+        return result == null ? null : result.toString();
+    }
 }
