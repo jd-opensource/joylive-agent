@@ -292,7 +292,7 @@ agent:
     configCenter:
       enabled: ${CONFIG_CENTER_ENABLED:false}
       type: ${CONFIG_CENTER_TYPE:nacos}
-      address: ${CONFIG_CENTER_ADDRESS:}
+      address: ${CONFIG_CENTER_ADDRESS:${CONFIG_EXTERNAL_HOST:${CONFIG_INTERNAL_HOST}}:${CONFIG_EXTERNAL_HTTP_PORT:${CONFIG_INTERNAL_HTTP_PORT:8848}}}
       username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}
       password: ${CONFIG_CENTER_PASSWORD:${CONFIG_PASSWORD:nacos}}
       refresh:
