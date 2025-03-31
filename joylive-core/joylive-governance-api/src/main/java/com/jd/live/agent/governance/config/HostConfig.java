@@ -15,29 +15,33 @@
  */
 package com.jd.live.agent.governance.config;
 
-import com.jd.live.agent.core.inject.annotation.Config;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.net.URI;
+import java.util.Map;
 
 @Getter
 @Setter
-public class RegistryConfig {
-
-    /**
-     * The name used to identify the registry configuration component.
-     */
-    public static final String COMPONENT_REGISTRY_CONFIG = "registryConfig";
-
-    private long heartbeatInterval = 5000L;
+public class HostConfig {
 
     private boolean enabled;
 
-    private List<RegistryClusterConfig> clusters;
+    private Map<String, String> services;
 
-    @Config("host")
-    private HostConfig hostConfig = new HostConfig();
+    public String getService(String scheme, String host) {
+        if (host == null || "lb".equalsIgnoreCase(scheme)) {
+            return host;
+        } else if (enabled && services != null) {
+            return services.get(host);
+        } else {
+            return null;
+        }
+    }
+
+    public String getService(URI uri) {
+        return uri == null ? null : getService(uri.getScheme(), uri.getHost());
+    }
 
 }
 

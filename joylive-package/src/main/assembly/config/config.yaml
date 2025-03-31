@@ -310,6 +310,9 @@ agent:
         profile: ${CONFIG_CENTER_PROFILE:DEFAULT_GROUP}
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:false}
+      host:
+        enabled: ${CONFIG_HOST_SERVICE_ENABLED:true}
+        services: ${CONFIG_HOST_SERVICES}
       clusters:
         - type: ${CONFIG_REGISTRY_TYPE_FIRST:nacos}
           mode: ${CONFIG_REGISTRY_MODE_FIRST:FULL}

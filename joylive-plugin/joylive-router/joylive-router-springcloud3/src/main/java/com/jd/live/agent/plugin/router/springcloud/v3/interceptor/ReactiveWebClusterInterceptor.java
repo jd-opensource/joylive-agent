@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ConstructorContext;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.governance.config.RegistryConfig;
+import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
@@ -45,12 +45,12 @@ public class ReactiveWebClusterInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final RegistryConfig config;
+    private final HostConfig config;
 
     public ReactiveWebClusterInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
         this.registry = registry;
-        this.config = context.getGovernanceConfig().getRegistryConfig();
+        this.config = context.getGovernanceConfig().getRegistryConfig().getHostConfig();
     }
 
     @Override

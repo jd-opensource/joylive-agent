@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.RegistryConfig;
+import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
@@ -49,14 +49,14 @@ public class FeignWebClusterInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final RegistryConfig config;
+    private final HostConfig config;
 
     private final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
 
     public FeignWebClusterInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
         this.registry = registry;
-        this.config = context.getGovernanceConfig().getRegistryConfig();
+        this.config = context.getGovernanceConfig().getRegistryConfig().getHostConfig();
     }
 
     @Override
