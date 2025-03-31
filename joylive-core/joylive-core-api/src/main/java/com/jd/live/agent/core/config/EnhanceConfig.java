@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.config;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -42,19 +43,14 @@ public class EnhanceConfig {
     private long poolCleanInterval = DEFAULT_POOL_CLEAN_INTERVAL;
 
     /**
-     * exclude class name prefix
-     */
-    private Set<String> excludePrefixes;
-
-    /**
      * exclude class names
      */
     private Set<String> excludeTypes;
 
     /**
-     * exclude interface name
+     * exclude class name prefix
      */
-    private Set<String> excludeInterfaces;
+    private Set<String> excludePrefixes;
 
     /**
      * exclude classes which is loaded by the classloader
@@ -70,25 +66,8 @@ public class EnhanceConfig {
 
     public boolean isExclude(Class<?> type) {
         String name = type.getName();
-        if (excludeTypes != null) {
-            if (excludeTypes.contains(name)) {
-                return true;
-            }
-        }
-        if (excludePrefixes != null) {
-            for (String excludePrefix : excludePrefixes) {
-                if (name.startsWith(excludePrefix)) {
-                    return true;
-                }
-            }
-        }
-        if (excludeInterfaces != null) {
-            Class<?>[] intfs = type.getInterfaces();
-            for (Class<?> intf : intfs) {
-                if (excludeInterfaces.contains(intf.getName())) {
-                    return true;
-                }
-            }
+        if (Inclusion.test(excludeTypes, excludePrefixes, false, name)) {
+            return true;
         }
         if (excludeClassLoaders != null) {
             return excludeClassLoaders.contains(type.getClassLoader().getClass().getName());

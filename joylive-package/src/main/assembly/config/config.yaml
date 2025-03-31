@@ -7,7 +7,6 @@ agent:
     exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
     excludePrefixes: null
     excludeTypes: null
-    excludeInterfaces: null
     excludeClassLoaders:
       - com.jd.jr.sgm.agent.loader.ClientLibClassLoader
       - com.jd.jr.sgm.agent.loader.ClientAppClassLoader
