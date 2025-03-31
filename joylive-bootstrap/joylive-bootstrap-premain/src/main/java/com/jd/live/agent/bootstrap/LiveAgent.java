@@ -20,7 +20,7 @@ import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.Exclusion;
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.bootstrap.util.option.ConfigResolver;
 
 import java.io.*;
@@ -218,7 +218,7 @@ public class LiveAgent {
         private String command;
         private boolean shutdownOnError;
         private BootClass bootClass;
-        private Exclusion exclusion;
+        private Inclusion exclusion;
 
         /**
          * Parses the installation arguments and returns an InstallArg object.
@@ -311,7 +311,7 @@ public class LiveAgent {
          * @return true if the main class is excluded, false otherwise.
          */
         public boolean isExcluded() {
-            return bootClass == null || bootClass.isExclude(exclusion::isExclude);
+            return bootClass == null || bootClass.isExclude(exclusion);
         }
 
         /**
@@ -592,8 +592,8 @@ public class LiveAgent {
          * @param env The environment function used to retrieve configuration values.
          * @return A set of strings representing the excluded applications.
          */
-        private static Exclusion getExcludeApps(Function<String, Object> env) {
-            Exclusion result = new Exclusion();
+        private static Inclusion getExcludeApps(Function<String, Object> env) {
+            Inclusion result = new Inclusion();
             String config = (String) env.apply(EXCLUDE_APP);
             if (config != null) {
                 String[] values = config.split(ARRAY_DELIMITER_PATTERN);

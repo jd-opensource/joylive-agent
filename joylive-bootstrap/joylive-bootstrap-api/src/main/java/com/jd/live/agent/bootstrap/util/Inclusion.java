@@ -17,11 +17,12 @@ package com.jd.live.agent.bootstrap.util;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Helper class for managing exclusion rules for boot classes.
  */
-public class Exclusion {
+public class Inclusion implements Predicate<String> {
 
     /**
      * Set of exact names to exclude (case-sensitive)
@@ -35,15 +36,15 @@ public class Exclusion {
 
     private final boolean nullable;
 
-    public Exclusion() {
+    public Inclusion() {
         this(null, null, false);
     }
 
-    public Exclusion(boolean nullable) {
+    public Inclusion(boolean nullable) {
         this(null, null, nullable);
     }
 
-    public Exclusion(Set<String> names, Set<String> prefixes, boolean nullable) {
+    public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable) {
         this.names = names == null ? new HashSet<>(20) : names;
         this.prefixes = prefixes == null ? new HashSet<>(10) : prefixes;
         this.nullable = nullable;
@@ -67,13 +68,8 @@ public class Exclusion {
         prefixes.add(prefix);
     }
 
-    /**
-     * Checks if a name should be excluded based on the configured rules
-     *
-     * @param name the name to check
-     * @return true if the class should be excluded, based on:
-     */
-    public boolean isExclude(String name) {
+    @Override
+    public boolean test(String name) {
         if (name == null) {
             return !nullable;
         } else if (names.contains(name)) {
