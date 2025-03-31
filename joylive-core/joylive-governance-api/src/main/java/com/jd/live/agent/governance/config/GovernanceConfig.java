@@ -56,8 +56,6 @@ public class GovernanceConfig {
     protected static final String CONFIG_SWITCH_CLASSLOADER = CONFIG_SWITCH + ".classloader";
     protected static final String CONFIG_SWITCH_COUNTER = CONFIG_SWITCH + ".counter";
 
-    public static final String CONFIG_CENTER_ENABLED = CONFIG_SWITCH_CONFIG_CENTER + ENABLED;
-
     public static final String CONFIG_CLASSLOADER_ENABLED = CONFIG_SWITCH_CLASSLOADER + ENABLED;
     public static final String CONFIG_CLASSLOADER_SPRING_BOOT_ENABLED = CONFIG_SWITCH_CLASSLOADER + ".springboot";
 
@@ -100,6 +98,9 @@ public class GovernanceConfig {
 
     public static final String CONFIG_REGISTRY = CONFIG_AGENT_GOVERNANCE + ".registry";
     public static final String CONFIG_REGISTRY_ENABLED = CONFIG_REGISTRY + ENABLED;
+
+    public static final String CONFIG_CENTER = CONFIG_AGENT_GOVERNANCE + ".configCenter";
+    public static final String CONFIG_CENTER_ENABLED = CONFIG_CENTER + ENABLED;
 
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();

@@ -29,6 +29,8 @@ import static com.jd.live.agent.core.util.StringUtils.splitList;
 @Setter
 public class ConfigCenterConfig {
 
+    private boolean enabled;
+
     private String type;
 
     private String address;
