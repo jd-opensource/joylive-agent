@@ -305,9 +305,9 @@ agent:
         ignoreKeyPrefixes: ${CONFIG_CENTER_REFRESH_IGNORE_KEY_PREFIXES:}
       names: ${CONFIG_CENTER_NAMES:}
       name:
-        namespace: ${CONFIG_CENTER_NAMESPACE:public}
+        namespace: ${CONFIG_CENTER_NAMESPACE:${APPLICATION_SERVICE_NAMESPACE}}
         name: ${CONFIG_CENTER_NAME:${APPLICATION_NAME}}
-        profile: ${CONFIG_CENTER_PROFILE:DEFAULT_GROUP}
+        profile: ${CONFIG_CENTER_PROFILE:${APPLICATION_SERVICE_GROUP}}
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:false}
       host:
