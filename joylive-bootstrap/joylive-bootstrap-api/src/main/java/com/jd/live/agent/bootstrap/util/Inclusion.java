@@ -117,6 +117,42 @@ public class Inclusion implements Predicate<String> {
         this.prefixes.addAll(prefixes);
     }
 
+    /**
+     * Processes and adds a class name based on its suffix pattern.
+     * <p>
+     * Handles special cases for class names ending with:
+     * <ul>
+     *   <li>'/', '.', or '$' - treats as a prefix match</li>
+     *   <li>'*' - treats as a wildcard prefix match (excluding the '*')</li>
+     *   <li>Other characters - treats as exact match</li>
+     * </ul>
+     *
+     * @param className the class name to process (null or empty values are ignored)
+     */
+    public void addClassName(String className) {
+        className = className == null ? null : className.trim();
+        int length = className == null ? 0 : className.length();
+        if (length > 0) {
+            char ch = className.charAt(length - 1);
+            switch (ch) {
+                case '/':
+                case '.':
+                case '$':
+                    if (length > 1) {
+                        addPrefix(className);
+                    }
+                    break;
+                case '*':
+                    if (length > 1) {
+                        addPrefix(className.substring(0, length - 1));
+                    }
+                    break;
+                default:
+                    addName(className);
+            }
+        }
+    }
+
     @Override
     public boolean test(String name) {
         // TODO use a trie to improve performance
