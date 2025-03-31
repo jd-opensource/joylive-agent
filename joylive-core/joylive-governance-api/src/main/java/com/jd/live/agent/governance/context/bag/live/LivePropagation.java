@@ -59,12 +59,12 @@ public class LivePropagation extends AbstractPropagation {
         HeaderFeature feature = writer.getFeature();
         if (names != null && names.hasNext()) {
             if (feature.isBatchable()) {
-                Map<String, String> headers = toMap(names, require::match, name -> name, name -> join(reader.getHeaders(name)));
+                Map<String, String> headers = toMap(names, require, name -> name, name -> join(reader.getHeaders(name)));
                 if (headers != null && !headers.isEmpty()) {
                     writer.setHeaders(headers);
                 }
             } else {
-                iterate(names, require::match, name -> writer.setHeader(name, join(reader.getHeaders(name))));
+                iterate(names, require, name -> writer.setHeader(name, join(reader.getHeaders(name))));
             }
         }
     }
@@ -77,6 +77,6 @@ public class LivePropagation extends AbstractPropagation {
         CargoRequire require = getRequire();
         return reader.read((name, values) ->
                         carrier.addCargo(new Cargo(name, Label.parseValue(values), true)),
-                require::match) > 0;
+                require) > 0;
     }
 }

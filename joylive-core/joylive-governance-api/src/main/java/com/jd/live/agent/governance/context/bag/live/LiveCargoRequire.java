@@ -15,10 +15,12 @@
  */
 package com.jd.live.agent.governance.context.bag.live;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.TransmitConfig;
 import com.jd.live.agent.governance.context.bag.CargoRequire;
 
 import java.util.Set;
@@ -38,8 +40,6 @@ public class LiveCargoRequire implements CargoRequire {
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
 
-    private static final String[] EMPTY_ARRAY = new String[0];
-
     public LiveCargoRequire() {
     }
 
@@ -48,14 +48,18 @@ public class LiveCargoRequire implements CargoRequire {
     }
 
     @Override
-    public String[] getNames() {
-        Set<String> keys = governanceConfig.getTransmitConfig().getKeys();
-        return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
+    public Set<String> getNames() {
+        return governanceConfig.getTransmitConfig().getKeys();
     }
 
     @Override
-    public String[] getPrefixes() {
-        Set<String> keys = governanceConfig.getTransmitConfig().getPrefixes();
-        return keys == null || keys.isEmpty() ? EMPTY_ARRAY : keys.toArray(new String[0]);
+    public Set<String> getPrefixes() {
+        return governanceConfig.getTransmitConfig().getPrefixes();
+    }
+
+    @Override
+    public boolean test(String name) {
+        TransmitConfig config = governanceConfig.getTransmitConfig();
+        return Inclusion.test(config.getKeys(), config.getPrefixes(), false, name);
     }
 }

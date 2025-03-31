@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.governance.context.bag;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import com.jd.live.agent.bootstrap.util.Inclusion;
+
 import java.util.List;
 import java.util.Set;
 
@@ -29,64 +29,43 @@ import java.util.Set;
  */
 public class CargoRequires implements CargoRequire {
 
-    private final String[] names;
-
-    private final Set<String> nameSet;
-
-    private final String[] prefixes;
+    private final Inclusion inclusion;
 
     public CargoRequires(List<CargoRequire> requires) {
         int size = requires == null ? 0 : requires.size();
         switch (size) {
             case 0:
-                names = new String[0];
-                nameSet = new HashSet<>();
-                prefixes = new String[0];
+                inclusion = new Inclusion();
                 break;
             case 1:
                 CargoRequire req = requires.get(0);
-                names = req.getNames() == null ? new String[0] : req.getNames();
-                nameSet = names == null ? new HashSet<>() : new HashSet<>(Arrays.asList(req.getNames()));
-                prefixes = req.getPrefixes() == null ? new String[0] : req.getPrefixes();
+                inclusion = new Inclusion(req.getNames(), req.getPrefixes());
                 break;
             default:
-                nameSet = new HashSet<>();
-                Set<String> prefixNames = new HashSet<>();
+                inclusion = new Inclusion();
                 for (CargoRequire require : requires) {
                     if (require.getNames() != null) {
-                        nameSet.addAll(Arrays.asList(require.getNames()));
+                        inclusion.addNames(require.getNames());
                     }
                     if (require.getPrefixes() != null) {
-                        prefixNames.addAll(Arrays.asList(require.getPrefixes()));
+                        inclusion.addPrefixes(require.getPrefixes());
                     }
                 }
-                names = nameSet.toArray(new String[0]);
-                prefixes = prefixNames.toArray(new String[0]);
         }
     }
 
     @Override
-    public String[] getNames() {
-        return names;
+    public Set<String> getNames() {
+        return inclusion.getNames();
     }
 
     @Override
-    public String[] getPrefixes() {
-        return prefixes;
+    public Set<String> getPrefixes() {
+        return inclusion.getPrefixes();
     }
 
     @Override
-    public boolean match(String name) {
-        if (name == null || name.isEmpty()) {
-            return false;
-        }
-        if (nameSet.contains(name)) {
-            return true;
-        }
-        for (String v : prefixes) {
-            if (name.startsWith(v))
-                return true;
-        }
-        return false;
+    public boolean test(String name) {
+        return inclusion.test(name);
     }
 }

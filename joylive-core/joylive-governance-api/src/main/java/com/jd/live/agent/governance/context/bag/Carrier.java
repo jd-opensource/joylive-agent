@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Defines the contract for a carrier that transports data and attributes within a request.
@@ -97,15 +98,15 @@ public interface Carrier extends Attributes {
     /**
      * Adds cargos based on a requirement and a map of potential cargos.
      *
-     * @param require The requirement that must be met for a cargo to be added.
-     * @param map     A map where the key is the cargo identifier and the value is a collection of cargo details.
+     * @param predicate The requirement that must be met for a cargo to be added.
+     * @param map       A map where the key is the cargo identifier and the value is a collection of cargo details.
      * @return A boolean indicating whether any cargos were successfully added.
      */
-    default boolean addCargo(CargoRequire require, Map<String, ? extends Collection<String>> map) {
+    default boolean addCargo(Predicate<String> predicate, Map<String, ? extends Collection<String>> map) {
         int counter = 0;
-        if (require != null && map != null) {
+        if (predicate != null && map != null) {
             for (Map.Entry<String, ? extends Collection<String>> entry : map.entrySet()) {
-                if (require.match(entry.getKey())) {
+                if (predicate.test(entry.getKey())) {
                     counter++;
                     addCargo(new Cargo(entry.getKey(), entry.getValue()));
                 }
@@ -117,19 +118,19 @@ public interface Carrier extends Attributes {
     /**
      * Adds cargos based on a requirement, a map of potential cargos, and a function to transform the map values.
      *
-     * @param require The requirement that must be met for a cargo to be added.
-     * @param map     A map of potential cargos to add.
-     * @param func    A function to transform the map values.
-     * @param <T>     The type of the map values.
-     * @param <M>    The type of the map extending from {@link Map} with keys as {@link String} and values of type {@code T}.
+     * @param predicate The requirement that must be met for a cargo to be added.
+     * @param map       A map of potential cargos to add.
+     * @param func      A function to transform the map values.
+     * @param <T>       The type of the map values.
+     * @param <M>       The type of the map extending from {@link Map} with keys as {@link String} and values of type {@code T}.
      * @return A boolean indicating whether any cargos were successfully added.
      */
-    default <T, M extends Map<String, T>> boolean addCargo(CargoRequire require, M map, Function<String, Collection<String>> func) {
+    default <T, M extends Map<String, T>> boolean addCargo(Predicate<String> predicate, M map, Function<String, Collection<String>> func) {
         int counter = 0;
-        if (require != null && map != null) {
+        if (predicate != null && map != null) {
             Object value;
             for (Map.Entry<String, T> entry : map.entrySet()) {
-                if (require.match(entry.getKey())) {
+                if (predicate.test(entry.getKey())) {
                     counter++;
                     value = entry.getValue();
                     if (value == null) {
@@ -147,20 +148,20 @@ public interface Carrier extends Attributes {
     /**
      * Adds cargos based on a requirement, an enumeration of names, and a function to obtain values for those names.
      *
-     * @param require The requirement that must be met for a cargo to be added.
-     * @param names   An enumeration of names to consider for adding as cargos.
-     * @param func    A function to obtain values for the names.
+     * @param predicate The requirement that must be met for a cargo to be added.
+     * @param names     An enumeration of names to consider for adding as cargos.
+     * @param func      A function to obtain values for the names.
      * @return A boolean indicating whether any cargos were successfully added.
      */
-    default boolean addCargo(CargoRequire require, Enumeration<String> names, Function<String, Enumeration<String>> func) {
+    default boolean addCargo(Predicate<String> predicate, Enumeration<String> names, Function<String, Enumeration<String>> func) {
         int counter = 0;
-        if (require != null && names != null) {
+        if (predicate != null && names != null) {
             String name;
             List<String> values;
             Enumeration<String> venum;
             while (names.hasMoreElements()) {
                 name = names.nextElement();
-                if (require.match(name)) {
+                if (predicate.test(name)) {
                     counter++;
                     values = null;
                     if (func != null) {
@@ -177,17 +178,17 @@ public interface Carrier extends Attributes {
     /**
      * Adds cargos based on a requirement, an iterable of names, and a function to obtain values for those names.
      *
-     * @param require The requirement that must be met for a cargo to be added.
-     * @param names   An iterable of names to consider for adding as cargos.
-     * @param func    A function to obtain values for the names.
+     * @param predicate The requirement that must be met for a cargo to be added.
+     * @param names     An iterable of names to consider for adding as cargos.
+     * @param func      A function to obtain values for the names.
      * @return A boolean indicating whether any cargos were successfully added.
      */
-    default boolean addCargo(CargoRequire require, Iterable<String> names, Function<String, List<String>> func) {
+    default boolean addCargo(Predicate<String> predicate, Iterable<String> names, Function<String, List<String>> func) {
         int counter = 0;
-        if (require != null && names != null) {
+        if (predicate != null && names != null) {
             List<String> values;
             for (String name : names) {
-                if (require.match(name)) {
+                if (predicate.test(name)) {
                     counter++;
                     values = null;
                     if (func != null) {
@@ -207,16 +208,16 @@ public interface Carrier extends Attributes {
      * are determined by applying the provided functions. Only cargos with keys that match the requirement are added.
      * </p>
      *
-     * @param <T>       The type of the target objects in the iterable.
-     * @param require   The requirement that must be met for a cargo to be added.
-     * @param targets   An iterable of target objects to process.
-     * @param keyFunc   A function that generates a key for a cargo based on a target object.
-     * @param valueFunc A function that generates a value for a cargo based on a target object (may be null).
+     * @param <T>         The type of the target objects in the iterable.
+     * @param predicate   The requirement that must be met for a cargo to be added.
+     * @param targets     An iterable of target objects to process.
+     * @param keyFunc     A function that generates a key for a cargo based on a target object.
+     * @param valueFunc   A function that generates a value for a cargo based on a target object (may be null).
      * @return A boolean indicating whether any cargos were successfully added.
      */
-    default <T> boolean addCargo(CargoRequire require, Iterable<T> targets, Function<T, String> keyFunc, Function<T, String> valueFunc) {
+    default <T> boolean addCargo(Predicate<String> predicate, Iterable<T> targets, Function<T, String> keyFunc, Function<T, String> valueFunc) {
         int counter = 0;
-        if (require != null && targets != null && keyFunc != null) {
+        if (predicate != null && targets != null && keyFunc != null) {
             Map<String, List<String>> tags = new HashMap<>();
             for (T target : targets) {
                 String key = keyFunc.apply(target);
@@ -229,7 +230,7 @@ public interface Carrier extends Attributes {
                 }
             }
             for (Map.Entry<String, ? extends Collection<String>> entry : tags.entrySet()) {
-                if (require.match(entry.getKey())) {
+                if (predicate.test(entry.getKey())) {
                     counter++;
                     addCargo(new Cargo(entry.getKey(), entry.getValue(), true));
                 }

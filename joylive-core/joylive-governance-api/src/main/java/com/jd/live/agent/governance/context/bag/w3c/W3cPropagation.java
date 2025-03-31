@@ -98,7 +98,7 @@ public class W3cPropagation extends AbstractPropagation {
         int counter;
         for (String header : headers) {
             counter = splitMap(header, COMMA, true, (key, value) -> {
-                if (require.match(key)) {
+                if (require.test(key)) {
                     carrier.addCargo(new Cargo(key, parseValue(value), true));
                     return true;
                 }
