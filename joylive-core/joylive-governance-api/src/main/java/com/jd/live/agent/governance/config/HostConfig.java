@@ -32,10 +32,10 @@ public class HostConfig {
     public String getService(String scheme, String host) {
         if (host == null || "lb".equalsIgnoreCase(scheme)) {
             return host;
-        } else if (enabled && services != null) {
-            return services.get(host);
+        } else if (enabled) {
+            return services == null || services.isEmpty() ? null : services.get(host);
         } else {
-            return null;
+            return host;
         }
     }
 
