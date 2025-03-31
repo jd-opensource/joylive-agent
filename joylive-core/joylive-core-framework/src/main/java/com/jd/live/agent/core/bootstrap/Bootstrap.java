@@ -732,8 +732,11 @@ public class Bootstrap implements AgentLifecycle {
         logger.error(message, throwable);
         boolean shutdownOnError = agentConfig != null && agentConfig.getEnhanceConfig().isShutdownOnError();
         if (shutdownOnError && installed.get()) {
-            logger.info("Shutdown.....");
+            logger.error("Shutdown because shutdownOnError is configured and the plugin is installed.");
             System.exit(1);
+        } else if (shutdownOnError) {
+            logger.error("Shutdown is not occurred because the plugin is not installed.");
+            logger.error("Please fix this exception and restart the application.");
         }
     }
 }
