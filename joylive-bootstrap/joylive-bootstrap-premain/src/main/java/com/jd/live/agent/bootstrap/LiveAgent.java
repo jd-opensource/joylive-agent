@@ -30,14 +30,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.jar.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -140,7 +141,7 @@ public class LiveAgent {
             shutdownOnError = ctx.shutdownOnError;
             if (ctx.isInJavaToolOptions()) {
                 if (ctx.isExcluded()) {
-                    // logger.log(Level.INFO, "[LiveAgent] the agent will exit when excluding main class " + ctx.bootClass.name);
+                    logger.log(Level.WARNING, "[LiveAgent] the agent will exit when excluding main class or missing main class.");
                     return;
                 } else {
                     logger.log(Level.INFO, "[LiveAgent] main class " + ctx.bootClass.name
@@ -285,22 +286,21 @@ public class LiveAgent {
          * @return The main class as a string.
          */
         private static String getMainClassByJar(String file) {
-            File jar = new File(file);
-            if (jar.exists()) {
-                try (JarInputStream jarStream = new JarInputStream(Files.newInputStream(jar.toPath()))) {
-                    while (true) {
-                        JarEntry entry = jarStream.getNextJarEntry();
-                        if (entry == null) {
-                            break;
-                        }
-                        String entryName = entry.getName();
-                        if (entryName.equals(FILE_MANIFEST_MF)) {
-                            Manifest manifest = new Manifest(jarStream);
-                            return manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS.toString());
+            File jarfile = new File(file);
+            if (jarfile.exists()) {
+                try (JarFile jar = new JarFile(jarfile)) {
+                    Manifest manifest = jar.getManifest();
+                    if (manifest != null) {
+                        String mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+                        if (mainClass != null) {
+                            return mainClass;
                         }
                     }
-                } catch (IOException ignore) {
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "[LiveAgent] Failed to read main class from " + file, e);
                 }
+            } else {
+                logger.log(Level.SEVERE, "[LiveAgent] Failed to find jar:" + file);
             }
             return null;
         }
