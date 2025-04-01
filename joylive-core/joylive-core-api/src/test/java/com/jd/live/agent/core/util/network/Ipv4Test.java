@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util;
+package com.jd.live.agent.core.util.network;
 
-import com.jd.live.agent.core.util.network.Ipv4;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

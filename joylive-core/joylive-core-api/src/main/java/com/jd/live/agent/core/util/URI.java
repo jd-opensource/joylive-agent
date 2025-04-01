@@ -33,6 +33,12 @@ public class URI {
     private String schema;
 
     @Getter
+    private String user;
+
+    @Getter
+    private String password;
+
+    @Getter
     private String host;
 
     @Getter
@@ -53,8 +59,17 @@ public class URI {
     public URI() {
     }
 
-    private URI(String schema, String host, Integer port, String path, Map<String, String> parameters, String url) {
+    private URI(String schema,
+                String user,
+                String password,
+                String host,
+                Integer port,
+                String path,
+                Map<String, String> parameters,
+                String url) {
         this.schema = schema;
+        this.user = user;
+        this.password = password;
         this.host = host;
         this.port = port;
         this.path = path;
@@ -71,9 +86,34 @@ public class URI {
      * @param path       the path component of the URI.
      * @param parameters the query parameters as a map.
      */
+    public URI(String schema,
+               String host,
+               Integer port,
+               String path,
+               Map<String, String> parameters) {
+        this(schema, null, null, host, port, path, parameters, null);
+    }
+
+    /**
+     * Constructs a URI with the specified schema, host, path, and parameters.
+     *
+     * @param schema     the URI schema (e.g., "http", "https").
+     * @param user       the user info.
+     * @param password   the password info.
+     * @param host       the host name or IP address.
+     * @param port       the port.
+     * @param path       the path component of the URI.
+     * @param parameters the query parameters as a map.
+     */
     @Builder
-    public URI(String schema, String host, Integer port, String path, Map<String, String> parameters) {
-        this(schema, host, port, path, parameters, null);
+    public URI(String schema,
+               String user,
+               String password,
+               String host,
+               Integer port,
+               String path,
+               Map<String, String> parameters) {
+        this(schema, user, password, host, port, path, parameters, null);
     }
 
     /**
@@ -83,7 +123,27 @@ public class URI {
      * @return a new URI instance with the updated schema.
      */
     public URI schema(String schema) {
-        return new URI(schema, host, port, path, parameters);
+        return new URI(schema, user, password, host, port, path, parameters);
+    }
+
+    /**
+     * Sets the user component of the URI.
+     *
+     * @param user the new user name
+     * @return a new URI instance with the updated user component
+     */
+    public URI user(String user) {
+        return new URI(schema, user, password, host, port, path, parameters);
+    }
+
+    /**
+     * Sets the password component of the URI.
+     *
+     * @param password the new password
+     * @return a new URI instance with the updated password component
+     */
+    public URI password(String password) {
+        return new URI(schema, user, password, host, port, path, parameters);
     }
 
     /**
@@ -93,7 +153,7 @@ public class URI {
      * @return a new URI instance with the updated host.
      */
     public URI host(String host) {
-        return new URI(schema, host, port, path, parameters);
+        return new URI(schema, user, password, host, port, path, parameters);
     }
 
     /**
@@ -103,7 +163,7 @@ public class URI {
      * @return a new URI instance with the updated port.
      */
     public URI port(Integer port) {
-        return new URI(schema, host, port, path, parameters);
+        return new URI(schema, user, password, host, port, path, parameters);
     }
 
     /**
@@ -113,7 +173,7 @@ public class URI {
      * @return a new URI instance with the updated path.
      */
     public URI path(String path) {
-        return new URI(schema, host, port, path, parameters);
+        return new URI(schema, user, password, host, port, path, parameters);
     }
 
     /**
@@ -124,17 +184,20 @@ public class URI {
      * @return a new URI instance with the updated parameters.
      */
     public URI parameter(String key, String value) {
-        if (key == null || key.isEmpty()) {
+        int keyLen = key == null ? 0 : key.length();
+        if (keyLen == 0) {
             return this;
         }
         int size = parameters == null ? 0 : parameters.size();
+        boolean keyExists = size != 0 && parameters.containsKey(key);
         Map<String, String> newParameters = size == 0 ? new HashMap<>(size + 1) : new HashMap<>(parameters);
         newParameters.put(key, value);
-        String newUrl = url;
-        if (newUrl != null) {
+        String newUrl = null;
+        if (url != null && !keyExists) {
+            newUrl = url;
             // improve performance
             int valueLen = value == null ? 0 : value.length();
-            StringBuilder builder = new StringBuilder(newUrl.length() + key.length() + valueLen + 2)
+            StringBuilder builder = new StringBuilder(newUrl.length() + keyLen + valueLen + 2)
                     .append(newUrl)
                     .append(size > 0 ? '&' : '?')
                     .append(key);
@@ -143,26 +206,35 @@ public class URI {
             }
             newUrl = builder.toString();
         }
-        return new URI(schema, host, port, path, newParameters, newUrl);
+        return new URI(schema, user, password, host, port, path, newParameters, newUrl);
     }
 
+    /**
+     * Returns the address (host:port) without schema prefix.
+     */
     public String getAddress() {
-        if (port == null) {
-            return host;
-        } else {
-            return host + ":" + port;
-        }
+        return getAddress(false);
     }
 
+    /**
+     * Returns the formatted address string.
+     *
+     * @param withSchema whether to include schema prefix (e.g. "http://")
+     * @return host:port (with schema if requested)
+     */
     public String getAddress(boolean withSchema) {
-        if (!withSchema && schema == null) {
-            return getAddress();
+        if (!withSchema || schema == null) {
+            if (port == null) {
+                return host;
+            } else {
+                return host + ":" + port;
+            }
         }
         StringBuilder sb = new StringBuilder(64);
-        if (schema != null) {
-            sb.append(schema).append("://");
+        sb.append(schema).append("://");
+        if (host != null) {
+            sb.append(host);
         }
-        sb.append(host);
         if (port != null) {
             sb.append(":").append(port);
         }
@@ -187,18 +259,31 @@ public class URI {
     public String getUri() {
         if (url == null) {
             StringBuilder sb = new StringBuilder(128);
-            if (schema != null) {
+            if (schema != null && !schema.isEmpty()) {
                 sb.append(schema).append("://");
             }
-            sb.append(host);
-            if (port != null) {
-                sb.append(":").append(port);
+            int userLen = user == null ? 0 : user.length();
+            int passwordLen = password == null ? 0 : password.length();
+            if (userLen > 0) {
+                sb.append(user);
             }
-            if (path != null) {
+            if (passwordLen > 0) {
+                sb.append(':').append(password);
+            }
+            if (userLen > 0 || passwordLen > 0) {
+                sb.append('@');
+            }
+            if (host != null) {
+                sb.append(host);
+            }
+            if (port != null) {
+                sb.append(':').append(port);
+            }
+            if (path != null && !path.isEmpty()) {
                 if (path.startsWith("/")) {
                     sb.append(path);
                 } else {
-                    sb.append("/").append(path);
+                    sb.append('/').append(path);
                 }
             }
             if (parameters != null && !parameters.isEmpty()) {
@@ -247,59 +332,29 @@ public class URI {
      * @return A {@link URI} object representing the parsed components of the input string, or {@code null} if the input is {@code null} or empty.
      */
     public static URI parse(String uri) {
-        String url = uri == null ? null : uri.trim();
+        uri = uri == null ? null : uri.trim();
         if (uri == null || uri.isEmpty()) {
             return null;
         }
-        String protocol = null;
-        String host = null;
-        Integer port = null;
-        String path = null;
-        Map<String, String> parameters = null;
-
-        int i = url.indexOf('?');
-        if (i >= 0) {
-            // parameter
-            if (i < url.length() - 1) {
-                String[] parts = url.substring(i + 1).split("&");
-                parameters = new HashMap<>(10);
-                for (String part : parts) {
-                    part = part.trim();
-                    if (!part.isEmpty()) {
-                        int j = part.indexOf('=');
-                        String name = j > 0 ? part.substring(0, j) : part;
-                        String value = j > 0 && j < part.length() - 1 ? part.substring(j + 1) : "";
-                        parameters.put(name, value);
-                    }
-                }
-            }
-            url = url.substring(0, i);
-        }
-        i = url.indexOf("://");
-        if (i > 0) {
-            protocol = url.substring(0, i);
-            url = url.substring(i + 3);
-        }
-        i = url.indexOf("/");
-        if (i >= 0) {
-            path = url.substring(i);
-            url = url.substring(0, i);
-        }
-        i = url.lastIndexOf(':');
-        if (i > 0 && i < url.length() - 1) {
+        char[] chars = uri.toCharArray();
+        int[] pos = URIPart.parse(chars, false);
+        String schema = Role.SCHEMA.getPart(chars, pos);
+        String user = Role.USER.getPart(chars, pos);
+        String password = Role.PASSWORD.getPart(chars, pos);
+        String host = Role.HOST.getPart(chars, pos);
+        String port = Role.PORT.getPart(chars, pos);
+        String path = Role.PATH.getPart(chars, pos);
+        Map<String, String> parameters = URIPart.parseQuery(chars, pos);
+        Integer p = null;
+        if (port != null && !port.isEmpty()) {
             try {
-                port = Integer.parseInt(url.substring(i + 1));
-                host = url.substring(0, i);
-            } catch (NumberFormatException e) {
-                // Handle invalid port number
-                port = null;
-                host = url;  // Fallback to full URL as host
+                p = Integer.parseInt(port);
+            } catch (NumberFormatException ignore) {
             }
-        } else {
-            host = url;
         }
-        return new URI(protocol, host, port, path, parameters);
+        return new URI(schema, user, password, host, p, path, parameters);
     }
+
 
     /**
      * Parses the host from a given URI.
@@ -308,46 +363,462 @@ public class URI {
      * @return the host part of the URI, or null if the URI is invalid or does not contain a host
      */
     public static String parseHost(String uri) {
-        String url = uri == null ? null : uri.trim();
+        uri = uri == null ? null : uri.trim();
         if (uri == null || uri.isEmpty()) {
             return null;
         }
+        char[] chars = uri.toCharArray();
+        int[] pos = URIPart.parse(chars, true);
+        return Role.HOST.getPart(chars, pos);
+    }
 
-        int start = url.indexOf("://");
-        int end = -1;
+    /**
+     * Represents a parsed URI with all components.
+     * Handles schema, authentication, host, port, path, query and fragment.
+     */
+    private static class URIPart {
 
-        char c;
-        for (int i = (start >= 0 ? start + 3 : 0); i < url.length(); i++) {
-            c = url.charAt(i);
-            if (c == '/' || c == '?' || c == '#') {
-                end = i;
-                break;
-            }
+        /**
+         * Parses URI components from string into position markers array.
+         * The returned array contains start/end position pairs for each URI component.
+         *
+         * @param uri      the URI string to parse (non-null)
+         * @param onlyHost if true, only parses host-related components (scheme, user, password, host, port)
+         * @return array of 16 integers representing component positions (even indices for start,
+         * odd for end positions, -1 means undefined)
+         * @throws NullPointerException if uri is null
+         */
+        public static int[] parse(char[] uri, boolean onlyHost) {
+            int[] pos = new int[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+            doParse(uri, onlyHost, pos);
+            return pos;
         }
-        if (start >= 0) {
-            url = url.substring(start + 3, end >= 0 ? end : url.length());
-        } else {
-            url = end >= 0 ? url.substring(0, end) : uri;
-        }
-        if (url.isEmpty()) {
-            return null;
-        } else if (url.charAt(0) == '[') {
-            // ipv6
-            int pos = url.lastIndexOf(']');
-            if (pos > 0) {
-                return url.substring(1, pos);
+
+        /**
+         * Parses query parameters from URI into key-value pairs.
+         * Handles standard URL-encoded query format (key1=value1&key2=value2).
+         * Empty values are converted to null, empty keys are ignored.
+         *
+         * @param uri the URI containing the query string (non-null)
+         * @param pos position array from parse() method
+         * @return Map of query parameters (key → value), or null if no query present
+         * @throws NullPointerException     if uri or pos is null
+         * @throws IllegalArgumentException if pos array is malformed
+         */
+        public static Map<String, String> parseQuery(char[] uri, int[] pos) {
+            if (Role.QUERY.isBeginless(pos)) {
+                return null;
             }
-            return null;
-        } else {
-            // max port 65535
-            int max = url.length() - 1;
-            int min = max - 5;
-            for (int i = max; i >= min; i--) {
-                if (url.charAt(i) == ':') {
-                    return url.substring(0, i);
+            Map<String, String> map = new HashMap<>(4);
+            int keyStart = Role.QUERY.getStart(pos);
+            int keyEnd = -1;
+            int valueStart = -1;
+            int valueEnd = -1;
+            int length = uri.length;
+            char c;
+            for (int i = keyStart; i < length; i++) {
+                c = uri[i];
+                switch (c) {
+                    case '=':
+                        keyEnd = i;
+                        valueStart = i + 1;
+                        break;
+                    case '&':
+                        // another parameter
+                        addParameter(map, uri, i, keyStart, keyEnd, valueStart, valueEnd);
+                        keyStart = i + 1;
+                        keyEnd = -1;
+                        valueStart = -1;
+                        valueEnd = -1;
+                        break;
                 }
             }
-            return url;
+            addParameter(map, uri, length, keyStart, keyEnd, valueStart, valueEnd);
+            return map;
+        }
+
+        /**
+         * Helper method to add a single parameter to the map.
+         *
+         * @param map        the target parameter map
+         * @param uri        the source URI string
+         * @param pos        current parsing position
+         * @param keyStart   start index of parameter key
+         * @param keyEnd     end index of parameter key (-1 if no '=' found)
+         * @param valueStart start index of parameter value
+         * @param valueEnd   end index of parameter value
+         */
+        private static void addParameter(Map<String, String> map, char[] uri,
+                                         int pos, int keyStart, int keyEnd, int valueStart, int valueEnd) {
+            String key;
+            String value;
+            if (keyEnd == -1) {
+                keyEnd = pos;
+            } else {
+                valueEnd = pos;
+            }
+            if (keyStart != -1) {
+                key = new String(uri, keyStart, keyEnd - keyStart);
+                value = valueStart == -1 ? null : new String(uri, valueStart, valueEnd - valueStart);
+                value = value == null || value.isEmpty() ? null : value;
+                if (!key.isEmpty()) {
+                    map.put(key, value);
+                }
+            }
+        }
+
+        /**
+         * Parses URI components from string.
+         *
+         * @param uri      the URI string to parse
+         * @param onlyHost if true, only parses host-related components
+         */
+        private static void doParse(char[] uri, boolean onlyHost, int[] pos) {
+            boolean success;
+            if (onlyHost) {
+                doParseHost(uri, pos);
+                if (Role.HOST.isEndless(pos)) {
+                    success = !Role.PATH.align(pos, Role.HOST) && Role.QUERY.align(pos, Role.HOST);
+                }
+                return;
+            }
+            doParseHost(uri, pos);
+            doParsePath(uri, pos);
+            if (Role.PATH.isEndless(pos)) {
+                success = Role.QUERY.align(pos, Role.PATH);
+            }
+            if (Role.HOST.isEndless(pos)) {
+                success = !Role.PATH.align(pos, Role.HOST) && Role.QUERY.align(pos, Role.HOST);
+            }
+            if (Role.PASSWORD.isEndless(pos)) {
+                success = !Role.HOST.align(pos, Role.PASSWORD) && !Role.PATH.align(pos, Role.PASSWORD) && Role.QUERY.align(pos, Role.PASSWORD);
+            }
+            if (Role.USER.isEndless(pos)) {
+                success = !Role.PASSWORD.align(pos, Role.USER) && !Role.HOST.align(pos, Role.USER) && !Role.PATH.align(pos, Role.USER) && Role.QUERY.align(pos, Role.USER);
+            }
+        }
+
+        /**
+         * Extracts path component from URI.
+         * Stops at query ('?'), parameter ('=') or fragment ('#').
+         */
+        private static void doParsePath(char[] uri, int[] pos) {
+            if (Role.PATH.isBeginless(pos)) {
+                return;
+            }
+            int length = uri.length;
+            for (int i = Role.PATH.getStart(pos); i < length; i++) {
+                switch (uri[i]) {
+                    case '?':
+                        // query
+                        Role.PATH.setEnd(pos, i - 1);
+                        Role.QUERY.setStart(pos, i + 1);
+                        return;
+                    case '=':
+                        Role.PATH.setEnd(pos, i - 1);
+                        Role.QUERY.setStart(pos, i);
+                        return;
+                }
+            }
+        }
+
+
+        /**
+         * Extracts host-related components (schema, auth, host, port).
+         * Supports IPv6 addresses in brackets and authentication.
+         */
+        private static void doParseHost(char[] uri, int[] pos) {
+            boolean schemaFlag = false;
+            int lastColon = -1;
+            int length = uri.length;
+            Role.HOST.setStart(pos, 0);
+            for (int i = 0; i < length; i++) {
+                switch (uri[i]) {
+                    case '[':
+                        // http://[1080:0:0:0:8:800:200C:417A]/index.html
+                        Role.IPV6.setStart(pos, i + 1);
+                        Role.HOST.setStart(pos, i + 1);
+                        Role.PORT.setStart(pos, -1);
+                        break;
+                    case ']':
+                        if (Role.IPV6.getStart(pos) >= 0) {
+                            Role.IPV6.setEnd(pos, i);
+                            Role.HOST.setEnd(pos, i);
+                            Role.PORT.setStart(pos, -1);
+                        }
+                        break;
+                    case '/':
+                        Role.PATH.setStart(pos, i + 1);
+                        return;
+                    case '?':
+                        Role.QUERY.setStart(pos, i + 1);
+                        return;
+                    case '=':
+                        Role.QUERY.setStart(pos, i);
+                        return;
+                    case '@':
+                        // user:password@host:port
+                        int schemaEnd = Role.SCHEMA.getEnd(pos);
+                        if (lastColon >= 0) {
+                            Role.USER.setPosition(pos, schemaEnd == -1 ? 0 : schemaEnd + 3, lastColon);
+                            Role.PASSWORD.setPosition(pos, lastColon + 1, i);
+                            Role.HOST.setEnd(pos, -1);
+                            Role.PORT.setStart(pos, -1);
+                            lastColon = -1;
+                        } else {
+                            Role.USER.setPosition(pos, schemaEnd == -1 ? 0 : schemaEnd + 3, i);
+                        }
+                        Role.HOST.setStart(pos, i + 1);
+                        break;
+                    case ':':
+                        if ((Role.IPV6.isBeginless(pos) || !Role.IPV6.isEndless(pos)) && Role.PORT.isBeginless(pos)) {
+                            if (!schemaFlag) {
+                                schemaFlag = true;
+                                if ((length - i >= 3) && uri[i + 1] == '/' && uri[i + 2] == '/') {
+                                    Role.SCHEMA.setPosition(pos, 0, i);
+                                    Role.HOST.setStart(pos, i + 3);
+                                    i += 2;
+                                    break;
+                                }
+                            }
+                            if (Role.HOST.isEndless(pos)) {
+                                Role.HOST.setEnd(pos, i);
+                            }
+                            Role.PORT.setStart(pos, i + 1);
+                        }
+                        lastColon = i;
+                        break;
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Represents portions of a URI with their start and end positions.
+     * Provides methods to extract, align and validate URI components.
+     */
+    @Getter
+    private enum Role {
+        /**
+         * URI scheme component (e.g., "http")
+         */
+        SCHEMA(0, 1),
+
+        /**
+         * User authentication component
+         */
+        USER(2, 3),
+
+        /**
+         * Password authentication component
+         */
+        PASSWORD(4, 5),
+
+        /**
+         * Host component with IPv6 handling
+         */
+        HOST(6, 7) {
+            @Override
+            public String getPart(char[] uri, int[] pos, boolean emptyAsNull) {
+                if (!IPV6.isBeginless(pos) && IPV6.isEndless(pos)) {
+                    return null;
+                }
+                return super.getPart(uri, pos, emptyAsNull);
+            }
+        },
+
+        /**
+         * IPv6 address component
+         */
+        IPV6(8, 9),
+
+        /**
+         * Port number component
+         */
+        PORT(10, 11),
+
+        /**
+         * Path component
+         */
+        PATH(12, 13) {
+            @Override
+            protected String getPart(char[] uri, int[] pos, int start, int end, boolean emptyAsNull) {
+                return super.getPart(uri, pos, start > 0 ? start - 1 : start, end, emptyAsNull);
+            }
+        },
+
+        /**
+         * Query string component
+         */
+        QUERY(14, 15);
+
+        protected final int startPos;
+        protected final int endPos;
+
+        Role(int startPos, int endPos) {
+            this.startPos = startPos;
+            this.endPos = endPos;
+        }
+
+        /**
+         * Aligns this portion with previous portion
+         *
+         * @param pos      Position array
+         * @param previous Previous portion
+         * @return true if alignment successful
+         */
+        public boolean align(int[] pos, Role previous) {
+            int thisStart = pos[startPos];
+            int previousStart = pos[previous.startPos];
+            if (thisStart >= 0) {
+                if (thisStart == previousStart) {
+                    pos[previous.startPos] = -1;
+                }
+                pos[previous.endPos] = thisStart - 1;
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Checks if this portion has no defined end
+         *
+         * @param pos Position array
+         */
+        public boolean isEndless(int[] pos) {
+            return isEndless(pos, startPos, endPos);
+        }
+
+        /**
+         * Checks if this portion has no defined start
+         *
+         * @param pos Position array
+         */
+        public boolean isBeginless(int[] pos) {
+            return isBeginless(pos, startPos);
+        }
+
+        /**
+         * Extracts this portion from URI with empty-as-null handling
+         *
+         * @param uri URI string
+         * @param pos Position array
+         */
+        public String getPart(char[] uri, int[] pos) {
+            return getPart(uri, pos, pos[startPos], pos[endPos], true);
+        }
+
+        /**
+         * Extracts this portion from URI
+         *
+         * @param uri         URI string
+         * @param pos         Position array
+         * @param emptyAsNull Convert empty strings to null
+         */
+        public String getPart(char[] uri, int[] pos, boolean emptyAsNull) {
+            return getPart(uri, pos, pos[startPos], pos[endPos], emptyAsNull);
+        }
+
+        /**
+         * Gets the start position from the position array
+         *
+         * @param pos The array containing position markers
+         * @return The start position value, or -1 if not set
+         */
+        public int getStart(int[] pos) {
+            return pos[startPos];
+        }
+
+        /**
+         * Sets the start position in the position array
+         *
+         * @param pos   The array containing position markers
+         * @param value The value to set as start position
+         */
+        public void setStart(int[] pos, int value) {
+            pos[startPos] = value;
+        }
+
+        /**
+         * Gets the end position from the position array
+         *
+         * @param pos The array containing position markers
+         * @return The end position value, or -1 if not set
+         */
+        public int getEnd(int[] pos) {
+            return pos[endPos];
+        }
+
+        /**
+         * Sets the end position in the position array
+         *
+         * @param pos   The array containing position markers
+         * @param value The value to set as end position
+         */
+        public void setEnd(int[] pos, int value) {
+            pos[endPos] = value;
+        }
+
+        /**
+         * Sets both start and end positions simultaneously
+         *
+         * @param pos   The array containing position markers
+         * @param start The start position value
+         * @param end   The end position value
+         */
+        public void setPosition(int[] pos, int start, int end) {
+            pos[startPos] = start;
+            pos[endPos] = end;
+        }
+
+        /**
+         * Extracts a substring from URI chars using position markers.
+         *
+         * @param uri         Char array containing URI
+         * @param pos         Array with start/end positions
+         * @param start       Index in pos array for start position
+         * @param end         Index in pos array for end position
+         * @param emptyAsNull If true, returns null for empty strings
+         * @return Extracted string, null if invalid positions, or empty string (when emptyAsNull is true)
+         */
+        protected String getPart(char[] uri, int[] pos, int start, int end, boolean emptyAsNull) {
+            String result = null;
+            int length = uri.length;
+            if (start >= 0 && start < length) {
+                if (end == -1) {
+                    result = new String(uri, start, length - start);
+                } else {
+                    result = new String(uri, start, end - start);
+                }
+            }
+            if (result == null) {
+                return result;
+            }
+            return emptyAsNull && result.isEmpty() ? null : result;
+        }
+
+        /**
+         * Checks if a position is undefined (has no beginning)
+         *
+         * @param pos      The array containing position markers
+         * @param startPos The index of the start position
+         * @return true if the position is undefined (-1)
+         */
+        public static boolean isBeginless(int[] pos, int startPos) {
+            return pos[startPos] == -1;
+        }
+
+        /**
+         * Checks if a position has no defined end (but has a start)
+         *
+         * @param pos      The array containing position markers
+         * @param startPos The index of the start position
+         * @param endPos   The index of the end position
+         * @return true if start is defined (≥0) but end is undefined (-1)
+         */
+        public static boolean isEndless(int[] pos, int startPos, int endPos) {
+            return pos[startPos] >= 0 && pos[endPos] == -1;
         }
     }
 

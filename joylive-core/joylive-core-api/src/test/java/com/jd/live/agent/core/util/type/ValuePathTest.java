@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,6 @@ public class ValuePathTest {
 
     @Test
     public void testPath() {
-
         Map<String, Object> map = new HashMap<>();
         map.put("room1", new Room(Arrays.asList(new Desk(1), new Desk(2))));
         ValuePath valuePath = new ValuePath("room1[2].length");
@@ -35,34 +35,30 @@ public class ValuePathTest {
         valuePath = new ValuePath("room1.desks[2].length");
         Assertions.assertNull(valuePath.get(map));
         valuePath = new ValuePath("room1.desks[1].length");
-        Assertions.assertEquals(valuePath.get(map), 2);
+        Assertions.assertEquals(2, valuePath.get(map));
     }
 
 
+    @Getter
     private static class Room {
 
-        private List<Desk> desks;
+        private final List<Desk> desks;
 
         Room(List<Desk> desks) {
             this.desks = desks;
         }
 
-        public List<Desk> getDesks() {
-            return desks;
-        }
     }
 
+    @Getter
     private static class Desk {
 
-        private int length;
+        private final int length;
 
         Desk(int length) {
             this.length = length;
         }
 
-        public int getLength() {
-            return length;
-        }
     }
 
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util;
+package com.jd.live.agent.core.util.trie.hanks;
 
 import com.jd.live.agent.core.util.trie.hankcs.AhoCorasickDoubleArrayTrie;
 import org.junit.jupiter.api.Assertions;
