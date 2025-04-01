@@ -17,12 +17,12 @@ package com.jd.live.agent.governance.subscription.policy.listener;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
-import com.jd.live.agent.governance.subscription.policy.PolicyListener;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyListener;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -86,7 +86,7 @@ public abstract class AbstractListener<T> implements PolicyListener {
     protected boolean update(PolicyEvent event) {
         for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
             if (supervisor.update(policy -> newPolicy(policy, event))) {
-                logger.info("Success " + event.getType().getName() + " " + event.getDescription());
+                logger.info("Success {} {}", event.getType().getDescription(), event.getDescription());
                 onSuccess(event);
                 return true;
             }

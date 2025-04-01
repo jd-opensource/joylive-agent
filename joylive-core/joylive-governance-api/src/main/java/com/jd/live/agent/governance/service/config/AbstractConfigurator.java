@@ -137,7 +137,7 @@ public abstract class AbstractConfigurator<T extends ConfigClientApi> implements
      * @param subscription The configuration subscription associated with the update.
      */
     protected void onUpdate(String configInfo, ConfigSubscription<T> subscription) {
-        logger.info("receive config update event from {}", subscription.getName().toString());
+        logger.info("Receive config update event from {}", subscription.getName().toString());
         ConfigParser parser = subscription.getParser();
         configInfo = configInfo == null ? "" : configInfo.trim();
         Map<String, Object> newValues = !configInfo.isEmpty() ? parser.parse(new StringReader(configInfo)) : new HashMap<>();

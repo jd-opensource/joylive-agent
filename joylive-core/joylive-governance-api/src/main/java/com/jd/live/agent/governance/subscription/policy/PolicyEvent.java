@@ -66,22 +66,22 @@ public class PolicyEvent {
         /**
          * Represents an event to update all items.
          */
-        UPDATE_ALL("update all"),
+        UPDATE_ALL("updating all"),
 
         /**
          * Represents an event to update a specific item.
          */
-        UPDATE_ITEM("update item"),
+        UPDATE_ITEM("updating item"),
 
         /**
          * Represents an event to delete a specific item.
          */
-        DELETE_ITEM("delete item");
+        DELETE_ITEM("deleting item");
 
-        private final String name;
+        private final String description;
 
-        EventType(String name) {
-            this.name = name;
+        EventType(String description) {
+            this.description = description;
         }
 
     }

@@ -53,7 +53,7 @@ public class NacosConfigurator extends AbstractConfigurator<NacosClientApi> {
         ConfigName name = subscription.getName();
         String profile = name.getProfile();
         profile = profile == null || profile.isEmpty() ? DEFAULT_GROUP : profile;
-        logger.info("subscribe " + name + ", parser " + subscription.getParser().getClass().getSimpleName());
+        logger.info("Subscribe {}, parser {}", name, subscription.getParser().getClass().getSimpleName());
         subscription.getClient().subscribe(name.getName(), profile, new ChangeListener(subscription));
     }
 
