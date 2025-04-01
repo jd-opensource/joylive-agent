@@ -61,7 +61,9 @@ public class JConfigSourcer implements Sourcer {
         }
         if (result instanceof String) {
             // handle expression language. such as ${ENV_1:123}
-            result = Template.evaluate((String) result, option, false);
+            String value = (String) result;
+            boolean nullable = value.startsWith("${") && value.endsWith("}");
+            result = Template.evaluate((String) result, option, nullable);
         }
         return result;
     }
