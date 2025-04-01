@@ -22,7 +22,7 @@ public class URITest {
 
     @Test
     void testParse() {
-        URI uri = URI.parse("http://a.b.com/order?id=123&a&");
+        URI uri = URI.parse("http://a.b.com/order?id=123&a&c=&=d");
         Assertions.assertNotNull(uri);
         Assertions.assertEquals("http", uri.getSchema());
         Assertions.assertEquals("a.b.com", uri.getHost());
