@@ -22,11 +22,13 @@ public class URITest {
 
     @Test
     void testParse() {
-        URI uri = URI.parse("http://a.b.com/order");
+        URI uri = URI.parse("http://a.b.com/order?id=123&a&");
         Assertions.assertNotNull(uri);
         Assertions.assertEquals("http", uri.getSchema());
         Assertions.assertEquals("a.b.com", uri.getHost());
         Assertions.assertEquals("/order", uri.getPath());
+        Assertions.assertEquals("123", uri.getParameter("id"));
+        Assertions.assertTrue(uri.hasParameter("a"));
         uri = uri.port(8080).path("/book").parameter("author", "zhangsan");
         Assertions.assertNotNull(uri);
         Assertions.assertEquals(8080, uri.getPort());

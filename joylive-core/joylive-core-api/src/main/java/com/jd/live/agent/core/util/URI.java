@@ -251,6 +251,10 @@ public class URI {
         return parameters == null || key == null ? null : parameters.get(key);
     }
 
+    public boolean hasParameter(String key) {
+        return parameters != null && key != null && parameters.containsKey(key);
+    }
+
     /**
      * Constructs the full URI string.
      *
@@ -511,11 +515,11 @@ public class URI {
                 switch (uri[i]) {
                     case '?':
                         // query
-                        Role.PATH.setEnd(pos, i - 1);
+                        Role.PATH.setEnd(pos, i);
                         Role.QUERY.setStart(pos, i + 1);
                         return;
                     case '=':
-                        Role.PATH.setEnd(pos, i - 1);
+                        Role.PATH.setEnd(pos, i);
                         Role.QUERY.setStart(pos, i);
                         return;
                 }
