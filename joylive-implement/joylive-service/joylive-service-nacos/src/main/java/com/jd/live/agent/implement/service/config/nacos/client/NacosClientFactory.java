@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.service.config.nacos.client;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.jd.live.agent.core.exception.ConfigException;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.config.AbstractSharedClientApi;
@@ -41,6 +42,9 @@ public abstract class NacosClientFactory {
      */
     public static NacosClientApi create(NacosProperties config) {
         URI uri = URI.parse(config.getUrl());
+        if (uri == null) {
+            throw new ConfigException("Invalid config center address: " + config.getUrl());
+        }
         String namespace = StringUtils.isEmpty(config.getNamespace()) ? NacosClientApi.DEFAULT_NAMESPACE : config.getNamespace();
         String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
         String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();

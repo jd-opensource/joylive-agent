@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.service.config.apollo.client;
 
 import com.ctrip.framework.apollo.ConfigFileChangeListener;
+import com.jd.live.agent.core.exception.ConfigException;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.config.AbstractSharedClientApi;
@@ -41,6 +42,9 @@ public abstract class ApolloClientFactory {
      */
     public static ApolloClientApi create(ApolloProperties properties) {
         URI uri = URI.parse(properties.getAddress());
+        if (uri == null) {
+            throw new ConfigException("Invalid config center address: " + properties.getAddress());
+        }
         ConfigName configName = properties.getName();
         String name = StringUtils.isEmpty(configName.getName()) ? "" : configName.getName();
         String username = StringUtils.isEmpty(properties.getUsername()) ? "" : properties.getUsername();
