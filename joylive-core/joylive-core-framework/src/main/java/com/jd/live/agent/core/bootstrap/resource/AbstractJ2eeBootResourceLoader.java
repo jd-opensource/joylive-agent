@@ -17,11 +17,7 @@ package com.jd.live.agent.core.bootstrap.resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_CLASSPATH;
 import static com.jd.live.agent.core.util.StringUtils.concat;
@@ -32,7 +28,7 @@ import static com.jd.live.agent.core.util.StringUtils.concat;
 public abstract class AbstractJ2eeBootResourceLoader implements BootResourceLoader {
 
     @Override
-    public InputStream getResource(BootResource resource) throws IOException {
+    public InputStreamResource getResource(BootResource resource) throws IOException {
         File workingDirectory = new File(System.getProperty("user.dir"));
         if (workingDirectory.getName().equals("bin")) {
             workingDirectory = workingDirectory.getParentFile();
@@ -53,7 +49,7 @@ public abstract class AbstractJ2eeBootResourceLoader implements BootResourceLoad
             if (files != null) {
                 for (File file : files) {
                     for (String path : paths) {
-                        InputStream inputStream = getInputStream(file, path, webappDirectory);
+                        InputStreamResource inputStream = getInputStream(file, path, webappDirectory);
                         if (inputStream != null) {
                             return inputStream;
                         }
@@ -102,31 +98,10 @@ public abstract class AbstractJ2eeBootResourceLoader implements BootResourceLoad
      * @return The input stream of the resource, or null if the resource could not be found.
      * @throws IOException If an I/O error occurs while trying to read the resource.
      */
-    private InputStream getInputStream(File file, String name, File webappDirectory) throws IOException {
+    private InputStreamResource getInputStream(File file, String name, File webappDirectory) throws IOException {
         if (file.isDirectory()) {
             File resourceFile = new File(file, name);
-            return !resourceFile.exists() ? null : Files.newInputStream(resourceFile.toPath());
-        }
-        return null;
-    }
-
-    /**
-     * A private helper method that tries to find the resource in a given WAR file.
-     *
-     * @param file The WAR file to search in.
-     * @param name The name of the resource to find.
-     * @return The input stream of the resource, or null if the resource could not be found.
-     * @throws IOException If an I/O error occurs while trying to read the resource.
-     */
-    private InputStream getInputStream(File file, String name) throws IOException {
-        try (JarFile jarFile = new JarFile(file)) {
-            Enumeration<JarEntry> entries = jarFile.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (entry.getName().equals(name)) {
-                    return jarFile.getInputStream(entry);
-                }
-            }
+            return !resourceFile.exists() ? null : new InputStreamResource(Files.newInputStream(resourceFile.toPath()), resourceFile.getPath());
         }
         return null;
     }

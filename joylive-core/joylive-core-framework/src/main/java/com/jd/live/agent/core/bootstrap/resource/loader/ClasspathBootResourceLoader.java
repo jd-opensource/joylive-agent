@@ -17,10 +17,10 @@ package com.jd.live.agent.core.bootstrap.resource.loader;
 
 import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.bootstrap.resource.BootResourceLoader;
+import com.jd.live.agent.core.bootstrap.resource.InputStreamResource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_CLASSPATH;
@@ -33,7 +33,7 @@ import static com.jd.live.agent.core.util.StringUtils.concat;
 public class ClasspathBootResourceLoader implements BootResourceLoader {
 
     @Override
-    public InputStream getResource(BootResource resource) throws IOException {
+    public InputStreamResource getResource(BootResource resource) throws IOException {
         String[] paths = resource.withPath()
                 ? new String[]{concat(resource.getPath(), resource.getPath(), "/")}
                 : new String[]{resource.getName(), "config/" + resource.getName(), "BOOT-INF/classes/" + resource.getName(), "BOOT-INF/classes/config/" + resource.getName()};
@@ -47,7 +47,7 @@ public class ClasspathBootResourceLoader implements BootResourceLoader {
                 }
             }
             if (url != null) {
-                return url.openStream();
+                return new InputStreamResource(url.openStream(), path);
             }
         }
         return null;

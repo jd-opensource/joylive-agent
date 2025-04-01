@@ -43,7 +43,7 @@ public interface BootResourceLoader {
      * @return An {@link InputStream} for reading the resource, or {@code null} if the resource could not be found.
      * @throws IOException If an I/O error occurs while attempting to access the resource.
      */
-    InputStream getResource(BootResource resource) throws IOException;
+    InputStreamResource getResource(BootResource resource) throws IOException;
 
     boolean support(String schema);
 

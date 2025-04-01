@@ -17,11 +17,11 @@ package com.jd.live.agent.core.bootstrap.resource.file;
 
 import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.bootstrap.resource.BootResourceLoader;
+import com.jd.live.agent.core.bootstrap.resource.InputStreamResource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_FILE;
@@ -34,14 +34,14 @@ import static com.jd.live.agent.core.util.StringUtils.concat;
 public class FileBootResourceLoader implements BootResourceLoader {
 
     @Override
-    public InputStream getResource(BootResource resource) throws IOException {
+    public InputStreamResource getResource(BootResource resource) throws IOException {
         String[] paths = resource.withPath()
                 ? new String[]{concat(resource.getPath(), resource.getName(), File.pathSeparator)}
                 : new String[]{resource.getName(), concat("config", resource.getName(), File.pathSeparator)};
         for (String path : paths) {
             File file = new File(path);
             if (file.exists()) {
-                return Files.newInputStream(file.toPath());
+                return new InputStreamResource(Files.newInputStream(file.toPath()), file.getPath());
             }
         }
         return null;

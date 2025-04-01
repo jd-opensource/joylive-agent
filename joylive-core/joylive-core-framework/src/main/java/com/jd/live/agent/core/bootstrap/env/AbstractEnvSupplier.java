@@ -21,6 +21,7 @@ import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier;
 import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.bootstrap.resource.BootResourceLoader;
+import com.jd.live.agent.core.bootstrap.resource.InputStreamResource;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.util.Close;
@@ -91,14 +92,15 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
         String ext = resource.getExtension();
         ConfigParser parser = parsers.get(ext);
         if (parser != null) {
-            InputStream stream = getResource(resource);
+            InputStreamResource stream = getResource(resource);
             if (stream != null) {
+                // logger plugin is not loaded.
                 try {
-                    Map<String, Object> result = parse(stream, parser);
-                    logger.info("[LiveAgent] Successfully load config from {}", resource);
+                    Map<String, Object> result = parse(stream.getInputStream(), parser);
+                    logger.info("[LiveAgent] Successfully load config from " + stream.getResource());
                     return result;
                 } catch (Throwable e) {
-                    logger.warn("[LiveAgent] Failed to load config from {}, caused by {}", resource, e.getMessage());
+                    logger.warn("[LiveAgent] Failed to load config from " + stream.getResource() + ", caused by " + e.getMessage());
                     return new HashMap<>();
                 } finally {
                     Close.instance().close(stream);
@@ -109,16 +111,16 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
     }
 
     /**
-     * Retrieves an {@link InputStream} for the specified {@link BootResource}.
+     * Retrieves an {@link InputStreamResource} for the specified {@link BootResource}.
      *
      * @param resource The {@link BootResource} to retrieve the input stream for.
-     * @return An {@link InputStream} for the resource, or {@code null} if the resource could not be accessed.
+     * @return An {@link InputStreamResource} for the resource, or {@code null} if the resource could not be accessed.
      */
-    protected InputStream getResource(BootResource resource) {
+    protected InputStreamResource getResource(BootResource resource) {
         for (BootResourceLoader loader : loaders) {
             if (loader.support(resource.getSchema())) {
                 try {
-                    InputStream stream = loader.getResource(resource);
+                    InputStreamResource stream = loader.getResource(resource);
                     if (stream != null) {
                         return stream;
                     }
