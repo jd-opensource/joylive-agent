@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Injectable
-@Extension("NodeEnvSupplier")
+@Extension(value = "NodeEnvSupplier", order = EnvSupplier.ORDER_NODE_ENV_SUPPLIER)
 public class NodeEnvSupplier implements EnvSupplier {
 
     @Override

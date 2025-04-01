@@ -32,6 +32,12 @@ import java.util.Map;
 @Extensible
 public interface EnvSupplier {
 
+    int ORDER_SPRING_ENV_SUPPLIER = 0;
+
+    int ORDER_NODE_ENV_SUPPLIER = ORDER_SPRING_ENV_SUPPLIER + 10;
+
+    int ORDER_CONFIG_ENV_SUPPLIER = ORDER_NODE_ENV_SUPPLIER + 10;
+
     /**
      * Processes the given environment.
      * Implementations of this method are expected to perform operations on or with the provided

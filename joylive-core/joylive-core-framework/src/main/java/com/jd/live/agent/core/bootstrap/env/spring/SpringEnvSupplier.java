@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.bootstrap.env.spring;
 
+import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -34,7 +35,7 @@ import static com.jd.live.agent.core.util.StringUtils.split;
 import static com.jd.live.agent.core.util.template.Template.evaluate;
 
 @Injectable
-@Extension("SpringEnvSupplier")
+@Extension(value = "SpringEnvSupplier",order = EnvSupplier.ORDER_SPRING_ENV_SUPPLIER)
 public class SpringEnvSupplier extends AbstractEnvSupplier {
 
     private static final String KEY_SPRING_APPLICATION_NAME = "spring.application.name";
