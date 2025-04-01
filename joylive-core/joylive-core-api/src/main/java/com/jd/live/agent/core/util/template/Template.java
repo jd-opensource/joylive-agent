@@ -73,11 +73,6 @@ public class Template implements Evaluator {
         this.variables = source == null ? 0 : parse(source.toCharArray(), 0, source.length(), sections, false);
     }
 
-    @Override
-    public Object evaluate(Object context) {
-        return evaluate(context, true);
-    }
-
     /**
      * Evaluates the template using the provided context. If {@code nullable} is true,
      * missing variables are treated as null; otherwise, they are treated as empty strings.
@@ -503,7 +498,7 @@ public class Template implements Evaluator {
                 if (defaultValue == null) {
                     candidate = null;
                 } else {
-                    context = context.isNullable() ? context : new EvalContext(context.getContext(), true);
+                    context = nullable ? context : new EvalContext(context.getContext(), true);
                     candidate = defaultValue.evaluate(context);
                 }
                 if (candidate == null) {

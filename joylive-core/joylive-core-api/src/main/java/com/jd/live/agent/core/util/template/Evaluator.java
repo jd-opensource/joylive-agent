@@ -26,7 +26,19 @@ public interface Evaluator {
      * @param context A map containing context variables that may be used during the evaluation.
      * @return The result of the evaluation.
      */
-    Object evaluate(Object context);
+    default Object evaluate(Object context) {
+        return evaluate(context, true);
+    }
+
+    /**
+     * Evaluates the template using the provided context. If {@code nullable} is true,
+     * missing variables are treated as null; otherwise, they are treated as empty strings.
+     *
+     * @param context  the object containing variable values
+     * @param nullable whether to allow null values for missing variables
+     * @return the evaluated result
+     */
+    Object evaluate(Object context, boolean nullable);
 
     /**
      * Evaluates an object context and returns the result as a string.
@@ -35,7 +47,18 @@ public interface Evaluator {
      * @return string representation of the evaluation result
      */
     default String render(Object context) {
-        Object result = evaluate(context);
+        return render(context, true);
+    }
+
+    /**
+     * Evaluates an object context and returns the result as a string.
+     *
+     * @param context  the context object to evaluate
+     * @param nullable whether to allow null values for missing variables
+     * @return string representation of the evaluation result
+     */
+    default String render(Object context, boolean nullable) {
+        Object result = evaluate(context, nullable);
         return result == null ? null : result.toString();
     }
 }
