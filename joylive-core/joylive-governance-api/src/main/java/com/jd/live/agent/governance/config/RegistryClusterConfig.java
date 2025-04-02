@@ -29,7 +29,7 @@ public class RegistryClusterConfig {
             return false;
         }
         URI uri = URI.parse(address);
-        String host = uri.getHost();
+        String host = uri == null ? null : uri.getHost();
         return host != null && !host.isEmpty();
     }
 
