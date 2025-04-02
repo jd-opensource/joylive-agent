@@ -141,7 +141,8 @@ public class LiveAgent {
             shutdownOnError = ctx.shutdownOnError;
             if (ctx.isInJavaToolOptions()) {
                 if (ctx.isExcluded()) {
-                    logger.log(Level.WARNING, "[LiveAgent] the agent will exit when excluding main class or missing main class.");
+                    // Disabled logging as it breaks script-based console output parsing.
+                    // logger.log(Level.WARNING, "[LiveAgent] the agent will exit when excluding main class or missing main class.");
                     return;
                 } else {
                     logger.log(Level.INFO, "[LiveAgent] main class " + ctx.bootClass.name
