@@ -30,7 +30,7 @@ public class RegistryClusterConfig {
         }
         URI uri = URI.parse(address);
         String host = uri.getHost();
-        return host != null && host.isEmpty();
+        return host != null && !host.isEmpty();
     }
 
     public String getGroup(String defaultGroup) {
