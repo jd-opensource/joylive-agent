@@ -233,7 +233,7 @@ public interface InvocationContext {
     default String getService(URI uri) {
         String schema = uri.getScheme();
         String host = uri.getHost();
-        String serviceName = host;
+        String serviceName = null;
         if (!"lb".equalsIgnoreCase(schema)) {
             GovernanceConfig governanceConfig = getGovernanceConfig();
             HostConfig hostConfig = governanceConfig.getRegistryConfig().getHostConfig();
@@ -245,8 +245,10 @@ public interface InvocationContext {
                     serviceName = service == null ? null : service.getName();
                 }
             }
+        } else {
+            serviceName = host;
         }
-        return serviceName == null ? host : serviceName;
+        return serviceName;
     }
 
     /**
