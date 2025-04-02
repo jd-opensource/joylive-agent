@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingWebHttpRequest;
@@ -28,7 +27,7 @@ import org.springframework.http.client.support.HttpAccessor;
 import java.net.URI;
 
 /**
- * RestTemplateInterceptor
+ * BlockingWebClusterInterceptor
  */
 public class BlockingWebClusterInterceptor extends InterceptorAdaptor {
 
@@ -36,23 +35,20 @@ public class BlockingWebClusterInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final HostConfig config;
-
     public BlockingWebClusterInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
         this.registry = registry;
-        this.config = context.getGovernanceConfig().getRegistryConfig().getHostConfig();
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         HttpAccessor restTemplate = (HttpAccessor) mc.getTarget();
-        URI url = ctx.getArgument(0);
+        URI uri = ctx.getArgument(0);
         HttpMethod method = ctx.getArgument(1);
-        String service = config.getService(url);
+        String service = context.getService(uri);
         if (service != null && !service.isEmpty()) {
-            BlockingWebHttpRequest request = new BlockingWebHttpRequest(url, method, service, restTemplate, context, registry);
+            BlockingWebHttpRequest request = new BlockingWebHttpRequest(uri, method, service, restTemplate, context, registry);
             mc.skipWithResult(request);
         }
     }
