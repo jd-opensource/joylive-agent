@@ -298,11 +298,13 @@ public class LiveAgent {
                         }
                     }
                 } catch (IOException e) {
-                    logger.log(Level.SEVERE, "[LiveAgent] Failed to read main class from " + file, e);
+                    // Disabled logging as it breaks script-based console output parsing.
+                    // logger.log(Level.SEVERE, "[LiveAgent] Failed to read main class from " + file, e);
+                    return null;
                 }
-            } else {
-                logger.log(Level.SEVERE, "[LiveAgent] Failed to find jar:" + file);
             }
+            // Disabled logging as it breaks script-based console output parsing.
+            // logger.log(Level.SEVERE, "[LiveAgent] Failed to find jar:" + file);
             return null;
         }
 
