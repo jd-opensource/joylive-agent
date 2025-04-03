@@ -66,7 +66,10 @@ public class IgnoredHandler implements BuilderHandler {
                                @MaybeNull JavaModule javaModule,
                                @MaybeNull Class<?> aClass,
                                @MaybeNull ProtectionDomain protectionDomain) {
-            return isArray(typeDescription) || isPrimitive(typeDescription) || isAgent(classLoader) || isExcluded(typeDescription)
+            return isArray(typeDescription)
+                    || isPrimitive(typeDescription)
+                    || isAgent(classLoader)
+                    || isExcluded(typeDescription, classLoader)
                     || isReflectionDynamicCreated(typeDescription);
         }
 
@@ -82,8 +85,8 @@ public class IgnoredHandler implements BuilderHandler {
             return classLoader instanceof LiveClassLoader;
         }
 
-        protected boolean isExcluded(TypeDescription typeDesc) {
-            return config.isExclude(typeDesc.getClass());
+        protected boolean isExcluded(TypeDescription typeDesc, ClassLoader classLoader) {
+            return config.isExclude(typeDesc.getActualName(), classLoader);
         }
 
         protected boolean isReflectionDynamicCreated(TypeDescription typeDesc) {

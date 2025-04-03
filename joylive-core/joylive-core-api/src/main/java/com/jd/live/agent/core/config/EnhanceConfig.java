@@ -59,13 +59,12 @@ public class EnhanceConfig {
 
     private boolean shutdownOnError;
 
-    public boolean isExclude(Class<?> type) {
-        String name = type.getName();
-        if (Inclusion.test(excludeTypes, excludePrefixes, false, name)) {
+    public boolean isExclude(String className, ClassLoader classLoader) {
+        if (Inclusion.test(excludeTypes, excludePrefixes, false, className)) {
             return true;
         }
-        if (excludeClassLoaders != null) {
-            return excludeClassLoaders.contains(type.getClassLoader().getClass().getName());
+        if (excludeClassLoaders != null && classLoader != null) {
+            return excludeClassLoaders.contains(classLoader.getClass().getName());
         }
         return false;
     }
