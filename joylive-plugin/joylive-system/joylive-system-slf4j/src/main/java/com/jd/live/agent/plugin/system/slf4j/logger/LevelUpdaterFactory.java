@@ -19,7 +19,6 @@ import com.jd.live.agent.plugin.system.slf4j.logger.jul.JulUpdater;
 import com.jd.live.agent.plugin.system.slf4j.logger.log4j.Log4jUpdater;
 import com.jd.live.agent.plugin.system.slf4j.logger.log4j2.Log4j2Updater;
 import com.jd.live.agent.plugin.system.slf4j.logger.logback.LogbackUpdater;
-import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +48,7 @@ public abstract class LevelUpdaterFactory {
      * @param logger The logger to get the level updater for.
      * @return The level updater for the specified logger, or null if no updater is found.
      */
-    public static LevelUpdater getLevelUpdater(org.slf4j.Logger logger) {
+    public static LevelUpdater getLevelUpdater(Object logger) {
         return TYPE_UPDATERS.computeIfAbsent(logger.getClass(), k -> {
             LevelUpdater levelUpdater = getUpdater(logger);
             return Optional.ofNullable(levelUpdater);
@@ -62,7 +61,7 @@ public abstract class LevelUpdaterFactory {
      * @param logger The logger to find the level updater for.
      * @return The level updater that supports the specified logger, or null if no updater is found.
      */
-    private static LevelUpdater getUpdater(Logger logger) {
+    private static LevelUpdater getUpdater(Object logger) {
         for (LevelUpdater levelUpdater : UPDATERS) {
             if (levelUpdater.support(logger)) {
                 return levelUpdater;

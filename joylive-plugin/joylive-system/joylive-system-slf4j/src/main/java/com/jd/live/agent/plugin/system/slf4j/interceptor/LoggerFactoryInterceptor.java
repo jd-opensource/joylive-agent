@@ -17,6 +17,8 @@ package com.jd.live.agent.plugin.system.slf4j.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -38,6 +40,8 @@ import static com.jd.live.agent.core.util.StringUtils.splitMap;
  * An interceptor class that listens for changes in logger levels and updates them accordingly.
  */
 public class LoggerFactoryInterceptor extends InterceptorAdaptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(LoggerFactoryInterceptor.class);
 
     private static final String DEFAULT_LOGGER_KEY = "logger.level";
 
@@ -63,7 +67,7 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         String name = mc.getArgument(0);
-        org.slf4j.Logger logger = mc.getResult();
+        Object logger = mc.getResult();
         LevelUpdater updater = LevelUpdaterFactory.getLevelUpdater(logger);
         String level = updater == null ? null : updater.getLevel(logger);
         LoggerCache cache = new LoggerCache(name, logger, updater, level);
@@ -161,7 +165,7 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
         /**
          * The logger instance.
          */
-        private final org.slf4j.Logger logger;
+        private final Object target;
 
         /**
          * The level updater responsible for updating the logger's level.
@@ -184,13 +188,13 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
          * Constructs a new LoggerCache instance with the specified name, logger, level updater, and level.
          *
          * @param name          The name of the logger.
-         * @param logger        The logger instance.
+         * @param target        The logger instance.
          * @param updater       The level updater responsible for updating the logger's level.
          * @param originLevel   The original level of the logger.
          */
-        LoggerCache(String name, org.slf4j.Logger logger, LevelUpdater updater, String originLevel) {
+        LoggerCache(String name, Object target, LevelUpdater updater, String originLevel) {
             this.name = name;
-            this.logger = logger;
+            this.target = target;
             this.updater = updater;
             this.originLevel = originLevel;
             this.currentLevel = originLevel;
@@ -235,7 +239,7 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
                     logger.info("Failed to update logger newLevel, " + name + "=" + newLevel + ", caused by updater is null");
                 } else {
                     try {
-                        updater.update(logger, name, newLevel);
+                        updater.update(target, name, newLevel);
                         currentLevel = newLevel;
                         logger.info("Success updating logger level, " + name + "=" + newLevel);
                         return true;

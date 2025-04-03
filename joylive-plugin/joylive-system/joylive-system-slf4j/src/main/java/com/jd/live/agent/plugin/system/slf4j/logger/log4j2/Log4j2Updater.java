@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.system.slf4j.logger.log4j2;
 
 import com.jd.live.agent.plugin.system.slf4j.logger.AbstractLevelUpdater;
-import org.slf4j.Logger;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -36,12 +35,12 @@ public class Log4j2Updater extends AbstractLevelUpdater {
     private static final Map<String, Optional<Class<?>>> TYPES = new ConcurrentHashMap<>();
 
     @Override
-    public boolean support(Logger logger) {
+    public boolean support(Object logger) {
         return logger.getClass().getName().startsWith("org.apache.logging.log4j");
     }
 
     @Override
-    protected void invoke(Method setter, Logger logger, String loggerName, String level, Object levelObj) throws Throwable {
+    protected void invoke(Method setter, Object logger, String loggerName, String level, Object levelObj) throws Throwable {
         setter.invoke(null, loggerName, level);
     }
 

@@ -27,14 +27,14 @@ public interface LevelUpdater {
      * @param loggerName The name of the logger.
      * @param level      The new logging level.
      */
-    void update(org.slf4j.Logger logger, String loggerName, String level) throws Throwable;
+    void update(Object logger, String loggerName, String level) throws Throwable;
 
     /**
      * Returns the level of the current instance.
      *
      * @return The level of the current instance.
      */
-    String getLevel(org.slf4j.Logger logger);
+    String getLevel(Object logger);
 
     /**
      * Checks if this level updater supports the specified logger.
@@ -42,6 +42,6 @@ public interface LevelUpdater {
      * @param logger The logger to check.
      * @return true if this level updater supports the specified logger, false otherwise.
      */
-    boolean support(org.slf4j.Logger logger);
+    boolean support(Object logger);
 }
 

@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.system.slf4j.logger.log4j;
 
 import com.jd.live.agent.plugin.system.slf4j.logger.AbstractLevelUpdater;
-import org.slf4j.Logger;
 
 /**
  * A class that updates the logging level for log4j loggers.
@@ -24,7 +23,7 @@ import org.slf4j.Logger;
 public class Log4jUpdater extends AbstractLevelUpdater {
 
     @Override
-    public boolean support(Logger logger) {
+    public boolean support(Object logger) {
         return logger.getClass().getName().startsWith("org.apache.log4j");
     }
 

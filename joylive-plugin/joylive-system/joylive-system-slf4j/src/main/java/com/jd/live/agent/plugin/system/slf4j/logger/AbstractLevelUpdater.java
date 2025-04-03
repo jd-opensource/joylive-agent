@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.plugin.system.slf4j.logger;
 
-import org.slf4j.Logger;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -35,7 +33,7 @@ public abstract class AbstractLevelUpdater implements LevelUpdater {
     protected static final String METHOD_GET_LEVEL = "getLevel";
 
     @Override
-    public void update(Logger logger, String loggerName, String level) throws Throwable {
+    public void update(Object logger, String loggerName, String level) throws Throwable {
         MethodCache cache = METHODS.computeIfAbsent(logger.getClass(), this::findMethod);
         Method setter = cache.getSetter();
         if (setter != null) {
@@ -47,7 +45,7 @@ public abstract class AbstractLevelUpdater implements LevelUpdater {
     }
 
     @Override
-    public String getLevel(Logger logger) {
+    public String getLevel(Object logger) {
         MethodCache cache = METHODS.computeIfAbsent(logger.getClass(), this::findMethod);
         Method method = cache.getGetter();
         if (method != null) {
@@ -69,7 +67,7 @@ public abstract class AbstractLevelUpdater implements LevelUpdater {
      * @param levelObj The level object to pass as an argument to the setter method.
      * @throws Throwable If an exception occurs during the invocation of the setter method.
      */
-    protected void invoke(Method setter, Logger logger, String loggerName, String level, Object levelObj) throws Throwable {
+    protected void invoke(Method setter, Object logger, String loggerName, String level, Object levelObj) throws Throwable {
         setter.invoke(logger, levelObj);
     }
 
