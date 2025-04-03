@@ -1,4 +1,5 @@
 com.jd.live.agent.governance.invoke.loadbalance.roundrobin.RoundRobinLoadBalancer
 com.jd.live.agent.governance.invoke.loadbalance.randomweight.RandomWeightLoadBalancer
+com.jd.live.agent.governance.invoke.loadbalance.active.LeastActiveLoadBalancer
 com.jd.live.agent.governance.invoke.loadbalance.response.ShortestResponseLoadBalancer
 com.jd.live.agent.governance.invoke.loadbalance.response.WeightResponseLoadBalancer

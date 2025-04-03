@@ -52,6 +52,12 @@ public interface LoadBalancer {
     int ORDER_WEIGHT_RESPONSE = ORDER_SHORTEST_RESPONSE + 1;
 
     /**
+     * Order value for least active strategy.
+     */
+    int ORDER_LEAST_ACTIVE = ORDER_WEIGHT_RESPONSE + 1;
+
+
+    /**
      * Elects a candidate endpoint from the list based on the invocation context and the specified load balancing policy.
      * The method selects an endpoint according to the rules defined by the provided policy and the current invocation.
      * If the list of endpoints is empty or null, this method returns {@code null}.
