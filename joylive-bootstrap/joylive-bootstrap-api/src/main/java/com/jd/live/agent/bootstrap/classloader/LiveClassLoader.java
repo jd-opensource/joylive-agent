@@ -126,30 +126,24 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         if (!started.get()) {
             throw new ClassNotFoundException("class " + name + " is not found.");
         }
-        boolean loadByParent = filter != null && filter.loadByParent(name);
-        Object mutex = getClassLoadingLock(name);
-        ClassCache cache = loadByParent ? null : findClass(name, mutex, resolve);
-        Class<?> type = cache == null ? null : cache.getType();
-        if (type == null) {
+        if (filter != null && filter.loadBySelf(name)) {
+            return loadBySelf(getClassLoadingLock(name), name, resolve);
+        } else if (filter != null && filter.loadByParent(name)) {
+            return loadByParent(name, resolve);
+        }
+        // first candidature for plugin classloader, use the classloader of the enhanced type and thread context.
+        ClassLoader candidature = filter == null ? null : filter.getCandidator();
+        if (candidature != null) {
             try {
-                type = super.loadClass(name, resolve);
-                if (type.getClassLoader() == this) {
-                    caches.putIfAbsent(name, new ClassCache(name, mutex, type, resolve));
-                }
+                return loadByClassLoader(candidature, name, resolve);
             } catch (ClassNotFoundException e) {
-                ClassLoader candidature = filter == null ? null : filter.getCandidator();
-                if (candidature != null && candidature != this && candidature != this.getParent()) {
-                    type = candidature.loadClass(name);
-                    if (resolve) {
-                        resolveClass(type);
-                    }
-                } else {
-                    throw e;
+                if (candidature != this) {
+                    return loadByDefault(name, resolve);
                 }
+                throw e;
             }
         }
-        return type;
-
+        return loadByDefault(name, resolve);
     }
 
     @Override
@@ -180,6 +174,78 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     @Override
     public String toString() {
         return name;
+    }
+
+    /**
+     * Attempts to load a class using the local class cache.
+     *
+     * @param mutex   the synchronization object to use for thread safety
+     * @param name    the fully qualified name of the desired class
+     * @param resolve if true, resolve the class (perform linking and verification)
+     * @return the resulting Class object
+     * @throws ClassNotFoundException if the class cannot be found in the cache
+     */
+    private Class<?> loadBySelf(Object mutex, String name, boolean resolve) throws ClassNotFoundException {
+        ClassCache cache = findClass(name, mutex, resolve);
+        Class<?> type = cache == null ? null : cache.getType();
+        if (type != null) {
+            return type;
+        }
+        throw new ClassNotFoundException("class " + name + " is not found.");
+    }
+
+
+    /**
+     * Attempts to load a class using the parent class loader delegation model.
+     *
+     * @param name    the fully qualified name of the desired class
+     * @param resolve if true, resolve the class (perform linking and verification)
+     * @return the resulting Class object
+     * @throws ClassNotFoundException if the class cannot be found by the parent loader
+     */
+    private Class<?> loadByParent(String name, boolean resolve) throws ClassNotFoundException {
+        return loadByClassLoader(getParent(), name, resolve);
+    }
+
+    /**
+     * Attempts to load a class using the default loading sequence (self-first then parent delegation).
+     *
+     * @param name    the fully qualified name of the desired class
+     * @param resolve if true, resolves the class (performs linking and verification)
+     * @return the loaded Class object
+     * @throws ClassNotFoundException if the class cannot be found by either this loader or its parent
+     */
+    private Class<?> loadByDefault(String name, boolean resolve) throws ClassNotFoundException {
+        // self
+        Object mutex = getClassLoadingLock(name);
+        Class<?> type;
+        ClassCache cache = findClass(name, mutex, resolve);
+        type = cache == null ? null : cache.getType();
+        if (type == null) {
+            // parent
+            type = super.loadClass(name, resolve);
+            if (type.getClassLoader() == this) {
+                caches.putIfAbsent(name, new ClassCache(name, mutex, type, resolve));
+            }
+        }
+        return type;
+    }
+
+    /**
+     * Loads a class using the specified class loader with optional resolution.
+     *
+     * @param classLoader the class loader to use for loading the class
+     * @param name        the fully qualified name of the desired class
+     * @param resolve     if true, resolve the class (perform linking and verification)
+     * @return the resulting Class object
+     * @throws ClassNotFoundException if the class cannot be found by the specified loader
+     */
+    private Class<?> loadByClassLoader(ClassLoader classLoader, String name, boolean resolve) throws ClassNotFoundException {
+        Class<?> type = classLoader.loadClass(name);
+        if (resolve) {
+            resolveClass(type);
+        }
+        return type;
     }
 
     /**

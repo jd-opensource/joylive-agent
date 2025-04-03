@@ -45,6 +45,8 @@ public class ResourceConfig {
                     "javax.",
                     "sun."
             },
+            new String[]{},
+            new String[]{"com.jd.live.agent.core."},
             null,
             new String[]{
                     "META-INF/services/com.jd.live.agent"
@@ -62,6 +64,8 @@ public class ResourceConfig {
                     "sun."
             },
             new String[]{},
+            new String[]{"com.jd.live.agent.implement."},
+            new String[]{},
             new String[]{}); // can be loaded in the parent class loader
     public static final ResourceConfig DEFAULT_PLUGIN_RESOURCE_CONFIG = new ResourceConfig(
             null,
@@ -75,6 +79,8 @@ public class ResourceConfig {
                     "javax.",
                     "sun."
             },
+            new String[]{},
+            new String[]{"com.jd.live.agent.plugin."},
             null,
             null); // can be loaded in the parent class loader
 
@@ -82,6 +88,8 @@ public class ResourceConfig {
     private Set<String> configExtensions;
     private Set<String> parentResources;
     private Set<String> parentPrefixes;
+    private Set<String> selfResources;
+    private Set<String> selfPrefixes;
     private Set<String> isolationResources;
     private Set<String> isolationPrefixes;
 
@@ -94,26 +102,26 @@ public class ResourceConfig {
         configExtensions = parse(env, prefix + ".configExtensions");
         parentResources = parse(env, prefix + ".parentResources");
         parentPrefixes = parse(env, prefix + ".parentPrefixes");
+        selfResources = parse(env, prefix + ".selfResources");
+        selfPrefixes = parse(env, prefix + ".selfPrefixes");
         isolationResources = parse(env, prefix + ".isolationResources");
         isolationPrefixes = parse(env, prefix + ".isolationPrefixes");
     }
 
-    public ResourceConfig(Set<String> configResources, Set<String> configExtensions, Set<String> parentResources,
-                          Set<String> parentPrefixes, Set<String> isolationResources, Set<String> isolationPrefixes) {
-        this.configResources = configResources;
-        this.configExtensions = configExtensions;
-        this.parentResources = parentResources;
-        this.parentPrefixes = parentPrefixes;
-        this.isolationResources = isolationResources;
-        this.isolationPrefixes = isolationPrefixes;
-    }
-
-    public ResourceConfig(String[] configResources, String[] configExtensions, String[] parentResources,
-                          String[] parentPrefixes, String[] isolationResources, String[] isolationPrefixes) {
+    public ResourceConfig(String[] configResources,
+                          String[] configExtensions,
+                          String[] parentResources,
+                          String[] parentPrefixes,
+                          String[] selfResources,
+                          String[] selfPrefixes,
+                          String[] isolationResources,
+                          String[] isolationPrefixes) {
         this.configResources = configResources == null ? null : new HashSet<>(Arrays.asList(configResources));
         this.configExtensions = configExtensions == null ? null : new HashSet<>(Arrays.asList(configExtensions));
         this.parentResources = parentResources == null ? null : new HashSet<>(Arrays.asList(parentResources));
         this.parentPrefixes = parentPrefixes == null ? null : new HashSet<>(Arrays.asList(parentPrefixes));
+        this.selfResources = selfResources == null ? null : new HashSet<>(Arrays.asList(selfResources));
+        this.selfPrefixes = selfPrefixes == null ? null : new HashSet<>(Arrays.asList(selfPrefixes));
         this.isolationResources = isolationResources == null ? null : new HashSet<>(Arrays.asList(isolationResources));
         this.isolationPrefixes = isolationPrefixes == null ? null : new HashSet<>(Arrays.asList(isolationPrefixes));
     }
@@ -130,6 +138,10 @@ public class ResourceConfig {
 
     public boolean isParent(String name) {
         return Inclusion.test(parentResources, parentPrefixes, false, name);
+    }
+
+    public boolean isSelf(String name) {
+        return Inclusion.test(selfResources, selfPrefixes, false, name);
     }
 
     public boolean isIsolation(String name) {

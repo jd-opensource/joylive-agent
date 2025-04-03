@@ -31,9 +31,6 @@ public class ClassLoaderConfig {
 
     public static final String COMPONENT_CLASSLOADER_CONFIG = "classLoaderConfig";
 
-    @Config("contextLoaderEnabled")
-    private boolean contextLoaderEnabled;
-
     @Config("core")
     private ResourceConfig coreResource = ResourceConfig.DEFAULT_CORE_RESOURCE_CONFIG;
 

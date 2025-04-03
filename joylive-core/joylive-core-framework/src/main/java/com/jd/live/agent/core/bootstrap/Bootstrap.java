@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.core.bootstrap;
 
-import com.jd.live.agent.bootstrap.classloader.CandidatorOption;
 import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.bootstrap.exception.InitializeException;
@@ -443,14 +442,12 @@ public class Bootstrap implements AgentLifecycle {
 
     /**
      * Creates a {@link ClassLoaderConfig} instance, fills its properties through dependency injection,
-     * and sets the context loader enable state in {@link CandidatorOption}.
      *
      * @return A configured {@link ClassLoaderConfig} instance.
      */
     private ClassLoaderConfig createClassLoaderConfig() {
         ClassLoaderConfig config = new ClassLoaderConfig();
         injector.inject(config);
-        CandidatorOption.setContextLoaderEnabled(config.isContextLoaderEnabled());
         return config;
     }
 

@@ -43,6 +43,11 @@ public class ResourceConfigFilter implements ResourceFilter {
     }
 
     @Override
+    public boolean loadBySelf(String name) {
+        return config.isSelf(name);
+    }
+
+    @Override
     public URL getResource(String name, ResourceFinder resourcer) {
         if (config.isConfig(name)) {
             File file = new File(configPath, name);

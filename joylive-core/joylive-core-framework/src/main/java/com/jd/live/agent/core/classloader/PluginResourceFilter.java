@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.core.classloader;
 
-import com.jd.live.agent.bootstrap.classloader.CandidatorOption;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfigFilter;
 
@@ -50,14 +49,12 @@ public class PluginResourceFilter extends ResourceConfigFilter {
 
     /**
      * Retrieves the ClassLoader to be used by the filter.
-     * This method checks the CandidatorOption for an associated ClassLoader.
      *
-     * @return The ClassLoader to be used, or null if no ClassLoader is specified in the CandidatorOption.
+     * @return The context classLoader to be used.
      */
     @Override
     public ClassLoader getCandidator() {
-        CandidatorOption option = CandidatorOption.getOption();
-        return option == null ? null : option.getClassLoader();
+        return Thread.currentThread().getContextClassLoader();
     }
 }
 

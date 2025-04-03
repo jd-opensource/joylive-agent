@@ -34,6 +34,14 @@ public interface ResourceFilter extends CandidatorProvider {
     boolean loadByParent(String name);
 
     /**
+     * Determines whether a resource with the given name should be loaded by the this class loader.
+     *
+     * @param name The name of the resource.
+     * @return {@code true} if the resource should be loaded by the this class loader; {@code false} otherwise.
+     */
+    boolean loadBySelf(String name);
+
+    /**
      * Retrieves a resource identified by the given name using the provided {@link ResourceFinder}.
      *
      * @param name      The name of the resource to retrieve.
