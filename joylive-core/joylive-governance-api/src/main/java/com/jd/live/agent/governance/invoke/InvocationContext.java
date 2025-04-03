@@ -24,6 +24,7 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -40,6 +41,7 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
@@ -51,6 +53,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -205,6 +208,48 @@ public interface InvocationContext {
      * default ClusterInvoker if no matching name is found.
      */
     ClusterInvoker getOrDefaultClusterInvoker(String name);
+
+    /**
+     * Resolves the target service name for a given URI based on host-to-service mapping rules.
+     *
+     * <p>The resolution follows this logic flow:
+     * <ol>
+     *   <li>For 'lb://host' URIs (load-balanced), returns the host directly as service name</li>
+     *   <li>Checks host-to-service mappings in {@link HostConfig} when enabled</li>
+     *   <li>Falls back to {@link GovernancePolicy} service alias lookup if no direct mapping exists</li>
+     * </ol>
+     *
+     * @param uri the service URI to resolve (must include scheme and host)
+     * @return resolved service name, or original host if:
+     * <ul>
+     *   <li>URI uses 'lb' scheme</li>
+     *   <li>HostConfig is disabled</li>
+     *   <li>No matching service found</li>
+     * </ul>
+     * @throws NullPointerException if uri is null
+     * @see HostConfig#isEnabled()
+     * @see GovernancePolicy#getServiceByAlias(String)
+     */
+    default String getService(URI uri) {
+        String schema = uri.getScheme();
+        String host = uri.getHost();
+        String serviceName = null;
+        if (!"lb".equalsIgnoreCase(schema)) {
+            GovernanceConfig governanceConfig = getGovernanceConfig();
+            HostConfig hostConfig = governanceConfig.getRegistryConfig().getHostConfig();
+            if (hostConfig.isEnabled()) {
+                serviceName = hostConfig.getService(host);
+                if (serviceName == null || serviceName.isEmpty()) {
+                    GovernancePolicy governancePolicy = getPolicySupplier().getPolicy();
+                    Service service = governancePolicy == null ? null : governancePolicy.getServiceByAlias(host);
+                    serviceName = service == null ? null : service.getName();
+                }
+            }
+        } else {
+            serviceName = host;
+        }
+        return serviceName;
+    }
 
     /**
      * Retrieves a {@link ClusterInvoker} based on the cluster policy associated with the provided service invocation.

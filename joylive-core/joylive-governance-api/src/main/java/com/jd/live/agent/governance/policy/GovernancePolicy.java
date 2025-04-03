@@ -137,6 +137,18 @@ public class GovernancePolicy {
 
     private final transient Cache<String, Service> serviceCache = new MapCache<>(new ListBuilder<>(() -> services, Service::getName));
 
+    private final transient Cache<String, Service> serviceAliasCache = new MapCache<>(() -> {
+        Map<String, Service> result = new HashMap<>();
+        if (services != null) {
+            services.forEach(service -> {
+                if (service.getAliases() != null) {
+                    service.getAliases().forEach(alias -> result.put(alias, service));
+                }
+            });
+        }
+        return result;
+    });
+
     /**
      * Default constructor for GovernancePolicy.
      */
@@ -196,6 +208,16 @@ public class GovernancePolicy {
      */
     public Service getService(String name) {
         return serviceCache.get(name);
+    }
+
+    /**
+     * Retrieves a {@link Service} by its unique alias.
+     *
+     * @param alias The unique alias of the service to retrieve.
+     * @return The service with the specified alias, or {@code null} if not found.
+     */
+    public Service getServiceByAlias(String alias) {
+        return serviceAliasCache.get(alias);
     }
 
     /**
@@ -278,6 +300,7 @@ public class GovernancePolicy {
         getLaneSpace("");
         getDomain("");
         getService("");
+        getServiceByAlias("");
         getDbCluster("");
         getDbCluster("", 0);
         getDefaultLaneSpace();

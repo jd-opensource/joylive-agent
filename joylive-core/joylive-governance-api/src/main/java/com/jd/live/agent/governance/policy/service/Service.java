@@ -53,6 +53,10 @@ public class Service extends PolicyOwner implements ServiceName {
 
     @Getter
     @Setter
+    private Set<String> aliases;
+
+    @Getter
+    @Setter
     private long version = 1;
 
     @Getter
