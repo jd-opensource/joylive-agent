@@ -20,12 +20,14 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.HttpClientClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.httpclient.HttpClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.HttpClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.HttpClientClusterResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -36,14 +38,14 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.HttpClie
  *
  * @see AbstractCloudCluster
  */
-public class HttpClientCloudCluster extends AbstractCloudCluster<HttpClientClusterRequest, HttpClientClusterResponse, HttpClientClusterContext> {
-
-    public HttpClientCloudCluster(HttpClientClusterContext context) {
-        super(context);
-    }
+public class HttpClientCloudCluster extends AbstractCloudCluster<
+        HttpClientClusterRequest,
+        HttpClientClusterResponse,
+        HttpClientClusterContext,
+        IOException> {
 
     public HttpClientCloudCluster(RibbonLoadBalancingHttpClient client) {
-        super(new HttpClientClusterContext(client));
+        super(new HttpClientClusterContext(client), new HttpClientThrowerFactory<>());
     }
 
     @Override

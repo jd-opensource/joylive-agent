@@ -30,12 +30,10 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.ThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.SpringClusterRequest;
 import lombok.Getter;
-import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpStatus;
 
 import java.util.*;
@@ -56,7 +54,8 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
 public abstract class AbstractCloudCluster<
         R extends SpringClusterRequest,
         O extends OutboundResponse,
-        C extends CloudClusterContext>
+        C extends CloudClusterContext,
+        T extends Throwable>
         extends AbstractLiveCluster<R, O, InstanceEndpoint> {
 
     protected static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
@@ -78,13 +77,9 @@ public abstract class AbstractCloudCluster<
 
     protected final Map<String, CacheObject<RetryPolicy>> retryPolicies = new ConcurrentHashMap<>();
 
-    protected final SpringOutboundThrower<? extends NestedRuntimeException, R> thrower;
+    protected final SpringOutboundThrower<T, R> thrower;
 
-    public AbstractCloudCluster(C context) {
-        this(context, new StatusThrowerFactory<>());
-    }
-
-    public AbstractCloudCluster(C context, ThrowerFactory<? extends NestedRuntimeException, R> factory) {
+    public AbstractCloudCluster(C context, ThrowerFactory<T, R> factory) {
         this.context = context;
         this.thrower = new SpringOutboundThrower<>(factory);
     }

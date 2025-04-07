@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.AbstractCloudCluster;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.filter.LiveGatewayFilterChain;
@@ -39,6 +40,7 @@ import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -67,14 +69,11 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
 public class GatewayCluster extends AbstractCloudCluster<
         GatewayCloudClusterRequest,
         GatewayClusterResponse,
-        GatewayClusterContext> {
-
-    public GatewayCluster(GatewayClusterContext context) {
-        super(context);
-    }
+        GatewayClusterContext,
+        NestedRuntimeException> {
 
     public GatewayCluster(ServiceRegistryFactory registryFactory, Propagation propagation) {
-        super(new GatewayClusterContext(registryFactory, propagation));
+        super(new GatewayClusterContext(registryFactory, propagation), new StatusThrowerFactory<>());
     }
 
     @Override

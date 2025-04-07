@@ -91,6 +91,9 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
             HttpClientClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();
             if (error != null && !error.isServerError()) {
+                if (error.getThrowable() instanceof IOException) {
+                    throw (IOException) error.getThrowable();
+                }
                 throw new ClientProtocolException(error.getError(), error.getThrowable());
             } else {
                 return response.getResponse();

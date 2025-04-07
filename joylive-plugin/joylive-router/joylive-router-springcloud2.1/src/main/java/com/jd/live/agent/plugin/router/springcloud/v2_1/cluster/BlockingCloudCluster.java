@@ -20,10 +20,12 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.BlockingClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.DegradeHttpResponse;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
@@ -41,14 +43,11 @@ import java.util.concurrent.CompletionStage;
 public class BlockingCloudCluster extends AbstractCloudCluster<
         BlockingCloudClusterRequest,
         BlockingClusterResponse,
-        BlockingClusterContext> {
-
-    public BlockingCloudCluster(BlockingClusterContext context) {
-        super(context);
-    }
+        BlockingClusterContext,
+        NestedRuntimeException> {
 
     public BlockingCloudCluster(ClientHttpRequestInterceptor interceptor) {
-        super(new BlockingClusterContext(interceptor));
+        super(new BlockingClusterContext(interceptor), new StatusThrowerFactory<>());
     }
 
     @Override

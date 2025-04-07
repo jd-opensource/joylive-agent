@@ -27,6 +27,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveCluster
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.concurrent.CompletionStage;
@@ -42,11 +43,8 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.Reactive
 public class ReactiveCloudCluster extends AbstractCloudCluster<
         ReactiveCloudClusterRequest,
         ReactiveClusterResponse,
-        ReactiveClusterContext> {
-
-    public ReactiveCloudCluster(ReactiveClusterContext context) {
-        super(context, new WebClientThrowerFactory<>());
-    }
+        ReactiveClusterContext,
+        WebClientException> {
 
     public ReactiveCloudCluster(ExchangeFilterFunction filterFunction) {
         super(new ReactiveClusterContext(filterFunction), new WebClientThrowerFactory<>());
