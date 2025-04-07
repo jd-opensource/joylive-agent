@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.config;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.net.URI;
 import java.util.Map;
 
 @Getter
@@ -29,19 +28,8 @@ public class HostConfig {
 
     private Map<String, String> services;
 
-    public String getService(String scheme, String host) {
-        if (host == null || "lb".equalsIgnoreCase(scheme)) {
-            return host;
-        } else if (enabled) {
-            return services == null || services.isEmpty() ? null : services.get(host);
-        } else {
-            return host;
-        }
+    public String getService(String host) {
+        return host == null || services == null || services.isEmpty() ? null : services.get(host);
     }
-
-    public String getService(URI uri) {
-        return uri == null ? null : getService(uri.getScheme(), uri.getHost());
-    }
-
 }
 
