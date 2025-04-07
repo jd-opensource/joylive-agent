@@ -22,6 +22,7 @@
         <module>joylive-router-springgateway2.2</module>
         <module>joylive-router-springgateway3</module>
         <module>joylive-router-springgateway4</module>
+        <module>joylive-router-zuul</module>
         <module>joylive-router-dubbo3</module>
         <module>joylive-router-dubbo2.7</module>
         <module>joylive-router-dubbo2.6</module>

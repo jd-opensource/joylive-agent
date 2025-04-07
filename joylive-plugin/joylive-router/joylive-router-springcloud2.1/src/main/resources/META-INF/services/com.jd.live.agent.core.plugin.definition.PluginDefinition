@@ -4,3 +4,5 @@ com.jd.live.agent.plugin.router.springcloud.v2_1.definition.FeignCloudClusterDef
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactorCloudClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactiveCloudClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ServiceInstanceSupplierDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.HttpClientCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.LoadbalancerClientDefinition

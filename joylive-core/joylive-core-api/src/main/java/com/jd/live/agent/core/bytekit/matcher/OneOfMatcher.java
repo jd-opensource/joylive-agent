@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.bytekit.matcher;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +26,7 @@ import java.util.Set;
  *
  * @since 1.0.0
  */
+@Getter
 public class OneOfMatcher extends AbstractJunction<String> {
 
     private final Set<String> values;

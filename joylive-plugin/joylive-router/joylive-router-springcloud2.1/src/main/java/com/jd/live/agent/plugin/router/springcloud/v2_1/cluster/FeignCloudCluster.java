@@ -20,10 +20,12 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.FeignClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClusterResponse;
 import feign.Client;
+import org.springframework.core.NestedRuntimeException;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -35,14 +37,14 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClu
  *
  * @see AbstractCloudCluster
  */
-public class FeignCloudCluster extends AbstractCloudCluster<FeignCloudClusterRequest, FeignClusterResponse, FeignClusterContext> {
-
-    public FeignCloudCluster(FeignClusterContext context) {
-        super(context);
-    }
+public class FeignCloudCluster extends AbstractCloudCluster<
+        FeignCloudClusterRequest,
+        FeignClusterResponse,
+        FeignClusterContext,
+        NestedRuntimeException> {
 
     public FeignCloudCluster(Client client) {
-        super(new FeignClusterContext(client));
+        super(new FeignClusterContext(client), new StatusThrowerFactory<>());
     }
 
     @Override

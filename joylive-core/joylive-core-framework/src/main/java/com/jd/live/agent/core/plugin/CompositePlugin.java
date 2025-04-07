@@ -18,6 +18,7 @@ package com.jd.live.agent.core.plugin;
 import com.jd.live.agent.bootstrap.plugin.PluginListener;
 import com.jd.live.agent.core.bytekit.matcher.ElementMatcher;
 import com.jd.live.agent.core.bytekit.matcher.NameMatcher;
+import com.jd.live.agent.core.bytekit.matcher.OneOfMatcher;
 import com.jd.live.agent.core.bytekit.matcher.StringMatcher;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
@@ -109,6 +110,11 @@ public class CompositePlugin extends AbstractPluginDescriptor {
                         namedDefinitions.computeIfAbsent(stringMatcher.getValue(), k -> new ArrayList<>()).add(definition);
                         continue;
                     }
+                } else if (matcher instanceof OneOfMatcher) {
+                    OneOfMatcher oneOfMatcher = (OneOfMatcher) matcher;
+                    oneOfMatcher.getValues().forEach(value ->
+                            namedDefinitions.computeIfAbsent(value, k -> new ArrayList<>()).add(definition));
+                    continue;
                 }
             }
             otherDefinitions.add(definition);

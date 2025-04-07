@@ -62,17 +62,18 @@ public class GovernanceConfig {
     public static final String CONFIG_LIVE_ENABLED = CONFIG_SWITCH_LIVE + ENABLED;
 
     public static final String CONFIG_GOVERN_ENABLED = CONFIG_SWITCH_GOVERN + ENABLED;
-    public static final String CONFIG_GOVERN_DUBBO_ENABLED = CONFIG_GOVERN_ENABLED + ".dubbo";
-    public static final String CONFIG_GOVERN_GRPC_ENABLED = CONFIG_GOVERN_ENABLED + ".grpc";
-    public static final String CONFIG_GOVERN_SOFARPC_ENABLED = CONFIG_GOVERN_ENABLED + ".sofarpc";
-    public static final String CONFIG_GOVERN_JSF_ENABLED = CONFIG_GOVERN_ENABLED + ".jsf";
-    public static final String CONFIG_GOVERN_SPRING_ENABLED = CONFIG_GOVERN_ENABLED + ".spring";
-    public static final String CONFIG_GOVERN_SPRING_GATEWAY_ENABLED = CONFIG_GOVERN_ENABLED + ".springgateway";
-    public static final String CONFIG_GOVERN_PHEVOS_ENABLED = CONFIG_GOVERN_ENABLED + ".phevos";
-    public static final String CONFIG_GOVERN_MQ_ENABLED = CONFIG_GOVERN_ENABLED + ".mq";
-    public static final String CONFIG_GOVERN_ROCKETMQ_ENABLED = CONFIG_GOVERN_ENABLED + ".rocketmq";
-    public static final String CONFIG_GOVERN_KAFKA_ENABLED = CONFIG_GOVERN_ENABLED + ".kafka";
-    public static final String CONFIG_GOVERN_PULSAR_ENABLED = CONFIG_GOVERN_ENABLED + ".pulsar";
+    public static final String CONFIG_GOVERN_DUBBO_ENABLED = CONFIG_SWITCH_GOVERN + ".dubbo";
+    public static final String CONFIG_GOVERN_GRPC_ENABLED = CONFIG_SWITCH_GOVERN + ".grpc";
+    public static final String CONFIG_GOVERN_SOFARPC_ENABLED = CONFIG_SWITCH_GOVERN + ".sofarpc";
+    public static final String CONFIG_GOVERN_JSF_ENABLED = CONFIG_SWITCH_GOVERN + ".jsf";
+    public static final String CONFIG_GOVERN_SPRING_ENABLED = CONFIG_SWITCH_GOVERN + ".spring";
+    public static final String CONFIG_GOVERN_SPRING_GATEWAY_ENABLED = CONFIG_SWITCH_GOVERN + ".springgateway";
+    public static final String CONFIG_GOVERN_ZUUL_ENABLED = CONFIG_SWITCH_GOVERN + ".zuul";
+    public static final String CONFIG_GOVERN_PHEVOS_ENABLED = CONFIG_SWITCH_GOVERN + ".phevos";
+    public static final String CONFIG_GOVERN_MQ_ENABLED = CONFIG_SWITCH_GOVERN + ".mq";
+    public static final String CONFIG_GOVERN_ROCKETMQ_ENABLED = CONFIG_SWITCH_GOVERN + ".rocketmq";
+    public static final String CONFIG_GOVERN_KAFKA_ENABLED = CONFIG_SWITCH_GOVERN + ".kafka";
+    public static final String CONFIG_GOVERN_PULSAR_ENABLED = CONFIG_SWITCH_GOVERN + ".pulsar";
 
     public static final String CONFIG_LANE_ENABLED = CONFIG_SWITCH_LANE + ENABLED;
 

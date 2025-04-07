@@ -25,6 +25,7 @@ import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
@@ -90,7 +91,7 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
         } else if (name.equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
             // RibbonLoadBalancerClient.clientFactory
             // SpringClientFactory
-            return service -> new RibbonServiceRegistry(service, getQuietly(client, FIELD_CLIENT_FACTORY));
+            return service -> new RibbonServiceRegistry(service, (SpringClientFactory) getQuietly(client, FIELD_CLIENT_FACTORY));
         }
         return null;
     }

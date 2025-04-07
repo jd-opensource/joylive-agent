@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.ReactiveCloudClusterInterceptor;
 
 /**
@@ -40,7 +40,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.ReactiveClou
  */
 @Injectable
 @Extension(value = "LoadBalancerExchangeFilterFunction_v2.1")
-@ConditionalOnSpringCloud2GovernanceEnabled
+@ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnClass(ReactiveCloudClusterDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
 public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
 
