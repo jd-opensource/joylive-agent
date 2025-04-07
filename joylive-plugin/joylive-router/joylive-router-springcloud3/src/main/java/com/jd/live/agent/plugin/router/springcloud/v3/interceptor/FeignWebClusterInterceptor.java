@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
@@ -49,14 +48,11 @@ public class FeignWebClusterInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final HostConfig config;
-
     private final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
 
     public FeignWebClusterInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
         this.registry = registry;
-        this.config = context.getGovernanceConfig().getRegistryConfig().getHostConfig();
     }
 
     @Override
@@ -65,7 +61,7 @@ public class FeignWebClusterInterceptor extends InterceptorAdaptor {
         Object[] arguments = mc.getArguments();
         Request request = (Request) arguments[0];
         URI uri = URI.create(request.url());
-        String service = config.getService(uri);
+        String service = context.getService(uri);
         if (service == null || service.isEmpty()) {
             // none governance service
             return;
