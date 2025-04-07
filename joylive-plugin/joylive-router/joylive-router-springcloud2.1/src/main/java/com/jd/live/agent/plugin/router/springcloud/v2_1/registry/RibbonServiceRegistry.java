@@ -37,8 +37,12 @@ public class RibbonServiceRegistry implements ServiceRegistry {
     private final ILoadBalancer loadBalancer;
 
     public RibbonServiceRegistry(String service, SpringClientFactory clientFactory) {
+        this(service, clientFactory.getLoadBalancer(service));
+    }
+
+    public RibbonServiceRegistry(String service, ILoadBalancer loadBalancer) {
         this.service = service;
-        this.loadBalancer = clientFactory.getLoadBalancer(service);
+        this.loadBalancer = loadBalancer;
     }
 
     @Override

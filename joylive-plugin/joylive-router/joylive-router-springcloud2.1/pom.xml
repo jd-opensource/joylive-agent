@@ -19,6 +19,7 @@
         <spring-retry.version>1.2.5.RELEASE</spring-retry.version>
         <ribbon-loadbalancer.version>2.3.0</ribbon-loadbalancer.version>
         <spring-cloud-openfeign.version>2.1.5.RELEASE</spring-cloud-openfeign.version>
+        <http-client.version>4.5.14</http-client.version>
     </properties>
 
     <dependencies>
@@ -75,6 +76,11 @@
             <artifactId>ribbon-loadbalancer</artifactId>
             <version>${ribbon-loadbalancer.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${http-client.version}</version>
         </dependency>
         <dependency>
             <!--fix compile error-->

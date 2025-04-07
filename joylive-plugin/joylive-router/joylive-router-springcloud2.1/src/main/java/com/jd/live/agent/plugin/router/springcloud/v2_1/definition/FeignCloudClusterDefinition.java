@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.FeignCloudClusterInterceptor;
 
 /**
@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.FeignCloudCl
  */
 @Injectable
 @Extension(value = "FeignClusterDefinition_v2.1")
-@ConditionalOnSpringCloud2GovernanceEnabled
+@ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnClass(FeignCloudClusterDefinition.TYPE)
 public class FeignCloudClusterDefinition extends PluginDefinitionAdapter {
 

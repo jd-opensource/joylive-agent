@@ -33,8 +33,10 @@ import java.util.*;
 
 /**
  * A wrapper class for HttpServletRequest that delegates all method calls to the underlying request object.
+ * This class supports Zuul by inheriting from ServletRequestWrapper while implementing HttpServletRequest
+ * and HeaderProvider interfaces.
  */
-public class JavaxRequest implements HttpServletRequest, HeaderProvider {
+public class JavaxRequest extends ServletRequestWrapper implements HttpServletRequest, HeaderProvider {
 
     // HTTP date formats
     private static final String DATE_RFC5322 = "EEE, dd MMM yyyy HH:mm:ss z";
@@ -48,7 +50,7 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
             DateTimeFormatter.ofPattern(DATE_OBSOLETE_ASCTIME, Locale.US).withZone(GMT_ZONE)
     };
 
-    private final HttpServletRequest request;
+    private HttpServletRequest request;
 
     private String queryString;
 
@@ -67,7 +69,14 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
     private MultiMap<String, String> headers;
 
     public JavaxRequest(HttpServletRequest request) {
+        super(request);
         this.request = request;
+    }
+
+    @Override
+    public void setRequest(ServletRequest request) {
+        super.setRequest(request);
+        this.request = request instanceof HttpServletRequest ? (HttpServletRequest) request : null;
     }
 
     @Override
@@ -276,11 +285,26 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
     }
 
     @Override
+    public long getContentLengthLong() {
+        return request.getContentLengthLong();
+    }
+
+    @Override
     public String getContentType() {
         if (contentType == null) {
             contentType = request.getContentType();
         }
         return contentType;
+    }
+
+    @Override
+    public String changeSessionId() {
+        return request.changeSessionId();
+    }
+
+    @Override
+    public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
+        return request.upgrade(handlerClass);
     }
 
     @Override

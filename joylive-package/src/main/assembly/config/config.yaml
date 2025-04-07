@@ -136,6 +136,7 @@ agent:
       sofarpc: true
       jsf: true
       spring: true
+      zuul: true
       phevos: true
       rocketmq: true
     live:
@@ -228,36 +229,8 @@ agent:
           - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
           - org.apache.tomcat.util.threads.InlineExecutorService
           - javax.management.NotificationBroadcasterSupport$1
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutorGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.ThreadPerTaskExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.GlobalEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractScheduledEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.SingleThreadEventLoop
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$1
-          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$ExecutorHolder
-          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$RestrictedScheduledExecutor
-          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$2
-          - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
-          - com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls.ThreadlessExecutor
-          - com.alibaba.nacos.shaded.io.grpc.SynchronizationContext
-          - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory
         excludeTasks:
-          - com.alibaba.nacos.common.executor.NameThreadFactory
-          - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve
-          - com.alibaba.nacos.client.naming.backups.FailoverReactor$DiskFileWriter
-          - com.alibaba.nacos.client.naming.backups.FailoverReactor.SwitchRefresher
-          - com.alibaba.nacos.client.naming.remote.gprc.redo.RedoScheduledTask
-          - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver$Resolve
-          - com.alibaba.nacos.shaded.io.grpc.internal.DelayedClientTransport$5
-          - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
-          - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
-          - com.alibaba.nacos.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder$1
           - com.jd.live.agent.core.thread.NamedThreadFactory
           - com.jd.jr.sgm.client.disruptor.LogEventFactory
           - com.jd.jr.sgm.client.util.AgentThreadFactory
@@ -278,17 +251,19 @@ agent:
           - org.apache.tomcat.util.threads.TaskThreadFactory
         excludeExecutorPrefixes:
           - com.jd.live.agent.shaded.
+          - com.netflix.hystrix.util.HystrixTimer$ScheduledExecutor$
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory$
+          - com.alibaba.nacos.
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
-          - com.alibaba.nacos.client.auth.ram.identify.CredentialWatcher$
-          - com.alibaba.nacos.client.naming.backups.FailoverReactor$$Lambda$
-          - com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate$$Lambda$
-          - com.alibaba.nacos.common.remote.client.RpcClient$$Lambda$
-          - com.alibaba.nacos.common.utils.ThreadFactoryBuilder$$Lambda$
+          - com.alibaba.nacos.
           - com.jd.live.agent.shaded.
           - org.apache.catalina.core.ContainerBase$
           - org.apache.catalina.core.StandardServer$$Lambda$
+          - com.netflix.loadbalancer.PollingServerListUpdater$
+          - com.netflix.hystrix.util.HystrixTimer$
+          - com.netflix.servo.util.ExpiringCache$
     configCenter:
       enabled: ${CONFIG_CENTER_ENABLED:false}
       type: ${CONFIG_CENTER_TYPE:nacos}

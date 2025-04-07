@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudClusterInterceptor;
 
 /**
@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudCl
  */
 @Injectable
 @Extension(value = "FeignRetryableClientDefinition_v2.2")
-@ConditionalOnSpringCloud2GovernanceEnabled
+@ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnSpringRetry
 @ConditionalOnClass(FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
 public class FeignRetryableCloudClusterDefinition extends PluginDefinitionAdapter {

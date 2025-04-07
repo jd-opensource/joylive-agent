@@ -100,6 +100,7 @@
                 <include>com.jd.live:joylive-registry-springgateway2.2</include>
                 <include>com.jd.live:joylive-registry-springgateway3</include>
                 <include>com.jd.live:joylive-registry-springgateway4</include>
+                <include>com.jd.live:joylive-registry-zuul</include>
                 <include>com.jd.live:joylive-router-springweb5</include>
                 <include>com.jd.live:joylive-router-springweb6</include>
                 <include>com.jd.live:joylive-router-springcloud2.1</include>
@@ -110,6 +111,7 @@
                 <include>com.jd.live:joylive-router-springgateway2.2</include>
                 <include>com.jd.live:joylive-router-springgateway3</include>
                 <include>com.jd.live:joylive-router-springgateway4</include>
+                <include>com.jd.live:joylive-router-zuul</include>
                 <include>com.jd.live:joylive-transmission-springweb5</include>
             </includes>
         </dependencySet>
