@@ -23,8 +23,6 @@ import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.thread.NamedThreadFactory;
-import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Waiter;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.SyncConfig;
@@ -42,8 +40,6 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -64,8 +60,6 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
     @Inject(Publisher.POLICY_SUBSCRIBER)
     protected Publisher<PolicySubscription> publisher;
 
-    protected ExecutorService executorService;
-
     protected final Queue<PolicySubscription> subscribers = new ConcurrentLinkedQueue<>();
 
     protected final Waiter.MutexWaiter waiter = new Waiter.MutexWaiter();
@@ -78,13 +72,13 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
     }
 
     @Override
-    protected void startSync() throws Exception {
+    protected void startSync() {
         SyncConfig config = getSyncConfig();
         int concurrency = config.getConcurrency() <= 0 ? CONCURRENCY : config.getConcurrency();
-        executorService = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory(getName(), true));
         publisher.addHandler(handler);
         for (int i = 0; i < concurrency; i++) {
-            executorService.submit(() -> {
+            // use threads to avoid blocking by another agent which maybe enhance the thread pool.
+            Thread thread = new Thread(() -> {
                 while (isStarted()) {
                     PolicySubscription subscription = subscribers.poll();
                     if (subscription != null) {
@@ -92,11 +86,16 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
                     } else {
                         try {
                             waiter.await(1000, TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException ignore) {
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
                         }
                     }
                 }
             });
+            thread.setDaemon(true);
+            thread.setName(getName() + "-" + i);
+            thread.start();
         }
         addTasks(policySupervisor.getSubscriptions());
     }
@@ -105,7 +104,6 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
     protected void stopSync() {
         publisher.removeHandler(handler);
         waiter.wakeup();
-        Close.instance().closeIfExists(executorService, ExecutorService::shutdownNow);
     }
 
     @Override
