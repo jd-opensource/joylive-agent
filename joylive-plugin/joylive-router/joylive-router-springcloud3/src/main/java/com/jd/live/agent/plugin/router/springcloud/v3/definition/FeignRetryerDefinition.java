@@ -37,8 +37,7 @@ public class FeignRetryerDefinition extends PluginDefinitionAdapter {
     public FeignRetryerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
-                        FeignRetryerInterceptor::new)
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), () -> new FeignRetryerInterceptor())
         };
     }
 }

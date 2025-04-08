@@ -45,7 +45,7 @@ public class NameResolverDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        NameResolverInterceptor::new)
+                        () -> new NameResolverInterceptor())
         };
 
     }

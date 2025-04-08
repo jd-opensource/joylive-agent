@@ -43,7 +43,8 @@ public class RequestBuilderDefinition extends PluginDefinitionAdapter {
     public RequestBuilderDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), RequestBuilderInterceptor::new)
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
+                        () -> new RequestBuilderInterceptor())
         };
     }
 }

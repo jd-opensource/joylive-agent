@@ -50,8 +50,7 @@ public class ReactorLoadBalancerDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_CHOOSE).
                                 and(MatcherBuilder.arguments(ARGUMENTS_CHOOSE)),
-                        ReactorLoadBalancerInterceptor::new
-                )
+                        () -> new ReactorLoadBalancerInterceptor())
         };
     }
 }

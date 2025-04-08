@@ -47,7 +47,7 @@ public class GatewayRouteLocatorDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        GatewayRouteLocatorInterceptor::new)
+                        () -> new GatewayRouteLocatorInterceptor())
         };
     }
 }

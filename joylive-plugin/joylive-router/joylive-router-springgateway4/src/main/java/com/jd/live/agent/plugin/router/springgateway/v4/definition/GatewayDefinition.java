@@ -50,7 +50,7 @@ public class GatewayDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        GatewayInterceptor::new
+                        () -> new GatewayInterceptor()
                 )
         };
     }

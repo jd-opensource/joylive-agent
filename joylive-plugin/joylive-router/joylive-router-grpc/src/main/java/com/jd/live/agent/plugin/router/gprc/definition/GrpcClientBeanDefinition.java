@@ -45,7 +45,7 @@ public class GrpcClientBeanDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        GrpcClientBeanInterceptor::new)
+                        () -> new GrpcClientBeanInterceptor())
         };
 
     }

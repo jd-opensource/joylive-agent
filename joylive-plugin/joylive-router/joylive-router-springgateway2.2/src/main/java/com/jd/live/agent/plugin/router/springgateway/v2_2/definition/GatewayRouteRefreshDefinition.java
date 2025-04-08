@@ -41,7 +41,7 @@ public class GatewayRouteRefreshDefinition extends PluginDefinitionAdapter {
     public GatewayRouteRefreshDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_REFRESH_ROUTES_EVENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), GatewayRouteRefreshInterceptor::new)
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), () -> new GatewayRouteRefreshInterceptor())
         };
     }
 }

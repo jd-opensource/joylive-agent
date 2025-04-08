@@ -42,7 +42,7 @@ public class NacosServiceDiscoveryDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HOST_TO_SERVICE_INSTANCE),
-                        NacosServiceDiscoveryInterceptor::new),
+                        () -> new NacosServiceDiscoveryInterceptor()),
         };
     }
 }

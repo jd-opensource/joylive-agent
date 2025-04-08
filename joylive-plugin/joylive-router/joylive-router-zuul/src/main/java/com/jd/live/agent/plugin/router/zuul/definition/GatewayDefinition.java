@@ -41,7 +41,8 @@ public class GatewayDefinition extends PluginDefinitionAdapter {
     public GatewayDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), GatewayInterceptor::new)
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
+                        () -> new GatewayInterceptor())
         };
     }
 }

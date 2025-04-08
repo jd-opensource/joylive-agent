@@ -41,7 +41,8 @@ public class NacosRegistrationDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_NACOS_AUTO_SERVICE_REGISTRATION);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), NacosRegistrationInterceptor::new),
+                        MatcherBuilder.isConstructor(),
+                        () -> new NacosRegistrationInterceptor()),
         };
     }
 }

@@ -41,7 +41,7 @@ public class ServerObserverDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_ON_ERROR),
-                        ServerObserverInterceptor::new)
+                        () -> new ServerObserverInterceptor())
         };
 
     }
