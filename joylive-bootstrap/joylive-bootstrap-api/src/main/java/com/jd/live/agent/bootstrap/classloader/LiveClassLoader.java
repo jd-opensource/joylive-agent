@@ -126,21 +126,22 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         if (!started.get()) {
             throw new ClassNotFoundException("class " + name + " is not found.");
         }
+        ClassLoader candidature = filter == null ? null : filter.getCandidator();
         if (filter != null && filter.loadBySelf(name)) {
             return loadBySelf(getClassLoadingLock(name), name, resolve);
         } else if (filter != null && filter.loadByParent(name)) {
-            return loadByParent(name, resolve);
-        }
-        // first candidature for plugin classloader, use the classloader of the enhanced type and thread context.
-        ClassLoader candidature = filter == null ? null : filter.getCandidator();
-        if (candidature != null && candidature != this) {
-            try {
-                return loadByClassLoader(candidature, name, resolve);
-            } catch (ClassNotFoundException ignored) {
-                // ignore
+            return loadByParent(name, resolve, candidature);
+        } else {
+            // first candidature for plugin classloader, use the classloader of the enhanced type and thread context.
+            if (candidature != null && candidature != this) {
+                try {
+                    return loadByClassLoader(candidature, name, resolve);
+                } catch (ClassNotFoundException ignored) {
+                    // ignore
+                }
             }
+            return loadByDefault(name, resolve);
         }
-        return loadByDefault(name, resolve);
     }
 
     @Override
@@ -191,17 +192,27 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         throw new ClassNotFoundException("class " + name + " is not found.");
     }
 
-
     /**
      * Attempts to load a class using the parent class loader delegation model.
      *
-     * @param name    the fully qualified name of the desired class
-     * @param resolve if true, resolve the class (perform linking and verification)
+     * @param name        the fully qualified name of the desired class
+     * @param resolve     if true, resolve the class (perform linking and verification)
+     * @param candidature the class loader to use for candidature
      * @return the resulting Class object
      * @throws ClassNotFoundException if the class cannot be found by the parent loader
      */
-    private Class<?> loadByParent(String name, boolean resolve) throws ClassNotFoundException {
-        return loadByClassLoader(getParent(), name, resolve);
+    private Class<?> loadByParent(String name, boolean resolve, ClassLoader candidature) throws ClassNotFoundException {
+        ClassLoader parent = getParent();
+        try {
+            return loadByClassLoader(parent, name, resolve);
+        } catch (ClassNotFoundException e) {
+            // javax.servlet.http.HttpServlet in tomcat-core
+            // spring boot jar
+            if (candidature != null && candidature != parent) {
+                return loadByClassLoader(candidature, name, resolve);
+            }
+            throw e;
+        }
     }
 
     /**
