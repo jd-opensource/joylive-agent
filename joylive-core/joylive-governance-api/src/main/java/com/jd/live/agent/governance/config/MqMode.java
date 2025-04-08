@@ -15,17 +15,19 @@
  */
 package com.jd.live.agent.governance.config;
 
-import lombok.Getter;
-import lombok.Setter;
-
 /**
- * LiveConfig is a configuration class that holds the keys for managing live settings within a system.
+ * MQ message consumption modes.
+ * <p>
+ * Defines different isolation strategies for message queue consumers:
+ *
+ * <ul>
+ *   <li>{@link #ISOLATION_CLUSTER} - Consumer isolation at cluster level</li>
+ *   <li>{@link #ISOLATION_TOPIC} - Consumer isolation at topic level</li>
+ *   <li>{@link #SHARED} - No isolation, shared consumption</li>
+ * </ul>
  */
-@Getter
-@Setter
-public class LiveConfig {
-
-    private boolean fallbackLocationIfNoSpace;
-
+public enum MqMode {
+    ISOLATION_CLUSTER,
+    ISOLATION_TOPIC,
+    SHARED,
 }
-

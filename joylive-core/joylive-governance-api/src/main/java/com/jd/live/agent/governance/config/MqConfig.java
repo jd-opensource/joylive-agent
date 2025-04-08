@@ -21,30 +21,82 @@ import com.jd.live.agent.core.util.template.Template;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
+/**
+ * MQ (Message Queue) configuration class that provides dynamic topic and group name generation
+ * based on template expressions. Supports both default configurations and per-topic overrides.
+ */
 public class MqConfig {
 
-    public static final String DEFAULT_GROUP = "${group}${'_unit_'unit}${'_lane_'lane}";
+    public static final String DEFAULT_GROUP = "${group}${'_lane_'lane}";
 
-    public static final String DEFAULT_TOPIC = "${topic}${'_unit_'unit}${'_lane_'lane}";
-
-    @Getter
-    @Setter
-    private String group = DEFAULT_GROUP;
+    public static final String DEFAULT_TOPIC = "${topic}${'_lane_'lane}";
 
     @Getter
     @Setter
-    private String topic = DEFAULT_TOPIC;
+    private MqMode liveMode = MqMode.ISOLATION_CLUSTER;
 
-    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(group, 128));
+    @Getter
+    @Setter
+    private MqMode laneMode = MqMode.SHARED;
 
-    public Evaluator getGroupTemplate() {
-        return groupTemplate.get();
+    @Getter
+    @Setter
+    private String groupExpression;
+
+    @Getter
+    @Setter
+    private Map<String, TopicConfig> topics;
+
+    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(groupExpression, 128));
+
+    /**
+     * Gets the appropriate evaluator for group name generation.
+     *
+     * @param topic The topic name to check for custom configuration (can be null)
+     * @return Evaluator for group name generation, preferring topic-specific configuration if available
+     */
+    public Evaluator getGroupTemplate(String topic) {
+        TopicConfig config = topics == null || topic == null ? null : topics.get(topic);
+        Evaluator evaluator = null;
+        if (config != null) {
+            evaluator = config.getGroupTemplate();
+        }
+        if (evaluator == null) {
+            evaluator = groupTemplate.get();
+        }
+        return evaluator;
     }
 
-    private final LazyObject<Evaluator> topicTemplate = new LazyObject<>(() -> new Template(topic, 128));
+    public boolean isEnabled(String topic) {
+        return topic != null && !topic.isEmpty() && topics != null && topics.containsKey(topic);
+    }
 
-    public Evaluator getTopicTemplate() {
-        return topicTemplate.get();
+    /**
+     * Gets the MQ mode for lane isolation of specified topic.
+     * Falls back to default laneMode if topic not configured.
+     *
+     * @param topic Target topic name (nullable)
+     * @return Configured mode for topic, or default laneMode if not configured
+     */
+    public MqMode getLaneMode(String topic) {
+        TopicConfig config = topics == null || topic == null ? null : topics.get(topic);
+        MqMode mode = config == null ? null : config.getLaneMode();
+        return mode == null ? laneMode : mode;
+    }
+
+    /**
+     * Gets the MQ mode for live isolation of specified topic.
+     * Falls back to default laneMode if topic not configured.
+     *
+     * @param topic Target topic name (nullable)
+     * @return Configured mode for topic, or default laneMode if not configured
+     */
+    public MqMode getLiveMode(String topic) {
+        TopicConfig config = topics == null || topic == null ? null : topics.get(topic);
+        MqMode mode = config == null ? null : config.getLiveMode();
+        return mode == null ? laneMode : mode;
     }
 
 }

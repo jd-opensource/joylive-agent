@@ -15,17 +15,31 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.template.Evaluator;
+import com.jd.live.agent.core.util.template.Template;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * LiveConfig is a configuration class that holds the keys for managing live settings within a system.
- */
-@Getter
-@Setter
-public class LiveConfig {
+public class TopicConfig {
 
-    private boolean fallbackLocationIfNoSpace;
+    @Getter
+    @Setter
+    private MqMode liveMode;
+
+    @Getter
+    @Setter
+    private MqMode laneMode;
+
+    @Getter
+    @Setter
+    private String groupExpression;
+
+    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(groupExpression, 128));
+
+    protected Evaluator getGroupTemplate() {
+        return groupTemplate.get();
+    }
 
 }
 

@@ -191,13 +191,15 @@ agent:
       monitor:
         forwardEnabled: ${CONFIG_MONITOR_FORWARD_TRAFFIC_ENABLED:}
         rejectEnabled: true
+    mq:
+      liveMode: ${CONFIG_LIVE_MQ_MODE:ISOLATION_CLUSTER}
+      laneMode: ${CONFIG_LANE_MQ_MODE:SHARED}
+      groupExpression: ${CONFIG_MQ_GROUP_EXPRESSION:${group}${'_lane_'lane}}
+      topics:
     live:
       fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
-      topics: ${CONFIG_LIVE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:false}
     lane:
-      topics: ${CONFIG_LANE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:false}
+      fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
     router:
       virtual: ${CONFIG_VIRTUAL_SIZE:500}
       spring:

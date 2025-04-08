@@ -18,8 +18,6 @@ package com.jd.live.agent.governance.config;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Set;
-
 /**
  * LaneConfig is a configuration class that holds the keys for identifying specific lanes within a system.
  */
@@ -28,14 +26,6 @@ import java.util.Set;
 public class LaneConfig {
 
     private boolean fallbackLocationIfNoSpace = true;
-
-    private boolean modifyMQGroupEnabled = true;
-
-    private Set<String> topics;
-
-    public boolean withTopic(String topic) {
-        return topic != null && topics != null && topics.contains(topic);
-    }
 
 }
 

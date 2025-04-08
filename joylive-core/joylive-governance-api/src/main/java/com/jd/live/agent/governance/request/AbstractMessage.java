@@ -33,7 +33,7 @@ public abstract class AbstractMessage implements Message {
     /**
      * A function to retrieve header values based on keys.
      */
-    protected Function<String, String> func;
+    protected Function<String, String> headerFunc;
 
     /**
      * The live space ID of the message, lazily initialized.
@@ -60,9 +60,9 @@ public abstract class AbstractMessage implements Message {
      */
     protected String lane;
 
-    public AbstractMessage(String topic, Function<String, String> func) {
+    public AbstractMessage(String topic, Function<String, String> headerFunc) {
         this.topic = topic;
-        this.func = func;
+        this.headerFunc = headerFunc;
     }
 
     @Override
@@ -72,7 +72,7 @@ public abstract class AbstractMessage implements Message {
 
     @Override
     public String getHeader(String key) {
-        return key == null || func == null ? null : func.apply(key);
+        return key == null || headerFunc == null ? null : headerFunc.apply(key);
     }
 
     @Override

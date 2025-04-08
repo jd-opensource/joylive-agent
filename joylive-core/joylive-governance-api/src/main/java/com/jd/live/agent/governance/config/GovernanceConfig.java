@@ -112,6 +112,9 @@ public class GovernanceConfig {
     @Config("service")
     private ServiceConfig serviceConfig = new ServiceConfig();
 
+    @Config("mq")
+    private MqConfig mqConfig = new MqConfig();
+
     @Config("registry")
     private RegistryConfig registryConfig = new RegistryConfig();
 
