@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.core.util.time;
 
-import com.jd.live.agent.core.thread.NamedThreadFactory;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -72,14 +72,14 @@ public class TimeScheduler implements AutoCloseable, Timer {
     private final TimeWheel timeWheel;
 
     /**
-     * The pool of worker threads that execute expired tasks.
+     * The worker threads that execute expired tasks.
      */
-    private ExecutorService workerPool;
+    private List<Thread> workers;
 
     /**
-     * The pool of threads that poll the delay queue for expired tasks.
+     * The boos thread that poll the delay queue for expired tasks.
      */
-    private ExecutorService bossPool;
+    private Thread boss;
 
     /**
      * A queue of tasks that have been cancelled.
@@ -90,6 +90,11 @@ public class TimeScheduler implements AutoCloseable, Timer {
      * A queue of tasks that are pending to be scheduled onto the time wheel.
      */
     private final Queue<TimeWork> flying = new ConcurrentLinkedQueue<>();
+
+    /**
+     * A queue of tasks that are processing.
+     */
+    private final BlockingQueue<TimeWork> working = new LinkedBlockingQueue<>();
 
     /**
      * A count of the tasks that are currently pending execution.
@@ -157,41 +162,63 @@ public class TimeScheduler implements AutoCloseable, Timer {
      */
     public void start() {
         if (started.compareAndSet(false, true)) {
-            this.workerPool = Executors.newFixedThreadPool(workerThreads, new NamedThreadFactory(prefix + "-worker", true));
-            this.bossPool = Executors.newFixedThreadPool(1, new NamedThreadFactory(prefix + "-boss", true));
-            this.bossPool.submit(() -> {
-                while (started.get()) {
-                    try {
-                        // Wait for the next tick, polling for the next TimeSlot.
-                        TimeSlot timeSlot = queue.poll(timeWheel.tickTime, TimeUnit.MILLISECONDS);
-                        if (started.get()) {
-                            // Process cancelled tasks and add new tasks.
-                            cancel();
-                            supply();
-                            if (timeSlot != null) {
-                                // Advance the time wheel and execute tasks in the current TimeSlot.
-                                timeWheel.advance(timeSlot.expiration);
-                                timeSlot.flush(beforeRun);
-                            } else {
-                                // Advance the time wheel by one tick in the absence of due tasks.
-                                timeWheel.advance(timeWheel.now + timeWheel.tickTime);
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        // Handle interruption gracefully by exiting the loop.
-                        break;
-                    }
-                }
-            });
+            this.workers = new ArrayList<>(workerThreads);
+            // Use thread to avoid block by another apm agent which maybe enhance the thread pool.
+            for (int i = 0; i < workerThreads; i++) {
+                workers.add(startThread(prefix + "-worker-" + i, this::processWorking));
+            }
+            boss = startThread(prefix + "-boss", this::processQueue);
         }
     }
 
     @Override
     public void close() {
         if (started.compareAndSet(true, false)) {
-            workerPool.shutdownNow();
-            bossPool.shutdownNow();
+            if (workers != null) {
+                workers.forEach(Thread::interrupt);
+            }
+            if (boss != null) {
+                boss.interrupt();
+            }
         }
+    }
+
+    @Override
+    public Timeout add(final String name, final long time, final Runnable runnable) {
+        return runnable == null ? null : add(new TimeWork(name, timeWheel.getLeastOneTick(time), runnable, afterRun, afterCancel));
+    }
+
+    @Override
+    public Timeout delay(final String name, final long delay, final Runnable runnable) {
+        if (runnable == null) {
+            return null;
+        }
+        long time = timeWheel.getLeastOneTick(delay + System.currentTimeMillis());
+        return add(new TimeWork(name, time, runnable, afterRun, afterCancel));
+    }
+
+    @Override
+    public Timeout add(final TimeTask task) {
+        if (task == null) {
+            return null;
+        }
+        long time = timeWheel.getLeastOneTick(task instanceof DelayTask ? System.currentTimeMillis() + task.getTime() : task.getTime());
+        return add(new TimeWork(task.getName(), time, task, afterRun, afterCancel));
+    }
+
+    /**
+     * Starts and returns a new daemon thread with the given name.
+     *
+     * @param name     the name to assign to the new thread (used for identification)
+     * @param runnable the task to be executed by the new thread
+     * @return the started daemon thread instance
+     */
+    protected Thread startThread(String name, Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        thread.setName(name);
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     /**
@@ -235,31 +262,58 @@ public class TimeScheduler implements AutoCloseable, Timer {
      */
     protected void supply(final TimeWork timeWork) {
         if (!timeWheel.add(timeWork)) {
-            workerPool.submit(timeWork);
+            working.add(timeWork);
         }
     }
 
-    @Override
-    public Timeout add(final String name, final long time, final Runnable runnable) {
-        return runnable == null ? null : add(new TimeWork(name, timeWheel.getLeastOneTick(time), runnable, afterRun, afterCancel));
+    /**
+     * Processes the time wheel queue in a loop while active.
+     * <p>Polls for time slots, cancels expired tasks, supplies new tasks,
+     * and advances the time wheel. Handles interruptions gracefully.
+     */
+    protected void processQueue() {
+        while (started.get()) {
+            try {
+                // Wait for the next tick, polling for the next TimeSlot.
+                TimeSlot timeSlot = queue.poll(timeWheel.tickTime, TimeUnit.MILLISECONDS);
+                if (started.get()) {
+                    // Process cancelled tasks and add new tasks.
+                    cancel();
+                    supply();
+                    if (timeSlot != null) {
+                        // Advance the time wheel and execute tasks in the current TimeSlot.
+                        timeWheel.advance(timeSlot.expiration);
+                        timeSlot.flush(beforeRun);
+                    } else {
+                        // Advance the time wheel by one tick in the absence of due tasks.
+                        timeWheel.advance(timeWheel.now + timeWheel.tickTime);
+                    }
+                }
+            } catch (InterruptedException e) {
+                // Handle interruption gracefully by exiting the loop.
+                break;
+            }
+        }
     }
 
-    @Override
-    public Timeout delay(final String name, final long delay, final Runnable runnable) {
-        if (runnable == null) {
-            return null;
+    /**
+     * Processes working tasks in a loop while active.
+     * <p>Polls for tasks every second and executes them if available.
+     * Handles interruptions gracefully.
+     */
+    protected void processWorking() {
+        while (started.get()) {
+            try {
+                // Wait for task.
+                TimeWork work = working.poll(1000L, TimeUnit.MILLISECONDS);
+                if (started.get() && work != null) {
+                    work.run();
+                }
+            } catch (InterruptedException e) {
+                // Handle interruption gracefully by exiting the loop.
+                break;
+            }
         }
-        long time = timeWheel.getLeastOneTick(delay + System.currentTimeMillis());
-        return add(new TimeWork(name, time, runnable, afterRun, afterCancel));
-    }
-
-    @Override
-    public Timeout add(final TimeTask task) {
-        if (task == null) {
-            return null;
-        }
-        long time = timeWheel.getLeastOneTick(task instanceof DelayTask ? System.currentTimeMillis() + task.getTime() : task.getTime());
-        return add(new TimeWork(task.getName(), time, task, afterRun, afterCancel));
     }
 
     /**
