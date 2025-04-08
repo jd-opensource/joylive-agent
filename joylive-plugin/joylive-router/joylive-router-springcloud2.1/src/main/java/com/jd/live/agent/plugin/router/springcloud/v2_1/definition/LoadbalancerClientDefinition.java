@@ -46,7 +46,8 @@ public class LoadbalancerClientDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(2)),
-                        LoadbalancerClientInterceptor::new),
+                        // cannot LoadbalancerClientInterceptor::new, because of the classloader issue
+                        () -> new LoadbalancerClientInterceptor()),
         };
     }
 }
