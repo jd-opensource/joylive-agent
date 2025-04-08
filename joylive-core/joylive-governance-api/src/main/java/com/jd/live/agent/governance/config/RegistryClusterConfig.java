@@ -20,6 +20,8 @@ public class RegistryClusterConfig {
 
     private String group;
 
+    private boolean groupEnabled;
+
     private RegistryMode mode = RegistryMode.FULL;
 
     public boolean validate() {
@@ -34,6 +36,9 @@ public class RegistryClusterConfig {
     }
 
     public String getGroup(String defaultGroup) {
+        if (!groupEnabled) {
+            return null;
+        }
         return group != null && !group.isEmpty() ? group : defaultGroup;
     }
 }
