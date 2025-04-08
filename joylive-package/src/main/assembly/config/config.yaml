@@ -296,21 +296,21 @@ agent:
           username: ${CONFIG_REGISTRY_USERNAME_FIRST:${REGISTRY_USERNAME:nacos}}
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:nacos}}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:public}
-          group: ${CONFIG_REGISTRY_GROUP_FIRST:${APPLICATION_SERVICE_GROUP}}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
           mode: ${CONFIG_REGISTRY_MODE_SECOND:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_SECOND}
           username: ${CONFIG_REGISTRY_USERNAME_SECOND:${REGISTRY_USERNAME:nacos}}
           password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:nacos}}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:public}
-          group: ${CONFIG_REGISTRY_GROUP_SECOND:${APPLICATION_SERVICE_GROUP}}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
           mode: ${CONFIG_REGISTRY_MODE_THIRD:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_THIRD}
           username: ${CONFIG_REGISTRY_USERNAME_THIRD:${REGISTRY_USERNAME:nacos}}
           password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:nacos}}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:public}
-          group: ${CONFIG_REGISTRY_GROUP_THIRD:${APPLICATION_SERVICE_GROUP}}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD}
   counter:
     gateway: true
     service: true
