@@ -70,6 +70,10 @@
                                     <shadedPattern>com.jd.live.agent.shaded.org.slf4j</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>ch.qos.logback</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.ch.qos.logback</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>com.fasterxml</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.com.fasterxml</shadedPattern>
                                 </relocation>
