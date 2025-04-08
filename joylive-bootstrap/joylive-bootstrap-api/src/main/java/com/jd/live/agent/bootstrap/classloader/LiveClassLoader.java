@@ -133,14 +133,11 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         }
         // first candidature for plugin classloader, use the classloader of the enhanced type and thread context.
         ClassLoader candidature = filter == null ? null : filter.getCandidator();
-        if (candidature != null) {
+        if (candidature != null && candidature != this) {
             try {
                 return loadByClassLoader(candidature, name, resolve);
-            } catch (ClassNotFoundException e) {
-                if (candidature != this) {
-                    return loadByDefault(name, resolve);
-                }
-                throw e;
+            } catch (ClassNotFoundException ignored) {
+                // ignore
             }
         }
         return loadByDefault(name, resolve);
