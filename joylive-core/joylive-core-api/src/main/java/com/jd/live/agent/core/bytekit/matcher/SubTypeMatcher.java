@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.core.bytekit.matcher;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bytekit.type.TypeDef;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 
@@ -31,8 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
-
-    private static final Logger logger = LoggerFactory.getLogger(SubTypeMatcher.class);
 
     private final Class<?> type;
 
