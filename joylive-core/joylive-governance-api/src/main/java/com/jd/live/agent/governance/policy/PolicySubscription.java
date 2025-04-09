@@ -74,7 +74,7 @@ public class PolicySubscription implements ServiceName {
         this.type = type;
         this.syncers = syncers == null || syncers.isEmpty() ? null
                 : syncers.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));
-        this.counter = this.syncers == null ? null : new AtomicInteger(this.syncers.size());
+        this.counter = new AtomicInteger(this.syncers == null ? 0 : this.syncers.size());
     }
 
     /**

@@ -117,7 +117,7 @@ public class AppLifecycle {
      * {@code false}
      */
     private static boolean load() {
-        return incrementAndGet(EVENT_LOAD) == 0;
+        return incrementAndGet(EVENT_LOAD) == 1;
     }
 
     /**

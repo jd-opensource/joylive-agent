@@ -143,6 +143,16 @@ public class AgentEvent {
     }
 
     /**
+     * Creates an AgentEvent indicating that the application is loading.
+     *
+     * @param message the message describing the event
+     * @return a new AgentEvent of type APPLICATION_LOADING
+     */
+    public static AgentEvent onApplicationLoading(String message) {
+        return new AgentEvent(EventType.APPLICATION_LOADING, message);
+    }
+
+    /**
      * Creates an AgentEvent indicating that the application is started.
      *
      * @param message the message describing the event
@@ -212,6 +222,11 @@ public class AgentEvent {
          * Indicates a successful initialization of an agent's policy or configuration.
          */
         AGENT_SERVICE_POLICY_READY,
+
+        /**
+         * Indicates that application is loading.
+         */
+        APPLICATION_LOADING,
 
         /**
          * Indicates that application is started.

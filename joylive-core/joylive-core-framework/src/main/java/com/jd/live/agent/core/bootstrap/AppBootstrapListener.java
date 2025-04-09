@@ -42,6 +42,7 @@ public class AppBootstrapListener extends AppListenerAdapter {
     public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
         application.setClassLoader(classLoader);
         application.setMainClass(mainClass);
+        publisher.offer(AgentEvent.onApplicationLoading("Application is loading"));
     }
 
     @Override
