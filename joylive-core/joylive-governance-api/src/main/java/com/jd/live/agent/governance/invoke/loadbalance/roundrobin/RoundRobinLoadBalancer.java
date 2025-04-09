@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
+import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
 
@@ -47,29 +48,27 @@ public class RoundRobinLoadBalancer extends AbstractLoadBalancer {
      */
     public static final String LOAD_BALANCER_NAME = "ROUND_ROBIN";
 
-    /**
-     * A function that creates a new {@code AtomicLong} instance set to 0L.
-     */
-    private static final Function<Long, AtomicLong> COUNTER_FUNC = s -> new AtomicLong(0L);
+    private static final Function<Long, AtomicLong> POLICY_COUNTER_FUNC = s -> new AtomicLong(0L);
 
-    /**
-     * A map of counters, keyed by load balance policy IDs, for maintaining the round-robin state
-     * specific to a load balance policy.
-     */
-    private final Map<Long, AtomicLong> counters = new ConcurrentHashMap<>();
+    private static final Function<String, AtomicLong> SERVICE_COUNTER_FUNC = s -> new AtomicLong(0L);
 
-    /**
-     * A global counter for the round-robin load balancing algorithm.
-     */
-    private final AtomicLong global = new AtomicLong(0);
+    private final Map<Long, AtomicLong> policyCounters = new ConcurrentHashMap<>();
+
+    private final Map<String, AtomicLong> serviceCounters = new ConcurrentHashMap<>();
+
+    private final AtomicLong globalCounter = new AtomicLong(0);
 
     @Override
     public <T extends Endpoint> Candidate<T> doElect(List<T> endpoints, LoadBalancePolicy policy, Invocation<?> invocation) {
-        AtomicLong counter = global;
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        AtomicLong counter = globalCounter;
+        ServiceMetadata metadata = invocation.getServiceMetadata();
+        ServicePolicy servicePolicy = metadata.getServicePolicy();
         LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+        String uniqueName = loadBalancePolicy != null ? null : metadata.getUniqueName();
         if (loadBalancePolicy != null) {
-            counter = counters.computeIfAbsent(loadBalancePolicy.getId(), COUNTER_FUNC);
+            counter = policyCounters.computeIfAbsent(loadBalancePolicy.getId(), POLICY_COUNTER_FUNC);
+        } else if (uniqueName != null && !uniqueName.isEmpty()) {
+            counter = serviceCounters.computeIfAbsent(uniqueName, SERVICE_COUNTER_FUNC);
         }
         long count = counter.getAndIncrement();
         if (count < 0) {

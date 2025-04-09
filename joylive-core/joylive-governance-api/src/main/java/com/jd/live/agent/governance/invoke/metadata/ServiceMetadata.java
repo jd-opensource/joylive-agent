@@ -140,6 +140,10 @@ public class ServiceMetadata implements Cloneable {
         return result;
     }
 
+    public String getUniqueName() {
+        return serviceGroup == null || serviceGroup.isEmpty() ? serviceName : serviceName + "@" + serviceGroup;
+    }
+
     @Override
     public ServiceMetadata clone() {
         try {
