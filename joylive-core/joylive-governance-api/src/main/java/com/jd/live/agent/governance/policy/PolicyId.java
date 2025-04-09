@@ -16,9 +16,11 @@
 package com.jd.live.agent.governance.policy;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -90,6 +92,33 @@ public class PolicyId implements PolicyIdGen {
         if (id == null && uri != null) {
             id = uri.getId();
         }
+    }
+
+    /**
+     * Sets this object's ID on the target if it lacks one.
+     */
+    protected void supplementId(PolicyInheritWithId<?> target) {
+        if (target != null && target.getId() == null) {
+            target.setId(id);
+        }
+    }
+
+
+    /**
+     * Creates or supplements a target policy object:
+     *
+     * @param <T> Policy type with ID inheritance
+     * @return Supplemented target (or new instance if target was null)
+     */
+    protected <T extends PolicyInheritWithId<T>> T supplement(T source, T target, Function<T, T> creator) {
+        if (source != null) {
+            if (target == null) {
+                target = creator.apply(source);
+                target.setId(id);
+            }
+            target.supplement(source);
+        }
+        return target;
     }
 }
 

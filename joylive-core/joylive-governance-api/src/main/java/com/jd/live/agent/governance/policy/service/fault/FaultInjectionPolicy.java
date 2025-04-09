@@ -52,6 +52,13 @@ public class FaultInjectionPolicy extends PolicyId implements PolicyInheritWithI
 
     private String errorMsg;
 
+    public FaultInjectionPolicy() {
+    }
+
+    public FaultInjectionPolicy(String name) {
+        this.name = name;
+    }
+
     @Override
     public void supplement(FaultInjectionPolicy source) {
         if (source == null) {

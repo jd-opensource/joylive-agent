@@ -20,7 +20,7 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.PolicyIdGen;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
@@ -101,129 +101,59 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Override
     public void supplement(ServicePolicy source) {
-        if (loadBalancePolicy != null && loadBalancePolicy.getId() == null) {
-            loadBalancePolicy.setId(id);
-        }
-        if (clusterPolicy != null && clusterPolicy.getId() == null) {
-            clusterPolicy.setId(id);
-        }
-        if (livePolicy != null && livePolicy.getId() == null) {
-            livePolicy.setId(id);
-        }
-        if (rateLimitPolicies != null && !rateLimitPolicies.isEmpty()) {
-            rateLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_RATE_LIMIT, r.getName())
-                    .parameter(KEY_SERVICE_RATE_LIMIT_TYPE, r.getRealizeType())));
-        }
-        if (concurrencyLimitPolicies != null && !concurrencyLimitPolicies.isEmpty()) {
-            concurrencyLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, r.getName())));
-        }
-        if (loadLimitPolicies != null && !loadLimitPolicies.isEmpty()) {
-            loadLimitPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_LOAD_LIMIT, r.getName())));
-        }
-        if (routePolicies != null && !routePolicies.isEmpty()) {
-            routePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_ROUTE, r.getName())));
-        }
-        if (lanePolicies != null && !lanePolicies.isEmpty()) {
-            lanePolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, r.getLaneSpaceId())));
-        }
-        if (circuitBreakPolicies != null && !circuitBreakPolicies.isEmpty()) {
-            circuitBreakPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, r.getName())));
-        }
-        if (permissionPolicies != null && !permissionPolicies.isEmpty()) {
-            permissionPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, r.getName())));
-        }
-        if (faultInjectionPolicies != null && !faultInjectionPolicies.isEmpty()) {
-            faultInjectionPolicies.forEach(r -> r.supplement(() -> uri.parameter(KEY_FAULT_INJECTION, r.getName())));
-        }
-        if (authPolicy != null && authPolicy.getId() != null) {
-            authPolicy.setId(id);
-        }
+        supplementId(loadBalancePolicy);
+        supplementId(clusterPolicy);
+        supplementId(livePolicy);
+        supplementId(authPolicy);
+        supplementUri(rateLimitPolicies,
+                new UriAppender<>(KEY_SERVICE_RATE_LIMIT, RateLimitPolicy::getName),
+                new UriAppender<>(KEY_SERVICE_RATE_LIMIT_TYPE, RateLimitPolicy::getRealizeType));
+        supplementUri(concurrencyLimitPolicies, new UriAppender<>(KEY_SERVICE_CONCURRENCY_LIMIT, ConcurrencyLimitPolicy::getName));
+        supplementUri(loadLimitPolicies, new UriAppender<>(KEY_SERVICE_LOAD_LIMIT, LoadLimitPolicy::getName));
+        supplementUri(routePolicies, new UriAppender<>(KEY_SERVICE_ROUTE, RoutePolicy::getName));
+        supplementUri(lanePolicies, new UriAppender<>(KEY_SERVICE_LANE_SPACE_ID, LanePolicy::getLaneSpaceId));
+        supplementUri(circuitBreakPolicies, new UriAppender<>(KEY_SERVICE_CIRCUIT_BREAK, CircuitBreakPolicy::getName));
+        supplementUri(permissionPolicies, new UriAppender<>(KEY_SERVICE_AUTH, PermissionPolicy::getName));
+        supplementUri(faultInjectionPolicies, new UriAppender<>(KEY_FAULT_INJECTION, FaultInjectionPolicy::getName));
 
         if (source != null) {
-            livePolicy = copy(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
-            clusterPolicy = copy(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
-            loadBalancePolicy = copy(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
-            authPolicy = copy(source.authPolicy, authPolicy, s -> new AuthPolicy());
-
-            if ((rateLimitPolicies == null || rateLimitPolicies.isEmpty()) &&
-                    (source.rateLimitPolicies != null && !source.rateLimitPolicies.isEmpty())) {
-                rateLimitPolicies = copy(source.rateLimitPolicies,
-                        s -> new RateLimitPolicy(),
-                        s -> uri.parameter(KEY_SERVICE_RATE_LIMIT, s.getName()));
-            }
-            if ((concurrencyLimitPolicies == null || concurrencyLimitPolicies.isEmpty()) &&
-                    (source.concurrencyLimitPolicies != null && !source.concurrencyLimitPolicies.isEmpty())) {
-                concurrencyLimitPolicies = copy(source.concurrencyLimitPolicies,
-                        s -> new ConcurrencyLimitPolicy(),
-                        s -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, s.getName()));
-            }
-            if ((loadLimitPolicies == null || loadLimitPolicies.isEmpty()) &&
-                    (source.loadLimitPolicies != null && !source.loadLimitPolicies.isEmpty())) {
-                loadLimitPolicies = copy(source.loadLimitPolicies,
-                        s -> new LoadLimitPolicy(),
-                        s -> uri.parameter(KEY_SERVICE_LOAD_LIMIT, s.getName()));
-            }
-            if ((routePolicies == null || routePolicies.isEmpty()) &&
-                    (source.routePolicies != null && !source.routePolicies.isEmpty())) {
-                routePolicies = copy(source.routePolicies,
-                        s -> new RoutePolicy(),
-                        s -> uri.parameter(KEY_SERVICE_ROUTE, s.getName()));
-            }
-            if ((lanePolicies == null || lanePolicies.isEmpty()) &&
-                    (source.lanePolicies != null && !source.lanePolicies.isEmpty())) {
-                lanePolicies = copy(source.lanePolicies,
-                        s -> new LanePolicy(),
-                        s -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()));
-            }
-            if ((circuitBreakPolicies == null || circuitBreakPolicies.isEmpty()) &&
-                    (source.circuitBreakPolicies != null && !source.circuitBreakPolicies.isEmpty())) {
-                circuitBreakPolicies = copy(source.circuitBreakPolicies,
-                        s -> new CircuitBreakPolicy(),
-                        s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, s.getName()));
-            }
-            if ((permissionPolicies == null || permissionPolicies.isEmpty()) &&
-                    (source.permissionPolicies != null && !source.permissionPolicies.isEmpty())) {
-                permissionPolicies = copy(source.permissionPolicies,
-                        s -> new PermissionPolicy(),
-                        s -> uri.parameter(KEY_SERVICE_AUTH, s.getName()));
-            }
-            if ((faultInjectionPolicies == null || faultInjectionPolicies.isEmpty()) &&
-                    (source.faultInjectionPolicies != null && !source.faultInjectionPolicies.isEmpty())) {
-                faultInjectionPolicies = copy(source.faultInjectionPolicies,
-                        s -> new FaultInjectionPolicy(),
-                        s -> uri.parameter(KEY_FAULT_INJECTION, s.getName()));
-            }
+            livePolicy = supplement(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
+            clusterPolicy = supplement(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
+            loadBalancePolicy = supplement(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
+            authPolicy = supplement(source.authPolicy, authPolicy, s -> new AuthPolicy());
+            rateLimitPolicies = supplement(source.rateLimitPolicies, rateLimitPolicies, s -> new RateLimitPolicy(),
+                    s -> uri.parameter(KEY_SERVICE_RATE_LIMIT, s.getName()));
+            concurrencyLimitPolicies = supplement(source.concurrencyLimitPolicies, concurrencyLimitPolicies,
+                    s -> new ConcurrencyLimitPolicy(),
+                    s -> uri.parameter(KEY_SERVICE_CONCURRENCY_LIMIT, s.getName()));
+            loadLimitPolicies = supplement(source.loadLimitPolicies, loadLimitPolicies, s -> new LoadLimitPolicy(),
+                    s -> uri.parameter(KEY_SERVICE_LOAD_LIMIT, s.getName()));
+            routePolicies = supplement(source.routePolicies, routePolicies, s -> new RoutePolicy(),
+                    s -> uri.parameter(KEY_SERVICE_ROUTE, s.getName()));
+            lanePolicies = supplement(source.lanePolicies, lanePolicies, s -> new LanePolicy(),
+                    s -> uri.parameter(KEY_SERVICE_LANE_SPACE_ID, s.getLaneSpaceId()));
+            circuitBreakPolicies = supplement(source.circuitBreakPolicies, circuitBreakPolicies,
+                    s -> new CircuitBreakPolicy(),
+                    s -> uri.parameter(KEY_SERVICE_CIRCUIT_BREAK, s.getName()));
+            permissionPolicies = supplement(source.permissionPolicies, permissionPolicies, s -> new PermissionPolicy(),
+                    s -> uri.parameter(KEY_SERVICE_AUTH, s.getName()));
+            faultInjectionPolicies = supplement(source.faultInjectionPolicies, faultInjectionPolicies,
+                    s -> new FaultInjectionPolicy(),
+                    s -> uri.parameter(KEY_FAULT_INJECTION, s.getName()));
         }
-    }
-
-    protected <T extends PolicyInherit.PolicyInheritWithId<T>> T copy(T source,
-                                                                      T target,
-                                                                      Function<T, T> creator) {
-        if (source != null) {
-            if (target == null) {
-                target = creator.apply(source);
-                target.setId(id);
-            }
-            target.supplement(source);
-        }
-        return target;
-    }
-
-    protected <T extends PolicyInheritWithIdGen<T>> List<T> copy(List<T> sources,
-                                                                 Function<T, T> creator,
-                                                                 Function<T, URI> uriFunc) {
-        List<T> result = new ArrayList<>(sources.size());
-        for (T source : sources) {
-            T newPolicy = creator.apply(source);
-            newPolicy.supplement(() -> uriFunc.apply(source));
-            newPolicy.supplement(source);
-            result.add(newPolicy);
-        }
-        return result;
     }
 
     public LanePolicy getLanePolicy(String laneSpaceId) {
         return lanePolicyCache.get(laneSpaceId);
+    }
+
+    @Override
+    public ServicePolicy clone() {
+        try {
+            return (ServicePolicy) super.clone();
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
     }
 
     protected void cache() {
@@ -242,12 +172,59 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         }
     }
 
-    @Override
-    public ServicePolicy clone() {
-        try {
-            return (ServicePolicy) super.clone();
-        } catch (CloneNotSupportedException e) {
-            return null;
+    /**
+     * Updates URIs for target policies by applying parameter transformations.
+     *
+     * @param targets Policies to modify (ignored if null/empty)
+     * @param params  URI parameters to apply (name-value mappings per policy)
+     */
+    protected <V extends PolicyIdGen> void supplementUri(List<V> targets, UriAppender<V>... params) {
+        if (targets != null && !targets.isEmpty() && params != null && params.length > 0) {
+            targets.forEach(r -> r.supplement(() -> {
+                URI uri = this.uri;
+                for (UriAppender<V> p : params) {
+                    uri = uri.parameter(p.name, p.valueFunc.apply(r));
+                }
+                return uri;
+            }));
+        }
+    }
+
+    /**
+     * Creates or supplements policy instances:
+     *
+     * @return New list of supplemented policies (or original targets if no-op)
+     */
+    protected <T extends PolicyInheritWithIdGen<T>> List<T> supplement(List<T> sources,
+                                                                       List<T> targets,
+                                                                       Function<T, T> creator,
+                                                                       Function<T, URI> uriFunc) {
+        if (targets != null && !targets.isEmpty() || sources == null || sources.isEmpty()) {
+            return targets;
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (T source : sources) {
+            T newPolicy = creator.apply(source);
+            newPolicy.supplement(() -> uriFunc.apply(source));
+            newPolicy.supplement(source);
+            result.add(newPolicy);
+        }
+        return result;
+    }
+
+    /**
+     * URI parameter definition for policy-specific URI transformations.
+     */
+    @Getter
+    protected static class UriAppender<V> {
+
+        private final String name;
+
+        private final Function<V, String> valueFunc;
+
+        public UriAppender(String name, Function<V, String> valueFunc) {
+            this.name = name;
+            this.valueFunc = valueFunc;
         }
     }
 

@@ -78,7 +78,6 @@ public class RateLimitPolicy extends AbstractLimitPolicy
      * Default constructor for creating an instance without initializing fields.
      */
     public RateLimitPolicy() {
-        super();
     }
 
     /**
@@ -88,6 +87,11 @@ public class RateLimitPolicy extends AbstractLimitPolicy
      */
     public RateLimitPolicy(String name) {
         super(name);
+    }
+
+    public RateLimitPolicy(String name, String realizeType) {
+        super(name);
+        this.realizeType = realizeType;
     }
 
     /**

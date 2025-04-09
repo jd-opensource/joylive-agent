@@ -64,6 +64,10 @@ public class PermissionPolicy extends PolicyId implements ConditionalMatcher<Tag
     public PermissionPolicy() {
     }
 
+    public PermissionPolicy(String name) {
+        this.name = name;
+    }
+
     public PermissionPolicy(String name, RelationType relationType, List<TagCondition> conditions, AllowResult type, long version) {
         this.name = name;
         this.relationType = relationType;

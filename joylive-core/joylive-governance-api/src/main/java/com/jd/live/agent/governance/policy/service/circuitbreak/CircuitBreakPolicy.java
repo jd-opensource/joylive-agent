@@ -207,6 +207,13 @@ public class CircuitBreakPolicy extends PolicyId
      */
     private transient Map<String, CircuitBreakInspector> inspectors = new ConcurrentHashMap<>();
 
+    public CircuitBreakPolicy() {
+    }
+
+    public CircuitBreakPolicy(String name) {
+        this.name = name;
+    }
+
     public CircuitBreakLevel getLevel() {
         return level == null ? CircuitBreakLevel.INSTANCE : level;
     }

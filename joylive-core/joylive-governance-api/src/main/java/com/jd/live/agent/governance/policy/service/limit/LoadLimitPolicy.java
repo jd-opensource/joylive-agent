@@ -33,6 +33,10 @@ public class LoadLimitPolicy extends AbstractLimitPolicy implements LimitPolicy,
     public LoadLimitPolicy() {
     }
 
+    public LoadLimitPolicy(String name) {
+        super(name);
+    }
+
     public boolean isEmpty() {
         return cpuUsage == null && loadUsage == null;
     }

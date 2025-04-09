@@ -45,6 +45,13 @@ public class LanePolicy extends PolicyId implements PolicyInheritWithIdGen<LaneP
      */
     private FallbackType fallbackType;
 
+    public LanePolicy() {
+    }
+
+    public LanePolicy(String laneSpaceId) {
+        this.laneSpaceId = laneSpaceId;
+    }
+
     @Override
     public void supplement(LanePolicy source) {
         if (source == null) {

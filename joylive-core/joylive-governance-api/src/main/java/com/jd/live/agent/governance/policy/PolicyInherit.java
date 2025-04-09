@@ -43,13 +43,14 @@ public interface PolicyInherit<T> {
     interface PolicyInheritWithId<T> extends PolicyInherit<T> {
 
         /**
-         * Assigns an identifier to this policy. The identifier is typically used to reference the
-         * policy in a data store or to differentiate it from other policies that may have similar settings.
+         * Assigns an identifier to this policy.
          *
          * @param id the unique identifier to be assigned to the policy; must not be null.
          * @throws IllegalArgumentException if the provided id is null.
          */
         void setId(Long id);
+
+        Long getId();
     }
 
     /**
