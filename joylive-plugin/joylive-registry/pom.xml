@@ -27,5 +27,6 @@
         <module>joylive-registry-springgateway4</module>
         <module>joylive-registry-zuul</module>
         <module>joylive-registry-nacos</module>
+        <module>joylive-registry-eureka</module>
     </modules>
 </project>
