@@ -16,8 +16,6 @@
 package com.jd.live.agent.governance.service.sync.http;
 
 import com.jd.live.agent.core.config.AgentPath;
-import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.template.Template;
@@ -45,12 +43,6 @@ public abstract class AbstractLiveSpaceHttpSyncer extends AbstractLiveSpaceSynce
     protected static final String SPACE_ID = "space_id";
 
     protected static final String SPACE_VERSION = "space_version";
-
-    @Inject(Application.COMPONENT_APPLICATION)
-    protected Application application;
-
-    @Inject(ObjectParser.JSON)
-    protected ObjectParser parser;
 
     protected HttpWatcher watcher;
 

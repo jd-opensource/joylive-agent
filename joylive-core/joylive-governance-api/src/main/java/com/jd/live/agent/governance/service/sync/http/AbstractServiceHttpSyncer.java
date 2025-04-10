@@ -26,6 +26,7 @@ import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.*;
 import com.jd.live.agent.governance.service.sync.SyncKey.ServiceKey;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -36,6 +37,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * An abstract class that provides a base implementation for synchronizing data with an HTTP service.
  */
+@Setter
 public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends AbstractServiceSyncer<K> {
 
     protected static final String APPLICATION_NAME = "application";
@@ -48,9 +50,6 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
 
     @Inject(Timer.COMPONENT_TIMER)
     protected Timer timer;
-
-    @Inject(ObjectParser.JSON)
-    protected ObjectParser jsonParser;
 
     @Override
     protected Syncer<K, Service> createSyncer() {
@@ -100,7 +99,7 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
     protected SyncResponse<Service> getResponse(SyncConfig config, String uri) throws IOException {
         HttpResponse<ApiResponse<Service>> response = HttpUtils.get(uri,
                 conn -> configure(config, conn),
-                reader -> jsonParser.read(reader, new TypeReference<ApiResponse<Service>>() {
+                reader -> parser.read(reader, new TypeReference<ApiResponse<Service>>() {
                 }));
         return ApiResponse.from(response).asSyncResponse();
     }

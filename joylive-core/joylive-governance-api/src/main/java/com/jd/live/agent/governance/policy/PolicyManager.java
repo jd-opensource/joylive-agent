@@ -62,6 +62,7 @@ import com.jd.live.agent.governance.subscription.policy.PolicyWatcherSupervisor;
 import com.jd.live.agent.governance.subscription.policy.listener.LaneSpaceListener;
 import com.jd.live.agent.governance.subscription.policy.listener.LiveSpaceListener;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceListener;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.*;
@@ -84,10 +85,6 @@ import static com.jd.live.agent.governance.subscription.policy.PolicyWatcher.*;
 public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, ExtensionInitializer, InvocationContext, ServiceSupervisorAware {
 
     private static final Logger logger = LoggerFactory.getLogger(PolicyManager.class);
-
-    private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
-
-    private final Map<String, PolicySubscription> subscriptions = new ConcurrentHashMap<>();
 
     @Getter
     @Inject(Publisher.POLICY_SUBSCRIBER)
@@ -191,9 +188,75 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private ConfigCenter configCenter;
 
+    private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
+
+    private final Map<String, PolicySubscription> subscriptions = new ConcurrentHashMap<>();
+
     private final PolicyWatcherSupervisor policyWatcherSupervisor = new PolicyWatcherManager();
 
     private final AtomicBoolean warmup = new AtomicBoolean(false);
+
+    public PolicyManager() {
+    }
+
+    @Builder
+    public PolicyManager(Publisher<PolicySubscription> policyPublisher,
+                         Publisher<AgentEvent> systemPublisher,
+                         Publisher<TrafficEvent> trafficPublisher,
+                         Application application,
+                         ObjectParser objectParser,
+                         boolean liveEnabled,
+                         boolean laneEnabled,
+                         boolean flowControlEnabled,
+                         GovernanceConfig governanceConfig,
+                         Map<String, UnitFunction> unitFunctions,
+                         Map<String, VariableFunction> variableFunctions,
+                         Map<String, VariableParser<?, ?>> variableParsers,
+                         Map<String, TagMatcher> tagMatchers,
+                         Map<String, LoadBalancer> loadBalancers,
+                         LoadBalancer loadBalancer,
+                         Map<String, ClusterInvoker> clusterInvokers,
+                         ClusterInvoker clusterInvoker,
+                         InboundFilter[] inboundFilters,
+                         RouteFilter[] routeFilters,
+                         OutboundFilter[] outboundFilters,
+                         RouteFilter[] liveFilters,
+                         Timer timer,
+                         Map<String, Propagation> propagations,
+                         List<Propagation> propagationList,
+                         Propagation propagation,
+                         CounterManager counterManager,
+                         List<String> serviceSyncers,
+                         ConfigCenter configCenter) {
+        this.policyPublisher = policyPublisher;
+        this.systemPublisher = systemPublisher;
+        this.trafficPublisher = trafficPublisher;
+        this.application = application;
+        this.objectParser = objectParser;
+        this.liveEnabled = liveEnabled;
+        this.laneEnabled = laneEnabled;
+        this.flowControlEnabled = flowControlEnabled;
+        this.governanceConfig = governanceConfig;
+        this.unitFunctions = unitFunctions;
+        this.variableFunctions = variableFunctions;
+        this.variableParsers = variableParsers;
+        this.tagMatchers = tagMatchers;
+        this.loadBalancers = loadBalancers;
+        this.loadBalancer = loadBalancer;
+        this.clusterInvokers = clusterInvokers;
+        this.clusterInvoker = clusterInvoker;
+        this.inboundFilters = inboundFilters;
+        this.routeFilters = routeFilters;
+        this.outboundFilters = outboundFilters;
+        this.liveFilters = liveFilters;
+        this.timer = timer;
+        this.propagations = propagations;
+        this.propagationList = propagationList;
+        this.propagation = propagation;
+        this.counterManager = counterManager;
+        this.serviceSyncers = serviceSyncers;
+        this.configCenter = configCenter;
+    }
 
     @Override
     public PolicySupplier getPolicySupplier() {

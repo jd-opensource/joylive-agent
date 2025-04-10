@@ -18,6 +18,7 @@ package com.jd.live.agent.core.parser;
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
 
@@ -84,4 +85,10 @@ public interface ObjectParser {
      * @param obj    The object to be serialized.
      */
     void write(Writer writer, Object obj);
+
+    default String write(Object obj) {
+        StringWriter writer = new StringWriter();
+        write(writer, obj);
+        return writer.toString();
+    }
 }

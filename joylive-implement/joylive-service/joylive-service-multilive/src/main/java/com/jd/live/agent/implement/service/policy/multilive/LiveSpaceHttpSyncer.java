@@ -33,6 +33,7 @@ import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.governance.service.sync.http.AbstractLiveSpaceHttpSyncer;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
+import lombok.Setter;
 
 import java.io.StringReader;
 import java.util.List;
@@ -40,6 +41,7 @@ import java.util.List;
 /**
  * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive control plane.
  */
+@Setter
 @Injectable
 @Extension("LiveSpaceSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")

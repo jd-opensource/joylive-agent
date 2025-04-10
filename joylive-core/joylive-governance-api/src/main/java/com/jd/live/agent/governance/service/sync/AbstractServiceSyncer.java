@@ -35,6 +35,7 @@ import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
 import com.jd.live.agent.governance.subscription.policy.PolicyListener;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
+import lombok.Setter;
 
 import java.io.StringReader;
 import java.util.List;
@@ -54,9 +55,11 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
 
     protected static final int CONCURRENCY = 5;
 
+    @Setter
     @Inject(PolicySupervisor.COMPONENT_POLICY_SUPERVISOR)
     protected PolicySupervisor policySupervisor;
 
+    @Setter
     @Inject(Publisher.POLICY_SUBSCRIBER)
     protected Publisher<PolicySubscription> publisher;
 

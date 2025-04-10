@@ -18,6 +18,7 @@ package com.jd.live.agent.core.instance;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Configurable;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -119,16 +120,11 @@ public class Application {
      * Default constructor initializes the process ID and instance with a unique application ID.
      */
     public Application() {
-        this.pid = pid();
-        this.instance = APP_ID;
-        this.timestamp = System.currentTimeMillis();
+        this(null, APP_ID, null, null, null);
     }
 
     public Application(String name) {
-        this.name = name;
-        this.pid = pid();
-        this.instance = APP_ID;
-        this.timestamp = System.currentTimeMillis();
+        this(name, APP_ID, null, null, null);
     }
 
     /**
@@ -140,6 +136,7 @@ public class Application {
      * @param location location information
      * @param meta     metadata
      */
+    @Builder
     public Application(String name, String instance, AppService service, Location location, Map<String, String> meta) {
         this.name = name;
         this.instance = instance;
@@ -147,7 +144,7 @@ public class Application {
         this.location = location;
         this.meta = meta;
         this.pid = pid();
-        this.instance = APP_ID;
+        this.timestamp = System.currentTimeMillis();
     }
 
     /**

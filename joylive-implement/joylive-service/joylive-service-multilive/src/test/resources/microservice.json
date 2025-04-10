@@ -1,0 +1,980 @@
+[
+  {
+    "name": "service-consumer",
+    "serviceType": "HTTP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "realizeType": "Resilience4j",
+              "slidingWindows": [
+                {
+                  "threshold": 1,
+                  "timeWindowInMs": 1000
+                },
+                {
+                  "threshold": 3,
+                  "timeWindowInMs": 2000
+                }
+              ],
+              "maxWaitMs": 100,
+              "actionParameters": {
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "paths": [
+          {
+            "path": "/echo",
+            "matchType": "EQUAL",
+            "servicePolicy": {
+              "livePolicy": {
+                "writeProtect": false,
+                "cellPolicy": "PREFER_LOCAL_CELL"
+              }
+            },
+            "methods": [
+              {
+                "name": "GET",
+                "servicePolicy": {
+                  "livePolicy": {
+                    "cellPolicy": "PREFER_LOCAL_CELL",
+                    "cellRemotes": [
+                      {
+                        "name": "cell1",
+                        "type": "INSTANCES",
+                        "threshold": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "service-provider",
+    "serviceType": "HTTP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "PREFER_LOCAL_UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "clusterPolicy": {
+            "type": "failover",
+            "retryPolicy": {
+              "retry": 10,
+              "interval": 1000,
+              "timeout": 5000,
+              "errorCodes": [
+                500,
+                502
+              ],
+              "methods": [
+                "GET"
+              ],
+              "exceptions": [
+                "java.lang.NullPointException"
+              ],
+              "version": 1704038400000
+            }
+          },
+          "permissionPolicies": [
+            {
+              "name": "auth-rule-2",
+              "version": 1704038400001,
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "auth",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ],
+              "type": "DENY"
+            }
+          ],
+          "authPolicy": {
+            "type": "token",
+            "params": {
+              "token": "1234567890",
+              "token.key": "Authorization"
+            }
+          },
+          "faultInjectionPolicies": [
+            {
+              "name": "fault-rule-1",
+              "version": 1704038400000,
+              "type": "delay",
+              "percent": 50,
+              "delayTimeMs": 1000,
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "fault",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "fault-rule-2",
+              "version": 1704038400000,
+              "type": "error",
+              "percent": 50,
+              "errorCode": 400,
+              "errorMsg": "Fault Injection Error",
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "fault",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ],
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "realizeType": "Resilience4j",
+              "slidingWindows": [
+                {
+                  "threshold": 1,
+                  "timeWindowInMs": 1000
+                },
+                {
+                  "threshold": 3,
+                  "timeWindowInMs": 2000
+                }
+              ],
+              "maxWaitMs": 100,
+              "actionParameters": {
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ],
+          "concurrencyLimitPolicies": [
+            {
+              "name": "limit-rule-2",
+              "version": 1704038400000,
+              "realizeType": "Resilience4j",
+              "maxConcurrency": 10,
+              "maxWaitMs": 100,
+              "actionParameters": {
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ],
+          "routePolicies": [
+            {
+              "name": "route1",
+              "order": 10,
+              "tagRules": [
+                {
+                  "order": 10,
+                  "relationType": "AND",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit1"
+                      ]
+                    },
+                    {
+                      "opType": "IN",
+                      "type": "header",
+                      "key": "x-live-cell",
+                      "values": [
+                        "cell1",
+                        "cell2"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "x-live-unit",
+                          "values": [
+                            "unit1"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "route2",
+              "order": 5,
+              "tagRules": [
+                {
+                  "order": 1,
+                  "relationType": "OR",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit2"
+                      ]
+                    },
+                    {
+                      "opType": "IN",
+                      "type": "header",
+                      "key": "x-live-cell",
+                      "values": [
+                        "cell4"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "x-live-unit",
+                          "values": [
+                            "unit1"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "circuitBreakPolicies": [
+            {
+              "name": "cb1",
+              "level": "SERVICE",
+              "slidingWindowType": "time",
+              "slidingWindowSize": 5,
+              "minCallsThreshold": 1,
+              "codePolicy": {
+                "parser": "JsonPath",
+                "expression": "$.code"
+              },
+              "errorCodes": [
+                "500",
+                "502"
+              ],
+              "failureRateThreshold": 20,
+              "slowCallRateThreshold": 20,
+              "slowCallDurationThreshold": 1000,
+              "waitDurationInOpenState": 50,
+              "allowedCallsInHalfOpenState": 3,
+              "forceOpen": false,
+              "realizeType": "Resilience4j",
+              "degradeConfig": {
+                "responseCode": 200,
+                "attributes": {
+                  "degrade-header-1": "service1",
+                  "degrade-header-2": "service2"
+                },
+                "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+              },
+              "version": 1
+            },
+            {
+              "name": "cb2",
+              "level": "API",
+              "slidingWindowType": "count",
+              "slidingWindowSize": 5,
+              "minCallsThreshold": 1,
+              "errorCodes": [
+                "500",
+                "502"
+              ],
+              "failureRateThreshold": 20,
+              "slowCallRateThreshold": 20,
+              "slowCallDurationThreshold": 1000,
+              "waitDurationInOpenState": 50,
+              "allowedCallsInHalfOpenState": 3,
+              "forceOpen": false,
+              "realizeType": "Resilience4j",
+              "degradeConfig": {
+                "responseCode": 200,
+                "attributes": {
+                  "degrade-header-1": "api1",
+                  "degrade-header-2": "api2"
+                },
+                "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+              },
+              "version": 1
+            },
+            {
+              "name": "cb3",
+              "level": "INSTANCE",
+              "slidingWindowType": "count",
+              "slidingWindowSize": 5,
+              "minCallsThreshold": 1,
+              "errorCodes": [
+                "500",
+                "502"
+              ],
+              "failureRateThreshold": 20,
+              "slowCallRateThreshold": 20,
+              "slowCallDurationThreshold": 1000,
+              "waitDurationInOpenState": 50,
+              "allowedCallsInHalfOpenState": 3,
+              "forceOpen": false,
+              "realizeType": "Resilience4j",
+              "degradeConfig": {
+                "responseCode": 200,
+                "attributes": {
+                  "degrade-header-1": "instance1",
+                  "degrade-header-2": "instance2"
+                },
+                "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+              },
+              "version": 1
+            }
+          ]
+        },
+        "paths": [
+          {
+            "path": "/echo",
+            "matchType": "EQUAL",
+            "servicePolicy": {
+              "livePolicy": {
+                "writeProtect": false,
+                "cellPolicy": "PREFER_LOCAL_CELL"
+              }
+            },
+            "methods": [
+              {
+                "name": "GET",
+                "servicePolicy": {
+                  "livePolicy": {
+                    "unitPolicy": "PREFER_LOCAL_UNIT",
+                    "unitRemotes": [
+                      {
+                        "name": "unit2",
+                        "type": "INSTANCES",
+                        "threshold": 1
+                      }
+                    ],
+                    "cellPolicy": "PREFER_LOCAL_CELL",
+                    "cellRemotes": [
+                      {
+                        "name": "cell1",
+                        "type": "INSTANCES",
+                        "threshold": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "service-provider-reactive",
+    "serviceType": "HTTP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "PREFER_LOCAL_UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "clusterPolicy": {
+            "type": "failover",
+            "retryPolicy": {
+              "retry": 10,
+              "interval": 1000,
+              "timeout": 5000,
+              "errorCodes": [
+                500,
+                502
+              ],
+              "methods": [
+                "GET"
+              ],
+              "exceptions": [
+                "java.lang.NullPointException"
+              ],
+              "version": 1704038400000
+            }
+          },
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "realizeType": "Redis",
+              "slidingWindows": [
+                {
+                  "threshold": 100,
+                  "timeWindowInMs": 1000
+                }
+              ],
+              "maxWaitMs": 100,
+              "actionParameters": {
+                "type": "Single",
+                "address": "127.0.0.1:6379"
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "query",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "dubbo3-provider",
+    "serviceType": "RPC_APP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        },
+        "paths": [
+          {
+            "path": "com.jd.live.agent.demo.service.HelloService",
+            "matchType": "EQUAL",
+            "methods": [
+              {
+                "name": "status",
+                "servicePolicy": {
+                  "clusterPolicy": {
+                    "type": "failover",
+                    "retryPolicy": {
+                      "retry": 2,
+                      "interval": 1000,
+                      "timeout": 5000,
+                      "exceptions": [
+                        "com.jd.live.agent.demo.exception.RetryableException"
+                      ],
+                      "version": 1704038400000
+                    }
+                  },
+                  "circuitBreakPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "com.jd.live.agent.demo.exception.BreakableException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 50,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "realizeType": "Resilience4j",
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "dubbo2.7-provider",
+    "serviceType": "RPC_APP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        },
+        "paths": [
+          {
+            "path": "com.jd.live.agent.demo.service.HelloService",
+            "matchType": "EQUAL",
+            "methods": [
+              {
+                "name": "status",
+                "servicePolicy": {
+                  "circuitBreakPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "java.lang.RuntimeException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 50,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "realizeType": "Resilience4j",
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.jd.live.agent.demo.service.HelloService",
+    "serviceType": "RPC_INTERFACE",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT",
+            "writeProtect": false,
+            "cellPolicy": "PREFER_LOCAL_CELL"
+          }
+        },
+        "paths": [
+          {
+            "path": "/",
+            "matchType": "EQUAL",
+            "methods": [
+              {
+                "name": "status",
+                "servicePolicy": {
+                  "circuitBreakPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "java.lang.RuntimeException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 50,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "realizeType": "Resilience4j",
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "grpc-consumer",
+    "serviceType": "RPC_APP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          }
+        },
+        "paths": [
+          {
+            "path": "/get",
+            "matchType": "EQUAL",
+            "servicePolicy": {
+              "livePolicy": {
+                "writeProtect": false,
+                "cellPolicy": "PREFER_LOCAL_CELL"
+              }
+            },
+            "methods": [
+              {
+                "name": "GET",
+                "servicePolicy": {
+                  "livePolicy": {
+                    "cellPolicy": "PREFER_LOCAL_CELL",
+                    "cellRemotes": [
+                      {
+                        "name": "cell1",
+                        "type": "INSTANCES",
+                        "threshold": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "grpc-provider",
+    "serviceType": "RPC_APP",
+    "version": 0,
+    "groups": [
+      {
+        "name": "default",
+        "defaultGroup": true,
+        "servicePolicy": {
+          "livePolicy": {
+            "unitPolicy": "PREFER_LOCAL_UNIT"
+          },
+          "loadBalancePolicy": {
+            "policyType": "ROUND_ROBIN"
+          },
+          "clusterPolicy": {
+            "type": "failover",
+            "retryPolicy": {
+              "retry": 10,
+              "interval": 1000,
+              "timeout": 5000,
+              "errorCodes": [
+                13,
+                14
+              ],
+              "methods": [
+                "get"
+              ],
+              "exceptions": [
+                "java.lang.NullPointException"
+              ],
+              "version": 1704038400000
+            }
+          },
+          "rateLimitPolicies": [
+            {
+              "name": "limit-rule-1",
+              "version": 1704038400000,
+              "realizeType": "Resilience4j",
+              "slidingWindows": [
+                {
+                  "threshold": 1,
+                  "timeWindowInMs": 1000
+                },
+                {
+                  "threshold": 3,
+                  "timeWindowInMs": 2000
+                }
+              ],
+              "maxWaitMs": 100,
+              "actionParameters": {
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "header",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ],
+          "concurrencyLimitPolicies": [
+            {
+              "name": "limit-rule-2",
+              "version": 1704038400000,
+              "realizeType": "Resilience4j",
+              "maxConcurrency": 10,
+              "maxWaitMs": 100,
+              "actionParameters": {
+              },
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "header",
+                  "opType": "EQUAL",
+                  "key": "limiter",
+                  "values": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          ],
+          "permissionPolicies": [
+            {
+              "name": "auth-rule-2",
+              "version": 1704038400001,
+              "relationType": "AND",
+              "conditions": [
+                {
+                  "type": "header",
+                  "opType": "EQUAL",
+                  "key": "x-live-unit",
+                  "values": [
+                    "unit1"
+                  ]
+                }
+              ],
+              "type": "DENY"
+            }
+          ],
+          "routePolicies": [
+            {
+              "name": "route1",
+              "order": 10,
+              "tagRules": [
+                {
+                  "order": 10,
+                  "relationType": "AND",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit1"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "x-live-unit",
+                          "values": [
+                            "unit1"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "route2",
+              "order": 10,
+              "tagRules": [
+                {
+                  "order": 10,
+                  "relationType": "OR",
+                  "conditions": [
+                    {
+                      "opType": "EQUAL",
+                      "type": "header",
+                      "key": "x-live-unit",
+                      "values": [
+                        "unit2"
+                      ]
+                    },
+                    {
+                      "opType": "IN",
+                      "type": "header",
+                      "key": "x-live-cell",
+                      "values": [
+                        "cell3"
+                      ]
+                    }
+                  ],
+                  "destinations": [
+                    {
+                      "weight": 100,
+                      "relationType": "AND",
+                      "conditions": [
+                        {
+                          "opType": "EQUAL",
+                          "key": "x-live-unit",
+                          "values": [
+                            "unit2"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "circuitBreakPolicies": [
+            {
+              "name": "cb1",
+              "level": "SERVICE",
+              "slidingWindowType": "time",
+              "slidingWindowSize": 5,
+              "minCallsThreshold": 2,
+              "errorCodes": [
+                "13"
+              ],
+              "failureRateThreshold": 1,
+              "slowCallRateThreshold": 20,
+              "slowCallDurationThreshold": 1000,
+              "waitDurationInOpenState": 50,
+              "allowedCallsInHalfOpenState": 3,
+              "forceOpen": false,
+              "realizeType": "Resilience4j",
+              "degradeConfig": {
+                "responseCode": 0,
+                "attributes": {
+                  "degrade-header-1": "service1",
+                  "degrade-header-2": "service2"
+                },
+                "responseBody": "{\n    \"name\": \"zhangsan\",\n    \"gender\": 200,\n    \"cell\": \"cell1\"\n\n}"
+              },
+              "version": 1
+            }
+          ]
+        },
+        "paths": []
+      }
+    ]
+  }
+]

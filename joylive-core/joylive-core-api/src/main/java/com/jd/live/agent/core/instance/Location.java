@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.instance;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -64,6 +65,28 @@ public class Location {
 
     // The IP address of the host machine.
     private String ip;
+
+    public Location() {
+    }
+
+    @Builder
+    public Location(String cloud, String region, String zone,
+                    String liveSpaceId, String unitRuleId, String unit, String cell,
+                    String laneSpaceId, String lane,
+                    String cluster, String host, String ip) {
+        this.cloud = cloud;
+        this.region = region;
+        this.zone = zone;
+        this.liveSpaceId = liveSpaceId;
+        this.unitRuleId = unitRuleId;
+        this.unit = unit;
+        this.cell = cell;
+        this.laneSpaceId = laneSpaceId;
+        this.lane = lane;
+        this.cluster = cluster;
+        this.host = host;
+        this.ip = ip;
+    }
 
     public boolean inLiveSpace(String spaceId) {
         if (spaceId == null || spaceId.isEmpty()) {

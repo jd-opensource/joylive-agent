@@ -48,8 +48,8 @@
     <properties>
         <revision>1.6.1-SNAPSHOT</revision>
         <lombok.version>1.18.34</lombok.version>
-        <mockito-core.version>4.11.0</mockito-core.version>
-        <junit-jupiter.version>5.10.1</junit-jupiter.version>
+        <mockito.version>5.10.0</mockito.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
 
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
@@ -74,6 +74,7 @@
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <flatten-maven-plugin.version>1.5.0</flatten-maven-plugin.version>
         <license-maven-plugin.version>4.3</license-maven-plugin.version>
+        <junit.version>4.13.2</junit.version>
     </properties>
 
     <modules>
@@ -103,6 +104,12 @@
             </dependency>
 
             <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit-jupiter.version}</version>
@@ -111,7 +118,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${mockito-core.version}</version>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

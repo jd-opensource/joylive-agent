@@ -35,6 +35,7 @@ import com.jd.live.agent.governance.service.sync.api.ApiResult;
 import com.jd.live.agent.governance.service.sync.http.AbstractServiceHttpSyncer;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
+import lombok.Setter;
 
 import java.io.IOException;
 
@@ -43,6 +44,7 @@ import java.io.IOException;
  */
 @Injectable
 @Extension("LiveServiceSyncer")
+@Setter
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
@@ -74,7 +76,7 @@ public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey>
     protected SyncResponse<Service> getResponse(SyncConfig config, String uri) throws IOException {
         HttpResponse<ApiResponse<ApiResult<Service>>> response = HttpUtils.get(uri,
                 conn -> configure(config, conn),
-                reader -> jsonParser.read(reader, new TypeReference<ApiResponse<ApiResult<Service>>>() {
+                reader -> parser.read(reader, new TypeReference<ApiResponse<ApiResult<Service>>>() {
                 }));
         return ApiResponse.from(response).asSyncResponse(ApiResult::asSyncResponse);
     }
