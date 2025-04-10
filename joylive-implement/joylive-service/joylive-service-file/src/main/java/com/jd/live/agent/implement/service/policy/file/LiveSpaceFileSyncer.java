@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.file.FileWatcher;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -39,6 +40,7 @@ import java.util.List;
  *
  * @since 1.0.0
  */
+@Setter
 @Getter
 @Injectable
 @Extension("LiveSpaceFileSyncer")

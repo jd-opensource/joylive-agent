@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.service.sync.Subscription;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
 import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import lombok.Setter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,6 +44,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSyncer.class);
 
+    @Setter
     @Inject(value = Publisher.CONFIG, nullable = true)
     protected Publisher<FileEvent> publisher;
 

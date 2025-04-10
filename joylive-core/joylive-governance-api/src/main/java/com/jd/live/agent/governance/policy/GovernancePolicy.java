@@ -160,10 +160,12 @@ public class GovernancePolicy {
      *
      * @param liveSpaces The list of live spaces governed by this policy.
      * @param services   The list of services governed by this policy.
+     * @param laneSpaces The list of lane spaces governed by this policy.
      */
-    public GovernancePolicy(List<LiveSpace> liveSpaces, List<Service> services) {
+    public GovernancePolicy(List<LiveSpace> liveSpaces, List<Service> services, List<LaneSpace> laneSpaces) {
         this.liveSpaces = liveSpaces;
         this.services = services;
+        this.laneSpaces = laneSpaces;
     }
 
     /**

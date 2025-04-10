@@ -124,6 +124,13 @@ public class Application {
         this.timestamp = System.currentTimeMillis();
     }
 
+    public Application(String name) {
+        this.name = name;
+        this.pid = pid();
+        this.instance = APP_ID;
+        this.timestamp = System.currentTimeMillis();
+    }
+
     /**
      * Custom constructor for setting application properties.
      *

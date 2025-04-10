@@ -1,0 +1,94 @@
+[
+  {
+    "id": "1",
+    "name": "默认空间",
+    "defaultSpace": true,
+    "lanes": [
+      {
+        "code": "production",
+        "name": "production lane",
+        "defaultLane": true,
+        "fallbackType": "REJECT"
+      },
+      {
+        "code": "beta",
+        "name": "beta lane",
+        "fallbackType": "DEFAULT"
+      },
+      {
+        "code": "test",
+        "name": "test lane",
+        "fallbackType": "CUSTOM",
+        "fallbackLane": "beta"
+      }
+    ],
+    "rules": [
+      {
+        "id": "1",
+        "laneCode": "beta",
+        "relationType": "OR",
+        "order": 0,
+        "conditions": [
+          {
+            "type": "query",
+            "opType": "EQUAL",
+            "key": "aaa",
+            "values": [
+              "true"
+            ]
+          },
+          {
+            "type": "query",
+            "opType": "EQUAL",
+            "key": "bbb",
+            "values": [
+              "true"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "laneCode": "test",
+        "relationType": "AND",
+        "order": 10,
+        "conditions": [
+          {
+            "type": "host",
+            "opType": "EQUAL",
+            "key": "",
+            "values": [
+              "www.jd.com"
+            ]
+          },
+          {
+            "type": "query",
+            "opType": "EQUAL",
+            "key": "beta",
+            "values": [
+              "true"
+            ]
+          }
+        ]
+      }
+    ],
+    "domains": [
+      {
+        "host": "demo.live.local",
+        "rules": [
+          "1",
+          "2"
+        ],
+        "paths": [
+          {
+            "path": "/",
+            "rules": [
+              "1",
+              "2"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

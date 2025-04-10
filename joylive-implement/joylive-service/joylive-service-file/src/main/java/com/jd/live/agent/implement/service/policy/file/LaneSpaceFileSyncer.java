@@ -15,20 +15,21 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.file.FileWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -40,6 +41,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Getter
+@Setter
 @Injectable
 @Extension("LaneSpaceFileSyncer")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "file")

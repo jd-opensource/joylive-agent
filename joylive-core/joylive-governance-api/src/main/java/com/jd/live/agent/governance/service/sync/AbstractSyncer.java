@@ -11,6 +11,7 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.service.AbstractPolicyService;
+import lombok.Setter;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -26,13 +27,16 @@ public abstract class AbstractSyncer<K extends SyncKey, T> extends AbstractPolic
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSyncer.class);
 
+    @Setter
     @Inject(Application.COMPONENT_APPLICATION)
     protected Application application;
 
-    @Inject(value = AgentPath.COMPONENT_AGENT_PATH)
+    @Inject(value = AgentPath.COMPONENT_AGENT_PATH, nullable = true)
+    @Setter
     protected AgentPath agentPath;
 
     @Inject(ObjectParser.JSON)
+    @Setter
     protected ObjectParser parser;
 
     protected Syncer<K, T> syncer;
@@ -108,7 +112,12 @@ public abstract class AbstractSyncer<K extends SyncKey, T> extends AbstractPolic
      * @param name      the filename to use for saving the configuration (must not be {@code null} or empty)
      */
     protected void saveConfig(String config, String directory, String name) {
-        File file = directory != null && !directory.isEmpty() ? new File(agentPath.getOutputPath(), directory) : agentPath.getOutputPath();
+        if (agentPath == null) {
+            return;
+        }
+        File file = directory != null && !directory.isEmpty()
+                ? new File(agentPath.getOutputPath(), directory)
+                : agentPath.getOutputPath();
         if (!file.exists()) {
             file.mkdirs();
         }

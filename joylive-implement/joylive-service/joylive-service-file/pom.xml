@@ -20,6 +20,17 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-eventbus-jbus</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-parser-jackson</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

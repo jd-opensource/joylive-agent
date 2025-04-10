@@ -7,62 +7,62 @@
       "namespace": "apaas-livespace"
     },
     "spec": {
+      "id": "v4bEh4kd6Jvu5QBX09qYq-qlbcs",
       "code": "7Jei1Q5nlDbx0dRB4ZKd",
       "name": "TestLiveSpace",
-      "workspaceId": 6,
       "version": "2023120609580935201",
       "tenantId": "tenant1",
       "units": [
         {
-          "code": "bj",
-          "name": "beijing",
+          "code": "unit1",
+          "name": "unit1",
           "type": "UNIT",
           "accessMode": "READ_WRITE",
           "labels": {
-            "region": "cn-north-2"
+            "region": "region1"
           },
           "cells": [
             {
-              "code": "m6",
-              "name": "M6",
+              "code": "cell1",
+              "name": "cell1",
               "accessMode": "READ_WRITE",
               "labels": {
-                "zone": "cn-north-2b"
+                "zone": "zone1"
               }
             },
             {
-              "code": "hc",
-              "name": "HC",
+              "code": "cell2",
+              "name": "cell2",
               "accessMode": "READ_WRITE",
               "labels": {
-                "zone": "cn-north-2c"
+                "zone": "zone2"
               }
             },
             {
-              "code": "yz2",
-              "name": "YZ2",
+              "code": "cell3",
+              "name": "cell3",
               "accessMode": "READ_WRITE",
               "labels": {
-                "zone": "cn-north-2a"
+                "zone": "zone3"
               }
             }
           ]
         },
         {
-          "code": "bj-xc",
-          "name": "beijing-test-unit",
+          "code": "unit2",
+          "name": "unit2",
           "type": "UNIT",
           "accessMode": "READ_WRITE",
           "labels": {
-            "region": "cn-north-2"
+            "region": "region2"
           },
           "cells": [
             {
-              "code": "m6-xc",
-              "name": "M6-XC",
+              "code": "cell4",
+              "name": "cell4",
               "accessMode": "READ_WRITE",
               "labels": {
-                "zone": "cn-north-2b"
+                "zone": "zone4"
               }
             }
           ]
@@ -70,23 +70,23 @@
       ],
       "domains": [
         {
-          "host": "jr-gw-unit.jd.com",
+          "host": "demo.live.local",
           "protocols": [
             "http",
             "https"
           ],
-          "unitFlag": true,
+          "liveType": "CROSS_REGION_LIVE",
           "correctionType": "UPSTREAM",
           "unitDomainEnabled": true,
           "unitDomains": [
             {
-              "unit": "bj-xc",
-              "host": "bj-xc-jr-gw-unit.jd.com",
+              "unit": "unit1",
+              "host": "unit1-demo.live.local",
               "backend": ":8080"
             },
             {
-              "unit": "bj",
-              "host": "bj-jr-gw-unit.jd.com",
+              "unit": "unit2",
+              "host": "unit2-demo.live.local",
               "backend": ":8080"
             }
           ],
@@ -96,8 +96,8 @@
               "ruleId": 1003,
               "ruleName": "Test",
               "customVariableSource": false,
-              "variable": "pin",
-              "variableSource": "getPinByQuery",
+              "variable": "user",
+              "variableSource": "getUserByQuery",
               "bizVariableEnabled": false,
               "bizVariableName": "",
               "bizVariableScope": null,
@@ -111,20 +111,20 @@
         {
           "id": 1003,
           "name": "Test",
-          "type": "CROSS_REGION_LIVE",
+          "liveType": "CROSS_REGION_LIVE",
           "business": "",
-          "variable": "pin",
-          "variableSource": "getPinByQuery",
-          "actionNoVariable": "CENTER",
-          "function": "BKDRHash",
+          "variable": "user",
+          "variableSource": "getUserByQuery",
+          "variableFunction": "BKDRHash",
+          "variableMissingAction": "CENTER",
           "modulo": 10000,
           "units": [
             {
-              "code": "bj",
+              "code": "unit1",
               "allows": [
               ],
               "prefixes": [
-                "dev"
+                "unit1"
               ],
               "ranges": [
                 {
@@ -134,19 +134,19 @@
               ],
               "cells": [
                 {
-                  "code": "m6",
+                  "code": "cell1",
                   "allows": [],
                   "prefixes": [],
                   "weight": 40
                 },
                 {
-                  "code": "hc",
+                  "code": "cell2",
                   "allows": [],
                   "prefixes": [],
                   "weight": 40
                 },
                 {
-                  "code": "yz2",
+                  "code": "cell3",
                   "allows": [],
                   "prefixes": [],
                   "weight": 20
@@ -154,11 +154,11 @@
               ]
             },
             {
-              "code": "bj-xc",
+              "code": "unit2",
               "allows": [
               ],
               "prefix": [
-                "xc"
+                "unit2"
               ],
               "ranges": [
                 {
@@ -168,7 +168,7 @@
               ],
               "cells": [
                 {
-                  "code": "m6-xc",
+                  "code": "cell4",
                   "allows": [],
                   "prefixes": [],
                   "weight": 100
@@ -180,13 +180,13 @@
       ],
       "variables": [
         {
-          "name": "pin",
+          "name": "user",
           "type": "unit",
           "sources": [
             {
-              "name": "getPinByQuery",
+              "name": "getUserByQuery",
               "scope": "QUERY",
-              "key": "pin",
+              "key": "user",
               "func": "",
               "header": ""
             }

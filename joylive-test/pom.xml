@@ -14,7 +14,6 @@
     <modules>
         <module>joylive-test-extension</module>
         <module>joylive-test-inject</module>
-        <module>joylive-test-file</module>
         <module>joylive-test-bytebuddy</module>
     </modules>
 
