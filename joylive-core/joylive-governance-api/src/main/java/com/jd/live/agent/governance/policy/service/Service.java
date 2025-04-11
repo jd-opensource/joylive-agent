@@ -66,7 +66,7 @@ public class Service extends PolicyOwner implements ServiceName {
     @Getter
     private transient ServiceGroup defaultGroup;
 
-    private transient final Cache<String, ServiceGroup> groupCache = new MapCache<>(new ListBuilder<>(() -> groups, null, ServiceGroup::getName, String::toUpperCase));
+    private transient final Cache<String, ServiceGroup> groupCache = new MapCache<>(new ListBuilder<>(() -> groups, null, ServiceGroup::getName, String::toLowerCase));
 
     public Service() {
     }

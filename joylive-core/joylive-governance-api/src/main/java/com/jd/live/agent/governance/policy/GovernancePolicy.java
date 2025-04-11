@@ -135,7 +135,7 @@ public class GovernancePolicy {
         return result;
     });
 
-    private final transient Cache<String, Service> serviceCache = new MapCache<>(new ListBuilder<>(() -> services, null, Service::getName, String::toUpperCase));
+    private final transient Cache<String, Service> serviceCache = new MapCache<>(new ListBuilder<>(() -> services, null, Service::getName, String::toLowerCase));
 
     private final transient Cache<String, Service> serviceAliasCache = new MapCache<>(() -> {
         Map<String, Service> result = new HashMap<>();
