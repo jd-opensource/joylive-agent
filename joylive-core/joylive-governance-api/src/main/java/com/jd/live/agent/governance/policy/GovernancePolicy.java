@@ -23,6 +23,8 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
+import com.jd.live.agent.core.util.map.MapBuilder.LowercaseMapBuilder;
 import com.jd.live.agent.governance.policy.db.DatabaseCluster;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
@@ -91,34 +93,9 @@ public class GovernancePolicy {
 
     private final transient Cache<String, LaneSpace> laneSpaceCache = new MapCache<>(new ListBuilder<>(() -> laneSpaces, LaneSpace::getId));
 
-    private final transient Cache<String, Domain> domainCache = new MapCache<>(() -> {
-        Map<String, Domain> laneDomains = new HashMap<>();
-        if (laneSpaces != null) {
-            for (LaneSpace laneSpace : laneSpaces) {
-                if (laneSpace.getDomains() != null) {
-                    for (LaneDomain laneDomain : laneSpace.getDomains()) {
-                        laneDomains.put(laneDomain.getHost(), new Domain(laneDomain.getHost(), new DomainPolicy(laneSpace, laneDomain)));
-                    }
-                }
-            }
-        }
-
-        Map<String, Domain> liveDomains = new HashMap<>();
-        if (liveSpaces != null) {
-            for (LiveSpace liveSpace : liveSpaces) {
-                LiveSpec liveSpec = liveSpace.getSpec();
-                if (liveSpec.getDomains() != null) {
-                    for (LiveDomain liveDomain : liveSpec.getDomains()) {
-                        liveDomains.put(liveDomain.getHost(), new Domain(liveDomain.getHost(), new DomainPolicy(liveSpace, liveDomain)));
-                        if (liveDomain.getUnitDomains() != null) {
-                            for (UnitDomain unitDomain : liveDomain.getUnitDomains()) {
-                                liveDomains.put(unitDomain.getHost(), new Domain(unitDomain.getHost(), new DomainPolicy(liveSpace, liveDomain, unitDomain)));
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    private final transient Cache<String, Domain> domainCache = new MapCache<>((LowercaseMapBuilder<Domain>) () -> {
+        Map<String, Domain> laneDomains = getLaneDomains();
+        Map<String, Domain> liveDomains = getLiveDomains();
 
         Map<String, Domain> result = new HashMap<>(Integer.max(liveDomains.size(), laneDomains.size()));
         for (Domain liveDomain : liveDomains.values()) {
@@ -135,7 +112,7 @@ public class GovernancePolicy {
         return result;
     });
 
-    private final transient Cache<String, Service> serviceCache = new MapCache<>(new ListBuilder<>(() -> services, null, Service::getName, String::toLowerCase));
+    private final transient Cache<String, Service> serviceCache = new MapCache<>(new LowercaseListBuilder<>(() -> services, null, Service::getName));
 
     private final transient Cache<String, Service> serviceAliasCache = new MapCache<>(() -> {
         Map<String, Service> result = new HashMap<>();
@@ -408,5 +385,44 @@ public class GovernancePolicy {
         result.services = services;
         result.dbClusters = dbClusters;
         return result;
+    }
+
+    private Map<String, Domain> getLiveDomains() {
+        String host;
+        Map<String, Domain> liveDomains = new HashMap<>();
+        if (liveSpaces != null) {
+            for (LiveSpace liveSpace : liveSpaces) {
+                LiveSpec liveSpec = liveSpace.getSpec();
+                if (liveSpec.getDomains() != null) {
+                    for (LiveDomain liveDomain : liveSpec.getDomains()) {
+                        host = liveDomain.getHost().toLowerCase();
+                        liveDomains.put(host, new Domain(host, new DomainPolicy(liveSpace, liveDomain)));
+                        if (liveDomain.getUnitDomains() != null) {
+                            for (UnitDomain unitDomain : liveDomain.getUnitDomains()) {
+                                host = unitDomain.getHost().toLowerCase();
+                                liveDomains.put(host, new Domain(host, new DomainPolicy(liveSpace, liveDomain, unitDomain)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return liveDomains;
+    }
+
+    private Map<String, Domain> getLaneDomains() {
+        String host;
+        Map<String, Domain> laneDomains = new HashMap<>();
+        if (laneSpaces != null) {
+            for (LaneSpace laneSpace : laneSpaces) {
+                if (laneSpace.getDomains() != null) {
+                    for (LaneDomain laneDomain : laneSpace.getDomains()) {
+                        host = laneDomain.getHost().toLowerCase();
+                        laneDomains.put(host, new Domain(host, new DomainPolicy(laneSpace, laneDomain)));
+                    }
+                }
+            }
+        }
+        return laneDomains;
     }
 }

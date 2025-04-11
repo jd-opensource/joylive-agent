@@ -25,4 +25,20 @@ public interface MapBuilder<K, T> {
     default Function<K, K> getKeyConverter() {
         return null;
     }
+
+    /**
+     * A {@link MapBuilder} extension that converts all keys to lowercase before insertion.
+     * This ensures case-insensitive key comparisons in the resulting map.
+     *
+     * @param <T> the type of values stored in the map
+     *
+     * @see MapBuilder
+     */
+    interface LowercaseMapBuilder<T> extends MapBuilder<String, T> {
+
+        @Override
+        default Function<String, String> getKeyConverter() {
+            return String::toLowerCase;
+        }
+    }
 }

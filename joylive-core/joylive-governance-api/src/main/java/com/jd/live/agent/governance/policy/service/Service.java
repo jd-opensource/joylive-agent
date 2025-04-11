@@ -18,7 +18,7 @@ package com.jd.live.agent.governance.policy.service;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
-import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
@@ -66,7 +66,7 @@ public class Service extends PolicyOwner implements ServiceName {
     @Getter
     private transient ServiceGroup defaultGroup;
 
-    private transient final Cache<String, ServiceGroup> groupCache = new MapCache<>(new ListBuilder<>(() -> groups, null, ServiceGroup::getName, String::toLowerCase));
+    private transient final Cache<String, ServiceGroup> groupCache = new MapCache<>(new LowercaseListBuilder<>(() -> groups, null, ServiceGroup::getName));
 
     public Service() {
     }
