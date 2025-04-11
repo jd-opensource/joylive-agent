@@ -336,7 +336,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         }
         namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
         String fullName = getUniqueName(namespace, service);
-        PolicySubscription subscription = subscriptions.get(fullName);
+        // fix for eureka by uppercase
+        String fullKey = fullName.toUpperCase();
+        PolicySubscription subscription = subscriptions.get(fullKey);
         return subscription != null && subscription.isReady();
     }
 
@@ -503,14 +505,15 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     /**
      * Subscribes a {@link PolicySubscription} to the policy publisher.
      *
-     * @param subscriber The {@link PolicySubscription} to be subscribed.
+     * @param subscription The {@link PolicySubscription} to be subscribed.
      */
-    protected CompletableFuture<Void> subscribe(PolicySubscription subscriber) {
-        PolicySubscription exist = subscriptions.putIfAbsent(subscriber.getFullName(), subscriber);
+    protected CompletableFuture<Void> subscribe(PolicySubscription subscription) {
+        // fix for eureka by subscription.getFullKey()
+        PolicySubscription exist = subscriptions.putIfAbsent(subscription.getFullKey(), subscription);
         if (exist == null) {
             // notify syncer by event bus.
-            policyPublisher.offer(subscriber);
-            return subscriber.watch();
+            policyPublisher.offer(subscription);
+            return subscription.watch();
         } else {
             return exist.watch();
         }

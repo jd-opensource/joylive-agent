@@ -47,6 +47,8 @@ public class PolicySubscription implements ServiceName {
 
     private final String fullName;
 
+    private final String fullKey;
+
     private final String type;
 
     private final Map<String, AtomicBoolean> syncers;
@@ -71,6 +73,8 @@ public class PolicySubscription implements ServiceName {
         this.name = name;
         this.namespace = namespace;
         this.fullName = ServiceName.getUniqueName(namespace, name);
+        // fix for eureka
+        this.fullKey = fullName.toUpperCase();
         this.type = type;
         this.syncers = syncers == null || syncers.isEmpty() ? null
                 : syncers.stream().collect(Collectors.toMap(o -> o, o -> new AtomicBoolean(false)));

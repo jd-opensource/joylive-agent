@@ -164,7 +164,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             instance.setGroup(application.getService().getGroup());
         }
         String name = getName(instance.getService(), instance.getGroup());
-        Registration registration = registrations.computeIfAbsent(name, n -> createRegistration(n, instance, doRegister));
+        // fix for eureka
+        String upper = name.toUpperCase();
+        Registration registration = registrations.computeIfAbsent(upper, n -> createRegistration(name, instance, doRegister));
         if (ready.get()) {
             registration.register();
         } else {
@@ -184,7 +186,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             instance.setGroup(application.getService().getGroup());
         }
         String name = getName(instance.getService(), instance.getGroup());
-        Registration registration = registrations.remove(name);
+        // fix for eureka
+        String upper = name.toUpperCase();
+        Registration registration = registrations.remove(upper);
         if (registration != null) {
             registration.unregister();
         }
@@ -213,7 +217,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
-        Subscription subscription = subscriptions.computeIfAbsent(name, s -> createSubscription(s, targetGroup));
+        // fix for eureka
+        String upper = name.toUpperCase();
+        Subscription subscription = subscriptions.computeIfAbsent(upper, s -> createSubscription(name, targetGroup));
         subscription.addConsumer(consumer);
         subscription.subscribe();
     }
@@ -225,7 +231,9 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
         group = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, group);
-        return subscriptions.containsKey(name);
+        // fix for eureka
+        String upper = name.toUpperCase();
+        return subscriptions.containsKey(upper);
     }
 
     @Override
@@ -240,14 +248,18 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
-        return subscriptions.get(name);
+        // fix for eureka
+        String upper = name.toUpperCase();
+        return subscriptions.get(upper);
     }
 
     @Override
     public void update(String service, List<ServiceEndpoint> instances) {
         if (service != null && !service.isEmpty()) {
             String name = getName(service, serviceConfig.getGroup(service));
-            Subscription subscription = subscriptions.get(name);
+            // fix for eureka
+            String upper = name.toUpperCase();
+            Subscription subscription = subscriptions.get(upper);
             if (subscription != null) {
                 subscription.update(FRAMEWORK, null, new InstanceEvent(service, instances));
             }
