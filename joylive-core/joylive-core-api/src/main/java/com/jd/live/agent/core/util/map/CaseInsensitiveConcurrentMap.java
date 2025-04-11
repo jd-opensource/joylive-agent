@@ -22,31 +22,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class CaseInsensitiveConcurrentHashMap<V> extends ConcurrentHashMap<String, V> implements Serializable {
+public class CaseInsensitiveConcurrentMap<V> extends ConcurrentHashMap<String, V> implements Serializable {
 
-    public CaseInsensitiveConcurrentHashMap() {
+    public CaseInsensitiveConcurrentMap() {
         super();
     }
 
-    public CaseInsensitiveConcurrentHashMap(int initialCapacity) {
+    public CaseInsensitiveConcurrentMap(int initialCapacity) {
         super(initialCapacity);
     }
 
-    public CaseInsensitiveConcurrentHashMap(Map<? extends String, ? extends V> m) {
+    public CaseInsensitiveConcurrentMap(Map<? extends String, ? extends V> m) {
         super(m);
     }
 
-    public CaseInsensitiveConcurrentHashMap(int initialCapacity, float loadFactor) {
+    public CaseInsensitiveConcurrentMap(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor);
     }
 
-    public CaseInsensitiveConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+    public CaseInsensitiveConcurrentMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
         super(initialCapacity, loadFactor, concurrencyLevel);
     }
 
     @Override
     public V get(Object key) {
-        return super.get(key);
+        return super.get(key.toString().toUpperCase());
     }
 
     @Override
@@ -61,8 +61,9 @@ public class CaseInsensitiveConcurrentHashMap<V> extends ConcurrentHashMap<Strin
 
     @Override
     public void putAll(Map<? extends String, ? extends V> m) {
-        for (Map.Entry<? extends String, ? extends V> e : m.entrySet())
+        for (Map.Entry<? extends String, ? extends V> e : m.entrySet()) {
             put(e.getKey(), e.getValue());
+        }
     }
 
     @Override

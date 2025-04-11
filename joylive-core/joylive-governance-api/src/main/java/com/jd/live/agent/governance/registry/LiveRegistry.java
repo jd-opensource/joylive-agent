@@ -30,7 +30,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentHashMap;
+import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
@@ -92,10 +92,10 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     private volatile List<RegistryService> registries = null;
 
     // fix for eureka
-    private final Map<String, Registration> registrations = new CaseInsensitiveConcurrentHashMap<>();
+    private final Map<String, Registration> registrations = new CaseInsensitiveConcurrentMap<>();
 
     // fix for eureka
-    private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentHashMap<>();
+    private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
     private final AtomicBoolean ready = new AtomicBoolean(false);
 

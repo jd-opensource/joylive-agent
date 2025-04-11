@@ -34,7 +34,7 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.service.ServiceSupervisorAware;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentHashMap;
+import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
@@ -192,7 +192,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
     // fix for eureka by uppercase
-    private final Map<String, PolicySubscription> subscriptions = new CaseInsensitiveConcurrentHashMap<>();
+    private final Map<String, PolicySubscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
     private final PolicyWatcherSupervisor policyWatcherSupervisor = new PolicyWatcherManager();
 
