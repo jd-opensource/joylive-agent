@@ -52,7 +52,12 @@ public class EurekaEndpoint extends AbstractEndpoint implements ServiceEndpoint 
 
     @Override
     public String getService() {
-        return instance.getVIPAddress();
+        return instance.getAppName();
+    }
+
+    @Override
+    public String getGroup() {
+        return instance.getAppGroupName();
     }
 
     @Override
