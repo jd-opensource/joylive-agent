@@ -6,9 +6,10 @@
 2. Added support for Apache HttpClient governance with Spring Cloud Zuul
 3. Added support for multi-registry registration.
 4. Added support for registering Spring Boot applications, converting them into microservices.
-5. Added support for maximum circuit breaker instance ratio
-6. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
-7. Fixed other issues and improved stability.
+5. Added support for Eureka service registry
+6. Added support for maximum circuit breaker instance ratio
+7. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
+8. Fixed other issues and improved stability.
 
 ## 1.6.0
 
