@@ -46,17 +46,17 @@ public class CaseInsensitiveConcurrentMap<V> extends ConcurrentHashMap<String, V
 
     @Override
     public V get(Object key) {
-        return super.get(key.toString().toUpperCase());
+        return super.get(key.toString().toLowerCase());
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return super.containsKey(key.toString().toUpperCase());
+        return super.containsKey(key.toString().toLowerCase());
     }
 
     @Override
     public V put(String key, V value) {
-        return super.put(key.toUpperCase(), value);
+        return super.put(key.toLowerCase(), value);
     }
 
     @Override
@@ -68,52 +68,52 @@ public class CaseInsensitiveConcurrentMap<V> extends ConcurrentHashMap<String, V
 
     @Override
     public V remove(Object key) {
-        return super.remove(key.toString().toUpperCase());
+        return super.remove(key.toString().toLowerCase());
     }
 
     @Override
     public V putIfAbsent(String key, V value) {
-        return super.putIfAbsent(key.toUpperCase(), value);
+        return super.putIfAbsent(key.toLowerCase(), value);
     }
 
     @Override
     public boolean remove(Object key, Object value) {
-        return super.remove(key.toString().toUpperCase(), value);
+        return super.remove(key.toString().toLowerCase(), value);
     }
 
     @Override
     public boolean replace(String key, V oldValue, V newValue) {
-        return super.replace(key.toUpperCase(), oldValue, newValue);
+        return super.replace(key.toLowerCase(), oldValue, newValue);
     }
 
     @Override
     public V replace(String key, V value) {
-        return super.replace(key.toUpperCase(), value);
+        return super.replace(key.toLowerCase(), value);
     }
 
     @Override
     public V getOrDefault(Object key, V defaultValue) {
-        return super.getOrDefault(key.toString().toUpperCase(), defaultValue);
+        return super.getOrDefault(key.toString().toLowerCase(), defaultValue);
     }
 
     @Override
     public V computeIfAbsent(String key, Function<? super String, ? extends V> mappingFunction) {
-        return super.computeIfAbsent(key.toUpperCase(), k -> mappingFunction.apply(key));
+        return super.computeIfAbsent(key.toLowerCase(), k -> mappingFunction.apply(key));
     }
 
     @Override
     public V computeIfPresent(String key, BiFunction<? super String, ? super V, ? extends V> remappingFunction) {
-        return super.computeIfPresent(key.toUpperCase(), (k, v) -> remappingFunction.apply(key, v));
+        return super.computeIfPresent(key.toLowerCase(), (k, v) -> remappingFunction.apply(key, v));
     }
 
     @Override
     public V compute(String key, BiFunction<? super String, ? super V, ? extends V> remappingFunction) {
-        return super.compute(key.toUpperCase(), (k, v) -> remappingFunction.apply(key, v));
+        return super.compute(key.toLowerCase(), (k, v) -> remappingFunction.apply(key, v));
     }
 
     @Override
     public V merge(String key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        return super.merge(key.toUpperCase(), value, remappingFunction);
+        return super.merge(key.toLowerCase(), value, remappingFunction);
     }
 
 }
