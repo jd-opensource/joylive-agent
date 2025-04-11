@@ -34,6 +34,7 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.service.ServiceSupervisorAware;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentHashMap;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
@@ -190,7 +191,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
-    private final Map<String, PolicySubscription> subscriptions = new ConcurrentHashMap<>();
+    // fix for eureka by uppercase
+    private final Map<String, PolicySubscription> subscriptions = new CaseInsensitiveConcurrentHashMap<>();
 
     private final PolicyWatcherSupervisor policyWatcherSupervisor = new PolicyWatcherManager();
 
@@ -336,9 +338,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         }
         namespace = namespace == null || namespace.isEmpty() ? application.getService().getNamespace() : namespace;
         String fullName = getUniqueName(namespace, service);
-        // fix for eureka by uppercase
-        String fullKey = fullName.toUpperCase();
-        PolicySubscription subscription = subscriptions.get(fullKey);
+        PolicySubscription subscription = subscriptions.get(fullName);
         return subscription != null && subscription.isReady();
     }
 
@@ -508,8 +508,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      * @param subscription The {@link PolicySubscription} to be subscribed.
      */
     protected CompletableFuture<Void> subscribe(PolicySubscription subscription) {
-        // fix for eureka by subscription.getFullKey()
-        PolicySubscription exist = subscriptions.putIfAbsent(subscription.getFullKey(), subscription);
+        PolicySubscription exist = subscriptions.putIfAbsent(subscription.getFullName(), subscription);
         if (exist == null) {
             // notify syncer by event bus.
             policyPublisher.offer(subscription);

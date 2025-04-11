@@ -30,6 +30,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentHashMap;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
@@ -90,9 +91,11 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     private volatile List<RegistryService> registries = null;
 
-    private final Map<String, Registration> registrations = new ConcurrentHashMap<>();
+    // fix for eureka
+    private final Map<String, Registration> registrations = new CaseInsensitiveConcurrentHashMap<>();
 
-    private final Map<String, Subscription> subscriptions = new ConcurrentHashMap<>();
+    // fix for eureka
+    private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentHashMap<>();
 
     private final AtomicBoolean ready = new AtomicBoolean(false);
 
@@ -164,9 +167,8 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             instance.setGroup(application.getService().getGroup());
         }
         String name = getName(instance.getService(), instance.getGroup());
-        // fix for eureka
-        String upper = name.toUpperCase();
-        Registration registration = registrations.computeIfAbsent(upper, n -> createRegistration(name, instance, doRegister));
+        // CaseInsensitiveConcurrentHashMap
+        Registration registration = registrations.computeIfAbsent(name, n -> createRegistration(n, instance, doRegister));
         if (ready.get()) {
             registration.register();
         } else {
@@ -186,9 +188,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             instance.setGroup(application.getService().getGroup());
         }
         String name = getName(instance.getService(), instance.getGroup());
-        // fix for eureka
-        String upper = name.toUpperCase();
-        Registration registration = registrations.remove(upper);
+        Registration registration = registrations.remove(name);
         if (registration != null) {
             registration.unregister();
         }
@@ -217,9 +217,8 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
-        // fix for eureka
-        String upper = name.toUpperCase();
-        Subscription subscription = subscriptions.computeIfAbsent(upper, s -> createSubscription(name, targetGroup));
+        // CaseInsensitiveConcurrentHashMap
+        Subscription subscription = subscriptions.computeIfAbsent(name, s -> createSubscription(s, targetGroup));
         subscription.addConsumer(consumer);
         subscription.subscribe();
     }
@@ -231,9 +230,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
         group = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, group);
-        // fix for eureka
-        String upper = name.toUpperCase();
-        return subscriptions.containsKey(upper);
+        return subscriptions.containsKey(name);
     }
 
     @Override
@@ -248,18 +245,14 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
-        // fix for eureka
-        String upper = name.toUpperCase();
-        return subscriptions.get(upper);
+        return subscriptions.get(name);
     }
 
     @Override
     public void update(String service, List<ServiceEndpoint> instances) {
         if (service != null && !service.isEmpty()) {
             String name = getName(service, serviceConfig.getGroup(service));
-            // fix for eureka
-            String upper = name.toUpperCase();
-            Subscription subscription = subscriptions.get(upper);
+            Subscription subscription = subscriptions.get(name);
             if (subscription != null) {
                 subscription.update(FRAMEWORK, null, new InstanceEvent(service, instances));
             }
