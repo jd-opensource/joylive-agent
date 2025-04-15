@@ -25,13 +25,13 @@ import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 /**
  * DiscoveryClientConstructorInterceptor
  */
-public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
+public class DiscoveryInstanceSupplierConstructorInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(DiscoveryClientConstructorInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DiscoveryInstanceSupplierConstructorInterceptor.class);
 
     private final Registry registry;
 
-    public DiscoveryClientConstructorInterceptor(Registry registry) {
+    public DiscoveryInstanceSupplierConstructorInterceptor(Registry registry) {
         this.registry = registry;
     }
 

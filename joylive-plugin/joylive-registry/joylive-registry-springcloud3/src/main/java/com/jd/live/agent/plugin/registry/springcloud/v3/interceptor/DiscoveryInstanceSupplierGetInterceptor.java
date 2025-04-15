@@ -31,11 +31,11 @@ import java.nio.charset.StandardCharsets;
 /**
  * DiscoveryClientGetInterceptor
  */
-public class DiscoveryClientGetInterceptor extends InterceptorAdaptor {
+public class DiscoveryInstanceSupplierGetInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    public DiscoveryClientGetInterceptor(Registry registry) {
+    public DiscoveryInstanceSupplierGetInterceptor(Registry registry) {
         this.registry = registry;
     }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.springcloud.v3.definition;
+package com.jd.live.agent.plugin.registry.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -25,18 +25,18 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.springcloud.v3.condition.ConditionalOnSpringCloud3GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientConstructorInterceptor;
-import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.DiscoveryClientGetInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v4.condition.ConditionalOnSpringCloud4GovernanceEnabled;
+import com.jd.live.agent.plugin.registry.springcloud.v4.interceptor.DiscoveryInstanceSupplierConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v4.interceptor.DiscoveryInstanceSupplierGetInterceptor;
 
 /**
  * DiscoveryClientDefinition
  */
 @Injectable
-@Extension(value = "DiscoveryClientDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnSpringCloud3GovernanceEnabled
-@ConditionalOnClass(DiscoveryClientDefinition.TYPE_DISCOVERY_CLIENT)
-public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
+@Extension(value = "DiscoveryClientDefinition_v4", order = PluginDefinition.ORDER_REGISTRY)
+@ConditionalOnSpringCloud4GovernanceEnabled
+@ConditionalOnClass(DiscoveryInstanceSupplierDefinition.TYPE_DISCOVERY_CLIENT)
+public class DiscoveryInstanceSupplierDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISCOVERY_CLIENT = "org.springframework.cloud.loadbalancer.core.DiscoveryClientServiceInstanceListSupplier";
 
@@ -45,15 +45,15 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
-    public DiscoveryClientDefinition() {
+    public DiscoveryInstanceSupplierDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(registry)),
+                        MatcherBuilder.isConstructor(), () -> new DiscoveryInstanceSupplierConstructorInterceptor(registry)),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET)
                                 .and(MatcherBuilder.arguments(0)),
-                        () -> new DiscoveryClientGetInterceptor(registry))
+                        () -> new DiscoveryInstanceSupplierGetInterceptor(registry))
         };
     }
 }
