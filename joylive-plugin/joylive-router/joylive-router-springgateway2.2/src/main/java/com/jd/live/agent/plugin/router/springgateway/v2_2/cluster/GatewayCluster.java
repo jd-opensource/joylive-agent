@@ -33,30 +33,18 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.Gatewa
 import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.request.GatewayCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.request.HttpHeadersParser;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.response.ErrorResponseDecorator;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.response.GatewayClusterResponse;
 import lombok.Getter;
-import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
-import org.springframework.lang.NonNull;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.plugin.router.springgateway.v2_2.util.WebExchangeUtils.forward;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR;
 
 @Getter
 public class GatewayCluster extends AbstractCloudCluster<
@@ -85,7 +73,7 @@ public class GatewayCluster extends AbstractCloudCluster<
                     headers -> propagation.write(carrier, new HttpHeadersParser(headers)));
             ServerWebExchange.Builder builder = request.getExchange().mutate().request(header);
             // decorate response to remove exception header and get body
-            BodyResponseDecorator decorator = new BodyResponseDecorator(request.getExchange(), policies);
+            ErrorResponseDecorator decorator = new ErrorResponseDecorator(request.getExchange(), policies);
             ServerWebExchange exchange = builder.response(decorator).build();
             GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(),
                     () -> (ServiceError) exchange.getAttributes().remove(Request.KEY_SERVER_ERROR),
@@ -117,70 +105,6 @@ public class GatewayCluster extends AbstractCloudCluster<
     @Override
     protected GatewayClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new GatewayClusterResponse(error, predicate);
-    }
-
-    /**
-     * A decorator for {@link ServerHttpResponse} that modifies the response body according to the specified code policies.
-     */
-    private static class BodyResponseDecorator extends ServerHttpResponseDecorator {
-
-        private final ServerWebExchange exchange;
-
-        private final Set<ErrorPolicy> policies;
-
-        BodyResponseDecorator(ServerWebExchange exchange, Set<ErrorPolicy> policies) {
-            super(exchange.getResponse());
-            this.exchange = exchange;
-            this.policies = policies;
-        }
-
-        @NonNull
-        @Override
-        public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-            final HttpHeaders headers = exchange.getResponse().getHeaders();
-            ServiceError error = ServiceError.build(key -> {
-                List<String> values = headers.remove(key);
-                return values == null || values.isEmpty() ? null : values.get(0);
-            });
-            if (error != null) {
-                exchange.getAttributes().put(Request.KEY_SERVER_ERROR, error);
-            }
-            if (policies != null && !policies.isEmpty()) {
-                String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-                if (body instanceof Mono && policyMatch(contentType)) {
-                    Mono<? extends DataBuffer> monoBody = Mono.from(body);
-                    return super.writeWith(monoBody.map(dataBuffer -> {
-                        DataBufferFactory bufferFactory = bufferFactory();
-                        byte[] data = new byte[dataBuffer.readableByteCount()];
-                        dataBuffer.read(data);
-                        // must release the buffer
-                        DataBufferUtils.release(dataBuffer);
-                        String res = new String(data, StandardCharsets.UTF_8);
-                        exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, res);
-                        return bufferFactory.wrap(data);
-                    }));
-                }
-            }
-            return super.writeWith(body);
-        }
-
-        /**
-         * Checks if any of the code policies match the given content type.
-         *
-         * @param contentType The content type to check.
-         * @return true if any of the code policies match the content type, false otherwise.
-         */
-        private boolean policyMatch(String contentType) {
-            contentType = contentType == null ? null : contentType.toLowerCase();
-            Integer status = getRawStatusCode();
-            int ok = HttpStatus.OK.value();
-            for (ErrorPolicy policy : policies) {
-                if (policy.match(status, contentType, ok)) {
-                    return true;
-                }
-            }
-            return false;
-        }
     }
 
 }
