@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
+import static com.jd.live.agent.plugin.router.springgateway.v4.util.WebExchangeUtils.getURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 /**
@@ -217,7 +218,7 @@ public class LiveChainBuilder {
             LiveGatewayFilterChain chain = new DefaultGatewayFilterChain(pathFilters);
             chain.filter(exchange).subscribe();
         }
-        URI uri = (URI) attributes.getOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
+        URI uri = getURI(exchange);
         uri = newURI(uri, routeURI.getScheme(), routeURI.getHost(), routeURI.getPort());
         attributes.put(GATEWAY_REQUEST_URL_ATTR, uri);
         return routeURI.isLoadBalancer();

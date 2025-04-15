@@ -32,6 +32,10 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
  */
 public class WebExchangeUtils {
 
+    public static URI getURI(ServerWebExchange exchange) {
+        return exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
+    }
+
     /**
      * Forwards the exchange to the specified endpoint while preserving original request information.
      *
