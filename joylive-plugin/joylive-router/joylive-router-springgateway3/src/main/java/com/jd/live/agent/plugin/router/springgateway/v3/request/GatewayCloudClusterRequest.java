@@ -24,6 +24,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.response.SpringClusterResp
 import com.jd.live.agent.plugin.router.springgateway.v3.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v3.util.WebExchangeUtils;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.CompletionContext;
@@ -39,14 +40,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
-import java.net.URI;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.jd.live.agent.core.util.StringUtils.choose;
-import static com.jd.live.agent.governance.instance.Endpoint.SECURE_SCHEME;
 import static com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint.getResponse;
-import static com.jd.live.agent.plugin.router.springcloud.v3.util.UriUtils.newURI;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
+import static com.jd.live.agent.plugin.router.springgateway.v3.util.WebExchangeUtils.forward;
 
 /**
  * GatewayOutboundRequest
@@ -74,7 +74,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
                                       GatewayConfig gatewayConfig,
                                       RetryConfig retryConfig,
                                       int index) {
-        super(exchange.getRequest(), getURI(exchange), context);
+        super(exchange.getRequest(), WebExchangeUtils.getURI(exchange), context);
         this.exchange = exchange;
         this.chain = chain;
         this.retryConfig = retryConfig;
@@ -170,34 +170,10 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onStartRequest(ServiceEndpoint endpoint) {
         if (endpoint != null) {
-            ServerWebExchange exchange = getExchange();
-            Map<String, Object> attributes = exchange.getAttributes();
-
-            URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, request.getURI());
-            // preserve the original url
-            Set<URI> urls = (Set<URI>) attributes.computeIfAbsent(GATEWAY_ORIGINAL_REQUEST_URL_ATTR, s -> new LinkedHashSet<>());
-            urls.add(uri);
-
-            // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
-            // if the loadbalancer doesn't provide one.
-            String overrideScheme = endpoint.isSecure() ? "https" : "http";
-
-            String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
-            if (schemePrefix != null) {
-                overrideScheme = request.getURI().getScheme();
-            }
-
-            boolean secure = SECURE_SCHEME.test(overrideScheme) || endpoint.isSecure();
-            String scheme = choose(endpoint.getScheme(), overrideScheme);
-            URI requestUrl = newURI(uri, scheme, secure, endpoint.getHost(), endpoint.getPort());
-
-
-            attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
-            attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, getResponse(endpoint));
+            forward(exchange, endpoint);
         }
         super.onStartRequest(endpoint);
     }
@@ -213,10 +189,6 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
         CompletionContext<ResponseData, ServiceInstance, ?> ctx = new CompletionContext<>(Status.SUCCESS, lbRequest, getResponse(endpoint), responseData);
         lifecycle(l -> l.onComplete(ctx));
-    }
-
-    private static URI getURI(ServerWebExchange exchange) {
-        return exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
     }
 
 }

@@ -49,18 +49,14 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import static com.jd.live.agent.governance.instance.Endpoint.SECURE_SCHEME;
-import static com.jd.live.agent.plugin.router.springcloud.v2_2.util.UriUtils.newURI;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
+import static com.jd.live.agent.plugin.router.springgateway.v2_2.util.WebExchangeUtils.forward;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR;
 
 @Getter
 public class GatewayCluster extends AbstractCloudCluster<
@@ -105,30 +101,10 @@ public class GatewayCluster extends AbstractCloudCluster<
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onStartRequest(GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         if (endpoint != null) {
-            Map<String, Object> attributes = request.getExchange().getAttributes();
-
-            URI uri = (URI) attributes.getOrDefault(GATEWAY_REQUEST_URL_ATTR, request.getRequest().getURI());
-            // preserve the original url
-            Set<URI> urls = (Set<URI>) attributes.computeIfAbsent(GATEWAY_ORIGINAL_REQUEST_URL_ATTR, s -> new LinkedHashSet<>());
-            urls.add(uri);
-
-            // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
-            // if the loadbalancer doesn't provide one.
-            String overrideScheme = endpoint.isSecure() ? "https" : "http";
-            String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
-            if (schemePrefix != null) {
-                overrideScheme = uri.getScheme();
-            }
-
-            boolean secure = SECURE_SCHEME.test(overrideScheme) || endpoint.isSecure();
-            String scheme = endpoint.getScheme();
-            scheme = scheme == null ? overrideScheme : scheme;
-            URI requestUrl = newURI(uri, scheme, secure, endpoint.getHost(), endpoint.getPort());
-            attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
+            forward(request.getExchange(), endpoint);
         }
         super.onStartRequest(request, endpoint);
     }
