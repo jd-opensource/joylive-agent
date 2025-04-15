@@ -22,6 +22,8 @@ public class RegistryClusterConfig {
 
     private boolean groupEnabled;
 
+    private boolean denyEmptyEnabled;
+
     private RegistryMode mode = RegistryMode.FULL;
 
     public boolean validate() {
