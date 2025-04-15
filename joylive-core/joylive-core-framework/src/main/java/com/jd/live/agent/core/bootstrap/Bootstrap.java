@@ -288,7 +288,6 @@ public class Bootstrap implements AgentLifecycle {
                 throw new EnhanceException("Failed to install plugin.");
             }
             installed.set(true);
-            serviceManager.start().join();
             shutdown = new Shutdown();
             shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
             shutdown.addHook(() -> serviceManager.stop());
@@ -707,6 +706,9 @@ public class Bootstrap implements AgentLifecycle {
             case AGENT_ENHANCE_FAILURE:
                 onException(event.getMessage(), event.getThrowable());
                 break;
+            case APPLICATION_LOADING:
+                onAppLoading();
+                break;
             case APPLICATION_STARTED:
                 application.setStatus(AppStatus.STARTED);
                 break;
@@ -716,6 +718,23 @@ public class Bootstrap implements AgentLifecycle {
             case APPLICATION_STOP:
                 application.setStatus(AppStatus.DESTROYING);
                 break;
+        }
+    }
+
+    /**
+     * Initializes services during application loading.
+     * Starts the service manager asynchronously and handles startup exceptions.
+     *
+     * @implNote Wraps service startup failures via {@link #onException(String, Throwable)}
+     */
+    private void onAppLoading() {
+        if (serviceManager != null) {
+            try {
+                logger.info("Start services after all agents are instrumented during application loading.");
+                serviceManager.start().join();
+            } catch (Throwable e) {
+                onException(e.getMessage(), e);
+            }
         }
     }
 
