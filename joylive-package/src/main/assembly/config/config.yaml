@@ -298,6 +298,7 @@ agent:
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:public}
           group: ${CONFIG_REGISTRY_GROUP_FIRST:${APPLICATION_SERVICE_GROUP}}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
           mode: ${CONFIG_REGISTRY_MODE_SECOND:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_SECOND}
@@ -306,6 +307,7 @@ agent:
           namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:public}
           group: ${CONFIG_REGISTRY_GROUP_SECOND:${APPLICATION_SERVICE_GROUP}}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
           mode: ${CONFIG_REGISTRY_MODE_THIRD:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_THIRD}
@@ -314,6 +316,7 @@ agent:
           namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:public}
           group: ${CONFIG_REGISTRY_GROUP_THIRD:${APPLICATION_SERVICE_GROUP}}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
   counter:
     gateway: true
     service: true
