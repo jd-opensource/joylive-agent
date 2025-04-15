@@ -127,7 +127,7 @@ public class GatewayCluster extends AbstractCloudCluster<
             String overrideScheme = endpoint.isSecure() ? "https" : "http";
             String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
             if (schemePrefix != null) {
-                overrideScheme = request.getURI().getScheme();
+                overrideScheme = uri.getScheme();
             }
 
             boolean secure = SECURE_SCHEME.test(overrideScheme) || endpoint.isSecure();

@@ -25,6 +25,7 @@ import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.web.server.ServerWebExchange;
 
+import java.net.URI;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -37,9 +38,10 @@ public class GatewayRouteConstructorInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] args = ctx.getArguments();
+        URI uri = (URI) args[1];
         AsyncPredicate<ServerWebExchange> predicate = (AsyncPredicate<ServerWebExchange>) args[3];
         if (!(predicate instanceof LiveRoutePredicate)) {
-            args[3] = new LiveRoutePredicate(predicate, LiveRoutes.getVersion());
+            args[3] = new LiveRoutePredicate(predicate, uri, LiveRoutes.getVersion());
         }
     }
 

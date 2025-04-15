@@ -21,6 +21,8 @@ import org.springframework.cloud.gateway.handler.AsyncPredicate;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.web.server.ServerWebExchange;
 
+import java.net.URI;
+
 public class LiveRoutePredicate implements AsyncPredicate<ServerWebExchange> {
 
     private final AsyncPredicate<ServerWebExchange> delegate;
@@ -31,14 +33,23 @@ public class LiveRoutePredicate implements AsyncPredicate<ServerWebExchange> {
     @Getter
     private final long version;
 
-    public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, long version) {
-        this(delegate, null, version);
+    @Getter
+    private final LiveRouteURI uri;
+
+    public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, URI uri, long version) {
+        this(delegate, null, uri, version);
     }
 
     public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, RouteDefinition definition, long version) {
+        this(delegate, definition, definition == null ? null : definition.getUri(), version);
+    }
+
+    public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, RouteDefinition definition, URI uri, long version) {
         this.delegate = delegate;
         this.definition = definition;
         this.version = version;
+        // improve performance in route construction
+        this.uri = new LiveRouteURI(uri);
     }
 
     @Override

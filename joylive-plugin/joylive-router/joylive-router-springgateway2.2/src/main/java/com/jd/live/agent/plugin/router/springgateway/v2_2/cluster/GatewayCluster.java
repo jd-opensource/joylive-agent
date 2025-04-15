@@ -109,10 +109,9 @@ public class GatewayCluster extends AbstractCloudCluster<
     @Override
     public void onStartRequest(GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         if (endpoint != null) {
-            ServerWebExchange exchange = request.getExchange();
-            Map<String, Object> attributes = exchange.getAttributes();
+            Map<String, Object> attributes = request.getExchange().getAttributes();
 
-            URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, request.getRequest().getURI());
+            URI uri = (URI) attributes.getOrDefault(GATEWAY_REQUEST_URL_ATTR, request.getRequest().getURI());
             // preserve the original url
             Set<URI> urls = (Set<URI>) attributes.computeIfAbsent(GATEWAY_ORIGINAL_REQUEST_URL_ATTR, s -> new LinkedHashSet<>());
             urls.add(uri);
@@ -122,7 +121,7 @@ public class GatewayCluster extends AbstractCloudCluster<
             String overrideScheme = endpoint.isSecure() ? "https" : "http";
             String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
             if (schemePrefix != null) {
-                overrideScheme = request.getURI().getScheme();
+                overrideScheme = uri.getScheme();
             }
 
             boolean secure = SECURE_SCHEME.test(overrideScheme) || endpoint.isSecure();
