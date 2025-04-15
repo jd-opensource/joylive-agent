@@ -84,7 +84,7 @@ public class NacosRegistry implements RegistryService {
                 properties.put(PASSWORD, config.getPassword());
             }
             if (config.isDenyEmptyEnabled()) {
-                properties.put(NAMING_PUSH_EMPTY_PROTECTION, true);
+                properties.put(NAMING_PUSH_EMPTY_PROTECTION, "true");
             }
             namingService = Executors.execute(this.getClass().getClassLoader(), () -> NamingFactory.createNamingService(properties));
         }
