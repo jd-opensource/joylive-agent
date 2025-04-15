@@ -25,23 +25,17 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.ThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.SpringClusterRequest;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Provides an abstract base for implementing client clusters that can send requests and receive responses from
@@ -56,7 +50,7 @@ public abstract class AbstractCloudCluster<
         O extends OutboundResponse,
         C extends CloudClusterContext,
         T extends Throwable>
-        extends AbstractLiveCluster<R, O, InstanceEndpoint> {
+        extends AbstractLiveCluster<R, O, ServiceEndpoint> {
 
     protected static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -107,19 +101,9 @@ public abstract class AbstractCloudCluster<
         return context.isRetryable();
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public CompletionStage<List<InstanceEndpoint>> route(R request) {
-        ServiceRegistry registry = context.getServiceRegistry(request.getService());
-        List<ServiceEndpoint> endpoints = registry.getEndpoints();
-        if (endpoints == null || endpoints.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        } else if (endpoints.get(0) instanceof InstanceEndpoint) {
-            return CompletableFuture.completedFuture((List) endpoints);
-        } else {
-            List<InstanceEndpoint> instances = toList(endpoints, e -> new SpringEndpoint(request.getService(), e));
-            return CompletableFuture.completedFuture(instances);
-        }
+    public CompletionStage<List<ServiceEndpoint>> route(R request) {
+        return context.getEndpoints(request);
     }
 
     @Override
@@ -128,7 +112,7 @@ public abstract class AbstractCloudCluster<
     }
 
     @Override
-    public Throwable createException(Throwable throwable, R request, InstanceEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, R request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 

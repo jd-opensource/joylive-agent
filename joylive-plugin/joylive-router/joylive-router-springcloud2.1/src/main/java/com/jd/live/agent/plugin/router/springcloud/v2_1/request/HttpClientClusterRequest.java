@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2_1.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.HttpClientClusterContext;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
@@ -27,13 +28,13 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
-import org.springframework.cloud.client.ServiceInstance;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.plugin.router.springcloud.v2_1.instance.EndpointInstance.convert;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.newURI;
 
 /**
@@ -91,12 +92,12 @@ public class HttpClientClusterRequest extends AbstractCloudClusterRequest<HttpRe
     /**
      * Executes the HTTP request for a specific service instance.
      *
-     * @param instance the {@link ServiceInstance} to which the request is directed
+     * @param endpoint the {@link ServiceEndpoint} to which the request is directed
      * @return the {@link HttpResponse} containing the response data
      * @throws IOException if an I/O error occurs during the request execution
      */
-    public CloseableHttpResponse execute(ServiceInstance instance) throws IOException {
-        HttpUriRequest newRequest = RequestBuilder.copy(request).setUri(newURI(instance, uri)).build();
+    public CloseableHttpResponse execute(ServiceEndpoint endpoint) throws IOException {
+        HttpUriRequest newRequest = RequestBuilder.copy(request).setUri(newURI(convert(endpoint), uri)).build();
         return client.execute(newRequest, httpContext);
     }
 }

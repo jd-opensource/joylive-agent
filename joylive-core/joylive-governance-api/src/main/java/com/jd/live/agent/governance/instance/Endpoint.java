@@ -30,6 +30,7 @@ import com.jd.live.agent.governance.rule.tag.TagCondition;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.StringUtils.isEqualsOrEmpty;
 
@@ -38,6 +39,10 @@ import static com.jd.live.agent.core.util.StringUtils.isEqualsOrEmpty;
  * Endpoints are fundamental entities that can represent services, nodes, or instances within a system.
  */
 public interface Endpoint extends Matcher<TagCondition>, Attributes {
+
+    Predicate<String> SECURE_SCHEME = scheme -> "https".equals(scheme) || "wss".equals(scheme);
+
+    String DEFAULT_HTTP_SCHEME = "http";
 
     /**
      * Key for the counter attribute of the endpoint.
@@ -85,6 +90,10 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
         String host = getHost();
         int port = getPort();
         return port <= 0 ? host : host + ":" + port;
+    }
+
+    default String getScheme() {
+        return null;
     }
 
     /**
@@ -421,7 +430,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
         String label = getGroup();
         // default group
         if (group == null || group.isEmpty() || PolicyId.DEFAULT_GROUP.equals(group)) {
-            return label == null || label.isEmpty() || PolicyId.DEFAULT_GROUP.equals(label);
+            return label == null || label.isEmpty() || PolicyId.DEFAULT_GROUP.equalsIgnoreCase(label);
         } else {
             return group.equals(label);
         }

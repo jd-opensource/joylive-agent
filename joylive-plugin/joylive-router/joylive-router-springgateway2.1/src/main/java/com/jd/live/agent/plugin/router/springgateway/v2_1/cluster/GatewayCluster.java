@@ -26,11 +26,12 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.AbstractCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayCloudClusterRequest;
@@ -39,7 +40,6 @@ import com.jd.live.agent.plugin.router.springgateway.v2_1.response.GatewayCluste
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -62,6 +62,7 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
+import static com.jd.live.agent.governance.instance.Endpoint.SECURE_SCHEME;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.newURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
@@ -72,8 +73,8 @@ public class GatewayCluster extends AbstractCloudCluster<
         GatewayClusterContext,
         NestedRuntimeException> {
 
-    public GatewayCluster(ServiceRegistryFactory registryFactory, Propagation propagation) {
-        super(new GatewayClusterContext(registryFactory, propagation), new StatusThrowerFactory<>());
+    public GatewayCluster(Registry registry, ServiceRegistryFactory system, Propagation propagation) {
+        super(new GatewayClusterContext(registry, system, propagation), new StatusThrowerFactory<>());
     }
 
     @Override
@@ -83,7 +84,7 @@ public class GatewayCluster extends AbstractCloudCluster<
     }
 
     @Override
-    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, InstanceEndpoint endpoint) {
+    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate request to transmission
@@ -111,7 +112,7 @@ public class GatewayCluster extends AbstractCloudCluster<
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onStartRequest(GatewayCloudClusterRequest request, InstanceEndpoint endpoint) {
+    public void onStartRequest(GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         if (endpoint != null) {
             ServerWebExchange exchange = request.getExchange();
             Map<String, Object> attributes = exchange.getAttributes();
@@ -124,13 +125,15 @@ public class GatewayCluster extends AbstractCloudCluster<
             // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
             // if the loadbalancer doesn't provide one.
             String overrideScheme = endpoint.isSecure() ? "https" : "http";
-
             String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
             if (schemePrefix != null) {
                 overrideScheme = request.getURI().getScheme();
             }
-            URI requestUrl = newURI(new DelegatingServiceInstance(endpoint, overrideScheme), uri);
 
+            boolean secure = SECURE_SCHEME.test(overrideScheme) || endpoint.isSecure();
+            String scheme = endpoint.getScheme();
+            scheme = scheme == null ? overrideScheme : scheme;
+            URI requestUrl = newURI(uri, scheme, secure, endpoint.getHost(), endpoint.getPort());
             attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
         }
         super.onStartRequest(request, endpoint);

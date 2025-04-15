@@ -17,10 +17,10 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.FeignClusterContext;
 import feign.Request;
 import feign.Response;
-import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMapAdapter;
@@ -102,12 +102,12 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
     /**
      * Executes the HTTP request for a specific service instance.
      *
-     * @param instance the {@link ServiceInstance} to which the request is directed
+     * @param endpoint the {@link ServiceEndpoint} to which the request is directed
      * @return the {@link Response} containing the response data
      * @throws IOException if an I/O error occurs during the request execution
      */
-    public Response execute(ServiceInstance instance) throws IOException {
-        String url = newURI(instance, uri).toString();
+    public Response execute(ServiceEndpoint endpoint) throws IOException {
+        String url = newURI(endpoint, uri).toString();
         // TODO sticky session
         Request req = Request.create(request.httpMethod(), url, request.headers(),
                 request.body(), request.charset(), request.requestTemplate());

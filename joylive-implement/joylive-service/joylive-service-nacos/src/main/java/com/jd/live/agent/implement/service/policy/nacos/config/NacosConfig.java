@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.service.policy.nacos.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 import static com.jd.live.agent.governance.config.SyncConfig.CONFIG_PREFIX;
 
 /**
@@ -45,13 +46,13 @@ public class NacosConfig {
 
     private String serviceKeyTemplate = CONFIG_PREFIX + "-service-${name}";
 
-    private String serviceGroup = "DEFAULT_GROUP";
+    private String serviceGroup = DEFAULT_GROUP;
 
     private String laneSpacesKey = CONFIG_PREFIX + "-laneSpaces";
 
     private String laneSpaceKeyTemplate = CONFIG_PREFIX + "-laneSpace-${id}";
 
-    private String laneSpaceGroup = "DEFAULT_GROUP";
+    private String laneSpaceGroup = DEFAULT_GROUP;
 
     private String liveSpacesKey = CONFIG_PREFIX + "-liveSpaces";
 
@@ -59,6 +60,6 @@ public class NacosConfig {
 
     private String liveServiceTemplate = CONFIG_PREFIX + "-liveService-${name}";
 
-    private String liveSpaceGroup = "DEFAULT_GROUP";
+    private String liveSpaceGroup = DEFAULT_GROUP;
 
 }

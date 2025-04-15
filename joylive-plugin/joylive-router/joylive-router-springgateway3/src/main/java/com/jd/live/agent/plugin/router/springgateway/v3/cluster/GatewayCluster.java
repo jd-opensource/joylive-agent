@@ -20,9 +20,10 @@ import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.AbstractCloudCluster;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springgateway.v3.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v3.filter.LiveGatewayFilterChain;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayCloudClusterRequest;
@@ -57,16 +58,12 @@ public class GatewayCluster extends AbstractCloudCluster<
         GatewayClusterResponse,
         GatewayClusterContext> {
 
-    public GatewayCluster(GatewayClusterContext context) {
-        super(context);
-    }
-
-    public GatewayCluster(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
-        super(new GatewayClusterContext(clientFactory));
+    public GatewayCluster(Registry registry, ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
+        super(new GatewayClusterContext(registry, clientFactory));
     }
 
     @Override
-    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
             Set<ErrorPolicy> policies = request.removeErrorPolicies();
             // decorate response to remove exception header and get body
@@ -87,7 +84,7 @@ public class GatewayCluster extends AbstractCloudCluster<
     }
 
     @Override
-    public void onSuccess(GatewayClusterResponse response, GatewayCloudClusterRequest request, SpringEndpoint endpoint) {
+    public void onSuccess(GatewayClusterResponse response, GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         request.onSuccess(response, endpoint);
     }
 

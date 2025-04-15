@@ -75,7 +75,7 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
 
     @Override
     public CompletionStage<List<ServiceEndpoint>> route(FeignWebClusterRequest request) {
-        return CompletableFuture.completedFuture(request.getInstances());
+        return request.getInstances();
     }
 
     @Override

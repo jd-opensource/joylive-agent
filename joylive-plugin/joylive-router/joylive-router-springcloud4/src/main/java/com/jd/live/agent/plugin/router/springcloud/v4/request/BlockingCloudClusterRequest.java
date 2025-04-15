@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.BlockingClusterContext;
-import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
 import org.springframework.cloud.client.loadbalancer.RequestData;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +27,8 @@ import org.springframework.http.client.ClientHttpResponse;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.jd.live.agent.plugin.router.springcloud.v4.instance.EndpointInstance.convert;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractCloudClusterRequest}
@@ -95,12 +97,12 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
     /**
      * Executes the HTTP request for a specific service instance and returns the response.
      *
-     * @param instance the {@link ServiceInstance} to which the request is directed
+     * @param endpoint the {@link ServiceEndpoint} to which the request is directed
      * @return the {@link ClientHttpResponse} containing the response data
      * @throws Exception if an error occurs during the request execution
      */
-    public ClientHttpResponse execute(ServiceInstance instance) throws Exception {
+    public ClientHttpResponse execute(ServiceEndpoint endpoint) throws Exception {
         LoadBalancerRequest<ClientHttpResponse> lbRequest = context.getRequestFactory().createRequest(request, body, execution);
-        return lbRequest.apply(instance);
+        return lbRequest.apply(convert(endpoint));
     }
 }

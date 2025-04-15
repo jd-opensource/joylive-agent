@@ -81,7 +81,7 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
         LiveHttpClient(RibbonLoadBalancingHttpClient client, CloseableHttpClient delegate, InvocationContext context) {
             this.delegate = delegate;
             this.context = context;
-            this.cluster = new HttpClientCloudCluster(client);
+            this.cluster = new HttpClientCloudCluster(context.getRegistry(), client);
         }
 
         @Override

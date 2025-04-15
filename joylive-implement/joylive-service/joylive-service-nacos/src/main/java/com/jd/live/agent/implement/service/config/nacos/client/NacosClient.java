@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.function.BiFunction;
 
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
 
@@ -52,7 +53,7 @@ public class NacosClient implements NacosClientApi {
         List<URI> uris = toList(split(config.getUrl(), SEMICOLON_COMMA), URI::parse);
         String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
         properties.put(PropertyKeyConst.SERVER_ADDR, address);
-        if (!isEmpty(config.getNamespace()) && !DEFAULT_NAMESPACE.equals(config.getNamespace())) {
+        if (!isEmpty(config.getNamespace()) && !DEFAULT_NAMESPACE_ID.equals(config.getNamespace())) {
             properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
         }
         if (!isEmpty(config.getUsername())) {

@@ -47,7 +47,7 @@ public class FeignCloudClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCloudCluster::new);
+        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest request = new FeignCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),

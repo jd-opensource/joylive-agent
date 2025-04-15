@@ -52,7 +52,7 @@ public class ReactiveCloudClusterInterceptor extends InterceptorAdaptor {
         // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
         LoadBalancedExchangeFilterFunction filter = (LoadBalancedExchangeFilterFunction) ctx.getTarget();
-        ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, ReactiveCloudCluster::new);
+        ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
         ReactiveCloudClusterRequest request = new ReactiveCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),

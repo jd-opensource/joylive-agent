@@ -39,6 +39,7 @@ agent:
       - mariadb
       - mongodb
       - nacos
+      - eureka
       - netty
       - okhttp
       - opengauss
@@ -260,6 +261,7 @@ agent:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
           - com.alibaba.nacos.
+          - com.netflix.discovery.
           - com.jd.live.agent.shaded.
           - org.apache.catalina.core.ContainerBase$
           - org.apache.catalina.core.StandardServer$$Lambda$
@@ -286,6 +288,7 @@ agent:
         profile: ${CONFIG_CENTER_PROFILE:${APPLICATION_SERVICE_GROUP}}
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:false}
+      subscribeMode: ${CONFIG_REGISTRY_SUBSCRIBE_MODE:AUTO}
       host:
         enabled: ${CONFIG_HOST_SERVICE_ENABLED:true}
         services: ${CONFIG_HOST_SERVICES}

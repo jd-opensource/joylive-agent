@@ -73,7 +73,7 @@ public class FeignWebClusterInterceptor extends InterceptorAdaptor {
             mc.skipWithThrowable(throwable);
         } else if (context.isFlowControlEnabled()) {
             // cluster invocation
-            FeignWebClusterRequest ror = new FeignWebClusterRequest(request, service, uri, registry.getEndpoints(service), endpoint -> {
+            FeignWebClusterRequest ror = new FeignWebClusterRequest(request, service, uri, registry, endpoint -> {
                 // invoke a endpoint
                 arguments[0] = createRequest(uri, request, endpoint);
                 try {
@@ -97,7 +97,7 @@ public class FeignWebClusterInterceptor extends InterceptorAdaptor {
             HttpOutboundInvocation<FeignWebOutboundRequest> invocation = new HttpOutboundInvocation<>(ror, context);
             // route invocation
             try {
-                arguments[0] = createRequest(uri, request, context.route(invocation, registry.getEndpoints(service)));
+                arguments[0] = createRequest(uri, request, context.route(invocation));
             } catch (Throwable e) {
                 mc.skipWithThrowable(thrower.createException(e, ror));
             }

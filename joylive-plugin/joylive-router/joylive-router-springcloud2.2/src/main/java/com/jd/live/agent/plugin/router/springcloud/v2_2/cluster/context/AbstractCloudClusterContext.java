@@ -17,13 +17,17 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.registry.ServiceRegistry;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Abstract implementation of CloudClusterContext for load balancing and service instance management
@@ -32,9 +36,15 @@ import java.util.Set;
 public abstract class AbstractCloudClusterContext implements CloudClusterContext {
 
     @Getter
-    protected ServiceRegistryFactory registryFactory;
+    protected Registry registry;
+
+    protected ServiceRegistryFactory system;
 
     protected RetryPolicy defaultRetryPolicy;
+
+    public AbstractCloudClusterContext(Registry registry) {
+        this.registry = registry;
+    }
 
     @Override
     public boolean isRetryable() {
@@ -47,8 +57,13 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
     }
 
     @Override
-    public ServiceRegistry getServiceRegistry(String service) {
-        return registryFactory == null ? null : registryFactory.getServiceRegistry(service);
+    public CompletionStage<List<ServiceEndpoint>> getEndpoints(ServiceRequest request) {
+        return registry.getEndpoints(request.getService(), request.getGroup(), system);
+    }
+
+    @Override
+    public boolean isInstanceSensitive() {
+        return system != null;
     }
 
     /**

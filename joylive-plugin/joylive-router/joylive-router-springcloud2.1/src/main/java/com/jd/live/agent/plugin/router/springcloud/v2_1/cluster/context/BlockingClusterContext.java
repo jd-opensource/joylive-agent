@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.RibbonServiceRegistry;
@@ -45,21 +46,17 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
     private static final String FIELD_REQUEST_FACTORY = "requestFactory";
 
-    private LoadBalancerRetryProperties retryProperties;
+    private final LoadBalancerRetryProperties retryProperties;
 
     @Getter
-    private LoadBalancerRequestFactory requestFactory;
+    private final LoadBalancerRequestFactory requestFactory;
 
-    protected BlockingClusterContext() {
-
-    }
-
-    public BlockingClusterContext(ClientHttpRequestInterceptor interceptor) {
+    public BlockingClusterContext(Registry registry, ClientHttpRequestInterceptor interceptor) {
+        super(registry);
         // LoadBalancerInterceptor.requestFactory
         this.requestFactory = getQuietly(interceptor, FIELD_REQUEST_FACTORY);
         // LoadBalancerInterceptor.loadBalancer
-        LoadBalancerClient client = getQuietly(interceptor, FIELD_LOAD_BALANCER);
-        this.registryFactory = createFactory(client);
+        this.system = createFactory(getQuietly(interceptor, FIELD_LOAD_BALANCER));
         // RetryLoadBalancerInterceptor.lbProperties
         this.retryProperties = getQuietly(interceptor, FIELD_LB_PROPERTIES);
         // RetryLoadBalancerInterceptor.lbRetryFactory

@@ -47,6 +47,9 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -127,6 +130,8 @@ public interface InvocationContext {
      * @return An instance of {@code GovernanceConfig} representing the governance configurations.
      */
     GovernanceConfig getGovernanceConfig();
+
+    Registry getRegistry();
 
     /**
      * Returns a timer instance used for measuring and recording the duration of events within the
@@ -439,6 +444,50 @@ public interface InvocationContext {
     }
 
     /**
+     * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
+     *
+     * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed.
+     * @param <E>        the type parameter extending {@link Endpoint}, representing the specific type of endpoint.
+     * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
+     *                   its initially considered endpoints.
+     * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
+     * @throws RejectNoProviderException if no provider is found for the invocation.
+     * @throws RejectException           if the request is rejected during filtering.
+     */
+    @SuppressWarnings("unchecked")
+    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
+        return route(invocation, (ServiceRegistry) null);
+    }
+
+    /**
+     * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
+     *
+     * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed.
+     * @param <E>        the type parameter extending {@link Endpoint}, representing the specific type of endpoint.
+     * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
+     *                   its initially considered endpoints.
+     * @param system     the system registry provider.
+     * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
+     * @throws RejectNoProviderException if no provider is found for the invocation.
+     * @throws RejectException           if the request is rejected during filtering.
+     */
+    @SuppressWarnings("unchecked")
+    default <R extends OutboundRequest, E extends ServiceEndpoint> E route(OutboundInvocation<R> invocation, ServiceRegistry system) {
+        try {
+            Registry registry = getRegistry();
+            R request = invocation.getRequest();
+            CompletionStage<List<ServiceEndpoint>> stage = registry.getEndpoints(request.getService(), request.getGroup(), system);
+            List<ServiceEndpoint> instances = stage.toCompletableFuture().get();
+            return (E) route(invocation, instances, (RouteFilter[]) null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            return route(invocation, null, (RouteFilter[]) null);
+        }
+    }
+
+    /**
      * Applies route filters to the specified {@link OutboundInvocation} and identifies endpoints that are suitable targets for the request.
      *
      * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed. This
@@ -469,24 +518,8 @@ public interface InvocationContext {
      * @throws RejectNoProviderException if no provider is found for the invocation.
      * @throws RejectException           if the request is rejected during filtering.
      */
-    default <R extends OutboundRequest,
-            E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
+    default <R extends OutboundRequest, E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
         return route(invocation, toList(instances, converter), (RouteFilter[]) null);
-    }
-
-    /**
-     * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
-     *
-     * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed.
-     * @param <E>        the type parameter extending {@link Endpoint}, representing the specific type of endpoint.
-     * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
-     *                   its initially considered endpoints.
-     * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
-     * @throws RejectNoProviderException if no provider is found for the invocation.
-     * @throws RejectException           if the request is rejected during filtering.
-     */
-    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
-        return route(invocation, null, (RouteFilter[]) null);
     }
 
     /**
@@ -508,8 +541,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest,
-            E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
@@ -642,6 +674,11 @@ public interface InvocationContext {
         @Override
         public GovernanceConfig getGovernanceConfig() {
             return delegate.getGovernanceConfig();
+        }
+
+        @Override
+        public Registry getRegistry() {
+            return delegate.getRegistry();
         }
 
         @Override

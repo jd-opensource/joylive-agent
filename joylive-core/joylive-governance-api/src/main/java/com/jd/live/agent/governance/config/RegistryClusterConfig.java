@@ -24,6 +24,13 @@ public class RegistryClusterConfig {
 
     private RegistryMode mode = RegistryMode.FULL;
 
+    public RegistryClusterConfig() {
+    }
+
+    public RegistryClusterConfig(RegistryMode mode) {
+        this.mode = mode;
+    }
+
     public boolean validate() {
         if (type == null || type.isEmpty()) {
             return false;

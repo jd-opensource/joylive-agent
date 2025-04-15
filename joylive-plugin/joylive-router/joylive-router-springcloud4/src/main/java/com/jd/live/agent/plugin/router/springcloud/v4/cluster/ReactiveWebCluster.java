@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.plugin.router.springcloud.v4.response.ReactiveClusterResponse.create;
@@ -77,7 +76,7 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRe
 
     @Override
     public CompletionStage<List<ServiceEndpoint>> route(ReactiveWebClusterRequest request) {
-        return CompletableFuture.completedFuture(request.getInstances());
+        return request.getInstances();
     }
 
     @Override

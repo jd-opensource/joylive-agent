@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.service.config;
 
+import com.jd.live.agent.core.inject.InjectSource;
+import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.service.AbstractService;
@@ -35,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <T> The type of {@link ConfigClientApi} used for configuration.
  */
-public abstract class AbstractConfigService<T extends ConfigClientApi> extends AbstractService implements ConfigService {
+public abstract class AbstractConfigService<T extends ConfigClientApi> extends AbstractService implements ConfigService, InjectSourceSupplier {
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     protected GovernanceConfig governanceConfig;
@@ -53,6 +55,11 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
     @Override
     public ConfigCenterConfig getConfig() {
         return governanceConfig.getConfigCenterConfig();
+    }
+
+    @Override
+    public void apply(InjectSource source) {
+        source.add(ConfigService.COMPONENT_CONFIG_CENTER, this);
     }
 
     @Override

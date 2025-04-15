@@ -34,7 +34,7 @@ import org.springframework.lang.NonNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
@@ -83,10 +83,12 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
             throw throwable;
         }
         try {
-            List<ServiceEndpoint> endpoints = registry.getEndpoints(service);
-            return context.isFlowControlEnabled() ? request(endpoints) : route(endpoints);
+            return context.isFlowControlEnabled() ? request() : route();
         } catch (IOException | NestedRuntimeException e) {
             throw e;
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw cause instanceof IOException ? (IOException) cause : new IOException(cause.getMessage(), cause);
         } catch (Throwable e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -139,14 +141,13 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     /**
      * Executes request through cluster strategy with error handling conversion.
      *
-     * @param endpoints Discovered service endpoints for cluster selection
      * @return Successful response from cluster-routed request
      * @throws Throwable Service-defined client errors or underlying exceptions
      * @see BlockingWebCluster  Cluster implementation handling load balancing/failover
      */
-    private ClientHttpResponse request(List<ServiceEndpoint> endpoints) throws Throwable {
+    private ClientHttpResponse request() throws Throwable {
         BlockingWebCluster cluster = BlockingWebCluster.INSTANCE;
-        BlockingWebClusterRequest request = new BlockingWebClusterRequest(this, service, endpoints);
+        BlockingWebClusterRequest request = new BlockingWebClusterRequest(this, service, registry);
         HttpOutboundInvocation<BlockingWebClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
@@ -160,15 +161,14 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     /**
      * Directly routes request to context-selected endpoint.
      *
-     * @param endpoints Candidate endpoints for routing decision
      * @return Response from directly executed endpoint request
      * @throws Throwable Routing failures or execution errors
      * @see InvocationContext#route  Custom routing logic implementation
      */
-    private ClientHttpResponse route(List<ServiceEndpoint> endpoints) throws Throwable {
+    private ClientHttpResponse route() throws Throwable {
         BlockingCloudOutboundRequest request = new BlockingCloudOutboundRequest(this, service);
         HttpOutboundInvocation<BlockingCloudOutboundRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        ServiceEndpoint endpoint = context.route(invocation, endpoints);
+        ServiceEndpoint endpoint = context.route(invocation);
         return execute(endpoint);
     }
 }

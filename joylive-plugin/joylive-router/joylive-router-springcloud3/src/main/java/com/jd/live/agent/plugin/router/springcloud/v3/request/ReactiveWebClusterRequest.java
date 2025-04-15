@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A specialized HTTP outbound request class for handling cluster requests.
@@ -100,7 +101,7 @@ public class ReactiveWebClusterRequest extends AbstractHttpOutboundRequest<Clien
      *
      * @return a list of {@link ServiceEndpoint} instances
      */
-    public List<ServiceEndpoint> getInstances() {
+    public CompletionStage<List<ServiceEndpoint>> getInstances() {
         return registry.getEndpoints(service);
     }
 

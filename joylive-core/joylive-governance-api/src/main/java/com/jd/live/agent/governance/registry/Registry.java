@@ -173,7 +173,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @param service  the service name to subscribe to
      * @param consumer the consumer that will receive endpoint events
      */
-    default void subscribe(String service, Consumer<InstanceEvent> consumer) {
+    default void subscribe(String service, Consumer<RegistryEvent> consumer) {
         subscribe(service, null, consumer);
     }
 
@@ -185,7 +185,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @param group    the group to which the service belongs.
      * @param consumer the consumer to handle endpoint events triggered by the subscription.
      */
-    void subscribe(String service, String group, Consumer<InstanceEvent> consumer);
+    void subscribe(String service, String group, Consumer<RegistryEvent> consumer);
 
     /**
      * Checks if currently subscribed to the specified service without considering any consumer group.
@@ -231,24 +231,45 @@ public interface Registry extends ServiceRegistryFactory {
     /**
      * Retrieves endpoints for the specified service using the default group.
      *
-     * @param service the name of the target service
-     * @return a list of endpoints associated with the service (never null)
+     * @param service the service name.
+     * @return a list of endpoints associated with the service
      */
-    default List<ServiceEndpoint> getEndpoints(String service) {
-        return getEndpoints(service, null);
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service) {
+        return getEndpoints(service, null, (ServiceRegistryFactory) null);
     }
 
     /**
      * Retrieves endpoints for the specified service and group.
      *
-     * @param service the name of the target service
-     * @param group   the cluster/group name (may be null for default group)
-     * @return a list of endpoints matching the service and group (never null)
+     * @param service the service name.
+     * @param group   the service group.
+     * @return a list of endpoints matching the service and group
      */
-    default List<ServiceEndpoint> getEndpoints(String service, String group) {
-        ServiceRegistry registry = getServiceRegistry(service, group);
-        return registry == null ? null : registry.getEndpoints();
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service, String group) {
+        return getEndpoints(service, group, (ServiceRegistryFactory) null);
     }
+
+    /**
+     * Gets service endpoints for specified service and group combination.
+     *
+     * @param service the service name.
+     * @param group   the service group.
+     * @param system  the system provider
+     * @return list of endpoints
+     */
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service, String group, ServiceRegistry system) {
+        return getEndpoints(service, group, name -> system);
+    }
+
+    /**
+     * Gets service endpoints for specified service and group combination.
+     *
+     * @param service the service name.
+     * @param group   the service group.
+     * @param system  the system provider
+     * @return list of endpoints
+     */
+    CompletionStage<List<ServiceEndpoint>> getEndpoints(String service, String group, ServiceRegistryFactory system);
 
     @Override
     default ServiceRegistry getServiceRegistry(String service) {

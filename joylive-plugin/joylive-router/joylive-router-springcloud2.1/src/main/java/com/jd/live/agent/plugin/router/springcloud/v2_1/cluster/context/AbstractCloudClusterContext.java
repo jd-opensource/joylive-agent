@@ -16,8 +16,10 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.registry.ServiceRegistry;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import com.netflix.client.RetryHandler;
 import com.netflix.client.config.CommonClientConfigKey;
 import com.netflix.client.config.IClientConfig;
@@ -30,6 +32,7 @@ import org.springframework.http.HttpMethod;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
@@ -49,13 +52,15 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
             "retryableStatusCodes") {
     };
 
-    protected ServiceRegistryFactory registryFactory;
+    @Getter
+    protected Registry registry;
+
+    protected ServiceRegistryFactory system;
 
     protected LoadBalancedRetryFactory retryFactory;
 
-    @Override
-    public ServiceRegistry getServiceRegistry(String service) {
-        return registryFactory == null ? null : registryFactory.getServiceRegistry(service);
+    public AbstractCloudClusterContext(Registry registry) {
+        this.registry = registry;
     }
 
     @Override
@@ -92,5 +97,15 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
             retryPolicy.setErrorCodes(new HashSet<>(statuses));
         }
         return retryPolicy;
+    }
+
+    @Override
+    public CompletionStage<List<ServiceEndpoint>> getEndpoints(ServiceRequest request) {
+        return registry.getEndpoints(request.getService(), request.getGroup(), system);
+    }
+
+    @Override
+    public boolean isInstanceSensitive() {
+        return system != null;
     }
 }

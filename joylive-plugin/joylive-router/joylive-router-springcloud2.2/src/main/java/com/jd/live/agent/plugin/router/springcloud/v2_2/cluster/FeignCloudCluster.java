@@ -19,8 +19,9 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.FeignClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.FeignClusterResponse;
 import feign.Client;
@@ -37,16 +38,12 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_2.response.FeignClu
  */
 public class FeignCloudCluster extends AbstractCloudCluster<FeignCloudClusterRequest, FeignClusterResponse, FeignClusterContext> {
 
-    public FeignCloudCluster(FeignClusterContext context) {
-        super(context);
-    }
-
-    public FeignCloudCluster(Client client) {
-        super(new FeignClusterContext(client));
+    public FeignCloudCluster(Registry registry, Client client) {
+        super(new FeignClusterContext(registry, client));
     }
 
     @Override
-    public CompletionStage<FeignClusterResponse> invoke(FeignCloudClusterRequest request, InstanceEndpoint endpoint) {
+    public CompletionStage<FeignClusterResponse> invoke(FeignCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
             feign.Response response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new FeignClusterResponse(response));

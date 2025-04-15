@@ -36,7 +36,7 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
  * providing a unified representation of a service endpoint that can be used for load balancing.
  * It extends {@link AbstractAttributes} to support additional attributes associated with the endpoint.
  */
-public class RibbonEndpoint extends AbstractEndpoint implements InstanceEndpoint {
+public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
 
     private static final Map<Class<?>, CacheObject<UnsafeFieldAccessor>> ACCESSOR_MAP = new ConcurrentHashMap<>();
     private static final String FIELD_METADATA = "metadata";

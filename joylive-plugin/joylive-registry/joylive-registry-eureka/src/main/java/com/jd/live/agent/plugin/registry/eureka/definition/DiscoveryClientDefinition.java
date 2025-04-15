@@ -25,10 +25,11 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.RegistrySupervisor;
-import com.jd.live.agent.plugin.registry.eureka.interceptor.DeltaUpdateInterceptor;
-import com.jd.live.agent.plugin.registry.eureka.interceptor.FullUpdateInterceptor;
+import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientDeltaUpdateInterceptor;
+import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientFullUpdateInterceptor;
 
 /**
  * DiscoveryClientDefinition
@@ -46,15 +47,18 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_UPDATE_DELTA = "updateDelta";
 
     @Inject(Registry.COMPONENT_REGISTRY)
-    private RegistrySupervisor registry;
+    private CompositeRegistry registry;
 
     public DiscoveryClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_GET_AND_STORE_FULL_REGISTRY), () -> new FullUpdateInterceptor(registry)),
+                        MatcherBuilder.named(METHOD_GET_AND_STORE_FULL_REGISTRY), () -> new DiscoveryClientFullUpdateInterceptor(registry)),
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_UPDATE_DELTA), () -> new DeltaUpdateInterceptor(registry))
+                        MatcherBuilder.named(METHOD_UPDATE_DELTA), () -> new DiscoveryClientDeltaUpdateInterceptor(registry)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(registry))
+
         };
     }
 }

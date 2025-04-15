@@ -19,28 +19,42 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.plugin.registry.springcloud.v4.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.registry.springcloud.v4.registry.SimpleRegistryService;
+import org.springframework.cloud.client.DefaultServiceInstance;
 import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryProperties;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * SimpleDiscoveryClientConstructorInterceptor
  */
-public class SimpleDiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
+public class SimpleDiscoveryClientInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimpleDiscoveryClientConstructorInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleDiscoveryClientInterceptor.class);
 
-    private final Registry registry;
+    private final CompositeRegistry registry;
 
-    public SimpleDiscoveryClientConstructorInterceptor(Registry registry) {
+    public SimpleDiscoveryClientInterceptor(CompositeRegistry registry) {
         this.registry = registry;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         SimpleDiscoveryProperties properties = ctx.getArgument(0);
-        properties.getInstances().keySet().forEach(service -> {
+        Map<String, List<DefaultServiceInstance>> simples = properties.getInstances();
+        Map<String, List<ServiceEndpoint>> instances = new HashMap<>(simples.size());
+        simples.forEach((service, instance) -> {
             registry.register(service);
             logger.info("Found simple discovery client provider, service: {}", service);
+            instances.put(service, toList(instance, SpringEndpoint::new));
         });
+        registry.setSystemRegistry(new SimpleRegistryService(instances));
     }
 }

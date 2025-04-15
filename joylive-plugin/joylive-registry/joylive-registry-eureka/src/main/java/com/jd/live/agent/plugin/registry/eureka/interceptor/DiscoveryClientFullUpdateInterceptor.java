@@ -17,37 +17,33 @@ package com.jd.live.agent.plugin.registry.eureka.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.RegistrySupervisor;
-import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.governance.registry.RegistryService;
+import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryService;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.shared.Application;
 import com.netflix.discovery.shared.Applications;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
-
 /**
- * DeltaUpdateInterceptor
+ * FullUpdateInterceptor
  */
-public class DeltaUpdateInterceptor extends InterceptorAdaptor {
+public class DiscoveryClientFullUpdateInterceptor extends InterceptorAdaptor {
 
-    private final RegistrySupervisor supervisor;
+    private final CompositeRegistry registry;
 
-    public DeltaUpdateInterceptor(RegistrySupervisor supervisor) {
-        this.supervisor = supervisor;
+    public DiscoveryClientFullUpdateInterceptor(CompositeRegistry registry) {
+        this.registry = registry;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        DiscoveryClient client = (DiscoveryClient) ctx.getTarget();
-        Applications applications = ctx.getArgument(0);
-        // delta update
-        for (Application app : applications.getRegisteredApplications()) {
-            if (supervisor.isSubscribed(app.getName())) {
-                // full instances
-                app = client.getApplication(app.getName());
-                if (app != null) {
-                    supervisor.update(app.getName(), toList(app.getInstances(), EurekaEndpoint::new));
-                }
+        RegistryService service = registry.getSystemRegistry();
+        if (service instanceof EurekaRegistryService) {
+            DiscoveryClient client = (DiscoveryClient) ctx.getTarget();
+            Applications applications = client.getApplications();
+            EurekaRegistryService eureka = (EurekaRegistryService) service;
+            for (Application app : applications.getRegisteredApplications()) {
+                eureka.publish(app);
             }
         }
     }

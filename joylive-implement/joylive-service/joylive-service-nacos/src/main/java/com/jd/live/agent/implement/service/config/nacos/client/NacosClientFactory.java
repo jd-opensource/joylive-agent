@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+
 public abstract class NacosClientFactory {
 
     private static final Map<String, SharedNacosClientApi> clients = new ConcurrentHashMap<>();
@@ -45,7 +47,7 @@ public abstract class NacosClientFactory {
         if (uri == null) {
             throw new ConfigException("Invalid config center address: " + config.getUrl());
         }
-        String namespace = StringUtils.isEmpty(config.getNamespace()) ? NacosClientApi.DEFAULT_NAMESPACE : config.getNamespace();
+        String namespace = StringUtils.isEmpty(config.getNamespace()) ? DEFAULT_NAMESPACE_ID : config.getNamespace();
         String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
         String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();
         String name = username + ":" + password + "@" + uri.getAddress() + "/" + namespace;

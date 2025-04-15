@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import feign.Request;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 
@@ -39,7 +41,7 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
 
     private final String service;
 
-    private final List<ServiceEndpoint> instances;
+    private final Registry registry;
 
     private final FeignExecution execution;
 
@@ -48,12 +50,12 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
     public FeignWebClusterRequest(Request request,
                                   String service,
                                   URI uri,
-                                  List<ServiceEndpoint> instances,
+                                  Registry registry,
                                   FeignExecution execution) {
         super(request);
         this.service = service;
         this.uri = uri;
-        this.instances = instances;
+        this.registry = registry;
         this.execution = execution;
     }
 
@@ -89,8 +91,8 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
         return MultiLinkedMap.caseInsensitive(request.headers(), true);
     }
 
-    public List<ServiceEndpoint> getInstances() {
-        return instances;
+    public CompletionStage<List<ServiceEndpoint>> getInstances() {
+        return registry.getEndpoints(service);
     }
 
     public feign.Response execute(Endpoint endpoint) throws IOException {

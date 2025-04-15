@@ -15,12 +15,15 @@
  */
 package com.jd.live.agent.plugin.registry.nacos.interceptor;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.RegistrySupervisor;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.governance.registry.RegistryEvent;
+import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
+import com.jd.live.agent.plugin.registry.nacos.registry.NacosRegistryService;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -29,18 +32,22 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class NacosInstanceChangeInterceptor extends InterceptorAdaptor {
 
-    private final RegistrySupervisor supervisor;
+    private final CompositeRegistry registry;
 
-    public NacosInstanceChangeInterceptor(RegistrySupervisor supervisor) {
-        this.supervisor = supervisor;
+    public NacosInstanceChangeInterceptor(CompositeRegistry registry) {
+        this.registry = registry;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        InstancesChangeEvent event = mc.getArgument(0);
-        if (supervisor.isSubscribed(event.getServiceName())) {
-            supervisor.update(event.getServiceName(), toList(event.getHosts(), NacosEndpoint::new));
+        RegistryService service = registry.getSystemRegistry();
+        if (service instanceof NacosRegistryService) {
+            InstancesChangeEvent event = ctx.getArgument(0);
+            NacosRegistryService nacos = (NacosRegistryService) service;
+            nacos.publish(new RegistryEvent(event.getServiceName(),
+                    event.getGroupName(),
+                    toList(event.getHosts(), NacosEndpoint::new),
+                    Constants.DEFAULT_GROUP));
         }
     }
 }

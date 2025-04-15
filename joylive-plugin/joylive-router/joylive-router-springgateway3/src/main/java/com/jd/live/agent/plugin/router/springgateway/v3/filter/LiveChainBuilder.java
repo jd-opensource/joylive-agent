@@ -99,7 +99,7 @@ public class LiveChainBuilder {
         this.gatewayConfig = gatewayConfig;
         this.target = target;
         this.globalFilters = getGlobalFilters(target);
-        this.cluster = new GatewayCluster(clientFactory);
+        this.cluster = new GatewayCluster(context.getRegistry(), clientFactory);
     }
 
     /**

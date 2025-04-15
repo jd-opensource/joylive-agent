@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.registry;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * An interface representing a service registry that provides access to service endpoints and metadata.
@@ -25,12 +26,12 @@ import java.util.List;
 public interface ServiceRegistry {
 
     /**
-     * Retrieves a list of {@link ServiceEndpoint} objects representing the available endpoints
+     * Retrieves a list of T objects representing the available endpoints
      * for the registered service.
      *
-     * @return a list of {@link ServiceEndpoint} objects
+     * @return a list of T objects
      */
-    List<ServiceEndpoint> getEndpoints();
+    CompletionStage<List<ServiceEndpoint>> getEndpoints();
 
     /**
      * Retrieves the name of the registered service.

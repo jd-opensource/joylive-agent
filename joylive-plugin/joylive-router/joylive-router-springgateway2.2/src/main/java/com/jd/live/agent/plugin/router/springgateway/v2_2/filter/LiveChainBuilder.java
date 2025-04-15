@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveGatewayFilterChain.DefaultGatewayFilterChain;
 import lombok.Getter;
@@ -67,7 +68,6 @@ public class LiveChainBuilder {
     private static final String SCHEME_REGEX = "[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*";
     private static final Pattern SCHEME_PATTERN = Pattern.compile(SCHEME_REGEX);
     private static final int WRITE_RESPONSE_FILTER_ORDER = -1;
-    private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
 
     /**
      * The invocation context for this filter configuration.
@@ -94,7 +94,7 @@ public class LiveChainBuilder {
      */
     private final GatewayCluster cluster;
 
-    private ServiceRegistryFactory registryFactory;
+    private ServiceRegistryFactory system;
 
     private final Map<String, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
@@ -110,7 +110,7 @@ public class LiveChainBuilder {
         this.gatewayConfig = gatewayConfig;
         this.target = target;
         this.globalFilters = getGlobalFilters(target);
-        this.cluster = new GatewayCluster(registryFactory, context.getPropagation());
+        this.cluster = new GatewayCluster(new GatewayClusterContext(context.getRegistry(), system, context.getPropagation()));
     }
 
     /**
@@ -204,10 +204,10 @@ public class LiveChainBuilder {
                 globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
                     LoadBalancerClientFactory clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
-                    registryFactory = service -> new SpringServiceRegistry(service, clientFactory);
+                    system = service -> new SpringServiceRegistry(service, clientFactory);
                 } else if (globalFilter instanceof LoadBalancerClientFilter) {
                     LoadBalancerClient client = getQuietly(globalFilter, "loadBalancer");
-                    registryFactory = createFactory(client);
+                    system = createFactory(client);
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);

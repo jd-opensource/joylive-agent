@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
@@ -44,16 +45,17 @@ public class ReactiveClusterContext extends AbstractCloudClusterContext {
 
     private final List<LoadBalancerClientRequestTransformer> transformers;
 
-    public ReactiveClusterContext(ExchangeFilterFunction filterFunction) {
+    public ReactiveClusterContext(Registry registry, ExchangeFilterFunction filterFunction) {
+        super(registry);
         // LoadBalancerExchangeFilterFunction.loadBalancerClient
         LoadBalancerClient client = getQuietly(filterFunction, FIELD_LOAD_BALANCER_CLIENT);
         if (client != null) {
-            this.registryFactory = createFactory(client);
+            this.system = createFactory(client);
         } else {
             // LoadBalancerExchangeFilterFunction.loadBalancerFactory
             ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory = getQuietly(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
             if (loadBalancerFactory != null) {
-                this.registryFactory = service -> new SpringServiceRegistry(service, loadBalancerFactory);
+                this.system = service -> new SpringServiceRegistry(service, loadBalancerFactory);
             }
         }
         LoadBalancerRetryProperties retryProperties = filterFunction instanceof RetryableLoadBalancerExchangeFilterFunction ? getQuietly(filterFunction, FIELD_RETRY_PROPERTIES) : null;

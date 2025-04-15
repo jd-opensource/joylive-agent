@@ -23,17 +23,12 @@ import org.springframework.cloud.client.ServiceInstance;
 import java.net.URI;
 import java.util.Map;
 
-/**
- * A concrete implementation of {@link AbstractEndpoint} that also implements the {@link InstanceEndpoint} interface.
- * This class provides functionality for managing and interacting with service endpoints in a Spring-based environment.
- * It combines the features of both {@link AbstractEndpoint} and {@link InstanceEndpoint} to offer a comprehensive
- * solution for handling service endpoints and instances.
- */
-public class SpringEndpoint extends AbstractEndpoint implements InstanceEndpoint {
+import static com.jd.live.agent.core.Constants.LABEL_STATE;
 
-    private static final String STATE_HANGUP = "hangup";
-    private static final String STATE_SUSPEND = "suspend";
-    private static final String LABEL_STATE = "state";
+/**
+ * A concrete implementation of {@link AbstractEndpoint}
+ */
+public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
 
     private final String service;
 
@@ -47,11 +42,6 @@ public class SpringEndpoint extends AbstractEndpoint implements InstanceEndpoint
     public SpringEndpoint(String service, ServiceInstance instance) {
         this.service = service;
         this.instance = instance;
-    }
-
-    public SpringEndpoint(String service, ServiceEndpoint endpoint) {
-        this.service = service;
-        this.instance = endpoint instanceof ServiceInstance ? (ServiceInstance) endpoint : new EndpointInstance(endpoint);
     }
 
     @Override
@@ -71,6 +61,16 @@ public class SpringEndpoint extends AbstractEndpoint implements InstanceEndpoint
     }
 
     @Override
+    public String getScheme() {
+        return instance.getScheme();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return instance.isSecure();
+    }
+
+    @Override
     public String getHost() {
         return instance.getHost();
     }
@@ -83,11 +83,6 @@ public class SpringEndpoint extends AbstractEndpoint implements InstanceEndpoint
     @Override
     public URI getUri() {
         return instance.getUri();
-    }
-
-    @Override
-    public boolean isSecure() {
-        return instance.isSecure();
     }
 
     @Override
@@ -106,47 +101,4 @@ public class SpringEndpoint extends AbstractEndpoint implements InstanceEndpoint
         return EndpointState.HEALTHY;
     }
 
-    /**
-     * A private static inner class that implements the {@link ServiceInstance} interface.
-     * This class represents a specific instance of a service endpoint, providing functionality
-     * to manage and interact with the instance. It is designed to be used internally within
-     * its enclosing class.
-     */
-    private static class EndpointInstance implements ServiceInstance {
-        private final ServiceEndpoint endpoint;
-
-        EndpointInstance(ServiceEndpoint endpoint) {
-            this.endpoint = endpoint;
-        }
-
-        @Override
-        public String getServiceId() {
-            return endpoint.getService();
-        }
-
-        @Override
-        public String getHost() {
-            return endpoint.getHost();
-        }
-
-        @Override
-        public int getPort() {
-            return endpoint.getPort();
-        }
-
-        @Override
-        public boolean isSecure() {
-            return endpoint.isSecure();
-        }
-
-        @Override
-        public URI getUri() {
-            return endpoint.getUri();
-        }
-
-        @Override
-        public Map<String, String> getMetadata() {
-            return endpoint.getMetadata();
-        }
-    }
 }

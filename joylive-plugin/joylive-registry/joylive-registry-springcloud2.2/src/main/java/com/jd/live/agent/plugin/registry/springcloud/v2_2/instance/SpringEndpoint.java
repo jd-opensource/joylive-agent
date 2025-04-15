@@ -20,11 +20,12 @@ import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import org.springframework.cloud.client.ServiceInstance;
 
+import java.net.URI;
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.LABEL_STATE;
 
-public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
 
     private final ServiceInstance instance;
 
@@ -39,8 +40,33 @@ public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint 
     }
 
     @Override
+    public String getInstanceId() {
+        return instance.getInstanceId();
+    }
+
+    @Override
+    public String getScheme() {
+        return instance.getScheme();
+    }
+
+    @Override
+    public String getServiceId() {
+        return instance.getServiceId();
+    }
+
+    @Override
     public String getService() {
         return instance.getServiceId();
+    }
+
+    @Override
+    public URI getUri() {
+        return instance.getUri();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return instance.isSecure();
     }
 
     @Override

@@ -82,7 +82,7 @@ public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRe
 
     @Override
     public CompletionStage<List<ServiceEndpoint>> route(BlockingWebClusterRequest request) {
-        return CompletableFuture.completedFuture(request.getInstances());
+        return request.getInstances();
     }
 
     @Override

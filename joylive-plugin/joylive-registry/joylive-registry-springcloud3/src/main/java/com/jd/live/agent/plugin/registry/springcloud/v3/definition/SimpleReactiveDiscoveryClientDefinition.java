@@ -24,10 +24,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springcloud.v3.condition.ConditionalOnSpringCloud3RegistryEnabled;
-import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.SimpleReactiveDiscoveryClientConstructorInterceptor;
-import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.SimpleReactiveDiscoveryClientGetInstancesInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v3.interceptor.SimpleDiscoveryClientInterceptor;
 
 /**
  * SimpleReactiveDiscoveryClientDefinition
@@ -41,21 +41,15 @@ public class SimpleReactiveDiscoveryClientDefinition extends PluginDefinitionAda
 
     protected static final String TYPE_SIMPLE_REACTIVE_DISCOVERY_CLIENT = "org.springframework.cloud.client.discovery.simple.SimpleReactiveDiscoveryClient";
 
-    private static final String METHOD_GET_INSTANCES = "getInstances";
-
     @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
+    private CompositeRegistry registry;
 
     public SimpleReactiveDiscoveryClientDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_SIMPLE_REACTIVE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(),
-                        () -> new SimpleReactiveDiscoveryClientConstructorInterceptor(registry)
-                ),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_GET_INSTANCES),
-                        () -> new SimpleReactiveDiscoveryClientGetInstancesInterceptor(registry)
+                        () -> new SimpleDiscoveryClientInterceptor(registry)
                 )
         };
     }

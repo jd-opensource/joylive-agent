@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_2.util;
 
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
@@ -57,25 +58,50 @@ public class UriUtils {
      * @return the modified {@link URI}
      */
     public static URI newURI(ServiceInstance instance, URI uri) {
-        String host = instance.getHost();
-        String scheme = instance.getScheme();
+        return newURI(uri, instance.getScheme(), instance.isSecure(), instance.getHost(), instance.getPort());
+    }
+
+    /**
+     * Modifies the URI in order to redirect the request to a service instance of choice.
+     *
+     * @param endpoint the {@link ServiceEndpoint} to redirect the request to.
+     * @param uri      the {@link URI} from the uri request
+     * @return the modified {@link URI}
+     */
+    public static URI newURI(ServiceEndpoint endpoint, URI uri) {
+        return newURI(uri, endpoint.getScheme(), endpoint.isSecure(), endpoint.getHost(), endpoint.getPort());
+    }
+
+    /**
+     * Creates a new URI by modifying components of an existing URI.
+     *
+     * @param uri    the original URI to base the new URI on (must not be null)
+     * @param scheme the desired scheme (nullable, falls back to original URI's scheme or {@code DEFAULT_SCHEME})
+     * @param secure whether to use secure scheme mapping (e.g., map http→https)
+     * @param host   the new host (nullable, falls back to original URI's host)
+     * @param port   the new port (negative values will use scheme-specific defaults)
+     * @return a new URI with specified modifications, or original URI if no changes were needed
+     */
+    public static URI newURI(URI uri, String scheme, boolean secure, String host, int port) {
         if (scheme == null || scheme.isEmpty()) {
             scheme = uri.getScheme();
             if (scheme == null || scheme.isEmpty()) {
                 scheme = DEFAULT_SCHEME;
             }
-            if (instance.isSecure() && INSECURE_SCHEME_MAPPINGS.containsKey(scheme)) {
-                scheme = INSECURE_SCHEME_MAPPINGS.get(scheme);
+        }
+        if (secure) {
+            String secureScheme = INSECURE_SCHEME_MAPPINGS.get(scheme);
+            if (secureScheme != null) {
+                scheme = secureScheme;
             }
         }
-        int port = instance.getPort();
         port = port >= 0 ? port : (DEFAULT_SECURE_SCHEME.equals(scheme) ? 443 : 80);
 
-        if (Objects.equals(host, uri.getHost())
-                && port == uri.getPort()
-                && Objects.equals(scheme, uri.getScheme())) {
+        if (Objects.equals(host, uri.getHost()) && port == uri.getPort() && Objects.equals(scheme, uri.getScheme())) {
             return uri;
         }
         return HttpUtils.newURI(uri, scheme, host, port);
     }
+
+
 }

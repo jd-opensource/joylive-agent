@@ -19,9 +19,10 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.ReactiveClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.reactive.WebClientThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.plugin.router.springcloud.v3.instance.EndpointInstance.convert;
 import static com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse.create;
 
 /**
@@ -55,18 +57,14 @@ public class ReactiveCloudCluster extends AbstractCloudCluster<
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    public ReactiveCloudCluster(ReactiveClusterContext context) {
-        super(context, new WebClientThrowerFactory<>());
-    }
-
-    public ReactiveCloudCluster(LoadBalancedExchangeFilterFunction filterFunction) {
-        super(new ReactiveClusterContext(filterFunction), new WebClientThrowerFactory<>());
+    public ReactiveCloudCluster(Registry registry, LoadBalancedExchangeFilterFunction filterFunction) {
+        super(new ReactiveClusterContext(registry, filterFunction), new WebClientThrowerFactory<>());
     }
 
     @Override
-    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveCloudClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
-            return request.exchange(endpoint.getInstance()).map(ReactiveClusterResponse::new).toFuture();
+            return request.exchange(convert(endpoint)).map(ReactiveClusterResponse::new).toFuture();
         } catch (Throwable e) {
             return Futures.future(e);
         }
@@ -78,7 +76,7 @@ public class ReactiveCloudCluster extends AbstractCloudCluster<
     }
 
     @Override
-    public void onSuccess(ReactiveClusterResponse response, ReactiveCloudClusterRequest request, SpringEndpoint endpoint) {
+    public void onSuccess(ReactiveClusterResponse response, ReactiveCloudClusterRequest request, ServiceEndpoint endpoint) {
         request.onSuccess(response, endpoint);
     }
 

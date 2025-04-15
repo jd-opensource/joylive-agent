@@ -25,8 +25,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.RegistrySupervisor;
 import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosInstanceChangeInterceptor;
 
 /**
@@ -43,7 +43,7 @@ public class NacosInstanceChangeDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_ON_EVENT = "onEvent";
 
     @Inject(Registry.COMPONENT_REGISTRY)
-    private RegistrySupervisor registry;
+    private CompositeRegistry registry;
 
     public NacosInstanceChangeDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_INSTANCES_CHANGE_NOTIFIER);

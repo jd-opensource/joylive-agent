@@ -24,10 +24,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.springcloud.v4.condition.ConditionalOnSpringCloud4RegistryEnabled;
-import com.jd.live.agent.plugin.registry.springcloud.v4.interceptor.SimpleDiscoveryClientConstructorInterceptor;
-import com.jd.live.agent.plugin.registry.springcloud.v4.interceptor.SimpleDiscoveryClientGetInstancesInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v4.interceptor.SimpleDiscoveryClientInterceptor;
 
 /**
  * SimpleDiscoveryClientDefinition
@@ -41,21 +41,15 @@ public class SimpleDiscoveryClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_SIMPLE_DISCOVERY_CLIENT = "org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClient";
 
-    private static final String METHOD_GET_INSTANCES = "getInstances";
-
     @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
+    private CompositeRegistry registry;
 
     public SimpleDiscoveryClientDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_SIMPLE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(),
-                        () -> new SimpleDiscoveryClientConstructorInterceptor(registry)
-                ),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_GET_INSTANCES),
-                        () -> new SimpleDiscoveryClientGetInstancesInterceptor(registry)
+                        () -> new SimpleDiscoveryClientInterceptor(registry)
                 )
         };
     }

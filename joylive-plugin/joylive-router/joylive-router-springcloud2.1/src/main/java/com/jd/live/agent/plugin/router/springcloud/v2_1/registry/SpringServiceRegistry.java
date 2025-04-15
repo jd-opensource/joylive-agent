@@ -22,14 +22,14 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.client.loadbalancer.reactive.Response;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceSupplier;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
@@ -51,22 +51,19 @@ public class SpringServiceRegistry implements ServiceRegistry {
         this.supplier = getSupplier(balancer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<ServiceEndpoint> getEndpoints() {
+    public CompletableFuture<List<ServiceEndpoint>> getEndpoints() {
         if (balancer == null) {
-            return null;
+            return CompletableFuture.completedFuture(null);
         }
+        Object result;
         if (supplier != null) {
-            List<ServiceInstance> instances = supplier.get().collectList().block();
-            return toList(instances, s -> new SpringEndpoint(service, s));
+            result = supplier.get().collectList().map(instances -> toList(instances, s -> new SpringEndpoint(service, s))).toFuture();
+        } else {
+            result = Mono.from(balancer.choose()).map(s -> singletonList(new SpringEndpoint(service, s.getServer()))).toFuture();
         }
-        Response<ServiceInstance> loadBalancerResponse = Mono.from(balancer.choose()).block();
-        if (loadBalancerResponse == null) {
-            return null;
-        }
-        List<ServiceEndpoint> result = new ArrayList<>();
-        result.add(new SpringEndpoint(service, loadBalancerResponse.getServer()));
-        return result;
+        return (CompletableFuture<List<ServiceEndpoint>>) result;
     }
 
     @Override

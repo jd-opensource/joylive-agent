@@ -4,9 +4,9 @@
 
 1. Added support for Spring Cloud Greenwich, currently supporting Spring Cloud Greenwich/Hoxton/2020/2021/2022/2023/2024.
 2. Added support for Apache HttpClient governance with Spring Cloud Zuul
-3. Added support for multi-registry registration.
-4. Added support for registering Spring Boot applications, converting them into microservices.
-5. Added support for Eureka service registry
+3. Added support for registering Spring Boot applications, converting them into microservices.
+4. Added support for Eureka service registry
+5. Added support for multi-registry registration and subscription.
 6. Added support for maximum circuit breaker instance ratio
 7. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
 8. Fixed other issues and improved stability.

@@ -19,8 +19,9 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.BlockingClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.DegradeHttpResponse;
@@ -54,19 +55,15 @@ public class BlockingCloudCluster extends AbstractCloudCluster<
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    public BlockingCloudCluster(BlockingClusterContext context) {
-        super(context);
-    }
-
-    public BlockingCloudCluster(ClientHttpRequestInterceptor interceptor) {
-        super(new BlockingClusterContext(interceptor));
+    public BlockingCloudCluster(Registry registry, ClientHttpRequestInterceptor interceptor) {
+        super(new BlockingClusterContext(registry, interceptor));
     }
 
     @Override
-    public CompletionStage<BlockingClusterResponse> invoke(BlockingCloudClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<BlockingClusterResponse> invoke(BlockingCloudClusterRequest request, ServiceEndpoint endpoint) {
         // TODO sticky session
         try {
-            ClientHttpResponse response = request.execute(endpoint.getInstance());
+            ClientHttpResponse response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new BlockingClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
@@ -79,7 +76,7 @@ public class BlockingCloudCluster extends AbstractCloudCluster<
     }
 
     @Override
-    public void onSuccess(BlockingClusterResponse response, BlockingCloudClusterRequest request, SpringEndpoint endpoint) {
+    public void onSuccess(BlockingClusterResponse response, BlockingCloudClusterRequest request, ServiceEndpoint endpoint) {
         request.onSuccess(response, endpoint);
     }
 

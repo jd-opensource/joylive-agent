@@ -16,45 +16,31 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster.context;
 
 import com.jd.live.agent.governance.invoke.cluster.ClusterContext;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerLifecycle;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.request.ServiceRequest;
 
-import java.util.Set;
+import java.util.List;
+import java.util.concurrent.CompletionStage;
 
+/**
+ * Extended cluster context with cloud-specific capabilities.
+ */
 public interface CloudClusterContext extends ClusterContext {
 
     /**
-     * Retrieves load balancing configuration properties for specified service
+     * Resolves endpoints for a service request.
      *
-     * @param service Target service identifier/name
-     * @return Configured properties for service load balancing
+     * @param request the service request
+     * @return matching endpoints
      */
-    LoadBalancerProperties getLoadBalancerProperties(String service);
+    CompletionStage<List<ServiceEndpoint>> getEndpoints(ServiceRequest request);
 
     /**
-     * Determines if raw HTTP status codes should be preserved in responses
+     * Retrieves the service context for the specified service name.
      *
-     * @param properties Active load balancing configuration
-     * @return True to retain original status codes in response data
+     * @param service the name of the service to lookup
+     * @return the associated service context
      */
-    boolean isUseRawStatusCodeInResponseData(LoadBalancerProperties properties);
-
-    /**
-     * Obtains service instance provider for discovery operations
-     *
-     * @param service Target service identifier/name
-     * @return Supplier of available service instances
-     */
-    ServiceInstanceListSupplier getServiceInstanceListSupplier(String service);
-
-    /**
-     * Gets lifecycle handlers for load balancing process
-     *
-     * @param service Target service identifier/name
-     * @return Set of lifecycle processors for load balancing events
-     */
-    @SuppressWarnings("rawtypes")
-    Set<LoadBalancerLifecycle> getLifecycleProcessors(String service);
+    ServiceContext getServiceContext(String service);
 
 }

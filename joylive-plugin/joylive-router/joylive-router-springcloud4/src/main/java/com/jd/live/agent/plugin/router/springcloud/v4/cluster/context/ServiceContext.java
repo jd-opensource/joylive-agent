@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.registry;
+package com.jd.live.agent.plugin.router.springcloud.v4.cluster.context;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.util.List;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 
 @Getter
 @AllArgsConstructor
-public class InstanceEvent {
+public class ServiceContext {
 
-    private String service;
+    private RequestLifecycle lifecycle;
 
-    private List<ServiceEndpoint> instances;
+    private LoadBalancerProperties loadBalancerProperties;
 
-    public boolean isEmpty() {
-        return instances == null || instances.isEmpty();
-    }
-
-    public int size() {
-        return instances == null ? 0 : instances.size();
-    }
 }

@@ -15,20 +15,26 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster.context;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
-import com.jd.live.agent.core.util.cache.CacheObject;
-import org.springframework.beans.factory.ObjectProvider;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.registry.SpringServiceRegistry;
+import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * Abstract implementation of CloudClusterContext for load balancing and service instance management
@@ -36,28 +42,24 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractCloudClusterContext implements CloudClusterContext {
 
+    private static final String FIELD_PROPERTIES = "properties";
+
     private static final Method METHOD_GET_PROPERTIES = getPropertiesMethod();
 
     private static final Field FIELD_USE_RAW_STATUS_CODE_IN_RESPONSE_DATA = getUseRawStatusCodeField();
 
-    private static final Map<String, CacheObject<ServiceInstanceListSupplier>> SERVICE_INSTANCE_LIST_SUPPLIERS = new ConcurrentHashMap<>();
+    private static final Map<String, RequestLifecycle> SERVICE_LIFECYCLES = new ConcurrentHashMap<>();
 
-    @SuppressWarnings("rawtypes")
-    private static final Map<String, Set<LoadBalancerLifecycle>> LOAD_BALANCER_LIFE_CYCLES = new ConcurrentHashMap<>();
+    protected Registry registry;
 
-    private static final String FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER = "serviceInstanceListSupplierProvider";
+    protected ServiceRegistryFactory system;
 
     protected ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory;
 
     protected LoadBalancerProperties loadBalancerProperties;
 
-    public AbstractCloudClusterContext() {
-    }
-
-    public AbstractCloudClusterContext(ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory,
-                                       LoadBalancerProperties loadBalancerProperties) {
-        this.loadBalancerFactory = loadBalancerFactory;
-        this.loadBalancerProperties = loadBalancerProperties;
+    public AbstractCloudClusterContext(Registry registry) {
+        this.registry = registry;
     }
 
     public ReactiveLoadBalancer.Factory<ServiceInstance> getLoadBalancerFactory() {
@@ -65,7 +67,29 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
     }
 
     @Override
-    public LoadBalancerProperties getLoadBalancerProperties(String service) {
+    public CompletionStage<List<ServiceEndpoint>> getEndpoints(ServiceRequest request) {
+        return registry.getEndpoints(request.getService(), request.getGroup(), system);
+    }
+
+    @Override
+    public ServiceContext getServiceContext(String service) {
+        RequestLifecycle lifecycle = getLifecycle(service);
+        LoadBalancerProperties properties = getLoadBalancerProperties(service);
+        boolean rawCode = isUseRawStatusCodeInResponseData(properties);
+        return new ServiceContext(lifecycle, properties, rawCode);
+    }
+
+    protected void setupLoadBalancerFactory(Object target, String... fields) {
+        this.loadBalancerFactory = getQuietly(target, fields, v -> v instanceof ReactiveLoadBalancer.Factory);
+        this.system = loadBalancerFactory == null ? null : name -> new SpringServiceRegistry(name, loadBalancerFactory);
+        this.loadBalancerProperties = getQuietly(loadBalancerFactory, FIELD_PROPERTIES, v -> v instanceof LoadBalancerProperties);
+    }
+
+    private RequestLifecycle getLifecycle(String service) {
+        return service == null ? null : SERVICE_LIFECYCLES.computeIfAbsent(service, s -> new SpringRequestLifecycle(s, loadBalancerFactory));
+    }
+
+    private LoadBalancerProperties getLoadBalancerProperties(String service) {
         try {
             LoadBalancerProperties result = loadBalancerFactory == null || METHOD_GET_PROPERTIES == null ? null : loadBalancerFactory.getProperties(service);
             return result == null ? loadBalancerProperties : result;
@@ -75,39 +99,13 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
         }
     }
 
-    @Override
-    public boolean isUseRawStatusCodeInResponseData(LoadBalancerProperties properties) {
+    private boolean isUseRawStatusCodeInResponseData(LoadBalancerProperties properties) {
         boolean useRawStatusCodeInResponseData = false;
         if (properties != null && FIELD_USE_RAW_STATUS_CODE_IN_RESPONSE_DATA != null) {
             // fix for spring cloud 2020, without field useRawStatusCodeInResponseData
             useRawStatusCodeInResponseData = properties.isUseRawStatusCodeInResponseData();
         }
         return useRawStatusCodeInResponseData;
-    }
-
-    @Override
-    public ServiceInstanceListSupplier getServiceInstanceListSupplier(String service) {
-        return SERVICE_INSTANCE_LIST_SUPPLIERS.computeIfAbsent(service, n -> {
-            ServiceInstanceListSupplier supplier = null;
-            ReactiveLoadBalancer<ServiceInstance> loadBalancer = loadBalancerFactory == null ? null : loadBalancerFactory.getInstance(n);
-            if (loadBalancer != null) {
-                ObjectProvider<ServiceInstanceListSupplier> provider = UnsafeFieldAccessorFactory.getQuietly(loadBalancer, FIELD_SERVICE_INSTANCE_LIST_SUPPLIER_PROVIDER);
-                supplier = provider == null ? null : provider.getIfAvailable();
-            }
-            return CacheObject.of(supplier);
-        }).get();
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes")
-    public Set<LoadBalancerLifecycle> getLifecycleProcessors(String service) {
-        return LOAD_BALANCER_LIFE_CYCLES.computeIfAbsent(service, n -> loadBalancerFactory == null ?
-                new HashSet<>() :
-                LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
-                        loadBalancerFactory.getInstances(n, LoadBalancerLifecycle.class),
-                        RequestDataContext.class,
-                        ResponseData.class,
-                        ServiceInstance.class));
     }
 
     /**
@@ -136,6 +134,50 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
         } catch (NoSuchMethodException ignored) {
         }
         return method;
+    }
+
+    private static class SpringRequestLifecycle implements RequestLifecycle {
+
+        @Getter
+        private final String service;
+
+        @SuppressWarnings("rawtypes")
+        private final Set<LoadBalancerLifecycle> lifecycles;
+
+        SpringRequestLifecycle(String service, ReactiveLoadBalancer.Factory<ServiceInstance> factory) {
+            this.service = service;
+            this.lifecycles = factory == null ?
+                    new HashSet<>() :
+                    LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(
+                            factory.getInstances(service, LoadBalancerLifecycle.class),
+                            RequestDataContext.class,
+                            ResponseData.class,
+                            ServiceInstance.class);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void onStart(Request<?> request) {
+            if (lifecycles != null) {
+                lifecycles.forEach(lifecycle -> lifecycle.onStart(request));
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void onStartRequest(Request<?> request, Response<?> lbResponse) {
+            if (lifecycles != null) {
+                lifecycles.forEach(lifecycle -> lifecycle.onStartRequest(request, lbResponse));
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void onComplete(CompletionContext<?, ?, ?> completionContext) {
+            if (lifecycles != null) {
+                lifecycles.forEach(lifecycle -> lifecycle.onComplete(completionContext));
+            }
+        }
     }
 
 }

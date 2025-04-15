@@ -16,13 +16,9 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.SpringClusterResponse;
-import org.springframework.cloud.client.ServiceInstance;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 /**
  * An interface that extends {@link HttpOutboundRequest} to provide additional methods
@@ -30,13 +26,6 @@ import java.util.List;
  * handling lifecycle events, and defining retry policies.
  */
 public interface SpringClusterRequest extends HttpOutboundRequest {
-
-    /**
-     * Retrieves a list of available service instances from the cluster.
-     *
-     * @return a {@link Mono} emitting a list of {@link ServiceInstance} objects
-     */
-    Mono<List<ServiceInstance>> getInstances();
 
     /**
      * Callback method invoked when the request processing starts.
@@ -51,25 +40,25 @@ public interface SpringClusterRequest extends HttpOutboundRequest {
     /**
      * Callback method invoked when a request is initiated for a specific endpoint.
      *
-     * @param endpoint the {@link SpringEndpoint} associated with the request
+     * @param endpoint the {@link ServiceEndpoint} associated with the request
      */
-    void onStartRequest(SpringEndpoint endpoint);
+    void onStartRequest(ServiceEndpoint endpoint);
 
     /**
      * Callback method invoked when the request is successfully processed.
      *
      * @param response the {@link SpringClusterResponse} containing the response data
-     * @param endpoint the {@link SpringEndpoint} associated with the request
+     * @param endpoint the {@link ServiceEndpoint} associated with the request
      */
-    void onSuccess(SpringClusterResponse response, SpringEndpoint endpoint);
+    void onSuccess(SpringClusterResponse response, ServiceEndpoint endpoint);
 
     /**
      * Callback method invoked when an error occurs during request processing.
      *
      * @param throwable the exception that caused the error
-     * @param endpoint  the {@link SpringEndpoint} associated with the request
+     * @param endpoint  the {@link ServiceEndpoint} associated with the request
      */
-    void onError(Throwable throwable, SpringEndpoint endpoint);
+    void onError(Throwable throwable, ServiceEndpoint endpoint);
 
     /**
      * Retrieves the default retry policy for the request.

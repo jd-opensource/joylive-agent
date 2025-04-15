@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2_1.instance;
+package com.jd.live.agent.plugin.registry.springcloud.v4.registry;
 
+import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import org.springframework.cloud.client.ServiceInstance;
 
-import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 /**
- * An interface that combines the functionality of both {@link ServiceEndpoint} and {@link ServiceInstance}.
- * This interface provides default implementations for methods inherited from both parent interfaces.
+ * Simple discovery client registry.
  */
-public interface InstanceEndpoint extends ServiceEndpoint, ServiceInstance {
+public class SimpleRegistryService extends RegistryService.AbstractSystemRegistryService {
 
-    @Override
-    default URI getUri() {
-        return ServiceEndpoint.super.getUri();
+    private final Map<String, List<ServiceEndpoint>> endpoints;
+
+    public SimpleRegistryService(Map<String, List<ServiceEndpoint>> endpoints) {
+        this.endpoints = endpoints;
     }
 
     @Override
-    default boolean isSecure() {
-        return ServiceEndpoint.super.isSecure();
+    protected List<ServiceEndpoint> getEndpoints(String service, String group) {
+        return endpoints.get(service);
     }
+
 }

@@ -21,6 +21,8 @@ import lombok.Setter;
 
 import java.util.List;
 
+import static com.jd.live.agent.governance.config.SubscribeMode.AUTO;
+
 @Getter
 @Setter
 public class RegistryConfig {
@@ -33,6 +35,8 @@ public class RegistryConfig {
     private long heartbeatInterval = 5000L;
 
     private boolean enabled;
+
+    private SubscribeMode subscribeMode = AUTO;
 
     private List<RegistryClusterConfig> clusters;
 

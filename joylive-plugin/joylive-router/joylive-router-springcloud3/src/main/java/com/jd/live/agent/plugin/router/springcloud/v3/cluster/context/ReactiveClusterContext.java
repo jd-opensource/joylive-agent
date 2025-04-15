@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster.context;
 
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
+import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClientRequestTransformer;
 import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
@@ -32,18 +32,16 @@ public class ReactiveClusterContext extends AbstractCloudClusterContext {
 
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
 
-    private static final String FIELD_PROPERTIES = "properties";
-
     private static final String FIELD_TRANSFORMERS = "transformers";
 
     private final LoadBalancedExchangeFilterFunction filterFunction;
 
     private final List<LoadBalancerClientRequestTransformer> transformers;
 
-    public ReactiveClusterContext(LoadBalancedExchangeFilterFunction filterFunction) {
+    public ReactiveClusterContext(Registry registry, LoadBalancedExchangeFilterFunction filterFunction) {
+        super(registry);
         this.filterFunction = filterFunction;
-        this.loadBalancerFactory = getQuietly(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
-        this.loadBalancerProperties = getQuietly(loadBalancerFactory, FIELD_PROPERTIES, v -> v instanceof LoadBalancerProperties);
+        setupLoadBalancerFactory(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
         this.transformers = getQuietly(filterFunction, FIELD_TRANSFORMERS);
     }
 

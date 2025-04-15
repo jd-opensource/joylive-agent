@@ -55,8 +55,8 @@ import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.service.PolicyService;
-import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherManager;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherSupervisor;
@@ -67,7 +67,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -185,9 +188,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     private CounterManager counterManager;
 
-    private List<String> serviceSyncers;
+    @Getter
+    private Registry registry;
 
-    private ConfigCenter configCenter;
+    private List<String> serviceSyncers;
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
@@ -228,8 +232,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                          List<Propagation> propagationList,
                          Propagation propagation,
                          CounterManager counterManager,
-                         List<String> serviceSyncers,
-                         ConfigCenter configCenter) {
+                         List<String> serviceSyncers) {
         this.policyPublisher = policyPublisher;
         this.systemPublisher = systemPublisher;
         this.trafficPublisher = trafficPublisher;
@@ -257,7 +260,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         this.propagation = propagation;
         this.counterManager = counterManager;
         this.serviceSyncers = serviceSyncers;
-        this.configCenter = configCenter;
     }
 
     @Override
@@ -313,7 +315,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             source.add(Propagation.COMPONENT_PROPAGATION, propagation);
-            source.add(ConfigCenter.COMPONENT_CONFIG_CENTER, configCenter);
             if (governanceConfig != null) {
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
@@ -422,8 +423,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         serviceSupervisor.service(service -> {
             if (service instanceof PolicyService) {
                 policyWatcherSupervisor.addWatcher((PolicyService) service);
-            } else if (service instanceof ConfigCenter) {
-                configCenter = (ConfigCenter) service;
+            } else if (service instanceof Registry) {
+                registry = (Registry) service;
             }
         });
     }

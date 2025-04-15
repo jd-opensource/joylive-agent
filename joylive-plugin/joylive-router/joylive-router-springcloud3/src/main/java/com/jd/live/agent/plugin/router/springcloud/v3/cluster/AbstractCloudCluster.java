@@ -21,21 +21,17 @@ import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.ThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.status.StatusThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.SpringClusterRequest;
-import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpStatus;
-import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -50,7 +46,7 @@ public abstract class AbstractCloudCluster<
         R extends SpringClusterRequest,
         O extends OutboundResponse,
         C extends CloudClusterContext>
-        extends AbstractLiveCluster<R, O, SpringEndpoint> {
+        extends AbstractLiveCluster<R, O, ServiceEndpoint> {
 
     protected final C context;
 
@@ -89,27 +85,9 @@ public abstract class AbstractCloudCluster<
         return context.isRetryable();
     }
 
-    /**
-     * Discover the service instances for the requested service.
-     *
-     * @param request The outbound request to be routed.
-     * @return ServiceInstance list
-     */
     @Override
-    public CompletionStage<List<SpringEndpoint>> route(R request) {
-        CompletableFuture<List<SpringEndpoint>> future = new CompletableFuture<>();
-        Mono<List<ServiceInstance>> mono = request.getInstances();
-        mono.subscribe(
-                v -> {
-                    List<SpringEndpoint> endpoints = new ArrayList<>();
-                    if (v != null) {
-                        v.forEach(i -> endpoints.add(new SpringEndpoint(i)));
-                    }
-                    future.complete(endpoints);
-                },
-                future::completeExceptionally
-        );
-        return future;
+    public CompletionStage<List<ServiceEndpoint>> route(R request) {
+        return context.getEndpoints(request);
     }
 
     @Override
@@ -118,7 +96,7 @@ public abstract class AbstractCloudCluster<
     }
 
     @Override
-    public Throwable createException(Throwable throwable, R request, SpringEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, R request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
@@ -138,12 +116,12 @@ public abstract class AbstractCloudCluster<
     }
 
     @Override
-    public void onStartRequest(R request, SpringEndpoint endpoint) {
+    public void onStartRequest(R request, ServiceEndpoint endpoint) {
         request.onStartRequest(endpoint);
     }
 
     @Override
-    public void onError(Throwable throwable, R request, SpringEndpoint endpoint) {
+    public void onError(Throwable throwable, R request, ServiceEndpoint endpoint) {
         request.onError(throwable, endpoint);
     }
 
