@@ -17,31 +17,73 @@ package com.jd.live.agent.plugin.router.springcloud.v4.instance;
 
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.DefaultResponse;
+import org.springframework.cloud.client.loadbalancer.EmptyResponse;
 import org.springframework.cloud.client.loadbalancer.Response;
 
+import java.net.URI;
 import java.util.Map;
 
-public class SpringEndpoint extends AbstractEndpoint {
+import static com.jd.live.agent.core.Constants.LABEL_STATE;
+import static com.jd.live.agent.plugin.router.springcloud.v4.instance.EndpointInstance.convert;
 
-    private static final String STATE_HANGUP = "hangup";
-    private static final String STATE_SUSPEND = "suspend";
-    private static final String LABEL_STATE = "state";
+public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
+
+    private final String service;
 
     private final ServiceInstance instance;
 
-    private final Response<ServiceInstance> response;
-
     public SpringEndpoint(ServiceInstance instance) {
+        this.service = instance.getServiceId();
         this.instance = instance;
-        this.response = new DefaultResponse(instance);
+    }
+
+    public SpringEndpoint(String service, ServiceInstance instance) {
+        this.service = service;
+        this.instance = instance;
+    }
+
+    public SpringEndpoint(String service, ServiceEndpoint endpoint) {
+        this.service = service;
+        this.instance = endpoint instanceof ServiceInstance ? (ServiceInstance) endpoint : new EndpointInstance(endpoint);
+    }
+
+    @Override
+    public String getInstanceId() {
+        return instance.getInstanceId();
     }
 
     @Override
     public String getId() {
         String result = instance.getInstanceId();
         return result != null ? result : getAddress();
+    }
+
+    @Override
+    public String getServiceId() {
+        return service;
+    }
+
+    @Override
+    public String getService() {
+        return service;
+    }
+
+    @Override
+    public String getScheme() {
+        return instance.getScheme();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return instance.isSecure();
+    }
+
+    @Override
+    public URI getUri() {
+        return instance.getUri();
     }
 
     @Override
@@ -52,6 +94,11 @@ public class SpringEndpoint extends AbstractEndpoint {
     @Override
     public int getPort() {
         return instance.getPort();
+    }
+
+    @Override
+    public Map<String, String> getMetadata() {
+        return instance.getMetadata();
     }
 
     @Override
@@ -75,7 +122,11 @@ public class SpringEndpoint extends AbstractEndpoint {
         return instance;
     }
 
-    public Response<ServiceInstance> getResponse() {
-        return response;
+    public static Response<ServiceInstance> getResponse(ServiceEndpoint endpoint) {
+        if (endpoint == null) {
+            return new EmptyResponse();
+        } else {
+            return new DefaultResponse(convert(endpoint));
+        }
     }
 }

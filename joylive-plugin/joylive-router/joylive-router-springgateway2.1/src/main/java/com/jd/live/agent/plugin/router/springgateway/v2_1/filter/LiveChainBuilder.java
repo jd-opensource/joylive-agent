@@ -36,11 +36,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.BlockingClusterContext.createFactory;
+import static com.jd.live.agent.plugin.router.springgateway.v2_1.util.WebExchangeUtils.getURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 /**
@@ -49,7 +49,6 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
 @Getter
 public class LiveChainBuilder {
 
-    public static final String SCHEMA_LB = "lb";
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
     private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";
@@ -57,10 +56,7 @@ public class LiveChainBuilder {
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
-    private static final String SCHEME_REGEX = "[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*";
-    private static final Pattern SCHEME_PATTERN = Pattern.compile(SCHEME_REGEX);
     private static final int WRITE_RESPONSE_FILTER_ORDER = -1;
-    private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
 
     /**
      * The invocation context for this filter configuration.
@@ -87,7 +83,7 @@ public class LiveChainBuilder {
      */
     private final GatewayCluster cluster;
 
-    private ServiceRegistryFactory registryFactory;
+    private ServiceRegistryFactory system;
 
     private final Map<String, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
@@ -104,7 +100,7 @@ public class LiveChainBuilder {
         this.target = target;
         this.globalFilters = getGlobalFilters(target);
         // depend on getGlobalFilters to initialize registryFactory
-        this.cluster = new GatewayCluster(registryFactory, context.getPropagation());
+        this.cluster = new GatewayCluster(context.getRegistry(), system, context.getPropagation());
     }
 
     /**
@@ -196,10 +192,10 @@ public class LiveChainBuilder {
                 globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
                     LoadBalancerClientFactory clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
-                    registryFactory = service -> new SpringServiceRegistry(service, clientFactory);
+                    system = service -> new SpringServiceRegistry(service, clientFactory);
                 } else if (globalFilter instanceof LoadBalancerClientFilter) {
                     LoadBalancerClient client = getQuietly(globalFilter, "loadBalancer");
-                    registryFactory = createFactory(client);
+                    system = createFactory(client);
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);
@@ -220,27 +216,19 @@ public class LiveChainBuilder {
      * @return A boolean indicating whether load balancing is used.
      */
     private boolean pareURI(ServerWebExchange exchange, Route route, List<GatewayFilter> pathFilters) {
-        URI routeUri = route.getUri();
-
-        String scheme = routeUri.getScheme();
-        String schemePrefix = null;
-        boolean hasAnotherScheme = routeUri.getHost() == null && routeUri.getRawPath() == null
-                && SCHEME_PATTERN.matcher(routeUri.getSchemeSpecificPart()).matches();
         Map<String, Object> attributes = exchange.getAttributes();
-        if (hasAnotherScheme) {
-            schemePrefix = routeUri.getScheme();
-            attributes.put(GATEWAY_SCHEME_PREFIX_ATTR, schemePrefix);
-            routeUri = URI.create(routeUri.getSchemeSpecificPart());
-            scheme = routeUri.getScheme();
+        LiveRoutePredicate predicate = route.getPredicate() instanceof LiveRoutePredicate ? (LiveRoutePredicate) route.getPredicate() : null;
+        LiveRouteURI routeURI = predicate != null ? predicate.getUri() : new LiveRouteURI(route.getUri());
+        if (routeURI.getSchemePrefix() != null) {
+            attributes.put(GATEWAY_SCHEME_PREFIX_ATTR, routeURI.getSchemePrefix());
         }
-
         if (pathFilters != null && !pathFilters.isEmpty()) {
             LiveGatewayFilterChain chain = new DefaultGatewayFilterChain(pathFilters);
             chain.filter(exchange).subscribe();
         }
-        URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
-        uri = newURI(uri, routeUri.getScheme(), routeUri.getHost(), routeUri.getPort());
+        URI uri = getURI(exchange);
+        uri = newURI(uri, routeURI.getScheme(), routeURI.getHost(), routeURI.getPort());
         attributes.put(GATEWAY_REQUEST_URL_ATTR, uri);
-        return SCHEMA_LB.equals(scheme) || SCHEMA_LB.equals(schemePrefix);
+        return routeURI.isLoadBalancer();
     }
 }

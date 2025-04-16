@@ -22,6 +22,7 @@ import com.netflix.loadbalancer.ILoadBalancer;
 import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -46,8 +47,8 @@ public class RibbonServiceRegistry implements ServiceRegistry {
     }
 
     @Override
-    public List<ServiceEndpoint> getEndpoints() {
-        return toList(loadBalancer.getAllServers(), s -> new RibbonEndpoint(service, s));
+    public CompletableFuture<List<ServiceEndpoint>> getEndpoints() {
+        return CompletableFuture.completedFuture(toList(loadBalancer.getAllServers(), s -> new RibbonEndpoint(service, s)));
     }
 
     @Override

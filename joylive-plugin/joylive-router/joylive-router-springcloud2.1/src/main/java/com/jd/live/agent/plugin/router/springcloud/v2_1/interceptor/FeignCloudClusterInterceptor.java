@@ -45,7 +45,7 @@ public class FeignCloudClusterInterceptor extends AbstractCloudClusterIntercepto
     protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Request request = ctx.getArgument(0);
-        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), FeignCloudCluster::new);
+        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest clusterRequest = new FeignCloudClusterRequest(request, ctx.getArgument(1), cluster.getContext());
         HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
         FeignClusterResponse response = cluster.request(invocation);

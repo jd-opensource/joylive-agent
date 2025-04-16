@@ -19,9 +19,10 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.HttpClientClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.httpclient.HttpClientThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.HttpClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.HttpClientClusterResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -44,12 +45,12 @@ public class HttpClientCloudCluster extends AbstractCloudCluster<
         HttpClientClusterContext,
         IOException> {
 
-    public HttpClientCloudCluster(RibbonLoadBalancingHttpClient client) {
-        super(new HttpClientClusterContext(client), new HttpClientThrowerFactory<>());
+    public HttpClientCloudCluster(Registry registry, RibbonLoadBalancingHttpClient client) {
+        super(new HttpClientClusterContext(registry, client), new HttpClientThrowerFactory<>());
     }
 
     @Override
-    public CompletionStage<HttpClientClusterResponse> invoke(HttpClientClusterRequest request, InstanceEndpoint endpoint) {
+    public CompletionStage<HttpClientClusterResponse> invoke(HttpClientClusterRequest request, ServiceEndpoint endpoint) {
         try {
             CloseableHttpResponse response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new HttpClientClusterResponse(response));

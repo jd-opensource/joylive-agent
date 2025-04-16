@@ -114,5 +114,22 @@ public class ListBuilder<K, T> implements MapBuilder<K, T> {
         }
         return result;
     }
+
+    /**
+     * A specialized {@link ListBuilder} that converts all keys to lowercase during operations.
+     * This enables case-insensitive comparisons when working with string keys.
+     *
+     * @param <T> the type of elements to be stored in the list
+     */
+    public static class LowercaseListBuilder<T> extends ListBuilder<String, T> {
+
+        public LowercaseListBuilder(Supplier<List<T>> supplier, Function<T, String> keyFunc) {
+            super(supplier, null, keyFunc, String::toLowerCase);
+        }
+
+        public LowercaseListBuilder(Supplier<List<T>> supplier, Consumer<T> consumer, Function<T, String> keyFunc) {
+            super(supplier, consumer, keyFunc, String::toLowerCase);
+        }
+    }
 }
 

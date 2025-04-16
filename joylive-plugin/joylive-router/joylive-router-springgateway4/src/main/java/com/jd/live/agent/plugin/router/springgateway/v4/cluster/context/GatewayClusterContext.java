@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v4.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.AbstractCloudClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.registry.SpringServiceRegistry;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
@@ -23,8 +25,10 @@ import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalanc
 @Getter
 public class GatewayClusterContext extends AbstractCloudClusterContext {
 
-    public GatewayClusterContext(ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
+    public GatewayClusterContext(Registry registry, ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory) {
+        super(registry);
         this.loadBalancerFactory = clientFactory;
+        this.system = loadBalancerFactory == null ? null : name -> new SpringServiceRegistry(name, loadBalancerFactory);
     }
 
     @Override

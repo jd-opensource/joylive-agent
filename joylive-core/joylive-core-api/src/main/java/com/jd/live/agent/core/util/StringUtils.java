@@ -166,6 +166,10 @@ public class StringUtils {
         }
     }
 
+    public static String choose(String cs1, String cs2) {
+        return cs1 == null || cs1.isEmpty() ? cs2 : cs1;
+    }
+
     /**
      * Appends a key-value pair to the provided StringBuilder with a specified separator.
      * If the value is null or empty, the behavior depends on the nullable flag.

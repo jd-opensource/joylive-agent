@@ -26,10 +26,6 @@ import java.util.function.BiFunction;
 
 public interface NacosClientApi extends ConfigClientApi {
 
-     String DEFAULT_NAMESPACE = "public";
-
-     String DEFAULT_GROUP = "DEFAULT_GROUP";
-
     /**
      * Subscribes to configuration changes for the specified dataId and group.
      *

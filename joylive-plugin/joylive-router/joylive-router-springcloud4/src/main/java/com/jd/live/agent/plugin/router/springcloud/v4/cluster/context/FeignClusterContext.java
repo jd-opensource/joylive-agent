@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import feign.Client;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
@@ -31,17 +31,15 @@ public class FeignClusterContext extends AbstractCloudClusterContext {
 
     private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
 
-    private static final String FIELD_PROPERTIES = "properties";
-
     private final Client client;
 
     private final Client delegate;
 
-    public FeignClusterContext(Client client) {
+    public FeignClusterContext(Registry registry, Client client) {
+        super(registry);
         this.client = client;
         this.delegate = getQuietly(client, FIELD_DELEGATE);
-        this.loadBalancerFactory = getQuietly(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
-        this.loadBalancerProperties = getQuietly(loadBalancerFactory, FIELD_PROPERTIES, v -> v instanceof LoadBalancerProperties);
+        setupLoadBalancerFactory(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
     }
 
     public Client getDelegate() {

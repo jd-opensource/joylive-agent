@@ -19,8 +19,9 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.DegradeHttpResponse;
@@ -43,16 +44,12 @@ public class BlockingCloudCluster extends AbstractCloudCluster<
         BlockingClusterResponse,
         BlockingClusterContext> {
 
-    public BlockingCloudCluster(BlockingClusterContext context) {
-        super(context);
-    }
-
-    public BlockingCloudCluster(ClientHttpRequestInterceptor interceptor) {
-        super(new BlockingClusterContext(interceptor));
+    public BlockingCloudCluster(Registry registry, ClientHttpRequestInterceptor interceptor) {
+        super(new BlockingClusterContext(registry, interceptor));
     }
 
     @Override
-    public CompletionStage<BlockingClusterResponse> invoke(BlockingCloudClusterRequest request, InstanceEndpoint endpoint) {
+    public CompletionStage<BlockingClusterResponse> invoke(BlockingCloudClusterRequest request, ServiceEndpoint endpoint) {
         // TODO sticky session
         try {
             ClientHttpResponse response = request.execute(endpoint);

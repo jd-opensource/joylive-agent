@@ -18,23 +18,27 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.CloudClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
+import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.RequestLifecycle;
+import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.ServiceContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.SpringClusterResponse;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
-import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint.getResponse;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -47,37 +51,11 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
 
     protected final C context;
 
-    /**
-     * A {@code LoadBalancerProperties} object, containing configuration
-     * properties for load balancing.
-     */
-    protected final LoadBalancerProperties properties;
+    protected final ServiceContext serviceContext;
 
-    /**
-     * A lazy-initialized object of {@code Set<LoadBalancerLifecycle>}, representing the lifecycle
-     * processors for the load balancer. These processors provide hooks for custom logic at various
-     * stages of the load balancing process.
-     */
-    @SuppressWarnings("rawtypes")
-    protected CacheObject<Set<LoadBalancerLifecycle>> lifecycles;
+    protected Request<?> lbRequest;
 
-    /**
-     * A lazy-initialized {@code Request<?>} object that encapsulates the original request data
-     * along with any hints to influence load balancing decisions.
-     */
-    protected CacheObject<Request<?>> lbRequest;
-
-    /**
-     * A lazy-initialized {@code RequestData} object, representing the data of the original
-     * request that will be used by the load balancer to select an appropriate service instance.
-     */
-    protected CacheObject<RequestData> requestData;
-
-    /**
-     * A lazy-initialized {@code ServiceInstanceListSupplier} object, responsible for providing
-     * a list of available service instances for load balancing.
-     */
-    protected CacheObject<ServiceInstanceListSupplier> instanceSupplier;
+    protected RequestData requestData;
 
     protected CacheObject<String> stickyId;
 
@@ -85,8 +63,11 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
         super(request);
         this.uri = uri;
         this.context = context;
+        String service = getService();
         // depend on url
-        this.properties = context.getLoadBalancerProperties(getService());
+        this.serviceContext = context.getServiceContext(service);
+        this.requestData = buildRequestData();
+        this.lbRequest = buildLbRequest(service, requestData);
     }
 
     @Override
@@ -112,7 +93,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
 
     @Override
     public RetryPolicy getDefaultRetryPolicy() {
-        LoadBalancerProperties properties = getProperties();
+        LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
         LoadBalancerProperties.Retry retry = properties == null ? null : properties.getRetry();
         if (retry != null && retry.isEnabled() && (getHttpMethod() == HttpMethod.GET || retry.isRetryOnAllOperations())) {
             Set<String> statuses = new HashSet<>(retry.getRetryableStatusCodes().size());
@@ -127,46 +108,31 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     }
 
     @Override
-    public Mono<List<ServiceInstance>> getInstances() {
-        ServiceInstanceListSupplier supplier = getInstanceSupplier();
-        if (supplier == null) {
-            return Mono.just(new ArrayList<>());
-        } else {
-            return supplier.get(getLbRequest()).next();
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
     public void onStart() {
-        lifecycles(l -> l.onStart(getLbRequest()));
+        lifecycle(l -> l.onStart(lbRequest));
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onDiscard() {
-        lifecycles(l -> l.onComplete(new CompletionContext<>(
-                CompletionContext.Status.DISCARD, getLbRequest(), new EmptyResponse())));
+        lifecycle(l -> l.onComplete(new CompletionContext<>(
+                CompletionContext.Status.DISCARD, lbRequest, new EmptyResponse())));
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void onStartRequest(SpringEndpoint endpoint) {
-        lifecycles(l -> l.onStartRequest(getLbRequest(),
-                endpoint == null ? new DefaultResponse(null) : endpoint.getResponse()));
+    public void onStartRequest(ServiceEndpoint endpoint) {
+        lifecycle(l -> l.onStartRequest(lbRequest, getResponse(endpoint)));
     }
 
     @Override
-    @SuppressWarnings({"deprecation", "unchecked"})
-    public void onSuccess(SpringClusterResponse response, SpringEndpoint endpoint) {
+    @SuppressWarnings({"deprecation"})
+    public void onSuccess(SpringClusterResponse response, ServiceEndpoint endpoint) {
         Object res = response;
         try {
             HttpHeaders httpHeaders = response.getHttpHeaders();
             int statusCode = response.getStatusCode();
             org.springframework.http.HttpStatus httpStatus = response.getHttpStatus();
-            RequestData requestData = getRequestData();
             MultiValueMap<String, ResponseCookie> cookies = null;
-            boolean useRawStatusCodeInResponseData = context.isUseRawStatusCodeInResponseData(getProperties());
+            boolean useRawStatusCodeInResponseData = serviceContext.isUseRawStatusCodeInResponseData();
             res = useRawStatusCodeInResponseData || httpStatus == null
                     ? new ResponseData(httpHeaders, cookies, requestData, statusCode)
                     : new ResponseData(httpStatus, httpHeaders, cookies, requestData);
@@ -174,24 +140,13 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
         }
 
         Object clientResponse = res;
-        Response<ServiceInstance> resp = endpoint == null ? new DefaultResponse(null) : endpoint.getResponse();
-        CompletionContext<Object, ServiceInstance, ?> ctx = new CompletionContext<>(
-                CompletionContext.Status.SUCCESS,
-                getLbRequest(),
-                resp,
-                clientResponse);
-        lifecycles(l -> l.onComplete(ctx));
+        CompletionContext<Object, ServiceInstance, ?> ctx = new CompletionContext<>(CompletionContext.Status.SUCCESS, lbRequest, getResponse(endpoint), clientResponse);
+        lifecycle(l -> l.onComplete(ctx));
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void onError(Throwable throwable, SpringEndpoint endpoint) {
-        Response<ServiceInstance> response = endpoint == null ? new DefaultResponse(null) : endpoint.getResponse();
-        lifecycles(l -> l.onComplete(new CompletionContext<>(
-                CompletionContext.Status.FAILED,
-                throwable,
-                getLbRequest(),
-                response)));
+    public void onError(Throwable throwable, ServiceEndpoint endpoint) {
+        lifecycle(l -> l.onComplete(new CompletionContext<>(CompletionContext.Status.FAILED, throwable, lbRequest, getResponse(endpoint))));
     }
 
     /**
@@ -200,70 +155,11 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
      *
      * @param consumer A consumer that accepts {@code LoadBalancerLifecycle} instances for processing.
      */
-    @SuppressWarnings("rawtypes")
-    protected void lifecycles(Consumer<LoadBalancerLifecycle> consumer) {
-        Set<LoadBalancerLifecycle> lifecycles = getLifecycles();
-        if (lifecycles != null && consumer != null) {
-            lifecycles.forEach(consumer);
+    protected void lifecycle(Consumer<RequestLifecycle> consumer) {
+        RequestLifecycle lifecycle = serviceContext.getLifecycle();
+        if (lifecycle != null && consumer != null) {
+            consumer.accept(lifecycle);
         }
-    }
-
-    /**
-     * Retrieves lifecycle processors for load balancing
-     *
-     * @return Set of lifecycle processors
-     */
-    @SuppressWarnings("rawtypes")
-    protected Set<LoadBalancerLifecycle> getLifecycles() {
-        if (lifecycles == null) {
-            lifecycles = new CacheObject<>(context.getLifecycleProcessors(getService()));
-        }
-        return lifecycles.get();
-    }
-
-    /**
-     * Gets the load balancer request
-     *
-     * @return The load balancer request
-     */
-    protected Request<?> getLbRequest() {
-        if (lbRequest == null) {
-            lbRequest = new CacheObject<>(buildLbRequest());
-        }
-        return lbRequest.get();
-    }
-
-    /**
-     * Retrieves load balancing properties
-     *
-     * @return Load balancing properties
-     */
-    protected LoadBalancerProperties getProperties() {
-        return properties;
-    }
-
-    /**
-     * Returns a supplier of service instance lists.
-     *
-     * @return a supplier of service instance lists
-     */
-    protected ServiceInstanceListSupplier getInstanceSupplier() {
-        if (instanceSupplier == null) {
-            instanceSupplier = new CacheObject<>(context.getServiceInstanceListSupplier(getService()));
-        }
-        return instanceSupplier.get();
-    }
-
-    /**
-     * Retrieves request data for load balancing
-     *
-     * @return Request data
-     */
-    protected RequestData getRequestData() {
-        if (requestData == null) {
-            requestData = new CacheObject<>(buildRequestData());
-        }
-        return requestData.get();
     }
 
     /**
@@ -276,18 +172,16 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     protected abstract RequestData buildRequestData();
 
     /**
-     * Creates a new load balancer request object that encapsulates the original request data along with
-     * any hints that may influence load balancing decisions. This object is used by the load balancer to
-     * select an appropriate service instance based on the provided hints and other criteria.
+     * Creates a new load balancer request object.
      *
      * @return A DefaultRequest object containing the context for the load balancing operation.
      */
-    protected DefaultRequest<RequestDataContext> buildLbRequest() {
-        LoadBalancerProperties properties = getProperties();
+    protected DefaultRequest<RequestDataContext> buildLbRequest(String service, RequestData requestData) {
+        LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
         Map<String, String> hints = properties == null ? null : properties.getHint();
         String defaultHint = hints == null ? null : hints.getOrDefault("default", "default");
-        String hint = hints == null ? null : hints.getOrDefault(getService(), defaultHint);
-        return new DefaultRequest<>(new RequestDataContext(getRequestData(), hint));
+        String hint = hints == null ? null : hints.getOrDefault(service, defaultHint);
+        return new DefaultRequest<>(new RequestDataContext(requestData, hint));
     }
 
     /**
@@ -298,10 +192,10 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
      * from this client to ensure session persistence.
      */
     protected String buildStickyId() {
-        LoadBalancerProperties properties = getProperties();
+        LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
         if (properties != null) {
             String instanceIdCookieName = properties.getStickySession().getInstanceIdCookieName();
-            Object context = getLbRequest().getContext();
+            Object context = lbRequest.getContext();
             if (context instanceof RequestDataContext) {
                 MultiValueMap<String, String> cookies = ((RequestDataContext) context).getClientRequest().getCookies();
                 return cookies == null ? null : cookies.getFirst(instanceIdCookieName);

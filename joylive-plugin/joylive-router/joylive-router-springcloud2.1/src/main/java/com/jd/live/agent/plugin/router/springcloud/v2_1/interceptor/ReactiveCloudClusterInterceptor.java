@@ -50,7 +50,7 @@ public class ReactiveCloudClusterInterceptor extends AbstractCloudClusterInterce
         MethodContext mc = (MethodContext) ctx;
         ClientRequest request = ctx.getArgument(0);
         ExchangeFilterFunction filter = (ExchangeFilterFunction) ctx.getTarget();
-        ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, ReactiveCloudCluster::new);
+        ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
         ReactiveCloudClusterRequest clusterRequest = new ReactiveCloudClusterRequest(request, ctx.getArgument(1), cluster.getContext());
         HttpOutboundInvocation<ReactiveCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
         CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);

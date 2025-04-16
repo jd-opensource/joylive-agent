@@ -25,6 +25,12 @@ import java.util.Map;
  */
 public interface ServiceEndpoint extends Endpoint {
 
+    @Override
+    default String getScheme() {
+        URI uri = getUri();
+        return uri == null ? null : uri.getScheme();
+    }
+
     /**
      * Retrieves the name of the service.
      *

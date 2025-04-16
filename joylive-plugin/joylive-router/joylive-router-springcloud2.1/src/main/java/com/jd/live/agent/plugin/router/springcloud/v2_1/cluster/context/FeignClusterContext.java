@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.RibbonServiceRegistry;
 import feign.Client;
 import lombok.Getter;
@@ -38,11 +39,11 @@ public class FeignClusterContext extends AbstractCloudClusterContext {
 
     private final SpringClientFactory clientFactory;
 
-    public FeignClusterContext(Client client) {
+    public FeignClusterContext(Registry registry, Client client) {
+        super(registry);
         this.delegate = getQuietly(client, FIELD_DELEGATE);
         this.clientFactory = getQuietly(client, FIELD_CLIENT_FACTORY);
-        CachingSpringLoadBalancerFactory factory = getQuietly(client, FIELD_LB_CLIENT_FACTORY);
-        this.retryFactory = getQuietly(factory, "loadBalancedRetryFactory");
-        this.registryFactory = service -> new RibbonServiceRegistry(service, clientFactory);
+        this.retryFactory = getQuietly((CachingSpringLoadBalancerFactory) getQuietly(client, FIELD_LB_CLIENT_FACTORY), "loadBalancedRetryFactory");
+        this.system = service -> new RibbonServiceRegistry(service, clientFactory);
     }
 }

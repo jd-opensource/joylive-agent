@@ -48,7 +48,19 @@ public enum RegistryMode {
      * Represents the mode where both registration and subscription operations are performed.
      * In this mode, entities are added to the registry and also subscribed to events or updates.
      */
-    FULL;
+    FULL,
+
+    NONE {
+        @Override
+        public boolean isRegister() {
+            return false;
+        }
+
+        @Override
+        public boolean isSubscribe() {
+            return false;
+        }
+    };
 
 
     public boolean isRegister() {

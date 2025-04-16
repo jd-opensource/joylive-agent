@@ -20,8 +20,9 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.FeignClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
 import feign.Client;
@@ -49,18 +50,14 @@ public class FeignCloudCluster extends AbstractCloudCluster<FeignCloudClusterReq
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    public FeignCloudCluster(FeignClusterContext context) {
-        super(context);
-    }
-
-    public FeignCloudCluster(Client client) {
-        super(new FeignClusterContext(client));
+    public FeignCloudCluster(Registry registry, Client client) {
+        super(new FeignClusterContext(registry, client));
     }
 
     @Override
-    public CompletionStage<FeignClusterResponse> invoke(FeignCloudClusterRequest request, SpringEndpoint endpoint) {
+    public CompletionStage<FeignClusterResponse> invoke(FeignCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
-            feign.Response response = request.execute(endpoint.getInstance());
+            feign.Response response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new FeignClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
@@ -73,7 +70,7 @@ public class FeignCloudCluster extends AbstractCloudCluster<FeignCloudClusterReq
     }
 
     @Override
-    public void onSuccess(FeignClusterResponse response, FeignCloudClusterRequest request, SpringEndpoint endpoint) {
+    public void onSuccess(FeignClusterResponse response, FeignCloudClusterRequest request, ServiceEndpoint endpoint) {
         request.onSuccess(response, endpoint);
     }
 

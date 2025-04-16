@@ -16,7 +16,10 @@
 package com.jd.live.agent.governance.registry;
 
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.config.RegistryMode;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -25,6 +28,8 @@ import java.util.function.Consumer;
  */
 public interface RegistryService extends AutoCloseable {
 
+    String SYSTEM = "system";
+
     /**
      * Retrieves the name of the registry service.
      *
@@ -32,6 +37,15 @@ public interface RegistryService extends AutoCloseable {
      * the registry service instance.
      */
     String getName();
+
+    /**
+     * Retrieves the description of the registry service.
+     *
+     * @return The description of the registry service.
+     */
+    default String getDescription() {
+        return getName();
+    }
 
     /**
      * Retrieves the configuration of the registry cluster associated with this service.
@@ -70,7 +84,7 @@ public interface RegistryService extends AutoCloseable {
      * @param service  The service name to subscribe to.
      * @param consumer The consumer that will receive endpoint events.
      */
-    void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception;
+    void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception;
 
     /**
      * Unsubscribes from endpoint events for a specific service.
@@ -84,7 +98,9 @@ public interface RegistryService extends AutoCloseable {
      * This class provides foundational functionality for managing the lifecycle of a registry service,
      * as well as registering, unregistering, subscribing, and unsubscribing from service instances.
      */
-    class AbstractRegistryService implements RegistryService {
+    abstract class AbstractRegistryService implements RegistryService {
+
+        protected final List<RegistryListener> listeners = new CopyOnWriteArrayList<>();
 
         @Override
         public String getName() {
@@ -117,13 +133,79 @@ public interface RegistryService extends AutoCloseable {
         }
 
         @Override
-        public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
-
+        public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
+            RegistryListener listener = new RegistryListener(service, group, consumer);
+            listeners.add(listener);
+            try {
+                List<ServiceEndpoint> endpoints = getEndpoints(service, group);
+                publish(new RegistryEvent(service, group, endpoints, getDefaultGroup()), listener);
+            } catch (Exception ignored) {
+                // ignore
+            }
         }
 
         @Override
         public void unsubscribe(String service, String group) throws Exception {
+            listeners.removeIf(listener -> listener.match(service, group, getDefaultGroup()));
+        }
 
+        protected String getDefaultGroup() {
+            return null;
+        }
+
+        protected abstract List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception;
+
+        /**
+         * Delivers an event to a specific listener if service/group conditions match.
+         */
+        protected void publish(RegistryEvent event) {
+            if (event != null) {
+                for (RegistryListener listener : listeners) {
+                    publish(event, listener);
+                }
+            }
+        }
+
+        /**
+         * Delivers an event to a specific listener if service/group conditions match.
+         */
+        protected void publish(RegistryEvent event, RegistryListener listener) {
+            if (event != null && listener != null && match(event, listener)) {
+                listener.publish(event);
+            }
+        }
+
+        protected boolean match(RegistryEvent event, RegistryListener listener) {
+            return listener.match(event.getService(), event.getGroup(), event.getDefaultGroup());
+        }
+    }
+
+    /**
+     * Base implementation for system-level registry services.
+     *
+     * @see AbstractRegistryService Parent service implementation
+     */
+    abstract class AbstractSystemRegistryService extends AbstractRegistryService {
+
+        private final RegistryClusterConfig config;
+
+        public AbstractSystemRegistryService() {
+            config = createDefaultConfig();
+        }
+
+        @Override
+        public String getName() {
+            return SYSTEM;
+        }
+
+        @Override
+        public RegistryClusterConfig getConfig() {
+            return config;
+        }
+
+        protected RegistryClusterConfig createDefaultConfig() {
+            // only subscribe mode is supported for system
+            return new RegistryClusterConfig(RegistryMode.SUBSCRIBE);
         }
     }
 

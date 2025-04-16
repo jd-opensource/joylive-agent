@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.instance;
 
-import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
@@ -32,11 +31,8 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
 
 /**
  * A class that represents a service endpoint in the context of Ribbon load balancing.
- * This class implements both {@link ServiceEndpoint} and {@link ServiceInstance} interfaces,
- * providing a unified representation of a service endpoint that can be used for load balancing.
- * It extends {@link AbstractAttributes} to support additional attributes associated with the endpoint.
  */
-public class RibbonEndpoint extends AbstractEndpoint implements InstanceEndpoint {
+public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
 
     private static final Map<Class<?>, CacheObject<UnsafeFieldAccessor>> ACCESSOR_MAP = new ConcurrentHashMap<>();
     private static final String FIELD_METADATA = "metadata";
@@ -54,7 +50,7 @@ public class RibbonEndpoint extends AbstractEndpoint implements InstanceEndpoint
     public RibbonEndpoint(String service, Server server) {
         this.service = service;
         this.server = server;
-        this.scheme = server.getScheme() == null || server.getScheme().isEmpty() ? "http" : server.getScheme();
+        this.scheme = server.getScheme() == null || server.getScheme().isEmpty() ? DEFAULT_HTTP_SCHEME : server.getScheme();
     }
 
     @Override
@@ -99,7 +95,7 @@ public class RibbonEndpoint extends AbstractEndpoint implements InstanceEndpoint
 
     @Override
     public boolean isSecure() {
-        return "https".equals(scheme);
+        return SECURE_SCHEME.test(scheme);
     }
 
     @Override

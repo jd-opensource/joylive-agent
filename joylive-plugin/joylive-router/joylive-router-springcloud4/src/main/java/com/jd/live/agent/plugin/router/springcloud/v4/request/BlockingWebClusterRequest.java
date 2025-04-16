@@ -16,12 +16,14 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.http.HttpHeaders;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * RestTemplateOutboundRequest
@@ -30,14 +32,14 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
 
     private final String service;
 
-    private final List<ServiceEndpoint> instances;
+    private final Registry registry;
 
     private final HttpHeaders writeableHeaders;
 
-    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, List<ServiceEndpoint> instances) {
+    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, Registry registry) {
         super(request);
         this.service = service;
-        this.instances = instances;
+        this.registry = registry;
         this.uri = request.getURI();
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
@@ -74,7 +76,7 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
         return writeableHeaders;
     }
 
-    public List<ServiceEndpoint> getInstances() {
-        return instances;
+    public CompletionStage<List<ServiceEndpoint>> getInstances() {
+        return registry.getEndpoints(service);
     }
 }

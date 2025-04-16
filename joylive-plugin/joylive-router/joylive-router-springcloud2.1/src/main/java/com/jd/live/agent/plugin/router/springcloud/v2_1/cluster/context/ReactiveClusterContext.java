@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.SpringServiceRegistry;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
@@ -32,16 +33,17 @@ public class ReactiveClusterContext extends BlockingClusterContext {
     private static final String FIELD_LOAD_BALANCER_CLIENT = "loadBalancerClient";
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
 
-    public ReactiveClusterContext(ExchangeFilterFunction filterFunction) {
+    public ReactiveClusterContext(Registry registry, ExchangeFilterFunction filterFunction) {
+        super(registry, null);
         // LoadBalancerExchangeFilterFunction.loadBalancerClient
         LoadBalancerClient client = getQuietly(filterFunction, FIELD_LOAD_BALANCER_CLIENT);
         if (client != null) {
-            this.registryFactory = createFactory(client);
+            this.system = createFactory(client);
         } else {
             // LoadBalancerExchangeFilterFunction.loadBalancerFactory
             ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerFactory = getQuietly(filterFunction, FIELD_LOAD_BALANCER_FACTORY);
             if (loadBalancerFactory != null) {
-                this.registryFactory = service -> new SpringServiceRegistry(service, loadBalancerFactory);
+                this.system = service -> new SpringServiceRegistry(service, loadBalancerFactory);
             }
         }
     }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.service.config.nacos;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -26,8 +27,6 @@ import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 
 import java.util.List;
 import java.util.concurrent.Executor;
-
-import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_GROUP;
 
 /**
  * A configurator that uses Nacos as the configuration source.
@@ -52,7 +51,7 @@ public class NacosConfigurator extends AbstractConfigurator<NacosClientApi> {
     protected void subscribe(ConfigSubscription<NacosClientApi> subscription) throws Exception {
         ConfigName name = subscription.getName();
         String profile = name.getProfile();
-        profile = profile == null || profile.isEmpty() ? DEFAULT_GROUP : profile;
+        profile = profile == null || profile.isEmpty() ? Constants.DEFAULT_GROUP : profile;
         logger.info("Subscribe {}, parser {}", name, subscription.getParser().getClass().getSimpleName());
         subscription.getClient().subscribe(name.getName(), profile, new ChangeListener(subscription));
     }

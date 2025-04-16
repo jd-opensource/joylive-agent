@@ -34,20 +34,20 @@ import java.util.Map;
  */
 public class BlockingCloudOutboundRequest extends AbstractHttpOutboundRequest<HttpRequest> {
 
-    private final String serviceId;
+    private final String service;
 
     private final HttpHeaders writeableHeaders;
 
-    public BlockingCloudOutboundRequest(HttpRequest request, String serviceId) {
+    public BlockingCloudOutboundRequest(HttpRequest request, String service) {
         super(request);
-        this.serviceId = serviceId;
+        this.service = service;
         this.uri = request.getURI();
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
     public String getService() {
-        return serviceId == null || serviceId.isEmpty() ? super.getService() : serviceId;
+        return service == null || service.isEmpty() ? super.getService() : service;
     }
 
     @Override

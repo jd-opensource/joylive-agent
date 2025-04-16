@@ -15,6 +15,9 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import java.util.List;
+import java.util.concurrent.CompletionStage;
+
 @FunctionalInterface
 public interface ServiceRegistryFactory {
 
@@ -25,5 +28,16 @@ public interface ServiceRegistryFactory {
      * @return the {@link ServiceRegistry} associated with the specified service name
      */
     ServiceRegistry getServiceRegistry(String service);
+
+    /**
+     * Asynchronously retrieves endpoints for a service.
+     *
+     * @param service the target service name
+     * @return CompletableFuture with endpoint list
+     */
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service) {
+        ServiceRegistry registry = getServiceRegistry(service);
+        return registry == null ? null : registry.getEndpoints();
+    }
 
 }

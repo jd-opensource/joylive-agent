@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.registry.InstanceEvent;
+import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import io.grpc.*;
 
@@ -69,7 +69,7 @@ public class LiveLoadBalancer extends LoadBalancer {
      *
      * @param event the endpoint event to handle
      */
-    protected void handle(InstanceEvent event) {
+    protected void handle(RegistryEvent event) {
         if (serviceName.equals(event.getService())) {
             helper.getSynchronizationContext().execute(helper::refreshNameResolution);
         }

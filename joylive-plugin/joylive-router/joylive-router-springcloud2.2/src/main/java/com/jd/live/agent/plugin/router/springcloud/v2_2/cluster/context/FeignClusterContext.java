@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import feign.Client;
 import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
-import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
@@ -44,11 +44,11 @@ public class FeignClusterContext extends AbstractCloudClusterContext {
     @Getter
     private final Client delegate;
 
-    public FeignClusterContext(Client client) {
+    public FeignClusterContext(Registry registry, Client client) {
+        super(registry);
         this.client = client;
         this.delegate = getQuietly(client, FIELD_DELEGATE);
-        BlockingLoadBalancerClient loadBalancerClient = getQuietly(client, FIELD_LOAD_BALANCER_CLIENT);
-        this.registryFactory = createFactory(loadBalancerClient);
+        this.system = createFactory(getQuietly(client, FIELD_LOAD_BALANCER_CLIENT));
         LoadBalancerRetryProperties retryProperties = getQuietly(client, FIELD_RETRY_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties);
         this.defaultRetryPolicy = getDefaultRetryPolicy(retryProperties);
     }

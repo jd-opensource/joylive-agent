@@ -34,6 +34,7 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.service.ServiceSupervisorAware;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
@@ -54,8 +55,8 @@ import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.service.PolicyService;
-import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherManager;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherSupervisor;
@@ -66,7 +67,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -184,13 +188,15 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     private CounterManager counterManager;
 
-    private List<String> serviceSyncers;
+    @Getter
+    private Registry registry;
 
-    private ConfigCenter configCenter;
+    private List<String> serviceSyncers;
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
 
-    private final Map<String, PolicySubscription> subscriptions = new ConcurrentHashMap<>();
+    // fix for eureka by uppercase
+    private final Map<String, PolicySubscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
     private final PolicyWatcherSupervisor policyWatcherSupervisor = new PolicyWatcherManager();
 
@@ -226,8 +232,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                          List<Propagation> propagationList,
                          Propagation propagation,
                          CounterManager counterManager,
-                         List<String> serviceSyncers,
-                         ConfigCenter configCenter) {
+                         List<String> serviceSyncers) {
         this.policyPublisher = policyPublisher;
         this.systemPublisher = systemPublisher;
         this.trafficPublisher = trafficPublisher;
@@ -255,7 +260,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         this.propagation = propagation;
         this.counterManager = counterManager;
         this.serviceSyncers = serviceSyncers;
-        this.configCenter = configCenter;
     }
 
     @Override
@@ -311,7 +315,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             source.add(Propagation.COMPONENT_PROPAGATION, propagation);
-            source.add(ConfigCenter.COMPONENT_CONFIG_CENTER, configCenter);
             if (governanceConfig != null) {
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
@@ -420,8 +423,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         serviceSupervisor.service(service -> {
             if (service instanceof PolicyService) {
                 policyWatcherSupervisor.addWatcher((PolicyService) service);
-            } else if (service instanceof ConfigCenter) {
-                configCenter = (ConfigCenter) service;
+            } else if (service instanceof Registry) {
+                registry = (Registry) service;
             }
         });
     }
@@ -503,14 +506,14 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     /**
      * Subscribes a {@link PolicySubscription} to the policy publisher.
      *
-     * @param subscriber The {@link PolicySubscription} to be subscribed.
+     * @param subscription The {@link PolicySubscription} to be subscribed.
      */
-    protected CompletableFuture<Void> subscribe(PolicySubscription subscriber) {
-        PolicySubscription exist = subscriptions.putIfAbsent(subscriber.getFullName(), subscriber);
+    protected CompletableFuture<Void> subscribe(PolicySubscription subscription) {
+        PolicySubscription exist = subscriptions.putIfAbsent(subscription.getFullName(), subscription);
         if (exist == null) {
             // notify syncer by event bus.
-            policyPublisher.offer(subscriber);
-            return subscriber.watch();
+            policyPublisher.offer(subscription);
+            return subscription.watch();
         } else {
             return exist.watch();
         }

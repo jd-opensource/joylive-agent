@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster.context;
 
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
+import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
 import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
-import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
@@ -33,17 +32,15 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
 
     private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancer.loadBalancerClientFactory";
 
-    private static final String FIELD_PROPERTIES = "properties";
-
     private final ClientHttpRequestInterceptor interceptor;
 
     private final LoadBalancerRequestFactory requestFactory;
 
-    public BlockingClusterContext(ClientHttpRequestInterceptor interceptor) {
+    public BlockingClusterContext(Registry registry, ClientHttpRequestInterceptor interceptor) {
+        super(registry);
         this.interceptor = interceptor;
         this.requestFactory = getQuietly(interceptor, FIELD_REQUEST_FACTORY);
-        this.loadBalancerFactory = getQuietly(interceptor, new String[]{FIELD_LOAD_BALANCER_CLIENT_FACTORY}, v -> v instanceof ReactiveLoadBalancer.Factory);
-        this.loadBalancerProperties = getQuietly(loadBalancerFactory, FIELD_PROPERTIES, v -> v instanceof LoadBalancerProperties);
+        setupLoadBalancerFactory(interceptor, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
     }
 
     public LoadBalancerRequestFactory getRequestFactory() {

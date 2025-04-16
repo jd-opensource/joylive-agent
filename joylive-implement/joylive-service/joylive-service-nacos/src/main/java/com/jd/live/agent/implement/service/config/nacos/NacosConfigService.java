@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi.DEFAULT_NAMESPACE;
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 
 @Injectable
 @ConditionalOnConfigCenterEnabled
@@ -46,7 +46,7 @@ public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
     @Override
     protected ConfigSubscription<NacosClientApi> createSubscription(ConfigName configName) throws Exception {
         String namespace = configName.getNamespace();
-        namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE : namespace;
+        namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE_ID : namespace;
         NacosClientApi client = clients.computeIfAbsent(namespace,
                 n -> NacosClientFactory.create(new NacosProperties(governanceConfig.getConfigCenterConfig(), n)));
         client.connect();

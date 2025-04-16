@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.RibbonServiceRegistry;
 import lombok.Getter;
 import org.springframework.cloud.netflix.ribbon.apache.RetryableRibbonLoadBalancingHttpClient;
@@ -31,10 +32,11 @@ public class HttpClientClusterContext extends AbstractCloudClusterContext {
 
     private final RibbonLoadBalancingHttpClient client;
 
-    public HttpClientClusterContext(RibbonLoadBalancingHttpClient client) {
+    public HttpClientClusterContext(Registry registry, RibbonLoadBalancingHttpClient client) {
+        super(registry);
         this.client = client;
         this.retryFactory = client instanceof RetryableRibbonLoadBalancingHttpClient ? (getQuietly(client, "loadBalancedRetryFactory")) : null;
-        this.registryFactory = service -> new RibbonServiceRegistry(service, client.getLoadBalancer());
+        this.system = service -> new RibbonServiceRegistry(service, client.getLoadBalancer());
     }
 
 }

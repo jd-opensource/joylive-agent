@@ -119,7 +119,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
      * potentially transformed by any configured {@link LoadBalancerClientRequestTransformer}s.
      */
     private ClientRequest createRequest(ServiceInstance serviceInstance) {
-        LoadBalancerProperties properties = getProperties();
+        LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
         LoadBalancerProperties.StickySession stickySession = properties == null ? null : properties.getStickySession();
         String instanceIdCookieName = stickySession == null ? null : stickySession.getInstanceIdCookieName();
         boolean addServiceInstanceCookie = stickySession != null && stickySession.isAddServiceInstanceCookie();

@@ -23,10 +23,10 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.RegistrySupervisor;
 import com.jd.live.agent.plugin.registry.springcloud.v2_2.condition.ConditionalOnSpringCloud2RegistryEnabled;
-import com.jd.live.agent.plugin.registry.springcloud.v2_2.interceptor.FixedInstanceSupplierConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v2_2.interceptor.FixedInstanceSupplierInterceptor;
 
 /**
  * FixedInstanceSupplierDefinition
@@ -40,14 +40,14 @@ public class FixedInstanceSupplierDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE = "org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier.FixedServiceInstanceListSupplier";
 
     @Inject(Registry.COMPONENT_REGISTRY)
-    private RegistrySupervisor registry;
+    private CompositeRegistry registry;
 
     public FixedInstanceSupplierDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(),
-                        () -> new FixedInstanceSupplierConstructorInterceptor(registry)
+                        () -> new FixedInstanceSupplierInterceptor(registry)
                 )
         };
     }

@@ -19,9 +19,10 @@ import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.ReactiveClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.reactive.WebClientThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.InstanceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.ReactiveCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveClusterResponse;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.plugin.router.springcloud.v2_1.instance.EndpointInstance.convert;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveClusterResponse.create;
 
 /**
@@ -46,14 +48,14 @@ public class ReactiveCloudCluster extends AbstractCloudCluster<
         ReactiveClusterContext,
         WebClientException> {
 
-    public ReactiveCloudCluster(ExchangeFilterFunction filterFunction) {
-        super(new ReactiveClusterContext(filterFunction), new WebClientThrowerFactory<>());
+    public ReactiveCloudCluster(Registry registry, ExchangeFilterFunction filterFunction) {
+        super(new ReactiveClusterContext(registry, filterFunction), new WebClientThrowerFactory<>());
     }
 
     @Override
-    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveCloudClusterRequest request, InstanceEndpoint endpoint) {
+    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
-            return request.exchange(endpoint).map(ReactiveClusterResponse::new).toFuture();
+            return request.exchange(convert(endpoint)).map(ReactiveClusterResponse::new).toFuture();
         } catch (Throwable e) {
             return Futures.future(e);
         }

@@ -18,30 +18,35 @@ package com.jd.live.agent.plugin.router.springgateway.v3.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.AbstractCloudClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v3.util.UriUtils;
+import com.jd.live.agent.plugin.router.springcloud.v3.response.SpringClusterResponse;
 import com.jd.live.agent.plugin.router.springgateway.v3.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v3.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v3.util.WebExchangeUtils;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.*;
+import org.springframework.cloud.client.loadbalancer.CompletionContext;
 import org.springframework.cloud.client.loadbalancer.CompletionContext.Status;
+import org.springframework.cloud.client.loadbalancer.RequestData;
+import org.springframework.cloud.client.loadbalancer.ResponseData;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
-import org.springframework.cloud.gateway.support.DelegatingServiceInstance;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
-import java.net.URI;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
+import static com.jd.live.agent.plugin.router.springcloud.v3.instance.SpringEndpoint.getResponse;
+import static com.jd.live.agent.plugin.router.springgateway.v3.util.WebExchangeUtils.forward;
 
 /**
  * GatewayOutboundRequest
@@ -69,7 +74,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
                                       GatewayConfig gatewayConfig,
                                       RetryConfig retryConfig,
                                       int index) {
-        super(exchange.getRequest(), getURI(exchange), context);
+        super(exchange.getRequest(), WebExchangeUtils.getURI(exchange), context);
         this.exchange = exchange;
         this.chain = chain;
         this.retryConfig = retryConfig;
@@ -165,54 +170,25 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void onStartRequest(SpringEndpoint endpoint) {
+    public void onStartRequest(ServiceEndpoint endpoint) {
         if (endpoint != null) {
-            ServiceInstance instance = endpoint.getInstance();
-            ServerWebExchange exchange = getExchange();
-            Map<String, Object> attributes = exchange.getAttributes();
-
-            URI uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, request.getURI());
-            // preserve the original url
-            Set<URI> urls = (Set<URI>) attributes.computeIfAbsent(GATEWAY_ORIGINAL_REQUEST_URL_ATTR, s -> new LinkedHashSet<>());
-            urls.add(uri);
-
-            // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
-            // if the loadbalancer doesn't provide one.
-            String overrideScheme = instance.isSecure() ? "https" : "http";
-
-            String schemePrefix = (String) attributes.get(GATEWAY_SCHEME_PREFIX_ATTR);
-            if (schemePrefix != null) {
-                overrideScheme = request.getURI().getScheme();
-            }
-            URI requestUrl = UriUtils.newURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
-
-            attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
-            attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, endpoint.getResponse());
+            forward(exchange, endpoint);
         }
         super.onStartRequest(endpoint);
     }
 
-    @SuppressWarnings({"deprecation", "unchecked"})
-    public void onSuccess(GatewayClusterResponse response, SpringEndpoint endpoint) {
-        boolean useRawStatusCodeInResponseData = context == null || context.isUseRawStatusCodeInResponseData(getProperties());
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onSuccess(SpringClusterResponse response, ServiceEndpoint endpoint) {
+        GatewayClusterResponse gcr = (GatewayClusterResponse) getResponse(endpoint);
+        boolean useRawStatusCodeInResponseData = serviceContext.isUseRawStatusCodeInResponseData();
         ResponseData responseData = useRawStatusCodeInResponseData
-                ? new ResponseData(new RequestData(request), response.getResponse())
-                : new ResponseData(response.getResponse(), new RequestData(request));
+                ? new ResponseData(new RequestData(request), gcr.getResponse())
+                : new ResponseData(gcr.getResponse(), new RequestData(request));
 
-        Response<ServiceInstance> resp = endpoint == null ? new DefaultResponse(null) : endpoint.getResponse();
-        CompletionContext<ResponseData, ServiceInstance, ?> ctx = new CompletionContext<>(
-                Status.SUCCESS,
-                getLbRequest(),
-                resp,
-                responseData);
-        lifecycles(l -> l.onComplete(ctx));
-
-    }
-
-    private static URI getURI(ServerWebExchange exchange) {
-        return exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
+        CompletionContext<ResponseData, ServiceInstance, ?> ctx = new CompletionContext<>(Status.SUCCESS, lbRequest, getResponse(endpoint), responseData);
+        lifecycle(l -> l.onComplete(ctx));
     }
 
 }

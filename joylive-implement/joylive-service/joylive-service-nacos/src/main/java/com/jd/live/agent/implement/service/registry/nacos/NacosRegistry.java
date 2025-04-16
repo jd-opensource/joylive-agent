@@ -24,8 +24,8 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
-import com.jd.live.agent.governance.registry.InstanceEvent;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 
@@ -61,6 +61,11 @@ public class NacosRegistry implements RegistryService {
 
     @Override
     public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getDescription() {
         return name;
     }
 
@@ -111,11 +116,11 @@ public class NacosRegistry implements RegistryService {
     }
 
     @Override
-    public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
+    public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
         namingService.subscribe(service, getGroup(group), event -> {
             if (event instanceof NamingEvent) {
                 NamingEvent e = (NamingEvent) event;
-                consumer.accept(new InstanceEvent(service, toList(e.getInstances(), NacosEndpoint::new)));
+                consumer.accept(new RegistryEvent(e.getServiceName(), e.getGroupName(), toList(e.getInstances(), NacosEndpoint::new), Constants.DEFAULT_GROUP));
             }
         });
     }

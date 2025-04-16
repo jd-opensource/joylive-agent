@@ -30,6 +30,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryConfig;
@@ -37,17 +38,14 @@ import com.jd.live.agent.governance.config.RegistryMode;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.exception.RegistryException;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.registry.RegistryService.AbstractRegistryService;
+import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -64,11 +62,9 @@ import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueN
  */
 @Extension("LiveRegistry")
 @Injectable
-public class LiveRegistry extends AbstractService implements RegistrySupervisor, InjectSourceSupplier, AppListenerSupplier {
+public class LiveRegistry extends AbstractService implements CompositeRegistry, InjectSourceSupplier, AppListenerSupplier {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveRegistry.class);
-
-    private static final String FRAMEWORK = "framework";
 
     @Inject(RegistryConfig.COMPONENT_REGISTRY_CONFIG)
     private RegistryConfig registryConfig;
@@ -90,9 +86,15 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
 
     private volatile List<RegistryService> registries = null;
 
-    private final Map<String, Registration> registrations = new ConcurrentHashMap<>();
+    private RegistryService systemRegistry;
 
-    private final Map<String, Subscription> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, RegistryService> systemRegistries = new ConcurrentHashMap<>();
+
+    // fix for eureka
+    private final Map<String, Registration> registrations = new CaseInsensitiveConcurrentMap<>();
+
+    // fix for eureka
+    private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
     private final AtomicBoolean ready = new AtomicBoolean(false);
 
@@ -116,9 +118,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                     }
                 }
             }
-            if (registries.isEmpty()) {
-                throw new RegistryException("No registry config found");
-            } else {
+            if (!registries.isEmpty()) {
                 for (RegistryService registry : registries) {
                     startCluster(registry);
                 }
@@ -156,6 +156,28 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
+    public void setSystemRegistry(RegistryService registryService) {
+        this.systemRegistry = registryService;
+    }
+
+    @Override
+    public RegistryService getSystemRegistry() {
+        return systemRegistry;
+    }
+
+    @Override
+    public void addSystemRegistry(String service, RegistryService registryService) {
+        if (service != null && registryService != null) {
+            systemRegistries.put(service, registryService);
+        }
+    }
+
+    @Override
+    public RegistryService getSystemRegistry(String service) {
+        return service == null ? null : systemRegistries.get(service);
+    }
+
+    @Override
     public void register(ServiceInstance instance, Callable<Void> doRegister) {
         if (instance == null) {
             return;
@@ -164,6 +186,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             instance.setGroup(application.getService().getGroup());
         }
         String name = getName(instance.getService(), instance.getGroup());
+        // CaseInsensitiveConcurrentHashMap
         Registration registration = registrations.computeIfAbsent(name, n -> createRegistration(n, instance, doRegister));
         if (ready.get()) {
             registration.register();
@@ -201,18 +224,19 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     public CompletableFuture<Void> subscribe(String service, String group) {
         group = group == null ? serviceConfig.getGroup(service) : group;
         // subscribe instance
-        subscribe(service, group, (Consumer<InstanceEvent>) null);
+        subscribe(service, group, (Consumer<RegistryEvent>) null);
         // subscribe govern policy
         return policySupplier.subscribe(service);
     }
 
     @Override
-    public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) {
+    public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) {
         if (service == null || service.isEmpty()) {
             return;
         }
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
+        // CaseInsensitiveConcurrentHashMap
         Subscription subscription = subscriptions.computeIfAbsent(name, s -> createSubscription(s, targetGroup));
         subscription.addConsumer(consumer);
         subscription.subscribe();
@@ -234,6 +258,42 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
     }
 
     @Override
+    public CompletionStage<List<ServiceEndpoint>> getEndpoints(String service, String group, ServiceRegistryFactory system) {
+        ServiceRegistry registry;
+        switch (registryConfig.getSubscribeMode()) {
+            case LIVE:
+                registry = getServiceRegistry(service, group);
+                return registry == null ? null : registry.getEndpoints();
+            case SYSTEM:
+                return system.getEndpoints(service);
+            case AUTO:
+            default:
+                registry = getServiceRegistry(service, group);
+                if (system == null) {
+                    return registry == null ? null : registry.getEndpoints();
+                } else if (registry == null) {
+                    return system.getEndpoints(service);
+                } else {
+                    CompletableFuture<List<ServiceEndpoint>> future = new CompletableFuture<>();
+                    registry.getEndpoints().whenComplete((v, throwable) -> {
+                        if (throwable == null && v != null && !v.isEmpty()) {
+                            future.complete(v);
+                        } else {
+                            system.getEndpoints(service).whenComplete((e, r) -> {
+                                if (r != null) {
+                                    future.completeExceptionally(r);
+                                } else {
+                                    future.complete(e);
+                                }
+                            });
+                        }
+                    });
+                    return future;
+                }
+        }
+    }
+
+    @Override
     public ServiceRegistry getServiceRegistry(String service, String group) {
         if (service == null || service.isEmpty()) {
             return null;
@@ -241,17 +301,6 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
         return subscriptions.get(name);
-    }
-
-    @Override
-    public void update(String service, List<ServiceEndpoint> instances) {
-        if (service != null && !service.isEmpty()) {
-            String name = getName(service, serviceConfig.getGroup(service));
-            Subscription subscription = subscriptions.get(name);
-            if (subscription != null) {
-                subscription.update(FRAMEWORK, null, new InstanceEvent(service, instances));
-            }
-        }
     }
 
     @Override
@@ -264,16 +313,12 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         source.add(Registry.COMPONENT_REGISTRY, this);
     }
 
-    private static String getName(String service, String group) {
-        return getUniqueName(null, service, group);
-    }
-
     private void startCluster(RegistryService registry) throws Exception {
         try {
             registry.start();
-            logger.info("Success starting registry: {}", registry.getName());
+            logger.info("Success starting registry: {}", registry.getDescription());
         } catch (Exception e) {
-            logger.error("Failed to start registry: {}", registry.getName(), e);
+            logger.error("Failed to start registry: {}", registry.getDescription(), e);
             throw e;
         }
     }
@@ -318,7 +363,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         List<RegistryService> clusters = registries;
         List<ClusterRegistration> values = new ArrayList<>(clusters == null ? 1 : clusters.size() + 1);
         if (doRegister != null) {
-            values.add(new ClusterRegistration(new FrameworkRegistryService(doRegister)));
+            values.add(new ClusterRegistration(new SystemRegistryService(doRegister)));
         }
         if (clusters != null) {
             for (RegistryService cluster : clusters) {
@@ -346,7 +391,19 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                 values.add(new ClusterSubscription(cluster));
             }
         }
+        if (systemRegistry != null) {
+            values.add(new ClusterSubscription(systemRegistry));
+        }
+        // for spring simple discovery client
+        RegistryService system = systemRegistries.get(service);
+        if (system != null) {
+            values.add(new ClusterSubscription(system));
+        }
         return new Subscription(service, group, values, timer);
+    }
+
+    private static String getName(String service, String group) {
+        return getUniqueName(null, service, group);
     }
 
     /**
@@ -518,14 +575,13 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         /**
          * The consumer that will receive endpoint events.
          */
-        private final List<Consumer<InstanceEvent>> consumers = new CopyOnWriteArrayList<>();
+        private final List<Consumer<RegistryEvent>> consumers = new CopyOnWriteArrayList<>();
 
         private final Map<String, List<ServiceEndpoint>> clustersEndpoints = new ConcurrentHashMap<>();
 
         /**
          * A map of endpoints for the service group, keyed by their addresses.
          */
-        @Getter
         private volatile List<ServiceEndpoint> endpoints;
 
         private final Object mutex = new Object();
@@ -537,12 +593,17 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
             this.timer = timer;
         }
 
+        @Override
+        public CompletableFuture<List<ServiceEndpoint>> getEndpoints() {
+            return CompletableFuture.completedFuture(endpoints);
+        }
+
         /**
          * Adds a new consumer to the list of consumers that will receive endpoint events.
          *
          * @param consumer the consumer to add
          */
-        public void addConsumer(Consumer<InstanceEvent> consumer) {
+        public void addConsumer(Consumer<RegistryEvent> consumer) {
             if (consumer != null) {
                 synchronized (mutex) {
                     if (!consumers.contains(consumer)) {
@@ -573,18 +634,18 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
 
         /**
-         * Updates the list of endpoints for a specific service instance based on the provided {@link InstanceEvent}.
+         * Updates service endpoints for a cluster based on registry changes.
          *
-         * @param clusterName  The name of the cluster or service instance being updated.
-         * @param event The {@link InstanceEvent} containing the updated endpoints and their size.
-         *              If the size is 0, the endpoints for the specified name are removed; otherwise, they are updated.
+         * @param clusterName the target cluster name
+         * @param name service group unique name
+         * @param event registry update event (null-safe, zero size removes endpoints)
          */
-        public void update(String clusterName, String serviceGroup, InstanceEvent event) {
+        private void update(String clusterName, String name, RegistryEvent event) {
             if (!started.get() || event == null) {
                 return;
             }
             int size = event.size();
-            String name = serviceGroup == null ? getName(service, group) : serviceGroup;
+            name = name == null ? getName(service, group) : name;
             logger.info("Service instance count is changed to {}, {} at {}", size, name, clusterName);
             synchronized (mutex) {
                 if (!started.get()) {
@@ -601,8 +662,8 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
                 });
                 List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
                 this.endpoints = newEndpoints;
-                for (Consumer<InstanceEvent> consumer : consumers) {
-                    consumer.accept(new InstanceEvent(service, newEndpoints));
+                for (Consumer<RegistryEvent> consumer : consumers) {
+                    consumer.accept(new RegistryEvent(service, group, newEndpoints, null));
                 }
             }
         }
@@ -763,7 +824,7 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
          * @param consumer The consumer to handle endpoint events.
          * @throws Exception if the subscription fails.
          */
-        public void subscribe(String service, String group, Consumer<InstanceEvent> consumer) throws Exception {
+        public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
             cluster.subscribe(service, group, consumer);
             done.set(true);
         }
@@ -785,20 +846,12 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
      * A specialized implementation of {@link AbstractRegistryService} that performs registration
      * using a provided callback. This class is designed to handle framework-specific registration logic.
      */
-    private static class FrameworkRegistryService extends AbstractRegistryService {
+    private static class SystemRegistryService extends AbstractSystemRegistryService {
 
         private final Callable<Void> callback;
 
-        private final RegistryClusterConfig config = new RegistryClusterConfig();
-
-        FrameworkRegistryService(Callable<Void> callback) {
+        SystemRegistryService(Callable<Void> callback) {
             this.callback = callback;
-            config.setMode(RegistryMode.FULL);
-        }
-
-        @Override
-        public String getName() {
-            return FRAMEWORK;
         }
 
         @Override
@@ -807,8 +860,13 @@ public class LiveRegistry extends AbstractService implements RegistrySupervisor,
         }
 
         @Override
-        public RegistryClusterConfig getConfig() {
-            return config;
+        protected List<ServiceEndpoint> getEndpoints(String service, String group) {
+            return null;
+        }
+
+        @Override
+        protected RegistryClusterConfig createDefaultConfig() {
+            return new RegistryClusterConfig(RegistryMode.REGISTER);
         }
     }
 }

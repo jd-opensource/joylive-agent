@@ -27,6 +27,8 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.SimpleServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.status.StatusThrowerFactory;
@@ -43,12 +45,13 @@ import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
 import reactor.core.publisher.Flux;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.router.springcloud.v3.instance.EndpointInstance.convert;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -128,14 +131,15 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
      * Routes the given outbound invocation to a service instance.
      *
      * @param invocation The outbound invocation to route.
-     * @param instances  The list of service instances to choose from.
+     * @param system     The list of service instances to choose from.
      * @return A list containing the selected service instance.
      */
-    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> instances) {
+    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> system) {
         try {
-            invocation.setInstances(toList(instances, SpringEndpoint::new));
-            SpringEndpoint endpoint = context.route(invocation);
-            return Collections.singletonList(endpoint.getInstance());
+            String service = invocation.getRequest().getService();
+            ServiceEndpoint endpoint = context.route(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
+            ServiceInstance instance = convert(endpoint);
+            return singletonList(instance);
         } catch (Throwable e) {
             logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
             throw (NestedRuntimeException) thrower.createException(e, invocation.getRequest());

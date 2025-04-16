@@ -46,7 +46,7 @@ public class BlockingCloudClusterInterceptor extends AbstractCloudClusterInterce
     protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         HttpRequest request = ctx.getArgument(0);
-        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), BlockingCloudCluster::new);
+        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
         BlockingCloudClusterRequest clusterRequest = new BlockingCloudClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
         HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
         BlockingClusterResponse response = cluster.request(invocation);

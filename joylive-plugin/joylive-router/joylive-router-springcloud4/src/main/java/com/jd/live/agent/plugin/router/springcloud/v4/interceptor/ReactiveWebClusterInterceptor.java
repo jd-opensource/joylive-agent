@@ -94,7 +94,7 @@ public class ReactiveWebClusterInterceptor extends InterceptorAdaptor {
     private Mono<ClientResponse> route(ClientRequest request, ExchangeFunction next, String service) {
         ReactiveCloudOutboundRequest ror = new ReactiveCloudOutboundRequest(request, service);
         HttpOutboundInvocation<ReactiveCloudOutboundRequest> invocation = new HttpOutboundInvocation<>(ror, context);
-        ServiceEndpoint endpoint = context.route(invocation, registry.getEndpoints(service));
+        ServiceEndpoint endpoint = context.route(invocation);
         request = ClientRequest.from(request).url(HttpUtils.newURI(request.url(), endpoint.getHost(), endpoint.getPort())).build();
         return next.exchange(request);
     }

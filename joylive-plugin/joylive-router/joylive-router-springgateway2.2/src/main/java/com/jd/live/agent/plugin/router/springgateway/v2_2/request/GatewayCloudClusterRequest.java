@@ -105,7 +105,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     @Override
     public boolean isInstanceSensitive() {
-        return context != null && context.getRegistryFactory() != null;
+        return context != null && context.isInstanceSensitive();
     }
 
     @Override
