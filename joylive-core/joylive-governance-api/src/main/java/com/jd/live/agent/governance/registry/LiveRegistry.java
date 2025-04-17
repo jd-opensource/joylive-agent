@@ -190,7 +190,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (instance.getGroup() == null) {
             instance.setGroup(application.getService().getGroup());
         }
-        String service = convert(instance.getService());
+        String service = getNameByAlias(instance.getService());
         String name = getName(service, instance.getGroup());
         // CaseInsensitiveConcurrentHashMap
         Registration registration = registrations.computeIfAbsent(name, n -> createRegistration(n, instance, doRegister));
@@ -222,13 +222,13 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     @Override
     public CompletableFuture<Void> register(String service, String group) {
         AppService appService = application.getService();
-        service = service == null ? appService.getName() : convert(service);
+        service = service == null ? appService.getName() : getNameByAlias(service);
         return policySupplier.subscribe(service);
     }
 
     @Override
     public CompletableFuture<Void> subscribe(String service, String group) {
-        service = convert(service);
+        service = getNameByAlias(service);
         group = group == null ? serviceConfig.getGroup(service) : group;
         // subscribe instance
         subscribe(service, group, (Consumer<RegistryEvent>) null);
@@ -241,7 +241,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return;
         }
-        service = convert(service);
+        service = getNameByAlias(service);
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
         // CaseInsensitiveConcurrentHashMap
@@ -255,7 +255,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return false;
         }
-        service = convert(service);
+        service = getNameByAlias(service);
         group = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, group);
         return subscriptions.containsKey(name);
@@ -263,7 +263,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Override
     public boolean isReady(String namespace, String service) {
-        return policySupplier.isReady(namespace, convert(service));
+        return policySupplier.isReady(namespace, getNameByAlias(service));
     }
 
     @Override
@@ -310,7 +310,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return null;
         }
-        service = convert(service);
+        service = getNameByAlias(service);
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
         return subscriptions.get(name);
@@ -318,7 +318,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Override
     public boolean isSubscribed(String service) {
-        service = convert(service);
+        service = getNameByAlias(service);
         return service != null && !service.isEmpty() && subscriptions.containsKey(service);
     }
 
@@ -327,7 +327,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         source.add(Registry.COMPONENT_REGISTRY, this);
     }
 
-    private String convert(String service) {
+    private String getNameByAlias(String service) {
         if (service == null) {
             return null;
         }
