@@ -84,7 +84,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     private RegistryService systemRegistry;
 
-    private final Map<String, String> cases = new ConcurrentHashMap<>();
+    private final Map<String, String> aliases = new ConcurrentHashMap<>();
 
     private final Map<String, RegistryService> systemRegistries = new ConcurrentHashMap<>();
 
@@ -141,7 +141,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     @Override
     public void setServiceAlias(String alias, String name) {
         if (alias != null && name != null) {
-            cases.putIfAbsent(alias, name);
+            aliases.putIfAbsent(alias, name);
         }
     }
 
@@ -331,7 +331,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null) {
             return null;
         }
-        String alias = cases.get(service);
+        String alias = aliases.get(service);
         return alias == null ? service : alias;
     }
 
