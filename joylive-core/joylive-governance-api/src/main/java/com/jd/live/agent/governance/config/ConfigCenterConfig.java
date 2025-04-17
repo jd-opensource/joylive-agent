@@ -47,6 +47,8 @@ public class ConfigCenterConfig {
 
     private long timeout = 3000;
 
+    private boolean grayEnabled = true;
+
     private Map<String, String> properties;
 
     private transient List<ConfigName> configs;

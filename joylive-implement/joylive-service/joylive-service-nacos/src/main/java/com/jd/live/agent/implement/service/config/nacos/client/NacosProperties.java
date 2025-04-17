@@ -31,15 +31,18 @@ public class NacosProperties {
 
     private final long timeout;
 
-    public NacosProperties(String url, String username, String password, String namespace, long timeout) {
+    private final boolean grayEnabled;
+
+    public NacosProperties(String url, String username, String password, String namespace, long timeout, boolean grayEnabled) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.namespace = namespace;
         this.timeout = timeout;
+        this.grayEnabled = grayEnabled;
     }
 
     public NacosProperties(ConfigCenterConfig config, String namespace) {
-        this(config.getAddress(), config.getUsername(), config.getPassword(), namespace, config.getTimeout());
+        this(config.getAddress(), config.getUsername(), config.getPassword(), namespace, config.getTimeout(), config.isGrayEnabled());
     }
 }
