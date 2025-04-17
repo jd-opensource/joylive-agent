@@ -32,10 +32,7 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.RegistryClusterConfig;
-import com.jd.live.agent.governance.config.RegistryConfig;
-import com.jd.live.agent.governance.config.RegistryMode;
-import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.exception.RegistryException;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
@@ -47,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
@@ -84,9 +80,11 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     @Inject
     private Map<String, RegistryFactory> factories;
 
-    private volatile List<RegistryService> registries = null;
+    private volatile List<RegistryService> registries;
 
     private RegistryService systemRegistry;
+
+    private final Map<String, String> cases = new ConcurrentHashMap<>();
 
     private final Map<String, RegistryService> systemRegistries = new ConcurrentHashMap<>();
 
@@ -141,6 +139,13 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     }
 
     @Override
+    public void setServiceAlias(String alias, String name) {
+        if (alias != null && name != null) {
+            cases.putIfAbsent(alias, name);
+        }
+    }
+
+    @Override
     public AppListener getAppListener() {
         return new AppListener.AppListenerAdapter() {
 
@@ -185,7 +190,8 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (instance.getGroup() == null) {
             instance.setGroup(application.getService().getGroup());
         }
-        String name = getName(instance.getService(), instance.getGroup());
+        String service = convert(instance.getService());
+        String name = getName(service, instance.getGroup());
         // CaseInsensitiveConcurrentHashMap
         Registration registration = registrations.computeIfAbsent(name, n -> createRegistration(n, instance, doRegister));
         if (ready.get()) {
@@ -194,7 +200,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             // delay register
             logger.info("Delay registering instance {}:{} to {} until application is ready",
                     instance.getHost(), instance.getPort(),
-                    instance.getService());
+                    service);
         }
     }
 
@@ -216,12 +222,13 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     @Override
     public CompletableFuture<Void> register(String service, String group) {
         AppService appService = application.getService();
-        service = service == null ? appService.getName() : service;
+        service = service == null ? appService.getName() : convert(service);
         return policySupplier.subscribe(service);
     }
 
     @Override
     public CompletableFuture<Void> subscribe(String service, String group) {
+        service = convert(service);
         group = group == null ? serviceConfig.getGroup(service) : group;
         // subscribe instance
         subscribe(service, group, (Consumer<RegistryEvent>) null);
@@ -234,6 +241,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return;
         }
+        service = convert(service);
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
         // CaseInsensitiveConcurrentHashMap
@@ -247,6 +255,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return false;
         }
+        service = convert(service);
         group = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, group);
         return subscriptions.containsKey(name);
@@ -254,7 +263,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Override
     public boolean isReady(String namespace, String service) {
-        return policySupplier.isReady(namespace, service);
+        return policySupplier.isReady(namespace, convert(service));
     }
 
     @Override
@@ -262,9 +271,11 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         ServiceRegistry registry;
         switch (registryConfig.getSubscribeMode()) {
             case LIVE:
+                // convert service name in getServiceRegistry
                 registry = getServiceRegistry(service, group);
                 return registry == null ? null : registry.getEndpoints();
             case SYSTEM:
+                // don't convert service name in system registry
                 return system.getEndpoints(service);
             case AUTO:
             default:
@@ -279,6 +290,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                         if (throwable == null && v != null && !v.isEmpty()) {
                             future.complete(v);
                         } else {
+                            // don't convert service name in system registry
                             system.getEndpoints(service).whenComplete((e, r) -> {
                                 if (r != null) {
                                     future.completeExceptionally(r);
@@ -298,6 +310,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return null;
         }
+        service = convert(service);
         String targetGroup = group == null ? serviceConfig.getGroup(service) : group;
         String name = getName(service, targetGroup);
         return subscriptions.get(name);
@@ -305,12 +318,21 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Override
     public boolean isSubscribed(String service) {
+        service = convert(service);
         return service != null && !service.isEmpty() && subscriptions.containsKey(service);
     }
 
     @Override
     public void apply(InjectSource source) {
         source.add(Registry.COMPONENT_REGISTRY, this);
+    }
+
+    private String convert(String service) {
+        if (service == null) {
+            return null;
+        }
+        String alias = cases.get(service);
+        return alias == null ? service : alias;
     }
 
     private void startCluster(RegistryService registry) throws Exception {
@@ -399,6 +421,14 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (system != null) {
             values.add(new ClusterSubscription(system));
         }
+        // sort by role PRIMARY > SYSTEM > SECONDARY
+        values.sort((o1, o2) -> {
+            RegistryRole role1 = o1.getConfig().getRole();
+            RegistryRole role2 = o2.getConfig().getRole();
+            role1 = role1 == null ? RegistryRole.SECONDARY : role1;
+            role2 = role2 == null ? RegistryRole.SECONDARY : role2;
+            return role1.getOrder() - role2.getOrder();
+        });
         return new Subscription(service, group, values, timer);
     }
 
@@ -655,11 +685,14 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 int capacity = endpoints == null ? 0 : endpoints.size();
                 capacity = capacity + size - (ce == null ? 0 : ce.size());
                 Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
-                clustersEndpoints.forEach((cluster, endpoints) -> {
-                    if (endpoints != null) {
-                        endpoints.forEach(endpoint -> merged.put(endpoint.getAddress(), endpoint));
+
+                // merge endpoints by order
+                for (ClusterSubscription cluster : clusters) {
+                    ce = clustersEndpoints.get(cluster.getName());
+                    if (ce != null) {
+                        ce.forEach(endpoint -> merged.putIfAbsent(endpoint.getAddress(), endpoint));
                     }
-                });
+                }
                 List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
                 this.endpoints = newEndpoints;
                 for (Consumer<RegistryEvent> consumer : consumers) {
@@ -738,8 +771,6 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
         protected final AtomicBoolean done = new AtomicBoolean(false);
 
-        protected final AtomicLong retry = new AtomicLong(0);
-
         ClusterOperation(RegistryService cluster) {
             this.cluster = cluster;
         }
@@ -759,14 +790,6 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
         public void setDone(boolean done) {
             this.done.set(done);
-        }
-
-        public long getRetry() {
-            return retry.get();
-        }
-
-        public void addRetry() {
-            retry.incrementAndGet();
         }
 
         public RegistryClusterConfig getConfig() {
@@ -792,7 +815,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
          */
         public void register(String service, String group, ServiceInstance instance) throws Exception {
             cluster.register(service, group, instance);
-            done.set(true);
+            setDone(true);
         }
 
         /**
@@ -802,7 +825,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
          */
         public void unregister(String service, String group, ServiceInstance instance) throws Exception {
             cluster.unregister(service, group, instance);
-            done.set(false);
+            setDone(false);
         }
     }
 
@@ -826,7 +849,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
          */
         public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
             cluster.subscribe(service, group, consumer);
-            done.set(true);
+            setDone(true);
         }
 
         /**
@@ -838,7 +861,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
          */
         public void unsubscribe(String service, String group) throws Exception {
             cluster.unsubscribe(service, group);
-            done.set(false);
+            setDone(false);
         }
     }
 
@@ -866,7 +889,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
         @Override
         protected RegistryClusterConfig createDefaultConfig() {
-            return new RegistryClusterConfig(RegistryMode.REGISTER);
+            return new RegistryClusterConfig(RegistryRole.SYSTEM, RegistryMode.REGISTER);
         }
     }
 }
