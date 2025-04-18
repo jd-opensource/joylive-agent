@@ -81,8 +81,8 @@ public class NacosRegistry implements RegistryService {
             List<URI> uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
             String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
             properties.put(SERVER_ADDR, address);
-            if (config.getConfig() != null) {
-                properties.putAll(config.getConfig());
+            if (config.getProperties() != null) {
+                properties.putAll(config.getProperties());
             }
             if (!isEmpty(config.getNamespace())) {
                 properties.put(NAMESPACE, config.getNamespace());

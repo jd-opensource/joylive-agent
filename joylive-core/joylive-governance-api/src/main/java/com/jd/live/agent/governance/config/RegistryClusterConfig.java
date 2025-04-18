@@ -26,7 +26,7 @@ public class RegistryClusterConfig {
 
     private boolean denyEmptyEnabled;
 
-    private Map<String, String> config;
+    private Map<String, String> properties;
 
     private RegistryMode mode = RegistryMode.FULL;
 
