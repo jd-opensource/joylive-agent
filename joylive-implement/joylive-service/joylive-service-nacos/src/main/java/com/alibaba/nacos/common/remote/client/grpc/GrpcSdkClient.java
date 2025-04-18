@@ -80,6 +80,7 @@ public class GrpcSdkClient extends GrpcClient {
 
     @Override
     public int rpcPortOffset() {
+        // parse rpc port by live
         String value = properties == null ? null : properties.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET);
         value = value != null && !value.isEmpty() ? value : System.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET, String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET));
         return Integer.parseInt(value);

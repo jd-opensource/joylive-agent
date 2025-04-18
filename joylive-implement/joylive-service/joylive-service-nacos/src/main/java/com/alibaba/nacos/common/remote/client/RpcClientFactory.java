@@ -131,7 +131,7 @@ public class RpcClientFactory {
 
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             RpcClient result = new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig, properties);
-            LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName + ", rpcPortOffset=" + result.rpcPortOffset());
+            LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             return result;
         });
     }
