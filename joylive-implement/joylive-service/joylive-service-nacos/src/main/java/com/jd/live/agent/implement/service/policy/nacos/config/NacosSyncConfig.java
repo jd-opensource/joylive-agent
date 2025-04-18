@@ -30,7 +30,7 @@ public class NacosSyncConfig extends SyncConfig {
     private NacosConfig nacos = new NacosConfig();
 
     public NacosProperties getProperties() {
-        return new NacosProperties(getUrl(), nacos.getUsername(), nacos.getPassword(), nacos.getNamespace(), getTimeout());
+        return new NacosProperties(getUrl(), nacos.getUsername(), nacos.getPassword(), nacos.getNamespace(), getTimeout(), false);
     }
 
 }

@@ -177,6 +177,16 @@ public class URI {
     }
 
     /**
+     * Sets the query component of the URI.
+     *
+     * @param parameters the new parameters.
+     * @return a new URI instance with the updated path.
+     */
+    public URI parameters(Map<String, String> parameters) {
+        return new URI(schema, user, password, host, port, path, parameters);
+    }
+
+    /**
      * Adds or updates a single query parameter.
      *
      * @param key   the parameter key.

@@ -18,6 +18,8 @@ package com.jd.live.agent.implement.service.config.nacos.client;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.core.exception.ConfigException;
+import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.config.AbstractSharedClientApi;
@@ -43,6 +45,18 @@ public abstract class NacosClientFactory {
      * @return A new instance of NacosClientApi.
      */
     public static NacosClientApi create(NacosProperties config) {
+        return create(config, null, null);
+    }
+
+    /**
+     * Creates a new instance of NacosClientApi using the provided configuration.
+     *
+     * @param config      The NacosProperties object containing the configuration for the client.
+     * @param json        The json parser used to parse the policy.
+     * @param application The application instance.
+     * @return A new instance of NacosClientApi.
+     */
+    public static NacosClientApi create(NacosProperties config, ObjectParser json, Application application) {
         URI uri = URI.parse(config.getUrl());
         if (uri == null) {
             throw new ConfigException("Invalid config center address: " + config.getUrl());
@@ -51,7 +65,8 @@ public abstract class NacosClientFactory {
         String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
         String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();
         String name = username + ":" + password + "@" + uri.getAddress() + "/" + namespace;
-        SharedNacosClientApi client = clients.computeIfAbsent(name, n -> new SharedNacosClientApi(n, new NacosClient(config), clients::remove));
+        SharedNacosClientApi client = clients.computeIfAbsent(name, n ->
+                new SharedNacosClientApi(n, new NacosClient(config, json, application), clients::remove));
         client.incReference();
         return client;
     }

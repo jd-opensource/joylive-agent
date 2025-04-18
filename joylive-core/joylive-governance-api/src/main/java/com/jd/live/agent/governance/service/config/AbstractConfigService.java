@@ -27,9 +27,7 @@ import com.jd.live.agent.governance.service.ConfigService;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -66,10 +64,11 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
     protected CompletableFuture<Void> doStart() {
         try {
             ConfigCenterConfig config = governanceConfig.getConfigCenterConfig();
+            Set<ConfigName> uniqueNames = new HashSet<>();
             List<ConfigName> names = config.getConfigs();
             List<ConfigSubscription<T>> subscriptions = new ArrayList<>(names.size());
             for (ConfigName name : names) {
-                if (name.validate()) {
+                if (name.validate() && uniqueNames.add(name)) {
                     ConfigSubscription<T> subscription = createSubscription(name);
                     if (subscription != null) {
                         subscriptions.add(subscription);

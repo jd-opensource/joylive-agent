@@ -17,7 +17,6 @@ package com.jd.live.agent.implement.service.registry.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -28,6 +27,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +81,9 @@ public class NacosRegistry implements RegistryService {
             List<URI> uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
             String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
             properties.put(SERVER_ADDR, address);
+            if (config.getProperties() != null) {
+                properties.putAll(config.getProperties());
+            }
             if (!isEmpty(config.getNamespace())) {
                 properties.put(NAMESPACE, config.getNamespace());
             }
@@ -91,7 +94,7 @@ public class NacosRegistry implements RegistryService {
             if (config.isDenyEmptyEnabled()) {
                 properties.put(NAMING_PUSH_EMPTY_PROTECTION, "true");
             }
-            namingService = Executors.execute(this.getClass().getClassLoader(), () -> NamingFactory.createNamingService(properties));
+            namingService = Executors.execute(this.getClass().getClassLoader(), () -> new NacosNamingService(properties));
         }
     }
 

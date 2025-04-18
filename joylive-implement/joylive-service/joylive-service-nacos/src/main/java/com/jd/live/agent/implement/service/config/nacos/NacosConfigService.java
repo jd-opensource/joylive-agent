@@ -17,7 +17,10 @@ package com.jd.live.agent.implement.service.config.nacos;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
 import com.jd.live.agent.governance.service.config.AbstractConfigService;
@@ -41,14 +44,19 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 @Extension("NacosConfigService")
 public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
 
+    @Inject(ObjectParser.JSON)
+    private ObjectParser json;
+
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
+
     protected final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
 
     @Override
     protected ConfigSubscription<NacosClientApi> createSubscription(ConfigName configName) throws Exception {
         String namespace = configName.getNamespace();
         namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE_ID : namespace;
-        NacosClientApi client = clients.computeIfAbsent(namespace,
-                n -> NacosClientFactory.create(new NacosProperties(governanceConfig.getConfigCenterConfig(), n)));
+        NacosClientApi client = clients.computeIfAbsent(namespace, n -> NacosClientFactory.create(getProperties(n), json, application));
         client.connect();
         return new ConfigSubscription<>(client, configName, getParser(configName));
     }
@@ -63,5 +71,16 @@ public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
     @Override
     protected Configurator createConfigurator(List<ConfigSubscription<NacosClientApi>> subscriptions) {
         return new NacosConfigurator(subscriptions);
+    }
+
+    /**
+     * Creates and returns a {@code NacosProperties} instance initialized with configuration center settings
+     * and the specified namespace.
+     *
+     * @param namespace the namespace to be used for Nacos configuration isolation (must not be {@code null})
+     * @return a new {@code NacosProperties} instance configured with the specified namespace
+     */
+    private NacosProperties getProperties(String namespace) {
+        return new NacosProperties(governanceConfig.getConfigCenterConfig(), namespace);
     }
 }

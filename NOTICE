@@ -47,6 +47,12 @@ Please visit this web site for more information of this project:
   * https://github.com/apache/dubbo
 ================================================================
 
+This software includes code from alibaba nacos:
+
+Please visit this web site for more information of this project:
+  * https://github.com/alibaba/nacos
+================================================================
+
 Repackage library to avoid conflict
 
 joylive-bytekit-bytebuddy

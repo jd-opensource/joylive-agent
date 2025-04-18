@@ -4,6 +4,8 @@ import com.jd.live.agent.core.util.URI;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 @Getter
 @Setter
 public class RegistryClusterConfig {
@@ -25,6 +27,8 @@ public class RegistryClusterConfig {
     private boolean denyEmptyEnabled;
 
     private RegistryRole role = RegistryRole.SECONDARY;
+
+    private Map<String, String> properties;
 
     private RegistryMode mode = RegistryMode.FULL;
 
