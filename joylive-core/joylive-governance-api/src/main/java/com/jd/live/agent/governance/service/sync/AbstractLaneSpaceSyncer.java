@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.service.sync;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.parser.TypeReference;
@@ -34,6 +36,8 @@ import static com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
  * An abstract class that provides a base implementation for synchronizing LaneSpace objects using subscriptions.
  */
 public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends AbstractSyncer<K, LaneSpace> {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractLaneSpaceSyncer.class);
 
     protected Syncer<K, List<ApiSpace>> spaceListSyncer;
 
@@ -184,6 +188,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
             Subscription<K, LaneSpace> subscription = subscriptions.get(space.getId());
             long version = space.getVersion();
             if (subscription != null) {
+                logger.info("Success syncing lane space policy, spaceId={}", spaceId);
                 synchronized (subscription) {
                     if (subscription.getVersion() < version) {
                         subscription.setVersion(version);
@@ -208,6 +213,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
     protected void deleteSpace(String spaceId) {
         Subscription<K, LaneSpace> subscription = subscriptions.remove(spaceId);
         if (subscription != null) {
+            logger.info("Lane space policy is removed, spaceId={}", spaceId);
             synchronized (subscription) {
                 syncer.remove(subscription);
                 publish(PolicyEvent.builder()

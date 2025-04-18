@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.implement.service.registry.nacos;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
@@ -36,6 +35,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static com.alibaba.nacos.api.PropertyKeyConst.*;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
 
@@ -80,13 +80,16 @@ public class NacosRegistry implements RegistryService {
             Properties properties = new Properties();
             List<URI> uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
             String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
-            properties.put(PropertyKeyConst.SERVER_ADDR, address);
+            properties.put(SERVER_ADDR, address);
             if (!isEmpty(config.getNamespace())) {
-                properties.put(PropertyKeyConst.NAMESPACE, config.getNamespace());
+                properties.put(NAMESPACE, config.getNamespace());
             }
             if (!isEmpty(config.getUsername())) {
-                properties.put(PropertyKeyConst.USERNAME, config.getUsername());
-                properties.put(PropertyKeyConst.PASSWORD, config.getPassword());
+                properties.put(USERNAME, config.getUsername());
+                properties.put(PASSWORD, config.getPassword());
+            }
+            if (config.isDenyEmptyEnabled()) {
+                properties.put(NAMING_PUSH_EMPTY_PROTECTION, "true");
             }
             namingService = Executors.execute(this.getClass().getClassLoader(), () -> NamingFactory.createNamingService(properties));
         }

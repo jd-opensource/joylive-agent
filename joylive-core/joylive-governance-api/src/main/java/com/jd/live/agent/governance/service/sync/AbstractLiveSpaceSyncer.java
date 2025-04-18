@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.service.sync;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.exception.SyncException;
 import com.jd.live.agent.core.instance.Location;
@@ -35,6 +37,8 @@ import static com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
  * An abstract class that provides a base implementation for synchronizing LiveSpace objects using subscriptions.
  */
 public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extends LiveSpaceKey> extends AbstractSyncer<K1, LiveSpace> {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractLiveSpaceSyncer.class);
 
     protected Syncer<K2, List<ApiSpace>> spaceListSyncer;
 
@@ -185,6 +189,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
             Subscription<K1, LiveSpace> subscription = subscriptions.get(space.getId());
             long version = space.getSpec().getVersion();
             if (subscription != null) {
+                logger.info("Success syncing live space policy, spaceId={}", spaceId);
                 synchronized (subscription) {
                     if (subscription.getVersion() < version) {
                         subscription.setVersion(version);
@@ -209,6 +214,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
     protected void deleteSpace(String spaceId) {
         Subscription<K1, LiveSpace> subscription = subscriptions.remove(spaceId);
         if (subscription != null) {
+            logger.info("Live space policy is removed, spaceId={}", spaceId);
             synchronized (subscription) {
                 syncer.remove(subscription);
                 publish(PolicyEvent.builder()

@@ -22,6 +22,8 @@ public class RegistryClusterConfig {
 
     private boolean groupEnabled;
 
+    private boolean denyEmptyEnabled;
+
     private RegistryRole role = RegistryRole.SECONDARY;
 
     private RegistryMode mode = RegistryMode.FULL;
