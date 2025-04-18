@@ -76,8 +76,8 @@ public class URITest {
         Assertions.assertEquals("1080:0:0:0:8:800:200C:417A", URI.parseHost("[1080:0:0:0:8:800:200C:417A]:8080?userid=1"));
         Assertions.assertEquals("1080:0:0:0:8:800:200C:417A", URI.parseHost("[1080:0:0:0:8:800:200C:417A]:8080/book"));
         Assertions.assertEquals("1080:0:0:0:8:800:200C:417A", URI.parseHost("[1080:0:0:0:8:800:200C:417A]:8080#book"));
+        Assertions.assertEquals("1:", URI.parseHost("http://[1:"));
         Assertions.assertNull(URI.parseHost("http://[]"));
-        Assertions.assertNull(URI.parseHost("http://[1080:0:0:0:8:800:200C:417A"));
         Assertions.assertNull(URI.parseHost("http://u1:p1@"));
         Assertions.assertNull(URI.parseHost("u1:p1@"));
         Assertions.assertNull(URI.parseHost("@"));
@@ -87,6 +87,7 @@ public class URITest {
         Assertions.assertNull(URI.parseHost("http://"));
         Assertions.assertNull(URI.parseHost("http:///"));
         Assertions.assertNull(URI.parseHost("http://?userid=1"));
+        Assertions.assertEquals(8, URI.parse("a:8?b=9").getPort());
     }
 
 
