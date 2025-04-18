@@ -152,13 +152,13 @@ public class NacosClient implements NacosClientApi {
         }
 
         /**
-         * Generates a policy variant of this configuration key by appending "-policy" suffix
+         * Generates a policy variant of this configuration key by appending "-beta-policy" suffix
          * and ".json" extension to the dataId. The group remains unchanged.
          *
          * @return a new {@code ConfigKey} instance representing the policy configuration variant
          */
         public ConfigKey getPolicyKey() {
-            return new ConfigKey(getDataId("-policy", ".json"), group);
+            return new ConfigKey(getDataId("-beta-policy", ".json"), group);
         }
 
         /**
