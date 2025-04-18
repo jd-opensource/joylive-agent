@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.registry;
 
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryMode;
+import com.jd.live.agent.governance.config.RegistryRole;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -205,7 +206,7 @@ public interface RegistryService extends AutoCloseable {
 
         protected RegistryClusterConfig createDefaultConfig() {
             // only subscribe mode is supported for system
-            return new RegistryClusterConfig(RegistryMode.SUBSCRIBE);
+            return new RegistryClusterConfig(RegistryRole.SYSTEM, RegistryMode.SUBSCRIBE);
         }
     }
 

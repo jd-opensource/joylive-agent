@@ -24,13 +24,16 @@ public class RegistryClusterConfig {
 
     private boolean denyEmptyEnabled;
 
+    private RegistryRole role = RegistryRole.SECONDARY;
+
     private RegistryMode mode = RegistryMode.FULL;
 
     public RegistryClusterConfig() {
     }
 
-    public RegistryClusterConfig(RegistryMode mode) {
+    public RegistryClusterConfig(RegistryRole role, RegistryMode mode) {
         this.mode = mode;
+        this.role = role;
     }
 
     public boolean validate() {
