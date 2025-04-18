@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
@@ -142,16 +143,6 @@ public class NacosClient implements NacosClientApi {
         }
 
         /**
-         * Generates a beta variant of this configuration key by appending "-beta" suffix to the dataId.
-         * The group remains unchanged.
-         *
-         * @return a new {@code ConfigKey} instance representing the beta configuration variant
-         */
-        public ConfigKey getBetaKey() {
-            return new ConfigKey(getDataId("-beta", null), group);
-        }
-
-        /**
          * Generates a policy variant of this configuration key by appending "-beta-policy" suffix
          * and ".json" extension to the dataId. The group remains unchanged.
          *
@@ -206,6 +197,8 @@ public class NacosClient implements NacosClientApi {
     @Setter
     private static class ConfigPolicy {
 
+        private String name;
+
         private Set<String> ips;
 
         private Map<String, String> labels;
@@ -225,7 +218,7 @@ public class NacosClient implements NacosClientApi {
 
         private final ConfigKey keyPolicy;
 
-        private final ConfigKey keyBeta;
+        private ConfigKey keyBeta;
 
         private final Listener listener;
 
@@ -254,7 +247,6 @@ public class NacosClient implements NacosClientApi {
         ConfigWatcher(ConfigKey key, Listener listener) {
             this.keyRelease = key;
             this.keyPolicy = key.getPolicyKey();
-            this.keyBeta = key.getBetaKey();
             this.listener = listener;
         }
 
@@ -292,10 +284,23 @@ public class NacosClient implements NacosClientApi {
          */
         private synchronized void onPolicy(String value) throws NacosException {
             try {
-                ConfigPolicy policy = value == null || value.isEmpty() ? null : json.read(new StringReader(value), ConfigPolicy.class);
-                if (policy != null && policy.match()) {
-                    if (beta.compareAndSet(false, true)) {
+                List<ConfigPolicy> policies = value == null || value.isEmpty() ? null : json.read(new StringReader(value), new TypeReference<List<ConfigPolicy>>() {
+                });
+                ConfigPolicy policy = null;
+                if (policies != null && !policies.isEmpty()) {
+                    for (ConfigPolicy p : policies) {
+                        if (p.match()) {
+                            policy = p;
+                            break;
+                        }
+                    }
+                }
+                if (policy != null) {
+                    ConfigKey newKeyBeta = new ConfigKey(policy.getName(), keyRelease.getGroup());
+                    if (beta.compareAndSet(false, true) || !newKeyBeta.equals(keyBeta)) {
                         removeListener(keyRelease, onUpdate);
+                        removeListener(keyBeta, onUpdate);
+                        keyBeta = newKeyBeta;
                         addListener(keyBeta, onUpdate);
                         onUpdate(getConfig(keyBeta));
                     }
@@ -316,7 +321,9 @@ public class NacosClient implements NacosClientApi {
         }
 
         private void removeListener(ConfigKey key, Listener listener) {
-            configService.removeListener(key.getDataId(), key.getGroup(), listener);
+            if (key != null && listener != null) {
+                configService.removeListener(key.getDataId(), key.getGroup(), listener);
+            }
         }
 
         private String getConfig(ConfigKey key) throws NacosException {
