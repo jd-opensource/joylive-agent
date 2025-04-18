@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
@@ -336,9 +337,7 @@ public abstract class GrpcClient extends RpcClient {
             if (grpcExecutor == null) {
                 this.grpcExecutor = createGrpcExecutor(serverInfo.getServerIp());
             }
-            // parse grpc port by live
-            Integer grpcPort = serverInfo.getGrpcPort();
-            int port = grpcPort != null ? grpcPort : serverInfo.getServerPort() + rpcPortOffset();
+            int port = serverInfo.getServerPort() + rpcPortOffset();
             ManagedChannel managedChannel = createNewManagedChannel(serverInfo.getServerIp(), port);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
 
@@ -470,6 +469,31 @@ public abstract class GrpcClient extends RpcClient {
     }
 
     /**
+     * Setup response handler.
+     */
+    class SetupRequestHandler implements ServerRequestHandler {
+
+        private final RecAbilityContext abilityContext;
+
+        SetupRequestHandler(RecAbilityContext abilityContext) {
+            this.abilityContext = abilityContext;
+        }
+
+        @Override
+        public Response requestReply(Request request, Connection connection) {
+            // if finish setup
+            if (request instanceof SetupAckRequest) {
+                SetupAckRequest setupAckRequest = (SetupAckRequest) request;
+                // remove and count down
+                recAbilityContext.release(
+                        Optional.ofNullable(setupAckRequest.getAbilityTable()).orElse(new HashMap<>(0)));
+                return new SetupAckResponse();
+            }
+            return null;
+        }
+    }
+
+    /**
      * This is for receiving server abilities.
      */
     static class RecAbilityContext {
@@ -560,31 +584,6 @@ public abstract class GrpcClient extends RpcClient {
                 return false;
             }
             return true;
-        }
-    }
-
-    /**
-     * Setup response handler.
-     */
-    class SetupRequestHandler implements ServerRequestHandler {
-
-        private final RecAbilityContext abilityContext;
-
-        SetupRequestHandler(RecAbilityContext abilityContext) {
-            this.abilityContext = abilityContext;
-        }
-
-        @Override
-        public Response requestReply(Request request, Connection connection) {
-            // if finish setup
-            if (request instanceof SetupAckRequest) {
-                SetupAckRequest setupAckRequest = (SetupAckRequest) request;
-                // remove and count down
-                recAbilityContext.release(
-                        Optional.ofNullable(setupAckRequest.getAbilityTable()).orElse(new HashMap<>(0)));
-                return new SetupAckResponse();
-            }
-            return null;
         }
     }
 }

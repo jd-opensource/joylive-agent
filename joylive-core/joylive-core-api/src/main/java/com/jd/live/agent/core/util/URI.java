@@ -177,6 +177,16 @@ public class URI {
     }
 
     /**
+     * Sets the query component of the URI.
+     *
+     * @param parameters the new parameters.
+     * @return a new URI instance with the updated path.
+     */
+    public URI parameters(Map<String, String> parameters) {
+        return new URI(schema, user, password, host, port, path, parameters);
+    }
+
+    /**
      * Adds or updates a single query parameter.
      *
      * @param key   the parameter key.
@@ -490,6 +500,9 @@ public class URI {
             doParsePath(uri, pos);
             if (Role.PATH.isEndless(pos)) {
                 success = Role.QUERY.align(pos, Role.PATH);
+            }
+            if (Role.PORT.isEndless(pos)) {
+                success = !Role.PATH.align(pos, Role.PORT) && Role.QUERY.align(pos, Role.PORT);
             }
             if (Role.HOST.isEndless(pos)) {
                 success = !Role.PATH.align(pos, Role.HOST) && Role.QUERY.align(pos, Role.HOST);
