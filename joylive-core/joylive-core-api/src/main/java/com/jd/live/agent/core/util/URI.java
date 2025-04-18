@@ -491,6 +491,9 @@ public class URI {
             if (Role.PATH.isEndless(pos)) {
                 success = Role.QUERY.align(pos, Role.PATH);
             }
+            if (Role.PORT.isEndless(pos)) {
+                success = !Role.PATH.align(pos, Role.PORT) && Role.QUERY.align(pos, Role.PORT);
+            }
             if (Role.HOST.isEndless(pos)) {
                 success = !Role.PATH.align(pos, Role.HOST) && Role.QUERY.align(pos, Role.HOST);
             }
