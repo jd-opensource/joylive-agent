@@ -181,7 +181,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @SuppressWarnings("deprecation")
     @Override
     public void onSuccess(SpringClusterResponse response, ServiceEndpoint endpoint) {
-        GatewayClusterResponse gcr = (GatewayClusterResponse) response;
+        GatewayClusterResponse gcr = (GatewayClusterResponse) getResponse(endpoint);
         boolean useRawStatusCodeInResponseData = serviceContext.isUseRawStatusCodeInResponseData();
         ResponseData responseData = useRawStatusCodeInResponseData
                 ? new ResponseData(new RequestData(request), gcr.getResponse())
