@@ -31,6 +31,14 @@ public interface Registry extends ServiceRegistryFactory {
     String COMPONENT_REGISTRY = "Registry";
 
     /**
+     * Associates an alias with the specified service name.
+     *
+     * @param alias the alternate name to assign
+     * @param name  the canonical name of the service
+     */
+    void setServiceAlias(String alias, String name);
+
+    /**
      * Registers a service instance with the registry.
      *
      * @param instance the service instance to be registered

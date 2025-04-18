@@ -1,1 +1,2 @@
 com.jd.live.agent.plugin.registry.eureka.definition.DiscoveryClientDefinition
+com.jd.live.agent.plugin.registry.eureka.definition.EurekaDiscoveryRouteDefinition
