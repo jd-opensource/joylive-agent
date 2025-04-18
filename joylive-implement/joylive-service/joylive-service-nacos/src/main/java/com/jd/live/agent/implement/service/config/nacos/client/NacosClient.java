@@ -23,10 +23,10 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
@@ -56,13 +56,16 @@ public class NacosClient implements NacosClientApi {
 
     private final ObjectParser json;
 
+    private final Application application;
+
     private ConfigService configService;
 
     private final Map<ConfigKey, ConfigWatcher> watchers = new ConcurrentHashMap<>();
 
-    public NacosClient(NacosProperties properties, ObjectParser json) {
+    public NacosClient(NacosProperties properties, ObjectParser json, Application application) {
         this.properties = properties;
         this.json = json;
+        this.application = application;
     }
 
     @Override
@@ -199,12 +202,23 @@ public class NacosClient implements NacosClientApi {
 
         private String name;
 
+        private Set<String> applications;
+
         private Set<String> ips;
 
         private Map<String, String> labels;
 
-        public boolean match() {
-            return ips != null && !ips.isEmpty() && ips.contains(Ipv4.getLocalIp());
+        public boolean match(Application application) {
+            if (application == null) {
+                return false;
+            }
+            String localIp = application.getLocation().getIp();
+            if (applications != null && !applications.isEmpty() && !applications.contains(application.getName())) {
+                return false;
+            } else if (ips != null && !ips.isEmpty() && !ips.contains(localIp)) {
+                return false;
+            }
+            return true;
         }
     }
 
@@ -289,7 +303,7 @@ public class NacosClient implements NacosClientApi {
                 ConfigPolicy policy = null;
                 if (policies != null && !policies.isEmpty()) {
                     for (ConfigPolicy p : policies) {
-                        if (p.match()) {
+                        if (p.match(application)) {
                             policy = p;
                             break;
                         }

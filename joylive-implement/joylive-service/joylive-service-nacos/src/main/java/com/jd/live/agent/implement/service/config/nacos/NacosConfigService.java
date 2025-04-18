@@ -19,6 +19,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
@@ -46,13 +47,16 @@ public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
     @Inject(ObjectParser.JSON)
     private ObjectParser json;
 
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
+
     protected final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
 
     @Override
     protected ConfigSubscription<NacosClientApi> createSubscription(ConfigName configName) throws Exception {
         String namespace = configName.getNamespace();
         namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE_ID : namespace;
-        NacosClientApi client = clients.computeIfAbsent(namespace, n -> NacosClientFactory.create(getProperties(n), json));
+        NacosClientApi client = clients.computeIfAbsent(namespace, n -> NacosClientFactory.create(getProperties(n), json, application));
         client.connect();
         return new ConfigSubscription<>(client, configName, getParser(configName));
     }
