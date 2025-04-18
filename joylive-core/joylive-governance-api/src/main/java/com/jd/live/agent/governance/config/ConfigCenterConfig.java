@@ -47,7 +47,7 @@ public class ConfigCenterConfig {
 
     private long timeout = 3000;
 
-    private boolean grayEnabled = true;
+    private boolean grayEnabled;
 
     private Map<String, String> properties;
 
