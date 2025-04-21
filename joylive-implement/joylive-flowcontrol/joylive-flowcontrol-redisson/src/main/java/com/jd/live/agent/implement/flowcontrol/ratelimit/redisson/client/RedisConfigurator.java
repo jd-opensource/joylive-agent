@@ -64,7 +64,7 @@ public interface RedisConfigurator<T> {
         @Override
         public void configure(T config, RedisConfig redisConfig) {
             super.configure(config, redisConfig);
-            config.setReadMode(ReadMode.MASTER)
+            config.setReadMode(redisConfig.getReadMode())
                     .setMasterConnectionPoolSize(redisConfig.masterConnectionPoolSize)
                     .setMasterConnectionMinimumIdleSize(redisConfig.masterConnectionMinimumIdleSize)
                     .setSlaveConnectionPoolSize(redisConfig.slaveConnectionPoolSize)

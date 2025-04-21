@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.Option;
 import lombok.Getter;
+import org.redisson.config.ReadMode;
 
 import java.util.Objects;
 
@@ -41,11 +42,12 @@ public class RedisConfig {
     private static final String KEY_ADDRESS = "address";
     private static final String KEY_USER = "user";
     private static final String KEY_PASSWORD = "password";
-    private static final String KEY_DATABASE = "database";
-    private static final String KEY_TIMEOUT = "timeout";
-    private static final String KEY_EXPIRE_TIME = "expireTime";
     private static final String KEY_SENTINEL_USER = "sentinelUser";
     private static final String KEY_SENTINEL_PASSWORD = "sentinelPassword";
+    private static final String KEY_DATABASE = "database";
+    private static final String KEY_READ_MODE = "readMode";
+    private static final String KEY_TIMEOUT = "timeout";
+    private static final String KEY_EXPIRE_TIME = "expireTime";
     private static final String KEY_RETRY_ATTEMPTS = "retryAttempts";
     private static final String KEY_RETRY_INTERVAL = "retryInterval";
     private static final String KEY_CONNECT_TIMEOUT = "connectTimeout";
@@ -68,7 +70,13 @@ public class RedisConfig {
 
     protected final String password;
 
+    protected final String sentinelUser;
+
+    protected final String sentinelPassword;
+
     protected final int database;
+
+    protected final ReadMode readMode;
 
     protected final int timeout;
 
@@ -98,10 +106,6 @@ public class RedisConfig {
 
     protected final int retryInterval;
 
-    protected final String sentinelUser;
-
-    protected final String sentinelPassword;
-
     public RedisConfig(long id, Option option) {
         this.id = id;
         type = option.getTrimmed(KEY_TYPE, RedisType.CLUSTER.name()).toUpperCase();
@@ -111,6 +115,7 @@ public class RedisConfig {
         database = option.getNatural(KEY_DATABASE, 0);
         sentinelUser = option.getTrimmed(KEY_SENTINEL_USER);
         sentinelPassword = option.getTrimmed(KEY_SENTINEL_PASSWORD);
+        readMode = getReadMode(option);
         timeout = option.getPositive(KEY_TIMEOUT, 5000);
         expireTime = option.getPositive(KEY_EXPIRE_TIME, 60000);
         keepAlive = option.getBoolean(KEY_RETRY_ATTEMPTS, false);
@@ -216,6 +221,14 @@ public class RedisConfig {
         }
 
         return result;
+    }
+
+    protected static ReadMode getReadMode(Option option) {
+        try {
+            return ReadMode.valueOf(option.getTrimmed(KEY_READ_MODE, ReadMode.MASTER.name()).toUpperCase());
+        } catch (Throwable e) {
+            return ReadMode.MASTER;
+        }
     }
 
 
