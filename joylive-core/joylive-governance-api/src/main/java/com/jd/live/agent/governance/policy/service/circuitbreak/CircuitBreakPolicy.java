@@ -382,7 +382,7 @@ public class CircuitBreakPolicy extends PolicyId
             return false;
         }
         // The number of instances cannot exceed the maximum limit.
-        int max = (int) Math.ceil(instances * ratio / 100);
+        int max = (int) Math.floor(instances * ratio / 100);
         // The number of instances plus the current request
         int count = inspectors.size() + 1;
         return count > max;
