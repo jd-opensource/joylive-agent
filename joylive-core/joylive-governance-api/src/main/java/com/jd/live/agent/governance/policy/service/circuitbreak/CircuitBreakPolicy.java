@@ -378,7 +378,14 @@ public class CircuitBreakPolicy extends PolicyId
      */
     public boolean isProtectMode(int instances) {
         double ratio = getOutlierMaxPercent();
-        return ratio > 0 && inspectors.size() >= Math.ceil(instances * ratio / 100);
+        if (ratio <= 0) {
+            return false;
+        }
+        // The number of instances cannot exceed the maximum limit.
+        int max = (int) Math.floor(instances * ratio / 100);
+        // The number of instances plus the current request
+        int count = inspectors.size() + 1;
+        return count >= max;
     }
 
     /**
