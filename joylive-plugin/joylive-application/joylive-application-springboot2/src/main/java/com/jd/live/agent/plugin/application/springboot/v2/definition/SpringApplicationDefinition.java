@@ -31,20 +31,25 @@ import com.jd.live.agent.plugin.application.springboot.v2.interceptor.Applicatio
 @Injectable
 @Extension(value = "SpringApplicationDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
 @ConditionalOnGovernanceEnabled
-@ConditionalOnClass(SpringApplicationDefinition.TYPE_SPRING_APPLICATION)
+@ConditionalOnClass(SpringApplicationDefinition.TYPE)
 public class SpringApplicationDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SPRING_APPLICATION = "org.springframework.boot.SpringApplication";
+    protected static final String TYPE = "org.springframework.boot.SpringApplication";
 
-    private static final String METHOD_DEDUCE_MAIN_APPLICATION_CLASS = "deduceMainApplicationClass";
+    private static final String[] ARGUMENTS = {
+            "org.springframework.core.io.ResourceLoader",
+            "java.lang.Class[]"
+    };
 
     @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
     private AppListener listener;
 
     public SpringApplicationDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_DEDUCE_MAIN_APPLICATION_CLASS),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor()
+                                .and(MatcherBuilder.arguments(ARGUMENTS)),
                         () -> new ApplicationLoadInterceptor(listener))
         };
     }

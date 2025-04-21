@@ -728,6 +728,7 @@ public class Bootstrap implements AgentLifecycle {
      * @implNote Wraps service startup failures via {@link #onException(String, Throwable)}
      */
     private void onAppLoading() {
+        logger.info("Application is loading..., classloader={}, mainClass={}", application.getClassLoader(), application.getMainClass());
         if (serviceManager != null) {
             try {
                 logger.info("Start services after all agents are instrumented during application loading.");

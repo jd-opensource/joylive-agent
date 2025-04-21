@@ -50,7 +50,7 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
 
     public static class SubNameMatcher<T extends TypeDesc> extends AbstractJunction<T> {
 
-        private static final Map<String, Set<String>> TYPES = new ConcurrentHashMap<>();
+        private static final Map<String, Set<String>> TYPES = new ConcurrentHashMap<>(8192);
 
         private final String type;
 

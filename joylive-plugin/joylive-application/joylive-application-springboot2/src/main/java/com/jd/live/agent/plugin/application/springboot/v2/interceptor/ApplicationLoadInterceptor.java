@@ -16,12 +16,12 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
-import org.springframework.boot.SpringApplication;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.ClassUtils;
 
 public class ApplicationLoadInterceptor extends InterceptorAdaptor {
 
@@ -32,15 +32,28 @@ public class ApplicationLoadInterceptor extends InterceptorAdaptor {
     }
 
     @Override
-    public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        SpringApplication application = (SpringApplication) mc.getTarget();
-        ClassLoader classLoader = application.getClassLoader();
-        Class<?> mainClass = mc.getResult();
+    public void onEnter(ExecutableContext ctx) {
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.load(() -> {
+            ResourceLoader resourceLoader = ctx.getArgument(0);
+            ClassLoader classLoader = resourceLoader != null ? resourceLoader.getClassLoader() : ClassUtils.getDefaultClassLoader();
+            Class<?> mainClass = deduceMainApplicationClass();
             InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
             listener.onLoading(classLoader, mainClass);
         });
+    }
+
+    private Class<?> deduceMainApplicationClass() {
+        try {
+            StackTraceElement[] stackTrace = new RuntimeException().getStackTrace();
+            for (StackTraceElement stackTraceElement : stackTrace) {
+                if ("main".equals(stackTraceElement.getMethodName())) {
+                    return Class.forName(stackTraceElement.getClassName());
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            // Swallow and continue
+        }
+        return null;
     }
 }
