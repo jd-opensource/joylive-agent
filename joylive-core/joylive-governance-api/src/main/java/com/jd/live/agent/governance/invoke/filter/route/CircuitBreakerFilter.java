@@ -390,7 +390,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             long duration = request.getDuration();
             for (CircuitBreaker circuitBreaker : circuitBreakers) {
                 if (response != null && isError(circuitBreaker.getPolicy(), request, response, null, errorParsers::get)) {
-                    circuitBreaker.onError(duration, new CircuitBreakException("Exception of fuse response code"));
+                    circuitBreaker.onError(duration, invocation.getRouteTarget().size(), new CircuitBreakException("Exception of fuse response code"));
                 } else {
                     circuitBreaker.onSuccess(duration);
                 }
@@ -405,7 +405,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 ErrorCause cause = cause(throwable, request.getErrorFunction(), null);
                 for (CircuitBreaker circuitBreaker : circuitBreakers) {
                     if (cause != null && cause.match(circuitBreaker.getPolicy())) {
-                        circuitBreaker.onError(duration, cause.getCause());
+                        circuitBreaker.onError(duration, invocation.getRouteTarget().size(), cause.getCause());
                     } else {
                         circuitBreaker.onSuccess(duration);
                     }

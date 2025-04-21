@@ -88,8 +88,8 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
     }
 
     @Override
-    public void onError(long durationInMs, Throwable throwable) {
-        if (started.get()) {
+    public void onError(long durationInMs, int instances, Throwable throwable) {
+        if (started.get() && !getPolicy().isProtectMode(instances)) {
             doOnError(durationInMs, throwable);
         }
     }

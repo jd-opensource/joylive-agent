@@ -47,9 +47,10 @@ public interface CircuitBreaker extends Licensee<CircuitBreakPolicy>, CircuitBre
      * Records a failed call. This method should be invoked when a call fails.
      *
      * @param durationInMs The elapsed time duration of the call in milliseconds.
+     * @param instances    The number of instances to evaluate for permit acquisition.
      * @param throwable    The throwable that represents the failure.
      */
-    void onError(long durationInMs, Throwable throwable);
+    void onError(long durationInMs, int instances, Throwable throwable);
 
     /**
      * Records a successful call. This method should be invoked when a call is successful.
