@@ -20,8 +20,11 @@ import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.RouteTarget;
+import com.jd.live.agent.governance.invoke.RouteTarget.MinPercentPredicate;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.health.HealthPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
@@ -37,8 +40,11 @@ public class HealthyFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        HealthPolicy healthPolicy = servicePolicy == null ? null : servicePolicy.getHealthPolicy();
+        int healthyMinPercent = healthPolicy == null || healthPolicy.getHealthyMinPercent() == null ? 0 : healthPolicy.getHealthyMinPercent();
         RouteTarget target = invocation.getRouteTarget();
-        target.filter(Endpoint::isAccessible);
+        target.filter(Endpoint::isAccessible, -1, healthyMinPercent <= 0 ? null : new MinPercentPredicate(healthyMinPercent));
         chain.filter(invocation);
     }
 }

@@ -28,6 +28,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -37,6 +38,8 @@ import java.util.function.Predicate;
  * handle a list of endpoints, perform actions on units, and manage routing logic.
  */
 public class RouteTarget {
+
+    public static final BiPredicate<Integer, Integer> NONE_NULL = (count, size) -> count > 0;
 
     /**
      * A list of instances that this route target is associated with.
@@ -164,7 +167,7 @@ public class RouteTarget {
      * @return The filtered list of endpoints.
      */
     public List<? extends Endpoint> filtrate(Predicate<Endpoint> predicate) {
-        filter(endpoints, predicate, -1, true);
+        filter(endpoints, predicate, -1, null);
         return endpoints;
     }
 
@@ -176,7 +179,7 @@ public class RouteTarget {
      * @return The filtered list of endpoints.
      */
     public List<? extends Endpoint> filtrate(Predicate<Endpoint> predicate, int maxSize) {
-        filter(endpoints, predicate, maxSize, true);
+        filter(endpoints, predicate, maxSize, null);
         return endpoints;
     }
 
@@ -189,7 +192,7 @@ public class RouteTarget {
      * @return The filtered list of endpoints.
      */
     public List<? extends Endpoint> filtrate(Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
-        filter(endpoints, predicate, maxSize, nullable);
+        filter(endpoints, predicate, maxSize, nullable ? null : NONE_NULL);
         return endpoints;
     }
 
@@ -200,7 +203,7 @@ public class RouteTarget {
      * @return The count of endpoints that matched the predicate.
      */
     public int filter(Predicate<Endpoint> predicate) {
-        return filter(endpoints, predicate, -1, true);
+        return filter(endpoints, predicate, -1, null);
     }
 
     /**
@@ -211,7 +214,7 @@ public class RouteTarget {
      * @return The count of endpoints that matched the predicate.
      */
     public int filter(Predicate<Endpoint> predicate, int maxSize) {
-        return filter(endpoints, predicate, maxSize, true);
+        return filter(endpoints, predicate, maxSize, null);
     }
 
     /**
@@ -223,7 +226,19 @@ public class RouteTarget {
      * @return The count of endpoints that matched the predicate.
      */
     public int filter(Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
-        return filter(endpoints, predicate, maxSize, nullable);
+        return filter(endpoints, predicate, maxSize, nullable ? null : NONE_NULL);
+    }
+
+    /**
+     * Filters the list of endpoints based on the provided predicate and maximum size.
+     *
+     * @param predicate The predicate to use for filtering.
+     * @param maxSize   The maximum size of the list to return.
+     * @param protect   Predicate controlling element removal (null=allow)
+     * @return The count of endpoints that matched the predicate.
+     */
+    public int filter(Predicate<Endpoint> predicate, int maxSize, BiPredicate<Integer, Integer> protect) {
+        return filter(endpoints, predicate, maxSize, protect);
     }
 
     /**
@@ -279,28 +294,46 @@ public class RouteTarget {
     }
 
     /**
-     * Static method to filter a list of endpoints based on a predicate and an optional maximum size.
+     * Filters endpoints in-place by a predicate, optionally limiting results.
      *
-     * @param endpoints The list of endpoints to filter.
-     * @param predicate The predicate to use for filtering.
-     * @param maxSize   The maximum size of the list to return.
-     * @param nullable  Whether a null list is acceptable.
-     * @param <T>       The type of the endpoints in the list.
-     * @return The count of endpoints that matched the predicate.
+     * <p>Operates in O(n) time by:
+     * <ol>
+     *   <li>Retaining matching elements (or all if predicate=null)</li>
+     *   <li>Optionally stopping after {@code maxSize} matches</li>
+     *   <li>Clearing remaining elements unless protected</li>
+     * </ol>
+     *
+     * @param endpoints List to filter (modified in-place)
+     * @param predicate Test for endpoint inclusion (null keeps all)
+     * @param maxSize Maximum matches to keep (≤0 for unlimited)
+     * @param protect Predicate controlling element removal (null=allow)
+     * @param <T> Endpoint type
+     * @return Count of matched endpoints
      */
-    public static <T extends Endpoint> int filter(List<T> endpoints, Predicate<Endpoint> predicate, int maxSize, boolean nullable) {
+    public static <T extends Endpoint> int filter(List<T> endpoints, Predicate<Endpoint> predicate, int maxSize, BiPredicate<Integer, Integer> protect) {
         int size = endpoints == null ? 0 : endpoints.size();
-        if (size == 0 || (predicate == null && maxSize <= 0)) {
-            return size;
+        if (size == 0) {
+            return 0;
+        } else if (predicate == null) {
+            if (maxSize <= 0 || maxSize >= size) {
+                return size;
+            }
+            endpoints.subList(0, maxSize).clear();
+            return maxSize;
         }
 
         int writeIndex = 0;
         // Traverse the list with readIndex to improve performance.
         for (int readIndex = 0; readIndex < size; readIndex++) {
             T endpoint = endpoints.get(readIndex);
-            if (predicate == null || predicate.test(endpoint)) {
+            if (predicate.test(endpoint)) {
                 if (writeIndex < readIndex) {
-                    endpoints.set(writeIndex, endpoint);
+                    if (protect != null && protect != NONE_NULL) {
+                        // swap in protect mode.
+                        endpoints.set(readIndex, endpoints.set(writeIndex, endpoint));
+                    } else {
+                        endpoints.set(writeIndex, endpoint);
+                    }
                 }
                 writeIndex++;
                 if (maxSize > 0 && writeIndex >= maxSize) {
@@ -310,7 +343,7 @@ public class RouteTarget {
         }
 
         // Remove the remaining elements if any
-        if ((writeIndex > 0 || nullable) && writeIndex < size) {
+        if (writeIndex < size && (protect == null || protect.test(writeIndex, size))) {
             if (writeIndex == 0) {
                 endpoints.clear();
             } else {
@@ -328,7 +361,7 @@ public class RouteTarget {
      *                  @return The count of endpoints that matched the predicate.
      */
     public static int filter(List<? extends Endpoint> endpoints, Predicate<Endpoint> predicate) {
-        return filter(endpoints, predicate, 0, false);
+        return filter(endpoints, predicate, 0, null);
     }
 
     /**
@@ -420,6 +453,23 @@ public class RouteTarget {
      */
     public static RouteTarget forward(EndpointGroup group, Unit unit, UnitRoute route) {
         return new RouteTarget(null, group, unit, UnitAction.forward(), route, null);
+    }
+
+    /**
+     * A {@link BiPredicate} that checks if a ratio meets a minimum percentage threshold.
+     */
+    public static class MinPercentPredicate implements BiPredicate<Integer, Integer> {
+
+        protected int minPercent;
+
+        public MinPercentPredicate(int minPercent) {
+            this.minPercent = minPercent;
+        }
+
+        @Override
+        public boolean test(Integer count, Integer size) {
+            return count * 100 / size >= minPercent;
+        }
     }
 
 }

@@ -27,6 +27,7 @@ import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
+import com.jd.live.agent.governance.policy.service.health.HealthPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.limit.ConcurrencyLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.LoadLimitPolicy;
@@ -53,6 +54,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     @Setter
     @Getter
     private ClusterPolicy clusterPolicy;
+
+    @Setter
+    @Getter
+    private HealthPolicy healthPolicy;
 
     @Setter
     @Getter
@@ -103,6 +108,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     public void supplement(ServicePolicy source) {
         supplementId(loadBalancePolicy);
         supplementId(clusterPolicy);
+        supplementId(healthPolicy);
         supplementId(livePolicy);
         supplementId(authPolicy);
         supplementUri(rateLimitPolicies,
@@ -119,6 +125,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (source != null) {
             livePolicy = supplement(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
             clusterPolicy = supplement(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
+            healthPolicy = supplement(source.healthPolicy, healthPolicy, s -> new HealthPolicy());
             loadBalancePolicy = supplement(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
             authPolicy = supplement(source.authPolicy, authPolicy, s -> new AuthPolicy());
             rateLimitPolicies = supplement(source.rateLimitPolicies, rateLimitPolicies, s -> new RateLimitPolicy(),
