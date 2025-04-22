@@ -8,8 +8,9 @@
 4. Added support for Eureka service registry
 5. Added support for multi-registry registration and subscription.
 6. Added support for maximum circuit breaker instance ratio
-7. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
-8. Fixed other issues and improved stability.
+7. Added support for minimum healthy instance ratio
+8. Improved dynamic configuration injection, supporting injection of fields in objects annotated with @ConfigurationProperties.
+9. Fixed other issues and improved stability.
 
 ## 1.6.0
 
