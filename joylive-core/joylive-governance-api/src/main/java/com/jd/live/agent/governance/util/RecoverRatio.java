@@ -71,11 +71,11 @@ public class RecoverRatio {
      *                   Defaults to 10000 if a non-positive value is provided.
      */
     public RecoverRatio(int durationMs, int phase, int weight) {
-        this.durationMs = durationMs < 0 ? 15000 : durationMs;
-        this.phase = phase < 0 ? 10 : phase;
+        this.durationMs = durationMs <= 0 ? 15000 : durationMs;
+        this.phase = phase <= 0 ? 10 : phase;
         this.weight = weight <= 0 ? 10000 : weight;
-        this.phaseMs = phase / (double) durationMs;
-        this.phaseRatio = ((double) weight) / phase;
+        this.phaseMs = this.phase / (double) this.durationMs;
+        this.phaseRatio = ((double) weight) / this.phase;
     }
 
     /**
