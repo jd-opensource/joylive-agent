@@ -22,10 +22,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryService;
-import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
 import com.jd.live.agent.plugin.registry.nacos.registry.NacosRegistryService;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.registry.nacos.registry.NacosRegistryService.getEndpoints;
 
 /**
  * NacosInstanceChangeInterceptor
@@ -46,7 +45,7 @@ public class NacosInstanceChangeInterceptor extends InterceptorAdaptor {
             NacosRegistryService nacos = (NacosRegistryService) service;
             nacos.publish(new RegistryEvent(event.getServiceName(),
                     event.getGroupName(),
-                    toList(event.getHosts(), NacosEndpoint::new),
+                    getEndpoints(event.getHosts()),
                     Constants.DEFAULT_GROUP));
         }
     }

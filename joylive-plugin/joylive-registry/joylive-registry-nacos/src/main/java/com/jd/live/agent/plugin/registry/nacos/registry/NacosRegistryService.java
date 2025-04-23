@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.registry.nacos.registry;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryListener;
@@ -32,6 +33,8 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class NacosRegistryService extends AbstractSystemRegistryService {
 
+    public static Boolean secure;
+
     private final NacosNamingService client;
 
     public NacosRegistryService(NacosNamingService client) {
@@ -40,7 +43,7 @@ public class NacosRegistryService extends AbstractSystemRegistryService {
 
     @Override
     protected List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception {
-        return toList(client.getAllInstances(service, group), NacosEndpoint::new);
+        return getEndpoints(client.getAllInstances(service, group));
     }
 
     /**
@@ -55,6 +58,10 @@ public class NacosRegistryService extends AbstractSystemRegistryService {
                 publish(event, listener);
             }
         }
+    }
+
+    public static List<ServiceEndpoint> getEndpoints(List<Instance> instances) {
+        return toList(instances, e -> new NacosEndpoint(e, secure));
     }
 
 }

@@ -13,6 +13,7 @@
     <properties>
         <spring-cloud-commons.version>3.1.8</spring-cloud-commons.version>
         <nacos-client.version>2.4.3</nacos-client.version>
+        <spring-cloud-nacos.version>2021.0.6.0</spring-cloud-nacos.version>
     </properties>
 
     <dependencies>
@@ -26,6 +27,12 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-client</artifactId>
             <version>${nacos-client.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            <version>${spring-cloud-nacos.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

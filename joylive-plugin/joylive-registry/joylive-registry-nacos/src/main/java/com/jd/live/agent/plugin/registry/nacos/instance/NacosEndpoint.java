@@ -44,6 +44,16 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
         this.instance = instance;
     }
 
+    public NacosEndpoint(Instance instance, Boolean secure) {
+        this.instance = instance;
+        if (secure != null && secure) {
+            Map<String, String> metadata = instance.getMetadata();
+            if (metadata != null) {
+                metadata.putIfAbsent(Constants.LABEL_SECURE, "true");
+            }
+        }
+    }
+
     @Override
     public String getId() {
         return instance.getInstanceId();
