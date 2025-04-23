@@ -109,7 +109,7 @@ public class RandomWeight {
 
                 // Select based on weight
                 int randomWeight = random.nextInt(totalWeight);
-                int start = randomWeight >= halfWeight ? half : 0;
+                int start = randomWeight >= halfWeight ? half + 1 : 0;
                 int weight = start == 0 ? 0 : halfWeight;
                 for (int i = start; i < size; i++) {
                     candidate = candidates[i];
