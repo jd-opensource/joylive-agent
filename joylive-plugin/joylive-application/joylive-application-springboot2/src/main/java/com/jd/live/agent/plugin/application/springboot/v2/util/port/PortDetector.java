@@ -10,5 +10,5 @@ public interface PortDetector {
      * @return The port number as an Integer, or null if the port cannot be determined.
      * @throws Throwable If an error occurs while trying to determine the port.
      */
-    Integer getPort() throws Throwable;
+    PortInfo getPort() throws Throwable;
 }

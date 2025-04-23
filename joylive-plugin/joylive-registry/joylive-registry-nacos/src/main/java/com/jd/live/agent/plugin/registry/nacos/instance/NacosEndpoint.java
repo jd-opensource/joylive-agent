@@ -65,6 +65,11 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
     }
 
     @Override
+    public boolean isSecure() {
+        return Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
+    }
+
+    @Override
     public Map<String, String> getMetadata() {
         return instance.getMetadata();
     }

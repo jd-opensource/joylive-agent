@@ -63,7 +63,7 @@ public class MultiliveSyncerTest {
     private static final Application application = Application.builder()
             .name("service-provider")
             .location(Location.builder().liveSpaceId("v4bEh4kd6Jvu5QBX09qYq-qlbcs").build())
-            .service(AppService.builder().name("service-provider").build())
+            .service(new AppService("service-provider"))
             .build();
 
     private static final EventBus eventBus = new JEventBus();

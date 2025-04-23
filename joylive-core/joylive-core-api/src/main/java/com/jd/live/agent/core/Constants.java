@@ -168,6 +168,7 @@ public interface Constants {
      */
     String LABEL_EXCEPTION_MESSAGE = "x-exception-message";
 
+    String LABEL_SECURE = "secure";
 
     String GATEWAY_ROUTE_LIVE_ENABLED = "liveEnabled";
 

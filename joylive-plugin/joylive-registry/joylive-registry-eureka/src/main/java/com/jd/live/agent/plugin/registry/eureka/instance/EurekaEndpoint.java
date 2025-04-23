@@ -67,7 +67,13 @@ public class EurekaEndpoint extends AbstractEndpoint implements ServiceEndpoint 
 
     @Override
     public int getPort() {
-        return instance.getPort();
+        return isSecure() ? instance.getSecurePort() : instance.getPort();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return instance.isPortEnabled(InstanceInfo.PortType.SECURE)
+                && !instance.isPortEnabled(InstanceInfo.PortType.UNSECURE);
     }
 
     @Override

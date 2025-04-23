@@ -26,6 +26,7 @@ import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppConte
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
@@ -35,6 +36,7 @@ public class NacosRegistrationInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosRegistrationInterceptor.class);
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onSuccess(ExecutableContext ctx) {
         // Fixed the issue that the WAR application cannot automatically register within the Tomcat container.
@@ -46,9 +48,9 @@ public class NacosRegistrationInterceptor extends InterceptorAdaptor {
                 if (registration.isAutoStartup() && !registration.isRunning()) {
                     PortDetector detector = PortDetectorFactory.get(context);
                     try {
-                        Integer port = detector.getPort();
+                        PortInfo port = detector.getPort();
                         if (port != null) {
-                            registration.setPort(port);
+                            registration.setPort(port.getPort());
                         }
                         registration.start();
                         logger.info("Success starting nacos registration.");

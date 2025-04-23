@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.core.instance;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -62,8 +61,6 @@ public class AppService {
 
     private Integer warmupDuration;
 
-    private Integer port;
-
     /**
      * Metadata associated with the service.
      */
@@ -82,26 +79,6 @@ public class AppService {
      */
     public AppService(String name) {
         this.name = name;
-    }
-
-    /**
-     * Constructs a new AppService with the specified properties.
-     *
-     * @param name      The service name.
-     * @param gateway   The gateway role.
-     * @param namespace The service namespace.
-     * @param group     The service group.
-     * @param protocol  The service communication protocol.
-     * @param meta      The service metadata.
-     */
-    @Builder
-    public AppService(String name, GatewayRole gateway, String namespace, String group, String protocol, Map<String, String> meta) {
-        this.name = name;
-        this.gateway = gateway;
-        this.namespace = namespace;
-        this.group = group;
-        this.protocol = protocol;
-        this.meta = meta;
     }
 
     /**

@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.instance.AppService;
@@ -30,6 +31,7 @@ import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.boot.web.server.WebServer;
@@ -82,16 +84,22 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         ConfigurableEnvironment environment = context.getEnvironment();
         String address = environment.getProperty("server.address");
         address = address == null || address.isEmpty() ? Ipv4.getLocalIp() : address;
+        PortInfo port = getPort(context);
         ServiceInstance instance = new ServiceInstance();
         instance.setInstanceId(application.getInstance());
         instance.setNamespace(appService.getNamespace());
         instance.setService(appService.getName());
         instance.setGroup(appService.getGroup());
         instance.setHost(address);
-        instance.setPort(getPort(context));
         Map<String, String> metadata = new HashMap<>();
         application.labelRegistry(metadata::putIfAbsent, true);
         metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
+        if (port != null) {
+            instance.setPort(port.getPort());
+            if (port.isSecure()) {
+                metadata.put(Constants.LABEL_SECURE, String.valueOf(port.isSecure()));
+            }
+        }
         instance.setMetadata(metadata);
         return instance;
     }
@@ -106,15 +114,14 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
      * @param context Application context for port detection
      * @return Validated port number
      */
-    private int getPort(ConfigurableApplicationContext context) {
+    private PortInfo getPort(ConfigurableApplicationContext context) {
         if (context instanceof WebServerApplicationContext) {
             return getPortByWebServer((WebServerApplicationContext) context);
         } else {
-            Integer port = getPortByDetector(context);
+            PortInfo port = getPortByDetector(context);
             if (port != null) {
                 return port;
             }
-
             return getPortByEnvironment(context);
         }
     }
@@ -125,9 +132,19 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
      * @param context Web-enabled application context
      * @return Actual bound port from web server
      */
-    private int getPortByWebServer(WebServerApplicationContext context) {
+    private PortInfo getPortByWebServer(WebServerApplicationContext context) {
         WebServer webServer = context.getWebServer();
-        return webServer.getPort();
+        int port = webServer.getPort();
+        boolean secure = false;
+        ClassLoader classLoader = context.getClassLoader();
+        classLoader = classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader;
+        try {
+            Class<?> clazz = classLoader.loadClass("org.springframework.boot.autoconfigure.web.ServerProperties");
+            Object bean = context.getBean(clazz);
+            secure = UnsafeFieldAccessorFactory.getQuietly(bean, "ssl") != null;
+        } catch (Throwable ignored) {
+        }
+        return new PortInfo(port, secure);
     }
 
     /**
@@ -137,7 +154,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
      * @param context Application context containing environment
      * @return Validated port number from configuration
      */
-    private Integer getPortByEnvironment(ConfigurableApplicationContext context) {
+    private PortInfo getPortByEnvironment(ConfigurableApplicationContext context) {
         ConfigurableEnvironment environment = context.getEnvironment();
         String serverPort = environment.getProperty("server.port");
         serverPort = serverPort == null || serverPort.isEmpty() ? "8080" : serverPort;
@@ -148,7 +165,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         } catch (NumberFormatException e) {
             port = 8080;
         }
-        return port;
+        return new PortInfo(port, false);
     }
 
     /**
@@ -158,16 +175,12 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
      * @param context Application context for detector initialization
      * @return Detected port or null if unavailable
      */
-    private Integer getPortByDetector(ConfigurableApplicationContext context) {
+    private PortInfo getPortByDetector(ConfigurableApplicationContext context) {
         PortDetector detector = PortDetectorFactory.get(context);
-        Integer port;
         try {
-            port = detector.getPort();
-            if (port != null) {
-                return port;
-            }
-        } catch (Throwable ignored) {
+            return detector.getPort();
+        } catch (Throwable e) {
+            return null;
         }
-        return null;
     }
 }

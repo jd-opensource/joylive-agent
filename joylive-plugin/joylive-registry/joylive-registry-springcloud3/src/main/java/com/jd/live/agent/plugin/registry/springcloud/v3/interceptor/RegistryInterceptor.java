@@ -50,6 +50,9 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         if (metadata != null) {
             application.labelRegistry(metadata::putIfAbsent, true);
             metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
+            if (registration.isSecure()) {
+                metadata.put(Constants.LABEL_SECURE, String.valueOf(registration.isSecure()));
+            }
         }
         String serviceId = registration.getServiceId();
         registry.register(serviceId);
