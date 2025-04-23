@@ -55,7 +55,7 @@ public class RandomWeightTest {
 
         private final int weight;
 
-        public Food(String name, int weight) {
+        Food(String name, int weight) {
             this.name = name;
             this.weight = weight;
         }
