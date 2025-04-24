@@ -20,6 +20,7 @@ import lombok.Getter;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -29,6 +30,8 @@ import java.util.function.Predicate;
  * A factory class that provides access to a specific field of an object.
  */
 public class UnsafeFieldAccessorFactory {
+
+    private static final Map<Class<?>, Map<String, Optional<Field>>> fields = new ConcurrentHashMap<>();
 
     private static Function<Field, UnsafeFieldAccessor> unsafeFieldFunc;
 
@@ -140,7 +143,7 @@ public class UnsafeFieldAccessorFactory {
                 throw new NoSuchFieldException("Field " + field + " is not found");
             }
         }
-        return getAccessor(clazz.getDeclaredField(field), defaultFunc);
+        return getAccessor(getField(clazz, field), defaultFunc);
     }
 
     /**
@@ -230,6 +233,21 @@ public class UnsafeFieldAccessorFactory {
             }
         }
         return null;
+    }
+
+    private static Field getField(Class<?> clazz, String field) {
+        Map<String, Optional<Field>> map = fields.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
+        return map.computeIfAbsent(field, k -> {
+            Class<?> parent = clazz;
+            while (parent != null) {
+                try {
+                    return Optional.of(parent.getDeclaredField(k));
+                } catch (NoSuchFieldException e) {
+                    parent = parent.getSuperclass();
+                }
+            }
+            return Optional.empty();
+        }).orElse(null);
     }
 
     /**
