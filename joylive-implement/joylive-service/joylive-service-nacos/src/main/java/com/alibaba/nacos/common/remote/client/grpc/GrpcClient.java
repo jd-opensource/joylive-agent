@@ -337,7 +337,9 @@ public abstract class GrpcClient extends RpcClient {
             if (grpcExecutor == null) {
                 this.grpcExecutor = createGrpcExecutor(serverInfo.getServerIp());
             }
-            int port = serverInfo.getServerPort() + rpcPortOffset();
+            // parse grpc port by live
+            Integer grpcPort = serverInfo.getGrpcPort();
+            int port = grpcPort != null ? grpcPort : (serverInfo.getServerPort() + rpcPortOffset());
             ManagedChannel managedChannel = createNewManagedChannel(serverInfo.getServerIp(), port);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
 
