@@ -33,7 +33,7 @@ public class UnsafeFieldAccessorFactoryTest {
     private static class Fruit {
         protected String name;
 
-        public Fruit(String name) {
+        Fruit(String name) {
             this.name = name;
         }
     }
@@ -43,7 +43,7 @@ public class UnsafeFieldAccessorFactoryTest {
 
         private final String color;
 
-        public Apple(String name, String color) {
+        Apple(String name, String color) {
             super(name);
             this.color = color;
         }
