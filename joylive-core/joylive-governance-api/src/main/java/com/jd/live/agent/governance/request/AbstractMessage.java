@@ -40,6 +40,10 @@ public abstract class AbstractMessage implements Message {
      */
     protected String liveSpaceId;
 
+    protected String unit;
+
+    protected String cell;
+
     /**
      * The rule ID of the message, lazily initialized.
      */
@@ -81,6 +85,22 @@ public abstract class AbstractMessage implements Message {
             liveSpaceId = getHeader(Constants.LABEL_LIVE_SPACE_ID);
         }
         return liveSpaceId;
+    }
+
+    @Override
+    public String getUnit() {
+        if (unit == null) {
+            unit = getHeader(Constants.LABEL_UNIT);
+        }
+        return unit;
+    }
+
+    @Override
+    public String getCell() {
+        if (cell == null) {
+            cell = getHeader(Constants.LABEL_CELL);
+        }
+        return cell;
     }
 
     @Override

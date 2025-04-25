@@ -25,10 +25,7 @@ import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.policy.live.Unit;
-import com.jd.live.agent.governance.policy.live.UnitRoute;
-import com.jd.live.agent.governance.policy.live.UnitRule;
+import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.Message;
 
@@ -69,8 +66,14 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         }
         GovernancePolicy policy = policySupplier.getPolicy();
         LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
-        Unit local = liveSpace == null ? null : liveSpace.getLocalUnit();
-        return local == null || local.getAccessMode().isWriteable();
+        Unit unit = liveSpace == null ? null : liveSpace.getLocalUnit();
+        Cell cell = liveSpace == null ? null : liveSpace.getLocalCell();
+        if (unit == null) {
+            return true;
+        } else if (!unit.getAccessMode().isReadable()) {
+            return false;
+        }
+        return cell == null || cell.getAccessMode().isReadable();
     }
 
     /**
@@ -155,26 +158,32 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         } else {
             GovernancePolicy policy = policySupplier.getPolicy();
             LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(liveSpaceId);
-            Unit local = liveSpace == null ? null : liveSpace.getLocalUnit();
-            UnitRule rule = liveSpace == null ? null : liveSpace.getUnitRule(message.getRuleId());
             if (liveSpace == null) {
                 return MessageAction.CONSUME;
-            } else if (local == null) {
+            }
+            Unit localUnit = liveSpace.getLocalUnit();
+            Cell localCell = liveSpace.getLocalCell();
+            UnitRule rule = liveSpace.getUnitRule(message.getRuleId());
+            if (localUnit == null) {
                 return MessageAction.DISCARD;
-            } else if (rule == null) {
-                return MessageAction.CONSUME;
-            } else {
+            } else if (!localUnit.getAccessMode().isReadable()) {
+                return MessageAction.REJECT;
+            } else if (localCell != null && !localCell.getAccessMode().isReadable()) {
+                return MessageAction.REJECT;
+            } else if (rule != null) {
                 UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
                 UnitRoute targetRoute = rule.getUnitRoute(message.getVariable(), func);
+                CellRoute cellRoute = targetRoute == null || localCell == null ? null : targetRoute.getCellRoute(message.getCell());
                 Unit targetUnit = targetRoute == null ? null : targetRoute.getUnit();
-                if (targetUnit == null) {
-                    return MessageAction.CONSUME;
-                } else if (targetUnit == local) {
-                    return MessageAction.CONSUME;
-                } else {
-                    return local.getCode().equals(targetRoute.getFailoverUnit()) ? MessageAction.CONSUME : MessageAction.DISCARD;
+                if (targetUnit != null) {
+                    if (localUnit != targetUnit && !localUnit.getCode().equals(targetRoute.getFailoverUnit())) {
+                        return MessageAction.DISCARD;
+                    } else if (cellRoute != null && !cellRoute.getAccessMode().isReadable()) {
+                        return MessageAction.REJECT;
+                    }
                 }
             }
+            return MessageAction.CONSUME;
         }
     }
 

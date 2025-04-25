@@ -46,6 +46,10 @@ public interface Message {
      */
     String getLiveSpaceId();
 
+    String getUnit();
+
+    String getCell();
+
     /**
      * Retrieves the rule ID associated with the message.
      *
