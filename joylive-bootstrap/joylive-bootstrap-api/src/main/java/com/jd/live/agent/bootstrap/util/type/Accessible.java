@@ -22,14 +22,7 @@ import java.lang.reflect.AccessibleObject;
  */
 public class Accessible {
 
-    private static volatile UnsafeFieldAccessor unsafe;
-
-    static {
-        try {
-            unsafe = UnsafeFieldAccessorFactory.getAccessor(AccessibleObject.class, "override", null);
-        } catch (Throwable ignored) {
-        }
-    }
+    private static final UnsafeFieldAccessor unsafe = UnsafeFieldAccessorFactory.getAccessor(AccessibleObject.class, "override");
 
     /**
      * Sets the accessibility of the specified accessible object.

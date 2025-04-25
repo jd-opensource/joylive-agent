@@ -26,7 +26,7 @@ import org.springframework.cloud.gateway.route.RouteDefinition;
 
 import java.net.URI;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
 
 /**
  * RouteInterceptor
@@ -39,7 +39,7 @@ public class RouteInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final UnsafeFieldAccessor accessor = getQuietly(RouteDefinition.class, "metadata");
+    private final UnsafeFieldAccessor accessor = getAccessor(RouteDefinition.class, "metadata");
 
     public RouteInterceptor(Registry registry) {
         this.registry = registry;

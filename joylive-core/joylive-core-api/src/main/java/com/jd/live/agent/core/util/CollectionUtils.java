@@ -39,7 +39,7 @@ public class CollectionUtils {
 
     private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
 
-    private static final UnsafeFieldAccessor MAP_FIELD = UnsafeFieldAccessorFactory.getQuietly(UNMODIFIED_MAP_CLASS, "m");
+    private static final UnsafeFieldAccessor MAP_FIELD = UnsafeFieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "m");
 
     /**
      * Looks up indices in the list of values where the predicate evaluates to true.

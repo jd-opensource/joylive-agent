@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class TomcatHeaderParser implements HttpHeaderParser {
 
-    private static final UnsafeFieldAccessor accessor = UnsafeFieldAccessorFactory.getQuietly(RequestFacade.class, "request");
+    private static final UnsafeFieldAccessor accessor = UnsafeFieldAccessorFactory.getAccessor(RequestFacade.class, "request");
 
     @Override
     public MultiMap<String, String> parse(Object request) {

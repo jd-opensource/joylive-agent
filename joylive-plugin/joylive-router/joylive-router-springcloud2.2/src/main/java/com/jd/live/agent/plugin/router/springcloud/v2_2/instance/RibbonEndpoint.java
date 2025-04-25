@@ -28,7 +28,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
 
 /**
  * A class that represents a service endpoint in the context of Ribbon load balancing.
@@ -116,7 +116,7 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
         if (metadata == null) {
             Map<String, String> result = null;
             // for nacos
-            CacheObject<UnsafeFieldAccessor> cache = ACCESSOR_MAP.computeIfAbsent(server.getClass(), c -> new CacheObject<>(getQuietly(c, FIELD_METADATA)));
+            CacheObject<UnsafeFieldAccessor> cache = ACCESSOR_MAP.computeIfAbsent(server.getClass(), c -> new CacheObject<>(getAccessor(c, FIELD_METADATA)));
             UnsafeFieldAccessor accessor = cache.get();
             if (accessor != null) {
                 Object target = accessor.get(server);

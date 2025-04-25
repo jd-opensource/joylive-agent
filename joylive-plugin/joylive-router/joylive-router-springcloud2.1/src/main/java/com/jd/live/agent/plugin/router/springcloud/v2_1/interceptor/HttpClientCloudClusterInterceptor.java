@@ -16,8 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -34,11 +32,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient;
-import org.springframework.cloud.netflix.ribbon.support.AbstractLoadBalancingClient;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 /**
  * HttpClientClusterInterceptor
@@ -58,12 +57,7 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
         RibbonLoadBalancingHttpClient target = (RibbonLoadBalancingHttpClient) ctx.getTarget();
         CloseableHttpClient client = target.getDelegate();
         client = new LiveHttpClient(target, client, context);
-        try {
-            UnsafeFieldAccessor accessor = UnsafeFieldAccessorFactory.getAccessor(AbstractLoadBalancingClient.class, "delegate");
-            accessor.set(target, client);
-        } catch (NoSuchFieldException ignored) {
-            // ignore
-        }
+        setValue(target, "delegate", client);
     }
 
     /**

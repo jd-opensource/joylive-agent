@@ -33,33 +33,14 @@ public class UnsafeFieldAccessorFactory {
 
     private static final Map<Class<?>, Map<String, Optional<Field>>> fields = new ConcurrentHashMap<>();
 
-    private static Function<Field, UnsafeFieldAccessor> unsafeFieldFunc;
-
-    private static BiFunction<Class<?>, String, UnsafeFieldAccessor> unsafeNameFunc;
+    private static final Function<Field, UnsafeFieldAccessor> unsafeFieldFunc;
 
     private static final Map<Class<?>, BiFunction<Object, UnsafeFieldAccessor, Object>> getters = new ConcurrentHashMap<>();
 
+    private static final Map<Class<?>, ValueSetter> setters = new ConcurrentHashMap<>();
+
     static {
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        try {
-            classLoader.loadClass("jdk.internal.misc.Unsafe");
-            jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-            boolean hasReference = withReference(unsafe);
-            unsafeFieldFunc = field -> new OpenUnsafeFieldAccessor(field, unsafe, hasReference);
-            unsafeNameFunc = (type, name) -> new OpenUnsafeFieldAccessor(type, name, unsafe, hasReference);
-            System.out.println("Use jdk.internal.misc.Unsafe to fast access field");
-        } catch (Throwable e) {
-            try {
-                classLoader.loadClass("sun.misc.Unsafe");
-                Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-                field.setAccessible(true);
-                sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
-                unsafeFieldFunc = f -> new MiscUnsafeFieldAccessor(f, unsafe);
-                System.out.println("Use sun.misc.Unsafe to fast access field");
-            } catch (Throwable ignore) {
-                System.out.println("Unable to use unsafe to fast access field");
-            }
-        }
+        unsafeFieldFunc = getUnsafe();
 
         getters.put(int.class, (o, accessor) -> accessor.getInt(o));
         getters.put(long.class, (o, accessor) -> accessor.getLong(o));
@@ -69,6 +50,72 @@ public class UnsafeFieldAccessorFactory {
         getters.put(float.class, (o, accessor) -> accessor.getFloat(o));
         getters.put(boolean.class, (o, accessor) -> accessor.getBoolean(o));
         getters.put(char.class, (o, accessor) -> accessor.getChar(o));
+
+        setters.put(int.class, (o, v, accessor) -> accessor.setInt(o, (int) v));
+        setters.put(long.class, (o, v, accessor) -> accessor.setLong(o, (long) v));
+        setters.put(short.class, (o, v, accessor) -> accessor.setShort(o, (short) v));
+        setters.put(byte.class, (o, v, accessor) -> accessor.setByte(o, (byte) v));
+        setters.put(double.class, (o, v, accessor) -> accessor.setDouble(o, (double) v));
+        setters.put(float.class, (o, v, accessor) -> accessor.setFloat(o, (float) v));
+        setters.put(boolean.class, (o, v, accessor) -> accessor.setBoolean(o, (boolean) v));
+        setters.put(char.class, (o, v, accessor) -> accessor.setChar(o, (char) v));
+    }
+
+    /**
+     * Provides unsafe field accessors using different implementations (JDK Unsafe, Sun Unsafe, or reflection fallback).
+     * 1. jdk.internal.misc.Unsafe (modern JDKs)
+     * 2. sun.misc.Unsafe (legacy JDKs)
+     * 3. Reflection (fallback)
+     *
+     * @return Function that creates field accessors for the best available implementation
+     */
+    protected static Function<Field, UnsafeFieldAccessor> getUnsafe() {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        Function<Field, UnsafeFieldAccessor> result;
+        try {
+            result = getJDKUnsafe(classLoader);
+            System.out.println("Use jdk.internal.misc.Unsafe to fast access field");
+        } catch (Throwable e) {
+            try {
+                result = getSunUnsafe(classLoader);
+                System.out.println("Use sun.misc.Unsafe to fast access field");
+            } catch (Throwable ignore) {
+                result = ReflectFieldAccessor::new;
+                System.out.println("Use reflection to access field");
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Creates JDK's internal Unsafe-based field accessor.
+     *
+     * @param classLoader ClassLoader to load Unsafe class
+     * @return Unsafe accessor function
+     * @throws ClassNotFoundException if jdk.internal.misc.Unsafe is unavailable
+     */
+    protected static Function<Field, UnsafeFieldAccessor> getJDKUnsafe(ClassLoader classLoader) throws ClassNotFoundException {
+        classLoader.loadClass("jdk.internal.misc.Unsafe");
+        jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
+        boolean hasReference = withReference(unsafe);
+        return field -> new OpenUnsafeFieldAccessor(field, unsafe, hasReference);
+    }
+
+    /**
+     * Creates Sun's legacy Unsafe-based field accessor.
+     *
+     * @param classLoader ClassLoader to load Unsafe class
+     * @return Unsafe accessor function
+     * @throws ClassNotFoundException if sun.misc.Unsafe is unavailable
+     * @throws NoSuchFieldException   if Unsafe instance field not found
+     * @throws IllegalAccessException if access to Unsafe is denied
+     */
+    protected static Function<Field, UnsafeFieldAccessor> getSunUnsafe(ClassLoader classLoader) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        classLoader.loadClass("sun.misc.Unsafe");
+        Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+        field.setAccessible(true);
+        sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
+        return f -> new MiscUnsafeFieldAccessor(f, unsafe);
     }
 
     /**
@@ -78,34 +125,7 @@ public class UnsafeFieldAccessorFactory {
      * @return an {@link UnsafeFieldAccessor} for the specified field
      */
     public static UnsafeFieldAccessor getAccessor(Field field) {
-        return getAccessor(field, ReflectFieldAccessor::new);
-    }
-
-    /**
-     * Returns an {@link UnsafeFieldAccessor} for the specified field.
-     *
-     * @param field       the field to access
-     * @param defaultFunc a function to create a default accessor if no other accessor is available
-     * @return an {@link UnsafeFieldAccessor} for the specified field
-     */
-    public static UnsafeFieldAccessor getAccessor(Field field, Function<Field, UnsafeFieldAccessor> defaultFunc) {
-        if (field == null) {
-            return null;
-        }
-        Function<Field, UnsafeFieldAccessor> func = unsafeFieldFunc == null ? defaultFunc : unsafeFieldFunc;
-        return func == null ? null : func.apply(field);
-    }
-
-    /**
-     * Returns a {@link UnsafeFieldAccessor} object for the specified field in the given class.
-     *
-     * @param clazz the class containing the field
-     * @param field the name of the field
-     * @return a {@link UnsafeFieldAccessor} object for the specified field
-     * @throws NoSuchFieldException if the specified field does not exist in the given class
-     */
-    public static UnsafeFieldAccessor getAccessor(Class<?> clazz, String field) throws NoSuchFieldException {
-        return getAccessor(clazz, field, ReflectFieldAccessor::new);
+        return field == null ? null : unsafeFieldFunc.apply(field);
     }
 
     /**
@@ -115,35 +135,8 @@ public class UnsafeFieldAccessorFactory {
      * @param field the name of the field
      * @return a {@link UnsafeFieldAccessor} object for the specified field
      */
-    public static UnsafeFieldAccessor getQuietly(Class<?> clazz, String field) {
-        try {
-            return getAccessor(clazz, field, ReflectFieldAccessor::new);
-        } catch (NoSuchFieldException e) {
-            return null;
-        }
-    }
-
-    /**
-     * Returns a {@link UnsafeFieldAccessor} object for the specified field in the given class.
-     *
-     * @param clazz       the class containing the field
-     * @param field       the name of the field
-     * @param defaultFunc a function to create a default accessor if no other accessor is available
-     * @return a {@link UnsafeFieldAccessor} object for the specified field
-     * @throws NoSuchFieldException if the specified field does not exist in the given class
-     */
-    public static UnsafeFieldAccessor getAccessor(Class<?> clazz, String field, Function<Field, UnsafeFieldAccessor> defaultFunc) throws NoSuchFieldException {
-        if (clazz == null || field == null || field.isEmpty()) {
-            return null;
-        }
-        if (unsafeNameFunc != null) {
-            try {
-                return unsafeNameFunc.apply(clazz, field);
-            } catch (InternalError e) {
-                throw new NoSuchFieldException("Field " + field + " is not found");
-            }
-        }
-        return getAccessor(getField(clazz, field), defaultFunc);
+    public static UnsafeFieldAccessor getAccessor(Class<?> clazz, String field) {
+        return getAccessor(getField(clazz, field));
     }
 
     /**
@@ -154,18 +147,12 @@ public class UnsafeFieldAccessorFactory {
      * @param field  The name of the field to retrieve.
      * @return The value of the specified field, or null if the field does not exist or the target object is null.
      */
-    @SuppressWarnings("unchecked")
     public static <T> T getQuietly(Object target, Field field) {
         if (target == null || field == null) {
             return null;
         }
-        try {
-            UnsafeFieldAccessor accessor = getAccessor(field);
-            BiFunction<Object, UnsafeFieldAccessor, Object> getter = getters.get(field.getType());
-            return getter == null ? (T) accessor.get(target) : (T) getter.apply(target, accessor);
-        } catch (InternalError e) {
-            return null;
-        }
+        UnsafeFieldAccessor accessor = getAccessor(field);
+        return getQuietly(target, field, accessor, null);
     }
 
     /**
@@ -190,17 +177,64 @@ public class UnsafeFieldAccessorFactory {
      * @param predicate A predicate to filter the field value. If the predicate returns false, the method returns null.
      * @return The value of the specified field, or null if the field does not exist, the target object is null, or the predicate returns false.
      */
-    @SuppressWarnings("unchecked")
     public static <T> T getQuietly(Object target, String field, Predicate<Object> predicate) {
-        if (target == null || field == null || field.isEmpty()) {
+        if (target == null) {
             return null;
         }
-        try {
-            UnsafeFieldAccessor accessor = getAccessor(target.getClass(), field);
-            return accessor == null ? null : (T) accessor.get(target, predicate);
-        } catch (NoSuchFieldException e) {
+        Field f = getField(target.getClass(), field);
+        if (f == null) {
             return null;
         }
+        UnsafeFieldAccessor accessor = getAccessor(f);
+        return getQuietly(target, f, accessor, predicate);
+    }
+
+    /**
+     * Safely gets a field value from an object using specified access strategy.
+     *
+     * @param target    The object instance to read from (null returns null)
+     * @param field     The field name to access (null/empty returns null)
+     * @param function  Field accessor factory function (null returns null)
+     * @param predicate Optional validation predicate for the return value
+     * @param <T>       Expected return type
+     * @return Field value if found and valid, otherwise null
+     */
+    protected static <T> T getQuietly(Object target,
+                                      String field,
+                                      Function<Field, UnsafeFieldAccessor> function,
+                                      Predicate<Object> predicate) {
+        if (target == null || field == null || field.isEmpty() || function == null) {
+            return null;
+        }
+        Field f = getField(target.getClass(), field);
+        if (f == null) {
+            return null;
+        }
+        UnsafeFieldAccessor accessor = function.apply(f);
+        return getQuietly(target, f, accessor, predicate);
+    }
+
+    /**
+     * Low-level field value access with explicit field and accessor.
+     *
+     * @param target    The object instance to read from (null returns null)
+     * @param field     The specific field to access (null returns null)
+     * @param accessor  Pre-created field accessor (null returns null)
+     * @param predicate Optional validation predicate for the return value
+     * @param <T>       Expected return type
+     * @return Field value if valid, otherwise null
+     */
+    @SuppressWarnings("unchecked")
+    protected static <T> T getQuietly(Object target,
+                                      Field field,
+                                      UnsafeFieldAccessor accessor,
+                                      Predicate<Object> predicate) {
+        if (target == null || field == null || accessor == null) {
+            return null;
+        }
+        BiFunction<Object, UnsafeFieldAccessor, Object> getter = getters.get(field.getType());
+        Object result = getter == null ? accessor.get(target) : getter.apply(target, accessor);
+        return result != null && (predicate == null || predicate.test(result)) ? (T) result : null;
     }
 
     /**
@@ -235,7 +269,59 @@ public class UnsafeFieldAccessorFactory {
         return null;
     }
 
+    /**
+     * Sets a field value on the target object using field name lookup.
+     *
+     * @param target The object instance to modify
+     * @param field  The name of the field to set
+     * @param value  The value to set
+     */
+    public static void setValue(Object target, String field, Object value) {
+        if (target == null || field == null) {
+            return;
+        }
+        Field f = getField(target.getClass(), field);
+        if (f == null) {
+            return;
+        }
+        setValue(target, f, value);
+    }
+
+    /**
+     * Sets a field value directly using a pre-resolved Field object.
+     *
+     * @param target The object instance to modify
+     * @param field  The specific Field to modify
+     * @param value  The value to set
+     */
+    public static void setValue(Object target, Field field, Object value) {
+        if (target == null || field == null) {
+            return;
+        }
+        UnsafeFieldAccessor accessor = getAccessor(field);
+
+        ValueSetter setter = setters.get(field.getType());
+        if (setter == null) {
+            accessor.set(target, value);
+        } else {
+            setter.set(target, value, accessor);
+        }
+    }
+
+    /**
+     * Finds a field by name in a class hierarchy using cached lookups.
+     *
+     * @param clazz The class to start searching from (may be null)
+     * @param field The field name to find (null/empty returns null)
+     * @return The found Field object, or null if not found
+     * @implNote Performs thread-safe caching of field lookups.
+     * Searches through the entire class hierarchy including superclasses.
+     * Returns the first matching field found in the hierarchy.
+     */
     private static Field getField(Class<?> clazz, String field) {
+        if (clazz == null || field == null || field.isEmpty()) {
+            return null;
+        }
         Map<String, Optional<Field>> map = fields.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
         return map.computeIfAbsent(field, k -> {
             Class<?> parent = clazz;
@@ -265,11 +351,17 @@ public class UnsafeFieldAccessorFactory {
         }
     }
 
+    @FunctionalInterface
+    protected interface ValueSetter {
+
+        void set(Object target, Object value, UnsafeFieldAccessor accessor);
+    }
+
     /**
      * A static inner class that implements the FieldAccessor interface using reflection.
      */
     @Getter
-    private static class ReflectFieldAccessor implements UnsafeFieldAccessor {
+    protected static class ReflectFieldAccessor implements UnsafeFieldAccessor {
 
         private final Field field;
 
@@ -497,12 +589,6 @@ public class UnsafeFieldAccessorFactory {
         OpenUnsafeFieldAccessor(Field field, jdk.internal.misc.Unsafe unsafe, boolean hasReference) {
             this.unsafe = unsafe;
             this.offset = unsafe.objectFieldOffset(field);
-            this.hasReference = hasReference;
-        }
-
-        OpenUnsafeFieldAccessor(Class<?> type, String field, jdk.internal.misc.Unsafe unsafe, boolean hasReference) {
-            this.unsafe = unsafe;
-            this.offset = unsafe.objectFieldOffset(type, field);
             this.hasReference = hasReference;
         }
 

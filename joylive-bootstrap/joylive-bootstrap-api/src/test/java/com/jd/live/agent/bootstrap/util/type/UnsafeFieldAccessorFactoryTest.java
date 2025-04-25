@@ -19,21 +19,42 @@ import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import java.lang.reflect.Field;
+import java.util.function.Function;
 
 public class UnsafeFieldAccessorFactoryTest {
 
     @Test
-    void testGetQuietly() {
-        Apple apple = new Apple("apple", "red");
-        Assertions.assertEquals("apple", getQuietly(apple, "name"));
+    void testAccessor() {
+        //  --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        try {
+            testAccessor(UnsafeFieldAccessorFactory.getJDKUnsafe(classLoader));
+        } catch (Throwable ignore) {
+        }
+        try {
+            testAccessor(UnsafeFieldAccessorFactory.getSunUnsafe(classLoader));
+        } catch (Throwable ignore) {
+        }
+        testAccessor(UnsafeFieldAccessorFactory.ReflectFieldAccessor::new);
+    }
+
+    protected void testAccessor(Function<Field, UnsafeFieldAccessor> function) {
+        Apple apple = new Apple("apple", "red", 1);
+        UnsafeFieldAccessorFactory.setValue(apple, "name", "orange");
+        UnsafeFieldAccessorFactory.setValue(apple, "color", "blue");
+        UnsafeFieldAccessorFactory.setValue(apple, "weight", 2);
+        Assertions.assertEquals("orange", UnsafeFieldAccessorFactory.getQuietly(apple, "name", function, null));
+        Assertions.assertEquals("blue", UnsafeFieldAccessorFactory.getQuietly(apple, "color", function, null));
+        Assertions.assertEquals(2, (int) UnsafeFieldAccessorFactory.getQuietly(apple, "weight", function, null));
+
     }
 
     @Getter
     private static class Fruit {
         protected String name;
 
-        public Fruit(String name) {
+        Fruit(String name) {
             this.name = name;
         }
     }
@@ -43,9 +64,12 @@ public class UnsafeFieldAccessorFactoryTest {
 
         private final String color;
 
-        public Apple(String name, String color) {
+        private final int weight;
+
+        Apple(String name, String color, int weight) {
             super(name);
             this.color = color;
+            this.weight = weight;
         }
     }
 }
