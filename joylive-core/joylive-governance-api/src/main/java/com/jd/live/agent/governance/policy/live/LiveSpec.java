@@ -123,7 +123,7 @@ public class LiveSpec {
                     List<LiveDatabase> databases = databaseGroup.getDatabases();
                     if (databases != null) {
                         for (LiveDatabase database : databases) {
-                            List<String> addresses = database.getAddresses();
+                            Set<String> addresses = database.getAddresses();
                             if (addresses != null && !addresses.isEmpty()) {
                                 for (String address : addresses) {
                                     result.put(address, database);
@@ -210,6 +210,47 @@ public class LiveSpec {
         if (unitRules != null) {
             unitRules.forEach(UnitRule::cache);
         }
+    }
+
+    public static boolean isChanged(List<LiveDatabaseGroup> oldGroups, List<LiveDatabaseGroup> newGroups) {
+        if (oldGroups == null || oldGroups.isEmpty()) {
+            return newGroups != null && !newGroups.isEmpty();
+        } else if (newGroups == null || newGroups.isEmpty()) {
+            return true;
+        } else if (oldGroups.size() != newGroups.size()) {
+            return true;
+        }
+        Map<String, LiveDatabaseGroup> newGroupMap = new HashMap<>(newGroups.size());
+        newGroups.forEach(newGroup -> newGroupMap.put(newGroup.getId(), newGroup));
+        for (LiveDatabaseGroup oldGroup : oldGroups) {
+            LiveDatabaseGroup newGroup = newGroupMap.get(oldGroup.getId());
+            if (newGroup == null) {
+                return true;
+            }
+            List<LiveDatabase> oldDatabases = oldGroup.getDatabases();
+            List<LiveDatabase> newDatabases = newGroup.getDatabases();
+            if (oldDatabases == null || oldDatabases.isEmpty()) {
+                return newDatabases != null && !newDatabases.isEmpty();
+            } else if (newDatabases == null || newDatabases.isEmpty()) {
+                return true;
+            } else if (oldDatabases.size() != newDatabases.size()) {
+                return true;
+            }
+            Map<String, LiveDatabase> newDatabaseMap = new HashMap<>(newDatabases.size());
+            newDatabases.forEach(newDatabase -> newDatabaseMap.put(newDatabase.getId(), newDatabase));
+            for (LiveDatabase oldDatabase : oldDatabases) {
+                LiveDatabase newDatabase = newDatabaseMap.get(oldDatabase.getId());
+                if (newDatabase == null) {
+                    return true;
+                }
+                if (!Objects.equals(oldDatabase.getAddresses(), newDatabase.getAddresses())
+                        || oldDatabase.getRole() != newDatabase.getRole()
+                        || oldDatabase.getAccessMode() != newDatabase.getAccessMode()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }

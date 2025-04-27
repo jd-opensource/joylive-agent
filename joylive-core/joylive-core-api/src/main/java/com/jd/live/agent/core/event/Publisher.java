@@ -39,6 +39,8 @@ public interface Publisher<E> {
      */
     String TRAFFIC = "traffic";
 
+    String DATABASE = "database";
+
     /**
      * Policy identifier for subscribers.
      */

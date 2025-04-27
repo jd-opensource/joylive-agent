@@ -19,7 +19,7 @@ import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Set;
 
 public class LiveDatabase {
     @Getter
@@ -32,7 +32,7 @@ public class LiveDatabase {
 
     @Getter
     @Setter
-    private List<String> addresses;
+    private Set<String> addresses;
 
     @Getter
     @Setter
@@ -59,6 +59,15 @@ public class LiveDatabase {
             return this;
         }
         return group == null ? null : group.getMaster(this);
+    }
+
+    public boolean contains(String address) {
+        return address != null && addresses != null && addresses.contains(address);
+    }
+
+    public String getAddress(String address) {
+        // TODO get prior address
+        return null;
     }
 
 }

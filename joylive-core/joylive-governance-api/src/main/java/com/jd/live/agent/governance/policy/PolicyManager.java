@@ -40,6 +40,7 @@ import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
+import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.instance.counter.CounterManager;
@@ -101,6 +102,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject(Publisher.TRAFFIC)
     private Publisher<TrafficEvent> trafficPublisher;
+
+    @Getter
+    @Inject(Publisher.DATABASE)
+    private Publisher<DatabaseEvent> databasePublisher;
 
     @Getter
     @Inject(Application.COMPONENT_APPLICATION)
@@ -408,7 +413,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             }
         });
 
-        policyWatcherSupervisor.addListener(TYPE_LIVE_POLICY, new LiveSpaceListener(this, objectParser));
+        policyWatcherSupervisor.addListener(TYPE_LIVE_POLICY, new LiveSpaceListener(this, objectParser, databasePublisher));
         policyWatcherSupervisor.addListener(TYPE_LANE_POLICY, new LaneSpaceListener(this, objectParser));
         policyWatcherSupervisor.addListener(TYPE_SERVICE_POLICY, new ServiceListener(this, objectParser, policyPublisher));
 
