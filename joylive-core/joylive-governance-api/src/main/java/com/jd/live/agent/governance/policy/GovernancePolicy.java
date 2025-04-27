@@ -25,7 +25,6 @@ import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
 import com.jd.live.agent.core.util.map.MapBuilder.LowercaseMapBuilder;
-import com.jd.live.agent.governance.policy.db.DatabaseCluster;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.lane.LaneDomain;
@@ -61,10 +60,6 @@ public class GovernancePolicy {
     @Getter
     private List<Service> services;
 
-    @Setter
-    @Getter
-    private List<DatabaseCluster> dbClusters;
-
     @Getter
     private transient LiveSpace localLiveSpace;
 
@@ -84,10 +79,6 @@ public class GovernancePolicy {
         }
         return null;
     });
-
-    private final transient Cache<String, DatabaseCluster> dbAddressCache = new MapCache<>(new ListBuilder<>(() -> dbClusters, DatabaseCluster::getAddress));
-
-    private final transient Cache<String, DatabaseCluster> dbNameCache = new MapCache<>(new ListBuilder<>(() -> dbClusters, DatabaseCluster::getName));
 
     private final transient Cache<String, LiveSpace> liveSpaceCache = new MapCache<>(new ListBuilder<>(() -> liveSpaces, LiveSpace::getId));
 
@@ -226,27 +217,6 @@ public class GovernancePolicy {
     }
 
     /**
-     * Retrieves a {@link DatabaseCluster} by its name.
-     *
-     * @param name The name of the database cluster to retrieve.
-     * @return The database cluster with the specified name, or {@code null} if not found.
-     */
-    public DatabaseCluster getDbCluster(String name) {
-        return dbNameCache.get(name);
-    }
-
-    /**
-     * Retrieves a {@link DatabaseCluster} by its host and port.
-     *
-     * @param host The host of the database cluster to retrieve.
-     * @param port The port of the database cluster.
-     * @return The database cluster with the specified host and port, or {@code null} if not found.
-     */
-    public DatabaseCluster getDbCluster(String host, int port) {
-        return dbAddressCache.get(port <= 0 ? host : host + ":" + port);
-    }
-
-    /**
      * Locates the given application in the live space and lane space.
      *
      * @param application the application object containing the location information
@@ -280,8 +250,6 @@ public class GovernancePolicy {
         getDomain("");
         getService("");
         getServiceByAlias("");
-        getDbCluster("");
-        getDbCluster("", 0);
         getDefaultLaneSpace();
 
         if (liveSpaces != null) {
@@ -292,9 +260,6 @@ public class GovernancePolicy {
         }
         if (services != null) {
             services.forEach(Service::cache);
-        }
-        if (dbClusters != null) {
-            dbClusters.forEach(DatabaseCluster::cache);
         }
     }
 
@@ -383,7 +348,6 @@ public class GovernancePolicy {
         result.liveSpaces = liveSpaces;
         result.laneSpaces = laneSpaces;
         result.services = services;
-        result.dbClusters = dbClusters;
         return result;
     }
 

@@ -13,27 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.db;
+package com.jd.live.agent.governance.policy.live.db;
 
 import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
-public class DatabasePolicy {
+import java.util.List;
 
+public class LiveDatabase {
+    @Getter
+    @Setter
+    private String id;
+
+    @Getter
+    @Setter
+    private String name;
+
+    @Getter
+    @Setter
+    private List<String> addresses;
+
+    @Getter
+    @Setter
+    private String unit;
+
+    @Getter
+    @Setter
+    private String cell;
+
+    @Getter
+    @Setter
+    private LiveDatabaseRole role;
+
+    @Getter
+    @Setter
     private AccessMode accessMode;
 
-    protected void supplement(DatabasePolicy source) {
-        if (source != null) {
-            if (accessMode == null) {
-                accessMode = source.getAccessMode();
-            } else if (source.accessMode == AccessMode.NONE) {
-                accessMode = AccessMode.NONE;
-            } else if (source.accessMode == AccessMode.READ && accessMode.isWriteable()) {
-                accessMode = AccessMode.READ;
-            }
+    @Getter
+    @Setter
+    private transient LiveDatabaseGroup group;
+
+    public LiveDatabase getMaster() {
+        if (role == LiveDatabaseRole.MASTER) {
+            return this;
         }
+        return group == null ? null : group.getMaster(this);
     }
+
 }

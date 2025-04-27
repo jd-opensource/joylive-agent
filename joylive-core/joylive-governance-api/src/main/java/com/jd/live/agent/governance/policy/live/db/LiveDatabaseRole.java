@@ -13,26 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.db;
+package com.jd.live.agent.governance.policy.live.db;
 
-import lombok.Getter;
-import lombok.Setter;
+public enum LiveDatabaseRole {
 
-@Getter
-@Setter
-public class Database {
+    MASTER,
 
-    private String name;
-
-    private DatabasePolicy policy;
-
-    protected void supplement(DatabasePolicy source) {
-        if (source != null) {
-            if (policy == null) {
-                policy = new DatabasePolicy();
-            }
-            policy.supplement(source);
-        }
-    }
-
+    SLAVE
 }

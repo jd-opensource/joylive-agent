@@ -54,6 +54,12 @@ public interface DbRequest extends Request {
      */
     int getPort();
 
+    default String getAddress() {
+        String host = getHost();
+        int port = getPort();
+        return port > 0 ? host + ":" + port : host;
+    }
+
     /**
      * Retrieves the name of the database.
      *

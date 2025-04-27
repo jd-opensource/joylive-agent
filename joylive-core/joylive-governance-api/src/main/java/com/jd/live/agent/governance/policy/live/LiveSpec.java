@@ -20,12 +20,13 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.core.util.map.MapBuilder;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseGroup;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * LiveSpec
@@ -74,6 +75,10 @@ public class LiveSpec {
     @Setter
     private Set<String> topics;
 
+    @Getter
+    @Setter
+    private List<LiveDatabaseGroup> databaseGroups;
+
     private final transient Cache<String, Unit> unitCache = new MapCache<>(new ListBuilder<>(() -> units, Unit::getCode));
 
     private final transient Cache<String, LiveDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LiveDomain::getHost));
@@ -109,6 +114,29 @@ public class LiveSpec {
         }
     }, UnitRule::getId));
 
+    private final transient Cache<String, LiveDatabase> databaseCache = new MapCache<>(new MapBuilder<String, LiveDatabase>() {
+        @Override
+        public Map<String, LiveDatabase> build() {
+            Map<String, LiveDatabase> result = new HashMap<>();
+            if (databaseGroups != null) {
+                for (LiveDatabaseGroup databaseGroup : databaseGroups) {
+                    List<LiveDatabase> databases = databaseGroup.getDatabases();
+                    if (databases != null) {
+                        for (LiveDatabase database : databases) {
+                            List<String> addresses = database.getAddresses();
+                            if (addresses != null && !addresses.isEmpty()) {
+                                for (String address : addresses) {
+                                    result.put(address, database);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+    });
+
     private final transient LazyObject<Unit> center = new LazyObject<>(() -> {
         for (Unit unit : units) {
             if (unit.getType() == UnitType.CENTER) {
@@ -140,6 +168,10 @@ public class LiveSpec {
         return domainCache.get(host);
     }
 
+    public LiveDatabase getDatabase(String address) {
+        return databaseCache.get(address);
+    }
+
     public LiveVariable getVariable(String name) {
         return variableCache.get(name);
     }
@@ -159,6 +191,7 @@ public class LiveSpec {
     public void cache() {
         getUnit("");
         getDomain("");
+        getDatabase("");
         getVariable("");
         getUnitRule("");
         getCenter();
@@ -167,6 +200,9 @@ public class LiveSpec {
         }
         if (domains != null) {
             domains.forEach(LiveDomain::cache);
+        }
+        if (databaseGroups != null) {
+            databaseGroups.forEach(LiveDatabaseGroup::cache);
         }
         if (variables != null) {
             variables.forEach(LiveVariable::cache);
