@@ -263,6 +263,20 @@
                 <include>com.jd.live:joylive-transmission-jdkhttp</include>
                 <include>com.jd.live:joylive-transmission-servlet-javax</include>
                 <include>com.jd.live:joylive-transmission-servlet-jakarta</include>
+                <include>com.jd.live:joylive-protection-jdbc</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/mysql -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/mysql</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-protection-mysql5</include>
+                <include>com.jd.live:joylive-protection-mysql6</include>
+                <include>com.jd.live:joylive-protection-mysql8</include>
+                <include>com.jd.live:joylive-protection-mysql9</include>
             </includes>
         </dependencySet>
 

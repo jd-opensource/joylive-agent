@@ -369,7 +369,6 @@ public class URI {
         return new URI(schema, user, password, host, p, path, parameters);
     }
 
-
     /**
      * Parses the host from a given URI.
      *
@@ -590,7 +589,7 @@ public class URI {
                     case ':':
                         if ((Role.IPV6.isBeginless(pos) || !Role.IPV6.isEndless(pos)) && Role.PORT.isBeginless(pos)) {
                             if (!schemaFlag) {
-                                schemaFlag = true;
+                                // jdbc:mariadb://localhost:8080/book
                                 if ((length - i >= 3) && uri[i + 1] == '/' && uri[i + 2] == '/') {
                                     Role.SCHEMA.setPosition(pos, 0, i);
                                     Role.HOST.setStart(pos, i + 3);
@@ -598,10 +597,16 @@ public class URI {
                                     break;
                                 }
                             }
-                            if (Role.HOST.isEndless(pos)) {
-                                Role.HOST.setEnd(pos, i);
+                            boolean portFlag = true;
+                            if (length > i + 1) {
+                                portFlag = Character.isDigit(uri[i + 1]);
                             }
-                            Role.PORT.setStart(pos, i + 1);
+                            if (portFlag) {
+                                if (Role.HOST.isEndless(pos)) {
+                                    Role.HOST.setEnd(pos, i);
+                                }
+                                Role.PORT.setStart(pos, i + 1);
+                            }
                         }
                         lastColon = i;
                         break;

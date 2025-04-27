@@ -20,6 +20,10 @@
         <module>joylive-protection-mongodb4</module>
         <module>joylive-protection-mariadb2</module>
         <module>joylive-protection-redis</module>
+        <module>joylive-protection-mysql5</module>
+        <module>joylive-protection-mysql8</module>
+        <module>joylive-protection-mysql6</module>
+        <module>joylive-protection-mysql9</module>
         <module>joylive-protection-jdbc</module>
     </modules>
 
