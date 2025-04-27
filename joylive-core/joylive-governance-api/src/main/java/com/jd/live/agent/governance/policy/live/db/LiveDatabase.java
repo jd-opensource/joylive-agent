@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class LiveDatabase {
@@ -54,6 +55,9 @@ public class LiveDatabase {
     @Setter
     private transient LiveDatabaseGroup group;
 
+    @Getter
+    private transient String primaryAddress;
+
     public LiveDatabase getMaster() {
         if (role == LiveDatabaseRole.MASTER) {
             return this;
@@ -62,12 +66,33 @@ public class LiveDatabase {
     }
 
     public boolean contains(String address) {
-        return address != null && addresses != null && addresses.contains(address);
+        return address != null && addresses != null && addresses.contains(address.toLowerCase());
     }
 
-    public String getAddress(String address) {
-        // TODO get prior address
-        return null;
+    public void cache() {
+        if (addresses != null) {
+            Set<String> lowerCases = new HashSet<>(addresses.size());
+            addresses.forEach(addr -> lowerCases.add(addr.toLowerCase()));
+            this.addresses = lowerCases;
+            this.primaryAddress = selectAddress();
+        }
+    }
+
+    private String selectAddress() {
+        if (addresses == null || addresses.isEmpty()) {
+            return null;
+        }
+        String first = null;
+        for (String addr : addresses) {
+            if (first == null) {
+                first = addr;
+            }
+            // k8s cluster service address
+            if (!addr.contains("svc.cluster.local")) {
+                return addr;
+            }
+        }
+        return first;
     }
 
 }

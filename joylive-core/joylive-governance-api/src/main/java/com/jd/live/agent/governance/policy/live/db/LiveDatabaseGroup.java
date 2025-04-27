@@ -51,7 +51,10 @@ public class LiveDatabaseGroup {
 
     public void cache() {
         if (databases != null) {
-            databases.forEach(d -> d.setGroup(this));
+            databases.forEach(d -> {
+                d.cache();
+                d.setGroup(this);
+            });
         }
     }
 

@@ -69,16 +69,16 @@ public class DriverConnectInterceptor extends InterceptorAdaptor {
         Integer port = uri.getPort();
         // handle ipv6
         Address address = parse(host, false, port);
-        String addr = address.getAddress();
+        String addr = address.getAddress().toLowerCase();
         LiveDatabase master = getMaster(addr);
-        String newAddress = master == null ? addr : master.getAddress(addr);
+        String newAddress = master == null ? addr : master.getPrimaryAddress();
         if (newAddress != null && !addr.equals(newAddress)) {
             // handle ipv6
             address = parse(newAddress);
             uri = new JdbcUrl(uri.getScheme(), uri.getUser(), uri.getPassword(), address, uri.getPath(), uri.getQuery());
-            ctx.setAttribute(ATTRIBUTE_ADDRESS, address.getAddress());
+            ctx.setAttribute(ATTRIBUTE_ADDRESS, newAddress);
             arguments[0] = uri.toString();
-            logger.info("Jdbc connection is created. it's redirected from {} to {} ", address, newAddress);
+            logger.info("Jdbc connection is created. it's redirected from {} to {} ", addr, newAddress);
         }
     }
 
@@ -104,7 +104,7 @@ public class DriverConnectInterceptor extends InterceptorAdaptor {
                 // Close connection to reconnect to the new master address
                 Close close = Close.instance();
                 cons.forEach(close::close);
-                logger.info("Jdbc connection is closing. it's redirected from {} to {} ", address, master.getAddress(address));
+                logger.info("Jdbc connection is closing. it's redirected from {} to {} ", address, master.getPrimaryAddress());
             }
         });
     }
