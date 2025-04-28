@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.protection.jdbc.sql;
 
+import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.request.DbRequest;
 import lombok.Getter;
 
 import java.sql.*;
@@ -129,7 +131,12 @@ public class LiveConnection implements Connection {
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        return delegate.getTransactionIsolation();
+        RequestContext.setAttribute(DbRequest.SYSTEM_REQUEST, Boolean.TRUE);
+        try {
+            return delegate.getTransactionIsolation();
+        } finally {
+            RequestContext.removeAttribute(DbRequest.SYSTEM_REQUEST);
+        }
     }
 
     @Override

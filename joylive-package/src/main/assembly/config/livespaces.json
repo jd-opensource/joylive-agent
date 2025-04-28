@@ -206,8 +206,8 @@
               ],
               "unit": "unit1",
               "cell": "cell1",
-              "role": "SLAVE",
-              "accessMode": "NONE"
+              "role": "MASTER",
+              "accessMode": "READ_WRITE"
             },
             {
               "id": "2",
@@ -217,8 +217,8 @@
               ],
               "unit": "unit1",
               "cell": "cell2",
-              "role": "MASTER",
-              "accessMode": "READ_WRITE"
+              "role": "SLAVE",
+              "accessMode": "NONE"
             }
           ]
         }

@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.governance.policy.AccessMode;
+
 import java.util.regex.Pattern;
 
 /**
@@ -25,6 +27,8 @@ import java.util.regex.Pattern;
  * </p>
  */
 public interface DbRequest extends Request {
+
+    String SYSTEM_REQUEST = "systemRequest";
 
     /**
      * Key for specifying the cluster name in the request.
@@ -68,11 +72,17 @@ public interface DbRequest extends Request {
     String getDatabase();
 
     /**
-     * Determines if the request is a write operation to the database.
+     * Get the access mode of the request.
      *
-     * @return {@code true} if the request is a write operation; {@code false} otherwise.
+     * @return The access mode of the request.
      */
-    boolean isWrite();
+    default AccessMode getAccessMode() {
+        Boolean systemRequest = getAttribute(SYSTEM_REQUEST);
+        if (systemRequest != null && systemRequest) {
+            return AccessMode.NONE;
+        }
+        return AccessMode.READ_WRITE;
+    }
 
     /**
      * Defines an interface for cache-related database requests.
@@ -100,21 +110,36 @@ public interface DbRequest extends Request {
                 "INSERT\\b|UPDATE\\b|DELETE\\b|CREATE\\b|ALTER\\b|DROP\\b|TRUNCATE\\b", Pattern.CASE_INSENSITIVE);
 
         /**
+         * Pattern to identify SQL read operations.
+         */
+        Pattern READ_PATTERN = Pattern.compile("SELECT\\b", Pattern.CASE_INSENSITIVE);
+
+        /**
          * Retrieves the SQL statement of the request.
          *
          * @return The SQL statement as a String.
          */
         String getSql();
 
-        /**
-         * Determines if the SQL request represents a write operation by matching the SQL statement against a predefined pattern.
-         *
-         * @return {@code true} if the SQL statement is a write operation; {@code false} otherwise.
-         */
         @Override
-        default boolean isWrite() {
+        default AccessMode getAccessMode() {
+            Boolean systemRequest = getAttribute(SYSTEM_REQUEST);
+            if (systemRequest != null && systemRequest) {
+                return AccessMode.NONE;
+            }
             String sql = getSql();
-            return sql != null && WRITE_PATTERN.matcher(sql).find();
+            if (sql == null) {
+                return AccessMode.NONE;
+            }
+            boolean isWrite = WRITE_PATTERN.matcher(sql).find();
+            boolean isRead = READ_PATTERN.matcher(sql).find();
+            if (isWrite) {
+                return AccessMode.READ_WRITE;
+            } else if (isRead) {
+                return AccessMode.READ;
+            } else {
+                return AccessMode.NONE;
+            }
         }
     }
 }

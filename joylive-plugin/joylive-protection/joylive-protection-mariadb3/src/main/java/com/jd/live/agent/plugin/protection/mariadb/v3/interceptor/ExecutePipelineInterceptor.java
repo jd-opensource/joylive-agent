@@ -25,11 +25,11 @@ import org.mariadb.jdbc.client.impl.StandardClient;
 import org.mariadb.jdbc.message.ClientMessage;
 
 /**
- * SendQueryInterceptor
+ * ExecutePipelineInterceptor
  */
-public class SendQueryInterceptor extends AbstractDbInterceptor {
+public class ExecutePipelineInterceptor extends AbstractDbInterceptor {
 
-    public SendQueryInterceptor(PolicySupplier policySupplier) {
+    public ExecutePipelineInterceptor(PolicySupplier policySupplier) {
         super(policySupplier);
     }
 
@@ -37,9 +37,15 @@ public class SendQueryInterceptor extends AbstractDbInterceptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         StandardClient client = (StandardClient) ctx.getTarget();
-        ClientMessage message = ctx.getArgument(0);
-        if (!(message instanceof LiveClientMessage)) {
+        Object[] arguments = mc.getArguments();
+        ClientMessage[] messages = (ClientMessage[]) arguments[0];
+        // protect
+        for (ClientMessage message : messages) {
             protect(mc, new MariadbRequest(client, message));
+        }
+        // Wrap the Message object to avoid repetitive protection checks in the sendQuery method
+        for (int i = 0; i < messages.length; i++) {
+            messages[i] = new LiveClientMessage(messages[i]);
         }
     }
 

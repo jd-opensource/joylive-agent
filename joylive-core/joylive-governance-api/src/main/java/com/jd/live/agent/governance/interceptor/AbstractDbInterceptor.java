@@ -64,15 +64,21 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
             LiveDatabase db = liveSpace.getSpec().getDatabase(address);
             if (db != null) {
                 // Retrieve the database policy and determine the access mode
-                AccessMode accessMode = db.getAccessMode();
+                AccessMode dbMode = db.getAccessMode();
+                AccessMode requestMode = request.getAccessMode();
                 // Check if the operation is allowed based on the access mode
-                if (!accessMode.isReadable() || !accessMode.isWriteable() && request.isWrite()) {
-                    // If not allowed, set an exception and skip the rest of the interceptor chain
-                    context.setThrowable(new SQLException("Database is not accessible, address=" + address));
-                    context.setSkip(true);
+                if (!dbMode.isReadable() && requestMode.isReadable()
+                        || !dbMode.isWriteable() && requestMode.isWriteable()) {
+                    onReject(context, request);
                 }
             }
         }
+    }
+
+    protected void onReject(MethodContext context, DbRequest request) {
+        // If not allowed, set an exception and skip the rest of the interceptor chain
+        context.setThrowable(new SQLException("Database is not accessible, address=" + request.getAddress()));
+        context.setSkip(true);
     }
 }
 
