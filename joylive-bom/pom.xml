@@ -485,7 +485,7 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-mysql0</artifactId>
+                <artifactId>joylive-protection-mysql9</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

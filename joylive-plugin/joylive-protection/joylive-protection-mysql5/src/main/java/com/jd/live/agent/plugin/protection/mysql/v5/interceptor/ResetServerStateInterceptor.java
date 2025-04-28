@@ -16,25 +16,27 @@
 package com.jd.live.agent.plugin.protection.mysql.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.mysql.v5.request.MysqlRequest;
-import com.mysql.jdbc.MySQLConnection;
+import com.jd.live.agent.governance.request.DbRequest;
 
 /**
- * ConnectionImplInterceptor
+ * ConfigureClientCharsetInterceptor
  */
-public class ConnectionImplInterceptor extends AbstractDbInterceptor {
+public class ResetServerStateInterceptor extends AbstractDbInterceptor {
 
-    public ConnectionImplInterceptor(PolicySupplier policySupplier) {
+    public ResetServerStateInterceptor(PolicySupplier policySupplier) {
         super(policySupplier);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        protect((MethodContext) ctx,
-                new MysqlRequest((MySQLConnection) ctx.getTarget(), (String) ctx.getArguments()[1]));
+        RequestContext.setAttribute(DbRequest.SYSTEM_REQUEST, Boolean.TRUE);
     }
 
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        RequestContext.removeAttribute(DbRequest.SYSTEM_REQUEST);
+    }
 }

@@ -26,7 +26,10 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mysql.v5.condition.ConditionalOnMysql5ProtectEnabled;
-import com.jd.live.agent.plugin.protection.mysql.v5.interceptor.ConnectionImplInterceptor;
+import com.jd.live.agent.plugin.protection.mysql.v5.interceptor.CreateNewIOInterceptor;
+import com.jd.live.agent.plugin.protection.mysql.v5.interceptor.ExecSqlInterceptor;
+import com.jd.live.agent.plugin.protection.mysql.v5.interceptor.IsReadOnlyInterceptor;
+import com.jd.live.agent.plugin.protection.mysql.v5.interceptor.ResetServerStateInterceptor;
 
 @Injectable
 @Extension(value = "ConnectionImplDefinition_v5", order = PluginDefinition.ORDER_PROTECT)
@@ -36,9 +39,15 @@ public class ConnectionImplDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "com.mysql.jdbc.ConnectionImpl";
 
-    private static final String METHOD = "execSQL";
+    private static final String METHOD_EXEC_SQL = "execSQL";
 
-    private static final String[] ARGUMENTS = {
+    private static final String METHOD_CREATE_NEW_IO = "createNewIO";
+
+    private static final String METHOD_IS_READONLY = "isReadOnly";
+
+    private static final String METHOD_RESET_SERVER_STATE = "resetServerState";
+
+    private static final String[] ARGUMENTS_EXEC_SQL = {
             "com.mysql.jdbc.StatementImpl",
             "java.lang.String",
             "int",
@@ -51,6 +60,10 @@ public class ConnectionImplDefinition extends PluginDefinitionAdapter {
             "boolean"
     };
 
+    private static final String[] ARGUMENTS_IS_READONLY = {
+            "boolean"
+    };
+
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
@@ -58,10 +71,17 @@ public class ConnectionImplDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).
-                                and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new ConnectionImplInterceptor(policySupplier)
-                )
+                        MatcherBuilder.named(METHOD_CREATE_NEW_IO),
+                        () -> new CreateNewIOInterceptor(policySupplier)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_IS_READONLY).and(MatcherBuilder.arguments(ARGUMENTS_IS_READONLY)),
+                        () -> new IsReadOnlyInterceptor(policySupplier)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_RESET_SERVER_STATE),
+                        () -> new ResetServerStateInterceptor(policySupplier)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_EXEC_SQL).and(MatcherBuilder.arguments(ARGUMENTS_EXEC_SQL)),
+                        () -> new ExecSqlInterceptor(policySupplier))
         };
     }
 }

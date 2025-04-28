@@ -29,13 +29,13 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnProtectEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MYSQL_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ConditionalOnMysql8ProtectEnabled.TYPE_MYSQL8_DRIVER)
+@ConditionalOnClass(ConditionalOnMysql8ProtectEnabled.TYPE_SOCKET_FACTORY)
 @ConditionalOnMissingClass(ConditionalOnMysql8ProtectEnabled.TYPE_OPEN_ID_CONNECT_AUTHENTICATION_CALLBACK)
 @ConditionalComposite
 public @interface ConditionalOnMysql8ProtectEnabled {
 
-    // mysql 6/8
-    String TYPE_MYSQL8_DRIVER = "com.mysql.cj.jdbc.Driver";
+    // mysql 8+
+    String TYPE_SOCKET_FACTORY = "com.mysql.cj.protocol.SocketFactory";
 
     // mysql 9+
     String TYPE_OPEN_ID_CONNECT_AUTHENTICATION_CALLBACK = "com.mysql.cj.callback.OpenidConnectAuthenticationCallback";

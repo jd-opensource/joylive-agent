@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.protection.mysql.v6.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
@@ -28,11 +29,15 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnProtectEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MYSQL_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ConditionalOnMysql6ProtectEnabled.TYPE_MYSQL8_DRIVER)
 @ConditionalOnMissingClass(ConditionalOnMysql6ProtectEnabled.TYPE_SOCKET_FACTORY)
 @ConditionalComposite
 public @interface ConditionalOnMysql6ProtectEnabled {
 
-    // mysql 8
+    // mysql 6+
+    String TYPE_MYSQL8_DRIVER = "com.mysql.cj.jdbc.Driver";
+
+    // mysql 8+
     String TYPE_SOCKET_FACTORY = "com.mysql.cj.protocol.SocketFactory";
 
 }

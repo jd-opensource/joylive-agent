@@ -15,16 +15,16 @@
  */
 package com.jd.live.agent.plugin.protection.mysql.v5.request;
 
-import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.governance.request.AbstractDbRequest;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import com.mysql.jdbc.ConnectionImpl;
 import com.mysql.jdbc.MySQLConnection;
 
 import java.sql.SQLException;
 
-public class MysqlRequest extends AbstractAttributes implements SQLRequest {
+public class MysqlRequest extends AbstractDbRequest implements SQLRequest {
 
     private static final UnsafeFieldAccessor accessor = UnsafeFieldAccessorFactory.getAccessor(ConnectionImpl.class, "port");
 

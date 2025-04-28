@@ -13,41 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.mysql.v8.interceptor;
+package com.jd.live.agent.plugin.protection.mysql.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.mysql.v8.request.MysqlRequest;
-import com.mysql.cj.PreparedQuery;
-import com.mysql.cj.Query;
-import com.mysql.cj.Session;
-import com.mysql.cj.jdbc.JdbcPreparedStatement;
+import com.jd.live.agent.plugin.protection.mysql.v6.request.MysqlRequest;
+import com.mysql.cj.api.jdbc.JdbcConnection;
+import com.mysql.cj.jdbc.PreparedStatement;
 
 /**
- * NativeSessionInterceptor
+ * ConnectionImplInterceptor
  */
-public class NativeSessionInterceptor extends AbstractDbInterceptor {
+public class ExecSqlInterceptor extends AbstractDbInterceptor {
 
-    public NativeSessionInterceptor(PolicySupplier policySupplier) {
+    public ExecSqlInterceptor(PolicySupplier policySupplier) {
         super(policySupplier);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Session session = (Session) ctx.getTarget();
-        Query query = ctx.getArgument(0);
+        JdbcConnection connection = (JdbcConnection) ctx.getTarget();
+        Object statement = ctx.getArgument(0);
         String sql = ctx.getArgument(1);
-        if (sql == null) {
-            if (query instanceof PreparedQuery) {
-                sql = ((PreparedQuery) query).getOriginalSql();
-            } else if (query instanceof JdbcPreparedStatement) {
-                sql = ((JdbcPreparedStatement) query).getPreparedSql();
-            }
+        if (sql == null && statement instanceof PreparedStatement) {
+            sql = ((PreparedStatement) statement).getPreparedSql();
         }
-        protect(mc, new MysqlRequest(session, sql));
+        protect(mc, new MysqlRequest(connection, sql));
     }
 
 }

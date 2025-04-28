@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.plugin.protection.mysql.v6.request;
 
-import com.jd.live.agent.bootstrap.util.AbstractAttributes;
+import com.jd.live.agent.governance.request.AbstractDbRequest;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import com.mysql.cj.api.jdbc.JdbcConnection;
 
-public class MysqlRequest extends AbstractAttributes implements SQLRequest {
+public class MysqlRequest extends AbstractDbRequest implements SQLRequest {
 
     private final JdbcConnection connection;
 

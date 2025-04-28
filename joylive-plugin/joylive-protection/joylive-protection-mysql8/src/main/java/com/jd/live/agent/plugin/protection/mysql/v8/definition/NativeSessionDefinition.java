@@ -29,7 +29,7 @@ import com.jd.live.agent.plugin.protection.mysql.v8.condition.ConditionalOnMysql
 import com.jd.live.agent.plugin.protection.mysql.v8.interceptor.NativeSessionInterceptor;
 
 @Injectable
-@Extension(value = "ConnectionImplDefinition_v8", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "NativeSessionDefinition_v8", order = PluginDefinition.ORDER_PROTECT)
 @ConditionalOnMysql8ProtectEnabled
 @ConditionalOnClass(NativeSessionDefinition.TYPE)
 public class NativeSessionDefinition extends PluginDefinitionAdapter {
@@ -38,17 +38,6 @@ public class NativeSessionDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD = "execSQL";
 
-    private static final String[] ARGUMENTS = {
-            "com.mysql.cj.Query",
-            "java.lang.String",
-            "int",
-            "com.mysql.cj.protocol.a.NativePacketPayload",
-            "boolean",
-            "com.mysql.cj.protocol.ProtocolEntityFactory",
-            "com.mysql.cj.protocol.ColumnDefinition",
-            "boolean"
-    };
-
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
@@ -56,8 +45,7 @@ public class NativeSessionDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).
-                                and(MatcherBuilder.arguments(ARGUMENTS)),
+                        MatcherBuilder.named(METHOD),
                         () -> new NativeSessionInterceptor(policySupplier)
                 )
         };

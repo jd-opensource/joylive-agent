@@ -37,6 +37,7 @@ agent:
       - jdk
       - kafka
       - mariadb
+      - mysql
       - mongodb
       - nacos
       - eureka
