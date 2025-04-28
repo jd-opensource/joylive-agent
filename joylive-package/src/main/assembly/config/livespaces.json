@@ -192,6 +192,36 @@
             }
           ]
         }
+      ],
+      "databaseGroups": [
+        {
+          "id": "1",
+          "name": "db-group-1",
+          "databases": [
+            {
+              "id": "1",
+              "name": "db-1",
+              "addresses": [
+                "127.0.0.1:3307"
+              ],
+              "unit": "unit1",
+              "cell": "cell1",
+              "role": "SLAVE",
+              "accessMode": "NONE"
+            },
+            {
+              "id": "2",
+              "name": "db-2",
+              "addresses": [
+                "127.0.0.1:3308"
+              ],
+              "unit": "unit1",
+              "cell": "cell2",
+              "role": "MASTER",
+              "accessMode": "READ_WRITE"
+            }
+          ]
+        }
       ]
     }
   }

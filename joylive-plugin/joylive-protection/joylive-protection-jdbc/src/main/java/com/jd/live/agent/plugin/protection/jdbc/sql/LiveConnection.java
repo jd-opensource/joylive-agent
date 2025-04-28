@@ -32,6 +32,8 @@ public class LiveConnection implements Connection {
 
     private final Consumer<LiveConnection> onClose;
 
+    private volatile boolean closed;
+
     public LiveConnection(String address, Connection delegate, Consumer<LiveConnection> onClose) {
         this.address = address;
         this.delegate = delegate;
@@ -80,6 +82,7 @@ public class LiveConnection implements Connection {
 
     @Override
     public void close() throws SQLException {
+        closed = true;
         delegate.close();
         if (onClose != null) {
             onClose.accept(this);
@@ -88,6 +91,9 @@ public class LiveConnection implements Connection {
 
     @Override
     public boolean isClosed() throws SQLException {
+        if (closed) {
+            return true;
+        }
         return delegate.isClosed();
     }
 
@@ -243,6 +249,9 @@ public class LiveConnection implements Connection {
 
     @Override
     public boolean isValid(int timeout) throws SQLException {
+        if (closed) {
+            return false;
+        }
         return delegate.isValid(timeout);
     }
 
@@ -293,6 +302,9 @@ public class LiveConnection implements Connection {
 
     @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        if (closed) {
+            return;
+        }
         delegate.setNetworkTimeout(executor, milliseconds);
     }
 

@@ -33,6 +33,7 @@ import com.jd.live.agent.governance.policy.live.LiveDomain;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.live.UnitDomain;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.service.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -214,6 +215,18 @@ public class GovernancePolicy {
         servicePolicy = servicePolicy == null && path != null ? path.getServicePolicy() : servicePolicy;
         servicePolicy = servicePolicy == null && group != null ? group.getServicePolicy() : servicePolicy;
         return servicePolicy;
+    }
+
+    public LiveDatabase getMaster(String address) {
+        LiveSpace liveSpace = getLocalLiveSpace();
+        LiveSpec spec = liveSpace == null ? null : liveSpace.getSpec();
+        if (spec != null) {
+            LiveDatabase database = spec.getDatabase(address);
+            if (database != null) {
+                return database.getMaster();
+            }
+        }
+        return null;
     }
 
     /**

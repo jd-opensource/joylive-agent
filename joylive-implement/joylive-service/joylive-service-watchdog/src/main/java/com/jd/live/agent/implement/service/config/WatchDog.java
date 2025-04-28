@@ -111,7 +111,7 @@ public class WatchDog extends AbstractService {
                         type = FileEvent.EventType.DELETE;
                     }
                     if (type != null) {
-                        logger.info("detected file changes. " + file.getPath());
+                        logger.info("Detected file changes. " + file.getPath());
                         publisher.offer(new FileEvent(type, file));
                     }
                 }
