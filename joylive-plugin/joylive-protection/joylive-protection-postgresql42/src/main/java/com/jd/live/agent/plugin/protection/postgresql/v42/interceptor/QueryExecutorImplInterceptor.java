@@ -24,7 +24,7 @@ import org.postgresql.core.Query;
 import org.postgresql.core.QueryExecutor;
 
 /**
- * SendQueryInterceptor
+ * QueryExecutorImplInterceptor
  */
 public class QueryExecutorImplInterceptor extends AbstractDbInterceptor {
 
@@ -32,16 +32,12 @@ public class QueryExecutorImplInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        protect((MethodContext) ctx,
-                new PostgresqlRequest((QueryExecutor) ctx.getTarget(), (Query) ctx.getArguments()[0]));
+        MethodContext mc = (MethodContext) ctx;
+        QueryExecutor target = (QueryExecutor) ctx.getTarget();
+        Query query = ctx.getArgument(0);
+        protect(mc, new PostgresqlRequest(target, query));
     }
 
 }

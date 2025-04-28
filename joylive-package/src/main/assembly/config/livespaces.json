@@ -221,6 +221,34 @@
               "accessMode": "NONE"
             }
           ]
+        },
+        {
+          "id": "2",
+          "name": "db-group-2",
+          "databases": [
+            {
+              "id": "3",
+              "name": "db-3",
+              "addresses": [
+                "127.0.0.1:5432"
+              ],
+              "unit": "unit1",
+              "cell": "cell1",
+              "role": "MASTER",
+              "accessMode": "READ_WRITE"
+            },
+            {
+              "id": "4",
+              "name": "db-4",
+              "addresses": [
+                "127.0.0.1:5433"
+              ],
+              "unit": "unit1",
+              "cell": "cell2",
+              "role": "SLAVE",
+              "accessMode": "NONE"
+            }
+          ]
         }
       ]
     }
