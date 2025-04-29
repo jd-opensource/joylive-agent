@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import com.jd.live.agent.governance.util.RedirectAddress;
 
 import java.util.List;
 import java.util.Map;
@@ -32,8 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
-import static com.jd.live.agent.governance.util.DatabaseUtils.redirect;
 
 /**
  * Abstract base class for database connection interceptors with failover support.
@@ -49,13 +48,13 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends AutoCloseable
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
 
-    private static final BiConsumer<String, String> consumer = (oldAddress, newAddress) -> logger.info("DB connection is redirected from {} to {} ", oldAddress, newAddress);
+    protected static final BiConsumer<String, String> consumer = (oldAddress, newAddress) -> logger.info("DB connection is redirected from {} to {} ", oldAddress, newAddress);
 
-    private final PolicySupplier policySupplier;
+    protected final PolicySupplier policySupplier;
 
-    private final Publisher<DatabaseEvent> publisher;
+    protected final Publisher<DatabaseEvent> publisher;
 
-    private final Map<String, List<C>> connections = new ConcurrentHashMap<>();
+    protected final Map<String, List<C>> connections = new ConcurrentHashMap<>();
 
     public AbstractDbConnectionInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         this.policySupplier = policySupplier;
@@ -66,30 +65,31 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends AutoCloseable
     /**
      * Creates and tracks a wrapped connection.
      *
-     * @param address    Database endpoint address
      * @param connection Raw connection to wrap
+     * @param address    Database endpoint address
      * @return Managed connection instance
      */
-    protected C createConnection(String address, T connection) {
-        C conn = doCreateConnection(address, connection, c -> {
-            List<C> values = connections.get(address);
+    protected C createConnection(T connection, RedirectAddress address) {
+        String newAddress = address.getNewAddress();
+        C conn = doCreateConnection(connection, address, c -> {
+            List<C> values = connections.get(newAddress);
             if (values != null) {
                 values.remove(c);
             }
         });
-        connections.computeIfAbsent(address, a -> new CopyOnWriteArrayList<>()).add(conn);
+        connections.computeIfAbsent(newAddress, a -> new CopyOnWriteArrayList<>()).add(conn);
         return conn;
     }
 
     /**
      * Implementation hook for connection wrapping.
      *
-     * @param address    Database endpoint address
      * @param connection Raw connection to wrap
+     * @param address    Database endpoint address
      * @param close      Callback to remove connection from pool
      * @return Custom wrapped connection
      */
-    protected abstract C doCreateConnection(String address, T connection, Consumer<C> close);
+    protected abstract C doCreateConnection(T connection, RedirectAddress address, Consumer<C> close);
 
     /**
      * Handles database topology change events.
@@ -100,13 +100,21 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends AutoCloseable
         GovernancePolicy policy = policySupplier.getPolicy();
         Close close = Close.instance();
         connections.forEach((address, cons) -> {
+            if (cons.isEmpty()) {
+                return;
+            }
             LiveDatabase master = policy.getMaster(address);
             if (master != null && !master.contains(address)) {
+                String newAddress = master.getPrimaryAddress();
                 // Close connection to reconnect to the new master address
-                cons.forEach(close::close);
-                redirect(address, master.getPrimaryAddress(), consumer);
+                cons.forEach(c -> {
+                    close.close(c);
+                    onRedirect(c, newAddress);
+                });
             }
         });
     }
+
+    protected abstract void onRedirect(C connection, String address);
 
 }

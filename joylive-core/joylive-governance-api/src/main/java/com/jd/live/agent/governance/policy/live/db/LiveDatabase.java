@@ -20,7 +20,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import static com.jd.live.agent.core.util.StringUtils.SEMICOLON_COMMA;
+import static com.jd.live.agent.core.util.StringUtils.split;
 
 public class LiveDatabase {
     @Getter
@@ -33,7 +37,7 @@ public class LiveDatabase {
 
     @Getter
     @Setter
-    private Set<String> addresses;
+    private List<String> addresses;
 
     @Getter
     @Setter
@@ -58,6 +62,9 @@ public class LiveDatabase {
     @Getter
     private transient String primaryAddress;
 
+    @Getter
+    private transient Set<String> nodes;
+
     public LiveDatabase getMaster() {
         if (role == LiveDatabaseRole.MASTER) {
             return this;
@@ -66,21 +73,40 @@ public class LiveDatabase {
     }
 
     public boolean contains(String address) {
-        return address != null && addresses != null && addresses.contains(address.toLowerCase());
+        return address != null && nodes.contains(address.toLowerCase());
+    }
+
+    public boolean contains(String[] shards) {
+        if (shards != null) {
+            for (String shard : shards) {
+                if (nodes.contains(shard.toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void cache() {
         if (addresses != null) {
             Set<String> lowerCases = new HashSet<>(addresses.size());
-            addresses.forEach(addr -> lowerCases.add(addr.toLowerCase()));
-            this.addresses = lowerCases;
+            addresses.forEach(addr -> {
+                String[] parts = split(addr, SEMICOLON_COMMA);
+                for (String part : parts) {
+                    lowerCases.add(part.toLowerCase());
+                }
+            });
+            this.nodes = lowerCases;
             this.primaryAddress = selectAddress();
         }
     }
 
     private String selectAddress() {
-        if (addresses == null || addresses.isEmpty()) {
+        int size = addresses == null ? 0 : addresses.size();
+        if (size == 0) {
             return null;
+        } else if (size == 1) {
+            return addresses.iterator().next();
         }
         String first = null;
         for (String addr : addresses) {

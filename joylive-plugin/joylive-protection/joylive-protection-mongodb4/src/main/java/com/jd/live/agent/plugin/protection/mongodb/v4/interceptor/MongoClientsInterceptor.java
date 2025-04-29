@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.jdbc.interceptor;
+package com.jd.live.agent.plugin.protection.mongodb.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
@@ -22,39 +22,39 @@ import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.RedirectAddress;
-import com.jd.live.agent.plugin.protection.jdbc.sql.LiveConnection;
+import com.jd.live.agent.plugin.protection.mongodb.v4.client.LiveMongoClient;
+import com.mongodb.client.MongoClient;
 
-import java.sql.Connection;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.util.RedirectAddress.redirect;
 
 /**
- * DataSourceInterceptor
+ * MongoClientsInterceptor
  */
-public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<Connection, LiveConnection> {
+public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<MongoClient, LiveMongoClient> {
 
-    public DataSourceInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
+    public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Connection oldConnection = mc.getResult();
+        MongoClient oldClient = mc.getResult();
         RedirectAddress address = RedirectAddress.getAndRemove();
         if (address != null) {
-            mc.setResult(createConnection(oldConnection, address));
+            mc.setResult(createConnection(oldClient, address));
         }
     }
 
     @Override
-    protected LiveConnection doCreateConnection(Connection connection, RedirectAddress address, Consumer<LiveConnection> close) {
-        return new LiveConnection(connection, address, close);
+    protected LiveMongoClient doCreateConnection(MongoClient client, RedirectAddress address, Consumer<LiveMongoClient> close) {
+        return new LiveMongoClient(client, address, close);
     }
 
     @Override
-    protected void onRedirect(LiveConnection connection, String address) {
+    protected void onRedirect(LiveMongoClient connection, String address) {
         redirect(connection.getAddress().newAddress(address), consumer);
     }
 }

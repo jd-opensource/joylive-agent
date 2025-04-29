@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.protection.jdbc.sql;
 
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.request.DbRequest;
+import com.jd.live.agent.governance.util.RedirectAddress;
 import lombok.Getter;
 
 import java.sql.*;
@@ -27,16 +28,16 @@ import java.util.function.Consumer;
 
 public class LiveConnection implements Connection {
 
-    @Getter
-    private final String address;
-
     private final Connection delegate;
+
+    @Getter
+    private final RedirectAddress address;
 
     private final Consumer<LiveConnection> onClose;
 
     private volatile boolean closed;
 
-    public LiveConnection(String address, Connection delegate, Consumer<LiveConnection> onClose) {
+    public LiveConnection(Connection delegate, RedirectAddress address, Consumer<LiveConnection> onClose) {
         this.address = address;
         this.delegate = delegate;
         this.onClose = onClose;

@@ -123,10 +123,10 @@ public class LiveSpec {
                     List<LiveDatabase> databases = databaseGroup.getDatabases();
                     if (databases != null) {
                         for (LiveDatabase database : databases) {
-                            Set<String> addresses = database.getAddresses();
-                            if (addresses != null && !addresses.isEmpty()) {
-                                for (String address : addresses) {
-                                    result.put(address, database);
+                            Set<String> nodes = database.getNodes();
+                            if (nodes != null && !nodes.isEmpty()) {
+                                for (String node : nodes) {
+                                    result.put(node, database);
                                 }
                             }
                         }
@@ -191,7 +191,6 @@ public class LiveSpec {
     public void cache() {
         getUnit("");
         getDomain("");
-        getDatabase("");
         getVariable("");
         getUnitRule("");
         getCenter();
@@ -210,6 +209,8 @@ public class LiveSpec {
         if (unitRules != null) {
             unitRules.forEach(UnitRule::cache);
         }
+        // after databaseGroups cache, databaseCache is ready
+        getDatabase("");
     }
 
     public static boolean isChanged(List<LiveDatabaseGroup> oldGroups, List<LiveDatabaseGroup> newGroups) {

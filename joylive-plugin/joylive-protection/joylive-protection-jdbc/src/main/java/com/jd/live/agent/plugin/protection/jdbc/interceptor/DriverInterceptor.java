@@ -22,13 +22,14 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.network.Address;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import com.jd.live.agent.governance.util.RedirectAddress;
 import com.jd.live.agent.plugin.protection.jdbc.util.JdbcUrl;
 
 import java.util.function.BiConsumer;
 
 import static com.jd.live.agent.core.util.network.Address.parse;
-import static com.jd.live.agent.governance.util.DatabaseUtils.ADDRESS;
-import static com.jd.live.agent.governance.util.DatabaseUtils.redirect;
+import static com.jd.live.agent.governance.util.RedirectAddress.redirect;
+import static com.jd.live.agent.governance.util.RedirectAddress.setAddress;
 
 /**
  * DriverConnectInterceptor
@@ -56,16 +57,20 @@ public class DriverInterceptor extends InterceptorAdaptor {
         String oldAddress = address.getAddress().toLowerCase();
         LiveDatabase master = policySupplier.getPolicy().getMaster(oldAddress);
         String newAddress = master == null ? oldAddress : master.getPrimaryAddress();
+        RedirectAddress redirect;
         if (newAddress != null && !oldAddress.equals(newAddress)) {
-            ADDRESS.set(newAddress);
+            redirect = new RedirectAddress(oldAddress, newAddress);
+            setAddress(redirect);
+            redirect(redirect, consumer);
+
             // handle ipv6
             address = parse(newAddress);
             uri = new JdbcUrl(uri.getScheme(), uri.getUser(), uri.getPassword(), address, uri.getPath(), uri.getQuery());
             arguments[0] = uri.toString();
-            redirect(oldAddress, newAddress, consumer);
         } else {
-            ADDRESS.set(oldAddress);
-            redirect(oldAddress, oldAddress, consumer);
+            redirect = new RedirectAddress(oldAddress, oldAddress);
+            setAddress(redirect);
+            redirect(redirect, consumer);
         }
     }
 
