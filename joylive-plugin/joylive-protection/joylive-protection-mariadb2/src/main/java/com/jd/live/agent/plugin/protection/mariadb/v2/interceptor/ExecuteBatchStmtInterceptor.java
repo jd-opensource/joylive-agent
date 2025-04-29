@@ -25,7 +25,7 @@ import org.mariadb.jdbc.internal.protocol.Protocol;
 import java.util.List;
 
 /**
- * ExecuteQueryInterceptor
+ * ExecuteBatchStmtInterceptor
  */
 public class ExecuteBatchStmtInterceptor extends AbstractDbInterceptor {
 

@@ -269,6 +269,7 @@ agent:
           - com.netflix.loadbalancer.PollingServerListUpdater$
           - com.netflix.hystrix.util.HystrixTimer$
           - com.netflix.servo.util.ExpiringCache$
+          - com.zaxxer.hikari.pool.HikariPool$
     configCenter:
       enabled: ${CONFIG_CENTER_ENABLED:false}
       type: ${CONFIG_CENTER_TYPE:nacos}
