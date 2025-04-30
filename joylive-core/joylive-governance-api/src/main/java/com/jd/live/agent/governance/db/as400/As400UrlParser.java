@@ -20,4 +20,9 @@ import com.jd.live.agent.governance.db.AbstractUrlParser;
 
 @Extension("as400")
 public class As400UrlParser extends AbstractUrlParser {
+
+    @Override
+    protected char getParameterDelimiter() {
+        return ';';
+    }
 }
