@@ -359,22 +359,6 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-protection-mysql5</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-protection-mysql6</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-protection-mysql8</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-protection-mysql9</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
             <artifactId>joylive-protection-mariadb2</artifactId>
         </dependency>
         <dependency>
