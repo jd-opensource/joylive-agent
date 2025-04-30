@@ -48,6 +48,8 @@ public class DbUrl {
 
     private String parameter;
 
+    private String parameterPart;
+
     public String toString() {
         StringBuilder sb = new StringBuilder(128);
         if (schemePart != null && !schemePart.isEmpty()) {
@@ -62,14 +64,15 @@ public class DbUrl {
         if (path != null && !path.isEmpty()) {
             sb.append(path);
         }
-        if (parameter != null && !parameter.isEmpty()) {
-            sb.append(parameter);
+        if (parameterPart != null && !parameterPart.isEmpty()) {
+            sb.append(parameterPart);
         }
         return sb.toString();
     }
 
     public DbUrl address(String address) {
-        return new DbUrl(scheme, schemePart, user, password, userPart, address, parseNodes(address), path, database, parameter);
+        return new DbUrl(scheme, schemePart, user, password, userPart, address, parseNodes(address),
+                path, database, parameter, parameterPart);
     }
 
     public static List<Address> parseNodes(String address) {
@@ -104,6 +107,7 @@ public class DbUrl {
         private String path;
         private String database;
         private String parameter;
+        private String parameterPart;
 
         public DbUrlBuilder scheme(String scheme) {
             this.scheme = scheme;
@@ -155,8 +159,13 @@ public class DbUrl {
             return this;
         }
 
+        public DbUrlBuilder parameterPart(String parameterPart) {
+            this.parameterPart = parameterPart;
+            return this;
+        }
+
         public DbUrl build() {
-            return new DbUrl(scheme, schemePart, user, password, userPart, address, nodes, path, database, parameter);
+            return new DbUrl(scheme, schemePart, user, password, userPart, address, nodes, path, database, parameter, parameterPart);
         }
     }
 

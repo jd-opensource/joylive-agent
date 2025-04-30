@@ -140,4 +140,15 @@ public class DbUrlTest {
         Assertions.assertEquals("jdbc:h2:~/test", url.toString());
 
     }
+
+    @Test
+    void testDb2() {
+        DbUrl url = DbUrlParser.parse("jdbc:db2://localhost:50000/test:a=true", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:db2", url.getScheme());
+        Assertions.assertEquals("localhost:50000", url.getAddress());
+        Assertions.assertEquals("test", url.getDatabase());
+        Assertions.assertEquals("a=true", url.getParameter());
+        Assertions.assertEquals("jdbc:db2://localhost:50000/test:a=true", url.toString());
+    }
 }

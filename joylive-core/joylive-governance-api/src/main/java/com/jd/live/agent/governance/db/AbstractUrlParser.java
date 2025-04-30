@@ -35,13 +35,17 @@ public abstract class AbstractUrlParser implements DbUrlParser {
             return null;
         }
         DbUrlBuilder builder = DbUrl.builder();
+        parse(url, builder);
+        return builder.build();
+    }
+
+    protected void parse(String url, DbUrlBuilder builder) {
         url = parserParameter(url, builder);
         url = parserScheme(url, builder);
         url = parsePath(url, builder);
         url = parseSecure(url, builder);
         parseHosts(url, builder);
         parseDatabase(builder);
-        return builder.build();
     }
 
     /**
@@ -76,7 +80,8 @@ public abstract class AbstractUrlParser implements DbUrlParser {
         // query
         int pos = url == null ? -1 : url.indexOf(getParameterDelimiter());
         if (pos >= 0) {
-            builder.parameter(url.substring(pos));
+            builder.parameter(url.substring(pos + 1));
+            builder.parameterPart(url.substring(pos));
             url = url.substring(0, pos);
         }
         return url;

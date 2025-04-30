@@ -17,7 +17,24 @@ package com.jd.live.agent.governance.db.db2;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.db.AbstractUrlParser;
+import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
 @Extension("db2")
 public class Db2UrlParser extends AbstractUrlParser {
+
+    @Override
+    protected String parserParameter(String url, DbUrlBuilder builder) {
+        int pos = url == null ? -1 : url.lastIndexOf('/');
+        if (pos > 0) {
+            pos = url.indexOf(':', pos + 1);
+            if (pos > 0) {
+                builder.parameter(url.substring(pos + 1));
+                builder.parameterPart(url.substring(pos));
+                url = url.substring(0, pos);
+            }
+        }
+        return url;
+    }
+
+
 }
