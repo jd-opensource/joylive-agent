@@ -19,16 +19,16 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.network.Address;
+import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
-import com.jd.live.agent.plugin.protection.jdbc.util.JdbcUrl;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 
-import static com.jd.live.agent.core.util.network.Address.parse;
 import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect;
 import static com.jd.live.agent.governance.util.network.ClusterRedirect.setAddress;
 
@@ -43,35 +43,34 @@ public class DriverInterceptor extends InterceptorAdaptor {
 
     private final PolicySupplier policySupplier;
 
-    public DriverInterceptor(PolicySupplier policySupplier) {
+    private final Map<String, DbUrlParser> parser;
+
+    public DriverInterceptor(PolicySupplier policySupplier, Map<String, DbUrlParser> parser) {
         this.policySupplier = policySupplier;
+        this.parser = parser;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        JdbcUrl uri = JdbcUrl.parse((String) arguments[0]);
-        String host = uri.getHost();
-        Integer port = uri.getPort();
-        // handle ipv6
-        Address address = parse(host, false, port);
-        String oldAddress = address.getAddress().toLowerCase();
-        LiveDatabase master = policySupplier.getPolicy().getMaster(oldAddress);
-        String newAddress = master == null ? oldAddress : master.getPrimaryAddress();
-        ClusterRedirect redirect;
-        if (newAddress != null && !oldAddress.equals(newAddress)) {
-            redirect = new ClusterRedirect(oldAddress, newAddress);
-            setAddress(redirect);
-            redirect(redirect, consumer);
-
-            // handle ipv6
-            address = parse(newAddress);
-            uri = new JdbcUrl(uri.getScheme(), uri.getUser(), uri.getPassword(), address, uri.getPath(), uri.getQuery());
-            arguments[0] = uri.toString();
-        } else {
-            redirect = new ClusterRedirect(oldAddress, oldAddress);
-            setAddress(redirect);
-            redirect(redirect, consumer);
+        DbUrl dbUrl = DbUrlParser.parse((String) arguments[0], parser::get);
+        // none tcp address, such as jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+        if (dbUrl.hasAddress()) {
+            String oldAddress = dbUrl.getAddress().toLowerCase();
+            LiveDatabase master = policySupplier.getPolicy().getMaster(oldAddress);
+            String newAddress = master == null ? oldAddress : master.getPrimaryAddress();
+            ClusterRedirect redirect;
+            if (newAddress != null && !oldAddress.equals(newAddress)) {
+                redirect = new ClusterRedirect(oldAddress, newAddress);
+                setAddress(redirect);
+                redirect(redirect, consumer);
+                dbUrl = dbUrl.address(newAddress);
+                arguments[0] = dbUrl.toString();
+            } else {
+                redirect = new ClusterRedirect(oldAddress, oldAddress);
+                setAddress(redirect);
+                redirect(redirect, consumer);
+            }
         }
     }
 

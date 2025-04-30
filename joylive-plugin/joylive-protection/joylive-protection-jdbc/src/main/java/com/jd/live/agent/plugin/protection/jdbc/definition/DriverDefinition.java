@@ -25,8 +25,11 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.jdbc.interceptor.DriverInterceptor;
+
+import java.util.Map;
 
 @Injectable
 @Extension(value = "DriverDefinition", order = PluginDefinition.ORDER_PROTECT)
@@ -46,13 +49,16 @@ public class DriverDefinition extends PluginDefinitionAdapter {
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
+    @Inject
+    private Map<String, DbUrlParser> parsers;
+
     public DriverDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).
                                 and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new DriverInterceptor(policySupplier)
+                        () -> new DriverInterceptor(policySupplier, parsers)
                 )
         };
     }
