@@ -25,6 +25,7 @@ import java.util.Set;
 
 import static com.jd.live.agent.core.util.StringUtils.SEMICOLON_COMMA;
 import static com.jd.live.agent.core.util.StringUtils.split;
+import static java.util.Collections.addAll;
 
 public class LiveDatabase {
     @Getter
@@ -90,12 +91,7 @@ public class LiveDatabase {
     public void cache() {
         if (addresses != null) {
             Set<String> lowerCases = new HashSet<>(addresses.size());
-            addresses.forEach(addr -> {
-                String[] parts = split(addr, SEMICOLON_COMMA);
-                for (String part : parts) {
-                    lowerCases.add(part.toLowerCase());
-                }
-            });
+            addresses.forEach(addr -> addAll(lowerCases, split(addr.toLowerCase(), SEMICOLON_COMMA)));
             this.nodes = lowerCases;
             this.primaryAddress = selectAddress();
         }
@@ -106,7 +102,7 @@ public class LiveDatabase {
         if (size == 0) {
             return null;
         } else if (size == 1) {
-            return addresses.iterator().next();
+            return addresses.get(0);
         }
         String first = null;
         for (String addr : addresses) {
@@ -114,7 +110,7 @@ public class LiveDatabase {
                 first = addr;
             }
             // k8s cluster service address
-            if (!addr.contains("svc.cluster.local")) {
+            if (!addr.toLowerCase().contains("svc.cluster.local")) {
                 return addr;
             }
         }

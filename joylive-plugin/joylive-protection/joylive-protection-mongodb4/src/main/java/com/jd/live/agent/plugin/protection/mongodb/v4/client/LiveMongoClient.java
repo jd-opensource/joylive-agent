@@ -1,4 +1,3 @@
-package com.jd.live.agent.plugin.protection.mongodb.v4.client;
 /*
  * Copyright © ${year} ${owner} (${email})
  *
@@ -14,8 +13,11 @@ package com.jd.live.agent.plugin.protection.mongodb.v4.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.jd.live.agent.plugin.protection.mongodb.v4.client;
 
-import com.jd.live.agent.governance.util.RedirectAddress;
+import com.jd.live.agent.governance.db.DbConnection;
+import com.jd.live.agent.governance.util.network.ClusterAddress;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.client.*;
 import com.mongodb.connection.ClusterDescription;
@@ -26,20 +28,26 @@ import org.bson.conversions.Bson;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class LiveMongoClient implements MongoClient {
+public class LiveMongoClient implements MongoClient, DbConnection {
 
-    private final MongoClient delegate;
+    private volatile MongoClient delegate;
 
     @Getter
-    private final RedirectAddress address;
+    private volatile ClusterRedirect address;
+
+    private final MongoClientFactory factory;
 
     private final Consumer<LiveMongoClient> onClose;
 
     private volatile boolean closed;
 
-    public LiveMongoClient(MongoClient delegate, RedirectAddress address, Consumer<LiveMongoClient> onClose) {
+    public LiveMongoClient(MongoClient delegate,
+                           ClusterRedirect address,
+                           MongoClientFactory factory,
+                           Consumer<LiveMongoClient> onClose) {
         this.delegate = delegate;
         this.address = address;
+        this.factory = factory;
         this.onClose = onClose;
     }
 
@@ -62,7 +70,7 @@ public class LiveMongoClient implements MongoClient {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         closed = true;
         delegate.close();
         if (onClose != null) {
@@ -158,5 +166,15 @@ public class LiveMongoClient implements MongoClient {
     @Override
     public ClusterDescription getClusterDescription() {
         return delegate.getClusterDescription();
+    }
+
+    public synchronized void reconnect(ClusterAddress newAddress) {
+        if (closed) {
+            return;
+        }
+        MongoClient old = this.delegate;
+        this.delegate = factory.create(newAddress);
+        this.address = address.newAddress(newAddress);
+        old.close();
     }
 }

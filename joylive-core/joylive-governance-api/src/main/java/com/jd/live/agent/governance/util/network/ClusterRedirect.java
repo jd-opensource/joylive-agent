@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.util;
+package com.jd.live.agent.governance.util.network;
 
 import lombok.Getter;
 
@@ -29,23 +29,32 @@ import java.util.function.BiConsumer;
  * Primarily used for database failover scenarios.
  */
 @Getter
-public class RedirectAddress {
+public class ClusterRedirect {
 
-    private static final ThreadLocal<RedirectAddress> ADDRESS = new ThreadLocal<>();
+    private static final ThreadLocal<ClusterRedirect> ADDRESS = new ThreadLocal<>();
 
-    private static final Map<String, AtomicReference<String>> REDIRECTS = new ConcurrentHashMap<>();
+    private static final Map<ClusterAddress, AtomicReference<ClusterAddress>> REDIRECTS = new ConcurrentHashMap<>();
 
-    private final String oldAddress;
+    private final ClusterAddress oldAddress;
 
-    private final String newAddress;
+    private final ClusterAddress newAddress;
 
-    public RedirectAddress(String oldAddress, String newAddress) {
+    public ClusterRedirect(String address) {
+        this(address, address);
+    }
+
+    public ClusterRedirect(String oldAddress, String newAddress) {
+        this.oldAddress = new ClusterAddress(oldAddress);
+        this.newAddress = new ClusterAddress(newAddress);
+    }
+
+    public ClusterRedirect(ClusterAddress oldAddress, ClusterAddress newAddress) {
         this.oldAddress = oldAddress;
         this.newAddress = newAddress;
     }
 
-    public RedirectAddress newAddress(String newAddress) {
-        return new RedirectAddress(oldAddress, newAddress);
+    public ClusterRedirect newAddress(ClusterAddress newAddress) {
+        return new ClusterRedirect(oldAddress, newAddress);
     }
 
     /**
@@ -53,8 +62,8 @@ public class RedirectAddress {
      *
      * @return Current redirect address or null
      */
-    public static RedirectAddress getAndRemove() {
-        RedirectAddress address = ADDRESS.get();
+    public static ClusterRedirect getAndRemove() {
+        ClusterRedirect address = ADDRESS.get();
         ADDRESS.remove();
         return address;
     }
@@ -64,7 +73,7 @@ public class RedirectAddress {
      *
      * @param address Contains old/new address pair
      */
-    public static void setAddress(RedirectAddress address) {
+    public static void setAddress(ClusterRedirect address) {
         ADDRESS.set(address);
     }
 
@@ -74,10 +83,10 @@ public class RedirectAddress {
      * @param address  Original database address
      * @param callback Notification when redirection occurs
      */
-    public static void redirect(RedirectAddress address, BiConsumer<String, String> callback) {
-        AtomicReference<String> reference = REDIRECTS.computeIfAbsent(address.getOldAddress(), AtomicReference::new);
-        String oldRedirect = reference.get();
-        String newRedirect = address.getNewAddress();
+    public static void redirect(ClusterRedirect address, BiConsumer<ClusterAddress, ClusterAddress> callback) {
+        AtomicReference<ClusterAddress> reference = REDIRECTS.computeIfAbsent(address.getOldAddress(), AtomicReference::new);
+        ClusterAddress oldRedirect = reference.get();
+        ClusterAddress newRedirect = address.getNewAddress();
         if (!newRedirect.equals(oldRedirect) && reference.compareAndSet(oldRedirect, newRedirect)) {
             callback.accept(oldRedirect, newRedirect);
         }

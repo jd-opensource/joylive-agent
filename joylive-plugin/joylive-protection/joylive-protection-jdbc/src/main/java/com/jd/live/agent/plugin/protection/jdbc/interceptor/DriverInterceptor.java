@@ -22,14 +22,15 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.network.Address;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
-import com.jd.live.agent.governance.util.RedirectAddress;
+import com.jd.live.agent.governance.util.network.ClusterAddress;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.jdbc.util.JdbcUrl;
 
 import java.util.function.BiConsumer;
 
 import static com.jd.live.agent.core.util.network.Address.parse;
-import static com.jd.live.agent.governance.util.RedirectAddress.redirect;
-import static com.jd.live.agent.governance.util.RedirectAddress.setAddress;
+import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect;
+import static com.jd.live.agent.governance.util.network.ClusterRedirect.setAddress;
 
 /**
  * DriverConnectInterceptor
@@ -38,7 +39,7 @@ public class DriverInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DriverInterceptor.class);
 
-    private static final BiConsumer<String, String> consumer = (oldAddress, newAddress) -> logger.info("Jdbc connection is redirected from {} to {} ", oldAddress, newAddress);
+    private static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("Jdbc connection is redirected from {} to {} ", oldAddress, newAddress);
 
     private final PolicySupplier policySupplier;
 
@@ -57,9 +58,9 @@ public class DriverInterceptor extends InterceptorAdaptor {
         String oldAddress = address.getAddress().toLowerCase();
         LiveDatabase master = policySupplier.getPolicy().getMaster(oldAddress);
         String newAddress = master == null ? oldAddress : master.getPrimaryAddress();
-        RedirectAddress redirect;
+        ClusterRedirect redirect;
         if (newAddress != null && !oldAddress.equals(newAddress)) {
-            redirect = new RedirectAddress(oldAddress, newAddress);
+            redirect = new ClusterRedirect(oldAddress, newAddress);
             setAddress(redirect);
             redirect(redirect, consumer);
 
@@ -68,7 +69,7 @@ public class DriverInterceptor extends InterceptorAdaptor {
             uri = new JdbcUrl(uri.getScheme(), uri.getUser(), uri.getPassword(), address, uri.getPath(), uri.getQuery());
             arguments[0] = uri.toString();
         } else {
-            redirect = new RedirectAddress(oldAddress, oldAddress);
+            redirect = new ClusterRedirect(oldAddress, oldAddress);
             setAddress(redirect);
             redirect(redirect, consumer);
         }

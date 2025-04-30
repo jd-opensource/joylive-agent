@@ -18,16 +18,17 @@ package com.jd.live.agent.plugin.protection.jdbc.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.RedirectAddress;
+import com.jd.live.agent.governance.util.network.ClusterAddress;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.jdbc.sql.LiveConnection;
 
 import java.sql.Connection;
-import java.util.function.Consumer;
 
-import static com.jd.live.agent.governance.util.RedirectAddress.redirect;
+import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect;
 
 /**
  * DataSourceInterceptor
@@ -41,20 +42,16 @@ public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<Conne
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Connection oldConnection = mc.getResult();
-        RedirectAddress address = RedirectAddress.getAndRemove();
+        Connection connection = mc.getResult();
+        ClusterRedirect address = ClusterRedirect.getAndRemove();
         if (address != null) {
-            mc.setResult(createConnection(oldConnection, address));
+            mc.setResult(createConnection(() -> new LiveConnection(connection, address, closer)));
         }
     }
 
     @Override
-    protected LiveConnection doCreateConnection(Connection connection, RedirectAddress address, Consumer<LiveConnection> close) {
-        return new LiveConnection(connection, address, close);
-    }
-
-    @Override
-    protected void onRedirect(LiveConnection connection, String address) {
+    protected void redirectTo(LiveConnection connection, ClusterAddress address) {
+        Close.instance().close(connection);
         redirect(connection.getAddress().newAddress(address), consumer);
     }
 }

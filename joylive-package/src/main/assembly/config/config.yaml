@@ -155,6 +155,7 @@ agent:
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
       mariadb: true
+      mysql: true
       postgresql: true
       opengauss: true
       mongodb: true

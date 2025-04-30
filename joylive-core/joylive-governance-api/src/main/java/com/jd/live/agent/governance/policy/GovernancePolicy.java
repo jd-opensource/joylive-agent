@@ -217,11 +217,11 @@ public class GovernancePolicy {
         return servicePolicy;
     }
 
-    public LiveDatabase getMaster(String address) {
+    public LiveDatabase getMaster(String... shards) {
         LiveSpace liveSpace = getLocalLiveSpace();
         LiveSpec spec = liveSpace == null ? null : liveSpace.getSpec();
         if (spec != null) {
-            LiveDatabase database = spec.getDatabase(address);
+            LiveDatabase database = spec.getDatabase(shards);
             if (database != null) {
                 return database.getMaster();
             }

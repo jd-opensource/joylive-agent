@@ -172,6 +172,19 @@ public class LiveSpec {
         return databaseCache.get(address);
     }
 
+    public LiveDatabase getDatabase(String[] shards) {
+        if (shards == null) {
+            return null;
+        }
+        for (String shard : shards) {
+            LiveDatabase database = getDatabase(shard);
+            if (database != null) {
+                return database;
+            }
+        }
+        return null;
+    }
+
     public LiveVariable getVariable(String name) {
         return variableCache.get(name);
     }

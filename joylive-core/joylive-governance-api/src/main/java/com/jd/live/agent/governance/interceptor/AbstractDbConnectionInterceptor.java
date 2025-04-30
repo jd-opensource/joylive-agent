@@ -20,12 +20,12 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
-import com.jd.live.agent.governance.util.RedirectAddress;
+import com.jd.live.agent.governance.util.network.ClusterAddress;
 
 import java.util.List;
 import java.util.Map;
@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Abstract base class for database connection interceptors with failover support.
@@ -44,17 +45,24 @@ import java.util.function.Consumer;
  * @param <T> Raw connection type to intercept
  * @param <C> Wrapped connection type (must be AutoCloseable)
  */
-public abstract class AbstractDbConnectionInterceptor<T, C extends AutoCloseable> extends InterceptorAdaptor {
+public abstract class AbstractDbConnectionInterceptor<T, C extends DbConnection> extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
 
-    protected static final BiConsumer<String, String> consumer = (oldAddress, newAddress) -> logger.info("DB connection is redirected from {} to {} ", oldAddress, newAddress);
+    protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("DB connection is redirected from {} to {} ", oldAddress, newAddress);
 
     protected final PolicySupplier policySupplier;
 
     protected final Publisher<DatabaseEvent> publisher;
 
-    protected final Map<String, List<C>> connections = new ConcurrentHashMap<>();
+    protected final Map<ClusterAddress, List<C>> connections = new ConcurrentHashMap<>();
+
+    protected final Consumer<C> closer = c -> {
+        List<C> values = connections.get(c.getAddress().getNewAddress());
+        if (values != null) {
+            values.remove(c);
+        }
+    };
 
     public AbstractDbConnectionInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         this.policySupplier = policySupplier;
@@ -65,31 +73,15 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends AutoCloseable
     /**
      * Creates and tracks a wrapped connection.
      *
-     * @param connection Raw connection to wrap
-     * @param address    Database endpoint address
+     * @param supplier The connection supplier
      * @return Managed connection instance
      */
-    protected C createConnection(T connection, RedirectAddress address) {
-        String newAddress = address.getNewAddress();
-        C conn = doCreateConnection(connection, address, c -> {
-            List<C> values = connections.get(newAddress);
-            if (values != null) {
-                values.remove(c);
-            }
-        });
-        connections.computeIfAbsent(newAddress, a -> new CopyOnWriteArrayList<>()).add(conn);
+    protected C createConnection(Supplier<C> supplier) {
+        C conn = supplier.get();
+        ClusterAddress address = conn.getAddress().getNewAddress();
+        connections.computeIfAbsent(address, a -> new CopyOnWriteArrayList<>()).add(conn);
         return conn;
     }
-
-    /**
-     * Implementation hook for connection wrapping.
-     *
-     * @param connection Raw connection to wrap
-     * @param address    Database endpoint address
-     * @param close      Callback to remove connection from pool
-     * @return Custom wrapped connection
-     */
-    protected abstract C doCreateConnection(T connection, RedirectAddress address, Consumer<C> close);
 
     /**
      * Handles database topology change events.
@@ -98,23 +90,19 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends AutoCloseable
      */
     protected void onEvent(List<Event<DatabaseEvent>> events) {
         GovernancePolicy policy = policySupplier.getPolicy();
-        Close close = Close.instance();
         connections.forEach((address, cons) -> {
             if (cons.isEmpty()) {
                 return;
             }
-            LiveDatabase master = policy.getMaster(address);
-            if (master != null && !master.contains(address)) {
-                String newAddress = master.getPrimaryAddress();
+            LiveDatabase master = policy.getMaster(address.getNodes());
+            if (master != null && !master.contains(address.getNodes())) {
+                ClusterAddress newAddress = new ClusterAddress(master.getPrimaryAddress());
                 // Close connection to reconnect to the new master address
-                cons.forEach(c -> {
-                    close.close(c);
-                    onRedirect(c, newAddress);
-                });
+                cons.forEach(c -> redirectTo(c, newAddress));
             }
         });
     }
 
-    protected abstract void onRedirect(C connection, String address);
+    protected abstract void redirectTo(C connection, ClusterAddress address);
 
 }

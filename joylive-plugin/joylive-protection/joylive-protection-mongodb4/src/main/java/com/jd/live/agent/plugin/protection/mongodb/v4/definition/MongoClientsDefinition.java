@@ -55,7 +55,7 @@ public class MongoClientsDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.isStatic()).and(MatcherBuilder.arguments(ARGUMENTS)),
                         () -> new MongoClientsInterceptor(policySupplier, publisher)
                 )
         };

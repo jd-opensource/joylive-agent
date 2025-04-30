@@ -21,13 +21,21 @@ import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.RedirectAddress;
+import com.jd.live.agent.governance.util.network.ClusterAddress;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.mongodb.v4.client.LiveMongoClient;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoDriverInformation;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
+import com.mongodb.connection.ClusterSettings;
 
-import java.util.function.Consumer;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.jd.live.agent.governance.util.RedirectAddress.redirect;
+import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.invokeOrigin;
+import static com.jd.live.agent.core.util.StringUtils.join;
 
 /**
  * MongoClientsInterceptor
@@ -41,20 +49,47 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Mon
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        MongoClient oldClient = mc.getResult();
-        RedirectAddress address = RedirectAddress.getAndRemove();
-        if (address != null) {
-            mc.setResult(createConnection(oldClient, address));
+        MongoClient client = mc.getResult();
+        MongoClientSettings settings = mc.getArgument(0);
+        MongoDriverInformation driverInfo = mc.getArgument(1);
+        ClusterSettings cluster = settings.getClusterSettings();
+        String srvHost = cluster.getSrvHost();
+        String address = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
+        if (address != null && !address.isEmpty()) {
+            ClusterRedirect redirect = new ClusterRedirect(address);
+            Method method = mc.getMethod();
+            mc.setResult(createConnection(() -> new LiveMongoClient(client, redirect, addr -> {
+                try {
+                    MongoClientSettings newSettings = MongoClientSettings.builder(settings)
+                            .applyToClusterSettings(builder -> {
+                                if (srvHost != null && !srvHost.isEmpty()) {
+                                    builder.srvHost(addr.getAddress());
+                                } else {
+                                    builder.hosts(newAddress(addr.getNodes()));
+                                }
+                            }).build();
+                    return (MongoClient) invokeOrigin(null, method, new Object[]{newSettings, driverInfo});
+                } catch (Exception ignore) {
+                    // Without exception.
+                    return null;
+                }
+            }, closer)));
         }
     }
 
     @Override
-    protected LiveMongoClient doCreateConnection(MongoClient client, RedirectAddress address, Consumer<LiveMongoClient> close) {
-        return new LiveMongoClient(client, address, close);
+    protected void redirectTo(LiveMongoClient client, ClusterAddress address) {
+        client.reconnect(address);
+        ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
     }
 
-    @Override
-    protected void onRedirect(LiveMongoClient connection, String address) {
-        redirect(connection.getAddress().newAddress(address), consumer);
+    private List<ServerAddress> newAddress(String[] addresses) {
+        List<ServerAddress> result = new ArrayList<>(addresses.length);
+        for (String address : addresses) {
+            // the port will be parsed from the address.
+            result.add(new ServerAddress(address));
+        }
+        return result;
     }
+
 }
