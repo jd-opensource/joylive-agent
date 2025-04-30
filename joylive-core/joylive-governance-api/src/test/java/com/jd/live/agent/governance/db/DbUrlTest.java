@@ -151,4 +151,23 @@ public class DbUrlTest {
         Assertions.assertEquals("a=true", url.getParameter());
         Assertions.assertEquals("jdbc:db2://localhost:50000/test:a=true", url.toString());
     }
+
+    @Test
+    void testOracle() {
+        DbUrl url = DbUrlParser.parse("jdbc:oracle:thin:@//localhost:8888/a.b.com", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:oracle:thin", url.getScheme());
+        Assertions.assertEquals("localhost:8888", url.getAddress());
+        Assertions.assertEquals("a.b.com", url.getDatabase());
+        Assertions.assertEquals("jdbc:oracle:thin:@//localhost:8888/a.b.com", url.toString());
+
+        url = DbUrlParser.parse("jdbc:oracle:thin:@//localhost:8888:abc", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:oracle:thin", url.getScheme());
+        Assertions.assertEquals("localhost:8888", url.getAddress());
+        Assertions.assertEquals("abc", url.getDatabase());
+        Assertions.assertEquals("jdbc:oracle:thin:@//localhost:8888:abc", url.toString());
+
+        //jdbc:oracle:thin:@<TNSName>
+    }
 }
