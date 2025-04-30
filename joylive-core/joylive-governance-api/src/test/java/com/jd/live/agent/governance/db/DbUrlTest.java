@@ -48,12 +48,14 @@ public class DbUrlTest {
 
     @Test
     void testMysql() {
-        DbUrl url = DbUrlParser.parse("jdbc:mysql://127.0.0.1:3306/test", PARSERS::get);
+        DbUrl url = DbUrlParser.parse("jdbc:mysql://a:b@127.0.0.1:3306/test", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:mysql", url.getScheme());
         Assertions.assertEquals("127.0.0.1:3306", url.getAddress());
         Assertions.assertEquals("test", url.getDatabase());
-        Assertions.assertEquals("jdbc:mysql://127.0.0.1:3306/test", url.toString());
+        Assertions.assertEquals("a", url.getUser());
+        Assertions.assertEquals("b", url.getPassword());
+        Assertions.assertEquals("jdbc:mysql://a:b@127.0.0.1:3306/test", url.toString());
 
         url = DbUrlParser.parse("jdbc:mysql://127.0.0.1:3306,localhost/test", PARSERS::get);
         Assertions.assertNotNull(url);
