@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.db.sqlserver;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.db.AbstractUrlParser;
-import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
 import static com.jd.live.agent.core.util.StringUtils.splitMap;
 
@@ -25,7 +25,7 @@ import static com.jd.live.agent.core.util.StringUtils.splitMap;
 public class SqlServerUrlParser extends AbstractUrlParser {
 
     @Override
-    protected void parseDatabase(DbUrl.DbUrlBuilder builder) {
+    protected void parseDatabase(DbUrlBuilder builder) {
         String path = builder.getPath();
         int pos = path == null ? -1 : path.lastIndexOf('/');
         if (pos >= 0) {

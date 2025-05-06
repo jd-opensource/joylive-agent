@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.db.oracle;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.db.AbstractUrlParser;
-import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
 @Extension("oracle")
 public class OracleUrlParser extends AbstractUrlParser {
@@ -28,7 +28,7 @@ public class OracleUrlParser extends AbstractUrlParser {
     private static final String JDBC_ORACLE_THIN_TNS_PREFIX = "jdbc:oracle:thin:@(";
 
     @Override
-    protected String parserScheme(String url, DbUrl.DbUrlBuilder builder) {
+    protected String parserScheme(String url, DbUrlBuilder builder) {
         if (url.startsWith(JDBC_ORACLE_THIN_SERVICE_PREFIX)) {
             //jdbc:oracle:thin:@//<host>:<port>/<service_name>
             builder.scheme(JDBC_ORACLE_THIN);
@@ -46,7 +46,7 @@ public class OracleUrlParser extends AbstractUrlParser {
     }
 
     @Override
-    protected String parsePath(String url, DbUrl.DbUrlBuilder builder) {
+    protected String parsePath(String url, DbUrlBuilder builder) {
         url = super.parsePath(url, builder);
         if (builder.getPath() == null || builder.getPath().isEmpty()) {
             int pos = url.lastIndexOf(':');
