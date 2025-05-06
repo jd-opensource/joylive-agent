@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
+import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
@@ -32,12 +32,6 @@ import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_
  * AbstractConfigInterceptor
  */
 public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfig> extends InterceptorAdaptor {
-
-    protected static final int REGISTRY_TYPE_SERVICE = 2;
-
-    protected static final int REGISTRY_TYPE_INTERFACE = 1;
-
-    protected static final int REGISTRY_TYPE_ALL = REGISTRY_TYPE_SERVICE | REGISTRY_TYPE_INTERFACE;
 
     protected final Application application;
 
