@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.plugin.definition;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * This interface defines the contract for plugin importers that need to specify
@@ -25,6 +26,14 @@ import java.util.Map;
  * operation.
  */
 public interface PluginImporter {
+
+    String TYPE_MODULE = "@";
+
+    String DEFINITION_MODULE = "";
+
+    Predicate<String> TYPE_PREDICATE = TYPE_MODULE::equals;
+
+    Predicate<String> DEFINITION_PREDICATE = s -> s == null || s.isEmpty();
 
     /**
      * Retrieves an array of fully qualified names of internal classes that the
