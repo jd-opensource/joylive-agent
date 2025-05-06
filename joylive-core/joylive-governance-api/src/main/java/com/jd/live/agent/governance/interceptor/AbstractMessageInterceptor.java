@@ -145,43 +145,57 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return the {@link MessageAction} indicating whether to consume or discard the message based on live space rules.
      */
     protected MessageAction allowLive(Message message) {
-        String liveSpaceId = message.getLiveSpaceId();
+        String targetLiveSpaceId = message.getLiveSpaceId();
+        String targetUnitCode = message.getUnit();
+        String targetCellCode = message.getCell();
         MqMode mode = governanceConfig.getMqConfig().getLiveMode(message.getTopic());
         if (mode != MqMode.SHARED) {
             return MessageAction.CONSUME;
         } else if (!context.isLiveEnabled()) {
             return MessageAction.CONSUME;
-        } else if (liveSpaceId == null || liveSpaceId.isEmpty()) {
+        } else if (targetLiveSpaceId == null || targetLiveSpaceId.isEmpty()) {
             return MessageAction.CONSUME;
-        } else if (!liveSpaceId.equals(location.getLiveSpaceId())) {
+        } else if (!targetLiveSpaceId.equals(location.getLiveSpaceId())) {
             return MessageAction.DISCARD;
         } else {
             GovernancePolicy policy = policySupplier.getPolicy();
-            LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(liveSpaceId);
+            LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
             if (liveSpace == null) {
                 return MessageAction.CONSUME;
             }
+            String localUnitCode = location.getUnit();
+            String localCellCode = location.getCell();
+            String failoverUnit = null;
             Unit localUnit = liveSpace.getLocalUnit();
             Cell localCell = liveSpace.getLocalCell();
+            Unit targetUnit = liveSpace.getUnit(targetUnitCode);
+            Cell targetCell = targetUnit == null ? null : targetUnit.getCell(targetCellCode);
+            CellRoute cellRoute = null;
             UnitRule rule = liveSpace.getUnitRule(message.getRuleId());
-            if (localUnit == null) {
+            if (localUnitCode == null || localUnitCode.isEmpty()) {
                 return MessageAction.DISCARD;
-            } else if (!localUnit.getAccessMode().isReadable()) {
-                return MessageAction.REJECT;
-            } else if (localCell != null && !localCell.getAccessMode().isReadable()) {
-                return MessageAction.REJECT;
             } else if (rule != null) {
                 UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
                 UnitRoute targetRoute = rule.getUnitRoute(message.getVariable(), func);
-                CellRoute cellRoute = targetRoute == null || localCell == null ? null : targetRoute.getCellRoute(message.getCell());
-                Unit targetUnit = targetRoute == null ? null : targetRoute.getUnit();
-                if (targetUnit != null) {
-                    if (localUnit != targetUnit && !localUnit.getCode().equals(targetRoute.getFailoverUnit())) {
-                        return MessageAction.DISCARD;
-                    } else if (cellRoute != null && !cellRoute.getAccessMode().isReadable()) {
-                        return MessageAction.REJECT;
-                    }
+                cellRoute = targetRoute == null ? null : targetRoute.getCellRoute(targetCellCode);
+                targetUnit = targetRoute == null ? targetUnit : targetRoute.getUnit();
+                targetCell = cellRoute == null ? targetCell : cellRoute.getCell();
+                targetUnitCode = targetUnit == null ? targetUnitCode : targetUnit.getCode();
+                failoverUnit = targetRoute == null ? null : targetRoute.getFailoverUnit();
+            }
+            if (!localUnitCode.equals(targetUnitCode) && !localUnitCode.equals(failoverUnit)) {
+                return MessageAction.DISCARD;
+            } else if (!localUnit.getAccessMode().isReadable()) {
+                return MessageAction.REJECT;
+            } else if (localCellCode != null && !localCellCode.isEmpty() && !localCellCode.equals(targetCellCode)) {
+                if (targetCell != null && !targetCell.getAccessMode().isReadable()) {
+                    return MessageAction.DISCARD;
+                } else if (cellRoute != null && cellRoute.getAccessMode().isReadable()) {
+                    return MessageAction.DISCARD;
                 }
+            }
+            if (localCell != null && !localCell.getAccessMode().isReadable()) {
+                return MessageAction.REJECT;
             }
             return MessageAction.CONSUME;
         }
