@@ -20,6 +20,8 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import org.apache.dubbo.config.ReferenceConfig;
 
 import java.util.Map;
@@ -47,8 +49,10 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
-    protected int getRegistryType(ReferenceConfig<?> config) {
+    protected RegisterType getRegistryType(String interfaceName, ReferenceConfig<?> config) {
         String service = config.getProvidedBy();
-        return service == null || service.isEmpty() ? REGISTRY_TYPE_INTERFACE : REGISTRY_TYPE_SERVICE;
+        return service == null || service.isEmpty()
+                ? new RegisterType(RegisterMode.INTERFACE, interfaceName, interfaceName)
+                : new RegisterType(RegisterMode.INSTANCE, service, interfaceName);
     }
 }

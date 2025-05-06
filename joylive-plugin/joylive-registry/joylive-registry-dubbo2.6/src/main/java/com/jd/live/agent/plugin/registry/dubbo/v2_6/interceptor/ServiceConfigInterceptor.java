@@ -42,7 +42,7 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected String getService(ServiceConfig<?> config) {
+    protected String getInterfaceName(ServiceConfig<?> config) {
         return config.getInterface();
     }
 

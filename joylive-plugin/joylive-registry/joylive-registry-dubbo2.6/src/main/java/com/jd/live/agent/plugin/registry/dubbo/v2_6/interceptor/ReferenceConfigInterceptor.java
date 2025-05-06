@@ -42,7 +42,7 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
-    protected String getService(ReferenceConfig<?> config) {
+    protected String getInterfaceName(ReferenceConfig<?> config) {
         return config.getInterface();
     }
 

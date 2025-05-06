@@ -20,6 +20,8 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
@@ -51,19 +53,27 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected int getRegistryType(ServiceConfig<?> config) {
-        int result = 0;
+    protected RegisterType getRegistryType(String interfaceName, ServiceConfig<?> config) {
+        int mode = 0;
         if (config.getRegistries() != null) {
             for (RegistryConfig registry : config.getRegistries()) {
                 Map<String, String> map = registry.getParameters();
                 if (map != null && SERVICE_REGISTRY_TYPE.equals(map.get(REGISTRY_TYPE_KEY))) {
-                    result |= REGISTRY_TYPE_SERVICE;
+                    mode |= RegisterMode.INSTANCE.getValue();
                 } else {
-                    result |= REGISTRY_TYPE_INTERFACE;
+                    mode |= RegisterMode.INTERFACE.getValue();
                 }
             }
         }
-        return result;
+        switch (mode) {
+            case 2:
+                return new RegisterType(RegisterMode.INSTANCE, config.getApplication().getName(), interfaceName);
+            case 3:
+                return new RegisterType(RegisterMode.ALL, config.getApplication().getName(), interfaceName);
+            default:
+                return new RegisterType(RegisterMode.INTERFACE, config.getApplication().getName(), interfaceName);
+
+        }
     }
 
 }

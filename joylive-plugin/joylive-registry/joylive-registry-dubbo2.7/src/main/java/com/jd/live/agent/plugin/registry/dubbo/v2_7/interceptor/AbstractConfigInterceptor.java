@@ -19,13 +19,14 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
 
 import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
-import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_TYPE;
 
 /**
  * AbstractConfigInterceptor
@@ -51,35 +52,38 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     @Override
     public void onEnter(ExecutableContext ctx) {
         T config = (T) ctx.getTarget();
-        String service = getService(config);
+        String interfaceName = config.getInterface();
         Map<String, String> map = getContext(ctx);
-        if (!isDubboSystemService(service)) {
-            subscribe(service, config, map);
+        if (!isDubboSystemService(interfaceName)) {
+            subscribe(interfaceName, config, map);
         }
     }
 
     /**
      * Subscribes to a specific service with the specified configuration and context.
      *
-     * @param service the name of the service to register.
-     * @param config  the configuration object for the service, containing details such as application name and group.
-     * @param ctx     the context map to populate with the service group and registry type.
+     * @param interfaceName the name of the interface.
+     * @param config        the configuration object for the service, containing details such as application name and group.
+     * @param ctx           the context map to populate with the service group and registry type.
      */
-    protected void subscribe(String service, T config, Map<String, String> ctx) {
+    protected void subscribe(String interfaceName, T config, Map<String, String> ctx) {
         application.labelRegistry(ctx::putIfAbsent);
-        int type = getRegistryType(config);
-        switch (type) {
-            case REGISTRY_TYPE_SERVICE:
-                ctx.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
-                subscribe(config.getApplication().getName(), config.getGroup());
+        RegisterType type = getRegistryType(interfaceName, config);
+        RegisterMode mode = type.getMode();
+        switch (mode) {
+            case INSTANCE:
+                ctx.put(REGISTRY_TYPE_KEY, mode.getName());
+                subscribe(type.getService(), config.getGroup());
                 break;
-            case REGISTRY_TYPE_ALL:
-                ctx.put(REGISTRY_TYPE_KEY, "all");
-                subscribe(config.getApplication().getName(), config.getGroup());
-                subscribe(service, config.getGroup());
-            case REGISTRY_TYPE_INTERFACE:
+            case ALL:
+                ctx.put(REGISTRY_TYPE_KEY, mode.getName());
+                subscribe(type.getService(), config.getGroup());
+                subscribe(type.getInterfaceName(), config.getGroup());
+                break;
+            case INTERFACE:
             default:
-                subscribe(service, config.getGroup());
+                subscribe(type.getInterfaceName(), config.getGroup());
+
         }
     }
 
@@ -101,21 +105,12 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
 
     /**
-     * Gets the service name from the given configuration object.
-     *
-     * @param config the configuration object for the service.
-     * @return the name of the service.
-     */
-    protected String getService(T config) {
-        return config.getInterface();
-    }
-
-    /**
      * Gets the registry type for the given configuration object.
      *
-     * @param config the configuration object for the service.
+     * @param interfaceName the name of the interface.
+     * @param config        the configuration object for the service.
      * @return the registry type for the service.
      */
-    protected abstract int getRegistryType(T config);
+    protected abstract RegisterType getRegistryType(String interfaceName, T config);
 
 }

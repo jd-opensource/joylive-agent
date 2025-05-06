@@ -21,6 +21,8 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
@@ -52,15 +54,15 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected int getRegistryType(ServiceConfig<?> config) {
+    protected RegisterType getRegistryType(String interfaceName, ServiceConfig<?> config) {
         ApplicationConfig appCfg = config.getApplication();
         String registerMode = appCfg.getRegisterMode();
-        if (DEFAULT_REGISTER_MODE_INSTANCE.equals(registerMode)) {
-            return REGISTRY_TYPE_SERVICE;
-        } else if (DEFAULT_REGISTER_MODE_INTERFACE.equals(registerMode)) {
-            return REGISTRY_TYPE_INTERFACE;
+        if (DEFAULT_REGISTER_MODE_INTERFACE.equals(registerMode)) {
+            return new RegisterType(RegisterMode.INTERFACE, appCfg.getName(), interfaceName);
+        } else if (DEFAULT_REGISTER_MODE_INSTANCE.equals(registerMode)) {
+            return new RegisterType(RegisterMode.INSTANCE, appCfg.getName(), interfaceName);
         } else {
-            return REGISTRY_TYPE_ALL;
+            return new RegisterType(RegisterMode.ALL, appCfg.getName(), interfaceName);
         }
     }
 }

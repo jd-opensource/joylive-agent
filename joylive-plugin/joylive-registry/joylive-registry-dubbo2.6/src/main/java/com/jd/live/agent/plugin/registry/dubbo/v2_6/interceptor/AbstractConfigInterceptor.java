@@ -44,10 +44,10 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     public void onSuccess(ExecutableContext ctx) {
         Map<String, String> map = getContext(ctx);
         T config = (T) ctx.getTarget();
-        String service = getService(config);
-        if (!isDubboSystemService(service)) {
+        String interfaceName = getInterfaceName(config);
+        if (!isDubboSystemService(interfaceName)) {
             application.labelRegistry(map::putIfAbsent);
-            subscribe(service, getService(config));
+            subscribe(interfaceName, getGroup(config));
         }
     }
 
@@ -65,7 +65,7 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
      * @param config The configuration object from which to extract the service name.
      * @return The name of the service.
      */
-    protected abstract String getService(T config);
+    protected abstract String getInterfaceName(T config);
 
     /**
      * Retrieves the group name from the provided configuration object.
