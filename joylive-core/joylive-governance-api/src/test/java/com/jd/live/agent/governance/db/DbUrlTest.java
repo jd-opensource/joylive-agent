@@ -67,7 +67,7 @@ public class DbUrlTest {
     }
 
     @Test
-    void testPostgresq() {
+    void testPostgresql() {
         DbUrl url = DbUrlParser.parse("jdbc:postgresql://127.0.0.1:1111/database", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:postgresql", url.getScheme());
@@ -170,6 +170,7 @@ public class DbUrlTest {
         Assertions.assertEquals("abc", url.getDatabase());
         Assertions.assertEquals("jdbc:oracle:thin:@//localhost:8888:abc", url.toString());
 
-        //jdbc:oracle:thin:@<TNSName>
+        url = DbUrlParser.parse("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=127.0.0.1)(PORT=1521))(FAILOVER=on)(LOAD_BALANCE=off))(CONNECT_DATA= (SERVICE_NAME=orcl)))", PARSERS::get);
+        Assertions.assertNull(url.getAddress());
     }
 }

@@ -23,22 +23,24 @@ import com.jd.live.agent.governance.db.DbUrl;
 public class OracleUrlParser extends AbstractUrlParser {
 
     private static final String JDBC_ORACLE_THIN = "jdbc:oracle:thin";
-    private static final String JDBC_ORACLE_THIN_PREFIX = "jdbc:oracle:thin:@";
+    private static final String JDBC_ORACLE_THIN_SID_PREFIX = "jdbc:oracle:thin:@";
     private static final String JDBC_ORACLE_THIN_SERVICE_PREFIX = "jdbc:oracle:thin:@//";
+    private static final String JDBC_ORACLE_THIN_TNS_PREFIX = "jdbc:oracle:thin:@(";
 
     @Override
     protected String parserScheme(String url, DbUrl.DbUrlBuilder builder) {
-        //jdbc:oracle:thin:@//<host>:<port>/<service_name>
-        //jdbc:oracle:thin:@<host>:<port>:<SID>
-        //jdbc:oracle:thin:@<TNSName>
         if (url.startsWith(JDBC_ORACLE_THIN_SERVICE_PREFIX)) {
+            //jdbc:oracle:thin:@//<host>:<port>/<service_name>
             builder.scheme(JDBC_ORACLE_THIN);
             builder.schemePart(JDBC_ORACLE_THIN_SERVICE_PREFIX);
             url = url.substring(JDBC_ORACLE_THIN_SERVICE_PREFIX.length());
-        } else if (url.startsWith(JDBC_ORACLE_THIN_PREFIX)) {
+        } else if (url.startsWith(JDBC_ORACLE_THIN_TNS_PREFIX)) {
+            //Do not support jdbc:oracle:thin:@<TNSName>
+        } else if (url.startsWith(JDBC_ORACLE_THIN_SID_PREFIX)) {
+            //jdbc:oracle:thin:@<host>:<port>:<SID>
             builder.scheme(JDBC_ORACLE_THIN);
-            builder.schemePart(JDBC_ORACLE_THIN_PREFIX);
-            url = url.substring(JDBC_ORACLE_THIN_PREFIX.length());
+            builder.schemePart(JDBC_ORACLE_THIN_SID_PREFIX);
+            url = url.substring(JDBC_ORACLE_THIN_SID_PREFIX.length());
         }
         return url;
     }
@@ -47,15 +49,11 @@ public class OracleUrlParser extends AbstractUrlParser {
     protected String parsePath(String url, DbUrl.DbUrlBuilder builder) {
         url = super.parsePath(url, builder);
         if (builder.getPath() == null || builder.getPath().isEmpty()) {
-            if (!url.startsWith("(")) {
-                int pos = url.lastIndexOf(':');
-                if (pos > 0) {
-                    builder.path(url.substring(pos));
-                    builder.database(url.substring(pos + 1));
-                    url = url.substring(0, pos);
-                }
-            } else {
-                // TODO TNSName
+            int pos = url.lastIndexOf(':');
+            if (pos > 0) {
+                builder.path(url.substring(pos));
+                builder.database(url.substring(pos + 1));
+                url = url.substring(0, pos);
             }
         }
         return url;

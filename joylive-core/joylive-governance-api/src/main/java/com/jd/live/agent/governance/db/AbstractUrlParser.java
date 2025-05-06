@@ -42,10 +42,13 @@ public abstract class AbstractUrlParser implements DbUrlParser {
     protected void parse(String url, DbUrlBuilder builder) {
         url = parserParameter(url, builder);
         url = parserScheme(url, builder);
-        url = parsePath(url, builder);
-        url = parseSecure(url, builder);
-        parseHosts(url, builder);
-        parseDatabase(builder);
+        if (builder.getScheme() != null) {
+            // Support for JDBC URL
+            url = parsePath(url, builder);
+            url = parseSecure(url, builder);
+            parseHosts(url, builder);
+            parseDatabase(builder);
+        }
     }
 
     /**

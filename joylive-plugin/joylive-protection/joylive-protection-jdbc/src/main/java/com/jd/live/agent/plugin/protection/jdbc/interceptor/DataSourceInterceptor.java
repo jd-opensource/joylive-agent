@@ -43,6 +43,7 @@ public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<Conne
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Connection connection = mc.getResult();
+        // After driver interceptor.
         ClusterRedirect address = ClusterRedirect.getAndRemove();
         if (address != null) {
             mc.setResult(createConnection(() -> new LiveConnection(connection, address, closer)));
