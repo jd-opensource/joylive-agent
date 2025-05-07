@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.context.bag.w3c;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.context.bag.*;
 import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderReader;
@@ -24,6 +25,7 @@ import com.jd.live.agent.governance.request.HeaderWriter;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.tag.Label.join;
@@ -43,23 +45,24 @@ public class W3cPropagation extends AbstractPropagation {
     }
 
     @Override
-    public void write(Carrier carrier, HeaderWriter writer) {
-        if (carrier == null || writer == null) {
+    public void write(Carrier carrier, Location location, HeaderWriter writer) {
+        if (writer == null) {
             return;
         }
-        Collection<Cargo> cargos = carrier.getCargos();
-        if (cargos == null || cargos.isEmpty()) {
+        Collection<Cargo> cargos = carrier == null ? null : carrier.getCargos();
+        Map<String, String> tags = location == null ? null : location.getTags();
+        if ((cargos == null || cargos.isEmpty()) && (tags == null || tags.isEmpty())) {
             return;
         }
 
-        // TODO w3c baggage header maybe propagated by another agent, so we need to update the baggage header
+        // w3c baggage header maybe propagated by another agent, so we need to update the baggage header
         HeaderFeature feature = writer.getFeature();
         if (feature.isDuplicable()) {
-            writer.addHeader(KEY_BAGGAGE, appendCargo(cargos, new StringBuilder()));
+            writer.addHeader(KEY_BAGGAGE, appendCargo(cargos, tags, new StringBuilder()));
         } else {
             String baggage = writer.getHeader(KEY_BAGGAGE);
             StringBuilder builder = baggage == null || baggage.isEmpty() ? new StringBuilder() : new StringBuilder(baggage);
-            writer.setHeader(KEY_BAGGAGE, appendCargo(cargos, builder));
+            writer.setHeader(KEY_BAGGAGE, appendCargo(cargos, tags, builder));
         }
     }
 
@@ -116,13 +119,19 @@ public class W3cPropagation extends AbstractPropagation {
      * The values are joined into a single string using the join method, and the key-value pair
      * is formatted as "key=value". Pairs are separated by commas.
      *
-     * @param cargos  the collection of Cargo objects to be added
-     * @param builder the StringBuilder to which the key-value pairs will be appended
+     * @param cargos   the collection of Cargo objects to be added
+     * @param location the location object to be appended
+     * @param builder  the StringBuilder to which the key-value pairs will be appended
      * @return the value with the appended key-value pairs
      */
-    private String appendCargo(Collection<Cargo> cargos, StringBuilder builder) {
-        for (Cargo cargo : cargos) {
-            append(builder, CHAR_COMMA, cargo.getKey(), join(cargo.getValues()), true);
+    private String appendCargo(Collection<Cargo> cargos, Map<String, String> location, StringBuilder builder) {
+        if (cargos != null) {
+            for (Cargo cargo : cargos) {
+                append(builder, CHAR_COMMA, cargo.getKey(), join(cargo.getValues()), true);
+            }
+        }
+        if (location != null) {
+            location.forEach((key, value) -> append(builder, CHAR_COMMA, key, value, false));
         }
         return builder.toString();
     }

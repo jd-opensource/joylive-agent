@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.transmission.rocketmq.v4.contidion.ConditionalOnRocketmq4TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.rocketmq.v4.interceptor.MQProducerInterceptor;
 
@@ -44,16 +44,16 @@ public class MQProducerDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SEND_ONEWAY = "sendOneway";
 
-    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
-    private Propagation propagation;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     public MQProducerDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PRODUCER);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND), () -> new MQProducerInterceptor(propagation)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_REQUEST), () -> new MQProducerInterceptor(propagation)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND_ONEWAY), () -> new MQProducerInterceptor(propagation)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND_MESSAGE_IN_TRANSACTION), () -> new MQProducerInterceptor(propagation))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND), () -> new MQProducerInterceptor(context)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_REQUEST), () -> new MQProducerInterceptor(context)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND_ONEWAY), () -> new MQProducerInterceptor(context)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND_MESSAGE_IN_TRANSACTION), () -> new MQProducerInterceptor(context))
         };
     }
 }

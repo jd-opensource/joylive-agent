@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor.PublishInterceptor;
 
 @Injectable
@@ -38,14 +38,14 @@ public class ChannelNDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_BASIC_PUBLISH = "basicPublish";
 
-    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
-    private Propagation propagation;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     public ChannelNDefinition() {
 
         this.matcher = () -> MatcherBuilder.named(TYPE_CHANNEL_N);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_BASIC_PUBLISH), () -> new PublishInterceptor(propagation))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_BASIC_PUBLISH), () -> new PublishInterceptor(context))
         };
     }
 }

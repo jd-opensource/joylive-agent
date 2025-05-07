@@ -147,8 +147,9 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
     protected MessageAction consumeLive(Message message) {
         GovernancePolicy policy = policySupplier.getPolicy();
         String targetLiveSpaceId = message.getLiveSpaceId();
-        String targetUnitCode = message.getUnit();
-        String targetCellCode = message.getCell();
+        targetLiveSpaceId = targetLiveSpaceId == null || targetLiveSpaceId.isEmpty() ? null : message.getLocationLiveSpaceId();
+        String targetUnitCode = message.getLocationUnit();
+        String targetCellCode = message.getLocationCell();
         String localUnitCode = location.getUnit();
         String localCellCode = location.getCell();
         String localLiveSpaceId = location.getLiveSpaceId();

@@ -40,10 +40,6 @@ public abstract class AbstractMessage implements Message {
      */
     protected String liveSpaceId;
 
-    protected String unit;
-
-    protected String cell;
-
     /**
      * The rule ID of the message, lazily initialized.
      */
@@ -63,6 +59,12 @@ public abstract class AbstractMessage implements Message {
      * The lane of the message, lazily initialized.
      */
     protected String lane;
+
+    protected String locationLiveSpaceId;
+
+    protected String locationUnit;
+
+    protected String locationCell;
 
     public AbstractMessage(String topic, Function<String, String> headerFunc) {
         this.topic = topic;
@@ -85,22 +87,6 @@ public abstract class AbstractMessage implements Message {
             liveSpaceId = getHeader(Constants.LABEL_LIVE_SPACE_ID);
         }
         return liveSpaceId;
-    }
-
-    @Override
-    public String getUnit() {
-        if (unit == null) {
-            unit = getHeader(Constants.LABEL_UNIT);
-        }
-        return unit;
-    }
-
-    @Override
-    public String getCell() {
-        if (cell == null) {
-            cell = getHeader(Constants.LABEL_CELL);
-        }
-        return cell;
     }
 
     @Override
@@ -133,5 +119,29 @@ public abstract class AbstractMessage implements Message {
             lane = getHeader(Constants.LABEL_LANE);
         }
         return lane;
+    }
+
+    @Override
+    public String getLocationLiveSpaceId() {
+        if (locationLiveSpaceId == null) {
+            locationLiveSpaceId = getHeader(Constants.LABEL_LOCATION_LIVE_SPACE_ID);
+        }
+        return locationLiveSpaceId;
+    }
+
+    @Override
+    public String getLocationUnit() {
+        if (locationUnit == null) {
+            locationUnit = getHeader(Constants.LABEL_LOCATION_UNIT);
+        }
+        return locationUnit;
+    }
+
+    @Override
+    public String getLocationCell() {
+        if (locationCell == null) {
+            locationCell = getHeader(Constants.LABEL_LOCATION_CELL);
+        }
+        return locationCell;
     }
 }

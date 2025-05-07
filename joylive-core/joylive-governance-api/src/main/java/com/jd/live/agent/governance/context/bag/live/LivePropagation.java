@@ -2,16 +2,14 @@ package com.jd.live.agent.governance.context.bag.live;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.context.bag.*;
 import com.jd.live.agent.governance.request.HeaderFeature;
 import com.jd.live.agent.governance.request.HeaderReader;
 import com.jd.live.agent.governance.request.HeaderWriter;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jd.live.agent.core.util.CollectionUtils.iterate;
 import static com.jd.live.agent.core.util.CollectionUtils.toMap;
@@ -31,19 +29,30 @@ public class LivePropagation extends AbstractPropagation {
     }
 
     @Override
-    public void write(Carrier carrier, HeaderWriter writer) {
-        if (carrier == null || writer == null) {
+    public void write(Carrier carrier, Location location, HeaderWriter writer) {
+        if (writer == null) {
             return;
         }
         Collection<Cargo> cargos = carrier.getCargos();
-        int size = cargos == null ? 0 : cargos.size();
+        Map<String, String> tags = location == null ? null : location.getTags();
+        int tagSize = tags == null ? 0 : tags.size();
+        int size = (cargos == null ? 0 : cargos.size()) + tagSize;
         if (size > 0) {
-            HeaderFeature feature = writer.getFeature();
-            if (size > 1 && feature.isBatchable()) {
-                writer.setHeaders(toMap(cargos, Cargo::getKey, cargo -> join(cargo.getValues())));
+            if (size > 1 && writer.getFeature().isBatchable()) {
+                Map<String, String> map = toMap(cargos, Cargo::getKey, cargo -> join(cargo.getValues()));
+                if (tagSize > 0) {
+                    map = map == null ? new HashMap<>(3) : map;
+                    map.putAll(tags);
+                }
+                writer.setHeaders(map);
             } else {
-                for (Cargo cargo : cargos) {
-                    writer.setHeader(cargo.getKey(), join(cargo.getValues()));
+                if (cargos != null) {
+                    for (Cargo cargo : cargos) {
+                        writer.setHeader(cargo.getKey(), join(cargo.getValues()));
+                    }
+                }
+                if (tagSize > 0) {
+                    tags.forEach(writer::setHeader);
                 }
             }
         }

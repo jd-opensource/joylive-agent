@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.context.bag;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.request.HeaderReader;
 import com.jd.live.agent.governance.request.HeaderWriter;
@@ -32,6 +33,8 @@ import java.util.Collection;
 public interface Propagation {
 
     String COMPONENT_PROPAGATION = "propagation";
+
+    String COMPONENT_LOCATION_PROPAGATION = "locationPropagation";
 
     int ORDER_W3C = 0;
 
@@ -52,7 +55,18 @@ public interface Propagation {
      * @param carrier The carrier from which to read the headers.
      * @param writer  The writer to which the headers should be written.
      */
-    void write(Carrier carrier, HeaderWriter writer);
+    default void write(Carrier carrier, HeaderWriter writer) {
+        write(carrier, null, writer);
+    }
+
+    /**
+     * Writes headers from the carrier to the writer.
+     *
+     * @param carrier  The carrier from which to read the headers.
+     * @param location The location information to be added.
+     * @param writer   The writer to which the headers should be written.
+     */
+    void write(Carrier carrier, Location location, HeaderWriter writer);
 
     /**
      * Writes headers from the carrier to the writer.
@@ -92,8 +106,8 @@ public interface Propagation {
         }
 
         @Override
-        public void write(Carrier carrier, HeaderWriter writer) {
-            this.writer.write(carrier, writer);
+        public void write(Carrier carrier, Location location, HeaderWriter writer) {
+            this.writer.write(carrier, location, writer);
         }
 
         @Override
