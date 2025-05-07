@@ -39,7 +39,7 @@ public class FetchInterceptor extends AbstractMessageInterceptor {
         TopicPartition topicPartition = (TopicPartition) arguments[0];
         if (isEnabled(topicPartition.topic())) {
             List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
-            filter(records, message -> allow(new KafkaMessage(message)) == MessageAction.CONSUME);
+            filter(records, message -> consume(new KafkaMessage(message)) == MessageAction.CONSUME);
         }
     }
 }
