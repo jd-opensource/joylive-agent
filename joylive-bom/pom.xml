@@ -48,7 +48,7 @@
     </scm>
 
     <properties>
-        <revision>1.6.1-SNAPSHOT</revision>
+        <revision>1.7.0</revision>
     </properties>
 
     <dependencyManagement>
@@ -533,6 +533,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <failOnError>false</failOnError>
+                        </configuration>
                         <executions>
                             <execution>
                                 <phase>package</phase>
