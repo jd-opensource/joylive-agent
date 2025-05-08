@@ -61,7 +61,7 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         if (action.getType() == UnitActionType.FORWARD) {
             chain.filter(invocation);
         } else {
-            invocation.reject(FaultType.UNIT, action.getMessage());
+            throw FaultType.UNIT.reject(action.getMessage());
         }
     }
 

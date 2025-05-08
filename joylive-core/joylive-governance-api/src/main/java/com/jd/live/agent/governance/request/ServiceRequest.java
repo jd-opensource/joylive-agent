@@ -20,8 +20,6 @@ import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
-import com.jd.live.agent.governance.policy.live.FaultType;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
 import java.util.List;
 import java.util.Random;
@@ -189,40 +187,6 @@ public interface ServiceRequest extends Request {
      */
     default boolean isSystem() {
         return false;
-    }
-
-    /**
-     * Rejects the request with the given fault type and reason.
-     *
-     * @param type   The type of fault.
-     * @param reason The reason for the rejection.
-     * @throws RuntimeException Throws a runtime exception as defined by the fault type's rejection method.
-     */
-    default void reject(FaultType type, String reason) {
-        throw type.reject(reason);
-    }
-
-    /**
-     * Initiates a failover for the request with the given fault type and reason.
-     *
-     * @param type   The type of fault.
-     * @param reason The reason for the failover.
-     * @throws RuntimeException Throws a runtime exception as defined by the fault type's failover method.
-     */
-    default void failover(FaultType type, String reason) {
-        throw type.failover(reason);
-    }
-
-    /**
-     * Initiates a degradation for the request with the given fault type and reason.
-     *
-     * @param type   The type of fault.
-     * @param reason The reason for the failover.
-     * @param config The degrade config.
-     * @throws RuntimeException Throws a runtime exception as defined by the fault type's failover method.
-     */
-    default void degrade(FaultType type, String reason, DegradeConfig config) {
-        throw type.degrade(reason, config);
     }
 
     /**

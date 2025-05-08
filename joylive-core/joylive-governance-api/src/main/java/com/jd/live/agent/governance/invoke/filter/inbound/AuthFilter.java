@@ -18,10 +18,11 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
-import com.jd.live.agent.governance.invoke.auth.AuthResult;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
@@ -52,13 +53,9 @@ public class AuthFilter implements InboundFilter {
         if (authPolicy != null && authPolicy.getType() != null) {
             Authenticate authenticate = authenticates.get(authPolicy.getType());
             if (authenticate != null) {
-                AuthResult result = authenticate.authenticate(invocation.getRequest(), authPolicy);
-                if (result != null && !result.isSuccess()) {
-                    if (result.getError() != null && !result.getError().isEmpty()) {
-                        invocation.reject(FaultType.UNAUTHORIZED, "The traffic auth policy rejected the request. caused by " + result.getError());
-                    } else {
-                        invocation.reject(FaultType.UNAUTHORIZED, "The traffic auth policy rejected the request.");
-                    }
+                Permission permission = authenticate.authenticate(invocation.getRequest(), authPolicy);
+                if (permission != null && !permission.isSuccess()) {
+                    return Futures.future(FaultType.UNAUTHORIZED.reject(permission.getMessage()));
                 }
             }
         }

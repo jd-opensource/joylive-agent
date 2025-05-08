@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.invoke.auth.token;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.invoke.auth.AuthResult;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.TokenPolicy;
@@ -24,6 +23,7 @@ import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -33,12 +33,12 @@ import java.util.Objects;
 public class TokenAuthenticate implements Authenticate {
 
     @Override
-    public AuthResult authenticate(ServiceRequest request, AuthPolicy policy) {
+    public Permission authenticate(ServiceRequest request, AuthPolicy policy) {
         TokenPolicy tokenPolicy = policy.getTokenPolicy();
-        if (tokenPolicy != null && tokenPolicy.isValid()) {
-            return new AuthResult(decodeAndCompare(request, tokenPolicy), "Token is not correct.");
+        if (tokenPolicy != null && tokenPolicy.isValid() && !decodeAndCompare(request, tokenPolicy)) {
+            return Permission.failure("Token is not correct.");
         }
-        return new AuthResult(true, null);
+        return Permission.success();
     }
 
     @Override

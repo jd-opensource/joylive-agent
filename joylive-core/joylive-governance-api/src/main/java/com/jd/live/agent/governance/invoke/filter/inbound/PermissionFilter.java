@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.inbound;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
@@ -44,8 +45,8 @@ public class PermissionFilter implements InboundFilter {
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<PermissionPolicy> policies = servicePolicy == null ? null : servicePolicy.getPermissionPolicies();
-        if (null != policies) {
-            pass(invocation, policies);
+        if (null != policies && !pass(invocation, policies)) {
+            return Futures.future(FaultType.PERMISSION_DENIED.reject("The traffic permission policy rejected the request."));
         }
         return chain.filter(invocation);
     }
@@ -56,7 +57,7 @@ public class PermissionFilter implements InboundFilter {
      * @param invocation The inbound invocation to pass through the policies.
      * @param policies The list of permission policies to apply.
      */
-    private <T extends InboundRequest> void pass(InboundInvocation<T> invocation, List<PermissionPolicy> policies) {
+    private <T extends InboundRequest> boolean pass(InboundInvocation<T> invocation, List<PermissionPolicy> policies) {
         boolean hasAllow = false;
         boolean allowed = false;
         boolean denied = false;
@@ -75,12 +76,10 @@ public class PermissionFilter implements InboundFilter {
         }
         // If denied, return false directly.
         if (denied) {
-            invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
+            return false;
         }
         // If there is a allow rule list, but it has not passed any allow rule, return false.
-        if (hasAllow && !allowed) {
-            invocation.reject(FaultType.PERMISSION_DENIED, "The traffic permission policy rejected the request.");
-        }
+        return !hasAllow || allowed;
     }
 
 }

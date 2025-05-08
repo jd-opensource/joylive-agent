@@ -19,6 +19,7 @@ import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -65,18 +66,17 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
     @Override
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        List<ConcurrencyLimitPolicy> concurrencyLimitPolicies = servicePolicy == null ? null : servicePolicy.getConcurrencyLimitPolicies();
+        List<ConcurrencyLimitPolicy> policies = servicePolicy == null ? null : servicePolicy.getConcurrencyLimitPolicies();
         List<ConcurrencyLimiter> limiters = new ArrayList<>();
-        if (null != concurrencyLimitPolicies && !concurrencyLimitPolicies.isEmpty()) {
-            for (ConcurrencyLimitPolicy policy : concurrencyLimitPolicies) {
+        if (null != policies && !policies.isEmpty()) {
+            for (ConcurrencyLimitPolicy policy : policies) {
                 // match logic
                 if (policy.getMaxConcurrency() != null && policy.getMaxConcurrency() > 0 && policy.match(invocation)) {
-                    ConcurrencyLimiter limiter = getConcurrencyLimiter(policy);
+                    ConcurrencyLimiter limiter = getLimiter(policy);
                     if (null != limiter && !limiter.acquire()) {
                         release(limiters);
-                        invocation.reject(FaultType.LIMIT,
-                                "The request is rejected by concurrency limiter. maxConcurrency=" +
-                                        policy.getMaxConcurrency());
+                        return Futures.future(FaultType.LIMIT.reject(
+                                "The request is rejected by concurrency limiter. maxConcurrency=" + policy.getMaxConcurrency()));
                     }
                     if (limiter != null) {
                         limiters.add(limiter);
@@ -96,7 +96,7 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
      * @param policy the concurrency limit policy.
      * @return the concurrency limiter, or null if no factory is found for the policy type.
      */
-    private ConcurrencyLimiter getConcurrencyLimiter(ConcurrencyLimitPolicy policy) {
+    private ConcurrencyLimiter getLimiter(ConcurrencyLimitPolicy policy) {
         String type = policy.getRealizeType() == null || policy.getRealizeType().isEmpty() ? defaultType : policy.getRealizeType();
         ConcurrencyLimiterFactory factory = type != null ? factories.get(type) : null;
         factory = factory == null ? defaultFactory : factory;

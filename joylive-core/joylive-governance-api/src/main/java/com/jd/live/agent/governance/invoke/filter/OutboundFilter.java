@@ -44,7 +44,9 @@ public interface OutboundFilter {
 
     int ORDER_FAULT_INJECTION = ORDER_COUNTER + 100;
 
-    int ORDER_AUTH = ORDER_FAULT_INJECTION + 100;
+    int ORDER_RATE_LIMITER = ORDER_FAULT_INJECTION + 100;
+
+    int ORDER_AUTH = ORDER_RATE_LIMITER + 100;
 
     /**
      * Filters the outbound service request before it is sent to the remote service.
