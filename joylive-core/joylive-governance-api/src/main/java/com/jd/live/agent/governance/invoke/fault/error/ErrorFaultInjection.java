@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.governance.invoke.fault.error;
 
-import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.fault.FaultInjection;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 
 import java.util.Random;
 
@@ -31,10 +31,11 @@ import java.util.Random;
 public class ErrorFaultInjection implements FaultInjection {
 
     @Override
-    public void acquire(FaultInjectionPolicy policy, Random random) {
+    public Permission acquire(FaultInjectionPolicy policy, Random random) {
         if (policy.getPercent() <= 0 || random.nextInt(100) < policy.getPercent()) {
             String errorMsg = policy.getErrorMsg() == null ? "Error by fault injection" : policy.getErrorMsg();
-            throw new FaultException(policy.getErrorCode(), errorMsg);
+            return Permission.failure(policy.getErrorCode(), errorMsg);
         }
+        return Permission.success();
     }
 }

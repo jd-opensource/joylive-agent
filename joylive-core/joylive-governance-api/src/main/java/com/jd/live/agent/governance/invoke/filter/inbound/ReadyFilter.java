@@ -19,6 +19,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -43,9 +44,9 @@ public class ReadyFilter implements InboundFilter {
     @Override
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         if (!application.getStatus().inbound()) {
-            invocation.reject(FaultType.UNREADY, "Service instance is not ready,"
+            return Futures.future(FaultType.UNREADY.reject("Service instance is not ready,"
                     + " service=" + application.getService().getName()
-                    + " address=" + Ipv4.getLocalIp());
+                    + " address=" + Ipv4.getLocalIp()));
         }
         return chain.filter(invocation);
     }

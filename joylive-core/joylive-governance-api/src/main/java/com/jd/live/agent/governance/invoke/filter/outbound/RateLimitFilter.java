@@ -15,63 +15,39 @@
  */
 package com.jd.live.agent.governance.invoke.filter.outbound;
 
-import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.fault.FaultInjection;
+import com.jd.live.agent.governance.invoke.filter.AbstractRateLimitFilter;
 import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
-import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
+import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 /**
- * A filter that injects faults into the request processing based on the specified fault injection policy.
- *
- * @see OutboundFilter
- * @since 1.4.0
+ * RateLimitFilter
  */
 @Injectable
-@Extension(value = "FaultInjectionFilter", order = OutboundFilter.ORDER_FAULT_INJECTION)
+@Extension(value = "RateLimitFilter", order = OutboundFilter.ORDER_RATE_LIMITER)
 @ConditionalOnFlowControlEnabled
-public class FaultInjectionFilter implements OutboundFilter {
-
-    @Inject
-    private Map<String, FaultInjection> faultInjections;
+public class RateLimitFilter extends AbstractRateLimitFilter implements OutboundFilter {
 
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        List<FaultInjectionPolicy> faultPolicies = servicePolicy == null ? null : servicePolicy.getFaultInjectionPolicies();
-        if (faultPolicies != null && !faultPolicies.isEmpty()) {
-            Permission permission;
-            for (FaultInjectionPolicy faultPolicy : faultPolicies) {
-                if (faultPolicy.match(invocation)) {
-                    FaultInjection injection = faultInjections.get(faultPolicy.getType());
-                    if (injection != null) {
-                        permission = injection.acquire(faultPolicy, invocation.getRandom());
-                        if (permission != null && !permission.isSuccess()) {
-                            return Futures.future(new FaultException(permission.getErrorCode(), permission.getMessage()));
-                        }
-                    }
-                }
-            }
+        Permission result = acquire(invocation);
+        if (result != null && !result.isSuccess()) {
+            return Futures.future(FaultType.LIMIT.reject(result.getMessage()));
         }
         return chain.filter(invocation, endpoint);
-
     }
 
 }

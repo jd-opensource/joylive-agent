@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.fault.FaultInjection;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
 
 import java.util.Random;
@@ -34,7 +35,7 @@ public class DelayFaultInjection implements FaultInjection {
     private static final Logger logger = LoggerFactory.getLogger(DelayFaultInjection.class);
 
     @Override
-    public void acquire(FaultInjectionPolicy policy, Random random) {
+    public Permission acquire(FaultInjectionPolicy policy, Random random) {
         if (policy.getDelayTimeMs() > 0 && (policy.getPercent() <= 0 || random.nextInt(100) < policy.getPercent())) {
             try {
                 if (logger.isDebugEnabled()) {
@@ -45,5 +46,6 @@ public class DelayFaultInjection implements FaultInjection {
                 // ignored
             }
         }
+        return Permission.success();
     }
 }

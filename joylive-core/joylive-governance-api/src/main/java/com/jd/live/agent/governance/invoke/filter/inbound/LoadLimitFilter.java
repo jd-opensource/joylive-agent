@@ -20,11 +20,13 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.LoadLimiterConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
@@ -78,15 +80,19 @@ public class LoadLimitFilter implements InboundFilter {
         ServiceConfig serviceConfig = invocation.getContext().getGovernanceConfig().getServiceConfig();
         LoadLimiterConfig limiterConfig = serviceConfig == null ? null : serviceConfig.getLoadLimiter();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        List<LoadLimitPolicy> loadLimitPolicies = servicePolicy == null ? null : servicePolicy.getLoadLimitPolicies();
+        List<LoadLimitPolicy> policies = servicePolicy == null ? null : servicePolicy.getLoadLimitPolicies();
 
         if (limiterConfig != null && !limiterConfig.isEmpty()) {
             pass(invocation, new SystemLoad(limiterConfig.getCpuUsage(), limiterConfig.getLoadUsage()), load);
         }
-        if (null != loadLimitPolicies && !loadLimitPolicies.isEmpty()) {
-            for (LoadLimitPolicy policy : loadLimitPolicies) {
+        if (null != policies && !policies.isEmpty()) {
+            Permission permission;
+            for (LoadLimitPolicy policy : policies) {
                 if (!policy.isEmpty() && policy.match(invocation)) {
-                    pass(invocation, new SystemLoad(policy.getCpuUsage(), policy.getLoadUsage()), load);
+                    permission = pass(invocation, new SystemLoad(policy.getCpuUsage(), policy.getLoadUsage()), load);
+                    if (!permission.isSuccess()) {
+                        return Futures.future(FaultType.LIMIT.reject(permission.getMessage()));
+                    }
                 }
             }
         }
@@ -109,22 +115,25 @@ public class LoadLimitFilter implements InboundFilter {
      * @param invocation the inbound request to process
      * @param threshold  the configured threshold for CPU usage and load average
      * @param load       the current system load metrics
+     * @return the permission to proceed with the request
      */
-    private void pass(InboundInvocation<?> invocation, SystemLoad threshold, SystemLoad load) {
+    private Permission pass(InboundInvocation<?> invocation, SystemLoad threshold, SystemLoad load) {
         if (!scheduled.get()) {
             schedule();
         }
         if (threshold == null || load == null) {
-            return;
+            return Permission.success();
         }
         Integer cpuUsage = threshold.getCpuUsage();
         Integer loadUsage = threshold.getLoadUsage();
         if (cpuUsage != null && cpuUsage > 0 && cpuUsage <= load.getCpuUsage()
                 || loadUsage != null && loadUsage > 0 && loadUsage <= load.getLoadUsage()) {
-            invocation.reject(FaultType.LIMIT, "The request is rejected by load limiter. "
+            return Permission.failure("The request is rejected by load limiter. "
                     + "load(cpu:" + load.getCpuUsage() + ", load:" + load.getLoadUsage() + "), "
                     + "threshold(cpu:" + (cpuUsage == null ? "" : cpuUsage) + ", load:" + (loadUsage == null ? "" : loadUsage) + ")");
+
         }
+        return Permission.success();
     }
 
     /**

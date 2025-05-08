@@ -44,9 +44,9 @@ public class FailoverFilter implements InboundFilter {
         UnitAction unitAction = invocation.getUnitAction();
         CellAction cellAction = invocation.getCellAction();
         if (unitAction.getType() == UnitActionType.FAILOVER || unitAction.getType() == UnitActionType.FAILOVER_CENTER) {
-            invocation.failover(FaultType.UNIT, unitAction.getMessage());
+            throw FaultType.UNIT.failover(unitAction.getMessage());
         } else if (cellAction.getType() == CellActionType.FAILOVER) {
-            invocation.failover(FaultType.CELL, cellAction.getMessage());
+            throw FaultType.CELL.failover(cellAction.getMessage());
         }
         return chain.filter(invocation);
     }

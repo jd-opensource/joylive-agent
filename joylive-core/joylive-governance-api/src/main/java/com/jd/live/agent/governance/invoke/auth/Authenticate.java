@@ -37,7 +37,7 @@ public interface Authenticate {
      * @param policy  the authentication policy to use
      * @return the result of the authentication attempt
      */
-    AuthResult authenticate(ServiceRequest request, AuthPolicy policy);
+    Permission authenticate(ServiceRequest request, AuthPolicy policy);
 
     /**
      * Injects the given authentication policy into the outbound request.

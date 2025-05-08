@@ -55,8 +55,7 @@ public class UnitFilter implements InboundFilter {
                 carrier.setAttribute(Carrier.ATTRIBUTE_FAILOVER_UNIT, unitAction);
                 break;
             case REJECT:
-                invocation.reject(FaultType.UNIT, unitAction.getMessage());
-                break;
+                throw FaultType.UNIT.reject(unitAction.getMessage());
             case FORWARD:
             default:
                 break;

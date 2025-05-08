@@ -62,7 +62,7 @@ public class CellFilter implements RouteFilter, LiveFilter {
         if (action.getType() == UnitActionType.FORWARD && forward(invocation, target)) {
             chain.filter(invocation);
         } else {
-            invocation.reject(FaultType.CELL, action.getMessage());
+            throw FaultType.CELL.reject(action.getMessage());
         }
     }
 
