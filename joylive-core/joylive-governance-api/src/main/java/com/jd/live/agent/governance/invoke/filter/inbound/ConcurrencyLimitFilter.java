@@ -73,6 +73,7 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
                 if (policy.getMaxConcurrency() != null && policy.getMaxConcurrency() > 0 && policy.match(invocation)) {
                     ConcurrencyLimiter limiter = getConcurrencyLimiter(policy);
                     if (null != limiter && !limiter.acquire()) {
+                        release(limiters);
                         invocation.reject(FaultType.LIMIT,
                                 "The request is rejected by concurrency limiter. maxConcurrency=" +
                                         policy.getMaxConcurrency());
@@ -83,11 +84,7 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
                 }
             }
         }
-        return chain.filter(invocation).whenComplete((o, throwable) -> {
-            for (ConcurrencyLimiter limiter : limiters) {
-                limiter.complete();
-            }
-        });
+        return chain.filter(invocation).whenComplete((o, throwable) -> release(limiters));
     }
 
     /**
@@ -104,5 +101,11 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
         ConcurrencyLimiterFactory factory = type != null ? factories.get(type) : null;
         factory = factory == null ? defaultFactory : factory;
         return factory == null ? null : factory.get(policy);
+    }
+
+    private void release(List<ConcurrencyLimiter> limiters) {
+        for (ConcurrencyLimiter limiter : limiters) {
+            limiter.complete();
+        }
     }
 }
