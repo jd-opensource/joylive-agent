@@ -1,6 +1,6 @@
 # Release History
 
-## 1.7.0-SNAPSHOT
+## 1.7.0
 
 1. Added support for Spring Cloud Greenwich, currently supporting Spring Cloud Greenwich/Hoxton/2020/2021/2022/2023/2024.
 2. Added support for Apache HttpClient governance with Spring Cloud Zuul

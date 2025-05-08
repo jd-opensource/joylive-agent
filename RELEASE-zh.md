@@ -1,6 +1,6 @@
 # 发布历史
 
-## 1.7.0-SNAPSHOT
+## 1.7.0
 
 1. 新增支持 Spring cloud greenwich，当前已经支持Spring cloud Greenwich/Hoxton/2020/2021/2022/2023/2024
 2. 新增支持 Spring cloud zuul 的Apache HttpClient治理
