@@ -57,4 +57,13 @@ public class RegistryClusterConfig {
         }
         return group != null && !group.isEmpty() ? group : defaultGroup;
     }
+
+    public String getProperty(String key) {
+        return properties != null && key != null ? properties.get(key) : null;
+    }
+
+    public String getProperty(String key, String defaultValue) {
+        String value = getProperty(key);
+        return value == null || value.isEmpty() ? defaultValue : value;
+    }
 }

@@ -64,6 +64,7 @@
                 <include>com.jd.live:joylive-service-microservice</include>
                 <include>com.jd.live:joylive-service-nacos</include>
                 <include>com.jd.live:joylive-service-apollo</include>
+                <include>com.jd.live:joylive-service-zookeeper</include>
                 <include>com.jd.live:joylive-service-watchdog</include>
                 <include>com.jd.live:joylive-event-logger</include>
                 <include>com.jd.live:joylive-event-opentelemetry</include>

@@ -22,16 +22,20 @@ import java.util.List;
 @Getter
 public class RegistryEvent {
 
-    private final String service;
+    protected final String service;
 
-    private final String group;
+    protected final String group;
 
-    private final List<ServiceEndpoint> instances;
+    protected final List<ServiceEndpoint> instances;
 
-    private final String defaultGroup;
+    protected final String defaultGroup;
 
     public RegistryEvent(String service, List<ServiceEndpoint> instances) {
         this(service, null, instances, null);
+    }
+
+    public RegistryEvent(String service, String group, List<ServiceEndpoint> instances) {
+        this(service, group, instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
@@ -48,4 +52,5 @@ public class RegistryEvent {
     public int size() {
         return instances == null ? 0 : instances.size();
     }
+
 }

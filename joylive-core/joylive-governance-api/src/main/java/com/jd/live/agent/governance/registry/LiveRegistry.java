@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
@@ -674,31 +675,76 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             if (!started.get() || event == null) {
                 return;
             }
-            int size = event.size();
             name = name == null ? getName(service, group) : name;
-            logger.info("Service instance count is changed to {}, {} at {}", size, name, clusterName);
             synchronized (mutex) {
                 if (!started.get()) {
                     return;
                 }
-                List<ServiceEndpoint> ce = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
-                int capacity = endpoints == null ? 0 : endpoints.size();
-                capacity = capacity + size - (ce == null ? 0 : ce.size());
-                Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
+                event = delta(clusterName, event);
+                int size = event.size();
+                logger.info("Service instance count is changed to {}, {} at {}", size, name, clusterName);
+
+                List<ServiceEndpoint> olds = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
 
                 // merge endpoints by order
+                int capacity = endpoints == null ? 0 : endpoints.size();
+                capacity = capacity + size - (olds == null ? 0 : olds.size());
+                Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
                 for (ClusterSubscription cluster : clusters) {
-                    ce = clustersEndpoints.get(cluster.getName());
-                    if (ce != null) {
-                        ce.forEach(endpoint -> merged.putIfAbsent(endpoint.getAddress(), endpoint));
+                    olds = clustersEndpoints.get(cluster.getName());
+                    if (olds != null) {
+                        olds.forEach(endpoint -> merged.putIfAbsent(endpoint.getAddress(), endpoint));
                     }
                 }
                 List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
                 this.endpoints = newEndpoints;
                 for (Consumer<RegistryEvent> consumer : consumers) {
-                    consumer.accept(new RegistryEvent(service, group, newEndpoints, null));
+                    consumer.accept(new RegistryEvent(service, group, newEndpoints));
                 }
             }
+        }
+
+        /**
+         * Applies delta changes to service endpoints for a cluster.
+         * Handles FULL/ADD/UPDATE/REMOVE operations from delta events.
+         *
+         * @param clusterName target cluster name
+         * @param event registry change event
+         * @return updated registry event
+         */
+        private RegistryEvent delta(String clusterName, RegistryEvent event) {
+            if (event instanceof RegistryDeltaEvent) {
+                RegistryDeltaEvent deltaEvent = (RegistryDeltaEvent) event;
+                switch (deltaEvent.getType()) {
+                    case FULL:
+                        break;
+                    case REMOVE:
+                        return delta(clusterName, deltaEvent, (map, instance) -> map.remove(instance.getAddress()));
+                    case ADD:
+                    case UPDATE:
+                    default:
+                        return delta(clusterName, deltaEvent, (map, instance) -> map.put(instance.getAddress(), instance));
+                }
+            }
+            return event;
+        }
+
+        /**
+         * Merges endpoint changes using the provided update operation.
+         *
+         * @param clusterName target cluster name
+         * @param event registry change event
+         * @param consumer operation to apply (add/remove endpoints)
+         * @return new registry event with merged endpoints
+         */
+        private RegistryEvent delta(String clusterName, RegistryEvent event, BiConsumer<Map<String, ServiceEndpoint>, ServiceEndpoint> consumer) {
+            List<ServiceEndpoint> oldEndpoints = clustersEndpoints.get(clusterName);
+            Map<String, ServiceEndpoint> merged = new HashMap<>(oldEndpoints == null ? 0 : oldEndpoints.size());
+            if (oldEndpoints != null) {
+                oldEndpoints.forEach(endpoint -> merged.putIfAbsent(endpoint.getAddress(), endpoint));
+            }
+            event.getInstances().forEach(instance -> consumer.accept(merged, instance));
+            return new RegistryEvent(event.getService(), event.getGroup(), new ArrayList<>(merged.values()), event.getDefaultGroup());
         }
 
         /**
