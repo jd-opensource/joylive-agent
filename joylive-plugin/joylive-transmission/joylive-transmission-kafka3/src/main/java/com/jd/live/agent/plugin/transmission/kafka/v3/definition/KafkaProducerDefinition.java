@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaProducerInterceptor;
 
 @Injectable
@@ -42,8 +42,8 @@ public class KafkaProducerDefinition extends PluginDefinitionAdapter {
             "org.apache.kafka.clients.producer.Callback"
     };
 
-    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
-    private Propagation propagation;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     public KafkaProducerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_KAFKA_PRODUCER);
@@ -51,6 +51,6 @@ public class KafkaProducerDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_DO_SEND).
                                 and(MatcherBuilder.arguments(ARGUMENT_DO_SEND)),
-                        () -> new KafkaProducerInterceptor(propagation))};
+                        () -> new KafkaProducerInterceptor(context))};
     }
 }

@@ -47,7 +47,7 @@ public class RegisterFilterInterceptor extends AbstractMessageInterceptor {
 
             @Override
             public void filterMessage(FilterMessageContext filterContext) {
-                filter(filterContext.getMsgList(), message -> allow(new RocketMQMessage(message)) == MessageAction.CONSUME);
+                filter(filterContext.getMsgList(), message -> consume(new RocketMQMessage(message)) == MessageAction.CONSUME);
             }
         });
         arguments[0] = result;

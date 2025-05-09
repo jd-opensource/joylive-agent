@@ -15,9 +15,13 @@
  */
 package com.jd.live.agent.core.instance;
 
+import com.jd.live.agent.core.Constants;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents the geographical and logical location information for an application or service.
@@ -65,6 +69,8 @@ public class Location {
 
     // The IP address of the host machine.
     private String ip;
+
+    private transient Map<String, String> tags;
 
     public Location() {
     }
@@ -126,6 +132,22 @@ public class Location {
 
     public boolean isLaneless() {
         return laneSpaceId == null || laneSpaceId.isEmpty();
+    }
+
+    public Map<String, String> getTags() {
+        if (tags == null) {
+            tags = new HashMap<>();
+            if (liveSpaceId != null && !liveSpaceId.isEmpty()) {
+                tags.put(Constants.LABEL_LOCATION_LIVE_SPACE_ID, liveSpaceId);
+                if (unit != null && !unit.isEmpty()) {
+                    tags.put(Constants.LABEL_LOCATION_UNIT, unit);
+                }
+                if (cell != null && !cell.isEmpty()) {
+                    tags.put(Constants.LABEL_LOCATION_CELL, cell);
+                }
+            }
+        }
+        return tags;
     }
 
 }

@@ -39,21 +39,14 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
         super(context);
     }
 
-    /**
-     * Enhanced logic before method execution. This method is called before the
-     * target method is executed.
-     *
-     * @param ctx The execution context of the method being intercepted.
-     * @see org.apache.kafka.clients.consumer.ConsumerConfig#ConsumerConfig(Properties)
-     * @see org.apache.kafka.clients.consumer.ConsumerConfig#ConsumerConfig(Map)
-     */
     @Override
+    @SuppressWarnings("unchecked")
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         if (arguments[0] instanceof Properties) {
             configure((Properties) arguments[0]);
         } else if (arguments[0] instanceof Map) {
-            configure((Map) arguments[0]);
+            configure((Map<String, Object>) arguments[0]);
         }
     }
 
@@ -66,7 +59,7 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
         }
     }
 
-    private void configure(Map map) {
+    private void configure(Map<String, Object> map) {
         String group = (String) map.get(GROUP_ID_CONFIG);
         String newGroup = getGroup(group, null);
         map.put(GROUP_ID_CONFIG, newGroup);

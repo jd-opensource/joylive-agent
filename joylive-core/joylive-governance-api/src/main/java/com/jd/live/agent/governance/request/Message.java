@@ -73,6 +73,27 @@ public interface Message {
      * @return the lane of the message.
      */
     String getLane();
+
+    /**
+     * Retrieves the live space ID of the producer location.
+     *
+     * @return the live space ID of the message.
+     */
+    String getLocationLiveSpaceId();
+
+    /**
+     * Retrieves the unit code of the producer location.
+     *
+     * @return the unit code of the message.
+     */
+    String getLocationUnit();
+
+    /**
+     * Retrieves the cell code of the producer location.
+     *
+     * @return the cell code of the message.
+     */
+    String getLocationCell();
 }
 
 

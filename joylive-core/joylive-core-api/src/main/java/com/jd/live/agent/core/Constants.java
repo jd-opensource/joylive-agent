@@ -27,6 +27,11 @@ public interface Constants {
     String LABEL_LIVE_PREFIX = "x-live-";
 
     /**
+     * Prefix for location-related constants.
+     */
+    String LABEL_LOCATION_PREFIX = "x-location-";
+
+    /**
      * Constant for the label application.
      */
     String LABEL_APPLICATION = LABEL_LIVE_PREFIX + "application";
@@ -67,6 +72,12 @@ public interface Constants {
      * Constant for the label live space ID.
      */
     String LABEL_LIVE_SPACE_ID = LABEL_LIVE_PREFIX + "space-id";
+
+    String LABEL_LOCATION_LIVE_SPACE_ID = LABEL_LOCATION_PREFIX + "live-space-id";
+
+    String LABEL_LOCATION_CELL = LABEL_LOCATION_PREFIX + "cell";
+
+    String LABEL_LOCATION_UNIT = LABEL_LOCATION_PREFIX + "unit";
 
     /**
      * Constant for the label zone.

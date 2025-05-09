@@ -25,10 +25,7 @@ import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.policy.live.Unit;
-import com.jd.live.agent.governance.policy.live.UnitRoute;
-import com.jd.live.agent.governance.policy.live.UnitRule;
+import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.Message;
 
@@ -69,8 +66,14 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         }
         GovernancePolicy policy = policySupplier.getPolicy();
         LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
-        Unit local = liveSpace == null ? null : liveSpace.getLocalUnit();
-        return local == null || local.getAccessMode().isWriteable();
+        Unit unit = liveSpace == null ? null : liveSpace.getLocalUnit();
+        Cell cell = liveSpace == null ? null : liveSpace.getLocalCell();
+        if (unit == null) {
+            return true;
+        } else if (!unit.getAccessMode().isReadable()) {
+            return false;
+        }
+        return cell == null || cell.getAccessMode().isReadable();
     }
 
     /**
@@ -126,13 +129,13 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @param message the {@link Message} to evaluate.
      * @return the {@link MessageAction} indicating whether to consume or discard the message.
      */
-    protected MessageAction allow(Message message) {
+    protected MessageAction consume(Message message) {
         String topic = message.getTopic();
         if (!isEnabled(topic)) {
             return MessageAction.CONSUME;
         }
-        MessageAction result = allowLive(message);
-        return result == MessageAction.CONSUME ? allowLane(message) : result;
+        MessageAction result = consumeLive(message);
+        return result == MessageAction.CONSUME ? consumeLane(message) : result;
     }
 
     /**
@@ -141,40 +144,61 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @param message the {@link Message} to evaluate.
      * @return the {@link MessageAction} indicating whether to consume or discard the message based on live space rules.
      */
-    protected MessageAction allowLive(Message message) {
-        String liveSpaceId = message.getLiveSpaceId();
+    protected MessageAction consumeLive(Message message) {
+        GovernancePolicy policy = policySupplier.getPolicy();
+        String targetLiveSpaceId = message.getLiveSpaceId();
+        targetLiveSpaceId = targetLiveSpaceId == null || targetLiveSpaceId.isEmpty() ? null : message.getLocationLiveSpaceId();
+        String targetUnitCode = message.getLocationUnit();
+        String targetCellCode = message.getLocationCell();
+        String localUnitCode = location.getUnit();
+        String localCellCode = location.getCell();
+        String localLiveSpaceId = location.getLiveSpaceId();
+        LiveSpace localLiveSpace = policy == null ? null : policy.getLocalLiveSpace();
         MqMode mode = governanceConfig.getMqConfig().getLiveMode(message.getTopic());
         if (mode != MqMode.SHARED) {
             return MessageAction.CONSUME;
         } else if (!context.isLiveEnabled()) {
             return MessageAction.CONSUME;
-        } else if (liveSpaceId == null || liveSpaceId.isEmpty()) {
+        } else if (targetLiveSpaceId == null || targetLiveSpaceId.isEmpty()) {
             return MessageAction.CONSUME;
-        } else if (!liveSpaceId.equals(location.getLiveSpaceId())) {
+        } else if (!targetLiveSpaceId.equals(localLiveSpaceId)) {
             return MessageAction.DISCARD;
+        } else if (localUnitCode == null || localUnitCode.isEmpty()) {
+            return MessageAction.DISCARD;
+        } else if (localLiveSpace == null) {
+            return MessageAction.CONSUME;
         } else {
-            GovernancePolicy policy = policySupplier.getPolicy();
-            LiveSpace liveSpace = policy == null ? null : policy.getLiveSpace(liveSpaceId);
-            Unit local = liveSpace == null ? null : liveSpace.getLocalUnit();
-            UnitRule rule = liveSpace == null ? null : liveSpace.getUnitRule(message.getRuleId());
-            if (liveSpace == null) {
-                return MessageAction.CONSUME;
-            } else if (local == null) {
-                return MessageAction.DISCARD;
-            } else if (rule == null) {
-                return MessageAction.CONSUME;
-            } else {
+            String targetFailoverUnitCode = null;
+            Unit localUnit = localLiveSpace.getLocalUnit();
+            Cell localCell = localLiveSpace.getLocalCell();
+            Unit targetUnit = localLiveSpace.getUnit(targetUnitCode);
+            Cell targetCell = targetUnit == null ? null : targetUnit.getCell(targetCellCode);
+            CellRoute cellRoute = null;
+            UnitRule rule = localLiveSpace.getUnitRule(message.getRuleId());
+            if (rule != null) {
                 UnitFunction func = context.getUnitFunction(rule.getVariableFunction());
                 UnitRoute targetRoute = rule.getUnitRoute(message.getVariable(), func);
-                Unit targetUnit = targetRoute == null ? null : targetRoute.getUnit();
-                if (targetUnit == null) {
-                    return MessageAction.CONSUME;
-                } else if (targetUnit == local) {
-                    return MessageAction.CONSUME;
-                } else {
-                    return local.getCode().equals(targetRoute.getFailoverUnit()) ? MessageAction.CONSUME : MessageAction.DISCARD;
+                cellRoute = targetRoute == null ? null : targetRoute.getCellRoute(targetCellCode);
+                targetUnit = targetRoute == null ? targetUnit : targetRoute.getUnit();
+                targetCell = cellRoute == null ? targetCell : cellRoute.getCell();
+                targetUnitCode = targetUnit == null ? targetUnitCode : targetUnit.getCode();
+                targetFailoverUnitCode = targetRoute == null ? null : targetRoute.getFailoverUnit();
+            }
+            if (!localUnitCode.equals(targetUnitCode) && !localUnitCode.equals(targetFailoverUnitCode)) {
+                return MessageAction.DISCARD;
+            } else if (!localUnit.getAccessMode().isReadable()) {
+                return MessageAction.REJECT;
+            } else if (localCellCode != null && !localCellCode.isEmpty() && !localCellCode.equals(targetCellCode)) {
+                if (targetCell != null && targetCell.getAccessMode().isReadable()) {
+                    return MessageAction.DISCARD;
+                } else if (cellRoute != null && cellRoute.getAccessMode().isReadable()) {
+                    return MessageAction.DISCARD;
                 }
             }
+            if (localCell != null && !localCell.getAccessMode().isReadable()) {
+                return MessageAction.REJECT;
+            }
+            return MessageAction.CONSUME;
         }
     }
 
@@ -184,7 +208,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @param message the {@link Message} to evaluate.
      * @return the {@link MessageAction} indicating whether to consume or discard the message based on lane rules.
      */
-    protected MessageAction allowLane(Message message) {
+    protected MessageAction consumeLane(Message message) {
         MqMode mode = governanceConfig.getMqConfig().getLaneMode(message.getTopic());
         if (mode != MqMode.SHARED) {
             return MessageAction.CONSUME;
