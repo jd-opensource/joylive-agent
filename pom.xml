@@ -46,7 +46,7 @@
     </scm>
 
     <properties>
-        <revision>1.7.0</revision>
+        <revision>1.7.1-SNAPSHOT</revision>
         <lombok.version>1.18.34</lombok.version>
         <mockito.version>5.10.0</mockito.version>
         <junit-jupiter.version>5.10.0</junit-jupiter.version>
