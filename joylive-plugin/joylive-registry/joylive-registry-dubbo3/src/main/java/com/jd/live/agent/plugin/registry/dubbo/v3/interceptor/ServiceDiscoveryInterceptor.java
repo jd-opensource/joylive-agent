@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
+package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
@@ -22,15 +22,16 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.registry.ServiceProtocol;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
  * RegistryInterceptor
  */
-public class RegistryInterceptor extends AbstractRegistryInterceptor {
+public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
 
-    public RegistryInterceptor(Application application, Registry registry) {
+    public ServiceDiscoveryInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
@@ -39,17 +40,25 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         org.apache.dubbo.registry.client.ServiceInstance instance = ctx.getArgument(0);
         Map<String, String> metadata = instance.getMetadata();
         application.labelRegistry(metadata::putIfAbsent);
+        List<ServiceProtocol> protocols = new ArrayList<>();
+        instance.getServiceMetadata().getServices().forEach((name, info) -> {
+            protocols.add(ServiceProtocol.builder()
+                    .group(info.getGroup())
+                    .path(info.getPath())
+                    .schema(info.getProtocol())
+                    .host(instance.getHost())
+                    .port(info.getPort())
+                    .metadata(info.getParams())
+                    .build());
+        });
         return ServiceInstance.builder()
-                .type("dubbo.v2_7")
+                .type("dubbo.v3")
                 .service(instance.getServiceName())
                 .host(instance.getHost())
                 .port(instance.getPort())
-                .protocols(Collections.singletonList(
-                        ServiceProtocol.builder()
-                                .host(instance.getHost())
-                                .port(instance.getPort())
-                                .metadata(metadata)
-                                .build()))
+                .metadata(metadata)
+                .protocols(protocols)
                 .build();
     }
 }
+

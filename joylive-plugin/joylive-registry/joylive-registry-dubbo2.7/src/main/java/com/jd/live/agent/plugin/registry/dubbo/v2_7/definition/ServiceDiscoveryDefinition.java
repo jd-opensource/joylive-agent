@@ -27,7 +27,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.RegistryInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ServiceDiscoveryInterceptor;
 
 import java.util.*;
 
@@ -37,8 +37,8 @@ import java.util.*;
 @Injectable
 @Extension(value = "RegistryDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnDubbo27GovernanceEnabled
-@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
-public class RegistryDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ServiceDiscoveryDefinition.TYPE_SERVICE_DISCOVERY)
+public class ServiceDiscoveryDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_SERVICE_DISCOVERY = "org.apache.dubbo.registry.client.AbstractServiceDiscovery";
 
@@ -54,7 +54,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
-    public RegistryDefinition() {
+    public ServiceDiscoveryDefinition() {
         Map<String, Set<String>> conditions = new HashMap<>();
         conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulServiceDiscovery", s -> new HashSet<>())
                 .add("com.ecwid.consul.v1.ConsulClient");
@@ -72,7 +72,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_REGISTER)
                                 .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
                                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new RegistryInterceptor(application, registry))
+                        () -> new ServiceDiscoveryInterceptor(application, registry))
         };
     }
 }
