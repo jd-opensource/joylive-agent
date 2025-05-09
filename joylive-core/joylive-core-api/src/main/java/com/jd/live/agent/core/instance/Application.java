@@ -269,7 +269,9 @@ public class Application {
         if (service != null) {
             accept(consumer, Constants.LABEL_WEIGHT, service.getWeight() == null ? null : service.getWeight().toString());
             accept(consumer, Constants.LABEL_WARMUP, service.getWarmupDuration() == null ? null : service.getWarmupDuration().toString());
-            accept(consumer, Constants.LABEL_SERVICE_GROUP, !group ? null : service.getGroup());
+            // The control plane requires service grouping
+            // accept(consumer, Constants.LABEL_SERVICE_GROUP, !group ? null : service.getGroup());
+            accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
             Map<String, String> serviceMeta = service.getMeta();
             if (serviceMeta != null) {
                 serviceMeta.forEach(consumer);
