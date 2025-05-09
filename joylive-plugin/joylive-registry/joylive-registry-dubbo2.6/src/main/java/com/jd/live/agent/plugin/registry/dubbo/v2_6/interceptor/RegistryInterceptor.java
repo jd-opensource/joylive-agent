@@ -21,9 +21,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
-import com.jd.live.agent.governance.registry.ServiceProtocol;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -47,13 +45,6 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 .host(url.getHost())
                 .port(url.getPort())
                 .metadata(metadata)
-                .protocols(Collections.singletonList(
-                        ServiceProtocol.builder()
-                                .schema(url.getProtocol())
-                                .host(url.getHost())
-                                .port(url.getPort())
-                                .metadata(metadata)
-                                .build()))
                 .build();
     }
 

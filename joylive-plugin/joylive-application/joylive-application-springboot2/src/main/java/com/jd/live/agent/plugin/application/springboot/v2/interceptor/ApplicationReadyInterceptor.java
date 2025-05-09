@@ -86,8 +86,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         address = address == null || address.isEmpty() ? Ipv4.getLocalIp() : address;
         PortInfo port = getPort(context);
         ServiceInstance instance = new ServiceInstance();
-        instance.setInstanceId(application.getInstance());
-        instance.setNamespace(appService.getNamespace());
+        instance.setId(application.getInstance());
         instance.setService(appService.getName());
         instance.setGroup(appService.getGroup());
         instance.setHost(address);

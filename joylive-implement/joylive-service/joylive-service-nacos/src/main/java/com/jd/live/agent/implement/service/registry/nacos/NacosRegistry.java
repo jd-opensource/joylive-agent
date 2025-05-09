@@ -138,7 +138,7 @@ public class NacosRegistry implements RegistryService {
 
     private Instance toInstance(ServiceInstance instance) {
         Instance result = new Instance();
-        result.setInstanceId(instance.getInstanceId());
+        result.setInstanceId(instance.getId());
         result.setIp(instance.getHost());
         result.setPort(instance.getPort());
         result.setServiceName(instance.getService());

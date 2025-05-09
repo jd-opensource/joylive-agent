@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.registry;
 import lombok.*;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,17 +30,17 @@ import java.util.Map;
 @NoArgsConstructor
 public class ServiceInstance implements Serializable {
 
-    private String type;
+    private String id;
 
-    private String namespace;
+    private String type;
 
     private String service;
 
     private String group;
 
-    private String instanceId;
-
     private String version;
+
+    private String scheme;
 
     private String host;
 
@@ -50,7 +49,5 @@ public class ServiceInstance implements Serializable {
     private int weight = 100;
 
     private Map<String, String> metadata;
-
-    private List<ServiceProtocol> protocols;
 
 }
