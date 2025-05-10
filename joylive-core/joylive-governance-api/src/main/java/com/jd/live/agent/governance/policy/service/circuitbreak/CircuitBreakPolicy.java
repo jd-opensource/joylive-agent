@@ -378,7 +378,7 @@ public class CircuitBreakPolicy extends PolicyId
      */
     public boolean isProtectMode(int instances) {
         if (level == null || !level.isProtectionSupported()) {
-            return true;
+            return false;
         }
         // the ratio is greater than zero.
         double ratio = getOutlierMaxPercent();
