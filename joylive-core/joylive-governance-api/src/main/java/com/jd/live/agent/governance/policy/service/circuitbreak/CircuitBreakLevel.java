@@ -35,5 +35,14 @@ public enum CircuitBreakLevel {
     /**
      * Circuit breaking at the instance level.
      */
-    INSTANCE;
+    INSTANCE {
+        @Override
+        public boolean isProtectionSupported() {
+            return true;
+        }
+    };
+
+    public boolean isProtectionSupported() {
+        return false;
+    }
 }
