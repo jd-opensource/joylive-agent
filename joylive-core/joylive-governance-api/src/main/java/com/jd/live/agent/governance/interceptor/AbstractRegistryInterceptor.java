@@ -42,14 +42,18 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         beforeRegister(mc);
         if (application.getStatus() == AppStatus.STARTING) {
-            ServiceInstance instance = getInstance(mc);
-            if (instance != null) {
-                registry.register(instance, () -> {
-                    mc.invokeOrigin();
-                    return null;
-                });
-                mc.setSkip(true);
-            }
+            doRegister(mc);
+        }
+    }
+
+    protected void doRegister(MethodContext mc) {
+        ServiceInstance instance = getInstance(mc);
+        if (instance != null) {
+            registry.register(instance, () -> {
+                mc.invokeOrigin();
+                return null;
+            });
+            mc.setSkip(true);
         }
     }
 
@@ -70,6 +74,8 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
      * @param ctx the {@link MethodContext} for which to retrieve the service instance
      * @return the {@link ServiceInstance} associated with the method context
      */
-    protected abstract ServiceInstance getInstance(MethodContext ctx);
+    protected ServiceInstance getInstance(MethodContext ctx) {
+        return null;
+    }
 
 }

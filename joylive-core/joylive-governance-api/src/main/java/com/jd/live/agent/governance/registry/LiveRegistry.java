@@ -184,6 +184,15 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     }
 
     @Override
+    public void register(List<ServiceInstance> instances, Callable<Void> doRegister) {
+        if (instances == null || instances.isEmpty()) {
+            return;
+        }
+        // TODO support multiple instances
+        register(instances.get(0), doRegister);
+    }
+
+    @Override
     public void register(ServiceInstance instance, Callable<Void> doRegister) {
         if (instance == null) {
             return;

@@ -50,6 +50,14 @@ public interface Registry extends ServiceRegistryFactory {
     /**
      * Registers a service instance with the registry.
      *
+     * @param instances  the service instances to be registered
+     * @param doRegister a doRegister function that will be called if the registration is successful
+     */
+    void register(List<ServiceInstance> instances, Callable<Void> doRegister);
+
+    /**
+     * Registers a service instance with the registry.
+     *
      * @param instance   the service instance to be registered
      * @param doRegister a doRegister function that will be called if the registration is successful
      */
