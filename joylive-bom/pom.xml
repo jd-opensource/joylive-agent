@@ -48,7 +48,7 @@
     </scm>
 
     <properties>
-        <revision>1.7.0</revision>
+        <revision>1.7.1-SNAPSHOT</revision>
     </properties>
 
     <dependencyManagement>
