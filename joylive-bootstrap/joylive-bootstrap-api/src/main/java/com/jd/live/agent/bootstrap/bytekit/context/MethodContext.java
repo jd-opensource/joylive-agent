@@ -112,7 +112,7 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin() throws Exception {
-        return invokeOrigin(target);
+        return invokeOrigin(target, method, arguments);
     }
 
     /**
@@ -123,6 +123,24 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin(final Object target) throws Exception {
+        return invokeOrigin(target, method, arguments);
+    }
+
+    @Override
+    public String toString() {
+        return description;
+    }
+
+    /**
+     * Invokes the original method on target object .
+     *
+     * @param target    Target object to invoke method on
+     * @param method    Method to invoke (will be made accessible if needed)
+     * @param arguments Method arguments
+     * @return Method return value
+     * @throws Exception Original exception if thrown by target method
+     */
+    public static Object invokeOrigin(final Object target, Method method, Object[] arguments) throws Exception {
         try {
             OriginStack.push(target, method);
             // method is always a copy object by java.lang.Class.getMethods
@@ -137,11 +155,6 @@ public class MethodContext extends ExecutableContext {
         } finally {
             OriginStack.tryPop(target, method);
         }
-    }
-
-    @Override
-    public String toString() {
-        return description;
     }
 
 }

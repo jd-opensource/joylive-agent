@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mariadb.v2.request.MariadbRequest;
-import org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol;
 import org.mariadb.jdbc.internal.protocol.Protocol;
 
 /**
@@ -32,18 +31,12 @@ public class ExecutePrepareInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     * @see AbstractQueryProtocol#prepare(String, boolean)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
         Protocol protocol = (Protocol) ctx.getTarget();
-        String sql = (String) ctx.getArguments()[0];
-        protect((MethodContext) ctx, new MariadbRequest(protocol, sql));
+        String sql = ctx.getArgument(0);
+        protect(mc, new MariadbRequest(protocol, sql));
     }
 
 }

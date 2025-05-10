@@ -15,11 +15,17 @@
  */
 package com.jd.live.agent.governance.subscription.policy.listener;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.policy.live.LiveSpec;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseGroup;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +37,24 @@ import static com.jd.live.agent.core.util.CollectionUtils.filter;
  */
 public class LiveSpaceListener extends AbstractListener<LiveSpace> {
 
-    public LiveSpaceListener(PolicySupervisor supervisor, ObjectParser parser) {
+    private static final Logger logger = LoggerFactory.getLogger(LiveSpaceListener.class);
+
+    private final Publisher<DatabaseEvent> publisher;
+
+    public LiveSpaceListener(PolicySupervisor supervisor, ObjectParser parser, Publisher<DatabaseEvent> publisher) {
         super(LiveSpace.class, supervisor, parser);
+        this.publisher = publisher;
+    }
+
+    @Override
+    protected void onSuccess(GovernancePolicy oldPolicy, GovernancePolicy newPolicy) {
+        LiveSpace oldSpace = oldPolicy == null ? null : oldPolicy.getLocalLiveSpace();
+        LiveSpace newSpace = newPolicy == null ? null : newPolicy.getLocalLiveSpace();
+        List<LiveDatabaseGroup> oldGroups = oldSpace == null ? null : oldSpace.getSpec().getDatabaseGroups();
+        List<LiveDatabaseGroup> newGroups = newSpace == null ? null : newSpace.getSpec().getDatabaseGroups();
+        if (LiveSpec.isChanged(oldGroups, newGroups)) {
+            publisher.offer(new DatabaseEvent());
+        }
     }
 
     @Override

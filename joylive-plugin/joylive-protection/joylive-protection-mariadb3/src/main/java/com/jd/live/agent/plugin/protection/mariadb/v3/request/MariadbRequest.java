@@ -15,15 +15,16 @@
  */
 package com.jd.live.agent.plugin.protection.mariadb.v3.request;
 
-import com.jd.live.agent.bootstrap.util.AbstractAttributes;
+import com.jd.live.agent.governance.request.AbstractDbRequest;
 import com.jd.live.agent.governance.request.DbRequest.SQLRequest;
 import org.mariadb.jdbc.client.Context;
 import org.mariadb.jdbc.client.impl.StandardClient;
 import org.mariadb.jdbc.message.ClientMessage;
 
-public class MariadbRequest extends AbstractAttributes implements SQLRequest {
+public class MariadbRequest extends AbstractDbRequest implements SQLRequest {
 
     private final StandardClient client;
+
     private final ClientMessage request;
 
     public MariadbRequest(StandardClient client, ClientMessage request) {
@@ -57,4 +58,5 @@ public class MariadbRequest extends AbstractAttributes implements SQLRequest {
     public String getSql() {
         return request.description();
     }
+
 }

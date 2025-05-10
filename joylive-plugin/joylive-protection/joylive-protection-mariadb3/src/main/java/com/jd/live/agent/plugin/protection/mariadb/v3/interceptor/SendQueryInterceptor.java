@@ -19,8 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.plugin.protection.mariadb.v3.request.LiveClientMessage;
 import com.jd.live.agent.plugin.protection.mariadb.v3.request.MariadbRequest;
-import org.mariadb.jdbc.client.impl.ReplayClient;
 import org.mariadb.jdbc.client.impl.StandardClient;
 import org.mariadb.jdbc.message.ClientMessage;
 
@@ -33,17 +33,14 @@ public class SendQueryInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     * @see ReplayClient#sendQuery(ClientMessage)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        protect((MethodContext) ctx,
-                new MariadbRequest((StandardClient) ctx.getTarget(), (ClientMessage) ctx.getArguments()[0]));
+        MethodContext mc = (MethodContext) ctx;
+        StandardClient client = (StandardClient) ctx.getTarget();
+        ClientMessage message = ctx.getArgument(0);
+        if (!(message instanceof LiveClientMessage)) {
+            protect(mc, new MariadbRequest(client, message));
+        }
     }
 
 }

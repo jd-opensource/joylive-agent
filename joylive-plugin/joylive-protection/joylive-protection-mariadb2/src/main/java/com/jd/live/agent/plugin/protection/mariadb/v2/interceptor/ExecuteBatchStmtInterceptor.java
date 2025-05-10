@@ -20,14 +20,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mariadb.v2.request.MariadbRequest;
-import org.mariadb.jdbc.internal.com.read.dao.Results;
-import org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol;
 import org.mariadb.jdbc.internal.protocol.Protocol;
 
 import java.util.List;
 
 /**
- * ExecuteQueryInterceptor
+ * ExecuteBatchStmtInterceptor
  */
 public class ExecuteBatchStmtInterceptor extends AbstractDbInterceptor {
 
@@ -35,20 +33,13 @@ public class ExecuteBatchStmtInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     * @see AbstractQueryProtocol#executeBatchStmt(boolean, Results, List)
-     */
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
         Protocol protocol = (Protocol) ctx.getTarget();
-        List<String> sqls = (List<String>) ctx.getArguments()[2];
-        for (String sql : sqls) {
-            protect((MethodContext) ctx, new MariadbRequest(protocol, sql));
+        List<String> queries = ctx.getArgument(2);
+        for (String query : queries) {
+            protect(mc, new MariadbRequest(protocol, query));
         }
     }
 
