@@ -110,7 +110,7 @@ public enum FaultType {
 
         @Override
         public RejectException failover(String reason) {
-            return new RejectEscapeException();
+            return new RejectEscapeException(reason);
         }
     };
 
