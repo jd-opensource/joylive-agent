@@ -91,7 +91,7 @@ public class PolicyPreparation extends AppListenerAdapter {
      * Logs the application's current location.
      */
     private void printLocation() {
-        logger.info(application.getLocation().toString());
+        logger.info("Location: {}", application.getLocation().toString(null, null));
     }
 
     /**

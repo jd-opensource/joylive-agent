@@ -130,41 +130,50 @@ public class Location {
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder("Location{");
+        return toString("Location{", "}");
+    }
+
+    public String toString(String prefix, String suffix) {
+        final StringBuilder builder = new StringBuilder(128);
+        if (prefix != null && !prefix.isEmpty()) {
+            builder.append(prefix);
+        }
         if (liveSpaceId != null && !liveSpaceId.isEmpty()) {
-            builder.append("liveSpaceId='").append(liveSpaceId).append("',");
+            builder.append("liveSpaceId=").append(liveSpaceId).append(',');
         }
         if (unit == null || unit.isEmpty()) {
-            builder.append("unit='").append(unit).append("',");
+            builder.append("unit=").append(unit).append(',');
         }
         if (cell != null && !cell.isEmpty()) {
-            builder.append("cell='").append(cell).append("',");
+            builder.append("cell=").append(cell).append(',');
         }
         if (unitRuleId != null && !unitRuleId.isEmpty()) {
-            builder.append("unitRuleId='").append(unitRuleId).append("',");
+            builder.append("unitRuleId=").append(unitRuleId).append(',');
         }
         if (laneSpaceId != null && !laneSpaceId.isEmpty()) {
-            builder.append("laneSpaceId='").append(laneSpaceId).append("',");
+            builder.append("laneSpaceId=").append(laneSpaceId).append(',');
         }
         if (lane != null && !lane.isEmpty()) {
-            builder.append("lane='").append(lane).append("',");
+            builder.append("lane=").append(lane).append(',');
         }
         if (cloud != null && !cloud.isEmpty()) {
-            builder.append("cloud='").append(cloud).append("',");
+            builder.append("cloud=").append(cloud).append(',');
         }
         if (region != null && !region.isEmpty()) {
-            builder.append("region='").append(region).append("',");
+            builder.append("region=").append(region).append(',');
         }
         if (zone != null && !zone.isEmpty()) {
-            builder.append("zone='").append(zone).append("',");
+            builder.append("zone=").append(zone).append(',');
         }
         if (cluster != null && !cluster.isEmpty()) {
-            builder.append("cluster='").append(cluster).append("',");
+            builder.append("cluster=").append(cluster).append(',');
         }
         if (builder.charAt(builder.length() - 1) == ',') {
             builder.deleteCharAt(builder.length() - 1);
         }
-        builder.append('}');
+        if (suffix != null && !suffix.isEmpty()) {
+            builder.append(suffix);
+        }
         return builder.toString();
     }
 }
