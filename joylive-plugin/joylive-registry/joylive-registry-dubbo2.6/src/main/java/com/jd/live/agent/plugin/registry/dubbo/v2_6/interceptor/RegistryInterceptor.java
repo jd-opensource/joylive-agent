@@ -42,8 +42,10 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 .type("dubbo.v2_6")
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
+                .scheme(url.getProtocol())
                 .host(url.getHost())
                 .port(url.getPort())
+                .weight(url.getParameter("weight", 100))
                 .metadata(metadata)
                 .build();
     }

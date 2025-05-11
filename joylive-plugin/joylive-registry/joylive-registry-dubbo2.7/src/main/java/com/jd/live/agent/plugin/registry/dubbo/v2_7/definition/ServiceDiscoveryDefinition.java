@@ -21,6 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -54,6 +55,9 @@ public class ServiceDiscoveryDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
+    @Inject(ObjectParser.JSON)
+    private ObjectParser jsonParser;
+
     public ServiceDiscoveryDefinition() {
         Map<String, Set<String>> conditions = new HashMap<>();
         conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulServiceDiscovery", s -> new HashSet<>())
@@ -72,7 +76,7 @@ public class ServiceDiscoveryDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_REGISTER)
                                 .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
                                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new ServiceDiscoveryInterceptor(application, registry))
+                        () -> new ServiceDiscoveryInterceptor(application, registry, jsonParser))
         };
     }
 }

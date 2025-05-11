@@ -67,7 +67,7 @@ public class DubboZookeeperRegistry implements RegistryService {
         this.address = join(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse),
                 uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
-        this.root = config.getProperty("root", "dubbo");
+        this.root = url("/", config.getProperty("root", "dubbo"));
     }
 
     @Override
@@ -160,7 +160,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     }
 
     private String getNode(ServiceInstance instance) {
-        URI uri = URI.builder().host(instance.getHost()).port(instance.getPort()).parameters(instance.getMetadata()).build();
+        URI uri = URI.builder().schema(instance.getScheme()).host(instance.getHost()).port(instance.getPort()).parameters(instance.getMetadata()).build();
         try {
             return URLEncoder.encode(uri.toString(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -192,7 +192,7 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private String getPath(String service, String group, ServiceInstance instance) {
         String node = getNode(instance);
-        return node == null ? null : url(root, getPath(service, group), node);
+        return node == null ? null : url(getPath(service, group), "providers", node);
     }
 
     private boolean match(String group1, String group2) {

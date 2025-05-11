@@ -44,8 +44,11 @@ public class FailbackRegistryInterceptor extends AbstractRegistryInterceptor {
         return ServiceInstance.builder()
                 .type("dubbo.v2_7")
                 .service(url.getServiceInterface())
+                .group(url.getParameter("group"))
+                .scheme(url.getProtocol())
                 .host(url.getHost())
                 .port(url.getPort())
+                .weight(url.getParameter("weight", 100))
                 .metadata(metadata)
                 .build();
     }
