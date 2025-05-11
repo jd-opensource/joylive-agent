@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
@@ -61,7 +62,11 @@ public interface Registry extends ServiceRegistryFactory {
      * @param instance   the service instance to be registered
      * @param doRegister a doRegister function that will be called if the registration is successful
      */
-    void register(ServiceInstance instance, Callable<Void> doRegister);
+    default void register(ServiceInstance instance, Callable<Void> doRegister) {
+        if (instance != null) {
+            register(Collections.singletonList(instance), doRegister);
+        }
+    }
 
     /**
      * Unregisters a service instance from the registry.
