@@ -34,6 +34,7 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -160,7 +161,13 @@ public class DubboZookeeperRegistry implements RegistryService {
     }
 
     private String getNode(ServiceInstance instance) {
-        URI uri = URI.builder().schema(instance.getScheme()).host(instance.getHost()).port(instance.getPort()).parameters(instance.getMetadata()).build();
+        URI uri = URI.builder()
+                .schema(instance.getScheme())
+                .host(instance.getHost())
+                .port(instance.getPort())
+                .path(instance.getService())
+                .parameters(new TreeMap<>(instance.getMetadata()))
+                .build();
         try {
             return URLEncoder.encode(uri.toString(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
