@@ -368,7 +368,8 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         if (service == null || service.isEmpty()) {
             return null;
         }
-        service = aliases.get(service);
+        String alias = aliases.get(service);
+        service = alias == null || alias.isEmpty() ? service : alias;
         if (group == null || group.isEmpty()) {
             group = role == ServiceRole.CONSUMER ? serviceConfig.getGroup(service) : application.getService().getGroup();
         }
