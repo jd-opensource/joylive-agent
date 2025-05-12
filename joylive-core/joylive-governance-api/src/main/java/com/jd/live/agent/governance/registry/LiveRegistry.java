@@ -96,9 +96,6 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        if (!registryConfig.isEnabled()) {
-            return CompletableFuture.completedFuture(null);
-        }
         // start registries
         List<RegistryClusterConfig> clusters = registryConfig.getClusters();
         List<RegistryService> registries = new ArrayList<>();

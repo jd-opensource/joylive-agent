@@ -46,6 +46,10 @@ public class RouteInterceptor extends InterceptorAdaptor {
         URI uri = definition.getUri();
         if (SCHEMA_LB.equals(uri.getScheme())) {
             String service = uri.getHost();
+            if (service == null) {
+                // lb://dubbo2.7-consumer
+                service = uri.getAuthority();
+            }
             String group = (String) definition.getMetadata().get(Constants.LABEL_SERVICE_GROUP);
             if (!registry.isSubscribed(service, group)) {
                 registry.subscribe(service, group);
