@@ -19,6 +19,7 @@ import com.alibaba.dubbo.config.AbstractInterfaceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
 
 import java.util.Map;
@@ -44,12 +45,14 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     public void onSuccess(ExecutableContext ctx) {
         Map<String, String> map = getContext(ctx);
         T config = (T) ctx.getTarget();
-        String interfaceName = getInterfaceName(config);
-        if (!isDubboSystemService(interfaceName)) {
+        RegisterType info = getRegisterType(config);
+        if (!isDubboSystemService(info.getInterfaceName())) {
             application.labelRegistry(map::putIfAbsent);
-            subscribe(interfaceName, getGroup(config));
+            subscribe(info.getInterfaceName(), info.getGroup());
         }
     }
+
+    protected abstract RegisterType getRegisterType(T config);
 
     /**
      * Retrieves the context associated with the given {@link ExecutableContext}.
@@ -58,22 +61,6 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
      * @return A map containing key-value pairs representing the context.
      */
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
-
-    /**
-     * Retrieves the service name from the provided configuration object.
-     *
-     * @param config The configuration object from which to extract the service name.
-     * @return The name of the service.
-     */
-    protected abstract String getInterfaceName(T config);
-
-    /**
-     * Retrieves the group name from the provided configuration object.
-     *
-     * @param config The configuration object from which to extract the group name.
-     * @return The name of the group.
-     */
-    protected abstract String getGroup(T config);
 
     /**
      * Subscribes to a specific service in the specified group.

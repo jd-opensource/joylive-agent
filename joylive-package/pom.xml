@@ -99,6 +99,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-service-zookeeper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-registry-eureka</artifactId>
         </dependency>
         <dependency>

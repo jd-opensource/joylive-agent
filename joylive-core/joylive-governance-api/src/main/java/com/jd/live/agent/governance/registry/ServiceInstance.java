@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.governance.registry;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,22 +26,13 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ServiceInstance implements Serializable {
+public class ServiceInstance extends ServiceId {
 
     private String type;
 
-    private String namespace;
-
-    private String service;
-
-    private String group;
-
-    private String instanceId;
-
     private String version;
+
+    private String scheme;
 
     private String host;
 
@@ -51,6 +42,28 @@ public class ServiceInstance implements Serializable {
 
     private Map<String, String> metadata;
 
-    private List<ServiceProtocol> protocols;
+    public ServiceInstance() {
+    }
 
+    @Builder
+    public ServiceInstance(String id,
+                           String namespace,
+                           String service,
+                           String group,
+                           String type,
+                           String version,
+                           String scheme,
+                           String host,
+                           int port,
+                           int weight,
+                           Map<String, String> metadata) {
+        super(id, namespace, service, group);
+        this.type = type;
+        this.version = version;
+        this.scheme = scheme;
+        this.host = host;
+        this.port = port;
+        this.weight = weight;
+        this.metadata = metadata;
+    }
 }

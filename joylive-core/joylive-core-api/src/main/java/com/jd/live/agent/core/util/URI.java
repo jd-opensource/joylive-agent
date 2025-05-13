@@ -19,6 +19,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.CRC32;
@@ -263,6 +264,10 @@ public class URI {
 
     public boolean hasParameter(String key) {
         return parameters != null && key != null && parameters.containsKey(key);
+    }
+
+    public Map<String, String> getParameters() {
+        return parameters == null ? null : Collections.unmodifiableMap(parameters);
     }
 
     /**

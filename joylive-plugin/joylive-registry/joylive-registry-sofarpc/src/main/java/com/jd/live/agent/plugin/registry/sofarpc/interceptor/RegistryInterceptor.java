@@ -24,7 +24,6 @@ import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
-import com.jd.live.agent.governance.registry.ServiceProtocol;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,30 +38,53 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     }
 
     @Override
-    protected ServiceInstance getInstance(MethodContext ctx) {
+    protected void doRegister(MethodContext mc) {
+        List<ServiceInstance> instances = getInstances(mc);
+        if (instances != null) {
+            registry.register(instances, () -> {
+                mc.invokeOrigin();
+                return null;
+            });
+            mc.setSkip(true);
+        }
+    }
+
+    /**
+     * Converts provider configuration into service instances.
+     *
+     * @param ctx the method context containing provider configuration
+     * @return list of service instances, or null if registration should be skipped
+     */
+    private List<ServiceInstance> getInstances(MethodContext ctx) {
+        List<ServiceInstance> instances = null;
         ProviderConfig<?> config  = ctx.getArgument(0);
-        if (config.isRegister()) {
-            List<ServiceProtocol> protocols = new ArrayList<>();
-            List<ServerConfig> serverConfigs = config.getServer();
+        List<ServerConfig> serverConfigs = config.getServer();
+        if (config.isRegister() && serverConfigs != null && !serverConfigs.isEmpty()) {
+            instances = new ArrayList<>(serverConfigs.size());
             for (ServerConfig serverConfig : serverConfigs) {
-                protocols.add(ServiceProtocol.builder()
-                        .schema(serverConfig.getProtocol())
-                        .host(RegistryUtils.getServerHost(serverConfig))
-                        .port(getPort(serverConfig))
-                        .metadata(RegistryUtils.convertProviderToMap(config, serverConfig))
-                        .build());
+                instances.add(
+                        ServiceInstance.builder()
+                                .type("sofa-rpc")
+                                .service(config.getInterfaceId())
+                                .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
+                                .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())
+                                .scheme(serverConfig.getProtocol())
+                                .host(RegistryUtils.getServerHost(serverConfig))
+                                .port(getPort(serverConfig))
+                                .metadata(RegistryUtils.convertProviderToMap(config, serverConfig))
+                                .build());
             }
-            return ServiceInstance.builder()
-                    .type("sofa-rpc")
-                    .service(config.getInterfaceId())
-                    .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
-                    .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())
-                    .protocols(protocols)
-                    .build();
         }
         return null;
     }
 
+    /**
+     * Gets the effective port number from server configuration.
+     * Prefers virtual port if specified, falls back to regular port otherwise.
+     *
+     * @param serverConfig the server configuration
+     * @return the effective port number
+     */
     private int getPort(ServerConfig serverConfig) {
         Integer port = serverConfig.getVirtualPort();
         if (port == null) {

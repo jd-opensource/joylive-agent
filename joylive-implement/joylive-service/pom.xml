@@ -19,6 +19,7 @@
         <module>joylive-service-microservice</module>
         <module>joylive-service-nacos</module>
         <module>joylive-service-apollo</module>
+        <module>joylive-service-zookeeper</module>
     </modules>
 
 </project>

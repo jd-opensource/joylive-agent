@@ -20,9 +20,9 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
+import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.ReferenceConfig;
 
 import java.util.Map;
@@ -39,6 +39,14 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
+    protected RegisterType getRegisterType(ReferenceConfig<?> config) {
+        String service = config.getProvidedBy();
+        return service == null || service.isEmpty()
+                ? new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup())
+                : new RegisterType(RegisterMode.INSTANCE, service, config.getInterface(), config.getGroup());
+    }
+
+    @Override
     protected void subscribe(String service, String group) {
         registry.subscribe(service, group);
         logger.info("Found dubbo consumer, service: {}, group: {}", service, group);
@@ -47,13 +55,5 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
         return ((MethodContext) ctx).getResult();
-    }
-
-    @Override
-    protected RegisterType getRegistryType(String interfaceName, ReferenceConfig<?> config) {
-        String service = config.getProvidedBy();
-        return service == null || service.isEmpty()
-                ? new RegisterType(RegisterMode.INTERFACE, interfaceName, interfaceName)
-                : new RegisterType(RegisterMode.INSTANCE, service, interfaceName);
     }
 }

@@ -15,19 +15,9 @@
  */
 package com.jd.live.agent.governance.registry;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public enum ServiceRole {
 
-@Getter
-@AllArgsConstructor
-public class RegisterType {
+    PROVIDER,
 
-    private final RegisterMode mode;
-
-    private final String service;
-
-    private final String interfaceName;
-
-    private final String group;
-
+    CONSUMER,
 }
