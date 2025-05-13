@@ -36,7 +36,7 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     /**
      * A thread-safe collection of live class loaders, indexed by their name.
      */
-    private final Map<String, LiveClassLoader> loaders = new ConcurrentHashMap<>(100);
+    private final Map<String, ClassLoader> loaders = new ConcurrentHashMap<>(100);
 
     /**
      * The factory used to create new class loaders.
@@ -64,12 +64,20 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public ClassLoader create(String name) {
-        return name == null || name.isEmpty() ? null : builder.create(name);
+        ClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name);
+        if (loader != null) {
+            loaders.put(name, loader);
+        }
+        return loader;
     }
 
     @Override
     public ClassLoader create(String name, URL[] urls) {
-        return name == null || name.isEmpty() ? null : builder.create(name, urls);
+        ClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name, urls);
+        if (loader != null) {
+            loaders.put(name, loader);
+        }
+        return loader;
     }
 
     @Override
@@ -85,6 +93,7 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     @Override
     public Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException {
         if (name != null && !name.isEmpty()) {
+            // TODO fast locate classloader by package
             for (ClassLoader classLoader : loaders.values()) {
                 try {
                     Class<?> clazz = classLoader.loadClass(name);
@@ -172,7 +181,12 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public void close() {
-        loaders.values().forEach(o -> Close.instance().close(o));
+        Close close = Close.instance();
+        loaders.values().forEach(o -> {
+            if (o instanceof AutoCloseable) {
+                close.close((AutoCloseable) o);
+            }
+        });
         loaders.clear();
     }
 }

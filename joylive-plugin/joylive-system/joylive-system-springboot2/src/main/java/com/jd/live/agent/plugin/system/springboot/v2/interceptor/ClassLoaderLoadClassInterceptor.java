@@ -35,12 +35,6 @@ public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
         this.classLoaderConfig = classLoaderConfig;
     }
 
-    /**
-     * Enhancement logic when method failed execute
-     *
-     * @param ctx ExecutableContext
-     * @see <code>org.springframework.boot.loader.LaunchedURLClassLoader#loadClass</code>
-     */
     @Override
     public void onError(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
