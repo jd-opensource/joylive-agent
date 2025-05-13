@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.parser.jdk;
 
 import com.jd.live.agent.core.exception.ParseException;
+import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.parser.XmlPathParser;
 import org.w3c.dom.Document;
 
@@ -27,6 +28,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 
+@Extension("jdk")
 public class JdkXmlPathParser implements XmlPathParser {
 
     @Override

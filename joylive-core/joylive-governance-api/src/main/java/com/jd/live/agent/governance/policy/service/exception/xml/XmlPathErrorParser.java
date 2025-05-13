@@ -18,7 +18,7 @@ package com.jd.live.agent.governance.policy.service.exception.xml;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.JsonPathParser;
+import com.jd.live.agent.core.parser.XmlPathParser;
 import com.jd.live.agent.governance.policy.service.exception.AbstractErrorParser;
 
 import java.io.InputStream;
@@ -28,7 +28,7 @@ import java.io.InputStream;
 public class XmlPathErrorParser extends AbstractErrorParser {
 
     @Inject
-    private JsonPathParser parser;
+    private XmlPathParser parser;
 
     @Override
     protected String parse(String expression, String response) {
