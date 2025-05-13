@@ -16,6 +16,9 @@
 package com.jd.live.agent.implement.service.registry.zookeeper;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.RegistryFactory;
 import com.jd.live.agent.governance.registry.RegistryService;
@@ -24,8 +27,12 @@ import com.jd.live.agent.governance.registry.RegistryService;
  * A factory implementation for creating instances of {@link DubboZookeeperRegistry}.
  * This class is annotated with {@link Extension} to indicate it provides the "dubbo-zookeeper" extension.
  */
+@Injectable
 @Extension("dubbo-zookeeper")
 public class DubboZookeeperRegistryFactory implements RegistryFactory {
+
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
 
     /**
      * Creates a new instance of {@link DubboZookeeperRegistry} using the provided {@link RegistryClusterConfig}.
@@ -35,6 +42,6 @@ public class DubboZookeeperRegistryFactory implements RegistryFactory {
      */
     @Override
     public RegistryService create(RegistryClusterConfig config) {
-        return new DubboZookeeperRegistry(config);
+        return new DubboZookeeperRegistry(config, timer);
     }
 }
