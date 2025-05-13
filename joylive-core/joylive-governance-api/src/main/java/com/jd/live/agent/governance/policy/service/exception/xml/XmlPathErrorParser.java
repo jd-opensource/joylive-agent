@@ -30,6 +30,13 @@ public class XmlPathErrorParser extends AbstractErrorParser {
     @Inject
     private XmlPathParser parser;
 
+    public XmlPathErrorParser() {
+    }
+
+    public XmlPathErrorParser(XmlPathParser parser) {
+        this.parser = parser;
+    }
+
     @Override
     protected String parse(String expression, String response) {
         return parser.read(response, expression);

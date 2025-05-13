@@ -26,6 +26,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 @Extension("jdk")
@@ -33,11 +34,17 @@ public class JdkXmlPathParser implements XmlPathParser {
 
     @Override
     public String read(String reader, String path) {
-        return null;
+        if (reader == null || reader.isEmpty()) {
+            return null;
+        }
+        return read(new ByteArrayInputStream(reader.getBytes()), path);
     }
 
     @Override
     public String read(InputStream in, String path) {
+        if (in == null || path == null || path.isEmpty()) {
+            return null;
+        }
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
