@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.service.exception.json;
+package com.jd.live.agent.governance.policy.service.exception.xml;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -24,8 +24,8 @@ import com.jd.live.agent.governance.policy.service.exception.AbstractErrorParser
 import java.io.InputStream;
 
 @Injectable
-@Extension("JsonPath")
-public class JsonPathErrorParser extends AbstractErrorParser {
+@Extension("XmlPath")
+public class XmlPathErrorParser extends AbstractErrorParser {
 
     @Inject
     private JsonPathParser parser;
