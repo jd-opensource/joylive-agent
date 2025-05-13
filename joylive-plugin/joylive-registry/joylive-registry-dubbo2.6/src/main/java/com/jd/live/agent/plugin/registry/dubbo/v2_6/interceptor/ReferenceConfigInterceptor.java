@@ -20,6 +20,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
 
 import java.util.Map;
@@ -35,20 +37,15 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
         super(application, registry);
     }
 
+    @Override
+    protected RegisterType getRegisterType(ReferenceConfig<?> config) {
+        return new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup());
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
         return (Map<String, String>) ctx.getArguments()[0];
-    }
-
-    @Override
-    protected String getInterfaceName(ReferenceConfig<?> config) {
-        return config.getInterface();
-    }
-
-    @Override
-    protected String getGroup(ReferenceConfig<?> config) {
-        return config.getGroup();
     }
 
     @Override

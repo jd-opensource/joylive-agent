@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.service.registry.zookeeper;
 
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.*;
@@ -25,6 +26,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
+import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 
@@ -49,6 +51,10 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  */
 public class DubboZookeeperRegistry implements RegistryService {
 
+    private static final String PROVIDERS = "providers";
+    private static final String CONSUMERS = "consumers";
+    private static final String SIDE = "side";
+    private static final String PROVIDER = "provider";
     private final RegistryClusterConfig config;
 
     private final String name;
@@ -125,26 +131,30 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     @Override
     public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
-        String path = getPath(service, group);
+        String path = getPath(service, group, PROVIDERS, null);
         caches.computeIfAbsent(path, p -> {
             CuratorCache cache = CuratorCache.build(client, p);
-            cache.listenable().addListener((type, oldData, newData) -> {
-                DubboZookeeperEndpoint endpoint = getInstance(service, newData != null ? newData : oldData);
-                if (endpoint != null && match(group, endpoint.getGroup())) {
-                    switch (type) {
-                        case NODE_CREATED:
-                            consumer.accept(new RegistryDeltaEvent(service, endpoint.getGroup(), singletonList(endpoint), EventType.ADD));
-                            break;
-                        case NODE_DELETED:
-                            consumer.accept(new RegistryDeltaEvent(service, endpoint.getGroup(), singletonList(endpoint), EventType.REMOVE));
-                            break;
-                        case NODE_CHANGED:
-                        default:
-                            consumer.accept(new RegistryDeltaEvent(service, endpoint.getGroup(), singletonList(endpoint), EventType.UPDATE));
-                            break;
+            CuratorCacheListener listener = CuratorCacheListener.builder().forPathChildrenCache(path, client, (client, event) -> {
+                EventType eventType = null;
+                switch (event.getType()) {
+                    case CHILD_ADDED:
+                        eventType = EventType.ADD;
+                        break;
+                    case CHILD_REMOVED:
+                        eventType = EventType.REMOVE;
+                        break;
+                    case CHILD_UPDATED:
+                        eventType = EventType.UPDATE;
+                        break;
+                }
+                if (eventType != null) {
+                    DubboZookeeperEndpoint endpoint = getInstance(service, event.getData());
+                    if (endpoint != null && match(group, endpoint.getGroup())) {
+                        consumer.accept(new RegistryDeltaEvent(service, group, singletonList(endpoint), eventType));
                     }
                 }
-            });
+            }).build();
+            cache.listenable().addListener(listener);
             cache.start();
             return cache;
         });
@@ -152,21 +162,29 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     @Override
     public void unsubscribe(String service, String group) throws Exception {
-        String path = getPath(service, group);
+        String path = getPath(service, group, PROVIDERS, null);
         Optional.ofNullable(caches.remove(path)).ifPresent(CuratorCache::close);
     }
 
+    /**
+     * Builds service path in format: {root}/{service}
+     */
     private String getPath(String service, String group) {
         return url(root, service);
     }
 
+    /**
+     * Encodes service instance into URL format for Zookeeper node.
+     *
+     * @return URL-encoded string or null if encoding fails
+     */
     private String getNode(ServiceInstance instance) {
         URI uri = URI.builder()
                 .schema(instance.getScheme())
                 .host(instance.getHost())
                 .port(instance.getPort())
                 .path(instance.getService())
-                .parameters(new TreeMap<>(instance.getMetadata()))
+                .parameters(instance.getMetadata() == null ? null : new TreeMap<>(instance.getMetadata()))
                 .build();
         try {
             return URLEncoder.encode(uri.toString(), "UTF-8");
@@ -175,6 +193,12 @@ public class DubboZookeeperRegistry implements RegistryService {
         }
     }
 
+    /**
+     * Converts Zookeeper node data into service endpoint.
+     * @param service service name context
+     * @param data Zookeeper node data
+     * @return endpoint instance or null if conversion fails
+     */
     private DubboZookeeperEndpoint getInstance(String service, ChildData data) {
         String path = data.getPath();
         int pos = path.lastIndexOf('/');
@@ -197,11 +221,31 @@ public class DubboZookeeperRegistry implements RegistryService {
                 .build();
     }
 
+    /**
+     * Builds full Zookeeper path for service instance registration.
+     * @return path string or null if node encoding fails
+     */
     private String getPath(String service, String group, ServiceInstance instance) {
+        Map<String, String> metadata = instance.getMetadata();
+        String side = metadata == null ? null : metadata.get(SIDE);
+        side = side == null || side.isEmpty() ? PROVIDER : side;
+        String role = PROVIDER.equals(side) ? PROVIDERS : CONSUMERS;
         String node = getNode(instance);
-        return node == null ? null : url(getPath(service, group), "providers", node);
+        return node == null ? null : getPath(service, group, role, node);
     }
 
+    /**
+     * Constructs Zookeeper path with role-specific segment.
+     * Format: {root}/{service}/{role}/{node}
+     */
+    private String getPath(String service, String group, String role, String node) {
+        return StringUtils.url(this.getPath(service, group), role, node);
+    }
+
+    /**
+     * Checks if two service groups match (null/empty considered equal).
+     * @return true if groups are equivalent
+     */
     private boolean match(String group1, String group2) {
         if (group1 == null || group1.isEmpty()) {
             return group2 == null || group2.isEmpty();

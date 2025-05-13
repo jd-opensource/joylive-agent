@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
+import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
@@ -50,39 +50,39 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onSuccess(ExecutableContext ctx) {
+    public void onEnter(ExecutableContext ctx) {
         T config = (T) ctx.getTarget();
-        String service = config.getInterface();
+        // Fix for dubbo 2.7.8
+        RegisterType info = getRegisterType(config);
         Map<String, String> map = getContext(ctx);
-        if (!isDubboSystemService(service)) {
-            subscribe(service, config, map);
+        if (!isDubboSystemService(info.getInterfaceName())) {
+            subscribe(info, map);
         }
     }
+
+    protected abstract RegisterType getRegisterType(T config);
 
     /**
      * Subscribes to a specific service with the specified configuration and context.
      *
-     * @param interfaceName the name of the interface to register.
-     * @param config        the configuration object for the service, containing details such as application name and group.
-     * @param ctx           the context map to populate with the service group and registry type.
+     * @param ctx the context map to populate with the service group and registry type.
      */
-    protected void subscribe(String interfaceName, T config, Map<String, String> ctx) {
+    protected void subscribe(RegisterType info, Map<String, String> ctx) {
         application.labelRegistry(ctx::putIfAbsent);
-        RegisterType type = getRegistryType(interfaceName, config);
-        RegisterMode mode = type.getMode();
+        RegisterMode mode = info.getMode();
         switch (mode) {
             case INSTANCE:
                 ctx.put(REGISTRY_TYPE_KEY, mode.getName());
-                subscribe(type.getService(), config.getGroup());
+                subscribe(info.getService(), info.getGroup());
                 break;
             case ALL:
                 ctx.put(REGISTRY_TYPE_KEY, mode.getName());
-                subscribe(type.getService(), config.getGroup());
-                subscribe(type.getInterfaceName(), config.getGroup());
+                subscribe(info.getService(), info.getGroup());
+                subscribe(info.getInterfaceName(), info.getGroup());
                 break;
             case INTERFACE:
             default:
-                subscribe(type.getInterfaceName(), config.getGroup());
+                subscribe(info.getInterfaceName(), info.getGroup());
 
         }
     }
@@ -102,14 +102,5 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
      * @return the context map for the given executable context.
      */
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
-
-    /**
-     * Gets the registry type for the given configuration object.
-     *
-     * @param interfaceName the name of the interface.
-     * @param config        the configuration object for the service.
-     * @return the registry type for the service.
-     */
-    protected abstract RegisterType getRegistryType(String interfaceName, T config);
 
 }
