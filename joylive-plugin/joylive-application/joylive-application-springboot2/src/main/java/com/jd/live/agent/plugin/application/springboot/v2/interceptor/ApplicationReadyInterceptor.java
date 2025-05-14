@@ -63,7 +63,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.ready(() -> {
-            if (config.getRegistryConfig().isEnabled()) {
+            if (config.getRegistryConfig().isRegisterAppServiceEnabled()) {
                 registry.register(createInstance(context.getContext(), application.getService()));
             }
             InnerListener.foreach(l -> l.onReady(context));

@@ -115,6 +115,7 @@ public class PolicyPreparation extends AppListenerAdapter {
                 .append(governanceConfig.getLaneConfig().isFallbackLocationIfNoSpace() ? "enabled" : "disabled").append("\n")
                 .append("Feature config center is ").append(governanceConfig.getConfigCenterConfig().isEnabled() ? "enabled" : "disabled").append("\n")
                 .append("Feature registry is ").append(governanceConfig.getRegistryConfig().isEnabled() ? "enabled" : "disabled").append("\n")
+                .append("Feature registry app service is ").append(governanceConfig.getRegistryConfig().isRegisterAppServiceEnabled() ? "enabled" : "disabled").append("\n")
                 // live feature
                 .append("Feature live is ").append(liveEnabled ? "enabled" : "disabled").append(", and fallbackLocationIfNoSpace is ")
                 .append(governanceConfig.getLiveConfig().isFallbackLocationIfNoSpace() ? "enabled" : "disabled").append("\n")

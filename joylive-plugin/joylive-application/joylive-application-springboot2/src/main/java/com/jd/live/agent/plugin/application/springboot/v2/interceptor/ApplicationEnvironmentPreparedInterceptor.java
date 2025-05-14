@@ -58,7 +58,7 @@ public class ApplicationEnvironmentPreparedInterceptor extends InterceptorAdapto
         SpringAppEnvironment environment = new SpringAppEnvironment(env);
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.prepared(() -> {
-            if (config.getRegistryConfig().isEnabled()) {
+            if (config.getRegistryConfig().isRegisterAppServiceEnabled()) {
                 // subscribe policy
                 registry.register(application.getService().getName(), application.getService().getGroup());
             }

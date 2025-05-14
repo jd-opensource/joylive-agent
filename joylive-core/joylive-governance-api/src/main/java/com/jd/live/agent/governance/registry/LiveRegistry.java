@@ -100,7 +100,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         List<RegistryClusterConfig> clusters = registryConfig.getClusters();
         List<RegistryService> registries = new ArrayList<>();
         try {
-            if (clusters != null) {
+            if (clusters != null && registryConfig.isEnabled()) {
                 for (RegistryClusterConfig cluster : clusters) {
                     if (cluster.validate()) {
                         RegistryFactory factory = factories.get(cluster.getType());
