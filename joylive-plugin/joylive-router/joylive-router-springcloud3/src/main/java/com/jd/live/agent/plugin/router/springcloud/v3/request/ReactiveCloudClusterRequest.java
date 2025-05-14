@@ -129,7 +129,6 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
                 .headers(headers -> headers.addAll(request.headers()))
                 .cookies(cookies -> {
                     cookies.addAll(request.cookies());
-                    // todo how to use this sticky session
                     if (!(instanceIdCookieName == null || instanceIdCookieName.isEmpty()) && addServiceInstanceCookie) {
                         cookies.add(instanceIdCookieName, serviceInstance.getInstanceId());
                     }

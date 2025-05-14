@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import com.jd.live.agent.governance.request.StickySession;
@@ -87,14 +86,7 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     @Override
     public StickySession getStickySession(StickySessionFactory sessionFactory) {
         StickySession session = sessionFactory == null ? null : sessionFactory.getStickySession(this);
-        session = session == null ? serviceContext.getStickySession(this) : session;
-        if (session != null && session.getStickyType() != StickyType.NONE) {
-            String stickyId = getStickyId();
-            if (stickyId != null && !stickyId.isEmpty() && !stickyId.equals(session.getStickyId())) {
-                session.setStickyId(stickyId);
-            }
-        }
-        return session;
+        return session == null ? serviceContext.getStickySession(this) : session;
     }
 
     @Override

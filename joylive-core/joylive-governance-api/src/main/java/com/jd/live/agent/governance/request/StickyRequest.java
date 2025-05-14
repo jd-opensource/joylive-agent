@@ -30,6 +30,11 @@ public interface StickyRequest {
         return null;
     }
 
+    /**
+     * Gets the current sticky session ID used for request routing.
+     *
+     * @return The sticky session ID, or null if not set
+     */
     default String getStickyId() {
         return null;
     }

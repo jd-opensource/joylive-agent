@@ -46,9 +46,9 @@ public class StickyFilter implements RouteFilter {
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         T request = invocation.getRequest();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        StickySessionFactory policy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
-        StickySession session = request.getStickySession(policy);
-        StickyType stickyType = session == null ? null : session.getStickyType();
+        StickySessionFactory factory = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+        StickySession session = request.getStickySession(factory);
+        StickyType stickyType = session == null ? StickyType.NONE : session.getStickyType();
         Carrier carrier = request.getCarrier();
         if (stickyType != null && stickyType != StickyType.NONE) {
             RouteTarget target = invocation.getRouteTarget();
