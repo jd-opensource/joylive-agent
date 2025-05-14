@@ -18,26 +18,43 @@ package com.jd.live.agent.core.parser.jdk;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.parser.XmlPathParser;
-import org.w3c.dom.Document;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Extension("jdk")
 public class JdkXmlPathParser implements XmlPathParser {
 
+    private final DocumentBuilderFactory factory;
+
+    private final XPath xpath;
+
+    private final Map<String, XPathExpression> expressions = new ConcurrentHashMap<>();
+
+    public JdkXmlPathParser() {
+        this.factory = DocumentBuilderFactory.newInstance();
+        this.xpath = XPathFactory.newInstance().newXPath();
+
+        try {
+            // XXE protection
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (ParserConfigurationException ignored) {
+        }
+    }
+
     @Override
     public String read(String reader, String path) {
-        if (reader == null || reader.isEmpty()) {
-            return null;
-        }
-        return read(new ByteArrayInputStream(reader.getBytes()), path);
+        return reader == null || reader.isEmpty() ? null : read(new ByteArrayInputStream(reader.getBytes(StandardCharsets.UTF_8)), path);
     }
 
     @Override
@@ -46,12 +63,15 @@ public class JdkXmlPathParser implements XmlPathParser {
             return null;
         }
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(in);
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile(path);
-            return expr.evaluate(doc, XPathConstants.STRING).toString();
+            XPathExpression expr = expressions.get(path);
+            if (expr == null) {
+                expr = xpath.compile(path);
+                XPathExpression old = expressions.putIfAbsent(path, expr);
+                if (old != null) {
+                    expr = old;
+                }
+            }
+            return expr.evaluate(factory.newDocumentBuilder().parse(in));
         } catch (Throwable e) {
             throw new ParseException("Error parsing XML response by " + path, e);
         }

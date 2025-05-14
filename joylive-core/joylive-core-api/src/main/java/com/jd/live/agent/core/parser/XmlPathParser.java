@@ -23,8 +23,6 @@ import java.io.InputStream;
  * Defines the contract for parsers that can extract data from XML documents based on XmlPath expressions.
  * This interface supports extensibility, allowing implementations to handle different XML parsing libraries
  * or strategies.
- *
- * @since 1.0.0
  */
 @Extensible("XmlPathParser")
 public interface XmlPathParser {
