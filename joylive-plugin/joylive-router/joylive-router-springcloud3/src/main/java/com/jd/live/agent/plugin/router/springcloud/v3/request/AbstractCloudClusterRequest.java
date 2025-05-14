@@ -15,11 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySessionFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.CloudClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.RequestLifecycle;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.ServiceContext;
@@ -57,8 +59,6 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
 
     protected RequestData requestData;
 
-    protected CacheObject<String> stickyId;
-
     public AbstractCloudClusterRequest(T request, URI uri, C context) {
         super(request);
         this.uri = uri;
@@ -84,11 +84,30 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     }
 
     @Override
-    public String getStickyId() {
-        if (stickyId == null) {
-            stickyId = new CacheObject<>(buildStickyId());
+    public StickySession getStickySession(StickySessionFactory sessionFactory) {
+        StickySession session = sessionFactory == null ? null : sessionFactory.getStickySession(this);
+        session = session == null ? serviceContext.getStickySession(this) : session;
+        if (session != null && session.getStickyType() != StickyType.NONE) {
+            String stickyId = getStickyId();
+            if (stickyId != null && !stickyId.isEmpty() && !stickyId.equals(session.getStickyId())) {
+                session.setStickyId(stickyId);
+            }
         }
-        return stickyId.get();
+        return session;
+    }
+
+    @Override
+    public String getStickyId() {
+        LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
+        if (properties != null) {
+            String instanceIdCookieName = properties.getStickySession().getInstanceIdCookieName();
+            Object context = lbRequest.getContext();
+            if (context instanceof RequestDataContext) {
+                MultiValueMap<String, String> cookies = ((RequestDataContext) context).getClientRequest().getCookies();
+                return cookies == null ? null : cookies.getFirst(instanceIdCookieName);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -184,23 +203,4 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
         return new DefaultRequest<>(new RequestDataContext(requestData, hint));
     }
 
-    /**
-     * Extracts the identifier from a sticky session cookie.
-     *
-     * @return The value of the sticky session cookie if present; otherwise, {@code null}.
-     * This value is used to identify the server instance that should handle requests
-     * from this client to ensure session persistence.
-     */
-    protected String buildStickyId() {
-        LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
-        if (properties != null) {
-            String instanceIdCookieName = properties.getStickySession().getInstanceIdCookieName();
-            Object context = lbRequest.getContext();
-            if (context instanceof RequestDataContext) {
-                MultiValueMap<String, String> cookies = ((RequestDataContext) context).getClientRequest().getCookies();
-                return cookies == null ? null : cookies.getFirst(instanceIdCookieName);
-            }
-        }
-        return null;
-    }
 }

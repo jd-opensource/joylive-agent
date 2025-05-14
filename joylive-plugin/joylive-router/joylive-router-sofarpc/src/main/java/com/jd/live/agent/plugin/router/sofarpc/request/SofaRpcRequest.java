@@ -25,7 +25,6 @@ import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
-import com.jd.live.agent.governance.request.StickyRequest;
 
 import java.util.function.Function;
 
@@ -135,23 +134,7 @@ public interface SofaRpcRequest {
             return DEFAULT_ERROR_FUNCTION.apply(throwable);
         };
 
-        private final StickyRequest stickyRequest;
-
         private final GenericType genericType;
-
-        /**
-         * Creates a new SofaRpcOutboundRequest without a sticky session identifier. This constructor is used
-         * when sticky session routing is not required for the RPC call.
-         * <p>
-         * Initializes the request with the provided SOFA request details, extracting necessary information
-         * such as service interface name, method name, arguments, and any attachments.
-         * </p>
-         *
-         * @param request The SOFA request containing the RPC call details.
-         */
-        public SofaRpcOutboundRequest(SofaRequest request) {
-            this(request, null);
-        }
 
         /**
          * Creates a new SofaRpcOutboundRequest with the specified SOFA request details and an optional sticky session
@@ -159,11 +142,9 @@ public interface SofaRpcRequest {
          * requests to be routed to the same provider.
          *
          * @param request  The SOFA request containing the RPC call details.
-         * @param stickyRequest A supplier providing the sticky session identifier, or {@code null} if sticky routing is not used.
          */
-        public SofaRpcOutboundRequest(SofaRequest request, StickyRequest stickyRequest) {
+        public SofaRpcOutboundRequest(SofaRequest request) {
             super(request);
-            this.stickyRequest = stickyRequest;
             this.genericType = computeGenericType();
             String uniqueName = request.getTargetServiceUniqueName();
             int pos = uniqueName.indexOf(':');
@@ -178,18 +159,6 @@ public interface SofaRpcRequest {
         public void setHeader(String key, String value) {
             if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
                 request.getRequestProps().put(key, value);
-            }
-        }
-
-        @Override
-        public String getStickyId() {
-            return stickyRequest == null ? null : stickyRequest.getStickyId();
-        }
-
-        @Override
-        public void setStickyId(String stickyId) {
-            if (stickyRequest != null) {
-                stickyRequest.setStickyId(stickyId);
             }
         }
 
