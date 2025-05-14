@@ -24,13 +24,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Extension("jdk")
+@Extension(value = "jdk", order = XmlPathParser.ORDER_JDK)
 public class JdkXmlPathParser implements XmlPathParser {
 
     private final DocumentBuilderFactory factory;
@@ -53,11 +51,6 @@ public class JdkXmlPathParser implements XmlPathParser {
     }
 
     @Override
-    public String read(String reader, String path) {
-        return reader == null || reader.isEmpty() ? null : read(new ByteArrayInputStream(reader.getBytes(StandardCharsets.UTF_8)), path);
-    }
-
-    @Override
     public String read(InputStream in, String path) {
         if (in == null || path == null || path.isEmpty()) {
             return null;
@@ -73,7 +66,7 @@ public class JdkXmlPathParser implements XmlPathParser {
             }
             return expr.evaluate(factory.newDocumentBuilder().parse(in));
         } catch (Throwable e) {
-            throw new ParseException("Error parsing XML response by " + path, e);
+            throw new ParseException("Failed to parse XML with JDK, path: " + path, e);
         }
     }
 }

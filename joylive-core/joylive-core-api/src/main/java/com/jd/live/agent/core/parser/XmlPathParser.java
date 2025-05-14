@@ -17,7 +17,9 @@ package com.jd.live.agent.core.parser;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Defines the contract for parsers that can extract data from XML documents based on XmlPath expressions.
@@ -27,6 +29,10 @@ import java.io.InputStream;
 @Extensible("XmlPathParser")
 public interface XmlPathParser {
 
+    int ORDER_JDK = Integer.MAX_VALUE;
+
+    int ORDER_JOOX = 100;
+
     /**
      * Reads and extracts data from a XML document based on the specified XmlPath expression.
      * The method is generic, enabling it to return data of any type as specified by the caller.
@@ -35,7 +41,9 @@ public interface XmlPathParser {
      * @param path   The XmlPath expression used to extract data from the XML document.
      * @return The extracted data.
      */
-    String read(String reader, String path);
+    default String read(String reader, String path) {
+        return reader == null || reader.isEmpty() ? null : read(new ByteArrayInputStream(reader.getBytes(StandardCharsets.UTF_8)), path);
+    }
 
     /**
      * Reads and extracts data from a it document based on the specified XmlPath expression.

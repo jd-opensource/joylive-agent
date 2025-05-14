@@ -16,6 +16,7 @@
         <module>joylive-parser-fastjson2</module>
         <module>joylive-parser-jackson</module>
         <module>joylive-parser-properties</module>
+        <module>joylive-parser-joox</module>
     </modules>
 
 </project>

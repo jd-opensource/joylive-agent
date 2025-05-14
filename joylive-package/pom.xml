@@ -67,6 +67,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-parser-joox</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-eventbus-jbus</artifactId>
         </dependency>
         <dependency>

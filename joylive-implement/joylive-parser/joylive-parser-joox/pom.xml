@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jd.live</groupId>
+        <artifactId>joylive-parser</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>joylive-parser-joox</artifactId>
+    <properties>
+        <joox-java-8.version>2.0.1</joox-java-8.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>joox-java-8</artifactId>
+            <version>${joox-java-8.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.jooq:*</include>
+                                    <include>jakarta.xml.bind:*</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <!-- This transformer will merge the contents of META-INF/services -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.joox</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.joox</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>jakarta.xml.bind</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.jakarta.xml.bind</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.slf4j</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

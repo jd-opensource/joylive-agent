@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.parser;
+package com.jd.live.agent.implement.parser.joox;
 
-import com.jd.live.agent.core.parser.XmlPathParser;
-import com.jd.live.agent.core.parser.jdk.JdkXmlPathParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class XmlPathParserTest {
+public class JooxXmlPathParserTest {
 
     @Test
     void testParse() {
@@ -39,7 +37,7 @@ public class XmlPathParserTest {
                 "    </details>\n" +
                 "    <contact supportEmail=\"support@example.com\" phone=\"+1-555-123-4567\"/>\n" +
                 "</errorResponse>";
-        XmlPathParser parser = new JdkXmlPathParser();
+        JooxXmlPathParser parser = new JooxXmlPathParser();
         Assertions.assertEquals("404", parser.read(response, "//status/text()"));
         Assertions.assertEquals("support@example.com", parser.read(response, "//contact/@supportEmail"));
     }
