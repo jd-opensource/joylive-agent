@@ -71,7 +71,6 @@ public class FaultInjectionFilter implements OutboundFilter {
             }
         }
         return chain.filter(invocation, endpoint);
-
     }
 
 }
