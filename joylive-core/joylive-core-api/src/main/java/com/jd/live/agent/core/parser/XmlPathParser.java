@@ -29,9 +29,9 @@ import java.nio.charset.StandardCharsets;
 @Extensible("XmlPathParser")
 public interface XmlPathParser {
 
-    int ORDER_JDK = Integer.MAX_VALUE;
+    int ORDER_JDK = 100;
 
-    int ORDER_JOOX = 100;
+    int ORDER_JOOX = ORDER_JDK + 10;
 
     /**
      * Reads and extracts data from a XML document based on the specified XmlPath expression.
