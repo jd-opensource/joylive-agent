@@ -126,3 +126,7 @@ joylive-service-apollo
     javax.inject -> com.jd.live.agent.shaded.javax.inject
     org.aopalliance -> com.jd.live.agent.shaded.org.aopalliance
     com.google -> com.jd.live.agent.shaded.com.google depend on joylive-event-opentelemetry
+joylive-parser-joox
+    org.joox -> com.jd.live.agent.shaded.org.joox
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+    jakarta.xml.bind -> com.jd.live.agent.shaded.jakarta.xml.bind
