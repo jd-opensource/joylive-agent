@@ -42,8 +42,7 @@ public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
         if (classLoaderConfig.isEssential(name)) {
             try {
                 mc.success(resourcer.loadClass(name));
-            } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                logger.warn("Failed to load class " + name);
+            } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
             }
         }
     }
