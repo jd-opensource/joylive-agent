@@ -53,7 +53,7 @@ public class RegistryClusterConfig {
 
     public String getGroup(String defaultGroup) {
         if (!groupEnabled) {
-            return null;
+            return defaultGroup;
         }
         return group != null && !group.isEmpty() ? group : defaultGroup;
     }
