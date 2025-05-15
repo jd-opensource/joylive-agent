@@ -48,6 +48,10 @@ public class RobustObjectPool<T> implements ObjectPool<T> {
     private final Supplier<T> objectFactory;
     private final Predicate<T> validator;
 
+    public RobustObjectPool(Supplier<T> factory, int maxCapacity) {
+        this(factory, maxCapacity, null);
+    }
+
     public RobustObjectPool(Supplier<T> factory, int maxCapacity, Predicate<T> validator) {
         this.objectFactory = factory;
         this.maxCapacity = Math.max(1, maxCapacity);
@@ -87,8 +91,12 @@ public class RobustObjectPool<T> implements ObjectPool<T> {
                 return objectFactory.get();
             }
             if (totalCount.compareAndSet(currentTotal, currentTotal + 1)) {
-                // no exception thrown, we can return the object
-                return objectFactory.get();
+                try {
+                    return objectFactory.get();
+                } catch (Throwable e) {
+                    totalCount.decrementAndGet();
+                    throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e.getMessage(), e);
+                }
             }
         }
     }

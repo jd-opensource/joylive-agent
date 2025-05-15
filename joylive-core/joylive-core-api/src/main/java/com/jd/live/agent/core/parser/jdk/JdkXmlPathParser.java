@@ -18,6 +18,8 @@ package com.jd.live.agent.core.parser.jdk;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.parser.XmlPathParser;
+import com.jd.live.agent.core.util.pool.ObjectPool;
+import com.jd.live.agent.core.util.pool.robust.RobustObjectPool;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -42,7 +44,7 @@ public class JdkXmlPathParser implements XmlPathParser {
 
     private final Map<String, SoftReference<XPathExpression>> expressions = new ConcurrentHashMap<>();
 
-    private final ThreadLocal<DocumentBuilder> builderLocal;
+    private final ObjectPool<DocumentBuilder> pool;
 
     public JdkXmlPathParser() {
         this.factory = DocumentBuilderFactory.newInstance();
@@ -56,13 +58,13 @@ public class JdkXmlPathParser implements XmlPathParser {
         } catch (ParserConfigurationException ignored) {
         }
 
-        builderLocal = ThreadLocal.withInitial(() -> {
+        pool = new RobustObjectPool<>(() -> {
             try {
                 return factory.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
                 throw new ParseException(e);
             }
-        });
+        }, 1000);
     }
 
     @Override
@@ -70,24 +72,26 @@ public class JdkXmlPathParser implements XmlPathParser {
         if (in == null || path == null || path.isEmpty()) {
             return null;
         }
+        XPathExpression expr = Optional.ofNullable(expressions.get(path))
+                .map(SoftReference::get)
+                .orElseGet(() -> {
+                    try {
+                        XPathExpression newExpr = xpath.compile(path);
+                        expressions.put(path, new SoftReference<>(newExpr));
+                        return newExpr;
+                    } catch (XPathExpressionException e) {
+                        throw new ParseException("Failed to parse XML with JDK, path: " + path, e);
+                    }
+                });
+        DocumentBuilder builder = null;
         try {
-            XPathExpression expr = Optional.ofNullable(expressions.get(path))
-                    .map(SoftReference::get)
-                    .orElseGet(() -> {
-                        try {
-                            XPathExpression newExpr = xpath.compile(path);
-                            expressions.put(path, new SoftReference<>(newExpr));
-                            return newExpr;
-                        } catch (XPathExpressionException e) {
-                            throw new ParseException("Failed to parse XML with JDK, path: " + path, e);
-                        }
-                    });
-            Document document = builderLocal.get().parse(in);
+            builder = pool.borrow();
+            Document document = builder.parse(in);
             return expr.evaluate(document);
-        } catch (ParseException e) {
-            throw e;
         } catch (Throwable e) {
             throw new ParseException("Failed to parse XML with JDK, path: " + path, e);
+        } finally {
+            pool.release(builder);
         }
     }
 }

@@ -18,6 +18,8 @@ package com.jd.live.agent.implement.parser.joox;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.parser.XmlPathParser;
+import com.jd.live.agent.core.util.pool.ObjectPool;
+import com.jd.live.agent.core.util.pool.robust.RobustObjectPool;
 import org.apache.commons.jxpath.CompiledExpression;
 import org.apache.commons.jxpath.JXPathContext;
 import org.w3c.dom.Document;
@@ -38,7 +40,7 @@ public class JXPathParser implements XmlPathParser {
 
     private final Map<String, SoftReference<CompiledExpression>> expressions = new ConcurrentHashMap<>(128);
 
-    private final ThreadLocal<DocumentBuilder> builderLocal;
+    private final ObjectPool<DocumentBuilder> pool;
 
     public JXPathParser() {
         factory = DocumentBuilderFactory.newInstance();
@@ -48,13 +50,13 @@ public class JXPathParser implements XmlPathParser {
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         } catch (ParserConfigurationException ignored) {
         }
-        builderLocal = ThreadLocal.withInitial(() -> {
+        pool = new RobustObjectPool<>(() -> {
             try {
                 return factory.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
                 throw new ParseException(e);
             }
-        });
+        }, 1000, null);
     }
 
     @Override
@@ -62,8 +64,9 @@ public class JXPathParser implements XmlPathParser {
         if (path == null || path.isEmpty()) {
             return null;
         }
+        DocumentBuilder builder = null;
         try {
-            DocumentBuilder builder = builderLocal.get();
+            builder = pool.borrow();
             Document doc = builder.parse(in);
             CompiledExpression expr = Optional.ofNullable(expressions.get(path))
                     .map(SoftReference::get)
@@ -77,6 +80,8 @@ public class JXPathParser implements XmlPathParser {
             return expr.getValue(context).toString();
         } catch (Throwable e) {
             throw new ParseException("Failed to parse XML with JXPath, path: " + path, e);
+        } finally {
+            pool.release(builder);
         }
     }
 }
