@@ -61,17 +61,6 @@ public interface Resourcer extends ResourceFinder {
     Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException;
 
     /**
-     * Loads the class with the specified name, with options to resolve it and provide a custom {@link CandidatorProvider}.
-     *
-     * @param name               The binary name of the class to load.
-     * @param resolve            If {@code true}, then resolve the class.
-     * @param candidatorProvider Provides a mechanism to influence the class loading process.
-     * @return The resulting {@link Class} object.
-     * @throws ClassNotFoundException If the class was not found.
-     */
-    Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException;
-
-    /**
      * Retrieves a resource located by a specified path.
      *
      * @param path The path to the resource.
