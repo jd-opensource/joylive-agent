@@ -13,49 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.parser.jdk;
+package com.jd.live.agent.implement.parser.joox;
 
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.parser.XmlPathParser;
+import org.apache.commons.jxpath.CompiledExpression;
+import org.apache.commons.jxpath.JXPathContext;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Extension(value = "jdk", order = XmlPathParser.ORDER_JDK)
-public class JdkXmlPathParser implements XmlPathParser {
+@Extension(value = "jxpath", order = XmlPathParser.ORDER_JXPATH)
+public class JXPathParser implements XmlPathParser {
 
     private final DocumentBuilderFactory factory;
 
-    private final XPath xpath;
-
-    private final Map<String, SoftReference<XPathExpression>> expressions = new ConcurrentHashMap<>();
+    private final Map<String, SoftReference<CompiledExpression>> expressions = new ConcurrentHashMap<>(128);
 
     private final ThreadLocal<DocumentBuilder> builderLocal;
 
-    public JdkXmlPathParser() {
-        this.factory = DocumentBuilderFactory.newInstance();
-        this.xpath = XPathFactory.newInstance().newXPath();
-
+    public JXPathParser() {
+        factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        factory.setValidating(false);
         try {
-            // XXE protection
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         } catch (ParserConfigurationException ignored) {
         }
-
         builderLocal = ThreadLocal.withInitial(() -> {
             try {
                 return factory.newDocumentBuilder();
@@ -67,27 +59,24 @@ public class JdkXmlPathParser implements XmlPathParser {
 
     @Override
     public String read(InputStream in, String path) {
-        if (in == null || path == null || path.isEmpty()) {
+        if (path == null || path.isEmpty()) {
             return null;
         }
         try {
-            XPathExpression expr = Optional.ofNullable(expressions.get(path))
+            DocumentBuilder builder = builderLocal.get();
+            Document doc = builder.parse(in);
+            CompiledExpression expr = Optional.ofNullable(expressions.get(path))
                     .map(SoftReference::get)
                     .orElseGet(() -> {
-                        try {
-                            XPathExpression newExpr = xpath.compile(path);
-                            expressions.put(path, new SoftReference<>(newExpr));
-                            return newExpr;
-                        } catch (XPathExpressionException e) {
-                            throw new ParseException("Failed to parse XML with JDK, path: " + path, e);
-                        }
+                        CompiledExpression newExpr = JXPathContext.compile(path);
+                        expressions.put(path, new SoftReference<>(newExpr));
+                        return newExpr;
                     });
-            Document document = builderLocal.get().parse(in);
-            return expr.evaluate(document);
-        } catch (ParseException e) {
-            throw e;
+            JXPathContext context = JXPathContext.newContext(doc);
+            context.setLenient(true);
+            return expr.getValue(context).toString();
         } catch (Throwable e) {
-            throw new ParseException("Failed to parse XML with JDK, path: " + path, e);
+            throw new ParseException("Failed to parse XML with JXPath, path: " + path, e);
         }
     }
 }

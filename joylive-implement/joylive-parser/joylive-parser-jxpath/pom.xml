@@ -9,16 +9,16 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-parser-joox</artifactId>
+    <artifactId>joylive-parser-jxpath</artifactId>
     <properties>
-        <joox-java-8.version>2.0.1</joox-java-8.version>
+        <commons-jxpath.version>1.4.0</commons-jxpath.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.jooq</groupId>
-            <artifactId>joox-java-8</artifactId>
-            <version>${joox-java-8.version}</version>
+            <groupId>commons-jxpath</groupId>
+            <artifactId>commons-jxpath</artifactId>
+            <version>${commons-jxpath.version}</version>
         </dependency>
     </dependencies>
 
@@ -32,8 +32,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes>
-                                    <include>org.jooq:*</include>
-                                    <include>jakarta.xml.bind:*</include>
+                                    <include>commons-jxpath:*</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
@@ -43,16 +42,8 @@
                             </transformers>
                             <relocations>
                                 <relocation>
-                                    <pattern>org.joox</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.org.joox</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>jakarta.xml.bind</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.jakarta.xml.bind</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.slf4j</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.org.slf4j</shadedPattern>
+                                    <pattern>org.apache.commons.jxpath</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.commons.jxpath</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

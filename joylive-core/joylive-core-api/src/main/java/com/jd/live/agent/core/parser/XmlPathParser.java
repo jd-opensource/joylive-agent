@@ -31,7 +31,7 @@ public interface XmlPathParser {
 
     int ORDER_JDK = 100;
 
-    int ORDER_JOOX = ORDER_JDK + 10;
+    int ORDER_JXPATH = ORDER_JDK - 10;
 
     /**
      * Reads and extracts data from a XML document based on the specified XmlPath expression.

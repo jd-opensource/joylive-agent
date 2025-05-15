@@ -105,7 +105,7 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-parser-joox</artifactId>
+                <artifactId>joylive-parser-jxpath</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
