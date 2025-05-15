@@ -61,7 +61,7 @@ public class JXPathParser implements XmlPathParser {
 
     @Override
     public String read(InputStream in, String path) {
-        if (path == null || path.isEmpty()) {
+        if (in == null || !validate(path)) {
             return null;
         }
         DocumentBuilder builder = null;

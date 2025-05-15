@@ -69,7 +69,7 @@ public class JdkXmlPathParser implements XmlPathParser {
 
     @Override
     public String read(InputStream in, String path) {
-        if (in == null || path == null || path.isEmpty()) {
+        if (in == null || !validate(path)) {
             return null;
         }
         XPathExpression expr = Optional.ofNullable(expressions.get(path))

@@ -55,4 +55,41 @@ public interface XmlPathParser {
      */
     String read(InputStream in, String path);
 
+    /**
+     * Validates that a path string contains only safe, well-defined characters.
+     * <p>
+     * A path is considered invalid if it:
+     * <ul>
+     *   <li>Is null or empty</li>
+     *   <li>Contains undefined Unicode characters</li>
+     *   <li>Contains single/double quotes (', ")</li>
+     *   <li>Contains high/low surrogate pairs</li>
+     *   <li>Contains ISO control characters</li>
+     * </ul>
+     *
+     * @param path the path string to validate (may be null)
+     * @return true if the path is non-null, non-empty, and contains only permitted characters,
+     *         false otherwise
+     * @see Character#isDefined(char)
+     * @see Character#isISOControl(char)
+     */
+    default boolean validate(String path) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+        int length = path.length();
+        for (int i = 0; i < length; ++i) {
+            char ch = path.charAt(i);
+            if (!Character.isDefined(ch)
+                    || ch == '\''
+                    || ch == '"'
+                    || Character.isHighSurrogate(ch)
+                    || Character.isISOControl(ch)
+                    || Character.isLowSurrogate(ch)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
