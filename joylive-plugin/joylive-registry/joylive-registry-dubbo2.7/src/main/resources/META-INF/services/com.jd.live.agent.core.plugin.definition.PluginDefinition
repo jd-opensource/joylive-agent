@@ -2,3 +2,4 @@ com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ReferenceConfigDefinitio
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ServiceDiscoveryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ServiceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.FailbackRegistryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ClusterUtilsDefinition

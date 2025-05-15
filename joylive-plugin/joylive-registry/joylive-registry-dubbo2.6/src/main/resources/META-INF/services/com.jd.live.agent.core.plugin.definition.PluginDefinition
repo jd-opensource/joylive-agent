@@ -1,3 +1,4 @@
 com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.ReferenceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.ServiceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.RegistryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.ClusterUtilsDefinition
