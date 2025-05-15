@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.bootstrap.classloader;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Represents a functional interface for providing a candidate class loader. This interface
  * is used in class loading operations to supply a custom class loader that will be used
@@ -26,11 +28,22 @@ package com.jd.live.agent.bootstrap.classloader;
 @FunctionalInterface
 public interface CandidatorProvider {
 
+    ThreadLocal<AtomicBoolean> CONTEXT_LOADER_ENABLED = ThreadLocal.withInitial(() -> new AtomicBoolean(true));
+
     /**
      * Gets the candidate class loader that should be used for class loading operations.
      *
      * @return The {@link ClassLoader} to be used as a candidate for loading classes.
      */
     ClassLoader getCandidator();
+
+    static boolean setContextLoaderEnabled(boolean contextLoaderEnabled) {
+        return CONTEXT_LOADER_ENABLED.get().getAndSet(contextLoaderEnabled);
+    }
+
+    static boolean isContextLoaderEnabled() {
+        return CONTEXT_LOADER_ENABLED.get().get();
+    }
+
 }
 
