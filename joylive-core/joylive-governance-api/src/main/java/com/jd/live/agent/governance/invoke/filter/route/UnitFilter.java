@@ -106,7 +106,6 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         List<UnitRoute> routes = rule == null ? null : rule.getUnitRoutes();
         Set<String> units = getAvailableUnits(invocation, routes);
         return RouteTarget.forward(invocation.getRouteTarget().filtrate(e -> e.isUnit(targetSpaceId, units) || e.isLiveless()));
-
     }
 
     /**

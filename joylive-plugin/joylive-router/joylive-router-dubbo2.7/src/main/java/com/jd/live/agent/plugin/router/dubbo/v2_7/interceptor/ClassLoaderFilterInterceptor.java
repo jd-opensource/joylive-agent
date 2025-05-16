@@ -47,9 +47,7 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Object[] arguments = mc.getArguments();
-        Invocation invocation = (Invocation) arguments[1];
-        DubboInboundRequest request = new DubboInboundRequest(invocation);
+        DubboInboundRequest request = new DubboInboundRequest(mc.getArgument(1), mc.getArgument(0));
         if (!request.isSystem()) {
             Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::convert);
             mc.skipWithResult(result);

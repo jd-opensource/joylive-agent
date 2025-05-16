@@ -118,14 +118,10 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        return this.loadClass(name, resolve, null);
-    }
-
-    @Override
-    public Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException {
         if (!started.get()) {
             throw new ClassNotFoundException("class " + name + " is not found.");
         }
+        // ThreadContextClassLoader is candidator for plugin classloader.
         ClassLoader candidature = filter == null ? null : filter.getCandidator();
         if (filter != null && filter.loadBySelf(name)) {
             return loadBySelf(getClassLoadingLock(name), name, resolve);

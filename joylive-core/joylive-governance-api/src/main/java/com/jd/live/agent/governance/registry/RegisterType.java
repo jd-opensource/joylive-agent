@@ -28,4 +28,6 @@ public class RegisterType {
 
     private final String interfaceName;
 
+    private final String group;
+
 }

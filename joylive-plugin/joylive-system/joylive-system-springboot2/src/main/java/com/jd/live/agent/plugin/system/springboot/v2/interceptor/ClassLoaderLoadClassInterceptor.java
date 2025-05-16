@@ -18,13 +18,12 @@ package com.jd.live.agent.plugin.system.springboot.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
+import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.setContextLoaderEnabled;
+
 public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
-    private static final Logger logger = LoggerFactory.getLogger(ClassLoaderLoadClassInterceptor.class);
 
     private final Resourcer resourcer;
 
@@ -35,22 +34,18 @@ public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
         this.classLoaderConfig = classLoaderConfig;
     }
 
-    /**
-     * Enhancement logic when method failed execute
-     *
-     * @param ctx ExecutableContext
-     * @see <code>org.springframework.boot.loader.LaunchedURLClassLoader#loadClass</code>
-     */
     @Override
     public void onError(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         String name = (String) ctx.getArguments()[0];
         if (classLoaderConfig.isEssential(name)) {
+            // Disable context class loader to avoid circuit.
+            boolean isContextLoaderEnabled = setContextLoaderEnabled(false);
             try {
                 mc.success(resourcer.loadClass(name));
-                logger.info("successfully loading class " + name);
-            } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                logger.warn("failed to load class " + name);
+            } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            } finally {
+                setContextLoaderEnabled(isContextLoaderEnabled);
             }
         }
     }

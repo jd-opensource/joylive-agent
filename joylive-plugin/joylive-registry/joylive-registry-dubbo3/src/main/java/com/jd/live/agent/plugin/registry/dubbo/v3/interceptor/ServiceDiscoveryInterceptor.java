@@ -13,25 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
+package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
-import com.jd.live.agent.governance.registry.ServiceProtocol;
 
-import java.util.Collections;
+import java.io.StringReader;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * RegistryInterceptor
  */
-public class RegistryInterceptor extends AbstractRegistryInterceptor {
+public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
 
-    public RegistryInterceptor(Application application, Registry registry) {
+    private final ObjectParser jsonParser;
+
+    public ServiceDiscoveryInterceptor(Application application, Registry registry, ObjectParser jsonParser) {
         super(application, registry);
+        this.jsonParser = jsonParser;
     }
 
     @Override
@@ -39,17 +46,23 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         org.apache.dubbo.registry.client.ServiceInstance instance = ctx.getArgument(0);
         Map<String, String> metadata = instance.getMetadata();
         application.labelRegistry(metadata::putIfAbsent);
+        MapOption option = new MapOption(metadata);
+        String params = option.getString("dubbo.metadata-service.ur-params");
+        Map<String, String> urlParams = params == null ? null : jsonParser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
+        });
+        MapOption urlOption = new MapOption(urlParams);
+        Set<String> groups = new HashSet<>();
+        instance.getServiceMetadata().getServices().forEach((k, v) -> groups.add(v.getGroup()));
         return ServiceInstance.builder()
-                .type("dubbo.v2_7")
+                .type("dubbo.v3")
+                .scheme(urlOption.getString("protocol", "dubbo"))
                 .service(instance.getServiceName())
+                .group(groups.size() == 1 ? groups.iterator().next() : null)
                 .host(instance.getHost())
                 .port(instance.getPort())
-                .protocols(Collections.singletonList(
-                        ServiceProtocol.builder()
-                                .host(instance.getHost())
-                                .port(instance.getPort())
-                                .metadata(metadata)
-                                .build()))
+                .weight(option.getInteger("weight", 100))
+                .metadata(metadata)
                 .build();
     }
 }
+

@@ -36,6 +36,8 @@ public class RegistryConfig {
 
     private boolean enabled;
 
+    private boolean registerAppServiceEnabled;
+
     private SubscribeMode subscribeMode = AUTO;
 
     private List<RegistryClusterConfig> clusters;
@@ -43,5 +45,8 @@ public class RegistryConfig {
     @Config("host")
     private HostConfig hostConfig = new HostConfig();
 
+    public boolean isRegisterAppServiceEnabled() {
+        return registerAppServiceEnabled && enabled;
+    }
 }
 

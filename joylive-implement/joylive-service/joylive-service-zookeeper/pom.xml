@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jd.live</groupId>
+        <artifactId>joylive-service</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>joylive-service-zookeeper</artifactId>
+
+    <properties>
+        <curator.version>5.8.0</curator.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-governance-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>${curator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>${curator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-x-discovery</artifactId>
+            <version>${curator.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.apache.curator:*</include>
+                                    <include>org.apache.zookeeper:*</include>
+                                    <include>org.apache.yetus:*</include>
+                                    <include>org.apache.jute:*</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <!-- This transformer will merge the contents of META-INF/services -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.curator</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.curator</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.zookeeper</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.zookeeper</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.slf4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.jute</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.jute</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.yetus</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.yetus</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.netty</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

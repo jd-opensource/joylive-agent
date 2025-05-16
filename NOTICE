@@ -126,6 +126,13 @@ joylive-service-apollo
     javax.inject -> com.jd.live.agent.shaded.javax.inject
     org.aopalliance -> com.jd.live.agent.shaded.org.aopalliance
     com.google -> com.jd.live.agent.shaded.com.google depend on joylive-event-opentelemetry
+joylive-service-zookeeper
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+    org.apache.curator -> com.jd.live.agent.shaded.org.apache.curator
+    org.apache.zookeeper -> com.jd.live.agent.shaded.org.apache.zookeeper
+    org.apache.yetus -> com.jd.live.agent.shaded.org.apache.yetus
+    org.apache.jute -> com.jd.live.agent.shaded.org.apache.jute
+    io.netty -> com.jd.live.agent.shaded.io.netty depend on joylive-flowcontrol-redisson
 joylive-parser-joox
     org.joox -> com.jd.live.agent.shaded.org.joox
     org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j

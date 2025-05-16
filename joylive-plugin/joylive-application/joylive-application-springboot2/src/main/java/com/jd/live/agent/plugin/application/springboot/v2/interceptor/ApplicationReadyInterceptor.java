@@ -63,7 +63,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.ready(() -> {
-            if (config.getRegistryConfig().isEnabled()) {
+            if (config.getRegistryConfig().isRegisterAppServiceEnabled()) {
                 registry.register(createInstance(context.getContext(), application.getService()));
             }
             InnerListener.foreach(l -> l.onReady(context));
@@ -86,8 +86,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         address = address == null || address.isEmpty() ? Ipv4.getLocalIp() : address;
         PortInfo port = getPort(context);
         ServiceInstance instance = new ServiceInstance();
-        instance.setInstanceId(application.getInstance());
-        instance.setNamespace(appService.getNamespace());
+        instance.setId(application.getInstance());
         instance.setService(appService.getName());
         instance.setGroup(appService.getGroup());
         instance.setHost(address);

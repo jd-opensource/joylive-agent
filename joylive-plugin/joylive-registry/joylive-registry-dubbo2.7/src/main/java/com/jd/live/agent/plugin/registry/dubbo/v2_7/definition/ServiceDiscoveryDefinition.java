@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v3.definition;
+package com.jd.live.agent.plugin.registry.dubbo.v2_7.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -21,24 +21,25 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.dubbo.v3.condition.ConditionalOnDubbo3GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.RegistryInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ServiceDiscoveryInterceptor;
 
 import java.util.*;
 
 /**
- * RegistryDefinition
+ * ServiceDiscoveryDefinition
  */
 @Injectable
-@Extension(value = "RegistryDefinition_v3", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnDubbo3GovernanceEnabled
-@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_DISCOVERY)
-public class RegistryDefinition extends PluginDefinitionAdapter {
+@Extension(value = "ServiceDiscoveryDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
+@ConditionalOnDubbo27GovernanceEnabled
+@ConditionalOnClass(ServiceDiscoveryDefinition.TYPE_SERVICE_DISCOVERY)
+public class ServiceDiscoveryDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_SERVICE_DISCOVERY = "org.apache.dubbo.registry.client.AbstractServiceDiscovery";
 
@@ -54,10 +55,19 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
-    public RegistryDefinition() {
+    @Inject(ObjectParser.JSON)
+    private ObjectParser jsonParser;
+
+    public ServiceDiscoveryDefinition() {
         Map<String, Set<String>> conditions = new HashMap<>();
+        conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulServiceDiscovery", s -> new HashSet<>())
+                .add("com.ecwid.consul.v1.ConsulClient");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.eureka.EurekaServiceDiscovery", s -> new HashSet<>())
+                .add("com.netflix.discovery.EurekaClient");
         conditions.computeIfAbsent("org.apache.dubbo.registry.nacos.NacosServiceDiscovery", s -> new HashSet<>())
                 .add("com.alibaba.nacos.api.naming.pojo.Instance");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.sofa.SofaRegistryServiceDiscovery", s -> new HashSet<>())
+                .addAll(Arrays.asList("com.alipay.sofa.registry.client.api.Publisher", "com.google.gson.Gson"));
         conditions.computeIfAbsent("org.apache.dubbo.registry.zookeeper.ZookeeperServiceDiscovery", s -> new HashSet<>())
                 .addAll(Arrays.asList("org.apache.curator.framework.CuratorFramework", "org.apache.zookeeper.KeeperException"));
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY).and(MatcherBuilder.exists(conditions));
@@ -66,7 +76,7 @@ public class RegistryDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_REGISTER)
                                 .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
                                 .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new RegistryInterceptor(application, registry))
+                        () -> new ServiceDiscoveryInterceptor(application, registry, jsonParser))
         };
     }
 }

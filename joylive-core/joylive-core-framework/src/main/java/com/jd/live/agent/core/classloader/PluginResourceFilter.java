@@ -20,6 +20,8 @@ import com.jd.live.agent.bootstrap.classloader.ResourceConfigFilter;
 
 import java.io.File;
 
+import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.isContextLoaderEnabled;
+
 /**
  * The PluginResourceFilter class extends the functionality of a ResourceConfigFilter,
  * providing a specific implementation for filtering plugin resources.
@@ -47,14 +49,9 @@ public class PluginResourceFilter extends ResourceConfigFilter {
         super(ResourceConfig.DEFAULT_PLUGIN_RESOURCE_CONFIG, configPath);
     }
 
-    /**
-     * Retrieves the ClassLoader to be used by the filter.
-     *
-     * @return The context classLoader to be used.
-     */
     @Override
     public ClassLoader getCandidator() {
-        return Thread.currentThread().getContextClassLoader();
+        return isContextLoaderEnabled() ? Thread.currentThread().getContextClassLoader() : null;
     }
 }
 

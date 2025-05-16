@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
@@ -27,10 +28,8 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.governance.registry.ServiceInstance;
-import com.alibaba.nacos.client.naming.NacosNamingService;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -47,6 +46,8 @@ public class NacosRegistry implements RegistryService {
 
     private final RegistryClusterConfig config;
 
+    private final String address;
+
     private final String name;
 
     private NamingService namingService;
@@ -55,8 +56,8 @@ public class NacosRegistry implements RegistryService {
 
     public NacosRegistry(RegistryClusterConfig config) {
         this.config = config;
-        URI uri = URI.parse(config.getAddress());
-        this.name = "nacos://" + (uri == null ? "" : uri.getAddress());
+        this.address = join(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse), uri -> uri.getAddress(true), CHAR_COMMA);
+        this.name = "nacos://" + address;
     }
 
     @Override
@@ -78,8 +79,6 @@ public class NacosRegistry implements RegistryService {
     public void start() throws Exception {
         if (started.compareAndSet(false, true)) {
             Properties properties = new Properties();
-            List<URI> uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
-            String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
             properties.put(SERVER_ADDR, address);
             if (config.getProperties() != null) {
                 properties.putAll(config.getProperties());
@@ -101,9 +100,11 @@ public class NacosRegistry implements RegistryService {
     @Override
     public void close() {
         if (started.compareAndSet(true, false)) {
-            try {
-                namingService.shutDown();
-            } catch (NacosException ignored) {
+            if (namingService != null) {
+                try {
+                    namingService.shutDown();
+                } catch (NacosException ignored) {
+                }
             }
         }
     }
@@ -137,7 +138,7 @@ public class NacosRegistry implements RegistryService {
 
     private Instance toInstance(ServiceInstance instance) {
         Instance result = new Instance();
-        result.setInstanceId(instance.getInstanceId());
+        result.setInstanceId(instance.getId());
         result.setIp(instance.getHost());
         result.setPort(instance.getPort());
         result.setServiceName(instance.getService());

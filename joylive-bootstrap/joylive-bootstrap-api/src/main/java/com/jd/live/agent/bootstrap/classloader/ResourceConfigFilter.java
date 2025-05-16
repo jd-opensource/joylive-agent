@@ -23,6 +23,7 @@ import java.util.Enumeration;
 
 public class ResourceConfigFilter implements ResourceFilter {
 
+
     private final ResourceConfig config;
 
     private final File configPath;

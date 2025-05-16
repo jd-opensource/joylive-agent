@@ -19,9 +19,9 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
+import com.jd.live.agent.governance.registry.Registry;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
@@ -42,18 +42,7 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected void subscribe(String service, String group) {
-        registry.register(service, group);
-        logger.info("Found dubbo provider, service: {}, group: {}", service, group);
-    }
-
-    @Override
-    protected Map<String, String> getContext(ExecutableContext ctx) {
-        return ctx.getArgument(2);
-    }
-
-    @Override
-    protected RegisterType getRegistryType(String interfaceName, ServiceConfig<?> config) {
+    protected RegisterType getRegisterType(ServiceConfig<?> config) {
         int mode = 0;
         if (config.getRegistries() != null) {
             for (RegistryConfig registry : config.getRegistries()) {
@@ -67,13 +56,24 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
         }
         switch (mode) {
             case 2:
-                return new RegisterType(RegisterMode.INSTANCE, config.getApplication().getName(), interfaceName);
+                return new RegisterType(RegisterMode.INSTANCE, config.getApplication().getName(), config.getInterface(), config.getGroup());
             case 3:
-                return new RegisterType(RegisterMode.ALL, config.getApplication().getName(), interfaceName);
+                return new RegisterType(RegisterMode.ALL, config.getApplication().getName(), config.getInterface(), config.getGroup());
             default:
-                return new RegisterType(RegisterMode.INTERFACE, config.getApplication().getName(), interfaceName);
+                return new RegisterType(RegisterMode.INTERFACE, config.getApplication().getName(), config.getInterface(), config.getGroup());
 
         }
+    }
+
+    @Override
+    protected void subscribe(String service, String group) {
+        registry.register(service, group);
+        logger.info("Found dubbo provider, service: {}, group: {}", service, group);
+    }
+
+    @Override
+    protected Map<String, String> getContext(ExecutableContext ctx) {
+        return ctx.getArgument(2);
     }
 
 }
