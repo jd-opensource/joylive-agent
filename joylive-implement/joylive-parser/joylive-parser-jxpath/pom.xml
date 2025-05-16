@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jd.live</groupId>
+        <artifactId>joylive-parser</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>joylive-parser-jxpath</artifactId>
+    <properties>
+        <commons-jxpath.version>1.4.0</commons-jxpath.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>commons-jxpath</groupId>
+            <artifactId>commons-jxpath</artifactId>
+            <version>${commons-jxpath.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>commons-jxpath:*</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <!-- This transformer will merge the contents of META-INF/services -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.commons.jxpath</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.org.apache.commons.jxpath</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -59,6 +59,7 @@
                 <include>com.jd.live:joylive-parser-jackson</include>
                 <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
+                <include>com.jd.live:joylive-parser-jxpath</include>
                 <include>com.jd.live:joylive-service-file</include>
                 <include>com.jd.live:joylive-service-multilive</include>
                 <include>com.jd.live:joylive-service-microservice</include>
