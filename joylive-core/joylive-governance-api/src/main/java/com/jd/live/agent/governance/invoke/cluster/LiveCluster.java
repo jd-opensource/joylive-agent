@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.invoke.exception.OutboundThrower;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.request.StickyRequest;
+import com.jd.live.agent.governance.request.StickySessionFactory;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -43,7 +44,7 @@ import java.util.concurrent.ExecutionException;
  */
 public interface LiveCluster<R extends OutboundRequest,
         O extends OutboundResponse,
-        E extends Endpoint> extends StickyRequest, OutboundThrower<R, E> {
+        E extends Endpoint> extends StickySessionFactory, OutboundThrower<R, E> {
 
     /**
      * Routes the given request to a list of suitable endpoints.

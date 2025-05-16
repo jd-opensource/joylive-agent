@@ -17,25 +17,18 @@
 package com.jd.live.agent.governance.request;
 
 /**
- * Manages sticky session routing between clients and service instances.
+ * Factory interface for creating sticky session instances.
  */
-public interface StickyRequest {
+public interface StickySessionFactory {
 
     /**
-     * Gets or creates a sticky session using the specified routing policy.
-     * @param sessionFactory The factory that determines sticky session behavior
-     * @return The sticky session instance
-     */
-    default StickySession getStickySession(StickySessionFactory sessionFactory) {
-        return null;
-    }
-
-    /**
-     * Gets the current sticky session ID used for request routing.
+     * Creates or retrieves a sticky session for the given service request.
      *
-     * @return The sticky session ID, or null if not set
+     * @param request The service request needing sticky routing
+     * @return The associated sticky session instance
      */
-    default String getStickyId() {
+    default StickySession getStickySession(ServiceRequest request) {
         return null;
     }
+
 }

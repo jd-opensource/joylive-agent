@@ -8,8 +8,6 @@ import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
-import com.jd.live.agent.governance.policy.service.loadbalance.LoadBalancePolicy;
-import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -97,17 +95,6 @@ public class ServiceMetadata implements Cloneable {
      */
     public ServiceLivePolicy getServiceLivePolicy() {
         return servicePolicy == null ? null : servicePolicy.getLivePolicy();
-    }
-
-    /**
-     * Retrieves the sticky type for load balancing. If no sticky type is defined, {@link StickyType#NONE} is returned.
-     *
-     * @return The sticky type for load balancing, defaulting to {@link StickyType#NONE} if not explicitly set.
-     */
-    public StickyType getStickyType() {
-        LoadBalancePolicy loadBalancePolicy = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
-        StickyType stickyType = loadBalancePolicy == null ? StickyType.NONE : loadBalancePolicy.getStickyType();
-        return stickyType == null ? StickyType.NONE : stickyType;
     }
 
     /**

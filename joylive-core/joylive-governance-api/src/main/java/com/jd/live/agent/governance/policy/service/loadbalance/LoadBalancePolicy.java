@@ -17,6 +17,9 @@ package com.jd.live.agent.governance.policy.service.loadbalance;
 
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import com.jd.live.agent.governance.policy.service.annotation.Consumer;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySessionFactory;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,7 +43,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Consumer
-public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy> {
+public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>, StickySession, StickySessionFactory {
 
     /**
      * The unique identifier of the load balance policy. This ID is used to reference and manage
@@ -61,6 +64,8 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
      * sticky type
      */
     private StickyType stickyType = StickyType.NONE;
+
+    private transient String stickyId;
 
     /**
      * Constructs a new, empty {@code LoadBalancePolicy}.
@@ -99,5 +104,9 @@ public class LoadBalancePolicy implements PolicyInheritWithId<LoadBalancePolicy>
         }
     }
 
+    @Override
+    public StickySession getStickySession(ServiceRequest request) {
+        return this;
+    }
 }
 

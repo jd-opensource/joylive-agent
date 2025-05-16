@@ -106,6 +106,10 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Override
     public void supplement(ServicePolicy source) {
+        // ensure loadBalancePolicy is not null to hold stick id.
+        if (loadBalancePolicy == null) {
+            loadBalancePolicy = new LoadBalancePolicy();
+        }
         supplementId(loadBalancePolicy);
         supplementId(clusterPolicy);
         supplementId(healthPolicy);

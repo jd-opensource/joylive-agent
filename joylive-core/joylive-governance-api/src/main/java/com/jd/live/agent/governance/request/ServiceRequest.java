@@ -321,7 +321,6 @@ public interface ServiceRequest extends Request {
         default Function<Throwable, ErrorName> getErrorFunction() {
             return DEFAULT_ERROR_FUNCTION;
         }
-
     }
 }
 

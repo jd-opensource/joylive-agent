@@ -19,12 +19,12 @@ package com.alibaba.dubbo.rpc.cluster.support;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.type.ClassDesc;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
-import com.jd.live.agent.core.util.type.FieldList;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -32,9 +32,10 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySession.DefaultStickySession;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26OutboundThrower;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
@@ -44,10 +45,15 @@ import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static com.alibaba.dubbo.common.Constants.CLUSTER_STICKY_KEY;
+import static com.alibaba.dubbo.common.Constants.DEFAULT_CLUSTER_STICKY;
 
 
 /**
@@ -75,30 +81,21 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
 
     private final AtomicBoolean destroyed;
 
-    /**
-     * The identifier used for stickiness. This ID is used to route requests to
-     * the same provider consistently.
-     */
-    private String stickyId;
+    private final Map<String, StickySession> sessions = new ConcurrentHashMap<>();
 
     public Dubbo26Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
         this.thrower = new Dubbo26OutboundThrower(cluster);
-        ClassDesc describe = ClassUtils.describe(cluster.getClass());
-        FieldList fieldList = describe.getFieldList();
-        FieldDesc field = fieldList.getField("destroyed");
-        this.destroyed = (AtomicBoolean) (field == null ? null : field.get(cluster));
+        this.destroyed = UnsafeFieldAccessorFactory.getQuietly(cluster, "destroyed");
     }
 
     @Override
-    public String getStickyId() {
-        return stickyId;
-    }
-
-    @Override
-    public void setStickyId(String stickyId) {
-        this.stickyId = stickyId;
+    public StickySession getStickySession(ServiceRequest request) {
+        return sessions.computeIfAbsent(request.getMethod(), m -> {
+            StickyType stickyType = cluster.getUrl().getMethodParameter(m, CLUSTER_STICKY_KEY, DEFAULT_CLUSTER_STICKY) ? StickyType.PREFERRED : StickyType.NONE;
+            return new DefaultStickySession(stickyType);
+        });
     }
 
     @Override

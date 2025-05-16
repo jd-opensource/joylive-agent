@@ -19,6 +19,8 @@ import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySessionFactory;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.*;
@@ -142,8 +144,11 @@ public interface DubboRequest {
 
         private final String interfaceName;
 
-        public DubboOutboundRequest(Invocation request) {
+        private final StickySessionFactory sessionFactory;
+
+        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory) {
             super(request);
+            this.sessionFactory = sessionFactory;
             URL url = request.getInvoker().getUrl();
             this.interfaceName = url.getServiceInterface();
             String providedBy = url.getParameter(PROVIDED_BY);
@@ -152,6 +157,12 @@ public interface DubboRequest {
             this.path = providedBy == null ? null : interfaceName;
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
+        }
+
+        @Override
+        public StickySession getStickySession(StickySessionFactory sessionFactory) {
+            StickySession session = sessionFactory == null ? null : sessionFactory.getStickySession(this);
+            return session == null && this.sessionFactory != null ? this.sessionFactory.getStickySession(this) : session;
         }
 
         @Override

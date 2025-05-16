@@ -15,18 +15,42 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.cluster.context;
 
-import lombok.AllArgsConstructor;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.StickyRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySession.DefaultStickySession;
+import com.jd.live.agent.governance.request.StickySessionFactory;
 import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 
 @Getter
-@AllArgsConstructor
-public class ServiceContext {
+public class ServiceContext implements StickySessionFactory {
 
-    private RequestLifecycle lifecycle;
+    private final RequestLifecycle lifecycle;
 
-    private LoadBalancerProperties loadBalancerProperties;
+    private final LoadBalancerProperties loadBalancerProperties;
 
-    private boolean useRawStatusCodeInResponseData;
+    private final boolean useRawStatusCodeInResponseData;
 
+    public ServiceContext(RequestLifecycle lifecycle,
+                          LoadBalancerProperties loadBalancerProperties,
+                          boolean useRawStatusCodeInResponseData) {
+        this.lifecycle = lifecycle;
+        this.loadBalancerProperties = loadBalancerProperties;
+        this.useRawStatusCodeInResponseData = useRawStatusCodeInResponseData;
+    }
+
+    @Override
+    public StickySession getStickySession(ServiceRequest request) {
+        LoadBalancerProperties.StickySession session = loadBalancerProperties.getStickySession();
+        if (session == null || !session.isAddServiceInstanceCookie()) {
+            return new DefaultStickySession(StickyType.NONE);
+        }
+        String stickyId = null;
+        if (request instanceof StickyRequest) {
+            stickyId = ((StickyRequest) request).getStickyId();
+        }
+        return new DefaultStickySession(StickyType.PREFERRED, stickyId);
+    }
 }
