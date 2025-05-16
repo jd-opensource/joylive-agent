@@ -44,15 +44,15 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  */
 public class NacosRegistry implements RegistryService {
 
-    private final RegistryClusterConfig config;
+    protected final RegistryClusterConfig config;
 
-    private final String address;
+    protected final String address;
 
-    private final String name;
+    protected final String name;
 
-    private NamingService namingService;
+    protected NamingService namingService;
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
+    protected final AtomicBoolean started = new AtomicBoolean(false);
 
     public NacosRegistry(RegistryClusterConfig config) {
         this.config = config;
@@ -111,12 +111,12 @@ public class NacosRegistry implements RegistryService {
 
     @Override
     public void register(String service, String group, ServiceInstance instance) throws Exception {
-        namingService.registerInstance(service, getGroup(group), toInstance(instance));
+        namingService.registerInstance(getService(service, instance), getGroup(group), toInstance(instance));
     }
 
     @Override
     public void unregister(String service, String group, ServiceInstance instance) throws Exception {
-        namingService.deregisterInstance(service, getGroup(group), toInstance(instance));
+        namingService.deregisterInstance(getService(service, instance), getGroup(group), toInstance(instance));
     }
 
     @Override
@@ -136,7 +136,7 @@ public class NacosRegistry implements RegistryService {
         });
     }
 
-    private Instance toInstance(ServiceInstance instance) {
+    protected Instance toInstance(ServiceInstance instance) {
         Instance result = new Instance();
         result.setInstanceId(instance.getId());
         result.setIp(instance.getHost());
@@ -147,7 +147,11 @@ public class NacosRegistry implements RegistryService {
         return result;
     }
 
-    private String getGroup(String group) {
+    protected String getGroup(String group) {
         return group == null || group.isEmpty() ? Constants.DEFAULT_GROUP : group;
+    }
+
+    protected String getService(String service, ServiceInstance instance) {
+        return service;
     }
 }

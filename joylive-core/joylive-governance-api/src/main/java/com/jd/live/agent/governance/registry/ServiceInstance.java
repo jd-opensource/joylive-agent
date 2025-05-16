@@ -66,4 +66,13 @@ public class ServiceInstance extends ServiceId {
         this.weight = weight;
         this.metadata = metadata;
     }
+
+    public String getMetadata(String key) {
+        return metadata == null || key == null ? null : metadata.get(key);
+    }
+
+    public String getMetadata(String key, String defaultValue) {
+        String value = getMetadata(key);
+        return value == null || value.isEmpty() ? defaultValue : value;
+    }
 }
