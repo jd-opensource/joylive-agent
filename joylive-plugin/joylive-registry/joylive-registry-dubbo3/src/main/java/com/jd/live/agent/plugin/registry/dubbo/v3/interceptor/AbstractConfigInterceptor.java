@@ -50,9 +50,8 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onEnter(ExecutableContext ctx) {
+    public void onSuccess(ExecutableContext ctx) {
         T config = (T) ctx.getTarget();
-        // Fix for dubbo 2.7.8
         RegisterType info = getRegisterType(config);
         Map<String, String> map = getContext(ctx);
         if (!isDubboSystemService(info.getInterfaceName())) {
