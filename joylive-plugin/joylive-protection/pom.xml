@@ -12,13 +12,14 @@
     <artifactId>joylive-protection</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>joylive-protection-jdbc</module>
         <module>joylive-protection-mariadb3</module>
-        <module>joylive-protection-postgresql42</module>
+        <module>joylive-protection-mariadb2</module>
         <module>joylive-protection-postgresql9.4</module>
+        <module>joylive-protection-postgresql42</module>
         <module>joylive-protection-opengauss3.0</module>
         <module>joylive-protection-opengauss3.1</module>
         <module>joylive-protection-mongodb4</module>
-        <module>joylive-protection-mariadb2</module>
         <module>joylive-protection-redis</module>
     </modules>
 

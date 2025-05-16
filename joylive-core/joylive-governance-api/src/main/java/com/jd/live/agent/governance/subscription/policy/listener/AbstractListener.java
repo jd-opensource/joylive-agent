@@ -85,14 +85,25 @@ public abstract class AbstractListener<T> implements PolicyListener {
      */
     protected boolean update(PolicyEvent event) {
         for (int i = 0; i < UPDATE_MAX_RETRY; i++) {
-            if (supervisor.update(policy -> newPolicy(policy, event))) {
-                logger.info("Success {} {}", event.getType().getDescription(), event.getDescription());
-                onSuccess(event);
+            if (doUpdate(event)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    protected boolean doUpdate(PolicyEvent event) {
+        if (supervisor.update(policy -> newPolicy(policy, event), this::onSuccess)) {
+            logger.info("Success {} {}", event.getType().getDescription(), event.getDescription());
+            onSuccess(event);
+            return true;
+        }
+        return false;
+    }
+
+    protected void onSuccess(GovernancePolicy oldPolicy, GovernancePolicy newPolicy) {
+
     }
 
     /**

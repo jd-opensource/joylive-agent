@@ -1,0 +1,9 @@
+com.jd.live.agent.governance.db.sqlserver.SqlServerUrlParser
+com.jd.live.agent.governance.db.sqlserver.JtdsUrlParser
+com.jd.live.agent.governance.db.postgresql.PostgresqlUrlParser
+com.jd.live.agent.governance.db.oracle.OracleUrlParser
+com.jd.live.agent.governance.db.mysql.MysqlUrlParser
+com.jd.live.agent.governance.db.mariadb.MariadbUrlParser
+com.jd.live.agent.governance.db.h2.H2UrlParser
+com.jd.live.agent.governance.db.db2.Db2UrlParser
+com.jd.live.agent.governance.db.as400.As400UrlParser

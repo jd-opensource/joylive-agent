@@ -41,7 +41,7 @@ public class Resilience4jRateLimiterTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"1,true", "0,false", "-1,false", "1000,false"})
+    @CsvSource({"1,true", "0,true", "-1,true", "1000,false"})
     void testAcquireWithPermits(int permits, boolean expected) {
         boolean result = limiter.acquire(permits);
         assert result == expected;

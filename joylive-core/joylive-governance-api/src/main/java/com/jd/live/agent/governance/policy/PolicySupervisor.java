@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -51,12 +52,29 @@ public interface PolicySupervisor extends PolicySupplier {
      * mechanism (e.g., replacing the old policy with the new one) fails.
      */
     default boolean update(Function<GovernancePolicy, GovernancePolicy> updater) {
+        return update(updater, null);
+    }
+
+    /**
+     * Attempts to update the governance policy by applying the specified transformation function.
+     *
+     * @param updater A function that transforms the current policy. The update will be skipped if:
+     * @param success An optional callback that receives both old and new policies when the update succeeds.
+     *                The callback is not invoked if the update fails or if this parameter is {@code null}.
+     * @return {@code true} if The policy was successfully updated:
+     */
+    default boolean update(Function<GovernancePolicy, GovernancePolicy> updater, BiConsumer<GovernancePolicy, GovernancePolicy> success) {
         if (updater != null) {
             GovernancePolicy old = getPolicy();
             GovernancePolicy update = updater.apply(old);
             if (update != null) {
                 update.cache();
-                return update(old, update);
+                if (update(old, update)) {
+                    if (success != null) {
+                        success.accept(old, update);
+                    }
+                    return true;
+                }
             }
         }
         return false;
