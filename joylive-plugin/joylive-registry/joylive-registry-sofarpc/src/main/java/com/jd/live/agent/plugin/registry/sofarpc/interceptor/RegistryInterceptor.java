@@ -64,7 +64,8 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
             for (ServerConfig serverConfig : serverConfigs) {
                 instances.add(
                         ServiceInstance.builder()
-                                .type("sofa-rpc")
+                                .interfaceMode(true)
+                                .framework("sofa-rpc")
                                 .service(config.getInterfaceId())
                                 .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
                                 .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())

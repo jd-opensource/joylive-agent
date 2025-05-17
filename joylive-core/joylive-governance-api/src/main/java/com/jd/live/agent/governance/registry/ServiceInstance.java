@@ -28,7 +28,9 @@ import java.util.Map;
 @Setter
 public class ServiceInstance extends ServiceId {
 
-    private String type;
+    private boolean interfaceMode;
+
+    private String framework;
 
     private String version;
 
@@ -50,7 +52,8 @@ public class ServiceInstance extends ServiceId {
                            String namespace,
                            String service,
                            String group,
-                           String type,
+                           boolean interfaceMode,
+                           String framework,
                            String version,
                            String scheme,
                            String host,
@@ -58,7 +61,8 @@ public class ServiceInstance extends ServiceId {
                            int weight,
                            Map<String, String> metadata) {
         super(id, namespace, service, group);
-        this.type = type;
+        this.interfaceMode = interfaceMode;
+        this.framework = framework;
         this.version = version;
         this.scheme = scheme;
         this.host = host;

@@ -54,7 +54,8 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
         Set<String> groups = new HashSet<>();
         instance.getServiceMetadata().getServices().forEach((k, v) -> groups.add(v.getGroup()));
         return ServiceInstance.builder()
-                .type("dubbo.v3")
+                .interfaceMode(false)
+                .framework("dubbo.v3")
                 .scheme(urlOption.getString("protocol", "dubbo"))
                 .service(instance.getServiceName())
                 .group(groups.size() == 1 ? groups.iterator().next() : null)

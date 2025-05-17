@@ -13,34 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor;
+package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
-import com.alibaba.dubbo.common.URL;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import org.apache.dubbo.common.URL;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * RegistryInterceptor
  */
-public class RegistryInterceptor extends AbstractRegistryInterceptor {
+public class FailbackRegistryInterceptor extends AbstractRegistryInterceptor {
 
-    public RegistryInterceptor(Application application, Registry registry) {
+    public FailbackRegistryInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
     @Override
     protected ServiceInstance getInstance(MethodContext ctx) {
         URL url = ctx.getArgument(0);
-        Map<String, String> metadata = url.getParameters();
-        application.labelRegistry(metadata::putIfAbsent);
+        Map<String, String> metadata = new HashMap<>(url.getParameters());
+        // application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
                 .interfaceMode(true)
-                .framework("dubbo.v2_6")
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .scheme(url.getProtocol())
@@ -50,6 +50,4 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 .metadata(metadata)
                 .build();
     }
-
-
 }

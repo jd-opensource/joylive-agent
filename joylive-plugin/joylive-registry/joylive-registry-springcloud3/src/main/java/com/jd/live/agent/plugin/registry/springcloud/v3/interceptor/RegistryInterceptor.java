@@ -62,7 +62,8 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = registration.getMetadata();
         metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
         return ServiceInstance.builder()
-                .type("spring-cloud-v3")
+                .interfaceMode(false)
+                .framework("spring-cloud.v3")
                 .service(registration.getServiceId())
                 .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
                 .scheme(registration.getScheme())

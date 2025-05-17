@@ -53,7 +53,8 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
         });
         MapOption urlOption = new MapOption(urlParams);
         return ServiceInstance.builder()
-                .type("dubbo.v2_7")
+                .interfaceMode(false)
+                .framework("dubbo.v2_7")
                 .service(instance.getServiceName())
                 .scheme(urlOption.getString("protocol", "dubbo"))
                 .group(option.getString("group"))

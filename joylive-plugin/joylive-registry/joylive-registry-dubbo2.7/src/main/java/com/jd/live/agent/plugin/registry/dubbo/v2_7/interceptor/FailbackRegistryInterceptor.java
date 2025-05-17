@@ -42,7 +42,8 @@ public class FailbackRegistryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = url.getParameters();
         // application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
-                .type("dubbo.v2_7")
+                .interfaceMode(true)
+                .framework("dubbo.v2_7")
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .scheme(url.getProtocol())

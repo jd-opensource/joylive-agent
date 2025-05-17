@@ -31,6 +31,9 @@ public class NacosDubboRegistry extends NacosRegistry {
 
     @Override
     protected String getService(String service, ServiceInstance instance) {
+        if (!instance.isInterfaceMode()) {
+            return service;
+        }
         String category = instance.getMetadata("category", "providers");
         String[] parts = new String[]{category, service, instance.getVersion(), instance.getGroup()};
         return join(parts, SEPARATOR_CHAR);
