@@ -53,6 +53,7 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
         });
         MapOption urlOption = new MapOption(urlParams);
         return ServiceInstance.builder()
+                .id(instance.getId())
                 .interfaceMode(false)
                 .framework("dubbo.v2_7")
                 .service(instance.getServiceName())
@@ -61,6 +62,7 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
                 .host(instance.getHost())
                 .port(instance.getPort())
                 .weight(option.getInteger("weight", 100))
+                .metadata(metadata)
                 .build();
     }
 }
