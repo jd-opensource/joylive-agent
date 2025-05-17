@@ -71,6 +71,14 @@ public class ServiceInstance extends ServiceId {
         this.metadata = metadata;
     }
 
+    public String getAddress() {
+        if (port > 0) {
+            return host + ":" + port;
+        } else {
+            return host;
+        }
+    }
+
     public String getMetadata(String key) {
         return metadata == null || key == null ? null : metadata.get(key);
     }

@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.implement.service.registry.zookeeper;
 
+import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.parser.json.JsonType;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryDeltaEvent.EventType;
+import lombok.Getter;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -34,10 +36,15 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -57,13 +64,21 @@ public class DubboZookeeperRegistry implements RegistryService {
     private static final String SIDE = "side";
     private static final String PROVIDER = "provider";
     private static final String GROUP = "group";
+    private static final String CATEGORY = "category";
+
     private final RegistryClusterConfig config;
+
+    private final Timer timer;
+
+    private final ObjectParser parser;
 
     private final String name;
 
     private final String address;
 
-    private final String root;
+    private final String interfaceRoot;
+
+    private final String serviceRoot;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
@@ -71,19 +86,20 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private final Map<String, CuratorCache> caches = new ConcurrentHashMap<>(64);
 
-    private final Set<String> nodes = new HashSet<>();
+    private final Map<String, PathData> nodes = new HashMap<>();
 
     private final Object mutex = new Object();
 
-    private final Timer timer;
-
-    public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer) {
+    public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer, ObjectParser parser) {
         this.config = config;
         this.timer = timer;
+        this.parser = parser;
         this.address = join(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse),
                 uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
-        this.root = url("/", config.getProperty("root", "dubbo"));
+        this.interfaceRoot = url("/", config.getProperty("interfaceRoot", "dubbo"));
+        this.serviceRoot = url("/", config.getProperty("serviceRoot", "services"));
+
     }
 
     @Override
@@ -135,11 +151,11 @@ public class DubboZookeeperRegistry implements RegistryService {
         if (!started.get()) {
             throw new IllegalStateException("Registry is not started");
         }
-        String path = getPath(service, group, instance);
-        if (path != null) {
-            client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path);
+        PathData pathData = getPathData(service, group, instance);
+        if (pathData != null) {
+            client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(pathData.getPath(), pathData.getData());
             synchronized (mutex) {
-                nodes.add(path);
+                nodes.put(pathData.path, pathData);
             }
         }
     }
@@ -148,7 +164,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     public void unregister(String service, String group, ServiceInstance instance) throws Exception {
         String path = getPath(service, group, instance);
         if (path != null) {
-            remove(path);
+            remove(new PathData(path));
             synchronized (mutex) {
                 nodes.remove(path);
             }
@@ -197,29 +213,22 @@ public class DubboZookeeperRegistry implements RegistryService {
         Optional.ofNullable(caches.remove(path)).ifPresent(CuratorCache::close);
     }
 
-    /**
-     * Builds service path in format: {root}/{service}
-     */
-    private String getPath(String service, String group) {
-        return url(root, service);
-    }
-
     private void onReconnected() {
         synchronized (mutex) {
             if (!nodes.isEmpty()) {
-                for (String node : nodes) {
-                    recreate(node);
+                for (Map.Entry<String, PathData> entry : nodes.entrySet()) {
+                    recreate(entry.getValue());
                 }
             }
         }
     }
 
-    private void recreate(String path) {
-        if (started.get() && nodes.contains(path)) {
+    private void recreate(PathData path) {
+        if (started.get() && nodes.containsKey(path.getPath())) {
             try {
                 if (remove(path)) {
                     // recreate
-                    client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path);
+                    client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path.getPath(), path.getData());
                 }
             } catch (Exception e) {
                 addCreateTask(path);
@@ -227,11 +236,11 @@ public class DubboZookeeperRegistry implements RegistryService {
         }
     }
 
-    private boolean remove(String path) throws Exception {
-        Stat stat = client.checkExists().forPath(path);
+    private boolean remove(PathData path) throws Exception {
+        Stat stat = client.checkExists().forPath(path.getPath());
         if (stat != null && stat.getEphemeralOwner() != client.getZookeeperClient().getZooKeeper().getSessionId()) {
             try {
-                client.delete().forPath(path);
+                client.delete().forPath(path.getPath());
                 return true;
             } catch (KeeperException.NoNodeException ignored) {
                 return true;
@@ -240,11 +249,11 @@ public class DubboZookeeperRegistry implements RegistryService {
         return false;
     }
 
-    private void addCreateTask(String node) {
+    private void addCreateTask(PathData path) {
         if (client.getZookeeperClient().isConnected()) {
             timer.delay("recreate-node", 2000, () -> {
                 synchronized (mutex) {
-                    recreate(node);
+                    recreate(path);
                 }
             });
         }
@@ -272,15 +281,43 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     /**
      * Builds full Zookeeper path for service instance registration.
+     *
+     * @return path string or null if node encoding fails
+     */
+    private PathData getPathData(String service, String group, ServiceInstance instance) {
+        String path = getPath(service, group, instance);
+        byte[] data = new byte[0];
+        if (!instance.isInterfaceMode()) {
+            String address = instance.getAddress();
+            ZookeeperInstance zi = new ZookeeperInstance(address, service, instance.getMetadata());
+            CuratorInstance<ZookeeperInstance> ci = new CuratorInstance<>(address, service, instance.getHost(), instance.getPort(), zi);
+            StringWriter writer = new StringWriter(2048);
+            // TODO custom writer to add @class to payload
+            parser.write(writer, ci);
+            data = writer.toString().getBytes(StandardCharsets.UTF_8);
+        }
+        return path == null ? null : new PathData(path, data);
+    }
+
+    /**
+     * Builds full Zookeeper path for service instance registration.
      * @return path string or null if node encoding fails
      */
     private String getPath(String service, String group, ServiceInstance instance) {
-        Map<String, String> metadata = instance.getMetadata();
-        String side = metadata == null ? null : metadata.get(SIDE);
-        side = side == null || side.isEmpty() ? PROVIDER : side;
-        String role = PROVIDER.equals(side) ? PROVIDERS : CONSUMERS;
-        String node = getNode(instance);
-        return node == null ? null : getPath(service, group, role, node);
+        if (instance.isInterfaceMode()) {
+            Map<String, String> metadata = instance.getMetadata();
+            String role = instance.getMetadata(CATEGORY, null);
+            if (role == null || role.isEmpty()) {
+                String side = metadata == null ? null : metadata.get(SIDE);
+                side = side == null || side.isEmpty() ? PROVIDER : side;
+                role = PROVIDER.equals(side) ? PROVIDERS : CONSUMERS;
+            }
+
+            String node = getNode(instance);
+            return node == null ? null : getPath(service, group, role, node);
+        } else {
+            return url(serviceRoot, service, instance.getAddress());
+        }
     }
 
     /**
@@ -288,7 +325,7 @@ public class DubboZookeeperRegistry implements RegistryService {
      * Format: {root}/{service}/{role}/{node}
      */
     private String getPath(String service, String group, String role, String node) {
-        return StringUtils.url(this.getPath(service, group), role, node);
+        return url(url(interfaceRoot, service), role, node);
     }
 
     /**
@@ -328,5 +365,64 @@ public class DubboZookeeperRegistry implements RegistryService {
                 .port(uri.getPort())
                 .metadata(parameters == null ? null : new HashMap<>(parameters))
                 .build();
+    }
+
+    @Getter
+    private static class PathData {
+
+        private final String path;
+
+        private final byte[] data;
+
+        PathData(String path) {
+            this(path, new byte[0]);
+        }
+
+        PathData(String path, byte[] data) {
+            this.path = path;
+            this.data = data;
+        }
+
+    }
+
+    @Getter
+    private static class ZookeeperInstance {
+
+        private final String id;
+
+        private final String name;
+
+        private final Map<String, String> metadata;
+
+        ZookeeperInstance(String id, String name, Map<String, String> metadata) {
+            this.id = id;
+            this.name = name;
+            this.metadata = metadata;
+        }
+    }
+
+    @Getter
+    private static class CuratorInstance<T> {
+
+        private final String name;
+        private final String id;
+        private final String address;
+        private final Integer port;
+        private final Integer sslPort;
+        @JsonType("org.apache.dubbo.registry.zookeeper.ZookeeperInstance")
+        private final T payload;
+        private final long registrationTimeUTC;
+        private final String serviceType;
+
+        CuratorInstance(String id, String name, String address, Integer port, T payload) {
+            this.id = id;
+            this.name = name;
+            this.address = address;
+            this.port = port;
+            this.sslPort = null;
+            this.payload = payload;
+            this.registrationTimeUTC = System.currentTimeMillis();
+            this.serviceType = "DYNAMIC";
+        }
     }
 }
