@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,7 +31,7 @@ public class ServiceInstance extends ServiceId {
 
     private boolean interfaceMode;
 
-    private String framework;
+    private FrameworkVersion framework;
 
     private String version;
 
@@ -53,7 +54,7 @@ public class ServiceInstance extends ServiceId {
                            String service,
                            String group,
                            boolean interfaceMode,
-                           String framework,
+                           FrameworkVersion framework,
                            String version,
                            String scheme,
                            String host,

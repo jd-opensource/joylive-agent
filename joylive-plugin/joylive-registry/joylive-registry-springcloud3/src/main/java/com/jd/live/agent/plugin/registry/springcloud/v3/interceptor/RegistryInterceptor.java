@@ -23,6 +23,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
@@ -63,7 +64,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
         return ServiceInstance.builder()
                 .interfaceMode(false)
-                .framework("spring-cloud.v3")
+                .framework(new FrameworkVersion("spring-cloud", "3"))
                 .service(registration.getServiceId())
                 .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
                 .scheme(registration.getScheme())

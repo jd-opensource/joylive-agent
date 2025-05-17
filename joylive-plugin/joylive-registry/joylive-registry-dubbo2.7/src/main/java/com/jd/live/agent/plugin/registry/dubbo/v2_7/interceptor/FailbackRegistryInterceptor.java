@@ -20,6 +20,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 import org.apache.dubbo.common.URL;
 
 import java.util.Map;
@@ -43,7 +44,7 @@ public class FailbackRegistryInterceptor extends AbstractRegistryInterceptor {
         // application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
                 .interfaceMode(true)
-                .framework("dubbo.v2_7")
+                .framework(new FrameworkVersion("dubbo", url.getParameter("release", "2.7")))
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .scheme(url.getProtocol())

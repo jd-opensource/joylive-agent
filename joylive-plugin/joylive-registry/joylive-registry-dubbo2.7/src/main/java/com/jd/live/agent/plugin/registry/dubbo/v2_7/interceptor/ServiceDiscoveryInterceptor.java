@@ -23,6 +23,7 @@ import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 
 import java.io.StringReader;
 import java.util.Map;
@@ -48,14 +49,15 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = instance.getMetadata();
         application.labelRegistry(metadata::putIfAbsent);
         MapOption option = new MapOption(metadata);
-        String params = option.getString("dubbo.metadata-service.ur-params");
-        Map<String, String> urlParams = params == null ? null : jsonParser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
+        String params = option.getString("dubbo.metadata-service.url-params");
+        Map<String, Map<String, String>> urlParams = params == null ? null : jsonParser.read(new StringReader(params), new TypeReference<Map<String, Map<String, String>>>() {
         });
-        MapOption urlOption = new MapOption(urlParams);
+        Map<String, String> dubboParams = urlParams == null ? null : urlParams.get("dubbo");
+        MapOption urlOption = new MapOption(dubboParams);
         return ServiceInstance.builder()
                 .id(instance.getId())
                 .interfaceMode(false)
-                .framework("dubbo.v2_7")
+                .framework(new FrameworkVersion("dubbo", urlOption.getString("release", "2.7")))
                 .service(instance.getServiceName())
                 .scheme(urlOption.getString("protocol", "dubbo"))
                 .group(option.getString("group"))

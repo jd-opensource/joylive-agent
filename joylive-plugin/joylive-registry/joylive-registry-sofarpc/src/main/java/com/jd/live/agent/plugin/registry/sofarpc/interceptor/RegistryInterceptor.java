@@ -24,6 +24,7 @@ import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 instances.add(
                         ServiceInstance.builder()
                                 .interfaceMode(true)
-                                .framework("sofa-rpc")
+                                .framework(new FrameworkVersion("sofarpc", null))
                                 .service(config.getInterfaceId())
                                 .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
                                 .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())

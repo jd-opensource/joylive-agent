@@ -23,6 +23,7 @@ import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 
 import java.io.StringReader;
 import java.util.HashSet;
@@ -55,7 +56,7 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
         instance.getServiceMetadata().getServices().forEach((k, v) -> groups.add(v.getGroup()));
         return ServiceInstance.builder()
                 .interfaceMode(false)
-                .framework("dubbo.v3")
+                .framework(new FrameworkVersion("dubbo", urlOption.getString("release", "3")))
                 .scheme(urlOption.getString("protocol", "dubbo"))
                 .service(instance.getServiceName())
                 .group(groups.size() == 1 ? groups.iterator().next() : null)

@@ -21,6 +21,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
                 .interfaceMode(true)
-                .framework("dubbo.v2_6")
+                .framework(new FrameworkVersion("dubbo", "2.6"))
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .scheme(url.getProtocol())
