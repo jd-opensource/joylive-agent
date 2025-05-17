@@ -41,7 +41,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
                 .interfaceMode(true)
-                .framework(new FrameworkVersion("dubbo", "2.6"))
+                .framework(new FrameworkVersion("dubbo", url.getParameter("release", "2.6")))
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .scheme(url.getProtocol())
