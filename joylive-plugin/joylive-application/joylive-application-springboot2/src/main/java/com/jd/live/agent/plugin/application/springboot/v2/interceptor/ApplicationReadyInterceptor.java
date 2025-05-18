@@ -86,7 +86,6 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         address = address == null || address.isEmpty() ? Ipv4.getLocalIp() : address;
         PortInfo port = getPort(context);
         ServiceInstance instance = new ServiceInstance();
-        instance.setId(application.getInstance());
         instance.setService(appService.getName());
         instance.setGroup(appService.getGroup());
         instance.setHost(address);
@@ -95,9 +94,12 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
         if (port != null) {
             instance.setPort(port.getPort());
+            instance.setId(instance.getAddress());
             if (port.isSecure()) {
                 metadata.put(Constants.LABEL_SECURE, String.valueOf(port.isSecure()));
             }
+        } else {
+            instance.setId(application.getInstance());
         }
         instance.setMetadata(metadata);
         return instance;

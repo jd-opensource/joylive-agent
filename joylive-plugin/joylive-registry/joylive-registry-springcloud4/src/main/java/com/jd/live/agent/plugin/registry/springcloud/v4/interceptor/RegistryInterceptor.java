@@ -24,7 +24,6 @@ import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
-import org.springframework.boot.SpringBootVersion;
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
@@ -48,7 +47,6 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = registration.getMetadata();
         if (metadata != null) {
             application.labelRegistry(metadata::putIfAbsent, true);
-            metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
             if (registration.isSecure()) {
                 metadata.put(Constants.LABEL_SECURE, String.valueOf(registration.isSecure()));
             }
@@ -63,9 +61,11 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Registration registration = (Registration) ctx.getArguments()[0];
         Map<String, String> metadata = registration.getMetadata();
         metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
+        FrameworkVersion version = getFrameworkVersion();
+        metadata.put(Constants.LABEL_FRAMEWORK, version.toString());
         return ServiceInstance.builder()
                 .interfaceMode(false)
-                .framework(getFrameworkVersion())
+                .framework(version)
                 .service(registration.getServiceId())
                 .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
                 .scheme(registration.getScheme())
