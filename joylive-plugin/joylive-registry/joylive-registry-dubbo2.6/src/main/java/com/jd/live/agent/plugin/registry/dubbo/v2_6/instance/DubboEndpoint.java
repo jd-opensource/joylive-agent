@@ -84,7 +84,7 @@ public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
         Double value = Converts.getDouble(Constants.LABEL_WEIGHT);
         if (value == null || value < 0) {
             return DEFAULT_WEIGHT;
-        } else if (value <= 1) {
+        } else if (value < 1) {
             return (int) (value * 100);
         }
         return value.intValue();
