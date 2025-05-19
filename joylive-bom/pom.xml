@@ -270,7 +270,12 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-registry-nacos</artifactId>
+                <artifactId>joylive-registry-nacos2.4</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-nacos2.3</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

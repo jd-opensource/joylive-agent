@@ -240,7 +240,8 @@
             <outputDirectory>plugin/nacos</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-registry-nacos</include>
+                <include>com.jd.live:joylive-registry-nacos2.4</include>
+                <include>com.jd.live:joylive-registry-nacos2.3</include>
             </includes>
         </dependencySet>
 
