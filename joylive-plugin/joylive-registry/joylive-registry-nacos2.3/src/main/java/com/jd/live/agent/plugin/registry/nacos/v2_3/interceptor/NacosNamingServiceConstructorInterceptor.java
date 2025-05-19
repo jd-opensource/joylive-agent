@@ -40,6 +40,7 @@ public class NacosNamingServiceConstructorInterceptor extends InterceptorAdaptor
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // TODO duplicated notification with dubbo nacos registry
         Object arg = ctx.getArgument(0);
         Properties properties = arg instanceof Properties ? (Properties) arg : null;
         NacosRegistryService registry = new NacosRegistryService(null, properties);
