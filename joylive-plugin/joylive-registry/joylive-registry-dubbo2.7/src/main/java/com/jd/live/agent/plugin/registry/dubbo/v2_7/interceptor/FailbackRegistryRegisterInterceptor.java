@@ -23,28 +23,26 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
 import org.apache.dubbo.common.URL;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * RegistryInterceptor
+ * FailbackRegistryRegisterInterceptor
  */
-public class FailbackRegistryInterceptor extends AbstractRegistryInterceptor {
+public class FailbackRegistryRegisterInterceptor extends AbstractRegistryInterceptor {
 
-    public FailbackRegistryInterceptor(Application application, Registry registry) {
+    public FailbackRegistryRegisterInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
     @Override
     protected ServiceInstance getInstance(MethodContext ctx) {
-        // TODO may called multiple times
-        // multiple service discovery instances.
-        // MultipleRegistryServiceDiscovery
         URL url = ctx.getArgument(0);
-        Map<String, String> metadata = url.getParameters();
+        Map<String, String> metadata = new HashMap<>(url.getParameters());
         // application.labelRegistry(metadata::putIfAbsent);
         return ServiceInstance.builder()
                 .interfaceMode(true)
-                .framework(new FrameworkVersion("dubbo", url.getParameter("release", "2.7")))
+                .framework(new FrameworkVersion("dubbo", url.getParameter("release", "3")))
                 .service(url.getServiceInterface())
                 .group(url.getParameter("group"))
                 .scheme(url.getProtocol())

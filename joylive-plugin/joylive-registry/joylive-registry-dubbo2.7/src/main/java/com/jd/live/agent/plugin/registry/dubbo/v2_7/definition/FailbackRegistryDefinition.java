@@ -27,7 +27,14 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.FailbackRegistryInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.FailbackRegistryConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.FailbackRegistryRegisterInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.FailbackRegistrySubscribeInterceptor;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * FailbackRegistryDefinition
@@ -40,10 +47,20 @@ public class FailbackRegistryDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_FAILBACK_REGISTRY = "org.apache.dubbo.registry.support.FailbackRegistry";
 
+    // compatible with interface registry
+    protected static final String TYPE_SERVICE_DISCOVERY_REGISTRY = "org.apache.dubbo.registry.client.ServiceDiscoveryRegistry";
+
     private static final String METHOD_REGISTER = "doRegister";
 
     private static final String[] ARGUMENT_REGISTER = new String[]{
             "org.apache.dubbo.common.URL"
+    };
+
+    private static final String METHOD_SUBSCRIBE = "doSubscribe";
+
+    private static final String[] ARGUMENT_SUBSCRIBE = new String[]{
+            "org.apache.dubbo.common.URL",
+            "org.apache.dubbo.registry.NotifyListener"
     };
 
     @Inject(Application.COMPONENT_APPLICATION)
@@ -53,13 +70,28 @@ public class FailbackRegistryDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public FailbackRegistryDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_FAILBACK_REGISTRY);
+
+        Map<String, Set<String>> conditions = new HashMap<>();
+        conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulRegistry", s -> new HashSet<>())
+                .add("com.ecwid.consul.v1.ConsulClient");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.nacos.NacosRegistry", s -> new HashSet<>())
+                .add("com.alibaba.nacos.api.naming.pojo.Instance");
+        conditions.computeIfAbsent("org.apache.dubbo.registry.redis.RedisRegistry", s -> new HashSet<>())
+                .add("redis.clients.jedis.JedisPubSub");
+
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_FAILBACK_REGISTRY)
+                .and(MatcherBuilder.not(MatcherBuilder.isAbstract()))
+                .and(MatcherBuilder.not(MatcherBuilder.named(TYPE_SERVICE_DISCOVERY_REGISTRY)))
+                .and(MatcherBuilder.exists(conditions));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER)
-                                .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
-                                .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new FailbackRegistryInterceptor(application, registry))
+                        MatcherBuilder.named(METHOD_REGISTER).and(MatcherBuilder.arguments(ARGUMENT_REGISTER)),
+                        () -> new FailbackRegistryRegisterInterceptor(application, registry)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_SUBSCRIBE).and(MatcherBuilder.arguments(ARGUMENT_SUBSCRIBE)),
+                        () -> new FailbackRegistrySubscribeInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
+                        () -> new FailbackRegistryConstructorInterceptor()),
         };
     }
 }
