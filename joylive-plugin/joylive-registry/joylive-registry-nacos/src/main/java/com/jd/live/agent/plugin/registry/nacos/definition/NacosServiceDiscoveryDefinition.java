@@ -23,8 +23,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosServiceDiscoveryConstructorInterceptor;
-import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosServiceDiscoveryToInstanceInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosServiceDiscoveryInterceptor;
 
 /**
  * NacosServiceDiscoveryDefinition
@@ -42,9 +41,7 @@ public class NacosServiceDiscoveryDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_NACOS_SERVICE_DISCOVERY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new NacosServiceDiscoveryConstructorInterceptor()),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_HOST_TO_SERVICE_INSTANCE), () -> new NacosServiceDiscoveryToInstanceInterceptor()),
+                        MatcherBuilder.named(METHOD_HOST_TO_SERVICE_INSTANCE), () -> new NacosServiceDiscoveryInterceptor()),
         };
     }
 }

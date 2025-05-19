@@ -55,6 +55,6 @@ public class SimpleDiscoveryClientInterceptor extends InterceptorAdaptor {
             logger.info("Found simple discovery client provider, service: {}", service);
             instances.put(service, toList(instance, SpringEndpoint::new));
         });
-        registry.setSystemRegistry(new SimpleRegistryService(instances));
+        registry.addSystemRegistry(new SimpleRegistryService(instances));
     }
 }

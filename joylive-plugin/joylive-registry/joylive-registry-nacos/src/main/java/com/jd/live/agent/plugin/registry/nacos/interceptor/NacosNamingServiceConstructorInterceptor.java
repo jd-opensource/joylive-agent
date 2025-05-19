@@ -19,7 +19,13 @@ import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.plugin.registry.nacos.registry.NacosInstancePublisher;
 import com.jd.live.agent.plugin.registry.nacos.registry.NacosRegistryService;
+
+import java.util.Properties;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.plugin.registry.nacos.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**
  * NacosNamingServiceConstructorInterceptor
@@ -33,8 +39,24 @@ public class NacosNamingServiceConstructorInterceptor extends InterceptorAdaptor
     }
 
     @Override
+    public void onEnter(ExecutableContext ctx) {
+        Object arg = ctx.getArgument(0);
+        Properties properties = arg instanceof Properties ? (Properties) arg : null;
+        NacosRegistryService registry = new NacosRegistryService(null, properties);
+        LOCAL_PUBLISHER.set(new NacosInstancePublisher(registry, null));
+    }
+
+    @Override
     public void onSuccess(ExecutableContext ctx) {
-        NacosNamingService client = (NacosNamingService) ctx.getTarget();
-        supervisor.setSystemRegistry(new NacosRegistryService(client));
+        NacosInstancePublisher publisher = LOCAL_PUBLISHER.get();
+        if (publisher != null) {
+            LOCAL_PUBLISHER.remove();
+            // set client and changeNotifier
+            NacosNamingService target = (NacosNamingService) ctx.getTarget();
+            NacosRegistryService registryService = (NacosRegistryService) publisher.getPublisher();
+            registryService.setClient(target);
+            setValue(target, "changeNotifier", publisher.getNotifier());
+            supervisor.addSystemRegistry(registryService);
+        }
     }
 }

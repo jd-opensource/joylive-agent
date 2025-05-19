@@ -9,21 +9,25 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-registry-eureka</artifactId>
+    <artifactId>joylive-registry-zookeeper</artifactId>
+
     <properties>
-        <spring-cloud-eureka-client.version>4.2.1</spring-cloud-eureka-client.version>
+        <spring-cloud-commons.version>3.1.8</spring-cloud-commons.version>
+        <spring-cloud-zookeeper.version>3.1.4</spring-cloud-zookeeper.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-            <version>${spring-cloud-eureka-client.version}</version>
+            <artifactId>spring-cloud-commons</artifactId>
+            <version>${spring-cloud-commons.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-zookeeper-discovery</artifactId>
+            <version>${spring-cloud-zookeeper.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

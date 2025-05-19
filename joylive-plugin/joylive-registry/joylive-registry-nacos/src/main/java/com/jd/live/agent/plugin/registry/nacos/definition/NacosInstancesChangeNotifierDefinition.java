@@ -18,41 +18,30 @@ package com.jd.live.agent.plugin.registry.nacos.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.registry.CompositeRegistry;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosNamingServiceConstructorInterceptor;
-import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosNamingServiceShutdownInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosInstancesChangeNotifierInterceptor;
 
 /**
- * NacosNamingServiceDefinition
+ * NacosInstanceChangeDefinition
  */
 @Injectable
-@Extension(value = "NacosNamingServiceDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosInstanceChangeDefinition", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnGovernanceEnabled
-@ConditionalOnClass(NacosNamingServiceDefinition.TYPE)
-public class NacosNamingServiceDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(NacosInstancesChangeNotifierDefinition.TYPE_INSTANCES_CHANGE_NOTIFIER)
+public class NacosInstancesChangeNotifierDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "com.alibaba.nacos.client.naming.NacosNamingService";
+    protected static final String TYPE_INSTANCES_CHANGE_NOTIFIER = "com.alibaba.nacos.client.naming.event.InstancesChangeNotifier";
 
-    private static final String METHOD_SHUTDOWN = "shutdown";
-
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private CompositeRegistry registry;
-
-    public NacosNamingServiceDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE);
+    public NacosInstancesChangeNotifierDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_INSTANCES_CHANGE_NOTIFIER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new NacosNamingServiceConstructorInterceptor(registry)),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SHUTDOWN), () -> new NacosNamingServiceShutdownInterceptor(registry)),
+                        MatcherBuilder.isConstructor(), () -> new NacosInstancesChangeNotifierInterceptor())
         };
     }
 }

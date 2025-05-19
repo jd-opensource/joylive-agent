@@ -18,39 +18,36 @@ package com.jd.live.agent.plugin.registry.nacos.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.registry.CompositeRegistry;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosInstanceChangeInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.interceptor.NacosNotifyCenterInterceptor;
 
 /**
- * NacosInstanceChangeDefinition
+ * NotifyCenterDefinition
  */
 @Injectable
-@Extension(value = "NacosInstanceChangeDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NotifyCenterDefinition", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnGovernanceEnabled
-@ConditionalOnClass(NacosInstanceChangeDefinition.TYPE_INSTANCES_CHANGE_NOTIFIER)
-public class NacosInstanceChangeDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(NacosNotifyCenterDefinition.TYPE)
+public class NacosNotifyCenterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_INSTANCES_CHANGE_NOTIFIER = "com.alibaba.nacos.client.naming.event.InstancesChangeNotifier";
+    protected static final String TYPE = "com.alibaba.nacos.common.notify.NotifyCenter";
 
-    private static final String METHOD_ON_EVENT = "onEvent";
+    private static final String METHOD = "registerSubscriber";
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private CompositeRegistry registry;
+    private static final String[] ARGUMENTS = new String[]{
+            "com.alibaba.nacos.common.notify.listener.Subscriber"
+    };
 
-    public NacosInstanceChangeDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_INSTANCES_CHANGE_NOTIFIER);
+    public NacosNotifyCenterDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_ON_EVENT),
-                        () -> new NacosInstanceChangeInterceptor(registry)),
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)), () -> new NacosNotifyCenterInterceptor())
         };
     }
 }

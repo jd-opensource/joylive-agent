@@ -30,6 +30,12 @@ import java.util.Map;
  */
 public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
+    public static final String KEY_SECURE = "secure";
+
+    public static final String KEY_GROUP = "group";
+
+    public static final String KEY_NAMESPACE = "namespace";
+
     /**
      * The instance associated with this endpoint.
      */

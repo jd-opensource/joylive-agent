@@ -280,6 +280,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-zookeeper</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-router-springweb5</artifactId>
                 <version>${revision}</version>
             </dependency>

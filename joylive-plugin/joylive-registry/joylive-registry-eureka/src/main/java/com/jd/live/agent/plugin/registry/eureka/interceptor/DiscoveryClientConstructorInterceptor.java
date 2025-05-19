@@ -18,8 +18,10 @@ package com.jd.live.agent.plugin.registry.eureka.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryConfig;
 import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryService;
 import com.netflix.discovery.DiscoveryClient;
+import com.netflix.discovery.EurekaClientConfig;
 
 /**
  * DiscoveryClientConstructorInterceptor
@@ -33,8 +35,19 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
     }
 
     @Override
+    public void onEnter(ExecutableContext ctx) {
+        Object[] arguments = ctx.getArguments();
+        EurekaClientConfig config = (EurekaClientConfig) arguments[1];
+        EurekaRegistryService registryService = new EurekaRegistryService();
+        arguments[1] = new EurekaRegistryConfig(config, registryService);
+        registry.addSystemRegistry(registryService);
+    }
+
+    @Override
     public void onSuccess(ExecutableContext ctx) {
         DiscoveryClient client = (DiscoveryClient) ctx.getTarget();
-        registry.setSystemRegistry(new EurekaRegistryService(client));
+        EurekaRegistryConfig config = (EurekaRegistryConfig) client.getEurekaClientConfig();
+        EurekaRegistryService registry = (EurekaRegistryService) config.getPublisher();
+        registry.setClient(client);
     }
 }

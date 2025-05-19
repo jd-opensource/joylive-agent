@@ -28,5 +28,6 @@
         <module>joylive-registry-zuul</module>
         <module>joylive-registry-nacos</module>
         <module>joylive-registry-eureka</module>
+        <module>joylive-registry-zookeeper</module>
     </modules>
 </project>

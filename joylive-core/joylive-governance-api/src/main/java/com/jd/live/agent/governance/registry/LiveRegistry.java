@@ -37,10 +37,7 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -80,11 +77,11 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     private volatile List<RegistryService> registries;
 
-    private RegistryService systemRegistry;
+    private final Set<RegistryService> systemRegistries = new CopyOnWriteArraySet<>();
 
     private final Map<String, String> aliases = new ConcurrentHashMap<>();
 
-    private final Map<String, RegistryService> systemRegistries = new ConcurrentHashMap<>();
+    private final Map<String, RegistryService> serviceSystemRegistries = new ConcurrentHashMap<>();
 
     // fix for eureka
     private final Map<String, Registration> registrations = new CaseInsensitiveConcurrentMap<>();
@@ -156,25 +153,24 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     }
 
     @Override
-    public void setSystemRegistry(RegistryService registryService) {
-        this.systemRegistry = registryService;
+    public void addSystemRegistry(RegistryService registryService) {
+        if (registryService != null) {
+            systemRegistries.add(registryService);
+        }
     }
 
     @Override
-    public RegistryService getSystemRegistry() {
-        return systemRegistry;
+    public void removeSystemRegistry(RegistryService registryService) {
+        if (registryService != null) {
+            systemRegistries.remove(registryService);
+        }
     }
 
     @Override
     public void addSystemRegistry(String service, RegistryService registryService) {
         if (service != null && registryService != null) {
-            systemRegistries.put(service, registryService);
+            serviceSystemRegistries.put(service, registryService);
         }
-    }
-
-    @Override
-    public RegistryService getSystemRegistry(String service) {
-        return service == null ? null : systemRegistries.get(service);
     }
 
     @Override
@@ -475,11 +471,11 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 values.add(new ClusterSubscription(cluster, service));
             }
         }
-        if (systemRegistry != null) {
-            values.add(new ClusterSubscription(systemRegistry, service));
+        if (systemRegistries != null) {
+            systemRegistries.forEach(registry -> values.add(new ClusterSubscription(registry, service)));
         }
         // for spring simple discovery client
-        RegistryService system = systemRegistries.get(service.getService());
+        RegistryService system = serviceSystemRegistries.get(service.getService());
         if (system != null) {
             values.add(new ClusterSubscription(system, service));
         }

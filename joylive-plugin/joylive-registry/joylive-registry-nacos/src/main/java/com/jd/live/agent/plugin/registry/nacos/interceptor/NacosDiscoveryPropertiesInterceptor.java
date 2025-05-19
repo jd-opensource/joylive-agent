@@ -17,17 +17,27 @@ package com.jd.live.agent.plugin.registry.nacos.interceptor;
 
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.registry.nacos.registry.NacosRegistryService;
+import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
+
+import java.util.Properties;
 
 /**
- * NacosServiceDiscoveryConstructorInterceptor
+ * NacosDiscoveryPropertiesInterceptor
  */
-public class NacosServiceDiscoveryConstructorInterceptor extends InterceptorAdaptor {
+public class NacosDiscoveryPropertiesInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        NacosDiscoveryProperties properties = ctx.getArgument(0);
-        NacosRegistryService.secure = properties.isSecure();
+        MethodContext mc = (MethodContext) ctx;
+        NacosDiscoveryProperties discoveryProperties = (NacosDiscoveryProperties) mc.getTarget();
+        // set group, namespace and secure
+        Properties properties = mc.getResult();
+        properties.setProperty(NacosEndpoint.KEY_GROUP, discoveryProperties.getGroup());
+        properties.setProperty(NacosEndpoint.KEY_NAMESPACE, discoveryProperties.getNamespace());
+        if (discoveryProperties.isSecure()) {
+            properties.put(NacosEndpoint.KEY_SECURE, "true");
+        }
     }
 }

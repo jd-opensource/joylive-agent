@@ -17,13 +17,17 @@ package com.jd.live.agent.plugin.registry.nacos.registry;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryListener;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -31,27 +35,37 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  * Registry service implementation for Eureka discovery client.
  * Handles service instance registration and discovery through Eureka server.
  */
-public class NacosRegistryService extends AbstractSystemRegistryService {
+public class NacosRegistryService extends AbstractSystemRegistryService implements NacosRegistryPublisher {
 
-    public static Boolean secure;
+    private NacosNamingService client;
 
-    private final NacosNamingService client;
+    private final Boolean secure;
 
-    public NacosRegistryService(NacosNamingService client) {
+    private final String group;
+
+    private final String namespace;
+
+    public NacosRegistryService(Properties properties) {
+        this(null, properties);
+    }
+
+    public NacosRegistryService(NacosNamingService client, Properties properties) {
+        this.client = client;
+        this.secure = properties != null && Converts.getBoolean(properties.getProperty(NacosEndpoint.KEY_SECURE), false);
+        this.group = properties == null ? null : properties.getProperty(NacosEndpoint.KEY_GROUP);
+        this.namespace = properties == null ? null : properties.getProperty(NacosEndpoint.KEY_NAMESPACE);
+    }
+
+    public void setClient(NacosNamingService client) {
         this.client = client;
     }
 
     @Override
     protected List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception {
-        return getEndpoints(client.getAllInstances(service, group));
+        return client == null ? new ArrayList<>() : convert(client.getAllInstances(service, group));
     }
 
-    /**
-     * Publishes an instance event to all subscribed listeners.
-     * Only listeners matching the event's service and group will receive it.
-     *
-     * @param event the instance event to publish (ignored if null)
-     */
+    @Override
     public void publish(RegistryEvent event) {
         if (event != null) {
             for (RegistryListener listener : listeners) {
@@ -60,8 +74,19 @@ public class NacosRegistryService extends AbstractSystemRegistryService {
         }
     }
 
-    public static List<ServiceEndpoint> getEndpoints(List<Instance> instances) {
+    @Override
+    public List<ServiceEndpoint> convert(List<Instance> instances) {
         return toList(instances, e -> new NacosEndpoint(e, secure));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof NacosRegistryService)) return false;
+        return client == ((NacosRegistryService) o).client;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(client);
+    }
 }

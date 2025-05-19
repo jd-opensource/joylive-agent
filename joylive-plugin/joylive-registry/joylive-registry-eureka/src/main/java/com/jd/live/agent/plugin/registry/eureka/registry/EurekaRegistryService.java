@@ -22,8 +22,10 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.shared.Application;
+import lombok.Setter;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -31,9 +33,13 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  * Registry service implementation for Eureka discovery client.
  * Handles service instance registration and discovery through Eureka server.
  */
-public class EurekaRegistryService extends AbstractSystemRegistryService {
+public class EurekaRegistryService extends AbstractSystemRegistryService implements EurekaRegistryPublisher {
 
-    private final DiscoveryClient client;
+    @Setter
+    private DiscoveryClient client;
+
+    public EurekaRegistryService() {
+    }
 
     public EurekaRegistryService(DiscoveryClient client) {
         this.client = client;
@@ -44,12 +50,7 @@ public class EurekaRegistryService extends AbstractSystemRegistryService {
         return getEndpoints(client.getApplication(service), group);
     }
 
-    /**
-     * Publishes application instance changes to all registered listeners.
-     * Only listeners subscribed to this application's service name will receive updates.
-     *
-     * @param application the application containing instance changes (ignored if null)
-     */
+    @Override
     public void publish(Application application) {
         if (application != null) {
             for (RegistryListener listener : listeners) {
@@ -69,4 +70,14 @@ public class EurekaRegistryService extends AbstractSystemRegistryService {
         });
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof EurekaRegistryService)) return false;
+        return client == ((EurekaRegistryService) o).client;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(client);
+    }
 }

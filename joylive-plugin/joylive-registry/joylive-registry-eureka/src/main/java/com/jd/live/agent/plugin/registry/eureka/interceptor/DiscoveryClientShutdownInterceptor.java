@@ -17,31 +17,30 @@ package com.jd.live.agent.plugin.registry.eureka.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryConfig;
-import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryPublisher;
+import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryService;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClientConfig;
-import com.netflix.discovery.shared.Application;
-import com.netflix.discovery.shared.Applications;
 
 /**
- * DiscoveryClientDeltaUpdateInterceptor
+ * DiscoveryClientShutdownInterceptor
  */
-public class DiscoveryClientDeltaUpdateInterceptor extends InterceptorAdaptor {
+public class DiscoveryClientShutdownInterceptor extends InterceptorAdaptor {
+
+    private final CompositeRegistry registry;
+
+    public DiscoveryClientShutdownInterceptor(CompositeRegistry registry) {
+        this.registry = registry;
+    }
 
     @Override
-    public void onSuccess(ExecutableContext ctx) {
+    public void onEnter(ExecutableContext ctx) {
         DiscoveryClient client = (DiscoveryClient) ctx.getTarget();
         EurekaClientConfig config = client.getEurekaClientConfig();
-        if (config instanceof EurekaRegistryConfig) {
-            EurekaRegistryConfig registryConfig = (EurekaRegistryConfig) config;
-            EurekaRegistryPublisher publisher = registryConfig.getPublisher();
-            Applications applications = ctx.getArgument(0);
-            // delta update
-            for (Application app : applications.getRegisteredApplications()) {
-                // full instances
-                publisher.publish(client.getApplication(app.getName()));
-            }
-        }
+        EurekaRegistryService registryService = config instanceof EurekaRegistryConfig
+                ? (EurekaRegistryService) ((EurekaRegistryConfig) config).getPublisher()
+                : new EurekaRegistryService(client);
+        registry.removeSystemRegistry(registryService);
     }
 }

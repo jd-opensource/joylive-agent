@@ -107,6 +107,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-zookeeper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-service-apollo</artifactId>
         </dependency>
         <dependency>
