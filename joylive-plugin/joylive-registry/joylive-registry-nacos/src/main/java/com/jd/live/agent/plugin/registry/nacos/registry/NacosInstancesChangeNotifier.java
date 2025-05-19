@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.common.notify.Event;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import lombok.Getter;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +37,7 @@ public class NacosInstancesChangeNotifier extends InstancesChangeNotifier {
 
     private final InstancesChangeNotifier notifier;
 
+    @Getter
     private final NacosRegistryPublisher publisher;
 
     public NacosInstancesChangeNotifier(String eventScope, InstancesChangeNotifier notifier, NacosRegistryPublisher publisher) {
@@ -91,7 +93,4 @@ public class NacosInstancesChangeNotifier extends InstancesChangeNotifier {
         return notifier.ignoreExpireEvent();
     }
 
-    public NacosRegistryPublisher getPublisher() {
-        return publisher;
-    }
 }

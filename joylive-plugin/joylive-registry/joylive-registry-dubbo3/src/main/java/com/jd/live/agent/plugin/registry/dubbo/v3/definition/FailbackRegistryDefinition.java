@@ -27,7 +27,9 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v3.condition.ConditionalOnDubbo3GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.FailbackRegistryInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.FailbackRegistryConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.FailbackRegistryRegisterInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.FailbackRegistrySubscribeInterceptor;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,6 +57,13 @@ public class FailbackRegistryDefinition extends PluginDefinitionAdapter {
             "org.apache.dubbo.common.URL"
     };
 
+    private static final String METHOD_SUBSCRIBE = "doSubscribe";
+
+    private static final String[] ARGUMENT_SUBSCRIBE = new String[]{
+            "org.apache.dubbo.common.URL",
+            "org.apache.dubbo.registry.NotifyListener"
+    };
+
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
@@ -71,14 +80,18 @@ public class FailbackRegistryDefinition extends PluginDefinitionAdapter {
         conditions.computeIfAbsent("org.apache.dubbo.registry.redis.RedisRegistry", s -> new HashSet<>())
                 .add("redis.clients.jedis.JedisPubSub");
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_FAILBACK_REGISTRY)
+                .and(MatcherBuilder.not(MatcherBuilder.isAbstract()))
                 .and(MatcherBuilder.not(MatcherBuilder.named(TYPE_SERVICE_DISCOVERY_REGISTRY)))
                 .and(MatcherBuilder.exists(conditions));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER)
-                                .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
-                                .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new FailbackRegistryInterceptor(application, registry))
+                        MatcherBuilder.named(METHOD_REGISTER).and(MatcherBuilder.arguments(ARGUMENT_REGISTER)),
+                        () -> new FailbackRegistryRegisterInterceptor(application, registry)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_SUBSCRIBE).and(MatcherBuilder.arguments(ARGUMENT_SUBSCRIBE)),
+                        () -> new FailbackRegistrySubscribeInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
+                        () -> new FailbackRegistryConstructorInterceptor()),
         };
     }
 }

@@ -18,12 +18,9 @@ package com.jd.live.agent.implement.service.registry.nacos;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 
-import static com.jd.live.agent.core.util.StringUtils.join;
-
 public class NacosDubboRegistry extends NacosRegistry {
 
     private static final String SEPARATOR = System.getProperty("nacos.service.name.separator", ":");
-    private static final char SEPARATOR_CHAR = SEPARATOR.isEmpty() ? ':' : SEPARATOR.charAt(0);
 
     public NacosDubboRegistry(RegistryClusterConfig config) {
         super(config);
@@ -35,7 +32,11 @@ public class NacosDubboRegistry extends NacosRegistry {
             return service;
         }
         String category = instance.getMetadata("category", "providers");
-        String[] parts = new String[]{category, service, instance.getVersion(), instance.getGroup()};
-        return join(parts, SEPARATOR_CHAR);
+        StringBuilder builder = new StringBuilder(56)
+                .append(category).append(SEPARATOR)
+                .append(service).append(':')
+                .append(instance.getVersion() == null ? "" : instance.getVersion()).append(':')
+                .append(instance.getGroup() == null ? "" : instance.getGroup());
+        return builder.toString();
     }
 }

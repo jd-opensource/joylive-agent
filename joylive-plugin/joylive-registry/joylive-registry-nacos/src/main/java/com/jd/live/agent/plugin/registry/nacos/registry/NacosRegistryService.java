@@ -18,11 +18,10 @@ package com.jd.live.agent.plugin.registry.nacos.registry;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.registry.RegistryEvent;
-import com.jd.live.agent.governance.registry.RegistryListener;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.registry.nacos.instance.NacosEndpoint;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +36,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class NacosRegistryService extends AbstractSystemRegistryService implements NacosRegistryPublisher {
 
+    @Setter
     private NacosNamingService client;
 
     private final Boolean secure;
@@ -56,22 +56,9 @@ public class NacosRegistryService extends AbstractSystemRegistryService implemen
         this.namespace = properties == null ? null : properties.getProperty(NacosEndpoint.KEY_NAMESPACE);
     }
 
-    public void setClient(NacosNamingService client) {
-        this.client = client;
-    }
-
     @Override
     protected List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception {
         return client == null ? new ArrayList<>() : convert(client.getAllInstances(service, group));
-    }
-
-    @Override
-    public void publish(RegistryEvent event) {
-        if (event != null) {
-            for (RegistryListener listener : listeners) {
-                publish(event, listener);
-            }
-        }
     }
 
     @Override

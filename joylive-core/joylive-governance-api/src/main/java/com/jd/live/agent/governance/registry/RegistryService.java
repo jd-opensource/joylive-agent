@@ -99,7 +99,7 @@ public interface RegistryService extends AutoCloseable {
      * This class provides foundational functionality for managing the lifecycle of a registry service,
      * as well as registering, unregistering, subscribing, and unsubscribing from service instances.
      */
-    abstract class AbstractRegistryService implements RegistryService {
+    abstract class AbstractRegistryService implements RegistryService, RegistryEventPublisher {
 
         protected final List<RegistryListener> listeners = new CopyOnWriteArrayList<>();
 
@@ -156,10 +156,8 @@ public interface RegistryService extends AutoCloseable {
 
         protected abstract List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception;
 
-        /**
-         * Delivers an event to a specific listener if service/group conditions match.
-         */
-        protected void publish(RegistryEvent event) {
+        @Override
+        public void publish(RegistryEvent event) {
             if (event != null) {
                 for (RegistryListener listener : listeners) {
                     publish(event, listener);

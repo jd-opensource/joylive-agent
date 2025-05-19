@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.nacos.registry;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.jd.live.agent.governance.registry.RegistryEvent;
+import com.jd.live.agent.governance.registry.RegistryEventPublisher;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 
 import java.util.List;
@@ -28,20 +29,12 @@ import java.util.List;
  * converting Nacos {@link Instance} objects to service endpoints.
  * <p>
  */
-public interface NacosRegistryPublisher {
+public interface NacosRegistryPublisher extends RegistryEventPublisher {
 
     /**
      * Thread-local storage for current publisher instance
      */
     ThreadLocal<NacosInstancePublisher> LOCAL_PUBLISHER = new ThreadLocal<>();
-
-    /**
-     * Publishes an instance event to all subscribed listeners.
-     * Only listeners matching the event's service and group will receive it.
-     *
-     * @param event the instance event to publish (ignored if null)
-     */
-    void publish(RegistryEvent event);
 
     /**
      * Converts Nacos instances to service endpoints

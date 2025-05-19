@@ -27,11 +27,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * RegistryInterceptor
+ * FailbackRegistryRegisterInterceptor
  */
-public class FailbackRegistryInterceptor extends AbstractRegistryInterceptor {
+public class FailbackRegistryRegisterInterceptor extends AbstractRegistryInterceptor {
 
-    public FailbackRegistryInterceptor(Application application, Registry registry) {
+    public FailbackRegistryRegisterInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
