@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.nacos.v2_4.instance;
+package com.jd.live.agent.plugin.registry.dubbo.v2_6.instance;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.dubbo.common.URL;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
@@ -28,54 +28,34 @@ import java.util.Map;
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
-    public static final String KEY_SECURE = "secure";
+    private final URL url;
 
-    public static final String KEY_NAMESPACE = "namespace";
-
-    /**
-     * The instance associated with this endpoint.
-     */
-    private final Instance instance;
-
-    /**
-     * Creates a new NacosEndpoint object with the specified instance.
-     *
-     * @param instance the instance associated with this endpoint
-     */
-    public NacosEndpoint(Instance instance) {
-        this.instance = instance;
-    }
-
-    public NacosEndpoint(Instance instance, Boolean secure) {
-        this.instance = instance;
-        if (secure != null && secure) {
-            Map<String, String> metadata = instance.getMetadata();
-            if (metadata != null) {
-                metadata.putIfAbsent(Constants.LABEL_SECURE, "true");
-            }
-        }
+    public DubboEndpoint(URL url) {
+        this.url = url;
     }
 
     @Override
     public String getId() {
-        return instance.getInstanceId();
+        int port = url.getPort();
+        String host = url.getHost();
+        return port <= 0 ? host : host + ":" + port;
     }
 
     @Override
     public String getService() {
-        return instance.getServiceName();
+        return url.getServiceInterface();
     }
 
     @Override
     public String getHost() {
-        return instance.getIp();
+        return url.getHost();
     }
 
     @Override
     public int getPort() {
-        return instance.getPort();
+        return url.getPort();
     }
 
     @Override
@@ -85,25 +65,28 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
     @Override
     public Map<String, String> getMetadata() {
-        return instance.getMetadata();
+        return url.getParameters();
     }
 
     @Override
     public String getLabel(String key) {
-        Map<String, String> metadata = instance.getMetadata();
+        Map<String, String> metadata = url.getParameters();
         return metadata == null ? null : metadata.get(key);
     }
 
     @Override
     public EndpointState getState() {
-        if (!instance.isEnabled()) {
-            return EndpointState.DISABLE;
-        }
-        return instance.isHealthy() ? EndpointState.HEALTHY : EndpointState.WEAK;
+        return EndpointState.HEALTHY;
     }
 
     @Override
     public Integer getWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), (int) (instance.getWeight() * DEFAULT_WEIGHT));
+        Double value = Converts.getDouble(Constants.LABEL_WEIGHT);
+        if (value == null || value < 0) {
+            return DEFAULT_WEIGHT;
+        } else if (value <= 1) {
+            return (int) (value * 100);
+        }
+        return value.intValue();
     }
 }

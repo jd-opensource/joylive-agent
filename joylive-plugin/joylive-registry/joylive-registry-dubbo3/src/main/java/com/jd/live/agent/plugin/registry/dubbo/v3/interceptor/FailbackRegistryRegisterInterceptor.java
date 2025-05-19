@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
@@ -44,11 +45,11 @@ public class FailbackRegistryRegisterInterceptor extends AbstractRegistryInterce
                 .interfaceMode(true)
                 .framework(new FrameworkVersion("dubbo", url.getParameter("release", "3")))
                 .service(url.getServiceInterface())
-                .group(url.getParameter("group"))
+                .group(url.getParameter(Constants.LABEL_GROUP))
                 .scheme(url.getProtocol())
                 .host(url.getHost())
                 .port(url.getPort())
-                .weight(url.getParameter("weight", 100))
+                .weight(url.getParameter(Constants.LABEL_WEIGHT, 100))
                 .metadata(metadata)
                 .build();
     }

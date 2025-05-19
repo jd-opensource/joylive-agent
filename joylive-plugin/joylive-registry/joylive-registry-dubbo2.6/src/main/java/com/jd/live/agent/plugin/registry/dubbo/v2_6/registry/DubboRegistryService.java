@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.registry;
+package com.jd.live.agent.plugin.registry.dubbo.v2_6.registry;
 
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.registry.Registry;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.instance.DubboEndpoint;
-import org.apache.dubbo.common.URL;
-import org.apache.dubbo.registry.Registry;
+import com.jd.live.agent.plugin.registry.dubbo.v2_6.instance.DubboEndpoint;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -30,8 +30,6 @@ import java.util.Map;
  */
 public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
-    public static final String KEY_GROUP = "group";
-
     private final URL url;
 
     public DubboEndpoint(URL url) {

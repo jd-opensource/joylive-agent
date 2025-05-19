@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
@@ -60,10 +61,10 @@ public class ServiceDiscoveryInterceptor extends AbstractRegistryInterceptor {
                 .framework(new FrameworkVersion("dubbo", urlOption.getString("release", "2.7")))
                 .service(instance.getServiceName())
                 .scheme(urlOption.getString("protocol", "dubbo"))
-                .group(option.getString("group"))
+                .group(option.getString(Constants.LABEL_GROUP))
                 .host(instance.getHost())
                 .port(instance.getPort())
-                .weight(option.getInteger("weight", 100))
+                .weight(option.getInteger(Constants.LABEL_WEIGHT, 100))
                 .metadata(metadata)
                 .build();
     }

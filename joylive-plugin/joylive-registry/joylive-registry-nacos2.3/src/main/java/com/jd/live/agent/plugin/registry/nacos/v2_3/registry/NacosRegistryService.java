@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.nacos.v2_3.registry;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
@@ -51,9 +52,9 @@ public class NacosRegistryService extends AbstractSystemRegistryService implemen
 
     public NacosRegistryService(NacosNamingService client, Properties properties) {
         this.client = client;
-        this.secure = properties != null && Converts.getBoolean(properties.getProperty(NacosEndpoint.KEY_SECURE), false);
-        this.group = properties == null ? null : properties.getProperty(NacosEndpoint.KEY_GROUP);
-        this.namespace = properties == null ? null : properties.getProperty(NacosEndpoint.KEY_NAMESPACE);
+        this.secure = properties != null && Converts.getBoolean(properties.getProperty(Constants.LABEL_SECURE), false);
+        this.group = properties == null ? null : properties.getProperty(Constants.LABEL_GROUP);
+        this.namespace = properties == null ? null : properties.getProperty(Constants.LABEL_NAMESPACE);
     }
 
     @Override

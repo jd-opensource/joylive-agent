@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.registry;
+package com.jd.live.agent.plugin.registry.dubbo.v2_6.registry;
 
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.registry.NotifyListener;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryEventPublisher;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.instance.DubboEndpoint;
-import org.apache.dubbo.common.URL;
-import org.apache.dubbo.registry.NotifyListener;
-import org.apache.dubbo.registry.client.event.listener.ServiceInstancesChangedListener;
+import com.jd.live.agent.plugin.registry.dubbo.v2_6.instance.DubboEndpoint;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.alibaba.dubbo.common.Constants.*;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 public class DubboNotifyListener implements NotifyListener {
 
@@ -61,8 +60,4 @@ public class DubboNotifyListener implements NotifyListener {
         delegate.notify(urls);
     }
 
-    @Override
-    public void addServiceListener(ServiceInstancesChangedListener instanceListener) {
-        delegate.addServiceListener(instanceListener);
-    }
 }
