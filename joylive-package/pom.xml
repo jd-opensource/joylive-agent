@@ -103,14 +103,6 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-eureka</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-zookeeper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
             <artifactId>joylive-service-apollo</artifactId>
         </dependency>
         <dependency>
@@ -208,6 +200,10 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-registry-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-eureka</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

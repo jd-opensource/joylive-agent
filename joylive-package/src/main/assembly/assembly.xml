@@ -254,16 +254,6 @@
             </includes>
         </dependencySet>
 
-        <!-- plugin/zookeeper -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>plugin/zookeeper</outputDirectory>
-            <unpack>false</unpack>
-            <includes>
-                <include>com.jd.live:joylive-registry-zookeeper</include>
-            </includes>
-        </dependencySet>
-
         <!-- plugin/jdk -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
