@@ -30,8 +30,7 @@ import java.net.URI;
  * dynamic client requests in a distributed system.
  */
 public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterContext>
-        extends AbstractHttpOutboundRequest<T>
-        implements SpringClusterRequest {
+        extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
 
     protected final C context;
 

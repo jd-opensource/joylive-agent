@@ -66,7 +66,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         List<ProviderInfo> invoked = (List<ProviderInfo>) arguments[1];
         SofaRpcCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(),
                 c -> new SofaRpcCluster(c, parser));
-        SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0], cluster);
+        SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0]);
         if (!request.isSystem() && !request.isDisabled()) {
             try {
                 SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
