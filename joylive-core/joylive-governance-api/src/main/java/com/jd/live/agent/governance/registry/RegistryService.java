@@ -15,13 +15,19 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.core.util.Locks;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.config.RegistryMode;
 import com.jd.live.agent.governance.config.RegistryRole;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
 
 /**
  * Provides functionality for managing the lifecycle of a registry service,
@@ -103,6 +109,10 @@ public interface RegistryService extends AutoCloseable {
 
         protected final List<RegistryListener> listeners = new CopyOnWriteArrayList<>();
 
+        protected final Map<String, RegistryEvent> events = new ConcurrentHashMap<>();
+
+        protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
         @Override
         public String getName() {
             return "unknown registry";
@@ -135,14 +145,25 @@ public interface RegistryService extends AutoCloseable {
 
         @Override
         public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
-            RegistryListener listener = new RegistryListener(service, group, consumer);
-            listeners.add(listener);
-            try {
-                List<ServiceEndpoint> endpoints = getEndpoints(service, group);
-                publish(new RegistryEvent(service, group, endpoints, getDefaultGroup()), listener);
-            } catch (Exception ignored) {
-                // ignore
-            }
+            Locks.write(lock, () -> {
+                RegistryListener listener = new RegistryListener(service, group, consumer);
+                listeners.add(listener);
+                // notify
+                String key = getUniqueName(null, service, group);
+                RegistryEvent event = events.get(key);
+                if (event == null) {
+                    try {
+                        event = new RegistryEvent(service, group, getEndpoints(service, group), getDefaultGroup());
+                        RegistryEvent old = events.putIfAbsent(key, event);
+                        if (old != null) {
+                            event = old;
+                        }
+                    } catch (Exception ignored) {
+                        // ignore
+                    }
+                }
+                publish(event, listener);
+            });
         }
 
         @Override
@@ -159,9 +180,15 @@ public interface RegistryService extends AutoCloseable {
         @Override
         public void publish(RegistryEvent event) {
             if (event != null) {
-                for (RegistryListener listener : listeners) {
-                    publish(event, listener);
+                if (event.isFull()) {
+                    String key = getUniqueName(null, event.getService(), event.getGroup());
+                    events.put(key, event);
                 }
+                Locks.read(lock, () -> {
+                    for (RegistryListener listener : listeners) {
+                        publish(event, listener);
+                    }
+                });
             }
         }
 

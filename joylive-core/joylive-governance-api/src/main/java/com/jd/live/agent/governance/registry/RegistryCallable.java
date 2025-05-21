@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
+package com.jd.live.agent.governance.registry;
 
-import com.jd.live.agent.governance.registry.RegistryEventPublisher;
-import org.apache.dubbo.common.URL;
+import java.util.concurrent.Callable;
 
 /**
- * Publisher for Dubbo registry events.
+ * Callable that provides access to a RegistryService.
+ *
+ * @param <T> the result type of the callable
  */
-public interface DubboRegistryPublisher extends RegistryEventPublisher {
+public interface RegistryCallable<T> extends Callable<T> {
 
     /**
-     * Subscribes to registry events for the given URL.
+     * Gets the associated registry service.
      *
-     * @param url the service URL to subscribe to
+     * @return the registry service instance
      */
-    void subscribe(URL url);
+    RegistryService getRegistry();
 
 }

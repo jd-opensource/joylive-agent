@@ -16,24 +16,29 @@
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.instance;
 
 import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.registry.client.InstanceAddressURL;
+import org.apache.dubbo.registry.client.ServiceInstance;
 
 import java.util.Map;
+
+import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toServiceId;
 
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class DubboEndpoint extends AbstractDubboEndpoint implements ServiceEndpoint {
 
     private final URL url;
 
     public DubboEndpoint(URL url) {
         this.url = url;
+        ServiceId serviceId = toServiceId(url);
+        this.service = serviceId.getService();
+        this.group = serviceId.getGroup();
     }
 
     @Override
@@ -69,24 +74,16 @@ public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
     }
 
     @Override
-    public String getLabel(String key) {
-        Map<String, String> metadata = url.getParameters();
-        return metadata == null ? null : metadata.get(key);
-    }
-
-    @Override
     public EndpointState getState() {
-        return EndpointState.HEALTHY;
-    }
-
-    @Override
-    public Integer getWeight(ServiceRequest request) {
-        Double value = Converts.getDouble(Constants.LABEL_WEIGHT);
-        if (value == null || value < 0) {
-            return DEFAULT_WEIGHT;
-        } else if (value < 1) {
-            return (int) (value * 100);
+        if (url instanceof InstanceAddressURL) {
+            InstanceAddressURL iau = (InstanceAddressURL) url;
+            ServiceInstance instance = iau.getInstance();
+            if (!instance.isEnabled()) {
+                return EndpointState.DISABLE;
+            } else {
+                return instance.isHealthy() ? EndpointState.HEALTHY : EndpointState.SUSPEND;
+            }
         }
-        return value.intValue();
+        return super.getState();
     }
 }

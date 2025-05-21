@@ -13,29 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_6.instance;
+package com.jd.live.agent.plugin.registry.dubbo.v3.instance;
 
-import com.alibaba.dubbo.common.URL;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.LABEL_GROUP;
 import static com.jd.live.agent.core.Constants.LABEL_SERVICE_GROUP;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.parse;
 
-/**
- * A class that represents an endpoint in the Nacos registry.
- */
-public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
-
-    private final URL url;
+public abstract class AbstractDubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
     protected String service;
 
@@ -43,23 +35,9 @@ public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
     protected Integer weight;
 
-    public DubboEndpoint(URL url) {
-        this.url = url;
-        ServiceId serviceId = parse(url);
-        this.service = serviceId.getService();
-        this.group = serviceId.getGroup();
-    }
-
-    @Override
-    public String getId() {
-        int port = url.getPort();
-        String host = url.getHost();
-        return port <= 0 ? host : host + ":" + port;
-    }
-
     @Override
     public String getService() {
-        return url.getServiceInterface();
+        return service;
     }
 
     @Override
@@ -101,25 +79,5 @@ public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
             }
         }
         return weight;
-    }
-
-    @Override
-    public String getHost() {
-        return url.getHost();
-    }
-
-    @Override
-    public int getPort() {
-        return url.getPort();
-    }
-
-    @Override
-    public boolean isSecure() {
-        return Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
-    }
-
-    @Override
-    public Map<String, String> getMetadata() {
-        return url.getParameters();
     }
 }

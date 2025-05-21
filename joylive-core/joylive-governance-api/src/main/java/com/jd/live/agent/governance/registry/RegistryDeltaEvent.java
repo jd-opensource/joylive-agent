@@ -25,24 +25,33 @@ public class RegistryDeltaEvent extends RegistryEvent {
     private final EventType type;
 
     public RegistryDeltaEvent(String service, List<ServiceEndpoint> instances) {
-        this(service, null, instances, null, EventType.FULL);
+        this(VERSION.incrementAndGet(), service, null, instances, null, EventType.FULL);
     }
 
     public RegistryDeltaEvent(String service, String group, List<ServiceEndpoint> instances) {
-        this(service, group, instances, null, EventType.FULL);
+        this(VERSION.incrementAndGet(), service, group, instances, null, EventType.FULL);
     }
 
     public RegistryDeltaEvent(String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
-        this(service, group, instances, defaultGroup, EventType.FULL);
+        this(VERSION.incrementAndGet(), service, group, instances, defaultGroup, EventType.FULL);
     }
 
     public RegistryDeltaEvent(String service, String group, List<ServiceEndpoint> instances, EventType type) {
-        this(service, group, instances, null, type);
+        this(VERSION.incrementAndGet(), service, group, instances, null, type);
     }
 
     public RegistryDeltaEvent(String service, String group, List<ServiceEndpoint> instances, String defaultGroup, EventType type) {
-        super(service, group, instances, defaultGroup);
+        this(VERSION.incrementAndGet(), service, group, instances, defaultGroup, type);
+    }
+
+    public RegistryDeltaEvent(long version, String service, String group, List<ServiceEndpoint> instances, String defaultGroup, EventType type) {
+        super(version, service, group, instances, defaultGroup);
         this.type = type;
+    }
+
+    @Override
+    public boolean isFull() {
+        return EventType.FULL == type;
     }
 
     public enum EventType {

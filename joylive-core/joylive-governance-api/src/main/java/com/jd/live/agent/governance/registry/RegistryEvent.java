@@ -18,9 +18,14 @@ package com.jd.live.agent.governance.registry;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
 public class RegistryEvent {
+
+    public static final AtomicLong VERSION = new AtomicLong(0);
+
+    protected final long version;
 
     protected final String service;
 
@@ -31,14 +36,19 @@ public class RegistryEvent {
     protected final String defaultGroup;
 
     public RegistryEvent(String service, List<ServiceEndpoint> instances) {
-        this(service, null, instances, null);
+        this(VERSION.incrementAndGet(), service, null, instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances) {
-        this(service, group, instances, null);
+        this(VERSION.incrementAndGet(), service, group, instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
+        this(VERSION.incrementAndGet(), service, group, instances, defaultGroup);
+    }
+
+    public RegistryEvent(long version, String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
+        this.version = version;
         this.service = service;
         this.group = group;
         this.instances = instances;
@@ -51,6 +61,10 @@ public class RegistryEvent {
 
     public int size() {
         return instances == null ? 0 : instances.size();
+    }
+
+    public boolean isFull() {
+        return true;
     }
 
 }

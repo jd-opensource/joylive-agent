@@ -26,57 +26,63 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ServiceDiscoveryInterceptor;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ServiceDiscoveryFactoryInterceptor;
 
 import java.util.*;
 
+import static java.util.Collections.singletonList;
+
 /**
- * ServiceDiscoveryDefinition
+ * ServiceDiscoveryFactoryDefinition
  */
 @Injectable
-@Extension(value = "ServiceDiscoveryDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "ServiceDiscoveryFactoryDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnDubbo27GovernanceEnabled
-@ConditionalOnClass(ServiceDiscoveryDefinition.TYPE_SERVICE_DISCOVERY)
-public class ServiceDiscoveryDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ServiceDiscoveryFactoryDefinition.TYPE)
+public class ServiceDiscoveryFactoryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SERVICE_DISCOVERY = "org.apache.dubbo.registry.client.AbstractServiceDiscovery";
+    protected static final String TYPE = "org.apache.dubbo.registry.client.AbstractServiceDiscoveryFactory";
 
-    private static final String METHOD_REGISTER = "doRegister";
+    protected static final Set<String> TYPE_EXCLUDES = new HashSet<>(singletonList(
+            "org.apache.dubbo.registry.multiple.MultipleServiceDiscoveryFactory"
+    ));
 
-    private static final String[] ARGUMENT_REGISTER = new String[]{
-            "org.apache.dubbo.registry.client.ServiceInstance"
+    private static final String METHOD = "createDiscovery";
+
+    private static final String[] ARGUMENTS = new String[]{
+            "org.apache.dubbo.common.URL"
     };
+
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private CompositeRegistry registry;
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
     @Inject(ObjectParser.JSON)
-    private ObjectParser jsonParser;
+    private ObjectParser parser;
 
-    public ServiceDiscoveryDefinition() {
+    public ServiceDiscoveryFactoryDefinition() {
+
         Map<String, Set<String>> conditions = new HashMap<>();
-        conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulServiceDiscovery", s -> new HashSet<>())
+        conditions.computeIfAbsent("org.apache.dubbo.registry.consul.ConsulServiceDiscoveryFactory", s -> new HashSet<>())
                 .add("com.ecwid.consul.v1.ConsulClient");
-        conditions.computeIfAbsent("org.apache.dubbo.registry.eureka.EurekaServiceDiscovery", s -> new HashSet<>())
-                .add("com.netflix.discovery.EurekaClient");
-        conditions.computeIfAbsent("org.apache.dubbo.registry.nacos.NacosServiceDiscovery", s -> new HashSet<>())
+        conditions.computeIfAbsent("org.apache.dubbo.registry.nacos.NacosServiceDiscoveryFactory", s -> new HashSet<>())
                 .add("com.alibaba.nacos.api.naming.pojo.Instance");
-        conditions.computeIfAbsent("org.apache.dubbo.registry.sofa.SofaRegistryServiceDiscovery", s -> new HashSet<>())
+        conditions.computeIfAbsent("org.apache.dubbo.registry.sofa.SofaRegistryServiceDiscoveryFactory", s -> new HashSet<>())
                 .addAll(Arrays.asList("com.alipay.sofa.registry.client.api.Publisher", "com.google.gson.Gson"));
-        conditions.computeIfAbsent("org.apache.dubbo.registry.zookeeper.ZookeeperServiceDiscovery", s -> new HashSet<>())
-                .addAll(Arrays.asList("org.apache.curator.framework.CuratorFramework", "org.apache.zookeeper.KeeperException"));
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_SERVICE_DISCOVERY).and(MatcherBuilder.exists(conditions));
+
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE)
+                .and(MatcherBuilder.not(MatcherBuilder.isAbstract()));
+        //.and(MatcherBuilder.not(MatcherBuilder.in(TYPE_EXCLUDES)))
+        //.and(MatcherBuilder.exists(conditions));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER)
-                                .and(MatcherBuilder.arguments(ARGUMENT_REGISTER))
-                                .and(MatcherBuilder.not(MatcherBuilder.isAbstract())),
-                        () -> new ServiceDiscoveryInterceptor(application, registry, jsonParser))
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new ServiceDiscoveryFactoryInterceptor(registry, application, parser)),
         };
     }
 }

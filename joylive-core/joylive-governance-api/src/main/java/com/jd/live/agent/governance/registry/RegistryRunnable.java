@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_6.registry;
+package com.jd.live.agent.governance.registry;
 
-import com.alibaba.dubbo.common.URL;
-import com.jd.live.agent.governance.registry.RegistryEventPublisher;
+public class RegistryRunnable implements RegistryCallable<Void> {
 
-/**
- * Publisher for Dubbo registry events.
- */
-public interface DubboRegistryPublisher extends RegistryEventPublisher {
+    private final RegistryService registry;
 
-    /**
-     * Subscribes to registry events for the given URL.
-     *
-     * @param url the service URL to subscribe to
-     */
-    void subscribe(URL url);
+    private final Runnable runnable;
 
+    public RegistryRunnable(RegistryService registry, Runnable runnable) {
+        this.registry = registry;
+        this.runnable = runnable;
+    }
+
+    @Override
+    public Void call() throws Exception {
+        runnable.run();
+        return null;
+    }
+
+    @Override
+    public RegistryService getRegistry() {
+        return registry;
+    }
 }

@@ -17,10 +17,10 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_6.registry;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.registry.NotifyListener;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryEventPublisher;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.dubbo.v2_6.instance.DubboEndpoint;
 
 import java.util.ArrayList;
@@ -28,6 +28,7 @@ import java.util.List;
 
 import static com.alibaba.dubbo.common.Constants.*;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.parse;
 
 public class DubboNotifyListener implements NotifyListener {
 
@@ -39,11 +40,14 @@ public class DubboNotifyListener implements NotifyListener {
 
     private final String defaultGroup;
 
+    private final ServiceId serviceId;
+
     public DubboNotifyListener(URL url, NotifyListener delegate, RegistryEventPublisher publisher, String defaultGroup) {
         this.url = url;
         this.delegate = delegate;
         this.publisher = publisher;
         this.defaultGroup = defaultGroup;
+        this.serviceId = parse(url);
     }
 
     @Override
@@ -54,10 +58,9 @@ public class DubboNotifyListener implements NotifyListener {
             if (PROVIDERS_CATEGORY.equalsIgnoreCase(category)) {
                 // When all instances are down, the event includes a ServiceConfigURL with empty protocol.
                 List<ServiceEndpoint> endpoints = EMPTY_PROTOCOL.equalsIgnoreCase(url.getProtocol()) ? new ArrayList<>() : toList(urls, DubboEndpoint::new);
-                publisher.publish(new RegistryEvent(url.getServiceInterface(), url.getParameter(Constants.LABEL_GROUP), endpoints, defaultGroup));
+                publisher.publish(new RegistryEvent(serviceId.getService(), serviceId.getGroup(), endpoints, defaultGroup));
             }
         }
         delegate.notify(urls);
     }
-
 }

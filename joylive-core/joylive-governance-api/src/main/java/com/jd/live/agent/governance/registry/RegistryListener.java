@@ -19,6 +19,12 @@ import lombok.Getter;
 
 import java.util.function.Consumer;
 
+/**
+ * Listener for registry events with version tracking and filtering capabilities.
+ * <p>
+ * Filters events by service and group, and ensures only newer versions are processed.
+ * Thread-safe for concurrent event publishing.
+ */
 @Getter
 public class RegistryListener {
 
@@ -28,33 +34,45 @@ public class RegistryListener {
 
     private final Consumer<RegistryEvent> consumer;
 
+    private final Object mutex = new Object();
+
+    private long version;
+
     public RegistryListener(String service, String group, Consumer<RegistryEvent> consumer) {
         this.service = service;
         this.group = group;
         this.consumer = consumer;
     }
 
-    public synchronized void publish(RegistryEvent event) {
-        if (event != null) {
-            consumer.accept(event);
+    /**
+     * Publishes an event if it matches criteria and has newer version.
+     * <p>
+     * Thread-safe operation that ensures only newer versions are processed.
+     *
+     * @param event the registry event to process
+     */
+    public void publish(RegistryEvent event) {
+        if (event != null && event.getVersion() > version) {
+            synchronized (mutex) {
+                if (event.getVersion() > version) {
+                    version = event.getVersion();
+                    consumer.accept(event);
+                }
+            }
+
         }
     }
 
+    /**
+     * Checks if listener matches given service and group.
+     *
+     * @param service      service name to match
+     * @param group        group name to match
+     * @param defaultGroup default group name for fallback matching
+     * @return true if both service and group match
+     */
     public boolean match(String service, String group, String defaultGroup) {
-        return isService(service) && isGroup(group, defaultGroup);
-    }
-
-    public boolean isGroup(String group, String defaultGroup) {
-        if (this.group == null || this.group.isEmpty()) {
-            return group == null
-                    || group.isEmpty()
-                    || defaultGroup != null && !defaultGroup.isEmpty() && defaultGroup.equalsIgnoreCase(group);
-        }
-        return this.group.equals(group);
-    }
-
-    public boolean isService(String service) {
-        return this.service.equalsIgnoreCase(service);
+        return ServiceId.match(this.service, this.group, service, group, defaultGroup);
     }
 
 }

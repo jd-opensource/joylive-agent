@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryEventPublisher;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.NotifyListener;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 public class DubboNotifyListener implements NotifyListener {
@@ -39,11 +41,14 @@ public class DubboNotifyListener implements NotifyListener {
 
     private final String defaultGroup;
 
+    private final ServiceId serviceId;
+
     public DubboNotifyListener(URL url, NotifyListener delegate, RegistryEventPublisher publisher, String defaultGroup) {
         this.url = url;
         this.delegate = delegate;
         this.publisher = publisher;
         this.defaultGroup = defaultGroup;
+        this.serviceId = toServiceId(url);
     }
 
     @Override
@@ -54,7 +59,7 @@ public class DubboNotifyListener implements NotifyListener {
             if (PROVIDERS_CATEGORY.equalsIgnoreCase(category)) {
                 // When all instances are down, the event includes a ServiceConfigURL with empty protocol.
                 List<ServiceEndpoint> endpoints = EMPTY_PROTOCOL.equalsIgnoreCase(url.getProtocol()) ? new ArrayList<>() : toList(urls, DubboEndpoint::new);
-                publisher.publish(new RegistryEvent(url.getServiceInterface(), url.getGroup(), endpoints, defaultGroup));
+                publisher.publish(new RegistryEvent(serviceId.getService(), serviceId.getGroup(), endpoints, defaultGroup));
             }
         }
         delegate.notify(urls);
@@ -63,15 +68,5 @@ public class DubboNotifyListener implements NotifyListener {
     @Override
     public void addServiceListener(ServiceInstancesChangedListener instanceListener) {
         delegate.addServiceListener(instanceListener);
-    }
-
-    @Override
-    public ServiceInstancesChangedListener getServiceListener() {
-        return delegate.getServiceListener();
-    }
-
-    @Override
-    public URL getConsumerUrl() {
-        return delegate.getConsumerUrl();
     }
 }

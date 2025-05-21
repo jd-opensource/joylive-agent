@@ -439,8 +439,12 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         List<RegistryService> clusters = registries;
         List<ClusterInstanceRegistration> values = new ArrayList<>(clusters == null ? 1 : clusters.size() + 1);
         if (doRegister != null) {
-            // SystemRegistryService, call doRegister
-            values.add(new ClusterInstanceRegistration(new SystemRegistryService(doRegister), instances.get(0)));
+            if (doRegister instanceof RegistryCallable) {
+                values.add(new ClusterInstanceRegistration(((RegistryCallable<?>) doRegister).getRegistry(), instances.get(0), doRegister));
+            } else {
+                // SystemRegistryService, call doRegister
+                values.add(new ClusterInstanceRegistration(new SystemRegistryService(doRegister), instances.get(0)));
+            }
         }
         if (clusters != null) {
             for (RegistryService cluster : clusters) {
@@ -471,9 +475,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 values.add(new ClusterSubscription(cluster, service));
             }
         }
-        if (systemRegistries != null) {
-            systemRegistries.forEach(registry -> values.add(new ClusterSubscription(registry, service)));
-        }
+        systemRegistries.forEach(registry -> values.add(new ClusterSubscription(registry, service)));
         // for spring simple discovery client
         RegistryService system = serviceSystemRegistries.get(service.getService());
         if (system != null) {
@@ -630,7 +632,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         /**
          * A map of endpoints for the service group, keyed by their addresses.
          */
-        private volatile List<ServiceEndpoint> endpoints;
+        private volatile RegistryEvent event;
 
         private final Object mutex = new Object();
 
@@ -647,7 +649,8 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
         @Override
         public CompletableFuture<List<ServiceEndpoint>> getEndpoints() {
-            return CompletableFuture.completedFuture(endpoints);
+            RegistryEvent event = this.event;
+            return CompletableFuture.completedFuture(event == null ? null : event.getInstances());
         }
 
         /**
@@ -660,6 +663,10 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 synchronized (mutex) {
                     if (!consumers.contains(consumer)) {
                         consumers.add(consumer);
+                        RegistryEvent event = this.event;
+                        if (event != null) {
+                            consumer.accept(event);
+                        }
                     }
                 }
             }
@@ -686,13 +693,23 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         }
 
         /**
+         * Checks if the event matches the service criteria.
+         *
+         * @param event registry event to match
+         * @return true if event matches service criteria
+         */
+        private boolean match(RegistryEvent event) {
+            return serviceId.match(event.getService(), event.getGroup(), event.getDefaultGroup());
+        }
+
+        /**
          * Updates service endpoints for a cluster based on registry changes.
          *
          * @param clusterName the target cluster name
          * @param event registry update event (null-safe, zero size removes endpoints)
          */
         private void update(String clusterName, RegistryEvent event) {
-            if (!started.get() || event == null) {
+            if (!started.get() || event == null || !match(event)) {
                 return;
             }
             synchronized (mutex) {
@@ -706,7 +723,8 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 List<ServiceEndpoint> olds = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
 
                 // merge endpoints by order
-                int capacity = endpoints == null ? 0 : endpoints.size();
+                RegistryEvent oldsEvent = this.event;
+                int capacity = oldsEvent == null ? 0 : oldsEvent.size();
                 capacity = capacity + size - (olds == null ? 0 : olds.size());
                 Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
                 for (ClusterSubscription cluster : clusters) {
@@ -716,7 +734,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                     }
                 }
                 List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
-                this.endpoints = newEndpoints;
+                this.event = new RegistryEvent(event.getVersion(), serviceId.getService(), serviceId.group, newEndpoints, event.getDefaultGroup());
                 for (Consumer<RegistryEvent> consumer : consumers) {
                     consumer.accept(new RegistryEvent(serviceId.getService(), serviceId.group, newEndpoints));
                 }
@@ -860,8 +878,15 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     private static class ClusterInstanceRegistration extends ClusterOperation<ServiceInstance> {
 
+        private final Callable<Void> doRegister;
+
         ClusterInstanceRegistration(RegistryService cluster, ServiceInstance instance) {
+            this(cluster, instance, null);
+        }
+
+        ClusterInstanceRegistration(RegistryService cluster, ServiceInstance instance, Callable<Void> doRegister) {
             super(cluster, instance);
+            this.doRegister = doRegister;
         }
 
         /**
@@ -870,14 +895,18 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         public boolean register() {
             if (!isDone()) {
                 try {
-                    cluster.register(service, group, instance);
+                    if (doRegister != null) {
+                        doRegister.call();
+                    } else {
+                        cluster.register(service, group, instance);
+                    }
                     setDone(true);
-                    logger.info("Success registering instance {}:{} to {} at {}",
-                            instance.getHost(), instance.getPort(), name, cluster.getName());
+                    logger.info("Success registering instance {} to {} at {}",
+                            instance.getSchemeAddress(), name, cluster.getName());
                     return true;
                 } catch (Throwable e) {
-                    logger.error("Failed to register instance {}:{} to {} at {}, caused by {}",
-                            instance.getHost(), instance.getPort(), name, cluster.getName(), e.getMessage(), e);
+                    logger.error("Failed to register instance {} to {} at {}, caused by {}",
+                            instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
                 return false;
             }
@@ -892,11 +921,11 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 try {
                     cluster.unregister(service, group, instance);
                     setDone(false);
-                    logger.info("Success unregistering instance {}:{} to {} at {}",
-                            instance.getHost(), instance.getPort(), name, cluster.getName());
+                    logger.info("Success unregistering instance {} to {} at {}",
+                            instance.getSchemeAddress(), name, cluster.getName());
                 } catch (Exception e) {
-                    logger.error("Failed to unregister instance {}:{} to {} at {}, caused by {}",
-                            instance.getHost(), instance.getPort(), name, cluster.getName(), e.getMessage(), e);
+                    logger.error("Failed to unregister instance {} to {} at {}, caused by {}",
+                            instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
             }
         }

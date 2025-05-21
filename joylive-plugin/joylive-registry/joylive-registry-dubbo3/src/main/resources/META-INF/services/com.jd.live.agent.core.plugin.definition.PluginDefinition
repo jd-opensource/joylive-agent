@@ -1,5 +1,5 @@
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ServiceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ReferenceConfigDefinition
-com.jd.live.agent.plugin.registry.dubbo.v3.definition.ServiceDiscoveryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ClusterUtilsDefinition
-com.jd.live.agent.plugin.registry.dubbo.v3.definition.FailbackRegistryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.RegistryFactoryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.ServiceDiscoveryFactoryDefinition

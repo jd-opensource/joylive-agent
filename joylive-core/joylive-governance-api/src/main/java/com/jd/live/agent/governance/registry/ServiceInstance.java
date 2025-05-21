@@ -29,8 +29,6 @@ import java.util.Map;
 @Setter
 public class ServiceInstance extends ServiceId {
 
-    private boolean interfaceMode;
-
     private FrameworkVersion framework;
 
     private String version;
@@ -61,8 +59,7 @@ public class ServiceInstance extends ServiceId {
                            int port,
                            int weight,
                            Map<String, String> metadata) {
-        super(id, namespace, service, group);
-        this.interfaceMode = interfaceMode;
+        super(id, namespace, service, group, interfaceMode);
         this.framework = framework;
         this.version = version;
         this.scheme = scheme;
@@ -87,5 +84,18 @@ public class ServiceInstance extends ServiceId {
     public String getMetadata(String key, String defaultValue) {
         String value = getMetadata(key);
         return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    public String getSchemeAddress() {
+        if (port > 0) {
+            if (scheme == null || scheme.isEmpty()) {
+                return host + ":" + port;
+            }
+            return scheme + "://" + host + ":" + port;
+        } else if (scheme == null || scheme.isEmpty()) {
+            return host;
+        }
+        return scheme + "://" + host;
+
     }
 }
