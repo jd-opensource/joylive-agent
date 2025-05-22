@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
+import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.client.DefaultServiceInstance;
 import org.apache.dubbo.registry.client.InstanceAddressURL;
@@ -146,21 +147,34 @@ public class UrlUtils {
         Map<String, String> metadata = instance.getMetadata();
         application.labelRegistry(metadata::put);
         MapOption option = new MapOption(metadata);
-        String params = option.getString("dubbo.metadata-service.url-params");
-        Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
-        });
-        MapOption urlOption = new MapOption(urlParams);
+        URLParams urlParams = getUrlParams(metadata, parser);
         return ServiceInstance.builder()
                 .interfaceMode(false)
-                .framework(new FrameworkVersion(DUBBO, urlOption.getString(RELEASE, VERSION)))
+                .framework(new FrameworkVersion(DUBBO, urlParams.getRelease()))
                 .service(instance.getServiceName())
-                .scheme(urlOption.getString("protocol", DUBBO))
+                .scheme(urlParams.getProtocol())
                 .group(instance.getMetadata(LABEL_GROUP))
                 .host(instance.getHost())
                 .port(instance.getPort())
                 .weight(option.getInteger(LABEL_WEIGHT, 100))
                 .metadata(metadata)
                 .build();
+    }
+
+    /**
+     * Extracts URL parameters from metadata map.
+     *
+     * @param metadata source metadata map (can be null)
+     * @param parser   parser for converting string to map
+     * @return URLParams containing protocol and version (defaults to DUBBO/VERSION if not found)
+     */
+    public static URLParams getUrlParams(Map<String, String> metadata, ObjectParser parser) {
+        String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
+        Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
+        });
+        String protocol = urlParams == null ? DUBBO : urlParams.getOrDefault("protocol", DUBBO);
+        String release = urlParams == null ? VERSION : urlParams.getOrDefault(RELEASE, VERSION);
+        return new URLParams(protocol, release);
     }
 
     /**
@@ -183,5 +197,18 @@ public class UrlUtils {
 
     public static URL toURL(org.apache.dubbo.registry.client.ServiceInstance instance) {
         return new InstanceAddressURL(instance, instance.getServiceMetadata(), "dubbo");
+    }
+
+    @Getter
+    public static class URLParams {
+
+        private final String protocol;
+
+        private final String release;
+
+        public URLParams(String protocol, String release) {
+            this.protocol = protocol;
+            this.release = release;
+        }
     }
 }

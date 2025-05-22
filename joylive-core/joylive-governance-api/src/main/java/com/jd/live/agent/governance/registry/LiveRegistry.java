@@ -992,7 +992,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                     if (doRegister != null) {
                         doRegister.call();
                     } else {
-                        cluster.register(service, group, instance);
+                        cluster.register(instance);
                     }
                     setDone(true);
                     logger.info("Success registering instance {} to {} at {}",

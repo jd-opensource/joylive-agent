@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils;
@@ -43,6 +45,8 @@ import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataU
  * Handles service instance changes and converts between Dubbo URL and RegistryEvent formats.
  */
 public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEvent>, AutoCloseable {
+
+    private static final Logger logger = LoggerFactory.getLogger(DubboRegistry.class);
 
     private final URL url;
 
@@ -132,6 +136,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
         List<ServiceInstance> instances = supply(endpoints);
         List<URL> urls = toList(instances, UrlUtils::toURL);
         delegate.notify(urls);
+        logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());
     }
 
     /**
