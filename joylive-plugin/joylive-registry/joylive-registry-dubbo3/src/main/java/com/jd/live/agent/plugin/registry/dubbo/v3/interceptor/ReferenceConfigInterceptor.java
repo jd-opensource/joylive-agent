@@ -33,6 +33,10 @@ import java.util.Map;
 public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<ReferenceConfig<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
+    private static final String KEY_REFERENCE_MIGRATION = "migration.step";
+    private static final String KEY_APPLICATION_MIGRATION = "dubbo.application.service-discovery.migration";
+    private static final String FORCE_INTERFACE = "FORCE_INTERFACE";
+    private static final String FORCE_APPLICATION = "FORCE_APPLICATION";
 
     public ReferenceConfigInterceptor(Application application, Registry registry) {
         super(application, registry);
@@ -40,10 +44,21 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
 
     @Override
     protected RegisterType getRegisterType(ReferenceConfig<?> config) {
-        String service = config.getProvidedBy();
-        return service == null || service.isEmpty()
+        String providedBy = config.getProvidedBy();
+        Map<String, String> parameters = config.getParameters();
+        String migration = parameters.get(KEY_REFERENCE_MIGRATION);
+        migration = migration == null || migration.isEmpty() ?
+                config.getApplication().getScopeModel().modelEnvironment().getAppConfigMap().get(KEY_APPLICATION_MIGRATION)
+                : migration;
+        migration = migration == null || migration.isEmpty() ? System.getProperty(KEY_APPLICATION_MIGRATION) : migration;
+        if (FORCE_INTERFACE.equalsIgnoreCase(migration)) {
+            return new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup());
+        } else if (FORCE_APPLICATION.equalsIgnoreCase(migration)) {
+            return new RegisterType(RegisterMode.INSTANCE, providedBy, config.getInterface(), config.getGroup());
+        }
+        return providedBy == null || providedBy.isEmpty()
                 ? new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup())
-                : new RegisterType(RegisterMode.INSTANCE, service, config.getInterface(), config.getGroup());
+                : new RegisterType(RegisterMode.INSTANCE, providedBy, config.getInterface(), config.getGroup());
     }
 
     @Override
