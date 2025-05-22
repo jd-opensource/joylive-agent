@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.url.component.PathURLAddress;
 import org.apache.dubbo.registry.client.DefaultServiceInstance;
 import org.apache.dubbo.registry.client.InstanceAddressURL;
 import org.apache.dubbo.rpc.model.ApplicationModel;
@@ -33,6 +34,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.Constants.*;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
@@ -45,6 +47,8 @@ public class UrlUtils {
     private static final String DUBBO = "dubbo";
     private static final String RELEASE = "release";
     private static final String VERSION = "3";
+    private static final String PROTOCOL = "protocol";
+    private static final String FIELD_URL_ADDRESS = "urlAddress";
 
     /**
      * Parses a URL into a ServiceId containing service name and group.
@@ -172,7 +176,7 @@ public class UrlUtils {
         String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
         Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
         });
-        String protocol = urlParams == null ? DUBBO : urlParams.getOrDefault("protocol", DUBBO);
+        String protocol = urlParams == null ? DUBBO : urlParams.getOrDefault(PROTOCOL, DUBBO);
         String release = urlParams == null ? VERSION : urlParams.getOrDefault(RELEASE, VERSION);
         return new URLParams(protocol, release);
     }
@@ -187,6 +191,7 @@ public class UrlUtils {
     public static DefaultServiceInstance toInstance(ServiceEndpoint endpoint, ApplicationModel model) {
         DefaultServiceInstance instance = new DefaultServiceInstance();
         Map<String, String> metadata = endpoint.getMetadata() == null ? new HashMap<>() : new HashMap<>(endpoint.getMetadata());
+        metadata.put(PROTOCOL, endpoint.getScheme());
         instance.setServiceName(endpoint.getService());
         instance.setHost(endpoint.getHost());
         instance.setPort(endpoint.getPort());
@@ -196,7 +201,11 @@ public class UrlUtils {
     }
 
     public static URL toURL(org.apache.dubbo.registry.client.ServiceInstance instance) {
-        return new InstanceAddressURL(instance, instance.getServiceMetadata(), "dubbo");
+        String protocol = instance.getMetadata(PROTOCOL, DUBBO);
+        PathURLAddress address = new PathURLAddress(protocol, null, null, null, instance.getHost(), instance.getPort());
+        URL url = new InstanceAddressURL(instance, instance.getServiceMetadata(), protocol);
+        setValue(url, FIELD_URL_ADDRESS, address);
+        return url;
     }
 
     @Getter
