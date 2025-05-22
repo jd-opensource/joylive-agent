@@ -929,10 +929,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         protected final T instance;
 
         @Getter
-        protected final String service;
-
-        @Getter
-        protected final String group;
+        protected final ServiceId serviceId;
 
         @Getter
         protected final String name;
@@ -942,8 +939,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         ClusterOperation(RegistryService cluster, T instance) {
             this.cluster = cluster;
             this.instance = instance;
-            this.service = instance.getService();
-            this.group = getClusterGroup(cluster, instance.group);
+            this.serviceId = new ServiceId(instance.getService(), getClusterGroup(cluster, instance.group), instance.isInterfaceMode());
             this.name = instance.getUniqueName();
         }
 
@@ -1013,7 +1009,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         public void unregister() {
             if (isDone()) {
                 try {
-                    cluster.unregister(service, group, instance);
+                    cluster.unregister(serviceId, instance);
                     setDone(false);
                     logger.info("Success unregistering instance {} to {} at {}",
                             instance.getSchemeAddress(), name, cluster.getName());
@@ -1045,7 +1041,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 return true;
             }
             try {
-                cluster.subscribe(service, group, consumer);
+                cluster.subscribe(serviceId, consumer);
                 setDone(true);
                 logger.info("Success subscribing {} at {}", name, cluster.getName());
                 return true;
@@ -1061,7 +1057,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
          */
         public void unsubscribe() {
             try {
-                cluster.unsubscribe(service, group);
+                cluster.unsubscribe(serviceId);
                 setDone(false);
                 logger.info("Success unsubscribing {} at {}", name, getClusterName());
             } catch (Exception e) {
