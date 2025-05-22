@@ -59,7 +59,7 @@ public class DubboNotifyListener implements NotifyListener {
             if (PROVIDERS_CATEGORY.equalsIgnoreCase(category)) {
                 // When all instances are down, the event includes a ServiceConfigURL with empty protocol.
                 List<ServiceEndpoint> endpoints = EMPTY_PROTOCOL.equalsIgnoreCase(url.getProtocol()) ? new ArrayList<>() : toList(urls, DubboEndpoint::new);
-                publisher.publish(new RegistryEvent(serviceId.getService(), serviceId.getGroup(), endpoints, defaultGroup));
+                publisher.publish(new RegistryEvent(serviceId, endpoints, defaultGroup));
             }
         }
         delegate.notify(urls);

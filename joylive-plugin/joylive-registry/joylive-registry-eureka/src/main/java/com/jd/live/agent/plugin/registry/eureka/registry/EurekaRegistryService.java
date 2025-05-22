@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryListener;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.shared.Application;
@@ -46,16 +47,17 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) {
-        return getEndpoints(client.getApplication(service), group);
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        return getEndpoints(client.getApplication(serviceId.getService()), serviceId.getGroup());
     }
 
     @Override
     public void publish(Application application) {
         if (application != null) {
             for (RegistryListener listener : listeners) {
-                List<ServiceEndpoint> endpoints = getEndpoints(application, listener.getGroup());
-                publish(new RegistryEvent(application.getName(), listener.getGroup(), endpoints, getDefaultGroup()), listener);
+                ServiceId serviceId = listener.getServiceId();
+                List<ServiceEndpoint> endpoints = getEndpoints(application, serviceId.getGroup());
+                publish(new RegistryEvent(serviceId, endpoints, getDefaultGroup()), listener);
             }
         }
     }

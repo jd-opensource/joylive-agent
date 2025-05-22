@@ -69,23 +69,29 @@ public class UrlUtils {
      */
     public static ServiceId toServiceId(URL url, boolean forceInterfaceMode) {
         String service;
+        boolean interfaceMode = forceInterfaceMode;
         String side = url.getParameter(SIDE_KEY, PROVIDER_SIDE);
         if (CONSUMER_SIDE.equalsIgnoreCase(side)) {
-            service = url.getParameter(PROVIDED_BY);
-            if (!forceInterfaceMode && service != null && !service.isEmpty()) {
-                // group is not valid for service.
-                // group is valid for interface.
-                return new ServiceId(service, "", false);
+            if (forceInterfaceMode) {
+                service = url.getServiceInterface();
+            } else {
+                service = url.getParameter(PROVIDED_BY);
+                if (service == null || service.isEmpty()) {
+                    interfaceMode = true;
+                    service = url.getServiceInterface();
+                }
             }
         } else if (!forceInterfaceMode && isServiceMode(url)) {
-            return new ServiceId(url.getApplication(), "", false);
+            service = url.getApplication();
+        } else {
+            service = url.getServiceInterface();
+            interfaceMode = true;
         }
-        service = url.getServiceInterface();
         String group = url.getParameter(LABEL_GROUP, "");
         if (group == null || group.isEmpty()) {
             group = url.getParameter(LABEL_SERVICE_GROUP, "");
         }
-        return new ServiceId(service, group, true);
+        return new ServiceId(service, group, interfaceMode);
     }
 
     /**

@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils;
+import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.metadata.MetadataInfo;
 import org.apache.dubbo.registry.NotifyListener;
@@ -45,6 +46,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
 
     private final URL url;
 
+    @Getter
     private final NotifyListener delegate;
 
     private final RegistryEventPublisher publisher;
@@ -106,8 +108,10 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
             String category = url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
             if (PROVIDERS_CATEGORY.equalsIgnoreCase(category)) {
                 // When all instances are down, the event includes a ServiceConfigURL with empty protocol.
-                List<ServiceEndpoint> endpoints = EMPTY_PROTOCOL.equalsIgnoreCase(url.getProtocol()) ? new ArrayList<>() : toList(urls, DubboEndpoint::new);
-                publisher.publish(new RegistryEvent(serviceId.getService(), serviceId.getGroup(), endpoints, defaultGroup));
+                List<ServiceEndpoint> endpoints = EMPTY_PROTOCOL.equalsIgnoreCase(url.getProtocol())
+                        ? new ArrayList<>()
+                        : toList(urls, u -> new DubboEndpoint(u, serviceId));
+                publisher.publish(new RegistryEvent(serviceId, endpoints, defaultGroup));
             }
         }
     }
@@ -135,7 +139,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
      */
     public void start() {
         if (started.compareAndSet(false, true)) {
-            registry.subscribe(serviceId.getService(), serviceId.getGroup(), this);
+            registry.subscribe(serviceId, this);
         }
     }
 
@@ -149,7 +153,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
      */
     private void unsubscribe() {
         if (started.compareAndSet(true, false)) {
-            registry.unsubscribe(serviceId.getService(), serviceId.getGroup(), this);
+            registry.unsubscribe(serviceId, this);
         }
     }
 

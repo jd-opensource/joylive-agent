@@ -15,8 +15,9 @@
  */
 package com.jd.live.agent.plugin.registry.springcloud.v2_2.registry;
 
-import com.jd.live.agent.governance.registry.RegistryService;
+import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ import java.util.Map;
 /**
  * Simple discovery client registry.
  */
-public class SimpleRegistryService extends RegistryService.AbstractSystemRegistryService {
+public class SimpleRegistryService extends AbstractSystemRegistryService {
 
     private final Map<String, List<ServiceEndpoint>> endpoints;
 
@@ -33,8 +34,8 @@ public class SimpleRegistryService extends RegistryService.AbstractSystemRegistr
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) {
-        return endpoints.get(service);
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        return endpoints.get(serviceId.getService());
     }
 
 }

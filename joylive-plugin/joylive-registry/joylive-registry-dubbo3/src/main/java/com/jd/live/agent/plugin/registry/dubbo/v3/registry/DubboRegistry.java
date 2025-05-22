@@ -29,9 +29,9 @@ import org.apache.dubbo.rpc.model.ScopeModelUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstance;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
 import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
@@ -58,17 +58,18 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     private final Map<URL, DubboNotifyListener> listeners = new ConcurrentHashMap<>(16);
 
+    private final AtomicBoolean registered = new AtomicBoolean(false);
+
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
         this.delegate = delegate;
         this.registry = registry;
         this.defaultGroup = GROUPS.get(delegate.getClass().getName());
         this.model = ScopeModelUtil.getApplicationModel(delegate.getUrl().getScopeModel());
-        registry.addSystemRegistry(this);
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) {
-        URL url = urls.get(getUniqueName(null, service, group));
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        URL url = urls.get(serviceId.getUniqueName());
         return url == null ? new ArrayList<>() : toList(delegate.lookup(url), DubboEndpoint::new);
     }
 
@@ -91,6 +92,8 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     @Override
     public void register(URL url) {
+        // Delay to ensure this registry is used.
+        addSystemRegistry();
         registry.register(toInstance(url), new RegistryRunnable(this, () -> delegate.register(url)));
     }
 
@@ -102,6 +105,8 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     @Override
     public void subscribe(URL url, NotifyListener listener) {
+        // Delay to ensure this registry is used.
+        addSystemRegistry();
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
             ServiceId serviceId = toServiceId(url, true);
             String key = serviceId.getUniqueName();
@@ -152,5 +157,11 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     @Override
     public int hashCode() {
         return Objects.hashCode(delegate);
+    }
+
+    private void addSystemRegistry() {
+        if (registered.compareAndSet(false, true)) {
+            registry.addSystemRegistry(this);
+        }
     }
 }

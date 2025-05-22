@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.service.registry.nacos;
 
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 
 public class NacosDubboRegistry extends NacosRegistry {
@@ -27,16 +28,16 @@ public class NacosDubboRegistry extends NacosRegistry {
     }
 
     @Override
-    protected String getService(String service, ServiceInstance instance) {
-        if (!instance.isInterfaceMode()) {
-            return service;
+    protected String getService(ServiceId serviceId, ServiceInstance instance) {
+        if (!serviceId.isInterfaceMode()) {
+            return serviceId.getService();
         }
         String category = instance.getMetadata("category", "providers");
         StringBuilder builder = new StringBuilder(56)
                 .append(category).append(SEPARATOR)
-                .append(service).append(':')
+                .append(serviceId.getService()).append(':')
                 .append(instance.getVersion() == null ? "" : instance.getVersion()).append(':')
-                .append(instance.getGroup() == null ? "" : instance.getGroup());
+                .append(serviceId.getGroup() == null ? "" : serviceId.getGroup());
         return builder.toString();
     }
 }

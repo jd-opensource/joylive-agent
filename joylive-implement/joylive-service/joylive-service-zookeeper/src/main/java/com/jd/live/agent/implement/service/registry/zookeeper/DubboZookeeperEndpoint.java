@@ -35,6 +35,8 @@ import java.util.Map;
 @Builder
 public class DubboZookeeperEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
+    private String scheme;
+
     private String service;
 
     private String group;

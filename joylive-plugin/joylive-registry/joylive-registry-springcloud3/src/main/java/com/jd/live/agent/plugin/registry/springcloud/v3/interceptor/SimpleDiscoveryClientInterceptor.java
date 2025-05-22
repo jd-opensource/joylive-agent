@@ -49,12 +49,14 @@ public class SimpleDiscoveryClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         SimpleDiscoveryProperties properties = ctx.getArgument(0);
         Map<String, List<DefaultServiceInstance>> simples = properties.getInstances();
-        Map<String, List<ServiceEndpoint>> instances = new HashMap<>(simples.size());
-        simples.forEach((service, instance) -> {
-            registry.register(service);
-            logger.info("Found simple discovery client provider, service: {}", service);
-            instances.put(service, toList(instance, SpringEndpoint::new));
-        });
-        registry.addSystemRegistry(new SimpleRegistryService(instances));
+        if (!simples.isEmpty()) {
+            Map<String, List<ServiceEndpoint>> instances = new HashMap<>(simples.size());
+            simples.forEach((service, instance) -> {
+                registry.register(service);
+                logger.info("Found simple discovery client provider, service: {}", service);
+                instances.put(service, toList(instance, SpringEndpoint::new));
+            });
+            registry.addSystemRegistry(new SimpleRegistryService(instances));
+        }
     }
 }

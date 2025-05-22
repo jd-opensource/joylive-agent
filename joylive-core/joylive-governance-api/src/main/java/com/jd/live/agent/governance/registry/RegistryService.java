@@ -27,8 +27,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
-
 /**
  * Provides functionality for managing the lifecycle of a registry service,
  * as well as registering, unregistering, subscribing, and unsubscribing from service instances.
@@ -76,29 +74,104 @@ public interface RegistryService extends AutoCloseable {
      *
      * @param instance The service instance to be registered.
      */
-    void register(String service, String group, ServiceInstance instance) throws Exception;
+    default void register(ServiceInstance instance) throws Exception {
+        register(instance, instance);
+    }
+
+    /**
+     * Registers a service instance under specified service and group.
+     *
+     * @param service  service name to register under (non-null)
+     * @param group    service group to register under (nullable for default group)
+     * @param instance service instance to register (non-null)
+     * @throws Exception if registration fails due to validation or system errors
+     * @see #register(ServiceId, ServiceInstance)
+     */
+    default void register(String service, String group, ServiceInstance instance) throws Exception {
+        register(new ServiceId(service, group), instance);
+    }
+
+    /**
+     * Core method to register a service instance with complete identification.
+     *
+     * @param serviceId full service identifier (non-null)
+     * @param instance  service instance to register (non-null)
+     * @throws Exception if registration fails due to validation or system errors
+     */
+    void register(ServiceId serviceId, ServiceInstance instance) throws Exception;
 
     /**
      * Unregisters a service instance from the registry.
      *
      * @param instance The service instance to be unregistered.
      */
-    void unregister(String service, String group, ServiceInstance instance) throws Exception;
+    default void unregister(ServiceInstance instance) throws Exception {
+        unregister(instance, instance);
+    }
 
     /**
-     * Subscribes to endpoint events for a specific service.
+     * Unregisters a service instance from the specified service group.
      *
-     * @param service  The service name to subscribe to.
-     * @param consumer The consumer that will receive endpoint events.
+     * @param service  the service name the instance belongs to (must not be null)
+     * @param group    the service group (null indicates default group)
+     * @param instance the service instance to unregister (must not be null)
+     * @throws Exception if unregistration fails due to system errors or invalid parameters
+     * @see #unregister(ServiceId, ServiceInstance)
      */
-    void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception;
+    default void unregister(String service, String group, ServiceInstance instance) throws Exception {
+        unregister(new ServiceId(service, group), instance);
+    }
 
     /**
-     * Unsubscribes from endpoint events for a specific service.
+     * Core method to unregister a service instance using complete service identification.
      *
-     * @param service The service name to unsubscribe from.
+     * @param serviceId the full service identifier (must not be null)
+     * @param instance  the service instance to unregister (must not be null)
+     * @throws Exception if unregistration fails due to system errors or invalid parameters
      */
-    void unsubscribe(String service, String group) throws Exception;
+    void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception;
+
+    /**
+     * Subscribes to service registry events for a specific service group.
+     *
+     * @param service  service name to subscribe to (must not be null)
+     * @param group    service group to monitor (null indicates default group)
+     * @param consumer event consumer that will receive registry events (must not be null)
+     * @throws Exception if subscription fails due to system errors or invalid parameters
+     * @see #subscribe(ServiceId, Consumer)
+     */
+    default void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
+        subscribe(new ServiceId(service, group), consumer);
+    }
+
+    /**
+     * Core method to subscribe to service registry events with complete identification.
+     *
+     * @param serviceId full service identifier (must not be null)
+     * @param consumer  event consumer that will receive registry events (must not be null)
+     * @throws Exception if subscription fails due to system errors or invalid parameters
+     */
+    void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) throws Exception;
+
+    /**
+     * Unsubscribes from service registry events for a specific service group.
+     *
+     * @param service service name to unsubscribe from (must not be null)
+     * @param group   service group to stop monitoring (null indicates default group)
+     * @throws Exception if unsubscription fails due to system errors or invalid parameters
+     * @see #unsubscribe(ServiceId)
+     */
+    default void unsubscribe(String service, String group) throws Exception {
+        unsubscribe(new ServiceId(service, group));
+    }
+
+    /**
+     * Core method to unsubscribe from service registry events with complete identification.
+     *
+     * @param serviceId full service identifier (must not be null)
+     * @throws Exception if unsubscription fails due to system errors or invalid parameters
+     */
+    void unsubscribe(ServiceId serviceId) throws Exception;
 
     /**
      * A basic implementation of the {@link RegistryService} interface.
@@ -134,26 +207,26 @@ public interface RegistryService extends AutoCloseable {
         }
 
         @Override
-        public void register(String service, String group, ServiceInstance instance) throws Exception {
+        public void register(ServiceId serviceId, ServiceInstance instance) throws Exception {
 
         }
 
         @Override
-        public void unregister(String service, String group, ServiceInstance instance) throws Exception {
+        public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
 
         }
 
         @Override
-        public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
+        public void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) throws Exception {
             Locks.write(lock, () -> {
-                RegistryListener listener = new RegistryListener(service, group, consumer);
+                RegistryListener listener = new RegistryListener(serviceId, consumer);
                 listeners.add(listener);
                 // notify
-                String key = getUniqueName(null, service, group);
+                String key = serviceId.getUniqueName();
                 RegistryEvent event = events.get(key);
                 if (event == null) {
                     try {
-                        event = new RegistryEvent(service, group, getEndpoints(service, group), getDefaultGroup());
+                        event = new RegistryEvent(serviceId, getEndpoints(serviceId), getDefaultGroup());
                         RegistryEvent old = events.putIfAbsent(key, event);
                         if (old != null) {
                             event = old;
@@ -167,21 +240,21 @@ public interface RegistryService extends AutoCloseable {
         }
 
         @Override
-        public void unsubscribe(String service, String group) throws Exception {
-            listeners.removeIf(listener -> listener.match(service, group, getDefaultGroup()));
+        public void unsubscribe(ServiceId serviceId) throws Exception {
+            listeners.removeIf(listener -> listener.match(serviceId, getDefaultGroup()));
         }
 
         protected String getDefaultGroup() {
             return null;
         }
 
-        protected abstract List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception;
+        protected abstract List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception;
 
         @Override
         public void publish(RegistryEvent event) {
             if (event != null) {
                 if (event.isFull()) {
-                    String key = getUniqueName(null, event.getService(), event.getGroup());
+                    String key = event.getServiceId().getUniqueName();
                     events.put(key, event);
                 }
                 Locks.read(lock, () -> {
@@ -202,7 +275,7 @@ public interface RegistryService extends AutoCloseable {
         }
 
         protected boolean match(RegistryEvent event, RegistryListener listener) {
-            return listener.match(event.getService(), event.getGroup(), event.getDefaultGroup());
+            return listener.match(event.getServiceId(), event.getDefaultGroup());
         }
     }
 

@@ -28,9 +28,7 @@ import java.util.function.Consumer;
 @Getter
 public class RegistryListener {
 
-    private final String service;
-
-    private final String group;
+    private final ServiceId serviceId;
 
     private final Consumer<RegistryEvent> consumer;
 
@@ -38,9 +36,8 @@ public class RegistryListener {
 
     private long version;
 
-    public RegistryListener(String service, String group, Consumer<RegistryEvent> consumer) {
-        this.service = service;
-        this.group = group;
+    public RegistryListener(ServiceId serviceId, Consumer<RegistryEvent> consumer) {
+        this.serviceId = serviceId;
         this.consumer = consumer;
     }
 
@@ -64,15 +61,15 @@ public class RegistryListener {
     }
 
     /**
-     * Checks if listener matches given service and group.
+     * Checks if this listener's service matches the target service ID.
+     * Delegates matching logic to {@link ServiceId#match(ServiceId, String)}.
      *
-     * @param service      service name to match
-     * @param group        group name to match
-     * @param defaultGroup default group name for fallback matching
-     * @return true if both service and group match
+     * @param target the service ID to match against (may be null)
+     * @param defaultGroup fallback group used when matching (may be null)
+     * @return true if services match according to ServiceId matching rules
      */
-    public boolean match(String service, String group, String defaultGroup) {
-        return ServiceId.match(this.service, this.group, service, group, defaultGroup);
+    public boolean match(ServiceId target, String defaultGroup) {
+        return serviceId.match(target, defaultGroup);
     }
 
 }

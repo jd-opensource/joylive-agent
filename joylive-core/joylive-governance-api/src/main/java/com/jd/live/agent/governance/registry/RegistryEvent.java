@@ -27,30 +27,39 @@ public class RegistryEvent {
 
     protected final long version;
 
-    protected final String service;
-
-    protected final String group;
+    protected final ServiceId serviceId;
 
     protected final List<ServiceEndpoint> instances;
 
     protected final String defaultGroup;
 
     public RegistryEvent(String service, List<ServiceEndpoint> instances) {
-        this(VERSION.incrementAndGet(), service, null, instances, null);
+        this(VERSION.incrementAndGet(), new ServiceId(service), instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances) {
-        this(VERSION.incrementAndGet(), service, group, instances, null);
+        this(VERSION.incrementAndGet(), new ServiceId(service, group), instances, null);
+    }
+
+    public RegistryEvent(ServiceId serviceId, List<ServiceEndpoint> instances) {
+        this(VERSION.incrementAndGet(), serviceId, instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
-        this(VERSION.incrementAndGet(), service, group, instances, defaultGroup);
+        this(VERSION.incrementAndGet(), new ServiceId(service, group), instances, defaultGroup);
+    }
+
+    public RegistryEvent(ServiceId serviceId, List<ServiceEndpoint> instances, String defaultGroup) {
+        this(VERSION.incrementAndGet(), serviceId, instances, defaultGroup);
     }
 
     public RegistryEvent(long version, String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
+        this(version, new ServiceId(service, group), instances, defaultGroup);
+    }
+
+    public RegistryEvent(long version, ServiceId serviceId, List<ServiceEndpoint> instances, String defaultGroup) {
         this.version = version;
-        this.service = service;
-        this.group = group;
+        this.serviceId = serviceId;
         this.instances = instances;
         this.defaultGroup = defaultGroup;
     }

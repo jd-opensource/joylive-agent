@@ -63,8 +63,9 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception {
-        List<ServiceInstance> instances = delegate.getInstances(service);
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        List<ServiceInstance> instances = delegate.getInstances(serviceId.getService());
+        String group = serviceId.getGroup();
         return toList(instances, instance -> {
             ServiceEndpoint endpoint = new DubboInstance(instance);
             String grp = endpoint.getGroup();
@@ -146,7 +147,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
         listener.addListener(protocolServiceKey, urls -> {
             Map<String, List<ServiceEndpoint>> endpoints = toInstance(urls);
             for (Map.Entry<String, List<ServiceEndpoint>> entry : endpoints.entrySet()) {
-                publish(new RegistryEvent(serviceId.getService(), entry.getKey(), entry.getValue(), defaultGroup));
+                publish(new RegistryEvent(new ServiceId(serviceId.getService(), entry.getKey()), entry.getValue(), defaultGroup));
             }
         });
         delegate.addServiceInstancesChangedListener(listener);

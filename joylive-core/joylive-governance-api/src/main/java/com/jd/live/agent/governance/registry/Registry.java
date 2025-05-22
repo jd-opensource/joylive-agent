@@ -76,42 +76,91 @@ public interface Registry extends ServiceRegistryFactory {
     void unregister(ServiceInstance instance);
 
     /**
-     * Subscribes to a specific service policy based on the service name.
+     * Registers a service for policy subscription.
      *
-     * @param service The name of the service to register.
-     * @return A {@link CompletableFuture} that completes when the registration is successful.
+     * @param service service name to register
+     * @return future that completes when registration succeeds
      */
     default CompletableFuture<Void> register(String service) {
-        return register(service, null);
+        return register(new ServiceId(service, null));
     }
 
     /**
-     * Subscribes to a specific service policy based on the service name and group.
+     * Registers a service with group for policy subscription.
      *
-     * @param service The name of the service to register.
-     * @param group   The group to which the service belongs.
-     * @return A {@link CompletableFuture} that completes when the registration is successful.
+     * @param service service name to register
+     * @param group service group (may be null)
+     * @return future that completes when registration succeeds
      */
-    CompletableFuture<Void> register(String service, String group);
+    default CompletableFuture<Void> register(String service, String group) {
+        return register(new ServiceId(service, group));
+    }
 
     /**
-     * Subscribes to a specific service policy based on the service name .
+     * Core registration method using ServiceId.
      *
-     * @param service The name of the service whose policy is to be subscribed to.
-     * @return A {@link CompletableFuture} that completes when the subscription is successful.
+     * @param serviceId complete service identifier
+     * @return future that completes when registration succeeds
+     */
+    CompletableFuture<Void> register(ServiceId serviceId);
+
+    /**
+     * Subscribes to service policy notifications.
+     *
+     * @param service target service name
+     * @return future completed when subscription succeeds
      */
     default CompletableFuture<Void> subscribe(String service) {
-        return subscribe(service, (String) null);
+        return subscribe(new ServiceId(service));
     }
 
     /**
-     * Subscribes to a specific service policy based on the service name and group.
+     * Subscribes to service policy notifications with group filtering.
      *
-     * @param service The name of the service whose policy is to be subscribed to.
-     * @param group   The group to which the service belongs.
-     * @return A {@link CompletableFuture} that completes when the subscription is successful.
+     * @param service target service name
+     * @param group service group (optional)
+     * @return future completed when subscription succeeds
      */
-    CompletableFuture<Void> subscribe(String service, String group);
+    default CompletableFuture<Void> subscribe(String service, String group) {
+        return subscribe(new ServiceId(service, group));
+    }
+
+    /**
+     * Core subscription method using complete service identifier.
+     *
+     * @param serviceId full service identification
+     * @return future completed when subscription succeeds
+     */
+    CompletableFuture<Void> subscribe(ServiceId serviceId);
+
+    /**
+     * Subscribes to service endpoint events.
+     *
+     * @param service  target service name
+     * @param consumer event handler for endpoint changes
+     */
+    default void subscribe(String service, Consumer<RegistryEvent> consumer) {
+        subscribe(new ServiceId(service), consumer);
+    }
+
+    /**
+     * Subscribes to service endpoint events with group filtering.
+     *
+     * @param service  target service name
+     * @param group    service group (optional)
+     * @param consumer event handler for endpoint changes
+     */
+    default void subscribe(String service, String group, Consumer<RegistryEvent> consumer) {
+        subscribe(new ServiceId(service, group), consumer);
+    }
+
+    /**
+     * Core subscription with full service identifier.
+     *
+     * @param serviceId complete service identification
+     * @param consumer  event handler for endpoint changes
+     */
+    void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer);
 
     /**
      * Subscribes to the specified service and attempts to retrieve its governance policy.
@@ -188,85 +237,94 @@ public interface Registry extends ServiceRegistryFactory {
         }
     }
 
-    /**
-     * Subscribes to endpoint events for a specific service.
-     *
-     * @param service  the service name to subscribe to
-     * @param consumer the consumer that will receive endpoint events
-     */
-    default void subscribe(String service, Consumer<RegistryEvent> consumer) {
-        subscribe(service, null, consumer);
-    }
 
     /**
-     * Subscribes to a specific service in the specified group and registers a consumer to handle endpoint events.
-     * This method allows the caller to receive notifications or updates related to the service's endpoints.
+     * Removes endpoint event subscription for a service.
      *
-     * @param service  the name of the service to subscribe to.
-     * @param group    the group to which the service belongs.
-     * @param consumer the consumer to handle endpoint events triggered by the subscription.
-     */
-    void subscribe(String service, String group, Consumer<RegistryEvent> consumer);
-
-    /**
-     * Unsubscribes from endpoint events for a service.
-     *
-     * @param service  the service name
-     * @param consumer the event consumer
+     * @param service  service name to unsubscribe from
+     * @param consumer event consumer to remove
      */
     default void unsubscribe(String service, Consumer<RegistryEvent> consumer) {
-        unsubscribe(service, null, consumer);
+        unsubscribe(new ServiceId(service), consumer);
     }
 
     /**
-     * Unsubscribes from endpoint events for a service in group.
+     * Removes endpoint event subscription for a grouped service.
      *
-     * @param service  the service name
-     * @param group    the service group (nullable)
-     * @param consumer the event consumer
+     * @param service  service name to unsubscribe from
+     * @param group    service group (may be null)
+     * @param consumer event consumer to remove
      */
-    void unsubscribe(String service, String group, Consumer<RegistryEvent> consumer);
+    default void unsubscribe(String service, String group, Consumer<RegistryEvent> consumer) {
+        unsubscribe(new ServiceId(service, group), consumer);
+    }
 
     /**
-     * Checks if currently subscribed to the specified service without considering any consumer group.
+     * Core unsubscription with complete service identifier.
      *
-     * @param service the service name to check subscription for (must not be {@code null})
-     * @return {@code true} if subscribed to the service, {@code false} otherwise
+     * @param serviceId full service identification
+     * @param consumer  event consumer to remove
+     */
+    void unsubscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer);
+
+    /**
+     * Checks subscription status for a service (group-agnostic).
+     *
+     * @param service service name to check (non-null)
+     * @return true if subscribed to the service
      * @see #isSubscribed(String, String)
      */
     default boolean isSubscribed(String service) {
-        return isSubscribed(service, null);
+        return isSubscribed(new ServiceId(service));
     }
 
     /**
-     * Checks if currently subscribed to the specified service and optional consumer group.
+     * Checks subscription status for a service and optional group.
      *
-     * @param service the service name to check subscription for (must not be {@code null})
-     * @param group   the consumer group to check (may be {@code null})
-     * @return {@code true} if subscribed to the service (and group, if specified), {@code false} otherwise
+     * @param service service name to check (non-null)
+     * @param group   consumer group (nullable)
+     * @return true if subscribed to service/group combination
      */
-    boolean isSubscribed(String service, String group);
+    default boolean isSubscribed(String service, String group) {
+        return isSubscribed(new ServiceId(service, group));
+    }
 
     /**
-     * Checks if the specified service policy is ready in the default namespace.
+     * Core subscription check using complete service identifier.
      *
-     * @param service the name of the service to check (must not be {@code null} or empty)
-     * @return {@code true} if the service is ready in the default namespace,
-     * {@code false} otherwise
+     * @param serviceId full service identification
+     * @return true if currently subscribed
+     */
+    boolean isSubscribed(ServiceId serviceId);
+
+    /**
+     * Verifies service readiness in default namespace.
+     *
+     * @param service service name to check (non-null and non-empty)
+     * @return true if service is operational
      */
     default boolean isReady(String service) {
-        return isReady(null, service);
+        return isReady(new ServiceId(service));
     }
 
     /**
-     * Checks if the specified service policy in the given namespace is ready for operation.
+     * Verifies service readiness in specified namespace.
      *
-     * @param namespace the namespace containing the service (may be {@code null} for default namespace)
-     * @param service   the name of the service to check (must not be {@code null} or empty)
-     * @return {@code true} if the service exists and is ready in the specified namespace,
-     * {@code false} otherwise
+     * @param namespace target namespace (null for default)
+     * @param service service name to check (non-null and non-empty)
+     * @return true if service is operational in namespace
      */
-    boolean isReady(String namespace, String service);
+    default boolean isReady(String namespace, String service) {
+        return isReady(new ServiceId(namespace, service, null));
+    }
+
+    /**
+     * Core readiness check with complete service identifier.
+     *
+     * @param serviceId full service identification
+     * @return true if service is operational
+     */
+    boolean isReady(ServiceId serviceId);
 
     /**
      * Retrieves endpoints for the specified service using the default group.
@@ -313,20 +371,27 @@ public interface Registry extends ServiceRegistryFactory {
 
     @Override
     default ServiceRegistry getServiceRegistry(String service) {
-        return getServiceRegistry(service, null);
+        return getServiceRegistry(new ServiceId(service));
     }
 
     /**
-     * Retrieves the {@link ServiceRegistry} for the specified service name and group.
-     * Implementations of this method should return the appropriate registry based on
-     * the provided service name and group. If the group is {@code null}, the default
-     * group should be used.
+     * Gets the ServiceRegistry for a service in specified group.
      *
-     * @param service the name of the service for which the registry is being retrieved
-     * @param group   the group name associated with the service (can be {@code null})
-     * @return the {@link ServiceRegistry} associated with the specified service name and group
+     * @param service target service name (non-null)
+     * @param group   service group (null for default)
+     * @return corresponding service registry
      */
-    ServiceRegistry getServiceRegistry(String service, String group);
+    default ServiceRegistry getServiceRegistry(String service, String group) {
+        return getServiceRegistry(new ServiceId(service, group));
+    }
+
+    /**
+     * Gets the ServiceRegistry with complete service identification.
+     *
+     * @param serviceId full service identifier
+     * @return corresponding service registry
+     */
+    ServiceRegistry getServiceRegistry(ServiceId serviceId);
 
 }
 

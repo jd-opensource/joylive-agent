@@ -25,8 +25,6 @@ import java.io.Serializable;
 @Setter
 public class ServiceId implements Serializable {
 
-    protected String id;
-
     protected String namespace;
 
     protected String service;
@@ -41,27 +39,22 @@ public class ServiceId implements Serializable {
     }
 
     public ServiceId(String service) {
-        this(null, null, service, null, false);
+        this(null, service, null, false);
     }
 
     public ServiceId(String service, String group) {
-        this(null, null, service, group, false);
+        this(null, service, group, false);
     }
 
     public ServiceId(String service, String group, boolean interfaceMode) {
-        this(null, null, service, group, interfaceMode);
+        this(null, service, group, interfaceMode);
     }
 
     public ServiceId(String namespace, String service, String group) {
-        this(null, namespace, service, group, false);
+        this(namespace, service, group, false);
     }
 
-    public ServiceId(String id, String namespace, String service, String group) {
-        this(id, namespace, service, group, false);
-    }
-
-    public ServiceId(String id, String namespace, String service, String group, boolean interfaceMode) {
-        this.id = id;
+    public ServiceId(String namespace, String service, String group, boolean interfaceMode) {
         this.namespace = namespace;
         this.service = service;
         this.group = group;
@@ -76,40 +69,29 @@ public class ServiceId implements Serializable {
     }
 
     /**
-     * Checks if ServiceId matches given service and group.
+     * Checks if this service matches the target service using the same rules as {@link #match(ServiceId, ServiceId, String)}.
      *
-     * @param service      service name to match
-     * @param group        group name to match
-     * @param defaultGroup default group name for fallback matching
-     * @return true if both service and group match
+     * @param target target service to match against (may be null)
+     * @param defaultGroup default group name used when this service's group is empty (may be null)
+     * @return true if services match (case-insensitive) and groups match according to rules
      */
-    public boolean match(String service, String group, String defaultGroup) {
-        return match(this.service, this.group, service, group, defaultGroup);
+    public boolean match(ServiceId target, String defaultGroup) {
+        return match(this, target, defaultGroup);
     }
 
     /**
-     * Determines if a source service/group matches a target service/group with default group fallback.
-     * <p>
-     * Matching rules:
-     * <ul>
-     *   <li>Service names must match (case-insensitive)</li>
-     *   <li>If source group is null or empty, matches:
-     *     <ul>
-     *       <li>Null/empty target group, OR</li>
-     *       <li>Target group matching default group (case-insensitive)</li>
-     *     </ul>
-     *   </li>
-     *   <li>Otherwise requires exact group match (case-insensitive)</li>
-     * </ul>
+     * Determines if two service IDs match according to the specified matching rules.
      *
-     * @param sourceService the source service name to match
-     * @param sourceGroup   the source group name to match (may be null or empty)
-     * @param targetService the target service name to compare against
-     * @param targetGroup   the target group name to compare against
-     * @param defaultGroup  the default group name for fallback matching
-     * @return true if services and groups match according to rules, false otherwise
+     * @param source the source service ID to match against (may be null)
+     * @param target the target service ID to check (may be null)
+     * @param defaultGroup the default group name to use when source group is empty (may be null)
+     * @return true if the service IDs match according to the rules, false otherwise
      */
-    public static boolean match(String sourceService, String sourceGroup, String targetService, String targetGroup, String defaultGroup) {
+    public static boolean match(ServiceId source, ServiceId target, String defaultGroup) {
+        String sourceService = source == null ? null : source.getService();
+        String sourceGroup = source == null ? null : source.getGroup();
+        String targetService = target == null ? null : target.getService();
+        String targetGroup = target == null ? null : target.getGroup();
         if (sourceService == null || !sourceService.equalsIgnoreCase(targetService)) {
             return false;
         }

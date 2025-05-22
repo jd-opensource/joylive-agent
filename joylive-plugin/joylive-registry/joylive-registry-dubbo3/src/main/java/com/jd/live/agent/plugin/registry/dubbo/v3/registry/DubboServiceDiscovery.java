@@ -18,11 +18,9 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.governance.registry.CompositeRegistry;
-import com.jd.live.agent.governance.registry.RegistryRunnable;
+import com.jd.live.agent.core.util.Locks;
+import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboInstance;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
@@ -38,12 +36,17 @@ import org.apache.dubbo.rpc.model.ScopeModelUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstance;
+import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
 import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
 import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.customizeInstance;
 import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.setMetadataStorageType;
@@ -59,6 +62,8 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     private static final int REGISTERED = 1;
 
     private static final int REGISTERED_SUCCESS = 2;
+
+    private static final String FIELD_CUSTOMIZERS = "serviceInstanceNotificationCustomizers";
 
     private final ServiceDiscovery delegate;
 
@@ -77,9 +82,11 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     private final AtomicInteger registered = new AtomicInteger(UNREGISTER);
 
-    private final Map<URL, NotifyListener> subscribes = new ConcurrentHashMap<>(16);
+    private final Map<URL, Set<NotifyListener>> subscribes = new ConcurrentHashMap<>(16);
 
     private final Map<ServiceInstancesChangedListener, List<DubboNotifyListener>> listeners = new ConcurrentHashMap<>(16);
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public DubboServiceDiscovery(ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
         this.delegate = delegate;
@@ -92,8 +99,9 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception {
-        List<org.apache.dubbo.registry.client.ServiceInstance> instances = delegate.getInstances(service);
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        List<org.apache.dubbo.registry.client.ServiceInstance> instances = delegate.getInstances(serviceId.getService());
+        String group = serviceId.getGroup();
         return toList(instances, instance -> {
             ServiceEndpoint endpoint = new DubboInstance(instance);
             String grp = endpoint.getGroup();
@@ -147,7 +155,16 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public void subscribe(URL url, NotifyListener listener) {
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            subscribes.putIfAbsent(url, listener);
+            Locks.write(lock, () -> {
+                if (subscribes.computeIfAbsent(url, k -> new CopyOnWriteArraySet<>()).add(listener) && !listeners.isEmpty()) {
+                    ServiceId serviceId = toServiceId(url);
+                    listeners.forEach((k, v) -> {
+                        if (k.getServiceNames().contains(serviceId.getService())) {
+                            addListener(url, listener, k, v);
+                        }
+                    });
+                }
+            });
         }
         delegate.subscribe(url, listener);
     }
@@ -155,7 +172,17 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public void unsubscribe(URL url, NotifyListener listener) {
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            subscribes.remove(url);
+            Locks.write(lock, () -> {
+                Set<NotifyListener> notifiers = subscribes.get(url);
+                if (notifiers != null && notifiers.remove(listener)) {
+                    ServiceId serviceId = toServiceId(url);
+                    listeners.forEach((k, v) -> {
+                        if (k.getServiceNames().contains(serviceId.getService())) {
+                            removeListener(url, listener, v);
+                        }
+                    });
+                }
+            });
         }
         delegate.unsubscribe(url, listener);
     }
@@ -183,26 +210,25 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public ServiceInstancesChangedListener createListener(Set<String> serviceNames) {
         // Dubbo will notify instances after creation
-        ServiceInstancesChangedListener listener = new ServiceInstancesChangedListener(serviceNames, this);
-        listeners.computeIfAbsent(listener, l -> {
-            Set<ServiceInstanceNotificationCustomizer> customizers = getQuietly(l, "serviceInstanceNotificationCustomizers");
-            List<DubboNotifyListener> listeners = new ArrayList<>(subscribes.size());
-            subscribes.forEach((k, v) -> listeners.add(
-                    new DubboNotifyListener(k, v, this, defaultGroup,
-                            registry, model, customizers, this::getRemoteMetadata)));
-            return listeners;
+        ServiceInstancesChangedListener result = new ServiceInstancesChangedListener(serviceNames, this);
+        Locks.read(lock, () -> {
+            listeners.computeIfAbsent(result, r -> {
+                Set<ServiceInstanceNotificationCustomizer> customizers = getQuietly(r, FIELD_CUSTOMIZERS);
+                List<DubboNotifyListener> listeners = new CopyOnWriteArrayList<>();
+                for (Map.Entry<URL, Set<NotifyListener>> entry : subscribes.entrySet()) {
+                    for (NotifyListener listener : entry.getValue()) {
+                        createListener(entry.getKey(), listener, r, customizers);
+                    }
+                }
+                return listeners;
+            });
         });
-        return listener;
+        return result;
     }
 
     @Override
     public void addServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws NullPointerException, IllegalArgumentException {
         delegate.addServiceInstancesChangedListener(listener);
-        List<DubboNotifyListener> watchers = listeners.get(listener);
-        if (watchers != null) {
-            // Start watching live registry
-            watchers.forEach(DubboNotifyListener::start);
-        }
     }
 
     @Override
@@ -259,6 +285,10 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
         return Objects.hashCode(delegate);
     }
 
+    /**
+     * Registers service instance if not already registered
+     * Performs host/port validation and handles delayed registration
+     */
     private void doRegister() {
         // Call multiple times, only register once
         if (registered.get() != UNREGISTER || delegate.isDestroy()) {
@@ -288,6 +318,63 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
             }));
         }
 
+    }
+
+    /**
+     * Adds service change listener if not already registered
+     *
+     * @param url       service consumer URL to monitor
+     * @param watcher   original notification callback
+     * @param listener  service instances change listener
+     * @param notifiers existing listeners to check for duplicates
+     */
+    private void addListener(URL url, NotifyListener watcher, ServiceInstancesChangedListener listener, List<DubboNotifyListener> notifiers) {
+        boolean added = false;
+        for (DubboNotifyListener notifier : notifiers) {
+            if (notifier.getConsumerUrl().equals(url)) {
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            Set<ServiceInstanceNotificationCustomizer> customizers = getQuietly(listener, FIELD_CUSTOMIZERS);
+            createListener(url, watcher, listener, customizers);
+        }
+    }
+
+    /**
+     * Removes and closes matching listeners for the given URL and delegate
+     *
+     * @param url       the consumer URL to match for removal
+     * @param listener  the original listener delegate to match
+     * @param listeners collection of active listeners to search
+     * @implNote performs reverse iteration for safe removal
+     */
+    private void removeListener(URL url, NotifyListener listener, List<DubboNotifyListener> listeners) {
+        for (int i = listeners.size() - 1; i >= 0; i--) {
+            DubboNotifyListener target = listeners.get(i);
+            if (target.getConsumerUrl().equals(url) && target.getDelegate() == listener) {
+                listeners.remove(i).close();
+            }
+        }
+    }
+
+    /**
+     * Adds listener for service instance changes
+     *
+     * @param url         service discovery URL
+     * @param watcher     original notify listener
+     * @param listener    service instances changed listener
+     * @param customizers notification customizers
+     */
+    private void createListener(URL url,
+                                NotifyListener watcher,
+                                ServiceInstancesChangedListener listener,
+                                Set<ServiceInstanceNotificationCustomizer> customizers) {
+        DubboNotifyListener notifier = new DubboNotifyListener(url, watcher, this, defaultGroup,
+                registry, model, customizers, this::getRemoteMetadata);
+        notifier.start();
+        listener.addListenerAndNotify(notifier.getConsumerUrl(), notifier);
     }
 
     /**
