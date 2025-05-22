@@ -94,12 +94,12 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     public void register(URL url) {
         // Delay to ensure this registry is used.
         addSystemRegistry();
-        registry.register(toInstance(url), new RegistryRunnable(this, () -> delegate.register(url)));
+        registry.register(toInstance(url, true), new RegistryRunnable(this, () -> delegate.register(url)));
     }
 
     @Override
     public void unregister(URL url) {
-        registry.unregister(toInstance(url));
+        registry.unregister(toInstance(url, true));
         delegate.unregister(url);
     }
 

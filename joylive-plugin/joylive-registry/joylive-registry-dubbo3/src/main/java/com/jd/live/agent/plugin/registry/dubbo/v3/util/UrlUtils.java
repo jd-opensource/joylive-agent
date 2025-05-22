@@ -118,8 +118,21 @@ public class UrlUtils {
      * @return ServiceInstance built from URL parameters
      */
     public static ServiceInstance toInstance(URL url) {
+        return toInstance(url, false);
+    }
+
+    /**
+     * Converts a Dubbo URL to a ServiceInstance representation.
+     * <p>
+     * Creates an interface-mode instance with metadata derived from URL parameters.
+     *
+     * @param url                the Dubbo URL to convert
+     * @param forceInterfaceMode if true, forces interface mode parsing
+     * @return ServiceInstance built from URL parameters
+     */
+    public static ServiceInstance toInstance(URL url, boolean forceInterfaceMode) {
         Map<String, String> metadata = new HashMap<>(url.getParameters());
-        ServiceId serviceId = toServiceId(url);
+        ServiceId serviceId = toServiceId(url, forceInterfaceMode);
         metadata.remove(REGISTRY_TYPE_KEY);
         return ServiceInstance.builder()
                 .interfaceMode(serviceId.isInterfaceMode())
