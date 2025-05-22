@@ -172,7 +172,20 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(String service, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(service, null, 5000, TimeUnit.MILLISECONDS, errorFunction);
+        return subscribe(new ServiceId(service), 5000, TimeUnit.MILLISECONDS, errorFunction);
+    }
+
+    /**
+     * Subscribes to the specified service and attempts to retrieve its governance policy.
+     * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
+     *
+     * @param <T>           the type of the result returned by the error function
+     * @param serviceId     the id of the service to subscribe to
+     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
+     */
+    default <T> T subscribe(ServiceId serviceId, BiFunction<String, Throwable, T> errorFunction) {
+        return subscribe(serviceId, 5000, TimeUnit.MILLISECONDS, errorFunction);
     }
 
     /**
@@ -187,7 +200,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(String service, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(service, null, timeout, unit, errorFunction);
+        return subscribe(new ServiceId(service), timeout, unit, errorFunction);
     }
 
     /**
@@ -201,7 +214,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(String service, String group, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(service, null, 5000, TimeUnit.MILLISECONDS, errorFunction);
+        return subscribe(new ServiceId(service, group), 5000, TimeUnit.MILLISECONDS, errorFunction);
     }
 
     /**
@@ -217,22 +230,37 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(String service, String group, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
+        return subscribe(new ServiceId(service, group), timeout, unit, errorFunction);
+    }
+
+    /**
+     * Subscribes to the specified service and group, and attempts to retrieve its governance policy.
+     * If the subscription or policy retrieval fails, the provided error function is invoked to handle the error.
+     *
+     * @param <T>           the type of the result returned by the error function
+     * @param serviceId     the id of the service to subscribe to
+     * @param timeout       the maximum time to wait for the subscription to complete
+     * @param unit          the time unit of the timeout parameter
+     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
+     */
+    default <T> T subscribe(ServiceId serviceId, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
         try {
-            subscribe(service, group).get(timeout, unit);
+            subscribe(serviceId).get(timeout, unit);
             return null;
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            String errorMessage = "Failed to get governance policy for " + service + ", caused by " + cause.getMessage();
+            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by " + cause.getMessage();
             return errorFunction.apply(errorMessage, cause);
         } catch (TimeoutException e) {
-            String errorMessage = "Failed to get governance policy for " + service + ", caused by it's timeout.";
+            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by it's timeout.";
             return errorFunction.apply(errorMessage, e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            String errorMessage = "Failed to get governance policy for " + service + ", caused by it's interrupted";
+            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by it's interrupted";
             return errorFunction.apply(errorMessage, e);
         } catch (Throwable e) {
-            String errorMessage = "Failed to get governance policy for " + service + ", caused by " + e.getMessage();
+            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by " + e.getMessage();
             return errorFunction.apply(errorMessage, e);
         }
     }

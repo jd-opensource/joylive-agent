@@ -23,6 +23,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.ReferenceConfig;
 
 import java.util.Map;
@@ -43,7 +44,7 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
-    protected RegisterType getRegisterType(ReferenceConfig<?> config) {
+    protected RegisterType getServiceId(ReferenceConfig<?> config) {
         String providedBy = config.getProvidedBy();
         Map<String, String> parameters = config.getParameters();
         String migration = parameters.get(KEY_REFERENCE_MIGRATION);
@@ -62,9 +63,9 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
-    protected void subscribe(String service, String group) {
-        registry.subscribe(service, group);
-        logger.info("Found dubbo consumer, service: {}, group: {}", service, group);
+    protected void subscribe(ServiceId serviceId) {
+        registry.subscribe(serviceId);
+        logger.info("Found dubbo consumer {}.", serviceId.getUniqueName());
     }
 
     @Override
