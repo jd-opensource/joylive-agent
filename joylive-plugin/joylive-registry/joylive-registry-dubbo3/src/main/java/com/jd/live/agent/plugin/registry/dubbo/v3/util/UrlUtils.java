@@ -204,7 +204,10 @@ public class UrlUtils {
     public static DefaultServiceInstance toInstance(ServiceEndpoint endpoint, ApplicationModel model) {
         DefaultServiceInstance instance = new DefaultServiceInstance();
         Map<String, String> metadata = endpoint.getMetadata() == null ? new HashMap<>() : new HashMap<>(endpoint.getMetadata());
-        metadata.put(PROTOCOL, endpoint.getScheme());
+        String scheme = endpoint.getScheme();
+        if (scheme != null && !scheme.isEmpty()) {
+            metadata.put(PROTOCOL, scheme);
+        }
         instance.setServiceName(endpoint.getService());
         instance.setHost(endpoint.getHost());
         instance.setPort(endpoint.getPort());
@@ -214,7 +217,8 @@ public class UrlUtils {
     }
 
     public static URL toURL(org.apache.dubbo.registry.client.ServiceInstance instance) {
-        String protocol = instance.getMetadata(PROTOCOL, DUBBO);
+        String protocol = instance.getMetadata(PROTOCOL);
+        protocol = protocol == null || protocol.isEmpty() ? DUBBO : protocol;
         PathURLAddress address = new PathURLAddress(protocol, null, null, null, instance.getHost(), instance.getPort());
         URL url = new InstanceAddressURL(instance, instance.getServiceMetadata(), protocol);
         setValue(url, FIELD_URL_ADDRESS, address);

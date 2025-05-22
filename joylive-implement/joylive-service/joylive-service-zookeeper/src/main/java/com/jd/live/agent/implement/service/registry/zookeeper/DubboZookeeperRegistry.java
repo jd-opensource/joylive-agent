@@ -412,6 +412,7 @@ public class DubboZookeeperRegistry implements RegistryService {
         return DubboZookeeperEndpoint.builder()
                 .service(serviceId.getService())
                 .group(group)
+                .scheme(uri.getSchema())
                 .host(uri.getHost())
                 .port(uri.getPort())
                 .metadata(parameters == null ? null : new HashMap<>(parameters))

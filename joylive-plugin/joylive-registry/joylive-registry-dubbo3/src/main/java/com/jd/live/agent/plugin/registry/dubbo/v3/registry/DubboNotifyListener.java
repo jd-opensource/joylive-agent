@@ -135,8 +135,12 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
         List<ServiceEndpoint> endpoints = event.getInstances();
         List<ServiceInstance> instances = supply(endpoints);
         List<URL> urls = toList(instances, UrlUtils::toURL);
-        delegate.notify(urls);
-        logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());
+        try {
+            delegate.notify(urls);
+            logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());
+        } catch (Throwable e) {
+            logger.error("Failed to notify service change event for {}", serviceId.getUniqueName(), e);
+        }
     }
 
     /**
