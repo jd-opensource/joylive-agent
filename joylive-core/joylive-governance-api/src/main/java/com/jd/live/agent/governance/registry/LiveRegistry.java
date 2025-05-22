@@ -183,6 +183,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         }
         ServiceInstance instance = instances.get(0);
         // CaseInsensitiveConcurrentHashMap
+        // Multi-registry
         Registration registration = registrations.computeIfAbsent(instance.getUniqueName(), n -> createRegistration(instances, doRegister));
         if (ready.get()) {
             registration.register();
@@ -233,6 +234,18 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             return;
         }
         doSubscribe(serviceId, consumer);
+    }
+
+    @Override
+    public void unsubscribe(String service, String group, Consumer<RegistryEvent> consumer) {
+        ServiceId serviceId = getServiceId(service, group, ServiceRole.CONSUMER);
+        if (serviceId == null) {
+            return;
+        }
+        Subscription subscription = subscriptions.get(serviceId.getUniqueName());
+        if (subscription != null) {
+            subscription.removeConsumer(consumer);
+        }
     }
 
     @Override
@@ -437,7 +450,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     private Registration createRegistration(List<ServiceInstance> instances, Callable<Void> doRegister) {
         // violate
         List<RegistryService> clusters = registries;
-        List<ClusterInstanceRegistration> values = new ArrayList<>(clusters == null ? 1 : clusters.size() + 1);
+        List<ClusterInstanceRegistration> values = new CopyOnWriteArrayList<>();
         if (doRegister != null) {
             if (doRegister instanceof RegistryCallable) {
                 values.add(new ClusterInstanceRegistration(((RegistryCallable<?>) doRegister).getRegistry(), instances.get(0), doRegister));
@@ -447,6 +460,8 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             }
         }
         if (clusters != null) {
+            // TODO Fix multi registry issue.
+            // Application register service in nacos for gateway and consume other service in zookeepers
             for (RegistryService cluster : clusters) {
                 if (cluster.getConfig().getMode().isRegister()) {
                     for (ServiceInstance instance : instances) {
@@ -556,6 +571,10 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         public void stop() {
             started.set(false);
             unregister();
+        }
+
+        public void add(Callable<Void> doRegister) {
+
         }
 
         /**
@@ -668,6 +687,19 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                             consumer.accept(event);
                         }
                     }
+                }
+            }
+        }
+
+        /**
+         * Removes an event consumer from subscription.
+         *
+         * @param consumer the consumer to remove (nullable)
+         */
+        public void removeConsumer(Consumer<RegistryEvent> consumer) {
+            if (consumer != null) {
+                synchronized (mutex) {
+                    consumers.remove(consumer);
                 }
             }
         }

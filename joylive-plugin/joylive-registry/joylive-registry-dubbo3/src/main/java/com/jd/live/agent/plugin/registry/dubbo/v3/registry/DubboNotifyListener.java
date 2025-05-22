@@ -15,23 +15,33 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 
-import com.jd.live.agent.governance.registry.RegistryEvent;
-import com.jd.live.agent.governance.registry.RegistryEventPublisher;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.registry.ServiceId;
+import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
+import com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.metadata.MetadataInfo;
 import org.apache.dubbo.registry.NotifyListener;
+import org.apache.dubbo.registry.client.ServiceInstance;
 import org.apache.dubbo.registry.client.event.listener.ServiceInstancesChangedListener;
+import org.apache.dubbo.registry.client.metadata.ServiceInstanceNotificationCustomizer;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstance;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
+import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.EXPORTED_SERVICES_REVISION_PROPERTY_NAME;
 
-public class DubboNotifyListener implements NotifyListener {
+/**
+ * Dubbo notification listener that bridges between Dubbo's NotifyListener and RegistryEvent system.
+ * Handles service instance changes and converts between Dubbo URL and RegistryEvent formats.
+ */
+public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEvent>, AutoCloseable {
 
     private final URL url;
 
@@ -41,14 +51,52 @@ public class DubboNotifyListener implements NotifyListener {
 
     private final String defaultGroup;
 
+    private final Registry registry;
+
+    private final ApplicationModel model;
+
+    private final Set<ServiceInstanceNotificationCustomizer> customizers;
+
+    private final BiFunction<String, List<ServiceInstance>, MetadataInfo> revisionFunc;
+
     private final ServiceId serviceId;
 
-    public DubboNotifyListener(URL url, NotifyListener delegate, RegistryEventPublisher publisher, String defaultGroup) {
+    private final AtomicBoolean started = new AtomicBoolean(false);
+
+    public DubboNotifyListener(URL url,
+                               NotifyListener delegate,
+                               RegistryEventPublisher publisher,
+                               String defaultGroup,
+                               Registry registry,
+                               ApplicationModel model,
+                               Set<ServiceInstanceNotificationCustomizer> customizers,
+                               BiFunction<String, List<ServiceInstance>, MetadataInfo> revisionFunc) {
+        this(url, toServiceId(url), delegate, publisher, defaultGroup, registry, model, customizers, revisionFunc);
+    }
+
+    public DubboNotifyListener(URL url,
+                               ServiceId serviceId,
+                               NotifyListener delegate,
+                               RegistryEventPublisher publisher,
+                               String defaultGroup,
+                               Registry registry,
+                               ApplicationModel model,
+                               Set<ServiceInstanceNotificationCustomizer> customizers,
+                               BiFunction<String, List<ServiceInstance>, MetadataInfo> revisionFunc) {
         this.url = url;
+        this.serviceId = serviceId;
         this.delegate = delegate;
         this.publisher = publisher;
         this.defaultGroup = defaultGroup;
-        this.serviceId = toServiceId(url);
+        this.registry = registry;
+        this.model = model;
+        this.customizers = customizers;
+        this.revisionFunc = revisionFunc;
+    }
+
+    @Override
+    public URL getConsumerUrl() {
+        return url;
     }
 
     @Override
@@ -62,11 +110,83 @@ public class DubboNotifyListener implements NotifyListener {
                 publisher.publish(new RegistryEvent(serviceId.getService(), serviceId.getGroup(), endpoints, defaultGroup));
             }
         }
-        delegate.notify(urls);
     }
 
     @Override
     public void addServiceListener(ServiceInstancesChangedListener instanceListener) {
         delegate.addServiceListener(instanceListener);
     }
+
+    @Override
+    public ServiceInstancesChangedListener getServiceListener() {
+        return delegate.getServiceListener();
+    }
+
+    @Override
+    public void accept(RegistryEvent event) {
+        List<ServiceEndpoint> endpoints = event.getInstances();
+        List<ServiceInstance> instances = supply(endpoints);
+        List<URL> urls = toList(instances, UrlUtils::toURL);
+        delegate.notify(urls);
+    }
+
+    /**
+     * Starts listening for service changes.
+     */
+    public void start() {
+        if (started.compareAndSet(false, true)) {
+            registry.subscribe(serviceId.getService(), serviceId.getGroup(), this);
+        }
+    }
+
+    @Override
+    public void close() {
+        unsubscribe();
+    }
+
+    /**
+     * Unsubscribes from service notifications.
+     */
+    private void unsubscribe() {
+        if (started.compareAndSet(true, false)) {
+            registry.unsubscribe(serviceId.getService(), serviceId.getGroup(), this);
+        }
+    }
+
+    /**
+     * Converts a list of ServiceEndpoints to ServiceInstances with optional customization and metadata processing.
+     *
+     * @param endpoints the list of service endpoints to convert
+     * @return list of processed service instances, empty list if input is null or empty
+     */
+    private List<ServiceInstance> supply(List<ServiceEndpoint> endpoints) {
+        if (endpoints == null || endpoints.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ServiceInstance> instances = toList(endpoints, e -> toInstance(e, model));
+        if (customizers != null && !customizers.isEmpty()) {
+            // customize service instances.
+            customizers.forEach(customizer -> customizer.customize(instances));
+        }
+        if (revisionFunc != null) {
+            // Handle metadata info.
+            Map<String, List<ServiceInstance>> revisions = new HashMap<>(4);
+            // Sort by revision.
+            for (ServiceInstance instance : instances) {
+                String revision = instance.getMetadata(EXPORTED_SERVICES_REVISION_PROPERTY_NAME);
+                if (revision != null && !revision.isEmpty()) {
+                    revisions.computeIfAbsent(revision, k -> new ArrayList<>()).add(instance);
+                }
+            }
+            // Update metadata info.
+            for (Map.Entry<String, List<ServiceInstance>> entry : revisions.entrySet()) {
+                MetadataInfo metadataInfo = revisionFunc.apply(entry.getKey(), entry.getValue());
+                for (ServiceInstance instance : entry.getValue()) {
+                    instance.setServiceMetadata(metadataInfo);
+                }
+            }
+        }
+        return instances;
+    }
+
 }

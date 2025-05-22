@@ -209,6 +209,25 @@ public interface Registry extends ServiceRegistryFactory {
     void subscribe(String service, String group, Consumer<RegistryEvent> consumer);
 
     /**
+     * Unsubscribes from endpoint events for a service.
+     *
+     * @param service  the service name
+     * @param consumer the event consumer
+     */
+    default void unsubscribe(String service, Consumer<RegistryEvent> consumer) {
+        unsubscribe(service, null, consumer);
+    }
+
+    /**
+     * Unsubscribes from endpoint events for a service in group.
+     *
+     * @param service  the service name
+     * @param group    the service group (nullable)
+     * @param consumer the event consumer
+     */
+    void unsubscribe(String service, String group, Consumer<RegistryEvent> consumer);
+
+    /**
      * Checks if currently subscribed to the specified service without considering any consumer group.
      *
      * @param service the service name to check subscription for (must not be {@code null})

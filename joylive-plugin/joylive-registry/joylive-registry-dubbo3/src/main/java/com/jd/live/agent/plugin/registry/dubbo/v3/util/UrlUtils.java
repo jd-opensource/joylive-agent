@@ -23,13 +23,13 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
-import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.registry.client.DefaultServiceInstance;
+import org.apache.dubbo.registry.client.InstanceAddressURL;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.*;
@@ -47,21 +47,37 @@ public class UrlUtils {
 
     /**
      * Parses a URL into a ServiceId containing service name and group.
+     * Handles both provider and consumer side URLs with different parsing strategies.
      *
      * @param url the URL to parse
      * @return parsed ServiceId with service name and group
      */
     public static ServiceId toServiceId(URL url) {
+        return toServiceId(url, false);
+    }
+
+    /**
+     * Parses a URL into a ServiceId with configurable parsing mode.
+     * Supports three parsing modes:
+     * 1. Consumer side with service reference (provided.by)
+     * 2. Provider side in service mode (application name)
+     * 3. Default interface mode (service interface)
+     *
+     * @param url                the URL to parse
+     * @param forceInterfaceMode if true, forces interface mode parsing
+     * @return parsed ServiceId containing service name, group and interface flag
+     */
+    public static ServiceId toServiceId(URL url, boolean forceInterfaceMode) {
         String service;
         String side = url.getParameter(SIDE_KEY, PROVIDER_SIDE);
         if (CONSUMER_SIDE.equalsIgnoreCase(side)) {
             service = url.getParameter(PROVIDED_BY);
-            if (service != null && !service.isEmpty()) {
+            if (!forceInterfaceMode && service != null && !service.isEmpty()) {
                 // group is not valid for service.
                 // group is valid for interface.
                 return new ServiceId(service, "", false);
             }
-        } else if (isServiceMode(url)) {
+        } else if (!forceInterfaceMode && isServiceMode(url)) {
             return new ServiceId(url.getApplication(), "", false);
         }
         service = url.getServiceInterface();
@@ -122,7 +138,7 @@ public class UrlUtils {
                                              Application application,
                                              ObjectParser parser) {
         Map<String, String> metadata = instance.getMetadata();
-        application.labelRegistry(metadata::putIfAbsent);
+        application.labelRegistry(metadata::put);
         MapOption option = new MapOption(metadata);
         String params = option.getString("dubbo.metadata-service.url-params");
         Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
@@ -142,26 +158,24 @@ public class UrlUtils {
     }
 
     /**
-     * Groups service instances by their group name.
+     * Converts a ServiceEndpoint to a DefaultServiceInstance.
+     * Copies all basic properties including service name, host, port and metadata.
      *
-     * @param urls list of service instances to group
-     * @return map of group names to their corresponding endpoints
+     * @param endpoint the service endpoint to convert
+     * @return a new DefaultServiceInstance containing the endpoint's data
      */
-    public static Map<String, List<ServiceEndpoint>> toInstance(List<URL> urls) {
-        Map<String, List<ServiceEndpoint>> endpoints = new HashMap<>(4);
-        String group;
-        List<ServiceEndpoint> lasts = null;
-        ServiceEndpoint current;
-        ServiceEndpoint last = null;
-        for (URL url : urls) {
-            current = new DubboEndpoint(url);
-            group = current.getGroup();
-            if (last == null || !current.getGroup().equals(last.getGroup())) {
-                lasts = endpoints.computeIfAbsent(group, k -> new ArrayList<>());
-            }
-            last = current;
-            lasts.add(current);
-        }
-        return endpoints;
+    public static DefaultServiceInstance toInstance(ServiceEndpoint endpoint, ApplicationModel model) {
+        DefaultServiceInstance instance = new DefaultServiceInstance();
+        Map<String, String> metadata = endpoint.getMetadata() == null ? new HashMap<>() : new HashMap<>(endpoint.getMetadata());
+        instance.setServiceName(endpoint.getService());
+        instance.setHost(endpoint.getHost());
+        instance.setPort(endpoint.getPort());
+        instance.setMetadata(metadata);
+        instance.setApplicationModel(model);
+        return instance;
+    }
+
+    public static URL toURL(org.apache.dubbo.registry.client.ServiceInstance instance) {
+        return new InstanceAddressURL(instance, instance.getServiceMetadata(), "dubbo");
     }
 }

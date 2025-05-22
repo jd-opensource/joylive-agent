@@ -17,8 +17,12 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.governance.registry.*;
+import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.governance.registry.RegistryRunnable;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboInstance;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
@@ -28,12 +32,16 @@ import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.client.DefaultServiceInstance;
 import org.apache.dubbo.registry.client.ServiceDiscovery;
 import org.apache.dubbo.registry.client.event.listener.ServiceInstancesChangedListener;
+import org.apache.dubbo.registry.client.metadata.ServiceInstanceNotificationCustomizer;
 import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.rpc.model.ScopeModelUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstance;
 import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
@@ -45,6 +53,12 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     private static final Map<String, String> GROUPS = new HashMap<String, String>() {{
         put("org.apache.dubbo.registry.nacos.NacosServiceDiscovery", "DEFAULT_GROUP");
     }};
+
+    private static final int UNREGISTER = 0;
+
+    private static final int REGISTERED = 1;
+
+    private static final int REGISTERED_SUCCESS = 2;
 
     private final ServiceDiscovery delegate;
 
@@ -59,7 +73,13 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Getter
     private final String defaultGroup;
 
-    private final Map<NotifyListener, NotifyListener> listeners = new ConcurrentHashMap<>(16);
+    private final ApplicationModel model;
+
+    private final AtomicInteger registered = new AtomicInteger(UNREGISTER);
+
+    private final Map<URL, NotifyListener> subscribes = new ConcurrentHashMap<>(16);
+
+    private final Map<ServiceInstancesChangedListener, List<DubboNotifyListener>> listeners = new ConcurrentHashMap<>(16);
 
     public DubboServiceDiscovery(ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
         this.delegate = delegate;
@@ -67,6 +87,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
         this.application = application;
         this.parser = parser;
         this.defaultGroup = GROUPS.get(delegate.getClass().getName());
+        this.model = ScopeModelUtil.getApplicationModel(delegate.getUrl().getScopeModel());
         registry.addSystemRegistry(this);
     }
 
@@ -86,54 +107,35 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public void destroy() throws Exception {
         registry.removeSystemRegistry(this);
+        listeners.forEach((k, v) -> Close.instance().close(v));
         delegate.destroy();
     }
 
     @Override
     public void register() throws RuntimeException {
-        instance = build(delegate, application, parser);
-        registry.register(instance, new RegistryCallable<Void>() {
-            @Override
-            public RegistryService getRegistry() {
-                return DubboServiceDiscovery.this;
-            }
-
-            @Override
-            public Void call() throws Exception {
-                // Wait for registering url to apply host and port
-                if (instance.getHost() == null || instance.getPort() <= 0) {
-                    // Rebuild instance to check host and port
-                    ServiceInstance current = build(delegate, application, parser);
-                    if (current.getHost() == null || current.getPort() <= 0) {
-                        // Throw exception to retry if host and port are empty
-                        throw new IllegalStateException("Dubbo service instance host and port can't be empty");
-                    }
-                    instance.setHost(current.getHost());
-                    instance.setPort(current.getPort());
-                    instance.setWeight(current.getWeight());
-                    instance.setMetadata(current.getMetadata());
-                }
-                delegate.register();
-                return null;
-            }
-        });
+        doRegister();
     }
 
     @Override
     public void update() throws RuntimeException {
-        delegate.update();
+        if (registered.get() == REGISTERED_SUCCESS && !delegate.isDestroy()) {
+            delegate.update();
+        }
     }
 
     @Override
     public void unregister() throws RuntimeException {
         registry.unregister(instance);
-        delegate.unregister();
+        if (registered.get() == REGISTERED_SUCCESS) {
+            delegate.unregister();
+        }
     }
 
     @Override
     public void register(URL url) {
         // register url to metadata, then register instance to registry.
         delegate.register(url);
+        doRegister();
     }
 
     @Override
@@ -144,22 +146,18 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     @Override
     public void subscribe(URL url, NotifyListener listener) {
-        NotifyListener wrapper = listener;
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            wrapper = listeners.computeIfAbsent(listener,
-                    l -> new DubboNotifyListener(url, l, this, GROUPS.get(delegate.getClass().getName())));
+            subscribes.putIfAbsent(url, listener);
         }
-        delegate.subscribe(url, wrapper);
+        delegate.subscribe(url, listener);
     }
 
     @Override
     public void unsubscribe(URL url, NotifyListener listener) {
-        NotifyListener wrapper = listener;
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            wrapper = listeners.remove(listener);
-            wrapper = wrapper == null ? listener : wrapper;
+            subscribes.remove(url);
         }
-        delegate.unsubscribe(url, wrapper);
+        delegate.unsubscribe(url, listener);
     }
 
     @Override
@@ -183,12 +181,34 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     }
 
     @Override
+    public ServiceInstancesChangedListener createListener(Set<String> serviceNames) {
+        // Dubbo will notify instances after creation
+        ServiceInstancesChangedListener listener = new ServiceInstancesChangedListener(serviceNames, this);
+        listeners.computeIfAbsent(listener, l -> {
+            Set<ServiceInstanceNotificationCustomizer> customizers = getQuietly(l, "serviceInstanceNotificationCustomizers");
+            List<DubboNotifyListener> listeners = new ArrayList<>(subscribes.size());
+            subscribes.forEach((k, v) -> listeners.add(
+                    new DubboNotifyListener(k, v, this, defaultGroup,
+                            registry, model, customizers, this::getRemoteMetadata)));
+            return listeners;
+        });
+        return listener;
+    }
+
+    @Override
     public void addServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws NullPointerException, IllegalArgumentException {
         delegate.addServiceInstancesChangedListener(listener);
+        List<DubboNotifyListener> watchers = listeners.get(listener);
+        if (watchers != null) {
+            // Start watching live registry
+            watchers.forEach(DubboNotifyListener::start);
+        }
     }
 
     @Override
     public void removeServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws IllegalArgumentException {
+        List<DubboNotifyListener> dubboListeners = listeners.remove(listener);
+        Close.instance().close(dubboListeners);
         delegate.removeServiceInstancesChangedListener(listener);
     }
 
@@ -239,6 +259,37 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
         return Objects.hashCode(delegate);
     }
 
+    private void doRegister() {
+        // Call multiple times, only register once
+        if (registered.get() != UNREGISTER || delegate.isDestroy()) {
+            return;
+        }
+        // validate the host and port
+        org.apache.dubbo.registry.client.ServiceInstance dubboInstance = build(delegate, application, parser);
+        if (dubboInstance.getHost() == null || dubboInstance.getPort() <= 0) {
+            return;
+        }
+        if (registered.compareAndSet(UNREGISTER, REGISTERED)) {
+            instance = toInstance(dubboInstance, application, parser);
+            registry.register(instance, new RegistryRunnable(this, () -> {
+                if (delegate.isDestroy()) {
+                    return;
+                }
+                // Delay register
+                org.apache.dubbo.registry.client.ServiceInstance newInstance = build(delegate, application, parser);
+                ServiceInstance current = toInstance(newInstance, application, parser);
+                instance.setHost(current.getHost());
+                instance.setPort(current.getPort());
+                instance.setWeight(current.getWeight());
+                instance.setMetadata(current.getMetadata());
+                setValue(delegate, "serviceInstance", newInstance);
+                delegate.register();
+                registered.set(REGISTERED_SUCCESS);
+            }));
+        }
+
+    }
+
     /**
      * Builds ServiceInstance from discovery service.
      *
@@ -247,7 +298,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
      * @param parser      the object parser
      * @return constructed service instance
      */
-    private static ServiceInstance build(ServiceDiscovery discovery, Application application, ObjectParser parser) {
+    private static org.apache.dubbo.registry.client.ServiceInstance build(ServiceDiscovery discovery, Application application, ObjectParser parser) {
         org.apache.dubbo.registry.client.ServiceInstance instance = discovery.getLocalInstance();
         if (instance == null) {
             MetadataInfo metadataInfo = discovery.getLocalMetadata();
@@ -259,6 +310,14 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
             setMetadataStorageType(instance, metadataType);
             customizeInstance(instance, model);
         }
-        return toInstance(instance, application, parser);
+        Map<String, String> metadata = instance.getMetadata();
+        if (metadata == null) {
+            metadata = new HashMap<>();
+            if (instance instanceof DefaultServiceInstance) {
+                ((DefaultServiceInstance) instance).setMetadata(metadata);
+            }
+        }
+        application.labelRegistry(metadata::putIfAbsent);
+        return instance;
     }
 }
