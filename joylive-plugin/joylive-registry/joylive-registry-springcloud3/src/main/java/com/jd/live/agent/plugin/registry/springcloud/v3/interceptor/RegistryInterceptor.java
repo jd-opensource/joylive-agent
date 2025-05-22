@@ -71,6 +71,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 .scheme(registration.getScheme())
                 .host(registration.getHost())
                 .port(registration.getPort())
+                .metadata(metadata)
                 .build();
     }
 
