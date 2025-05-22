@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.LABEL_GROUP;
 import static com.jd.live.agent.core.Constants.LABEL_SERVICE_GROUP;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.parse;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.toServiceId;
 
 /**
  * A class that represents an endpoint in the Nacos registry.
@@ -44,8 +44,11 @@ public class DubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
     protected Integer weight;
 
     public DubboEndpoint(URL url) {
+        this(url, toServiceId(url));
+    }
+
+    public DubboEndpoint(URL url, ServiceId serviceId) {
         this.url = url;
-        ServiceId serviceId = parse(url);
         this.service = serviceId.getService();
         this.group = serviceId.getGroup();
     }

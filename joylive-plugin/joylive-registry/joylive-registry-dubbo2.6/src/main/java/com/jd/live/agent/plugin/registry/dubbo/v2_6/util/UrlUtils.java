@@ -20,11 +20,8 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
-import com.jd.live.agent.plugin.registry.dubbo.v2_6.instance.DubboEndpoint;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.*;
@@ -40,17 +37,18 @@ public class UrlUtils {
 
     /**
      * Parses a URL into a ServiceId containing service name and group.
+     * Handles both provider and consumer side URLs with different parsing strategies.
      *
      * @param url the URL to parse
      * @return parsed ServiceId with service name and group
      */
-    public static ServiceId parse(URL url) {
-        String serviceName = url.getServiceInterface();
+    public static ServiceId toServiceId(URL url) {
+        String service = url.getServiceInterface();
         String group = url.getParameter(LABEL_GROUP, "");
         if (group == null || group.isEmpty()) {
             group = url.getParameter(LABEL_SERVICE_GROUP, "");
         }
-        return new ServiceId(serviceName, group);
+        return new ServiceId(service, group, true);
     }
 
     /**
@@ -63,12 +61,12 @@ public class UrlUtils {
      */
     public static ServiceInstance toInstance(URL url) {
         Map<String, String> metadata = new HashMap<>(url.getParameters());
-        // application.labelRegistry(metadata::putIfAbsent);
+        ServiceId serviceId = toServiceId(url);
         return ServiceInstance.builder()
-                .interfaceMode(true)
+                .interfaceMode(serviceId.isInterfaceMode())
                 .framework(new FrameworkVersion(DUBBO, url.getParameter(RELEASE, VERSION)))
-                .service(url.getServiceInterface())
-                .group(url.getParameter(LABEL_GROUP))
+                .service(serviceId.getService())
+                .group(serviceId.getGroup())
                 .scheme(url.getProtocol())
                 .host(url.getHost())
                 .port(url.getPort())
@@ -78,26 +76,15 @@ public class UrlUtils {
     }
 
     /**
-     * Groups service instances by their group name.
+     * Converts ServiceEndpoint to URL object.
+     * Uses default DUBBO scheme if endpoint scheme is null/empty.
      *
-     * @param urls list of service instances to group
-     * @return map of group names to their corresponding endpoints
+     * @param endpoint the service endpoint to convert
+     * @return new URL with endpoint data
      */
-    public static Map<String, List<ServiceEndpoint>> toInstance(List<URL> urls) {
-        Map<String, List<ServiceEndpoint>> endpoints = new HashMap<>(4);
-        String group;
-        List<ServiceEndpoint> lasts = null;
-        ServiceEndpoint current;
-        ServiceEndpoint last = null;
-        for (URL url : urls) {
-            current = new DubboEndpoint(url);
-            group = current.getGroup();
-            if (last == null || !current.getGroup().equals(last.getGroup())) {
-                lasts = endpoints.computeIfAbsent(group, k -> new ArrayList<>());
-            }
-            last = current;
-            lasts.add(current);
-        }
-        return endpoints;
+    public static URL toURL(ServiceEndpoint endpoint) {
+        String scheme = endpoint.getScheme();
+        scheme = scheme == null || scheme.isEmpty() ? DUBBO : scheme;
+        return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), endpoint.getMetadata());
     }
 }
