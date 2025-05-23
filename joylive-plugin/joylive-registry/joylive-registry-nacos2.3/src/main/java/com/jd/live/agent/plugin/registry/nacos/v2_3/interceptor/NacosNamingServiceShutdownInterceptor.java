@@ -39,9 +39,10 @@ public class NacosNamingServiceShutdownInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         NacosNamingService client = (NacosNamingService) ctx.getTarget();
         InstancesChangeNotifier changeNotifier = UnsafeFieldAccessorFactory.getQuietly(client, "changeNotifier");
-        NacosRegistryService registry = changeNotifier instanceof NacosInstancesChangeNotifier
-                ? (NacosRegistryService) ((NacosInstancesChangeNotifier) changeNotifier).getPublisher()
-                : new NacosRegistryService(client, null);
-        supervisor.removeSystemRegistry(registry);
+        if (changeNotifier instanceof NacosInstancesChangeNotifier) {
+            NacosInstancesChangeNotifier notifier = (NacosInstancesChangeNotifier) changeNotifier;
+            NacosRegistryService service = (NacosRegistryService) notifier.getPublisher();
+            supervisor.removeSystemRegistry(service);
+        }
     }
 }

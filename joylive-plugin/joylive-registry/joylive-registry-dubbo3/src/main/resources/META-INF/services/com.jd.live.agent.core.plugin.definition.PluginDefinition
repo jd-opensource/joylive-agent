@@ -3,3 +3,4 @@ com.jd.live.agent.plugin.registry.dubbo.v3.definition.ReferenceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ClusterUtilsDefinition
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.RegistryFactoryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ServiceDiscoveryFactoryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.NacosPropertiesDefinition

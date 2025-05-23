@@ -3,3 +3,4 @@ com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ServiceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ClusterUtilsDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.RegistryFactoryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ServiceDiscoveryFactoryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.NacosPropertiesDefinition

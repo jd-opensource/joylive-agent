@@ -19,6 +19,7 @@ import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.governance.registry.RegistryService;
 import com.jd.live.agent.plugin.registry.nacos.v2_3.registry.NacosInstancePublisher;
 import com.jd.live.agent.plugin.registry.nacos.v2_3.registry.NacosRegistryService;
 
@@ -40,11 +41,13 @@ public class NacosNamingServiceConstructorInterceptor extends InterceptorAdaptor
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO duplicated notification with dubbo nacos registry
         Object arg = ctx.getArgument(0);
         Properties properties = arg instanceof Properties ? (Properties) arg : null;
-        NacosRegistryService registry = new NacosRegistryService(null, properties);
-        LOCAL_PUBLISHER.set(new NacosInstancePublisher(registry, null));
+        String system = properties == null ? null : properties.getProperty(RegistryService.SYSTEM);
+        if (!"true".equalsIgnoreCase(system)) {
+            NacosRegistryService registry = new NacosRegistryService(null, properties);
+            LOCAL_PUBLISHER.set(new NacosInstancePublisher(registry, null));
+        }
     }
 
     @Override

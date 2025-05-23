@@ -39,9 +39,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.getSchemeAddress;
 import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toInstance;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
 
 public class DubboServiceDiscovery extends AbstractSystemRegistryService implements ServiceDiscovery {
 
@@ -172,17 +174,17 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     public void addServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws NullPointerException, IllegalArgumentException {
         URL url = listener.getUrl();
         ServiceId serviceId = UrlUtils.toServiceId(url);
+        String protocolServiceKey = url.getServiceKey() + GROUP_CHAR_SEPARATOR + url.getParameter(PROTOCOL_KEY, DUBBO);
+        Map<String, Set<NotifyListener>> delegates = getQuietly(listener, "listeners");
         listeners.computeIfAbsent(listener, l -> {
-            NotifyListener delegate = urls -> {
-                // TODO add notify to avoid recurse;
-                List<ServiceInstance> instances = new ArrayList<>(urls.size());
-                listener.onEvent(new ServiceInstancesChangedEvent(serviceId.getService(), instances));
-            };
-            DubboNotifyListener notifier = new DubboNotifyListener(url, serviceId, delegate, this, defaultGroup, registry);
-            notifier.start();
-            return notifier;
-        });
-        delegate.addServiceInstancesChangedListener(listener);
+            Set<NotifyListener> notifiers = delegates.get(protocolServiceKey);
+            NotifyListener old = notifiers.iterator().next();
+            DubboNotifyListener wrapper = new DubboNotifyListener(url, serviceId, old, this, defaultGroup, registry);
+            notifiers.clear();
+            notifiers.add(wrapper);
+            delegate.addServiceInstancesChangedListener(listener);
+            return wrapper;
+        }).start();
     }
 
     @Override
