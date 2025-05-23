@@ -15,11 +15,15 @@
  */
 package com.jd.live.agent.implement.service.registry.zookeeper;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.parser.json.JsonType;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.*;
@@ -28,6 +32,8 @@ import lombok.Getter;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
+import org.apache.curator.framework.listen.Listenable;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
@@ -38,16 +44,18 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
@@ -58,6 +66,8 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  * This class provides functionality to register, unregister, and subscribe to services using Nacos.
  */
 public class DubboZookeeperRegistry implements RegistryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DubboZookeeperRegistry.class);
 
     private static final String PROVIDERS = "providers";
     private static final String CONSUMERS = "consumers";
@@ -74,31 +84,42 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private final String name;
 
+    private final List<URI> uris;
+
     private final String address;
 
     private final String interfaceRoot;
 
     private final String serviceRoot;
 
+    private final int connectTimeout;
+
+    private final int sessionTimeout;
+
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     private CuratorFramework client;
 
-    private final Map<String, CuratorCache> caches = new ConcurrentHashMap<>(64);
+    private final Map<String, DubboCuratorCache> caches = new ConcurrentHashMap<>(64);
 
     private final Map<String, PathData> nodes = new HashMap<>();
 
-    private final Object mutex = new Object();
+    private final AtomicLong versions = new AtomicLong(0);
+
+    private final AtomicBoolean connected = new AtomicBoolean(false);
 
     public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer, ObjectParser parser) {
         this.config = config;
         this.timer = timer;
         this.parser = parser;
-        this.address = join(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse),
-                uri -> uri.getAddress(true), CHAR_COMMA);
+        this.uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
+        this.address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
         this.interfaceRoot = url("/", config.getProperty("interfaceRoot", "dubbo"));
         this.serviceRoot = url("/", config.getProperty("serviceRoot", "services"));
+        Option option = new MapOption(config.getProperties());
+        this.connectTimeout = option.getInteger("connectTimeout", 2000);
+        this.sessionTimeout = option.getInteger("sessionTimeout", 30000);
 
     }
 
@@ -123,22 +144,32 @@ public class DubboZookeeperRegistry implements RegistryService {
             RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
             client = CuratorFrameworkFactory.builder()
                     .connectString(address)
-                    .sessionTimeoutMs(3000)
-                    .connectionTimeoutMs(5000)
+                    .sessionTimeoutMs(sessionTimeout)
+                    .connectionTimeoutMs(connectTimeout)
                     .retryPolicy(retryPolicy)
                     .build();
             client.getConnectionStateListenable().addListener((c, newState) -> {
                 if (newState == ConnectionState.RECONNECTED) {
+                    connected.set(true);
                     onReconnected();
+                } else if (newState == ConnectionState.LOST) {
+                    connected.set(false);
+                    onLost();
+                } else if (newState == ConnectionState.CONNECTED) {
+                    connected.set(true);
+                    onConnected();
                 }
             });
-            client.start();
+            logger.info("Start connecting to {}.", name);
+            addDetectTask(versions.get(), 100);
         }
     }
 
     @Override
     public void close() {
         if (started.compareAndSet(true, false)) {
+            // Stop tasks
+            versions.incrementAndGet();
             Close.instance().close(client);
             for (CuratorCache cache : caches.values()) {
                 cache.close();
@@ -147,15 +178,16 @@ public class DubboZookeeperRegistry implements RegistryService {
     }
 
     @Override
-    public void register(ServiceId serviceId, ServiceInstance instance) throws Exception {
+    public void register(ServiceId serviceId, ServiceInstance instance) {
         if (!started.get()) {
             throw new IllegalStateException("Registry is not started");
         }
         PathData pathData = getPathData(serviceId, instance);
         if (pathData != null) {
-            client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(pathData.getPath(), pathData.getData());
-            synchronized (mutex) {
-                nodes.put(pathData.path, pathData);
+            nodes.put(pathData.path, pathData);
+            long version = versions.get();
+            if (connected.get()) {
+                addCreationTask(version, pathData);
             }
         }
     }
@@ -164,21 +196,21 @@ public class DubboZookeeperRegistry implements RegistryService {
     public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
         String path = getPath(serviceId, instance);
         if (path != null) {
-            remove(new PathData(path));
-            synchronized (mutex) {
-                nodes.remove(path);
+            nodes.remove(path);
+            if (connected.get()) {
+                remove(client, new PathData(path));
             }
         }
     }
 
     @Override
-    public void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) throws Exception {
+    public void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) {
         if (!started.get()) {
             throw new IllegalStateException("Registry is not started");
         }
         String path = getPath(serviceId, PROVIDERS, null);
         if (client != null) {
-            caches.computeIfAbsent(path, p -> {
+            DubboCuratorCache dubboCache = caches.computeIfAbsent(path, p -> {
                 CuratorCache cache = CuratorCache.build(client, p);
                 CuratorCacheListener listener = CuratorCacheListener.builder().forPathChildrenCache(path, client, (client, event) -> {
                     EventType eventType = null;
@@ -201,62 +233,113 @@ public class DubboZookeeperRegistry implements RegistryService {
                     }
                 }).build();
                 cache.listenable().addListener(listener);
-                cache.start();
-                return cache;
+                return new DubboCuratorCache(cache);
             });
+            if (connected.get()) {
+                dubboCache.start();
+            }
         }
     }
 
     @Override
-    public void unsubscribe(ServiceId serviceId) throws Exception {
+    public void unsubscribe(ServiceId serviceId) {
         String path = getPath(serviceId, PROVIDERS, null);
         Optional.ofNullable(caches.remove(path)).ifPresent(CuratorCache::close);
     }
 
+    /**
+     * Handles ZooKeeper reconnection event by incrementing version and scheduling node creation tasks.
+     */
     private void onReconnected() {
-        synchronized (mutex) {
-            if (!nodes.isEmpty()) {
-                for (Map.Entry<String, PathData> entry : nodes.entrySet()) {
-                    recreate(entry.getValue());
-                }
-            }
+        long version = versions.incrementAndGet();
+        if (!started.get()) {
+            return;
+        }
+        addCreationTask(version);
+    }
+
+    /**
+     * Handles ZooKeeper connection loss by incrementing version, closing client, and initiating detection.
+     */
+    private void onLost() {
+        long version = versions.incrementAndGet();
+        if (!started.get()) {
+            return;
+        }
+        client.close();
+        addDetectTask(version, 1000);
+        logger.info("Failed to connect {}, trying to reconnect...", name);
+    }
+
+    /**
+     * Handles successful ZooKeeper connection by incrementing version and scheduling creation/cache tasks.
+     */
+    private void onConnected() {
+        long version = versions.incrementAndGet();
+        if (!started.get()) {
+            return;
+        }
+        addCreationTask(version);
+        addCacheTask(version);
+        logger.info("Success connecting to {}", name);
+    }
+
+    /**
+     * Schedules cache tasks for all registered caches at the specified version.
+     *
+     * @param version The current operation version for task execution control
+     */
+    private void addCacheTask(long version) {
+        for (Map.Entry<String, DubboCuratorCache> entry : caches.entrySet()) {
+            addCacheTask(version, entry.getValue());
         }
     }
 
-    private void recreate(PathData path) {
-        if (started.get() && nodes.containsKey(path.getPath())) {
-            try {
-                if (remove(path)) {
-                    // recreate
-                    client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path.getPath(), path.getData());
-                }
-            } catch (Exception e) {
-                addCreateTask(path);
-            }
+    /**
+     * Creates and schedules a cache synchronization task for a specific cache.
+     *
+     * @param version The current operation version
+     * @param cache   The cache instance to synchronize
+     */
+    private void addCacheTask(long version, DubboCuratorCache cache) {
+        CacheTask creation = new CacheTask(cache);
+        ZookeeperTask task = new ZookeeperTask("CacheNode", creation, version, versions, timer, 1000L);
+        task.delay(100L);
+    }
+
+    /**
+     * Creates and schedules a ZooKeeper server detection task.
+     *
+     * @param version The current operation version
+     * @param delay   Initial delay before first execution (milliseconds)
+     */
+    private void addDetectTask(long version, long delay) {
+        DetectTask detection = new DetectTask(name, uris, client, connectTimeout);
+        ZookeeperTask task = new ZookeeperTask("DetectZookeeper", detection, version, versions, timer, 2000L);
+        task.delay(delay);
+    }
+
+    /**
+     * Schedules node creation tasks for all registered nodes at the specified version.
+     *
+     * @param version The current operation version for task execution control
+     */
+    private void addCreationTask(long version) {
+        for (Map.Entry<String, PathData> entry : nodes.entrySet()) {
+            addCreationTask(version, entry.getValue());
         }
     }
 
-    private boolean remove(PathData path) throws Exception {
-        Stat stat = client.checkExists().forPath(path.getPath());
-        if (stat != null && stat.getEphemeralOwner() != client.getZookeeperClient().getZooKeeper().getSessionId()) {
-            try {
-                client.delete().forPath(path.getPath());
-                return true;
-            } catch (KeeperException.NoNodeException ignored) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void addCreateTask(PathData path) {
-        if (client.getZookeeperClient().isConnected()) {
-            timer.delay("recreate-node", 2000, () -> {
-                synchronized (mutex) {
-                    recreate(path);
-                }
-            });
-        }
+    /**
+     * Creates and schedules a ZooKeeper node creation task for a specific path.
+     *
+     * @param version  The current operation version
+     * @param pathData The node path and data to create
+     */
+    private void addCreationTask(long version, PathData pathData) {
+        CreateTask creation = new CreateTask(client, pathData, nodes);
+        ZookeeperTask task = new ZookeeperTask("CreateZkNode", creation, version, versions, timer, 1000L);
+        task.delay(100L);
     }
 
     /**
@@ -300,6 +383,7 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     /**
      * Builds full Zookeeper path for service instance registration.
+     *
      * @return path string or null if node encoding fails
      */
     private String getPath(ServiceId serviceId, ServiceInstance instance) {
@@ -332,6 +416,7 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     /**
      * Checks if two service groups match (null/empty considered equal).
+     *
      * @return true if groups are equivalent
      */
     private boolean match(String group1, String group2) {
@@ -344,8 +429,8 @@ public class DubboZookeeperRegistry implements RegistryService {
     /**
      * Converts Zookeeper node data into service endpoint.
      *
-     * @param data       Zookeeper node data
-     * @param serviceId  Service id
+     * @param data      Zookeeper node data
+     * @param serviceId Service id
      * @return endpoint instance or null if conversion fails
      */
     private DubboZookeeperEndpoint getInstance(ChildData data, ServiceId serviceId) {
@@ -419,6 +504,29 @@ public class DubboZookeeperRegistry implements RegistryService {
                 .build();
     }
 
+    /**
+     * Removes a ZooKeeper node if it exists and is not owned by the current session.
+     * <p>
+     * Only removes nodes that are either persistent or ephemeral nodes owned by other sessions.
+     *
+     * @param client Curator client instance
+     * @param path   Path and data of the node to remove
+     * @return true if the node was removed or didn't exist, false if node belongs to current session
+     * @throws Exception if ZooKeeper operations fail
+     */
+    private static boolean remove(CuratorFramework client, PathData path) throws Exception {
+        Stat stat = client.checkExists().forPath(path.getPath());
+        if (stat != null && stat.getEphemeralOwner() != client.getZookeeperClient().getZooKeeper().getSessionId()) {
+            try {
+                client.delete().forPath(path.getPath());
+                return true;
+            } catch (KeeperException.NoNodeException ignored) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Getter
     private static class PathData {
 
@@ -475,6 +583,227 @@ public class DubboZookeeperRegistry implements RegistryService {
             this.payload = payload;
             this.registrationTimeUTC = System.currentTimeMillis();
             this.serviceType = "DYNAMIC";
+        }
+    }
+
+    /**
+     * A retryable task for ZooKeeper operations with version control.
+     */
+    private static class ZookeeperTask implements Runnable {
+
+        private final String name;
+
+        private final Callable<Boolean> callable;
+
+        private final long version;
+
+        private final AtomicLong versions;
+
+        private final Timer timer;
+
+        private final long retryInterval;
+
+        ZookeeperTask(String name,
+                      Callable<Boolean> callable,
+                      long version,
+                      AtomicLong versions,
+                      Timer timer,
+                      long retryInterval) {
+            this.name = name;
+            this.callable = callable;
+            this.version = version;
+            this.versions = versions;
+            this.timer = timer;
+            this.retryInterval = retryInterval;
+        }
+
+        @Override
+        public void run() {
+            if (versions.get() == version) {
+                try {
+                    if (callable.call()) {
+                        return;
+                    }
+                    timer.delay(name, retryInterval, this);
+                } catch (Exception e) {
+                    timer.delay(name, retryInterval, this);
+                }
+            }
+        }
+
+        /**
+         * Schedules this task to run after the specified delay.
+         *
+         * @param delay The delay in milliseconds before execution
+         */
+        public void delay(long delay) {
+            timer.delay(name, delay, this);
+        }
+    }
+
+    /**
+     * A task that creates or recreates a ZooKeeper node with ephemeral mode.
+     */
+    private static class CreateTask implements Callable<Boolean> {
+
+        private final CuratorFramework client;
+
+        private final PathData path;
+
+        private final Map<String, PathData> nodes;
+
+        CreateTask(CuratorFramework client, PathData path, Map<String, PathData> nodes) {
+            this.client = client;
+            this.path = path;
+            this.nodes = nodes;
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            if (nodes.containsKey(path.getPath()) && remove(client, path)) {
+                // recreate
+                client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path.getPath(), path.getData());
+            }
+            return true;
+        }
+    }
+
+    /**
+     * A task that detects ZooKeeper server availability by probing multiple URIs.
+     */
+    private static class DetectTask implements Callable<Boolean> {
+
+        private final String name;
+
+        private final List<URI> uris;
+
+        private final CuratorFramework client;
+
+        private final int connectTimeout;
+
+        private final AtomicLong counter = new AtomicLong(0);
+
+        DetectTask(String name, List<URI> uris, CuratorFramework client, int connectTimeout) {
+            this.name = name;
+            this.uris = uris;
+            this.client = client;
+            this.connectTimeout = connectTimeout;
+        }
+
+        @Override
+        public Boolean call() {
+            if (client.getState() != CuratorFrameworkState.STOPPED) {
+                client.close();
+            }
+            for (URI uri : uris) {
+                if (probe(uri.getHost(), uri.getPort())) {
+                    client.start();
+                    return true;
+                }
+            }
+            if (counter.incrementAndGet() % 100 == 0) {
+                logger.error("Retry connecting to zookeeper {} times, {}", counter.get(), name);
+            }
+            return false;
+        }
+
+        /**
+         * Probes a ZooKeeper server by sending 'ruok' command.
+         *
+         * @param host ZooKeeper server host
+         * @param port ZooKeeper server port
+         * @return true if server responds to connection attempt
+         */
+        private boolean probe(String host, int port) {
+            Socket socket = null;
+            OutputStream out = null;
+            try {
+                socket = new Socket();
+                socket.connect(new InetSocketAddress(host, port), connectTimeout);
+                out = socket.getOutputStream();
+                out.write("ruok\n".getBytes(StandardCharsets.UTF_8));
+                out.flush();
+                return true;
+            } catch (Throwable e) {
+                return false;
+            } finally {
+                Close.instance().close(socket, out);
+            }
+        }
+    }
+
+    /**
+     * A task that starts a {@link DubboCuratorCache} and returns its started status.
+     */
+    private static class CacheTask implements Callable<Boolean> {
+
+        private final DubboCuratorCache cache;
+
+        CacheTask(DubboCuratorCache cache) {
+            this.cache = cache;
+        }
+
+        @Override
+        public Boolean call() {
+            cache.start();
+            return cache.isStarted();
+        }
+    }
+
+    /**
+     * A wrapper implementation of {@link CuratorCache} that adds atomic start/close control
+     * and delegates all operations to the underlying CuratorCache instance.
+     */
+    private static class DubboCuratorCache implements CuratorCache {
+
+        private final CuratorCache delegate;
+
+        private final AtomicBoolean started = new AtomicBoolean(false);
+
+        DubboCuratorCache(CuratorCache delegate) {
+            this.delegate = delegate;
+        }
+
+        public boolean isStarted() {
+            return started.get();
+        }
+
+        @Override
+        public void start() {
+            if (started.compareAndSet(false, true)) {
+                try {
+                    delegate.start();
+                } catch (Exception e) {
+                    started.set(false);
+                }
+            }
+        }
+
+        @Override
+        public void close() {
+            if (started.compareAndSet(true, false)) {
+                delegate.close();
+            }
+        }
+
+        @Override
+        public Listenable<CuratorCacheListener> listenable() {
+            return delegate.listenable();
+        }
+
+        @Override
+        public Optional<ChildData> get(String path) {
+            return delegate.get(path);
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public Stream<ChildData> stream() {
+            return delegate.stream();
         }
     }
 }
