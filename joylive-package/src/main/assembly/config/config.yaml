@@ -303,8 +303,8 @@ agent:
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:guest}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_FIRST}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:public}
-          group: ${CONFIG_REGISTRY_GROUP_FIRST:${APPLICATION_SERVICE_GROUP}}
-          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
           role: ${CONFIG_REGISTRY_ROLE_SECOND:SECONDARY}
@@ -314,8 +314,8 @@ agent:
           password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:guest}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_SECOND}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:public}
-          group: ${CONFIG_REGISTRY_GROUP_SECOND:${APPLICATION_SERVICE_GROUP}}
-          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
           role: ${CONFIG_REGISTRY_ROLE_THIRD:SECONDARY}
@@ -325,8 +325,8 @@ agent:
           properties: ${CONFIG_REGISTRY_PROPERTIES_THIRD}
           password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:guest}}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:public}
-          group: ${CONFIG_REGISTRY_GROUP_THIRD:${APPLICATION_SERVICE_GROUP}}
-          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
   counter:
     gateway: true

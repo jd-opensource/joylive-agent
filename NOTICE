@@ -133,3 +133,7 @@ joylive-service-zookeeper
     org.apache.yetus -> com.jd.live.agent.shaded.org.apache.yetus
     org.apache.jute -> com.jd.live.agent.shaded.org.apache.jute
     io.netty -> com.jd.live.agent.shaded.io.netty depend on joylive-flowcontrol-redisson
+joylive-parser-joox
+    org.joox -> com.jd.live.agent.shaded.org.joox
+    org.slf4j -> com.jd.live.agent.shaded.org.slf4j depend on joylive-logger-slf4j
+    jakarta.xml.bind -> com.jd.live.agent.shaded.jakarta.xml.bind

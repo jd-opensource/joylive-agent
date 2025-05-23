@@ -17,35 +17,25 @@
 package com.jd.live.agent.governance.request;
 
 /**
- * The StickyRequest interface defines the methods that must be implemented by
- * any class that wishes to support "sticky" sessions in a distributed system.
- * Sticky sessions are used to ensure that requests from the same client are
- * consistently routed to the same service instance, typically to maintain session
- * state or to provide a consistent context for stateful interactions.
+ * Manages sticky session routing between clients and service instances.
  */
 public interface StickyRequest {
 
     /**
-     * Retrieves the sticky session ID associated with the request, if any.
-     * Implementations should return the current session ID that is used to
-     * stick the request to a particular service instance. If sticky sessions
-     * are not used or the ID is not set, the method should return {@code null}.
-     *
-     * @return The sticky session ID as a String, or {@code null} if not applicable.
+     * Gets or creates a sticky session using the specified routing policy.
+     * @param sessionFactory The factory that determines sticky session behavior
+     * @return The sticky session instance
      */
-    default String getStickyId() {
+    default StickySession getStickySession(StickySessionFactory sessionFactory) {
         return null;
     }
 
     /**
-     * Sets the sticky session ID for the request. Implementations should use this
-     * method to assign a specific session ID that will be used to route subsequent
-     * requests to the same service instance. If sticky sessions are not supported,
-     * this method may be left empty.
+     * Gets the current sticky session ID used for request routing.
      *
-     * @param stickyId The sticky session ID to be set.
+     * @return The sticky session ID, or null if not set
      */
-    default void setStickyId(String stickyId) {
-
+    default String getStickyId() {
+        return null;
     }
 }
