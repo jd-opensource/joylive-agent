@@ -69,6 +69,8 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private static final Logger logger = LoggerFactory.getLogger(DubboZookeeperRegistry.class);
 
+    private static final String DUBBO = "dubbo";
+    private static final String PROTOCOL = "protocol";
     private static final String PROVIDERS = "providers";
     private static final String CONSUMERS = "consumers";
     private static final String SIDE = "side";
@@ -458,10 +460,9 @@ public class DubboZookeeperRegistry implements RegistryService {
         String group = parameters == null ? null : parameters.get(GROUP);
         group = group == null || group.isEmpty() ? serviceId.getGroup() : group;
         String params = parameters == null ? null : parameters.get("dubbo.metadata-service.url-params");
-        Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
-        });
-        String protocol = urlParams == null ? null : urlParams.get("protocol");
-        protocol = protocol == null || protocol.isEmpty() ? "dubbo" : protocol;
+        boolean version2 = params != null && params.contains("\"release\":\"2");
+        String protocol = version2 ? getProtocol2(params, parser) : getProtocol3(params, parser);
+        protocol = protocol == null || protocol.isEmpty() ? DUBBO : protocol;
         return DubboZookeeperEndpoint.builder()
                 .scheme(protocol)
                 .service(serviceId.getService())
@@ -470,6 +471,40 @@ public class DubboZookeeperRegistry implements RegistryService {
                 .port(instance.getPort())
                 .metadata(parameters)
                 .build();
+    }
+
+    /**
+     * Extracts the protocol type (version 2 format) from URL parameters.
+     *
+     * @param params URL parameters string to parse (may be null)
+     * @param parser Object parser instance for parameter deserialization
+     * @return "dubbo" if Dubbo protocol is found, null otherwise
+     */
+    private String getProtocol2(String params, ObjectParser parser) {
+        try {
+            Map<String, Map<String, String>> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, Map<String, String>>>() {
+            });
+            return urlParams == null || !urlParams.containsKey(DUBBO) ? null : DUBBO;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Extracts the protocol type (version 3 format) from URL parameters.
+     *
+     * @param params URL parameters string to parse (may be null)
+     * @param parser Object parser instance for parameter deserialization
+     * @return The protocol string if found, null otherwise
+     */
+    private String getProtocol3(String params, ObjectParser parser) {
+        try {
+            Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
+            });
+            return urlParams == null ? null : urlParams.get(PROTOCOL);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
