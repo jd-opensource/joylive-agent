@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.getSchemeAddress;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.getClusterName;
 import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toInstance;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 
@@ -75,7 +75,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     private final String defaultGroup;
 
     public DubboServiceDiscovery(URL url, ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
-        super(getSchemeAddress(url));
+        super(getClusterName(url));
         this.url = url;
         this.delegate = delegate;
         this.registry = registry;

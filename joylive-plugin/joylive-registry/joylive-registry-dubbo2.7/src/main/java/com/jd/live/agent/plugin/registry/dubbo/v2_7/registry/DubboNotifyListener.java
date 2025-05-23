@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toServiceId;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 /**
@@ -56,14 +55,6 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     private final ServiceId serviceId;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
-
-    public DubboNotifyListener(URL url,
-                               NotifyListener delegate,
-                               RegistryEventPublisher publisher,
-                               String defaultGroup,
-                               Registry registry) {
-        this(url, toServiceId(url), delegate, publisher, defaultGroup, registry);
-    }
 
     public DubboNotifyListener(URL url,
                                ServiceId serviceId,

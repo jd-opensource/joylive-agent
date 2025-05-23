@@ -56,7 +56,7 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     private final AtomicBoolean registered = new AtomicBoolean(false);
 
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
-        super(getSchemeAddress(delegate.getUrl()));
+        super(getClusterName(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
         this.defaultGroup = GROUPS.get(delegate.getClass().getName());

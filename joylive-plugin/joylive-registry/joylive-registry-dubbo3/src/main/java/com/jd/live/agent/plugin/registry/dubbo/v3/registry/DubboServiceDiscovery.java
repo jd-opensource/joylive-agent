@@ -88,7 +88,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public DubboServiceDiscovery(ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
-        super(getSchemeAddress(delegate.getUrl()));
+        super(getClusterName(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
         this.application = application;

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.util;
 
+import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
@@ -35,8 +36,8 @@ public class UrlUtils {
     private static final String RELEASE = "release";
     private static final String VERSION = "2.6";
 
-    public static String getSchemeAddress(URL url) {
-        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
+    public static String getClusterName(URL url) {
+        return url.toString(Constants.BACKUP_KEY);
     }
 
     /**

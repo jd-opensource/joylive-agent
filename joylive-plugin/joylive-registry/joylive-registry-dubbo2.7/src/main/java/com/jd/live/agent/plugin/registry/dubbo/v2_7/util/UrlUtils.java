@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.constants.RemotingConstants;
 
 import java.io.StringReader;
 import java.util.HashMap;
@@ -42,10 +43,9 @@ public class UrlUtils {
     private static final String DUBBO = "dubbo";
     private static final String RELEASE = "release";
     private static final String VERSION = "2.7";
-    private static final String PROTOCOL = "protocol";
 
-    public static String getSchemeAddress(URL url) {
-        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
+    public static String getClusterName(URL url) {
+        return url.toString(RemotingConstants.BACKUP_KEY);
     }
 
     /**
