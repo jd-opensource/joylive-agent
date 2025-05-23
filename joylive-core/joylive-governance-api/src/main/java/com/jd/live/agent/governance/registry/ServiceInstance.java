@@ -62,6 +62,7 @@ public class ServiceInstance extends ServiceId {
                            int weight,
                            Map<String, String> metadata) {
         super(namespace, service, group, interfaceMode);
+        this.id = id;
         this.framework = framework;
         this.version = version;
         this.scheme = scheme;
@@ -69,6 +70,13 @@ public class ServiceInstance extends ServiceId {
         this.port = port;
         this.weight = weight;
         this.metadata = metadata;
+    }
+
+    public String getId() {
+        if (id == null) {
+            id = getAddress();
+        }
+        return id;
     }
 
     public String getAddress() {
