@@ -184,12 +184,16 @@ public class UrlUtils {
      * @return URLParams containing protocol and version (defaults to DUBBO/VERSION if not found)
      */
     public static URLParams getUrlParams(Map<String, String> metadata, ObjectParser parser) {
-        String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
-        Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
-        });
-        String protocol = urlParams == null ? DUBBO : urlParams.getOrDefault(PROTOCOL, DUBBO);
-        String release = urlParams == null ? VERSION : urlParams.getOrDefault(RELEASE, VERSION);
-        return new URLParams(protocol, release);
+        try {
+            String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
+            Map<String, Map<String, String>> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, Map<String, String>>>() {
+            });
+            Map<String, String> dubboParams = urlParams == null ? null : urlParams.get(DUBBO);
+            String release = dubboParams == null ? VERSION : dubboParams.getOrDefault(RELEASE, VERSION);
+            return new URLParams(DUBBO, release);
+        } catch (Exception e) {
+            return new URLParams(DUBBO, VERSION);
+        }
     }
 
     /**

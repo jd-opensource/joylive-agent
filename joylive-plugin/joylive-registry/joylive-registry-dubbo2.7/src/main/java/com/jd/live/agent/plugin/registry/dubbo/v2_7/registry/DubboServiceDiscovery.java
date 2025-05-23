@@ -55,6 +55,8 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     private static final int DESTROYED = 2;
 
+    private final URL url;
+
     private final ServiceDiscovery delegate;
 
     private final CompositeRegistry registry;
@@ -70,8 +72,9 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Getter
     private final String defaultGroup;
 
-    public DubboServiceDiscovery(ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
-        super(getSchemeAddress(delegate.getUrl()));
+    public DubboServiceDiscovery(URL url, ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
+        super(getSchemeAddress(url));
+        this.url = url;
         this.delegate = delegate;
         this.registry = registry;
         this.application = application;

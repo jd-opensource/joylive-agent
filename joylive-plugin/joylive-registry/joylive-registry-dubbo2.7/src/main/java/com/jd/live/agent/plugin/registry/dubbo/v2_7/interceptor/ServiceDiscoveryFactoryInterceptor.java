@@ -44,6 +44,6 @@ public class ServiceDiscoveryFactoryInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         // Wrap the service discovery with DubboServiceDiscovery
-        mc.skipWithResult(new DubboServiceDiscovery(mc.getResult(), registry, application, parser));
+        mc.skipWithResult(new DubboServiceDiscovery(mc.getArgument(0), mc.getResult(), registry, application, parser));
     }
 }
