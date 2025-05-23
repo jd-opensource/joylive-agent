@@ -203,6 +203,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             return;
         }
         customize(instance);
+        // TODO only remove the instance.
         Registration registration = registrations.remove(instance.getUniqueName());
         if (registration != null) {
             registration.unregister();
@@ -437,11 +438,12 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         List<RegistryService> clusters = registries;
         List<ClusterInstanceRegistration> values = new CopyOnWriteArrayList<>();
         if (doRegister != null) {
-            if (doRegister instanceof RegistryCallable) {
-                values.add(new ClusterInstanceRegistration(((RegistryCallable<?>) doRegister).getRegistry(), instances.get(0), doRegister));
-            } else {
-                // SystemRegistryService, call doRegister
-                values.add(new ClusterInstanceRegistration(new SystemRegistryService(doRegister), instances.get(0)));
+            RegistryService cluster;
+            for (ServiceInstance instance : instances) {
+                cluster = doRegister instanceof RegistryCallable
+                        ? ((RegistryCallable<?>) doRegister).getRegistry()
+                        : new SystemRegistryService();
+                values.add(new ClusterInstanceRegistration(cluster, instance, doRegister));
             }
         }
         if (clusters != null) {
@@ -555,12 +557,30 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             }
         }
 
+        public void register(ServiceInstance instance) {
+            for (ClusterInstanceRegistration registration : instances) {
+                if (!(registration.getCluster() instanceof AbstractSystemRegistryService)
+                        && Objects.equals(registration.getInstance().getSchemeAddress(), instance.getSchemeAddress())) {
+                    registration.register();
+                }
+            }
+        }
+
         /**
          * Unregisters the service instance from the registry.
          */
         public void unregister() {
             if (registered.compareAndSet(true, false)) {
                 doUnregister();
+            }
+        }
+
+        public void unregister(ServiceInstance instance) {
+            for (ClusterInstanceRegistration registration : instances) {
+                if (!(registration.getCluster() instanceof AbstractSystemRegistryService)
+                        && Objects.equals(registration.getInstance().getSchemeAddress(), instance.getSchemeAddress())) {
+                    registration.unregister();
+                }
             }
         }
 
@@ -597,7 +617,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                     dones++;
                 }
             }
-            if (dones != instances.size()) {
+            if (dones < instances.size()) {
                 delayRegister();
             }
         }
@@ -988,7 +1008,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                     if (doRegister != null) {
                         doRegister.call();
                     } else {
-                        cluster.register(instance);
+                        cluster.register(serviceId, instance);
                     }
                     setDone(true);
                     logger.info("Success registering instance {} to {} at {}",
@@ -1074,13 +1094,19 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
         private final Callable<Void> callback;
 
+        SystemRegistryService() {
+            this(null);
+        }
+
         SystemRegistryService(Callable<Void> callback) {
             this.callback = callback;
         }
 
         @Override
-        public void register(String service, String group, ServiceInstance instance) throws Exception {
-            callback.call();
+        public void register(ServiceId serviceId, ServiceInstance instance) throws Exception {
+            if (callback != null) {
+                callback.call();
+            }
         }
 
         @Override
