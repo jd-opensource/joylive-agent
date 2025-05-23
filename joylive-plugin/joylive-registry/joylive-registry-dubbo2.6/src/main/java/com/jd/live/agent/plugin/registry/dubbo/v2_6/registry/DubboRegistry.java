@@ -34,8 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.dubbo.common.Constants.CONSUMER_PROTOCOL;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.toInstance;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.toServiceId;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_6.util.UrlUtils.*;
 
 
 /**
@@ -55,6 +54,7 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     private final AtomicBoolean registered = new AtomicBoolean(false);
 
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
+        super(getSchemeAddress(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
     }

@@ -186,9 +186,15 @@ public interface RegistryService extends AutoCloseable {
 
         protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+        protected final String name;
+
+        public AbstractRegistryService(String name) {
+            this.name = name;
+        }
+
         @Override
         public String getName() {
-            return "unknown registry";
+            return name;
         }
 
         @Override
@@ -288,13 +294,9 @@ public interface RegistryService extends AutoCloseable {
 
         private final RegistryClusterConfig config;
 
-        public AbstractSystemRegistryService() {
-            config = createDefaultConfig();
-        }
-
-        @Override
-        public String getName() {
-            return SYSTEM;
+        public AbstractSystemRegistryService(String name) {
+            super(name == null ? SYSTEM : name);
+            this.config = createDefaultConfig();
         }
 
         @Override

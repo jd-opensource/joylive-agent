@@ -32,8 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstance;
-import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
+import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.*;
 import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
 
 /**
@@ -61,6 +60,7 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     private final AtomicBoolean registered = new AtomicBoolean(false);
 
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
+        super(getSchemeAddress(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
         this.defaultGroup = GROUPS.get(delegate.getClass().getName());
@@ -139,6 +139,9 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     @Override
     public void reExportRegister(URL url) {
+        // TODO reexport register
+        // unregister(url);
+        // register(url);
         delegate.reExportRegister(url);
     }
 

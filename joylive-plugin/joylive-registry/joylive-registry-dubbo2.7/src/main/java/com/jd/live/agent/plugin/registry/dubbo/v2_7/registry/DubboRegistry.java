@@ -27,12 +27,16 @@ import org.apache.dubbo.registry.Registry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toInstance;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toServiceId;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.*;
 import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
 
+/**
+ * Dubbo registry implementation that delegates to an underlying registry while providing additional functionality.
+ * Handles service registration, discovery and notification with support for grouping and endpoint conversion.
+ */
 public class DubboRegistry extends AbstractSystemRegistryService implements Registry {
 
     private static final Map<String, String> GROUPS = new HashMap<String, String>() {{
@@ -43,18 +47,23 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     private final CompositeRegistry registry;
 
+    private final String defaultGroup;
+
     private final Map<String, URL> urls = new ConcurrentHashMap<>(16);
 
-    private final Map<NotifyListener, NotifyListener> listeners = new ConcurrentHashMap<>(16);
+    private final Map<URL, DubboNotifyListener> listeners = new ConcurrentHashMap<>(16);
+
+    private final AtomicBoolean registered = new AtomicBoolean(false);
 
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
+        super(getSchemeAddress(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
-        registry.addSystemRegistry(this);
+        this.defaultGroup = GROUPS.get(delegate.getClass().getName());
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) {
         URL url = urls.get(serviceId.getUniqueName());
         return url == null ? new ArrayList<>() : toList(delegate.lookup(url), DubboEndpoint::new);
     }
@@ -72,41 +81,50 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     @Override
     public void destroy() {
         registry.removeSystemRegistry(this);
+        listeners.forEach((k, v) -> v.close());
         delegate.destroy();
     }
 
     @Override
     public void register(URL url) {
-        registry.register(toInstance(url), new RegistryRunnable(this, () -> delegate.register(url)));
+        // Delay to ensure this registry is used.
+        addSystemRegistry();
+        registry.register(toInstance(url, true), new RegistryRunnable(this, () -> delegate.register(url)));
     }
 
     @Override
     public void unregister(URL url) {
-        registry.unregister(toInstance(url));
+        registry.unregister(toInstance(url, true));
         delegate.unregister(url);
     }
 
     @Override
     public void subscribe(URL url, NotifyListener listener) {
-        NotifyListener wrapper = listener;
+        // Delay to ensure this registry is used.
+        addSystemRegistry();
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            ServiceId serviceId = toServiceId(url);
+            ServiceId serviceId = toServiceId(url, true);
             String key = serviceId.getUniqueName();
             urls.put(key, url);
-            wrapper = listeners.computeIfAbsent(listener,
-                    l -> new DubboNotifyListener(url, l, this, GROUPS.get(delegate.getClass().getName())));
+            DubboNotifyListener dubboListener = listeners.computeIfAbsent(url,
+                    u -> new DubboNotifyListener(u, serviceId, listener, this, defaultGroup, registry));
+            dubboListener.start();
+            delegate.subscribe(url, dubboListener);
+        } else {
+            delegate.subscribe(url, listener);
         }
-        delegate.subscribe(url, wrapper);
     }
 
     @Override
     public void unsubscribe(URL url, NotifyListener listener) {
-        NotifyListener wrapper = listener;
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            wrapper = listeners.remove(listener);
-            wrapper = wrapper == null ? listener : wrapper;
+            DubboNotifyListener dubboListener = listeners.remove(url);
+            if (dubboListener != null) {
+                dubboListener.close();
+                listener = dubboListener;
+            }
         }
-        delegate.unsubscribe(url, wrapper);
+        delegate.unsubscribe(url, listener);
     }
 
     @Override
@@ -134,5 +152,11 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     @Override
     public int hashCode() {
         return Objects.hashCode(delegate);
+    }
+
+    private void addSystemRegistry() {
+        if (registered.compareAndSet(false, true)) {
+            registry.addSystemRegistry(this);
+        }
     }
 }

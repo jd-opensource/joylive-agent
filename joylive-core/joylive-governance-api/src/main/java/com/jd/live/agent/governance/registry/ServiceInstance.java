@@ -80,10 +80,11 @@ public class ServiceInstance extends ServiceId {
     }
 
     public String getAddress() {
+        int port = getPort();
         if (port > 0) {
-            return host + ":" + port;
+            return getHost() + ":" + port;
         } else {
-            return host;
+            return getHost();
         }
     }
 
@@ -97,6 +98,11 @@ public class ServiceInstance extends ServiceId {
     }
 
     public String getSchemeAddress() {
+        return getSchemeAddress(getScheme(), getHost(), getPort());
+
+    }
+
+    public static String getSchemeAddress(String scheme, String host, int port) {
         if (port > 0) {
             if (scheme == null || scheme.isEmpty()) {
                 return host + ":" + port;
@@ -106,6 +112,13 @@ public class ServiceInstance extends ServiceId {
             return host;
         }
         return scheme + "://" + host;
+    }
 
+    public static String getSchemeAddress(String scheme, String host, String port) {
+        try {
+            return getSchemeAddress(scheme, host, Integer.parseInt(port));
+        } catch (NumberFormatException e) {
+            return getSchemeAddress(scheme, host, 0);
+        }
     }
 }

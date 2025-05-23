@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
+import static com.alibaba.nacos.api.PropertyKeyConst.SERVER_ADDR;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.governance.registry.ServiceInstance.getSchemeAddress;
 
 /**
  * Registry service implementation for Eureka discovery client.
@@ -52,6 +54,7 @@ public class NacosRegistryService extends AbstractSystemRegistryService implemen
     }
 
     public NacosRegistryService(NacosNamingService client, Properties properties) {
+        super(getSchemeAddress("nacos", properties.getProperty(SERVER_ADDR), null));
         this.client = client;
         this.secure = properties != null && Converts.getBoolean(properties.getProperty(Constants.LABEL_SECURE), false);
         this.group = properties == null ? null : properties.getProperty(Constants.LABEL_GROUP);

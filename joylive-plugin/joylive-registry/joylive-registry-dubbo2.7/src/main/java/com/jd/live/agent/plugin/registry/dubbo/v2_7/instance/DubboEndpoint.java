@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toServiceId;
 
+
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
@@ -35,8 +36,11 @@ public class DubboEndpoint extends AbstractDubboEndpoint implements ServiceEndpo
     private final URL url;
 
     public DubboEndpoint(URL url) {
+        this(url, toServiceId(url));
+    }
+
+    public DubboEndpoint(URL url, ServiceId serviceId) {
         this.url = url;
-        ServiceId serviceId = toServiceId(url);
         this.service = serviceId.getService();
         this.group = serviceId.getGroup();
     }
@@ -46,11 +50,6 @@ public class DubboEndpoint extends AbstractDubboEndpoint implements ServiceEndpo
         int port = url.getPort();
         String host = url.getHost();
         return port <= 0 ? host : host + ":" + port;
-    }
-
-    @Override
-    public String getService() {
-        return url.getServiceInterface();
     }
 
     @Override

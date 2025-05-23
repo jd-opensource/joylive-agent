@@ -32,6 +32,7 @@ public class FixedRegistryService extends AbstractSystemRegistryService {
     private final List<ServiceEndpoint> endpoints;
 
     public FixedRegistryService(String service, List<ServiceEndpoint> endpoints) {
+        super("fixed://");
         this.service = service;
         this.endpoints = endpoints;
     }

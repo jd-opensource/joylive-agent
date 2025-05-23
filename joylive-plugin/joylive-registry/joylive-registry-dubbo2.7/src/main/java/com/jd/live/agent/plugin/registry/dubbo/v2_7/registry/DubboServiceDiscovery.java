@@ -17,30 +17,43 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.registry;
 
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.governance.registry.*;
+import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.governance.registry.CompositeRegistry;
+import com.jd.live.agent.governance.registry.RegistryRunnable;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.instance.DubboInstance;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.lang.Prioritized;
 import org.apache.dubbo.common.utils.Page;
+import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.client.ServiceDiscovery;
 import org.apache.dubbo.registry.client.ServiceInstance;
 import org.apache.dubbo.registry.client.event.ServiceInstancesChangedEvent;
 import org.apache.dubbo.registry.client.event.listener.ServiceInstancesChangedListener;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.getSchemeAddress;
 import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toInstance;
-import static org.apache.dubbo.common.constants.CommonConstants.*;
 
 public class DubboServiceDiscovery extends AbstractSystemRegistryService implements ServiceDiscovery {
 
     private static final Map<String, String> GROUPS = new HashMap<String, String>() {{
         put("org.apache.dubbo.registry.nacos.NacosServiceDiscovery", "DEFAULT_GROUP");
     }};
+
+    private static final int UNREGISTER = 0;
+
+    private static final int REGISTERED = 1;
+
+    private static final int DESTROYED = 2;
 
     private final ServiceDiscovery delegate;
 
@@ -50,10 +63,15 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     private final ObjectParser parser;
 
+    private final AtomicInteger status = new AtomicInteger(UNREGISTER);
+
+    private final Map<ServiceInstancesChangedListener, DubboNotifyListener> listeners = new ConcurrentHashMap<>(16);
+
     @Getter
     private final String defaultGroup;
 
     public DubboServiceDiscovery(ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
+        super(getSchemeAddress(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
         this.application = application;
@@ -83,6 +101,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     @Override
     public void destroy() throws Exception {
+        status.set(DESTROYED);
         registry.removeSystemRegistry(this);
         delegate.destroy();
     }
@@ -90,12 +109,19 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public void register(ServiceInstance serviceInstance) throws RuntimeException {
         registry.register(toInstance(serviceInstance, application, parser),
-                new RegistryRunnable(this, () -> delegate.register(serviceInstance)));
+                new RegistryRunnable(this, () -> {
+                    if (status.get() == UNREGISTER) {
+                        delegate.register(serviceInstance);
+                        status.compareAndSet(UNREGISTER, REGISTERED);
+                    }
+                }));
     }
 
     @Override
     public void update(ServiceInstance serviceInstance) throws RuntimeException {
-        delegate.update(serviceInstance);
+        if (status.get() == REGISTERED) {
+            delegate.update(serviceInstance);
+        }
     }
 
     @Override
@@ -143,18 +169,22 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     public void addServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws NullPointerException, IllegalArgumentException {
         URL url = listener.getUrl();
         ServiceId serviceId = UrlUtils.toServiceId(url);
-        String protocolServiceKey = url.getServiceKey() + GROUP_CHAR_SEPARATOR + url.getParameter(PROTOCOL_KEY, DUBBO);
-        listener.addListener(protocolServiceKey, urls -> {
-            Map<String, List<ServiceEndpoint>> endpoints = toInstance(urls);
-            for (Map.Entry<String, List<ServiceEndpoint>> entry : endpoints.entrySet()) {
-                publish(new RegistryEvent(new ServiceId(serviceId.getService(), entry.getKey()), entry.getValue(), defaultGroup));
-            }
+        listeners.computeIfAbsent(listener, l -> {
+            NotifyListener delegate = urls -> {
+                // TODO add notify to avoid recurse;
+                List<ServiceInstance> instances = new ArrayList<>(urls.size());
+                listener.onEvent(new ServiceInstancesChangedEvent(serviceId.getService(), instances));
+            };
+            DubboNotifyListener notifier = new DubboNotifyListener(url, serviceId, delegate, this, defaultGroup, registry);
+            notifier.start();
+            return notifier;
         });
         delegate.addServiceInstancesChangedListener(listener);
     }
 
     @Override
     public void removeServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws IllegalArgumentException {
+        Close.instance().close(listeners.remove(listener));
         delegate.removeServiceInstancesChangedListener(listener);
     }
 

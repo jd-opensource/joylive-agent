@@ -45,8 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstance;
-import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
+import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.*;
 import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
 import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.customizeInstance;
 import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.setMetadataStorageType;
@@ -89,6 +88,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public DubboServiceDiscovery(ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
+        super(getSchemeAddress(delegate.getUrl()));
         this.delegate = delegate;
         this.registry = registry;
         this.application = application;

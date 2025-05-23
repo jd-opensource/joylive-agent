@@ -23,13 +23,11 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.instance.DubboEndpoint;
+import lombok.Getter;
 import org.apache.dubbo.common.URL;
 
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.*;
@@ -44,32 +42,59 @@ public class UrlUtils {
     private static final String DUBBO = "dubbo";
     private static final String RELEASE = "release";
     private static final String VERSION = "2.7";
+    private static final String PROTOCOL = "protocol";
+
+    public static String getSchemeAddress(URL url) {
+        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
+    }
 
     /**
      * Parses a URL into a ServiceId containing service name and group.
+     * Handles both provider and consumer side URLs with different parsing strategies.
      *
      * @param url the URL to parse
      * @return parsed ServiceId with service name and group
      */
     public static ServiceId toServiceId(URL url) {
+        return toServiceId(url, false);
+    }
+
+    /**
+     * Parses a URL into a ServiceId with configurable parsing mode.
+     * Supports three parsing modes:
+     * 1. Consumer side with service reference (provided.by)
+     * 2. Provider side in service mode (application name)
+     * 3. Default interface mode (service interface)
+     *
+     * @param url                the URL to parse
+     * @param forceInterfaceMode if true, forces interface mode parsing
+     * @return parsed ServiceId containing service name, group and interface flag
+     */
+    public static ServiceId toServiceId(URL url, boolean forceInterfaceMode) {
         String service;
+        boolean interfaceMode = forceInterfaceMode;
         String side = url.getParameter(SIDE_KEY, PROVIDER_SIDE);
         if (CONSUMER_SIDE.equalsIgnoreCase(side)) {
-            service = url.getParameter(PROVIDED_BY);
-            if (service != null && !service.isEmpty()) {
-                // group is not valid for service.
-                // group is valid for interface.
-                return new ServiceId(service, "", false);
+            if (forceInterfaceMode) {
+                service = url.getServiceInterface();
+            } else {
+                service = url.getParameter(PROVIDED_BY);
+                if (service == null || service.isEmpty()) {
+                    interfaceMode = true;
+                    service = url.getServiceInterface();
+                }
             }
-        } else if (isServiceMode(url)) {
-            return new ServiceId(url.getParameter(PROVIDED_BY), "", false);
+        } else if (!forceInterfaceMode && isServiceMode(url)) {
+            service = url.getParameter(PROVIDED_BY);
+        } else {
+            service = url.getServiceInterface();
+            interfaceMode = true;
         }
-        service = url.getServiceInterface();
         String group = url.getParameter(LABEL_GROUP, "");
         if (group == null || group.isEmpty()) {
             group = url.getParameter(LABEL_SERVICE_GROUP, "");
         }
-        return new ServiceId(service, group, true);
+        return new ServiceId(service, group, interfaceMode);
     }
 
     /**
@@ -91,9 +116,22 @@ public class UrlUtils {
      * @return ServiceInstance built from URL parameters
      */
     public static ServiceInstance toInstance(URL url) {
+        return toInstance(url, false);
+    }
+
+    /**
+     * Converts a Dubbo URL to a ServiceInstance representation.
+     * <p>
+     * Creates an interface-mode instance with metadata derived from URL parameters.
+     *
+     * @param url                the Dubbo URL to convert
+     * @param forceInterfaceMode if true, forces interface mode parsing
+     * @return ServiceInstance built from URL parameters
+     */
+    public static ServiceInstance toInstance(URL url, boolean forceInterfaceMode) {
         Map<String, String> metadata = new HashMap<>(url.getParameters());
+        ServiceId serviceId = toServiceId(url, forceInterfaceMode);
         metadata.remove(REGISTRY_TYPE_KEY);
-        ServiceId serviceId = toServiceId(url);
         return ServiceInstance.builder()
                 .interfaceMode(serviceId.isInterfaceMode())
                 .framework(new FrameworkVersion(DUBBO, url.getParameter(RELEASE, VERSION)))
@@ -122,20 +160,15 @@ public class UrlUtils {
                                              Application application,
                                              ObjectParser parser) {
         Map<String, String> metadata = instance.getMetadata();
-        application.labelRegistry(metadata::putIfAbsent);
+        application.labelRegistry(metadata::put);
         MapOption option = new MapOption(metadata);
-        String params = option.getString("dubbo.metadata-service.url-params");
-        Map<String, Map<String, String>> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, Map<String, String>>>() {
-        });
-        Map<String, String> dubboParams = urlParams == null ? null : urlParams.get(DUBBO);
-        MapOption urlOption = new MapOption(dubboParams);
+        URLParams urlParams = getUrlParams(metadata, parser);
         return ServiceInstance.builder()
-                .id(instance.getId())
                 .interfaceMode(false)
-                .framework(new FrameworkVersion(DUBBO, urlOption.getString(RELEASE, VERSION)))
+                .framework(new FrameworkVersion(DUBBO, urlParams.getRelease()))
                 .service(instance.getServiceName())
-                .scheme(urlOption.getString("protocol", DUBBO))
-                .group(option.getString(LABEL_GROUP))
+                .scheme(urlParams.getProtocol())
+                .group(instance.getMetadata(LABEL_GROUP))
                 .host(instance.getHost())
                 .port(instance.getPort())
                 .weight(option.getInteger(LABEL_WEIGHT, 100))
@@ -144,26 +177,44 @@ public class UrlUtils {
     }
 
     /**
-     * Groups service instances by their group name.
+     * Extracts URL parameters from metadata map.
      *
-     * @param urls list of service instances to group
-     * @return map of group names to their corresponding endpoints
+     * @param metadata source metadata map (can be null)
+     * @param parser   parser for converting string to map
+     * @return URLParams containing protocol and version (defaults to DUBBO/VERSION if not found)
      */
-    public static Map<String, List<ServiceEndpoint>> toInstance(List<URL> urls) {
-        Map<String, List<ServiceEndpoint>> endpoints = new HashMap<>(4);
-        String group;
-        List<ServiceEndpoint> lasts = null;
-        ServiceEndpoint current;
-        ServiceEndpoint last = null;
-        for (URL url : urls) {
-            current = new DubboEndpoint(url);
-            group = current.getGroup();
-            if (last == null || !current.getGroup().equals(last.getGroup())) {
-                lasts = endpoints.computeIfAbsent(group, k -> new ArrayList<>());
-            }
-            last = current;
-            lasts.add(current);
+    public static URLParams getUrlParams(Map<String, String> metadata, ObjectParser parser) {
+        String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
+        Map<String, String> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, String>>() {
+        });
+        String protocol = urlParams == null ? DUBBO : urlParams.getOrDefault(PROTOCOL, DUBBO);
+        String release = urlParams == null ? VERSION : urlParams.getOrDefault(RELEASE, VERSION);
+        return new URLParams(protocol, release);
+    }
+
+    /**
+     * Converts a ServiceEndpoint to a URL.
+     * Copies all basic properties including service name, host, port and metadata.
+     *
+     * @param endpoint the service endpoint to convert
+     * @return a new URL containing the endpoint's data
+     */
+    public static URL toURL(ServiceEndpoint endpoint) {
+        Map<String, String> metadata = endpoint.getMetadata() == null ? new HashMap<>() : new HashMap<>(endpoint.getMetadata());
+        String scheme = endpoint.getScheme();
+        return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), metadata);
+    }
+
+    @Getter
+    public static class URLParams {
+
+        private final String protocol;
+
+        private final String release;
+
+        public URLParams(String protocol, String release) {
+            this.protocol = protocol;
+            this.release = release;
         }
-        return endpoints;
     }
 }

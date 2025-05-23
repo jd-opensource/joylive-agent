@@ -30,6 +30,7 @@ public class SimpleRegistryService extends AbstractSystemRegistryService {
     private final Map<String, List<ServiceEndpoint>> endpoints;
 
     public SimpleRegistryService(Map<String, List<ServiceEndpoint>> endpoints) {
+        super("simple://");
         this.endpoints = endpoints;
     }
 

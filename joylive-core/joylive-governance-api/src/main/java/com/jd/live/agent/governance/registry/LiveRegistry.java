@@ -817,7 +817,6 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 }
                 event = delta(clusterName, event);
                 int size = event.size();
-                logger.info("Service instance count is changed to {}, {} at {}", size, serviceId.getUniqueName(), clusterName);
 
                 List<ServiceEndpoint> olds = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
 
@@ -837,6 +836,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 for (Consumer<RegistryEvent> consumer : consumers) {
                     consumer.accept(new RegistryEvent(serviceId.getService(), serviceId.group, newEndpoints));
                 }
+                logger.info("Service instances is changed to {} at {}, totals is {}, {}", size, clusterName, newEndpoints.size(), serviceId.getUniqueName());
             }
         }
 
@@ -1099,6 +1099,7 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         }
 
         SystemRegistryService(Callable<Void> callback) {
+            super(SYSTEM);
             this.callback = callback;
         }
 

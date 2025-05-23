@@ -35,6 +35,10 @@ public class UrlUtils {
     private static final String RELEASE = "release";
     private static final String VERSION = "2.6";
 
+    public static String getSchemeAddress(URL url) {
+        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
+    }
+
     /**
      * Parses a URL into a ServiceId containing service name and group.
      * Handles both provider and consumer side URLs with different parsing strategies.

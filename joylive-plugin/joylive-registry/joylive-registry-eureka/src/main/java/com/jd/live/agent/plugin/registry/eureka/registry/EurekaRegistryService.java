@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
 import com.netflix.discovery.DiscoveryClient;
+import com.netflix.discovery.EurekaClientConfig;
 import com.netflix.discovery.shared.Application;
 import lombok.Setter;
 
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.governance.registry.ServiceInstance.getSchemeAddress;
 
 /**
  * Registry service implementation for Eureka discovery client.
@@ -39,10 +41,12 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     @Setter
     private DiscoveryClient client;
 
-    public EurekaRegistryService() {
+    public EurekaRegistryService(EurekaClientConfig config) {
+        super(getSchemeAddress("eureka", config.getEurekaServerDNSName(), config.getEurekaServerPort()));
     }
 
     public EurekaRegistryService(DiscoveryClient client) {
+        this(client.getEurekaClientConfig());
         this.client = client;
     }
 

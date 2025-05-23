@@ -38,7 +38,7 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
         EurekaClientConfig config = (EurekaClientConfig) arguments[1];
-        EurekaRegistryService registryService = new EurekaRegistryService();
+        EurekaRegistryService registryService = new EurekaRegistryService(config);
         arguments[1] = new EurekaRegistryConfig(config, registryService);
         registry.addSystemRegistry(registryService);
     }
