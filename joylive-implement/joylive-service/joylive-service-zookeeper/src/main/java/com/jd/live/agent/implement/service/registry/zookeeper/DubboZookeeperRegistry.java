@@ -156,13 +156,13 @@ public class DubboZookeeperRegistry implements RegistryService {
             client = builder.build();
             client.getConnectionStateListenable().addListener((c, newState) -> {
                 if (newState == ConnectionState.RECONNECTED) {
-                    connected.set(true);
+                    // A suspended, lost, or read-only connection has been re-established
                     onReconnected();
                 } else if (newState == ConnectionState.LOST) {
-                    connected.set(false);
+                    // The ZooKeeper session has expired
                     onLost();
                 } else if (newState == ConnectionState.CONNECTED) {
-                    connected.set(true);
+                    // Sent for the first successful connection to the server
                     onConnected();
                 }
             });
@@ -262,6 +262,9 @@ public class DubboZookeeperRegistry implements RegistryService {
             return;
         }
         addCreationTask(version);
+        if (connected.compareAndSet(false, true)) {
+            addCacheTask(version);
+        }
     }
 
     /**
@@ -272,8 +275,9 @@ public class DubboZookeeperRegistry implements RegistryService {
         if (!started.get()) {
             return;
         }
+        connected.set(false);
         client.close();
-        addDetectTask(version, 1000);
+        addDetectTask(version, 1000L);
         logger.info("Failed to connect {}, trying to reconnect...", name);
     }
 
@@ -285,6 +289,7 @@ public class DubboZookeeperRegistry implements RegistryService {
         if (!started.get()) {
             return;
         }
+        connected.set(true);
         addCreationTask(version);
         addCacheTask(version);
         logger.info("Success connecting to {}", name);
@@ -309,7 +314,7 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private void addCacheTask(long version, DubboCuratorCache cache) {
         CacheTask creation = new CacheTask(cache);
-        ZookeeperTask task = new ZookeeperTask("CacheNode", creation, version, versions, timer, 1000L);
+        ZookeeperTask task = new ZookeeperTask("CacheTask", creation, version, versions, timer, 1000L);
         task.delay(100L);
     }
 
@@ -321,7 +326,7 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private void addDetectTask(long version, long delay) {
         DetectTask detection = new DetectTask(name, uris, client, connectTimeout);
-        ZookeeperTask task = new ZookeeperTask("DetectZookeeper", detection, version, versions, timer, 2000L);
+        ZookeeperTask task = new ZookeeperTask("DetectTask", detection, version, versions, timer, 2000L);
         task.delay(delay);
     }
 
@@ -344,7 +349,7 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private void addCreationTask(long version, PathData pathData) {
         CreateTask creation = new CreateTask(client, pathData, nodes);
-        ZookeeperTask task = new ZookeeperTask("CreateZkNode", creation, version, versions, timer, 1000L);
+        ZookeeperTask task = new ZookeeperTask("CreationTask", creation, version, versions, timer, 1000L);
         task.delay(100L);
     }
 
@@ -555,7 +560,9 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private static boolean remove(CuratorFramework client, PathData path) throws Exception {
         Stat stat = client.checkExists().forPath(path.getPath());
-        if (stat != null && stat.getEphemeralOwner() != client.getZookeeperClient().getZooKeeper().getSessionId()) {
+        if (stat == null) {
+            return true;
+        } else if (stat.getEphemeralOwner() != client.getZookeeperClient().getZooKeeper().getSessionId()) {
             try {
                 client.delete().forPath(path.getPath());
                 return true;
