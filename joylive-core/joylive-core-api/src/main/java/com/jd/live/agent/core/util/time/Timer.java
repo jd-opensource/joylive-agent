@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.util.time;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * The Timer interface defines the contract for a timing mechanism that can schedule tasks
  * for future execution in a background thread. The tasks can be scheduled for one-time
@@ -51,4 +53,15 @@ public interface Timer {
      * @return A Timeout object representing the scheduled task.
      */
     Timeout add(TimeTask task);
+
+    /**
+     * Calculates actual retry interval with optional random jitter.
+     *
+     * @param interval base interval in ms
+     * @param random   maximum random jitter to add (0 for no jitter)
+     * @return calculated interval (base + random jitter if applicable)
+     */
+    static long getRetryInterval(long interval, long random) {
+        return interval + (random > 0 ? ThreadLocalRandom.current().nextLong(random) : 0);
+    }
 }

@@ -55,11 +55,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 import static com.jd.live.agent.core.util.StringUtils.*;
+import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
 
 /**
  * An implementation of the {@link Registry} interface specifically for Nacos.
@@ -110,11 +111,13 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
 
+    private final Predicate<RetryTask> predicate = t -> t.getVersion() == versions.get();
+
     public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer, ObjectParser parser) {
         this.config = config;
         this.timer = timer;
         this.parser = parser;
-        this.uris = toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse);
+        this.uris = shuffle(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse));
         this.address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
         this.interfaceRoot = url("/", config.getProperty("interfaceRoot", "dubbo"));
@@ -122,7 +125,6 @@ public class DubboZookeeperRegistry implements RegistryService {
         Option option = new MapOption(config.getProperties());
         this.connectTimeout = option.getInteger("connectTimeout", 1000);
         this.sessionTimeout = option.getInteger("sessionTimeout", 20000);
-
     }
 
     @Override
@@ -167,7 +169,7 @@ public class DubboZookeeperRegistry implements RegistryService {
                 }
             });
             logger.info("Start connecting to {}.", name);
-            addDetectTask(versions.get(), 100);
+            addDetectTask(versions.get(), getRetryInterval(100, 1000));
         }
     }
 
@@ -277,7 +279,7 @@ public class DubboZookeeperRegistry implements RegistryService {
         }
         connected.set(false);
         client.close();
-        addDetectTask(version, 1000L);
+        addDetectTask(version, getRetryInterval(1000, 1000));
         logger.info("Failed to connect {}, trying to reconnect...", name);
     }
 
@@ -314,8 +316,8 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private void addCacheTask(long version, DubboCuratorCache cache) {
         CacheTask creation = new CacheTask(cache);
-        ZookeeperTask task = new ZookeeperTask("CacheTask", creation, version, versions, timer, 1000L);
-        task.delay(100L);
+        RetryTask task = new RetryTask("CacheTask", creation, version, predicate, timer);
+        task.delay(getRetryInterval(100, 500));
     }
 
     /**
@@ -326,7 +328,7 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private void addDetectTask(long version, long delay) {
         DetectTask detection = new DetectTask(name, uris, client, connectTimeout);
-        ZookeeperTask task = new ZookeeperTask("DetectTask", detection, version, versions, timer, 2000L);
+        RetryTask task = new RetryTask("DetectTask", detection, version, predicate, timer);
         task.delay(delay);
     }
 
@@ -349,8 +351,8 @@ public class DubboZookeeperRegistry implements RegistryService {
      */
     private void addCreationTask(long version, PathData pathData) {
         CreateTask creation = new CreateTask(client, pathData, nodes);
-        ZookeeperTask task = new ZookeeperTask("CreationTask", creation, version, versions, timer, 1000L);
-        task.delay(100L);
+        RetryTask task = new RetryTask("CreationTask", creation, version, predicate, timer);
+        task.delay(getRetryInterval(100, 500));
     }
 
     /**
@@ -633,46 +635,54 @@ public class DubboZookeeperRegistry implements RegistryService {
     }
 
     /**
+     * A retryable task that returns success status.
+     * Provides retry interval calculation with optional random jitter.
+     */
+    private interface Task extends Callable<Boolean> {
+        /**
+         * Gets the base retry interval in milliseconds.
+         */
+        long getRetryInterval();
+    }
+
+    /**
      * A retryable task for ZooKeeper operations with version control.
      */
-    private static class ZookeeperTask implements Runnable {
+    private static class RetryTask implements Runnable {
 
         private final String name;
 
-        private final Callable<Boolean> callable;
+        private final Task task;
 
+        @Getter
         private final long version;
 
-        private final AtomicLong versions;
+        private final Predicate<RetryTask> predicate;
 
         private final Timer timer;
 
-        private final long retryInterval;
-
-        ZookeeperTask(String name,
-                      Callable<Boolean> callable,
-                      long version,
-                      AtomicLong versions,
-                      Timer timer,
-                      long retryInterval) {
+        RetryTask(String name,
+                  Task task,
+                  long version,
+                  Predicate<RetryTask> predicate,
+                  Timer timer) {
             this.name = name;
-            this.callable = callable;
+            this.task = task;
             this.version = version;
-            this.versions = versions;
+            this.predicate = predicate;
             this.timer = timer;
-            this.retryInterval = retryInterval;
         }
 
         @Override
         public void run() {
-            if (versions.get() == version) {
+            if (predicate.test(this)) {
                 try {
-                    if (callable.call()) {
+                    if (task.call()) {
                         return;
                     }
-                    timer.delay(name, retryInterval, this);
+                    timer.delay(name, task.getRetryInterval(), this);
                 } catch (Exception e) {
-                    timer.delay(name, retryInterval, this);
+                    timer.delay(name, task.getRetryInterval(), this);
                 }
             }
         }
@@ -690,7 +700,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     /**
      * A task that creates or recreates a ZooKeeper node with ephemeral mode.
      */
-    private static class CreateTask implements Callable<Boolean> {
+    private static class CreateTask implements Task {
 
         private final CuratorFramework client;
 
@@ -712,12 +722,17 @@ public class DubboZookeeperRegistry implements RegistryService {
             }
             return true;
         }
+
+        @Override
+        public long getRetryInterval() {
+            return Timer.getRetryInterval(1000, 1000);
+        }
     }
 
     /**
      * A task that detects ZooKeeper server availability by probing multiple URIs.
      */
-    private static class DetectTask implements Callable<Boolean> {
+    private static class DetectTask implements Task {
 
         private final String name;
 
@@ -741,16 +756,22 @@ public class DubboZookeeperRegistry implements RegistryService {
             if (client.getState() != CuratorFrameworkState.STOPPED) {
                 client.close();
             }
+            // the uris is shuffled to avoid the same server is probed by many clients.
             for (URI uri : uris) {
                 if (probe(uri.getHost(), uri.getPort())) {
                     client.start();
                     return true;
                 }
             }
-            if (counter.incrementAndGet() % 100 == 0) {
+            if (counter.incrementAndGet() % 50 == 0) {
                 logger.error("Retry connecting to zookeeper {} times, {}", counter.get(), name);
             }
             return false;
+        }
+
+        @Override
+        public long getRetryInterval() {
+            return Timer.getRetryInterval(1500, 5000);
         }
 
         /**
@@ -781,7 +802,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     /**
      * A task that starts a {@link DubboCuratorCache} and returns its started status.
      */
-    private static class CacheTask implements Callable<Boolean> {
+    private static class CacheTask implements Task {
 
         private final DubboCuratorCache cache;
 
@@ -793,6 +814,11 @@ public class DubboZookeeperRegistry implements RegistryService {
         public Boolean call() {
             cache.start();
             return cache.isStarted();
+        }
+
+        @Override
+        public long getRetryInterval() {
+            return Timer.getRetryInterval(1000, 1000);
         }
     }
 
