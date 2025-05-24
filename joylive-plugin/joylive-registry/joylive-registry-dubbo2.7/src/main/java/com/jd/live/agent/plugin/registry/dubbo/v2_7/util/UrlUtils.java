@@ -26,6 +26,13 @@ import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.RemotingConstants;
+import org.apache.dubbo.metadata.MetadataInfo;
+import org.apache.dubbo.metadata.MetadataService;
+import org.apache.dubbo.registry.client.DefaultServiceInstance;
+import org.apache.dubbo.registry.client.InstanceAddressURL;
+import org.apache.dubbo.registry.client.RegistryClusterIdentifier;
+import org.apache.dubbo.registry.client.ServiceDiscovery;
+import org.apache.dubbo.registry.client.metadata.MetadataUtils;
 
 import java.io.StringReader;
 import java.util.HashMap;
@@ -34,6 +41,8 @@ import java.util.Map;
 import static com.jd.live.agent.core.Constants.*;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
+import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.EXPORTED_SERVICES_REVISION_PROPERTY_NAME;
+import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.METADATA_STORAGE_TYPE_PROPERTY_NAME;
 
 /**
  * Utility class for URL parsing operations.
@@ -197,16 +206,48 @@ public class UrlUtils {
     }
 
     /**
-     * Converts a ServiceEndpoint to a URL.
-     * Copies all basic properties including service name, host, port and metadata.
+     * Converts a ServiceEndpoint to an appropriate URL representation based on the service configuration.
      *
-     * @param endpoint the service endpoint to convert
-     * @return a new URL containing the endpoint's data
+     * @param serviceId The service identifier determining conversion mode (interface/non-interface)
+     * @param endpoint The service endpoint containing connection details and metadata
+     * @param url The original URL providing context for registry cluster configuration
+     * @param discovery The service discovery instance for metadata retrieval
+     * @return A new URL instance containing the endpoint's data in appropriate format
      */
-    public static URL toURL(ServiceEndpoint endpoint) {
+    public static URL toURL(ServiceId serviceId, ServiceEndpoint endpoint, URL url, ServiceDiscovery discovery) {
         Map<String, String> metadata = endpoint.getMetadata() == null ? new HashMap<>() : new HashMap<>(endpoint.getMetadata());
         String scheme = endpoint.getScheme();
-        return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), metadata);
+        if (serviceId.isInterfaceMode()) {
+            return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), metadata);
+        } else {
+            DefaultServiceInstance instance = new DefaultServiceInstance(endpoint.getId(), endpoint.getService(), endpoint.getHost(), endpoint.getPort());
+            instance.setMetadata(metadata);
+            return new InstanceAddressURL(instance, getMetadataInfo(instance, url, discovery));
+        }
+    }
+
+    /**
+     * Retrieves metadata information for a service instance based on its storage type.
+     *
+     * @param instance  The service instance containing metadata and storage type
+     * @param url       The original URL for registry cluster configuration
+     * @param discovery The service discovery instance for proxy creation
+     * @return MetadataInfo object containing service metadata, or null if retrieval fails
+     */
+    private static MetadataInfo getMetadataInfo(DefaultServiceInstance instance, URL url, ServiceDiscovery discovery) {
+        Map<String, String> metadata = instance.getMetadata();
+        String metadataType = metadata.getOrDefault(METADATA_STORAGE_TYPE_PROPERTY_NAME, DEFAULT_METADATA_STORAGE_TYPE);
+        instance.getExtendParams().putIfAbsent(REGISTRY_CLUSTER_KEY, RegistryClusterIdentifier.getExtension(url).consumerKey(url));
+        try {
+            if (REMOTE_METADATA_STORAGE_TYPE.equals(metadataType)) {
+                return MetadataUtils.getRemoteMetadataService().getMetadata(instance);
+            } else {
+                MetadataService metadataServiceProxy = MetadataUtils.getMetadataServiceProxy(instance, discovery);
+                return metadataServiceProxy.getMetadataInfo(metadata.get(EXPORTED_SERVICES_REVISION_PROPERTY_NAME));
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     @Getter

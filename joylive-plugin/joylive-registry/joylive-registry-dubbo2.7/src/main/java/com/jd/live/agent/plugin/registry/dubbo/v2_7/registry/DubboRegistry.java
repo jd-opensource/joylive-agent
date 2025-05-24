@@ -107,7 +107,7 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
             String key = serviceId.getUniqueName();
             urls.put(key, url);
             DubboNotifyListener dubboListener = listeners.computeIfAbsent(url,
-                    u -> new DubboNotifyListener(u, serviceId, listener, this, defaultGroup, registry));
+                    u -> new DubboNotifyListener(u, serviceId, listener, this, null, defaultGroup, registry));
             dubboListener.start();
             delegate.subscribe(url, dubboListener);
         } else {

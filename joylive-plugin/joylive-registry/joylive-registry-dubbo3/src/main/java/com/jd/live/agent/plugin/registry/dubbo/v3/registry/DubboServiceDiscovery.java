@@ -128,6 +128,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     public void update() throws RuntimeException {
         if (registered.get() == REGISTERED_SUCCESS && !delegate.isDestroy()) {
             delegate.update();
+            // TODO check EXPORTED_SERVICES_REVISION_PROPERTY_NAME is changed and reregister.
         }
     }
 

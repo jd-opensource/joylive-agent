@@ -19,10 +19,10 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.instance.DubboEndpoint;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.NotifyListener;
+import org.apache.dubbo.registry.client.ServiceDiscovery;
 import org.apache.dubbo.registry.client.event.listener.ServiceInstancesChangedListener;
 
 import java.util.ArrayList;
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toURL;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
 /**
@@ -46,6 +47,8 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     @Getter
     private final NotifyListener delegate;
 
+    private final ServiceDiscovery discovery;
+
     private final RegistryEventPublisher publisher;
 
     private final String defaultGroup;
@@ -60,11 +63,13 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
                                ServiceId serviceId,
                                NotifyListener delegate,
                                RegistryEventPublisher publisher,
+                               ServiceDiscovery discovery,
                                String defaultGroup,
                                Registry registry) {
         this.url = url;
         this.serviceId = serviceId;
         this.delegate = delegate;
+        this.discovery = discovery;
         this.publisher = publisher;
         this.defaultGroup = defaultGroup;
         this.registry = registry;
@@ -93,7 +98,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     @Override
     public void accept(RegistryEvent event) {
         List<ServiceEndpoint> endpoints = event.getInstances();
-        List<URL> urls = toList(endpoints, UrlUtils::toURL);
+        List<URL> urls = toList(endpoints, e -> toURL(serviceId, e, url, discovery));
         try {
             delegate.notify(urls);
             logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());

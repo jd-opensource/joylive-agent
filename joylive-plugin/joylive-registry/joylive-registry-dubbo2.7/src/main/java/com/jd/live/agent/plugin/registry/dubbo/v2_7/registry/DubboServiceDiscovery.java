@@ -125,6 +125,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public void update(ServiceInstance serviceInstance) throws RuntimeException {
         if (status.get() == REGISTERED) {
+            registry.reregister(toInstance(serviceInstance, application, parser));
             delegate.update(serviceInstance);
         }
     }
@@ -179,7 +180,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
         listeners.computeIfAbsent(listener, l -> {
             Set<NotifyListener> notifiers = delegates.get(protocolServiceKey);
             NotifyListener old = notifiers.iterator().next();
-            DubboNotifyListener wrapper = new DubboNotifyListener(url, serviceId, old, this, defaultGroup, registry);
+            DubboNotifyListener wrapper = new DubboNotifyListener(url, serviceId, old, this, this, defaultGroup, registry);
             notifiers.clear();
             notifiers.add(wrapper);
             delegate.addServiceInstancesChangedListener(listener);

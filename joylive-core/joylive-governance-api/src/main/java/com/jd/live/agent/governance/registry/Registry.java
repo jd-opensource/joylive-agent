@@ -76,6 +76,18 @@ public interface Registry extends ServiceRegistryFactory {
     void unregister(ServiceInstance instance);
 
     /**
+     * Reregister a service instance with the registry.
+     *
+     * @param instance the service instance to be reregistered
+     */
+    default void reregister(ServiceInstance instance) {
+        if (instance != null) {
+            unregister(instance);
+            register(instance);
+        }
+    }
+
+    /**
      * Registers a service for policy subscription.
      *
      * @param service service name to register
