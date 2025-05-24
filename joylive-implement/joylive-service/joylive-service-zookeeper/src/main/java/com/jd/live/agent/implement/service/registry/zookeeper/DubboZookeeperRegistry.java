@@ -120,8 +120,8 @@ public class DubboZookeeperRegistry implements RegistryService {
         this.interfaceRoot = url("/", config.getProperty("interfaceRoot", "dubbo"));
         this.serviceRoot = url("/", config.getProperty("serviceRoot", "services"));
         Option option = new MapOption(config.getProperties());
-        this.connectTimeout = option.getInteger("connectTimeout", 2000);
-        this.sessionTimeout = option.getInteger("sessionTimeout", 30000);
+        this.connectTimeout = option.getInteger("connectTimeout", 1000);
+        this.sessionTimeout = option.getInteger("sessionTimeout", 20000);
 
     }
 
@@ -144,12 +144,16 @@ public class DubboZookeeperRegistry implements RegistryService {
     public void start() throws Exception {
         if (started.compareAndSet(false, true)) {
             RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-            client = CuratorFrameworkFactory.builder()
+            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                     .connectString(address)
                     .sessionTimeoutMs(sessionTimeout)
                     .connectionTimeoutMs(connectTimeout)
-                    .retryPolicy(retryPolicy)
-                    .build();
+                    .retryPolicy(retryPolicy);
+            String authority = config.getAuthority();
+            if (authority != null && !authority.isEmpty()) {
+                builder.authorization("digest", authority.getBytes());
+            }
+            client = builder.build();
             client.getConnectionStateListenable().addListener((c, newState) -> {
                 if (newState == ConnectionState.RECONNECTED) {
                     connected.set(true);

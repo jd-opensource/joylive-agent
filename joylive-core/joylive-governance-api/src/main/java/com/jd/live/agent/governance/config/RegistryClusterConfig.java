@@ -58,6 +58,13 @@ public class RegistryClusterConfig {
         return group != null && !group.isEmpty() ? group : defaultGroup;
     }
 
+    public String getAuthority() {
+        if (username != null && !username.isEmpty() && password != null && !password.isEmpty()) {
+            return username + ":" + password;
+        }
+        return null;
+    }
+
     public String getProperty(String key) {
         return properties != null && key != null ? properties.get(key) : null;
     }
