@@ -26,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mariadb.v3.condition.ConditionalOnMariadbProtectEnabled;
+import com.jd.live.agent.plugin.protection.mariadb.v3.interceptor.ExecutePipelineInterceptor;
 import com.jd.live.agent.plugin.protection.mariadb.v3.interceptor.SendQueryInterceptor;
 
 @Injectable
@@ -38,6 +39,8 @@ public class StandardClientDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SEND_QUERY = "sendQuery";
 
+    private static final String METHOD_EXECUTE_PIPELINE = "executePipeline";
+
     private static final String[] ARGUMENT_SEND_QUERY = new String[]{
             "org.mariadb.jdbc.message.ClientMessage"
     };
@@ -49,10 +52,11 @@ public class StandardClientDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_STANDARD_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SEND_QUERY).
-                                and(MatcherBuilder.arguments(ARGUMENT_SEND_QUERY)),
-                        () -> new SendQueryInterceptor(policySupplier)
-                )
+                        MatcherBuilder.named(METHOD_EXECUTE_PIPELINE),
+                        () -> new ExecutePipelineInterceptor(policySupplier)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_SEND_QUERY).and(MatcherBuilder.arguments(ARGUMENT_SEND_QUERY)),
+                        () -> new SendQueryInterceptor(policySupplier))
         };
     }
 }

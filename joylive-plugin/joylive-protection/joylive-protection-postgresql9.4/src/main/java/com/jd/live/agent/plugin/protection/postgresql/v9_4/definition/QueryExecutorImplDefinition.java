@@ -25,12 +25,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.postgresql.v9_4.condition.ConditionalOnPostgresqlProtectEnabled;
+import com.jd.live.agent.plugin.protection.postgresql.v9_4.condition.ConditionalOnPostgresql9ProtectEnabled;
 import com.jd.live.agent.plugin.protection.postgresql.v9_4.interceptor.QueryExecutorImplInterceptor;
 
 @Injectable
 @Extension(value = "QueryExecutorImplDefinition_v9.4", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnPostgresqlProtectEnabled
+@ConditionalOnPostgresql9ProtectEnabled
 @ConditionalOnClass(QueryExecutorImplDefinition.TYPE_QUERY_EXECUTOR_IMPL)
 public class QueryExecutorImplDefinition extends PluginDefinitionAdapter {
 
