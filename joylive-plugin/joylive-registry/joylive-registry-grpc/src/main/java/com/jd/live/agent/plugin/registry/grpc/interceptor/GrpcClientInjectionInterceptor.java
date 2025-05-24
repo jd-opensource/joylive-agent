@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 
 /**
@@ -39,7 +40,7 @@ public class GrpcClientInjectionInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         GrpcClient grpcClient = ctx.getArgument(1);
         String service = grpcClient.value();
-        registry.subscribe(service);
+        registry.subscribe(new ServiceId(service, null, true));
         logger.info("Found grpc consumer, service: {}", service);
     }
 }

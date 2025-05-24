@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +29,9 @@ import java.util.Map;
 @Setter
 public class ServiceInstance extends ServiceId {
 
-    private String type;
+    private String id;
+
+    private FrameworkVersion framework;
 
     private String version;
 
@@ -46,24 +49,76 @@ public class ServiceInstance extends ServiceId {
     }
 
     @Builder
-    public ServiceInstance(String id,
-                           String namespace,
+    public ServiceInstance(String namespace,
                            String service,
                            String group,
-                           String type,
+                           boolean interfaceMode,
+                           String id,
+                           FrameworkVersion framework,
                            String version,
                            String scheme,
                            String host,
                            int port,
                            int weight,
                            Map<String, String> metadata) {
-        super(id, namespace, service, group);
-        this.type = type;
+        super(namespace, service, group, interfaceMode);
+        this.id = id;
+        this.framework = framework;
         this.version = version;
         this.scheme = scheme;
         this.host = host;
         this.port = port;
         this.weight = weight;
         this.metadata = metadata;
+    }
+
+    public String getId() {
+        if (id == null) {
+            id = getAddress();
+        }
+        return id;
+    }
+
+    public String getAddress() {
+        int port = getPort();
+        if (port > 0) {
+            return getHost() + ":" + port;
+        } else {
+            return getHost();
+        }
+    }
+
+    public String getMetadata(String key) {
+        return metadata == null || key == null ? null : metadata.get(key);
+    }
+
+    public String getMetadata(String key, String defaultValue) {
+        String value = getMetadata(key);
+        return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    public String getSchemeAddress() {
+        return getSchemeAddress(getScheme(), getHost(), getPort());
+
+    }
+
+    public static String getSchemeAddress(String scheme, String host, int port) {
+        if (port > 0) {
+            if (scheme == null || scheme.isEmpty()) {
+                return host + ":" + port;
+            }
+            return scheme + "://" + host + ":" + port;
+        } else if (scheme == null || scheme.isEmpty()) {
+            return host;
+        }
+        return scheme + "://" + host;
+    }
+
+    public static String getSchemeAddress(String scheme, String host, String port) {
+        try {
+            return getSchemeAddress(scheme, host, Integer.parseInt(port));
+        } catch (NumberFormatException e) {
+            return getSchemeAddress(scheme, host, 0);
+        }
     }
 }

@@ -45,9 +45,11 @@ public class FixedInstanceSupplierInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         String service = ctx.getArgument(0);
         List<ServiceInstance> instances = ctx.getArgument(1);
-        // subscribe policy
-        registry.subscribe(service);
-        logger.info("Found fixed instance supplier consumer, service: {}", service);
-        registry.addSystemRegistry(service, new FixedRegistryService(service, toList(instances, SpringEndpoint::new)));
+        if (instances != null && !instances.isEmpty()) {
+            // subscribe policy
+            registry.subscribe(service);
+            logger.info("Found fixed instance supplier consumer, service: {}", service);
+            registry.addSystemRegistry(service, new FixedRegistryService(service, toList(instances, SpringEndpoint::new)));
+        }
     }
 }

@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.springcloud.v2_2.registry;
 
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 import java.util.List;
 import java.util.Objects;
@@ -31,12 +32,13 @@ public class FixedRegistryService extends AbstractSystemRegistryService {
     private final List<ServiceEndpoint> endpoints;
 
     public FixedRegistryService(String service, List<ServiceEndpoint> endpoints) {
+        super("fixed://");
         this.service = service;
         this.endpoints = endpoints;
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) throws Exception {
-        return Objects.equals(this.service, service) ? endpoints : null;
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        return Objects.equals(service, serviceId.getService()) ? endpoints : null;
     }
 }

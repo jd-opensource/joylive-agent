@@ -24,10 +24,7 @@ import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.RegistryEvent;
-import com.jd.live.agent.governance.registry.RegistryService;
-import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.registry.*;
 
 import java.util.HashMap;
 import java.util.Properties;
@@ -44,15 +41,15 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  */
 public class NacosRegistry implements RegistryService {
 
-    private final RegistryClusterConfig config;
+    protected final RegistryClusterConfig config;
 
-    private final String address;
+    protected final String address;
 
-    private final String name;
+    protected final String name;
 
-    private NamingService namingService;
+    protected NamingService namingService;
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
+    protected final AtomicBoolean started = new AtomicBoolean(false);
 
     public NacosRegistry(RegistryClusterConfig config) {
         this.config = config;
@@ -110,33 +107,34 @@ public class NacosRegistry implements RegistryService {
     }
 
     @Override
-    public void register(String service, String group, ServiceInstance instance) throws Exception {
-        namingService.registerInstance(service, getGroup(group), toInstance(instance));
+    public void register(ServiceId serviceId, ServiceInstance instance) throws Exception {
+        namingService.registerInstance(getService(serviceId, instance), getGroup(serviceId.getGroup()), toInstance(instance));
     }
 
     @Override
-    public void unregister(String service, String group, ServiceInstance instance) throws Exception {
-        namingService.deregisterInstance(service, getGroup(group), toInstance(instance));
+    public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
+        namingService.deregisterInstance(getService(serviceId, instance), getGroup(serviceId.getGroup()), toInstance(instance));
     }
 
     @Override
-    public void subscribe(String service, String group, Consumer<RegistryEvent> consumer) throws Exception {
-        namingService.subscribe(service, getGroup(group), event -> {
+    public void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) throws Exception {
+        namingService.subscribe(serviceId.getService(), getGroup(serviceId.getGroup()), event -> {
             if (event instanceof NamingEvent) {
                 NamingEvent e = (NamingEvent) event;
-                consumer.accept(new RegistryEvent(e.getServiceName(), e.getGroupName(), toList(e.getInstances(), NacosEndpoint::new), Constants.DEFAULT_GROUP));
+                ServiceId id = new ServiceId(e.getServiceName(), e.getGroupName(), serviceId.isInterfaceMode());
+                consumer.accept(new RegistryEvent(id, toList(e.getInstances(), NacosEndpoint::new), Constants.DEFAULT_GROUP));
             }
         });
     }
 
     @Override
-    public void unsubscribe(String service, String group) throws Exception {
-        namingService.unsubscribe(service, getGroup(group), event -> {
+    public void unsubscribe(ServiceId serviceId) throws Exception {
+        namingService.unsubscribe(serviceId.getService(), getGroup(serviceId.getGroup()), event -> {
 
         });
     }
 
-    private Instance toInstance(ServiceInstance instance) {
+    protected Instance toInstance(ServiceInstance instance) {
         Instance result = new Instance();
         result.setInstanceId(instance.getId());
         result.setIp(instance.getHost());
@@ -147,7 +145,11 @@ public class NacosRegistry implements RegistryService {
         return result;
     }
 
-    private String getGroup(String group) {
+    protected String getGroup(String group) {
         return group == null || group.isEmpty() ? Constants.DEFAULT_GROUP : group;
+    }
+
+    protected String getService(ServiceId serviceId, ServiceInstance instance) {
+        return serviceId.getService();
     }
 }

@@ -1,1 +1,2 @@
 com.jd.live.agent.implement.service.registry.nacos.NacosRegistryFactory
+com.jd.live.agent.implement.service.registry.nacos.NacosDubboRegistryFactory
