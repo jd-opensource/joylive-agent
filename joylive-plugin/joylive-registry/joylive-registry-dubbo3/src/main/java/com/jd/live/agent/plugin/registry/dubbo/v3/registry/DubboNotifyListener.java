@@ -46,7 +46,7 @@ import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataU
  */
 public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEvent>, AutoCloseable {
 
-    private static final Logger logger = LoggerFactory.getLogger(DubboRegistry.class);
+    private static final Logger logger = LoggerFactory.getLogger(DubboNotifyListener.class);
 
     private final URL url;
 

@@ -38,7 +38,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEvent>, AutoCloseable {
 
-    private static final Logger logger = LoggerFactory.getLogger(DubboRegistry.class);
+    private static final Logger logger = LoggerFactory.getLogger(DubboNotifyListener.class);
 
     private final URL url;
 
