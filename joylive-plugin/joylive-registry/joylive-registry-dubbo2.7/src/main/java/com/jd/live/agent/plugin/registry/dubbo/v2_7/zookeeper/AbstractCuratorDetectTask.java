@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.SocketDetector;
 import com.jd.live.agent.core.util.SocketDetector.ZookeeperSocketListener;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.time.Timer;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -79,7 +79,7 @@ public abstract class AbstractCuratorDetectTask implements RetryExecution {
             return Connectivity.FAILURE_MAX_RETRIES;
         }
         if (count % 50 == 0) {
-            logger.error("Test zookeeper connection " + count + " times, current address is " + address);
+            logger.error("Test zookeeper connection {} times, current address is {}", count, address);
         }
         List<URI> uris = toList(split(address, ','), URI::parse);
         int threshold = uris.size() / 2 + 1;

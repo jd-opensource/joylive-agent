@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
@@ -25,8 +27,6 @@ import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.remoting.zookeeper.ChildListener;
 import org.apache.dubbo.remoting.zookeeper.DataListener;
 import org.apache.zookeeper.CreateMode;
@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.StringUtils.join;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
 import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
 
@@ -89,7 +90,6 @@ public class CuratorFailoverClient {
     private final Map<String, TreeCache> caches = new ConcurrentHashMap<>();
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final CountDownLatch connectLatch = new CountDownLatch(1);
-    private final AtomicBoolean recover = new AtomicBoolean(false);
 
     public CuratorFailoverClient(URL url, Consumer<Integer> stateListener, Timer timer) {
         this.url = url;
@@ -110,10 +110,16 @@ public class CuratorFailoverClient {
             }
 
             @Override
+            protected void onSuspended(long sessionId) {
+                doSuspended(sessionId);
+                super.onSuspended(sessionId);
+            }
+
+            @Override
             protected void onConnected(long sessionId) {
                 doConnected(sessionId);
                 super.onConnected(sessionId);
-                // Trigger connected event
+                // Notify main thread which is waiting for connection
                 connectLatch.countDown();
             }
 
@@ -136,7 +142,9 @@ public class CuratorFailoverClient {
         client.getConnectionStateListenable().addListener(connectionListener);
 
         try {
-            client.start();
+            // Replace client.start() with addDetectTask
+            logger.info("Try detect healthy zookeeper {}", join(addresses, ';'));
+            addDetectTask(false);
             if (!connectLatch.await((long) timeout * addresses.size(), TimeUnit.MILLISECONDS)) {
                 // cancel task.
                 versions.incrementAndGet();
@@ -178,7 +186,7 @@ public class CuratorFailoverClient {
 
             @Override
             public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-                logger.warn("ZNode " + pathData.getPath() + " already exists.", e);
+                logger.warn("ZNode {} already exists.", pathData.getPath(), e);
             }
         });
     }
@@ -221,10 +229,10 @@ public class CuratorFailoverClient {
 
             @Override
             public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-                logger.warn("ZNode " + pathData.getPath() + " already exists, since we will only try to recreate a node on a session expiration" +
+                logger.warn("ZNode {} already exists, since we will only try to recreate a node on a session expiration" +
                         ", this duplication might be caused by a delete delay from the zk server, which means the old expired session" +
                         " may still holds this ZNode and the server just hasn't got time to do the deletion. In this case, " +
-                        "we can just try to delete and create again.", e);
+                        "we can just try to delete and create again.", pathData.getPath(), e);
                 deletePath(path);
                 createEphemeral(path);
             }
@@ -246,10 +254,10 @@ public class CuratorFailoverClient {
 
             @Override
             public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-                logger.warn("ZNode " + pathData.getPath() + " already exists, since we will only try to recreate a node on a session expiration" +
+                logger.warn("ZNode {} already exists, since we will only try to recreate a node on a session expiration" +
                         ", this duplication might be caused by a delete delay from the zk server, which means the old expired session" +
                         " may still holds this ZNode and the server just hasn't got time to do the deletion. In this case, " +
-                        "we can just try to delete and create again.", e);
+                        "we can just try to delete and create again.", pathData.getPath(), e);
                 deletePath(path);
                 createEphemeral(path, data);
             }
@@ -395,47 +403,62 @@ public class CuratorFailoverClient {
     }
 
     /**
+     * Handles actions when ZooKeeper connection is suspended (temporarily disconnected).
+     *
+     * @param sessionId The ID of the suspended ZooKeeper session (in hexadecimal format)
+     */
+    private void doSuspended(long sessionId) {
+
+    }
+
+    /**
      * Handles connection loss by initiating reconnection attempts.
      */
     private void doLost() {
-        logger.info("Failed to connect " + ensembleProvider.current() + ", trying to reconnect...");
         // close first
         client.close();
-        long version = versions.incrementAndGet();
         boolean connected = this.connected.get();
         if (!connected && ensembleProvider.size() == 1) {
             // fail fast when initialization.
             connectLatch.countDown();
-        } else if (connected && recover.compareAndSet(false, true)) {
-            // recover immediately
-            ensembleProvider.reset();
-            client.start();
         } else {
+            logger.info("Failed to connect {}, trying to reconnect...", ensembleProvider.current());
             // reconnect to next server
             ensembleProvider.next();
-            CuratorDetectTask detect = new CuratorDetectTask(ensembleProvider, timeout, successThreshold, connected, new CuratorDetectTaskListener() {
-                @Override
-                public void onBefore() {
-                    if (client.getState() != CuratorFrameworkState.STOPPED) {
-                        client.close();
-                    }
-                }
-
-                @Override
-                public void onSuccess() {
-                    logger.info("Try connect to zookeeper " + ensembleProvider.current());
-                    client.start();
-                }
-
-                @Override
-                public void onFailure() {
-                    connectLatch.countDown();
-                }
-            });
-            RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper-detect", detect, version, predicate, timer);
-            // fast to reconnect when initialization
-            task.delay(connected ? Timer.getRetryInterval(1500, 5000) : 0);
+            addDetectTask(connected);
         }
+    }
+
+    /**
+     * Schedules a ZooKeeper connection detection task.
+     *
+     * @param connected true if currently connected (will delay retry),
+     *                  false for immediate detection attempt
+     */
+    private void addDetectTask(boolean connected) {
+        long version = versions.incrementAndGet();
+        CuratorDetectTask detect = new CuratorDetectTask(ensembleProvider, timeout, successThreshold, connected, new CuratorDetectTaskListener() {
+            @Override
+            public void onBefore() {
+                if (client.getState() != CuratorFrameworkState.STOPPED) {
+                    client.close();
+                }
+            }
+
+            @Override
+            public void onSuccess() {
+                logger.info("Try connect to healthy zookeeper {}", ensembleProvider.current());
+                client.start();
+            }
+
+            @Override
+            public void onFailure() {
+                connectLatch.countDown();
+            }
+        });
+        RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper-detect", detect, version, predicate, timer);
+        // fast to reconnect when initialization
+        task.delay(connected ? Timer.getRetryInterval(1500, 5000) : 0);
     }
 
     /**
@@ -460,14 +483,16 @@ public class CuratorFailoverClient {
             String current = ensembleProvider.current();
             String first = ensembleProvider.first();
             if (!Objects.equals(current, first)) {
-                logger.info("Try detect and recover " + first + "...");
+                logger.info("Try detect and recover {}...", first);
                 CuratorRecoverTask execution = new CuratorRecoverTask(first, timeout, successThreshold, new CuratorDetectTaskListener() {
                     @Override
                     public void onSuccess() {
                         if (!Objects.equals(ensembleProvider.current(), first)) {
-                            recover.set(true);
-                            // close will trigger onLost, start client in onLost.
                             client.close();
+                            // recover immediately
+                            ensembleProvider.reset();
+                            logger.info("Try switch to the healthy preferred zookeeper {}.", ensembleProvider.current());
+                            client.start();
                         }
                     }
                 });

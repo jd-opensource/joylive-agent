@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.remoting.zookeeper.StateListener;
 
 import java.util.function.Consumer;
@@ -64,33 +64,49 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
         }
     }
 
+    /**
+     * Handles successful reconnection where previous session is reused.
+     *
+     * @param sessionId The reused session ID
+     */
     protected void onReconnected(long sessionId) {
         if (lastSessionId == sessionId && sessionId != UNKNOWN_SESSION_ID) {
             logger.warn("Curator zookeeper connection recovered from connection lose, " +
-                    "reuse the old session " + Long.toHexString(sessionId));
+                    "reuse the old session {}", Long.toHexString(sessionId));
             stateListener.accept(StateListener.RECONNECTED);
         } else {
             logger.warn("New session created after old session lost, " +
-                    "old session " + Long.toHexString(lastSessionId) + ", new session " + Long.toHexString(sessionId));
+                    "old session {}, new session {}", Long.toHexString(lastSessionId), Long.toHexString(sessionId));
             lastSessionId = sessionId;
             stateListener.accept(StateListener.NEW_SESSION_CREATED);
         }
     }
 
+    /**
+     * Handles initial successful connection.
+     * @param sessionId The new session ID
+     */
     protected void onConnected(long sessionId) {
         lastSessionId = sessionId;
-        logger.info("Curator zookeeper client instance initiated successfully, session id is " + Long.toHexString(sessionId));
+        logger.info("Curator zookeeper client instance initiated successfully, session id is {}", Long.toHexString(sessionId));
         stateListener.accept(StateListener.CONNECTED);
     }
 
+    /**
+     * Handles connection suspension (timeout before session expiration).
+     * @param sessionId The suspended session ID
+     */
     protected void onSuspended(long sessionId) {
-        logger.warn("Curator zookeeper connection of session " + Long.toHexString(sessionId) + " timed out. " +
-                "connection timeout value is " + timeout + ", session expire timeout value is " + sessionExpireMs);
+        logger.warn("Curator zookeeper connection of session {} timed out. " +
+                "connection timeout value is {}, session expire timeout value is {}", Long.toHexString(sessionId), timeout, sessionExpireMs);
         stateListener.accept(StateListener.SUSPENDED);
     }
 
+    /**
+     * Handles complete session expiration (requires new session creation).
+     */
     protected void onLost() {
-        logger.warn("Curator zookeeper session " + Long.toHexString(lastSessionId) + " expired.");
+        logger.warn("Curator zookeeper session {} expired.", Long.toHexString(lastSessionId));
         stateListener.accept(StateListener.SESSION_LOST);
     }
 

@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.TreeCacheEvent;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.remoting.zookeeper.ChildListener;
 import org.apache.dubbo.remoting.zookeeper.DataListener;
 import org.apache.dubbo.remoting.zookeeper.EventType;
@@ -83,7 +83,7 @@ public class CuratorListenerImpl implements CuratorListener {
     public void childEvent(CuratorFramework client, TreeCacheEvent event) throws Exception {
         if (dataListener != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("listen the zookeeper changed. The changed data:" + event.getData());
+                logger.debug("listen the zookeeper changed. The changed data {}", event.getData());
             }
             TreeCacheEvent.Type type = event.getType();
             EventType eventType = null;

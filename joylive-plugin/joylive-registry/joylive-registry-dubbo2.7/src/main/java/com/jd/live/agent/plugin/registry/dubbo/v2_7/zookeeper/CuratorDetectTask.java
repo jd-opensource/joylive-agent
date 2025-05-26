@@ -28,7 +28,7 @@ public class CuratorDetectTask extends AbstractCuratorDetectTask {
                              int successThreshold,
                              boolean connected,
                              CuratorDetectTaskListener listener) {
-        super(connectTimeout, successThreshold, connected ? 0 : addressList.size() - 1, connected, listener);
+        super(connectTimeout, connected ? successThreshold : 1, connected ? 0 : addressList.size(), connected, listener);
         this.addressList = addressList;
     }
 
