@@ -53,30 +53,45 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
         } catch (Exception e) {
             logger.warn("Curator client state changed, but failed to get the related zk session instance.");
         }
-
         if (state == ConnectionState.LOST) {
-            logger.warn("Curator zookeeper session " + Long.toHexString(lastSessionId) + " expired.");
-            stateListener.accept(StateListener.SESSION_LOST);
+            onLost();
         } else if (state == ConnectionState.SUSPENDED) {
-            logger.warn("Curator zookeeper connection of session " + Long.toHexString(sessionId) + " timed out. " +
-                    "connection timeout value is " + timeout + ", session expire timeout value is " + sessionExpireMs);
-            stateListener.accept(StateListener.SUSPENDED);
+            onSuspended(sessionId);
         } else if (state == ConnectionState.CONNECTED) {
-            lastSessionId = sessionId;
-            logger.info("Curator zookeeper client instance initiated successfully, session id is " + Long.toHexString(sessionId));
-            stateListener.accept(StateListener.CONNECTED);
+            onConnected(sessionId);
         } else if (state == ConnectionState.RECONNECTED) {
-            if (lastSessionId == sessionId && sessionId != UNKNOWN_SESSION_ID) {
-                logger.warn("Curator zookeeper connection recovered from connection lose, " +
-                        "reuse the old session " + Long.toHexString(sessionId));
-                stateListener.accept(StateListener.RECONNECTED);
-            } else {
-                logger.warn("New session created after old session lost, " +
-                        "old session " + Long.toHexString(lastSessionId) + ", new session " + Long.toHexString(sessionId));
-                lastSessionId = sessionId;
-                stateListener.accept(StateListener.NEW_SESSION_CREATED);
-            }
+            onReconnected(sessionId);
         }
+    }
+
+    protected void onReconnected(long sessionId) {
+        if (lastSessionId == sessionId && sessionId != UNKNOWN_SESSION_ID) {
+            logger.warn("Curator zookeeper connection recovered from connection lose, " +
+                    "reuse the old session " + Long.toHexString(sessionId));
+            stateListener.accept(StateListener.RECONNECTED);
+        } else {
+            logger.warn("New session created after old session lost, " +
+                    "old session " + Long.toHexString(lastSessionId) + ", new session " + Long.toHexString(sessionId));
+            lastSessionId = sessionId;
+            stateListener.accept(StateListener.NEW_SESSION_CREATED);
+        }
+    }
+
+    protected void onConnected(long sessionId) {
+        lastSessionId = sessionId;
+        logger.info("Curator zookeeper client instance initiated successfully, session id is " + Long.toHexString(sessionId));
+        stateListener.accept(StateListener.CONNECTED);
+    }
+
+    protected void onSuspended(long sessionId) {
+        logger.warn("Curator zookeeper connection of session " + Long.toHexString(sessionId) + " timed out. " +
+                "connection timeout value is " + timeout + ", session expire timeout value is " + sessionExpireMs);
+        stateListener.accept(StateListener.SUSPENDED);
+    }
+
+    protected void onLost() {
+        logger.warn("Curator zookeeper session " + Long.toHexString(lastSessionId) + " expired.");
+        stateListener.accept(StateListener.SESSION_LOST);
     }
 
 }

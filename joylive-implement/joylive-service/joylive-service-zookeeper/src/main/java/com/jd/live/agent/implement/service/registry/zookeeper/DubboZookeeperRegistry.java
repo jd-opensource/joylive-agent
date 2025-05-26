@@ -21,9 +21,14 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.parser.json.JsonType;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.SocketDetector;
+import com.jd.live.agent.core.util.SocketDetector.ZookeeperSocketListener;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.task.RetryExecution;
+import com.jd.live.agent.core.util.task.RetryVersionTask;
+import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.*;
@@ -44,13 +49,10 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -111,7 +113,7 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
 
-    private final Predicate<RetryTask> predicate = t -> t.getVersion() == versions.get();
+    private final Predicate<RetryVersionTask> predicate = t -> t.getVersion() == versions.get();
 
     public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer, ObjectParser parser) {
         this.config = config;
@@ -315,8 +317,8 @@ public class DubboZookeeperRegistry implements RegistryService {
      * @param cache   The cache instance to synchronize
      */
     private void addCacheTask(long version, DubboCuratorCache cache) {
-        CacheTask creation = new CacheTask(cache);
-        RetryTask task = new RetryTask("CacheTask", creation, version, predicate, timer);
+        CacheExecution creation = new CacheExecution(cache);
+        RetryVersionTask task = new RetryVersionTimerTask("CacheTask", creation, version, predicate, timer);
         task.delay(getRetryInterval(100, 500));
     }
 
@@ -327,8 +329,8 @@ public class DubboZookeeperRegistry implements RegistryService {
      * @param delay   Initial delay before first execution (milliseconds)
      */
     private void addDetectTask(long version, long delay) {
-        DetectTask detection = new DetectTask(name, uris, client, connectTimeout);
-        RetryTask task = new RetryTask("DetectTask", detection, version, predicate, timer);
+        DetectExecution detection = new DetectExecution(name, uris, client, connectTimeout);
+        RetryVersionTask task = new RetryVersionTimerTask("DetectTask", detection, version, predicate, timer);
         task.delay(delay);
     }
 
@@ -350,8 +352,8 @@ public class DubboZookeeperRegistry implements RegistryService {
      * @param pathData The node path and data to create
      */
     private void addCreationTask(long version, PathData pathData) {
-        CreateTask creation = new CreateTask(client, pathData, nodes);
-        RetryTask task = new RetryTask("CreationTask", creation, version, predicate, timer);
+        CreateExecution creation = new CreateExecution(client, pathData, nodes);
+        RetryVersionTask task = new RetryVersionTimerTask("CreationTask", creation, version, predicate, timer);
         task.delay(getRetryInterval(100, 500));
     }
 
@@ -635,72 +637,9 @@ public class DubboZookeeperRegistry implements RegistryService {
     }
 
     /**
-     * A retryable task that returns success status.
-     * Provides retry interval calculation with optional random jitter.
-     */
-    private interface Task extends Callable<Boolean> {
-        /**
-         * Gets the base retry interval in milliseconds.
-         */
-        long getRetryInterval();
-    }
-
-    /**
-     * A retryable task for ZooKeeper operations with version control.
-     */
-    private static class RetryTask implements Runnable {
-
-        private final String name;
-
-        private final Task task;
-
-        @Getter
-        private final long version;
-
-        private final Predicate<RetryTask> predicate;
-
-        private final Timer timer;
-
-        RetryTask(String name,
-                  Task task,
-                  long version,
-                  Predicate<RetryTask> predicate,
-                  Timer timer) {
-            this.name = name;
-            this.task = task;
-            this.version = version;
-            this.predicate = predicate;
-            this.timer = timer;
-        }
-
-        @Override
-        public void run() {
-            if (predicate.test(this)) {
-                try {
-                    if (task.call()) {
-                        return;
-                    }
-                    timer.delay(name, task.getRetryInterval(), this);
-                } catch (Exception e) {
-                    timer.delay(name, task.getRetryInterval(), this);
-                }
-            }
-        }
-
-        /**
-         * Schedules this task to run after the specified delay.
-         *
-         * @param delay The delay in milliseconds before execution
-         */
-        public void delay(long delay) {
-            timer.delay(name, delay, this);
-        }
-    }
-
-    /**
      * A task that creates or recreates a ZooKeeper node with ephemeral mode.
      */
-    private static class CreateTask implements Task {
+    private static class CreateExecution implements RetryExecution {
 
         private final CuratorFramework client;
 
@@ -708,7 +647,7 @@ public class DubboZookeeperRegistry implements RegistryService {
 
         private final Map<String, PathData> nodes;
 
-        CreateTask(CuratorFramework client, PathData path, Map<String, PathData> nodes) {
+        CreateExecution(CuratorFramework client, PathData path, Map<String, PathData> nodes) {
             this.client = client;
             this.path = path;
             this.nodes = nodes;
@@ -732,7 +671,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     /**
      * A task that detects ZooKeeper server availability by probing multiple URIs.
      */
-    private static class DetectTask implements Task {
+    private static class DetectExecution implements RetryExecution {
 
         private final String name;
 
@@ -740,15 +679,15 @@ public class DubboZookeeperRegistry implements RegistryService {
 
         private final CuratorFramework client;
 
-        private final int connectTimeout;
-
         private final AtomicLong counter = new AtomicLong(0);
 
-        DetectTask(String name, List<URI> uris, CuratorFramework client, int connectTimeout) {
+        private final SocketDetector detector;
+
+        DetectExecution(String name, List<URI> uris, CuratorFramework client, int connectTimeout) {
             this.name = name;
             this.uris = uris;
             this.client = client;
-            this.connectTimeout = connectTimeout;
+            this.detector = new SocketDetector(connectTimeout, 2181, new ZookeeperSocketListener());
         }
 
         @Override
@@ -758,7 +697,7 @@ public class DubboZookeeperRegistry implements RegistryService {
             }
             // the uris is shuffled to avoid the same server is probed by many clients.
             for (URI uri : uris) {
-                if (probe(uri.getHost(), uri.getPort())) {
+                if (detector.test(uri.getHost(), uri.getPort())) {
                     client.start();
                     return true;
                 }
@@ -773,40 +712,16 @@ public class DubboZookeeperRegistry implements RegistryService {
         public long getRetryInterval() {
             return Timer.getRetryInterval(1500, 5000);
         }
-
-        /**
-         * Probes a ZooKeeper server by sending 'ruok' command.
-         *
-         * @param host ZooKeeper server host
-         * @param port ZooKeeper server port
-         * @return true if server responds to connection attempt
-         */
-        private boolean probe(String host, int port) {
-            Socket socket = null;
-            OutputStream out = null;
-            try {
-                socket = new Socket();
-                socket.connect(new InetSocketAddress(host, port), connectTimeout);
-                out = socket.getOutputStream();
-                out.write("ruok\n".getBytes(StandardCharsets.UTF_8));
-                out.flush();
-                return true;
-            } catch (Throwable e) {
-                return false;
-            } finally {
-                Close.instance().close(socket, out);
-            }
-        }
     }
 
     /**
      * A task that starts a {@link DubboCuratorCache} and returns its started status.
      */
-    private static class CacheTask implements Task {
+    private static class CacheExecution implements RetryExecution {
 
         private final DubboCuratorCache cache;
 
-        CacheTask(DubboCuratorCache cache) {
+        CacheExecution(DubboCuratorCache cache) {
             this.cache = cache;
         }
 

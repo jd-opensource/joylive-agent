@@ -117,6 +117,13 @@ public class URI {
         this(schema, user, password, host, port, path, parameters, null);
     }
 
+    public int getPort(int defaultPort) {
+        if (port == null || port < 0) {
+            return defaultPort;
+        }
+        return port;
+    }
+
     /**
      * Sets the schema component of the URI.
      *

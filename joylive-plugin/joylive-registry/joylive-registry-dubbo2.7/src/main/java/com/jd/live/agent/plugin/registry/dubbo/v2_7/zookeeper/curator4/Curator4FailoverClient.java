@@ -48,7 +48,7 @@ public class Curator4FailoverClient extends AbstractZookeeperClient<CuratorListe
 
     @Override
     public void doClose() {
-        client.doClose();
+        client.close();
     }
 
     @Override

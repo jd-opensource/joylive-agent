@@ -15,10 +15,13 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
+import com.jd.live.agent.core.util.task.RetryVersionTask;
+import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper.CuratorExecution.CuratorVoidExecution;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.dubbo.common.URL;
@@ -29,13 +32,20 @@ import org.apache.dubbo.remoting.zookeeper.DataListener;
 import org.apache.zookeeper.CreateMode;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.StringUtils.splitList;
 import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
 
 /**
@@ -66,33 +76,65 @@ public class CuratorFailoverClient {
     private final URL url;
     private final Consumer<Integer> stateListener;
     private final Timer timer;
+    private final int timeout;
+    private final int successThreshold;
+    private final boolean autoRecover;
+    private final List<String> addresses = new ArrayList<>();
+    private final CuratorFailoverEnsembleProvider ensembleProvider;
+    private final CuratorConnectionStateListener connectionListener;
     private final CuratorFramework client;
+    private final AtomicLong versions = new AtomicLong(0);
+    private final Predicate<RetryVersionTask> predicate = v -> v.getVersion() == versions.get();
     @SuppressWarnings("deprecation")
     private final Map<String, TreeCache> caches = new ConcurrentHashMap<>();
+    private final AtomicBoolean connected = new AtomicBoolean(false);
+    private final CountDownLatch connectLatch = new CountDownLatch(1);
+    private final AtomicBoolean recover = new AtomicBoolean(false);
 
     public CuratorFailoverClient(URL url, Consumer<Integer> stateListener, Timer timer) {
         this.url = url;
         this.stateListener = stateListener;
         this.timer = timer;
-        int timeout = url.getParameter(TIMEOUT_KEY, DEFAULT_CONNECTION_TIMEOUT_MS);
+        this.timeout = url.getParameter(TIMEOUT_KEY, DEFAULT_CONNECTION_TIMEOUT_MS);
+        this.successThreshold = url.getParameter("successThreshold", 3);
+        this.autoRecover = url.getParameter("autoRecover", true);
         int sessionExpireMs = url.getParameter(ZK_SESSION_EXPIRE_KEY, DEFAULT_SESSION_TIMEOUT_MS);
-        try {
-            // TODO failover
-            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
-                    .connectString(url.getBackupAddress())
-                    .retryPolicy(new RetryNTimes(1, 1000))
-                    .connectionTimeoutMs(timeout)
-                    .sessionTimeoutMs(sessionExpireMs);
-            String authority = url.getAuthority();
-            if (authority != null && !authority.isEmpty()) {
-                builder = builder.authorization("digest", authority.getBytes());
+        addresses.add(url.getBackupAddress());
+        addresses.addAll(splitList(url.getParameter("failovers"), ';'));
+        this.ensembleProvider = new CuratorFailoverEnsembleProvider(addresses);
+        this.connectionListener = new CuratorConnectionStateListener(stateListener, timeout, sessionExpireMs) {
+            @Override
+            protected void onLost() {
+                doLost();
+                super.onLost();
             }
-            client = builder.build();
-            client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(stateListener, timeout, sessionExpireMs));
+
+            @Override
+            protected void onConnected(long sessionId) {
+                doConnected(sessionId);
+                super.onConnected(sessionId);
+                // Trigger connected event
+                connectLatch.countDown();
+            }
+        };
+        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
+                .ensembleProvider(ensembleProvider)
+                .retryPolicy(new RetryNTimes(1, 1000))
+                .connectionTimeoutMs(timeout)
+                .sessionTimeoutMs(sessionExpireMs);
+        String authority = url.getAuthority();
+        if (authority != null && !authority.isEmpty()) {
+            builder = builder.authorization("digest", authority.getBytes());
+        }
+        this.client = builder.build();
+        client.getConnectionStateListenable().addListener(connectionListener);
+
+        try {
             client.start();
-            boolean connected = client.blockUntilConnected(timeout, TimeUnit.MILLISECONDS);
-            if (!connected) {
-                throw new IllegalStateException("zookeeper not connected");
+            if (!connectLatch.await((long) timeout * addresses.size(), TimeUnit.MILLISECONDS)) {
+                // cancel task.
+                versions.incrementAndGet();
+                throw new IllegalStateException("It's timeout to connect to zookeeper.");
             }
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
@@ -111,7 +153,7 @@ public class CuratorFailoverClient {
     /**
      * Closes the client and releases all resources.
      */
-    public void doClose() {
+    public void close() {
         client.close();
     }
 
@@ -346,4 +388,77 @@ public class CuratorFailoverClient {
         listener.removeDataListener();
     }
 
+    /**
+     * Handles connection loss by initiating reconnection attempts.
+     */
+    private void doLost() {
+        logger.info("Failed to connect " + ensembleProvider.current() + ", trying to reconnect...");
+        // close first
+        client.close();
+        long version = versions.incrementAndGet();
+        boolean connected = this.connected.get();
+        if (!connected && ensembleProvider.size() == 1) {
+            // fail fast when initialization.
+            connectLatch.countDown();
+        } else if (connected && recover.compareAndSet(false, true)) {
+            // recover immediately
+            ensembleProvider.reset();
+            client.start();
+        } else {
+            // reconnect to next server
+            ensembleProvider.next();
+            CuratorDetectTask detect = new CuratorDetectTask(ensembleProvider, timeout, successThreshold, connected, new CuratorDetectTaskListener() {
+                @Override
+                public void onBefore() {
+                    if (client.getState() != CuratorFrameworkState.STOPPED) {
+                        client.close();
+                    }
+                }
+
+                @Override
+                public void onSuccess() {
+                    logger.info("Try connect to zookeeper " + ensembleProvider.current());
+                    client.start();
+                }
+
+                @Override
+                public void onFailure() {
+                    connectLatch.countDown();
+                }
+            });
+            RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper-detect", detect, version, predicate, timer);
+            // fast to reconnect when initialization
+            task.delay(connected ? Timer.getRetryInterval(1500, 5000) : 0);
+        }
+    }
+
+    /**
+     * Handles successful connection and optionally initiates recovery to primary server.
+     *
+     * @param sessionId the established ZooKeeper session ID
+     */
+    private void doConnected(long sessionId) {
+        // Discard running tasks
+        long version = versions.incrementAndGet();
+        connected.set(true);
+        if (autoRecover) {
+            String current = ensembleProvider.current();
+            String first = ensembleProvider.first();
+            if (!Objects.equals(current, first)) {
+                logger.info("Try detect and recover " + first + "...");
+                CuratorRecoverTask execution = new CuratorRecoverTask(first, timeout, successThreshold, new CuratorDetectTaskListener() {
+                    @Override
+                    public void onSuccess() {
+                        if (!Objects.equals(ensembleProvider.current(), first)) {
+                            recover.set(true);
+                            // close will trigger onLost, start client in onLost.
+                            client.close();
+                        }
+                    }
+                });
+                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper-recover", execution, version, predicate, timer);
+                task.delay(Timer.getRetryInterval(1500, 5000));
+            }
+        }
+    }
 }
