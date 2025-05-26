@@ -116,6 +116,12 @@ public class CuratorFailoverClient {
                 // Trigger connected event
                 connectLatch.countDown();
             }
+
+            @Override
+            protected void onReconnected(long sessionId) {
+                doReconnected(sessionId);
+                super.onReconnected(sessionId);
+            }
         };
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                 .ensembleProvider(ensembleProvider)
@@ -430,6 +436,15 @@ public class CuratorFailoverClient {
             // fast to reconnect when initialization
             task.delay(connected ? Timer.getRetryInterval(1500, 5000) : 0);
         }
+    }
+
+    /**
+     * Handles successful reconnection and optionally initiates recovery to primary server.
+     *
+     * @param sessionId the established ZooKeeper session ID
+     */
+    private void doReconnected(long sessionId) {
+        doConnected(sessionId);
     }
 
     /**
