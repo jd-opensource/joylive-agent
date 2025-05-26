@@ -38,7 +38,7 @@ import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
@@ -145,7 +145,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     @Override
     public void start() throws Exception {
         if (started.compareAndSet(false, true)) {
-            RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+            RetryPolicy retryPolicy = new RetryNTimes(1, 1000);
             CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                     .connectString(address)
                     .sessionTimeoutMs(sessionTimeout)

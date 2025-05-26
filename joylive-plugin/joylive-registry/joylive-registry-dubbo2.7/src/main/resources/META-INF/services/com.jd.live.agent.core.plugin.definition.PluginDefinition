@@ -4,3 +4,5 @@ com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ClusterUtilsDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.RegistryFactoryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.ServiceDiscoveryFactoryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.NacosPropertiesDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.CuratorZookeeperDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_7.definition.Curator5ZookeeperDefinition

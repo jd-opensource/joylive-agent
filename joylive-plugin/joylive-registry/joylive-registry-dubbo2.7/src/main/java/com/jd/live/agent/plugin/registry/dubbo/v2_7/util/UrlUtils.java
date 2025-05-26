@@ -29,14 +29,15 @@ import org.apache.dubbo.common.constants.RemotingConstants;
 import org.apache.dubbo.metadata.MetadataInfo;
 import org.apache.dubbo.metadata.MetadataService;
 import org.apache.dubbo.registry.client.DefaultServiceInstance;
-import org.apache.dubbo.registry.client.InstanceAddressURL;
 import org.apache.dubbo.registry.client.RegistryClusterIdentifier;
 import org.apache.dubbo.registry.client.ServiceDiscovery;
 import org.apache.dubbo.registry.client.metadata.MetadataUtils;
 
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.core.Constants.*;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
@@ -52,6 +53,8 @@ public class UrlUtils {
     private static final String DUBBO = "dubbo";
     private static final String RELEASE = "release";
     private static final String VERSION = "2.7";
+    private static volatile AtomicReference<Constructor<?>> constructorRef = null;
+    private static final Object mutex = new Object();
 
     public static String getClusterName(URL url) {
         return url.toString(RemotingConstants.BACKUP_KEY);
@@ -104,16 +107,6 @@ public class UrlUtils {
             group = url.getParameter(LABEL_SERVICE_GROUP, "");
         }
         return new ServiceId(service, group, interfaceMode);
-    }
-
-    /**
-     * Checks if URL represents service registration mode.
-     *
-     * @param url Dubbo URL to check
-     * @return true if service mode
-     */
-    public static boolean isServiceMode(URL url) {
-        return SERVICE_REGISTRY_TYPE.equalsIgnoreCase(url.getParameter(REGISTRY_TYPE_KEY));
     }
 
     /**
@@ -186,26 +179,6 @@ public class UrlUtils {
     }
 
     /**
-     * Extracts URL parameters from metadata map.
-     *
-     * @param metadata source metadata map (can be null)
-     * @param parser   parser for converting string to map
-     * @return URLParams containing protocol and version (defaults to DUBBO/VERSION if not found)
-     */
-    public static URLParams getUrlParams(Map<String, String> metadata, ObjectParser parser) {
-        try {
-            String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
-            Map<String, Map<String, String>> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, Map<String, String>>>() {
-            });
-            Map<String, String> dubboParams = urlParams == null ? null : urlParams.get(DUBBO);
-            String release = dubboParams == null ? VERSION : dubboParams.getOrDefault(RELEASE, VERSION);
-            return new URLParams(DUBBO, release);
-        } catch (Exception e) {
-            return new URLParams(DUBBO, VERSION);
-        }
-    }
-
-    /**
      * Converts a ServiceEndpoint to an appropriate URL representation based on the service configuration.
      *
      * @param serviceId The service identifier determining conversion mode (interface/non-interface)
@@ -220,9 +193,18 @@ public class UrlUtils {
         if (serviceId.isInterfaceMode()) {
             return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), metadata);
         } else {
-            DefaultServiceInstance instance = new DefaultServiceInstance(endpoint.getId(), endpoint.getService(), endpoint.getHost(), endpoint.getPort());
-            instance.setMetadata(metadata);
-            return new InstanceAddressURL(instance, getMetadataInfo(instance, url, discovery));
+            Constructor<?> constructor = getUrlConstructor(discovery.getClass().getClassLoader());
+            if (constructor == null) {
+                return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), metadata);
+            }
+            try {
+                // InstanceAddressURL is introduced in Dubbo 2.7.9+
+                DefaultServiceInstance instance = new DefaultServiceInstance(endpoint.getId(), endpoint.getService(), endpoint.getHost(), endpoint.getPort());
+                instance.setMetadata(metadata);
+                return (URL) constructor.newInstance(instance, getMetadataInfo(instance, url, discovery));
+            } catch (Throwable e) {
+                return new URL(scheme, endpoint.getHost(), endpoint.getPort(), endpoint.getService(), metadata);
+            }
         }
     }
 
@@ -250,6 +232,58 @@ public class UrlUtils {
         }
     }
 
+    /**
+     * Checks if URL represents service registration mode.
+     *
+     * @param url Dubbo URL to check
+     * @return true if service mode
+     */
+    private static boolean isServiceMode(URL url) {
+        return SERVICE_REGISTRY_TYPE.equalsIgnoreCase(url.getParameter(REGISTRY_TYPE_KEY));
+    }
+
+    /**
+     * Extracts URL parameters from metadata map.
+     *
+     * @param metadata source metadata map (can be null)
+     * @param parser   parser for converting string to map
+     * @return URLParams containing protocol and version (defaults to DUBBO/VERSION if not found)
+     */
+    private static URLParams getUrlParams(Map<String, String> metadata, ObjectParser parser) {
+        try {
+            String params = metadata == null ? null : metadata.get("dubbo.metadata-service.url-params");
+            Map<String, Map<String, String>> urlParams = params == null ? null : parser.read(new StringReader(params), new TypeReference<Map<String, Map<String, String>>>() {
+            });
+            Map<String, String> dubboParams = urlParams == null ? null : urlParams.get(DUBBO);
+            String release = dubboParams == null ? VERSION : dubboParams.getOrDefault(RELEASE, VERSION);
+            return new URLParams(DUBBO, release);
+        } catch (Exception e) {
+            return new URLParams(DUBBO, VERSION);
+        }
+    }
+
+    /**
+     * Gets the constructor for {@code InstanceAddressURL} class in a thread-safe manner.
+     *
+     * @param classLoader the class loader to use for loading the {@code InstanceAddressURL} class
+     * @return the constructor if available, or {@code null} if the class or constructor cannot be found
+     */
+    private static Constructor<?> getUrlConstructor(ClassLoader classLoader) {
+        if (constructorRef == null) {
+            synchronized (mutex) {
+                if (constructorRef == null) {
+                    try {
+                        Class<?> type = classLoader.loadClass("org.apache.dubbo.registry.client.InstanceAddressURL");
+                        constructorRef = new AtomicReference<>(type.getConstructor(org.apache.dubbo.registry.client.ServiceInstance.class, MetadataInfo.class));
+                    } catch (Throwable e) {
+                        constructorRef = new AtomicReference<>(null);
+                    }
+                }
+            }
+        }
+        return constructorRef.get();
+    }
+
     @Getter
     public static class URLParams {
 
@@ -262,4 +296,5 @@ public class UrlUtils {
             this.release = release;
         }
     }
+
 }
